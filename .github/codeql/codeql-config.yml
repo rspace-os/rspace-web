@@ -1,0 +1,7 @@
+# JavaScript is limited to the Vite app. src/main/webapp/scripts is mostly
+# vendored; its first-party files join once the initial baseline is triaged.
+paths:
+  - src/main/java
+  - src/test/java
+  - src/main/webapp/ui/src
+  - .github

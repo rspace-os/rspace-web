@@ -27,18 +27,29 @@ export class GallerySortMenu {
     await item.click();
   }
 
+  async toggleActiveDirection(): Promise<void> {
+    const { item } = await this.findActiveMenuItem();
+    await item.click();
+  }
+
   async activeSort(): Promise<GallerySortField> {
+    const { text } = await this.findActiveMenuItem();
+    await this.page.keyboard.press("Escape");
+    return text.split("(")[0].trim() as GallerySortField;
+  }
+
+  private async findActiveMenuItem(): Promise<{ item: Locator; text: string }> {
     await this.button.click();
     const items = this.menu.getByRole("menuitem");
     const count = await items.count();
     for (let i = 0; i < count; i++) {
-      const text = await items.nth(i).innerText();
+      const item = items.nth(i);
+      const text = await item.innerText();
       if (text.includes("(Sorted")) {
-        await this.page.keyboard.press("Escape");
-        return text.split("(")[0].trim() as GallerySortField;
+        return { item, text };
       }
     }
     await this.page.keyboard.press("Escape");
-    throw new Error("activeSort(): no menu item's label contained '(Sorted' — none appear active");
+    throw new Error("findActiveMenuItem(): no menu item's label contained '(Sorted' — none appear active");
   }
 }

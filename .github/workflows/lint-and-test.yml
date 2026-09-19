@@ -228,11 +228,11 @@ jobs:
     env:
       # ponytail: shard count is a plain number, not a matrix-generating step;
       # bump both this and the matrix.shard list below together to rescale.
-      VITEST_SHARD_COUNT: 2
+      VITEST_SHARD_COUNT: 1
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       inputs.frontend_tests ||
@@ -388,12 +388,24 @@ jobs:
       # The Vitest browser provider drives real Playwright browsers, so the
       # browser binaries still need installing (just the one for this leg).
       - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+        run: |
+          for attempt in 1 2 3; do
+            pnpm exec playwright install --with-deps ${{ matrix.browser }} && exit 0
+            if [ "$attempt" -lt 3 ]; then
+              echo "Playwright download failed (attempt ${attempt}/3); retrying..."
+              sleep $((attempt * 10))
+            fi
+          done
+          exit 1
 
       - name: Run Vitest browser-mode tests
         env:
           VITEST_BROWSERS: ${{ matrix.browser }}
         run: pnpm run test-browser
+
+      - name: Run Storybook tests
+        if: ${{ !cancelled() && matrix.browser == 'chromium' }}
+        run: pnpm run storybook:test
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.24.0
@@ -613,6 +625,10 @@ jobs:
           SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
           SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
           GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
+          -- scratch database for the HibernateTest-based model tests, which
+          -- manage their own schema and skip when it is not available
+          CREATE DATABASE IF NOT EXISTS hibtest;
+          GRANT ALL ON hibtest.* TO 'rspacedbuser'@'%';
           FLUSH PRIVILEGES;
           SQL
 

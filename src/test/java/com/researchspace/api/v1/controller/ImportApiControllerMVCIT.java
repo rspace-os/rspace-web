@@ -1,13 +1,13 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @WebAppConfiguration
 public class ImportApiControllerMVCIT extends API_MVC_TestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -68,32 +68,6 @@ public class ImportApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     // a default image folder is created one - see RSPAC-1882
     assertEquals(totalFolderCount + 1, getCountOfEntityTable("Folder").intValue());
-  }
-
-  @Test
-  public void testEvernoteImport() throws Exception {
-    User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createNewApiKeyForUser(anyUser);
-    MockMultipartFile mf =
-        new MockMultipartFile(
-            "file",
-            "EvernoteDump.enex",
-            "text/xml",
-            getTestResourceFileStream("EvernoteDump.enex"));
-    Folder imgTarget = createImageTarget(anyUser);
-
-    // this will create an API inbox folder
-    MvcResult result =
-        mockMvc
-            .perform(
-                multipart(createUrl(API_VERSION.ONE, "/import/evernote"))
-                    .file(mf)
-                    .param("imageFolderId", imgTarget.getId() + "")
-                    .header("apiKey", apiKey))
-            .andReturn();
-    assertEquals(HttpStatus.CREATED.value(), result.getResponse().getStatus());
-    final int EXPECTED_IMAGE_COUNT = 2;
-    assertEquals(EXPECTED_IMAGE_COUNT, getRecordCountInFolderForUser(imgTarget.getId()));
   }
 
   private Folder createImageTarget(User anyUser) {

@@ -149,7 +149,9 @@ public interface ContainerApiManager extends InventoryApiManager<Container> {
   ApiContainer createNewApiContainer(ApiContainer newContainer, User user);
 
   /**
-   * Updates database container based on apiContainer provided.
+   * Updates database container based on apiContainer provided. A content edit bumps the user-facing
+   * version, at most once per container per transaction (RSDEV-1319, see
+   * InventoryApiManagerImpl#increaseVersionOncePerTransaction).
    *
    * @returns updated container
    */

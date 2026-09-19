@@ -11,6 +11,7 @@ import com.researchspace.model.Role;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
+import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.ISignupHandlerPolicy;
@@ -23,6 +24,8 @@ import java.util.List;
 import javax.naming.directory.DirContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +38,8 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class UserLdapRepoImpl implements UserLdapRepo {
+
+  private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   private @Autowired LdapContextSource ldapContext;
   private @Autowired LdapTemplate ldapTemplate;
@@ -123,6 +128,18 @@ public class UserLdapRepoImpl implements UserLdapRepo {
   public User authenticate(String username, String credentials) {
     assertLdapEnabled();
     assertLdapAuthenticationEnabled();
+
+    // a bind with a zero-length password is an unauthenticated bind (RFC 4513), which some
+    // directories treat as successful without verifying anything, so it must never reach the
+    // bind; a non-empty password (even whitespace-only) is verified by the directory as normal.
+    // LdapRealm screens login attempts too, but this guard is not redundant with that: it is
+    // the only check on the reauthentication path (IReauthenticator, e.g. document signing
+    // and witnessing), which passes the user-supplied password straight to this method
+    if (StringUtils.isEmpty(credentials)) {
+      SECURITY_LOG.warn(
+          "Rejecting LDAP bind attempt with empty password for username {}", username);
+      return null;
+    }
 
     User user = findUserByUsername(username);
     if (user == null) {

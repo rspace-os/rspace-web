@@ -1,11 +1,11 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatComment;
@@ -39,13 +39,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MediaManagerTest extends SpringTransactionalTest {
-
-  @BeforeClass
-  public static void setUpBeforeClass() throws Exception {}
 
   @Test
   public void saveChemElementRequiresPermissionOnParentRecord() throws Exception {
@@ -112,7 +108,7 @@ public class MediaManagerTest extends SpringTransactionalTest {
             savedMath.getId(),
             newUser);
     assertEquals(newLatex, updatedMath.getLatex());
-    assertEquals("The ids should be the same", savedMath.getId(), updatedMath.getId());
+    assertEquals(savedMath.getId(), updatedMath.getId(), "The ids should be the same");
 
     logoutAndLoginAs(other);
     assertAuthorisationExceptionThrown(
@@ -252,8 +248,8 @@ public class MediaManagerTest extends SpringTransactionalTest {
     String expectedFPFilenameRegex =
         "a{" + (BaseRecord.DEFAULT_VARCHAR_LENGTH - 22) + "}\\.\\.\\._(\\d){13}\\.docx";
     assertTrue(
-        "unexpected filename: " + savedFPFilename,
-        savedFPFilename.matches(expectedFPFilenameRegex));
+        savedFPFilename.matches(expectedFPFilenameRegex),
+        "unexpected filename: " + savedFPFilename);
 
     // very long extension (filename part after last .) scenario
     String shorNameLongExtension =
@@ -272,8 +268,8 @@ public class MediaManagerTest extends SpringTransactionalTest {
     String expectedFPFilename2Regex =
         "test_(\\d){13}\\.a{" + (BaseRecord.DEFAULT_VARCHAR_LENGTH - 19) + "}";
     assertTrue(
-        "unexpected filename: " + savedFPFilename,
-        savedFPFilename2.matches(expectedFPFilename2Regex));
+        savedFPFilename2.matches(expectedFPFilename2Regex),
+        "unexpected filename: " + savedFPFilename);
   }
 
   @Test

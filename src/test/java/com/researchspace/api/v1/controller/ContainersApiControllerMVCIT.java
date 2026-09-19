@@ -31,14 +31,14 @@ import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.web.servlet.MvcResult;
 
 public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }

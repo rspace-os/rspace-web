@@ -4,9 +4,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.researchspace.archive.ArchivalField;
 import com.researchspace.archive.ArchivalGalleryMetadata;
@@ -24,11 +23,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 public class StoichiometryImporterTest {
+
+  private AutoCloseable mocks;
 
   public static final String NEW_FIELD_FIELDDATA = "newFieldFielData";
   public static final String NEW_FIELD_FIELDDATA_REAL =
@@ -48,9 +51,9 @@ public class StoichiometryImporterTest {
   @Mock private FieldManager fieldManager;
   @Mock private StoichiometryReader reader;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
-    initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     Stoichiometry newStoichIometry = new Stoichiometry();
     newStoichIometry.setId(33L);
     when(oldChemElement.getId()).thenReturn(1L);
@@ -66,14 +69,14 @@ public class StoichiometryImporterTest {
   public void testNoStoichiometries() {
     when(oldField.getStoichiometries()).thenReturn(new ArrayList<>());
     testee.importStoichiometries(oldChemElement, currentChem);
-    verifyZeroInteractions(service);
+    verifyNoInteractions(service);
   }
 
   @Test
   public void testWhenStoichiometriesButNoParentReactionId() {
     when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
     testee.importStoichiometries(oldChemElement, currentChem);
-    verifyZeroInteractions(service);
+    verifyNoInteractions(service);
   }
 
   @Test
@@ -81,7 +84,7 @@ public class StoichiometryImporterTest {
     when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
     when(existingStoich.getParentReactionId()).thenReturn(123456789L);
     testee.importStoichiometries(oldChemElement, currentChem);
-    verifyZeroInteractions(service);
+    verifyNoInteractions(service);
   }
 
   @Test
@@ -122,7 +125,7 @@ public class StoichiometryImporterTest {
   public void testReactionlessImport_whenEmptyStoichiometriesList_doesNothing() {
     when(oldField.getStoichiometries()).thenReturn(new ArrayList<>());
     testee.importReactionlessStoichiometries(Collections.emptySet());
-    verifyZeroInteractions(service);
+    verifyNoInteractions(service);
   }
 
   @Test
@@ -167,5 +170,10 @@ public class StoichiometryImporterTest {
 
     verify(service, never()).createReactionlessFromArchive(any(), any(), any());
     verify(fieldManager, never()).save(any(), any());
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    mocks.close();
   }
 }

@@ -34,9 +34,9 @@
             at or below ids already in use, colliding on the primary key across roughly 40 tables.
 
             Id allocation itself is unchanged by the upgrade: every TABLE-strategy entity carries an
-            explicit @TableGenerator in rspace-core-model and keeps its own counter, keyed by its physical
-            table name, the same one-row-per-table layout Hibernate 5 used (generators declared without
-            pkColumnValue default their segment to the entity's own table).
+            explicit @TableGenerator and keeps its own counter, keyed by its physical table name, the
+            same one-row-per-table layout Hibernate 5 used (generators declared without pkColumnValue
+            default their segment to the entity's own table).
 
             This changeset loops over every existing hibernate_sequences row and, for any row whose name is a
             real base table with an "id" column, sets next_val above that table's MAX(id). Driving off the
@@ -49,8 +49,7 @@
               - AbstractUserOrGroupImpl  -> shared by User + rsGroup
               - Communication            -> shared by Notification, MessageOrRequest, GroupMessageOrRequest,
                                             CreateGroupMessageOrRequest, ShareRecordMessageOrRequest
-            These two carry an explicit @TableGenerator(allocationSize=1, pkColumnValue=entity name) in
-            rspace-core-model.
+            These two carry an explicit @TableGenerator(allocationSize=1, pkColumnValue=entity name).
 
             Margin: next_val = MAX(id) + 51 clears a full allocation block (allocationSize 50) plus one,
             which is safe for the pooled, pooled-lo and no-op optimizers alike. It is idempotent: re-running

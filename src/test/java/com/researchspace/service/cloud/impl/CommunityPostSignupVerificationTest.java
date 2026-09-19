@@ -1,7 +1,7 @@
 package com.researchspace.service.cloud.impl;
 
 import static com.researchspace.core.testutil.MockLoggingUtils.assertNoLogging;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 
 import com.axiope.userimport.IPostUserSignup;
@@ -12,33 +12,32 @@ import com.researchspace.service.impl.ConfigurableLogger;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 @CommunityTestContext
+@ExtendWith(MockitoExtension.class)
 public class CommunityPostSignupVerificationTest extends SpringTransactionalTest {
 
   MockHttpServletRequest request;
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock Logger log;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     request = new MockHttpServletRequest();
     getBeanOfClass(ConfigurableLogger.class).setLogger(log);
   }
 
-  @After
+  @AfterEach
   public void teardown() {
     getBeanOfClass(ConfigurableLogger.class).setLoggerDefault();
   }

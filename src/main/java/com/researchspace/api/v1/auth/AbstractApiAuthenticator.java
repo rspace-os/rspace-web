@@ -3,6 +3,7 @@ package com.researchspace.api.v1.auth;
 import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 
 import com.researchspace.auth.ApiKeyAuthenticationToken;
+import com.researchspace.auth.StatelessApiLogin;
 import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.permissions.IUserPermissionUtils;
@@ -81,6 +82,8 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
       // When it does, we know that session  preservation is not possible.
     }
 
+    // this login must not disturb any session that arrived with the request (for example a
+    // browser session cookie sent alongside the API key); see StatelessApiLogin
     doLogin(accessToken, targetUser);
     return targetUser;
   }
@@ -94,7 +97,8 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
    * Package scoped for testing
    */
   void doLogin(String apiKey, User u) {
-    SecurityUtils.getSubject().login(new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
+    StatelessApiLogin.login(
+        SecurityUtils.getSubject(), new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
   }
 
   @Override

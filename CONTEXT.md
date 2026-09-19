@@ -40,40 +40,41 @@ resolved during design. This file is a glossary only — no implementation detai
 ## Instrument PID registration (B2INST/PIDINST)
 
 - **PIDINST-mapped field** — a custom field on a concrete Instrument that feeds
-  the B2INST/PIDINST registration metadata because both its name (compared
-  case-insensitively, ignoring surrounding whitespace) and its declared field
-  type match a field of the default PIDINST template. A field matching by name
-  but not by type is ignored. Participation is decided by name+type
+  the B2INST/PIDINST and DataCite PIDINST registration metadata because both its
+  name (compared case-insensitively, ignoring surrounding whitespace) and its
+  declared field type match a field of the default PIDINST template. A field
+  matching by name but not by type is ignored. Participation is decided by name+type
   conformance, never by template lineage: any instrument carrying conforming
   fields is mapped, however it was created. The template's field names are the
   canonical spelling of the mapping contract.
 - **Documentation-only field** — a field of the default PIDINST template that
   deliberately feeds no registration metadata, existing purely so users can
-  record the fact against the instrument. The measurement technique, the
-  calibration and the last calibration date are documentation-only: they have no
-  PIDINST property that fits them, and inventing one was tried and rejected. A
-  documentation-only field is still an ordinary instrument field, so users fill,
-  edit and read it as usual; it simply never leaves RSpace.
-- **Materialised default** — a value RSpace fills into a PIDINST-mapped field
-  the user left empty, applied whenever the Instrument is saved rather than at
-  PID registration, so the field is populated from the moment the instrument
-  exists and regardless of whether it is ever registered. Applies to the landing
-  page, whose default is the instrument's own public RSpace address. Only a blank
-  field is filled and a user's own value is never replaced; once written it is an
-  ordinary field value the user may edit, and clearing it and saving fills it
-  again. Instruments carrying no conforming field are untouched, and templates
-  are never filled, since one instrument's address must not be stamped onto every
-  instrument later created from that template.
+  record the fact against the instrument. Only the last calibration date is
+  documentation-only now: PIDINST's Date vocabulary has no home for it. The
+  measurement technique and calibration links were documentation-only until
+  RSDEV-1253 mapped them to RelatedIdentifier entries with a fixed IsDescribedBy
+  relation (see ADR 0007); the relation type stored on the link itself still
+  never leaves RSpace. A documentation-only field is still an ordinary
+  instrument field, so users fill, edit and read it as usual.
+- **Legacy auto-filled landing page** — a landing page RSpace itself wrote into
+  an instrument's Landing page field, back when saving an instrument filled a
+  blank field with the record's own globalId address. RSpace no longer writes
+  these, and a blank Landing page now stays blank until a user types a value or
+  an identifier is registered. The ones already in the data are recognised by
+  their `/globalId/<globalId>` tail and are treated as an empty field wherever
+  the field is read: never registered with a provider, since the address needs an
+  RSpace sign-in, and replaced by the public landing page when an identifier is
+  registered. A user who deliberately types such an address is therefore also
+  overridden; that is accepted, because an address needing a sign-in is unfit
+  either way.
 - **Identity-bound field** — a field whose value names exactly one concrete
   Instrument, so deriving a new record from an existing one must not carry it
   over. The Landing page is identity-bound. Three derivation paths enforce this
   today: duplicating an instrument, duplicating a template, and creating an
   instrument from a template all start the derived record's Landing page blank,
-  whether the source value was system-filled or typed by a user. On a concrete
-  instrument the blank is then an ordinary materialised default (filled with the
-  new record's own address, or left blank when no public server address is
-  configured — blank being the recoverable state); on a template it stays blank,
-  since templates are never filled. A value the user supplies directly *on the
+  whether the source value was written by RSpace or typed by a user. It then
+  stays blank, on an instrument as on a template, until a user types a value or
+  an identifier is registered for it. A value the user supplies directly *on the
   new record itself* (e.g. typed into the creation form, or sent in the creation
   request) is theirs and is kept: it is derivation that discards a landing page,
   never user input. The one value that does *not* count as user input on the new
@@ -106,6 +107,138 @@ resolved during design. This file is a glossary only — no implementation detai
   provider, distinct from a citable public URL: it exists from registration
   onwards and may require signing in to that provider, so it is never presented
   as the identifier's public address.
+- **Public link suffix** — the unguessable random token that names an
+  identifier's public landing page. Generated when a new identifier registration
+  begins — always before the identifier is created, and before the provider call
+  on the path whose payload carries the address — then immutable for the
+  identifier's lifetime. Every identifier has one, whichever provider registers
+  it. (ADR 0006 records the per-provider ordering and why it differs.)
+- **Public landing page** — the page RSpace serves anonymously for a published
+  identifier, addressed by the public link suffix
+  (`/public/inventory/<suffix>`). Distinct from the instrument's Landing page
+  field (a field value on the record), from the provider record page (the
+  record's page on the provider's site), and from the record's globalId address
+  (which needs an RSpace sign-in). The address exists from the moment
+  registration begins; the page itself resolves only once the identifier is
+  published.
+
+  The page serves the record *as of the newest revision of the identifier row*,
+  for both providers. Two consequences worth knowing. Changes to the identifier
+  row itself reach the page without a republish, which B2INST needs because it
+  has no republish operation. And because the record snapshot moves with that
+  revision, record edits made after publishing become public as soon as anything
+  writes the identifier row — the `customFieldsOnPublicPage` toggle, an
+  identifier metadata edit, a B2INST status refresh — rather than staying private
+  until a deliberate republish. DataCite used to be held at the publication-time
+  snapshot instead; that difference was removed deliberately.
+- **Updatable identifier state** — an identifier state in which the provider's
+  copy of the metadata can be rewritten in place by RSpace. The two providers
+  express it from opposite ends. For B2INST it is every state *except*
+  `accepted`: an InvenioRDM draft stays writable right up to acceptance, which
+  publishes the record and removes the draft, and since `refreshIdentifier`
+  stores the community review's status verbatim an identifier can legitimately
+  sit in `draft`, `created`, `submitted`, `cancelled`, `declined` or `expired`,
+  each with a live draft behind it (verified against b2inst-test.gwdg.de,
+  August 2026). For DataCite it is *only* `draft`: a findable DOI is refreshed
+  through the existing Republish, which already resends the full current
+  metadata (retract then publish), and a retracted (`registered`) DOI is left
+  alone by decision rather than because DataCite would refuse it. An accepted
+  B2INST record is never updated in place; it would need a whole new
+  draft-and-review round.
+- **External metadata update** — re-running the usual PIDINST mapping over an
+  instrument's current fields and pushing the result to the provider record
+  registered for it, so the external record keeps describing the instrument as
+  it is today rather than drifting. Triggered by saving an instrument that
+  carries an identifier in an updatable identifier state; saving *is* the
+  explicit user action, there is no separate "update external PIDINST" button.
+  A failed push never blocks or reverts the save: the instrument edit is
+  persisted regardless, the identifier's own state is left untouched, and the
+  failure is reported on the identifier in the API response, and the web
+  interface shows it after a save or a transfer: a provider failure as an error,
+  a record frozen by its own state as a notice, and success silently
+  (RSDEV-1356). A save reports one toast per identifier; a bulk transfer groups
+  them into one alert per kind, because both kinds wait to be dismissed. The
+  toast decides by the machine-readable `outcome` (`UPDATED`, `FAILED`,
+  `NOT_UPDATABLE`) that travels with the reason, never by the wording of the
+  reason itself, and an outcome it does not recognise is reported as a failure
+  rather than passed over. Every qualifying save pushes, whether or not a mapped
+  field changed, so retrying a failed push is just saving again. An identifier whose state has frozen its
+  provider record is reported too, rather than passed over in silence, in a
+  message that explains why in words without echoing the provider's own state
+  token; an identifier belonging to a provider whose integration is switched
+  off is passed over silently, because there is nothing to act on. Saving an
+  instrument and transferring one both push. A transfer is told apart from an
+  instrument with no identifiers by reading the record, because the response a
+  departing owner receives is a limited view that lists none either way; the
+  outcome is then reported only to a caller who can still see the identifier.
+  Template sync, restore, duplicate and delete do not push, and edits to samples,
+  subsamples and containers do not (their draft-DOI metadata still drifts).
+  Neither does a *bulk* change of owner run with rollback-on-error: that runs the
+  whole batch in one transaction, and pushing from inside it could leave the
+  provider holding an owner a later rollback took away. Those instruments drift
+  until their next ordinary save, which is the recoverable direction.
+  (RSDEV-1251)
+- **Registered landing page** — the LandingPage value RSpace sends to a PID
+  provider when registering an instrument identifier: the Landing page field
+  when it holds an absolute http(s) address the user typed themselves, otherwise
+  the identifier's public landing page. A legacy auto-filled landing page is
+  never registered — it is a login-walled address, and a landing page is baked into a
+  citable PID once a curator accepts — and neither is any value a resolver could
+  not follow. When no registrable address exists the property is omitted, a
+  missing property being recoverable where a wrong published one is not.
+
+  Registering an instrument identifier also writes that same address into the
+  Landing page field whenever the field held no address the user typed, so the
+  field afterwards shows exactly what was registered rather than drifting from
+  it. A value the user typed is left untouched. The write happens only once the
+  provider has accepted the registration, so a failed registration leaves the
+  field as it was. Deleting the identifier takes that address back out again,
+  leaving the field as empty as it started; here too a value the user typed, and
+  an address belonging to another identifier, are left alone.
+
+- **Registered identifier** — an identifier RSpace minted itself through a PID provider
+  (DataCite or B2INST). RSpace owns the provider-side record: it pushes metadata to it,
+  refreshes its state, publishes, retracts or deletes it, and serves its public landing
+  page. Every identifier that existed before Workflow 1 (RSDEV-1033) is a registered
+  identifier.
+  _Avoid_: RSpace identifier, own identifier, minted identifier (as a noun)
+- **Linked identifier** — an identifier that records a PID minted by another party, found
+  in a public PID registry and attached to an Instrument on import. It carries the same
+  provider type as a registered identifier and mirrors the state the provider holds, but
+  RSpace owns nothing on the provider side: it never pushes metadata to it, never
+  refreshes, publishes, retracts or deletes it at the provider, and never serves a public
+  landing page for it. It is what makes an Instrument "linked to a PIDINST", and it fills
+  the record's single identifier slot, so no new PID can be registered for that Instrument
+  while the link stands; removing the link is deleting the identifier in RSpace only.
+  _Avoid_: external identifier (ambiguous with *external metadata update*, which is about
+  registered identifiers), imported identifier, foreign PID
+
+- **Unlinking** — removing a record's identifier in RSpace and nowhere else, leaving whatever
+  the provider holds exactly as it was. It releases the PID, which can then be imported again.
+  A user unlinks by deleting the identifier, and trashing an Instrument unlinks whatever it
+  carried. Applies to a registered identifier as well as a linked one: there, unlinking is
+  *not* the same as deleting the identifier, which also removes it at the provider, and RSpace
+  keeps owning a provider record that no longer describes anything of ours. Restoring a trashed
+  Instrument does not undo it.
+  _Avoid_: detaching, disconnecting, deleting the PID (nothing is deleted at the provider)
+
+- **PID lookup** — searching a PID registry for instrument records, by free text or by a
+  PID, in order to import one. A lookup always goes to the deployment's enabled PIDINST
+  provider, with that provider's configured server and credentials; while no PIDINST
+  provider is enabled there is no lookup, and there is never a choice of registry. Only
+  *public* records are found: a PID whose registration is still in progress, or has been
+  declined, is not a lookup result and cannot be imported, because it has no resolvable
+  landing page to link to.
+  _Avoid_: federated search (there is one registry per deployment), PIDINST search, DOI
+  search
+
+- **Instrument import** — creating an Instrument from a PID record found in a public PID
+  registry: RSpace fetches the record itself, fills the default PIDINST template's fields
+  from it by the inverse of the PIDINST mapping, and attaches a linked identifier for the
+  PID, all in one step. The imported values are ordinary field values afterwards: the user
+  edits them like any other, and only the identifier stays tied to the registry.
+  _Avoid_: PIDINST import (the PID is imported, the instrument is created), instrument
+  lookup (that is the search that precedes it), sync
 
 ## Record version history
 

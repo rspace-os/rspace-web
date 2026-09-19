@@ -2,10 +2,10 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 
@@ -18,26 +18,26 @@ import com.researchspace.model.User;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.ui.ModelMap;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodName.class)
 public class SysadminGroupsControllerMVCIT extends MVCTestBase {
 
   private static final String SYSTEM_GROUPS_AJAX_LIST = "/system/groups/ajax/list";
   private static final String SYSTEM_GROUPS_LIST = "/system/groups/list";
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
     super.tearDown();
   }
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -114,8 +114,8 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
     grps = getListOfGroupInfo(result);
     assertEquals(1, grps.size());
     // file usage should not be 0
-    assertTrue("fileusage is 0", grps.get(0).getFileUsage() > 0);
-    assertTrue("usage percent is 0", grps.get(0).getPercent() > 0);
+    assertTrue(grps.get(0).getFileUsage() > 0, "fileusage is 0");
+    assertTrue(grps.get(0).getPercent() > 0, "usage percent is 0");
 
     MvcResult result2 =
         mockMvc

@@ -39,6 +39,10 @@ export class PyratDialogPage {
     return page.getByRole("button", { name: "Filter", exact: true });
   }
 
+  get insertButton(): Locator {
+    return page.getByRole("button", { name: "Insert", exact: true });
+  }
+
   /**
    * The sortable column header. Clicking the label text bubbles to the
    * enclosing TableSortLabel's onClick, which triggers the sort. We target the
@@ -67,5 +71,17 @@ export class PyratDialogPage {
     await this.animalTypeSelect.click();
     await page.getByRole("option", { name: animalType, exact: true }).click();
     await this.applyFilterButton.click();
+  }
+
+  async selectAnimal(eartag: string): Promise<void> {
+    // The row overrides its role to checkbox and also labels the checkbox
+    // input inside it, so both match the eartag; scope to the row (the
+    // first match, as it precedes its descendant) and click its checkbox.
+    const row = page.getByRole("checkbox", { name: eartag }).first();
+    await row.getByRole("checkbox").click();
+  }
+
+  async insertSelectedAnimals(): Promise<void> {
+    await this.insertButton.click();
   }
 }

@@ -70,7 +70,7 @@ declare global {
     tinymceInsertInternalLink?: (...params: InternalLinkInsertParams) => void;
   }
   interface Window {
-    RS: RSGlobal;
+    RS?: RSGlobal;
   }
 }
 const LATEST_REVISION_SELECTION = "__latest__" as const;
@@ -134,7 +134,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
     if (!params) {
       return;
     }
-    window.RS.tinymceInsertInternalLink?.(...params);
+    window.RS?.tinymceInsertInternalLink?.(...params);
     props.initialEl?.remove();
     setOpen(false);
   };

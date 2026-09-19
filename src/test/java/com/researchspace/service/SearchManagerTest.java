@@ -15,11 +15,12 @@ import static com.researchspace.testutils.SearchTestUtils.createSimpleFullTextSe
 import static com.researchspace.testutils.SearchTestUtils.createSimpleGeneralSearchCfg;
 import static com.researchspace.testutils.SearchTestUtils.createSimpleOwnerSearchCfg;
 import static com.researchspace.testutils.SearchTestUtils.createSimpleTagSearchCfg;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.axiope.search.IFileIndexer;
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
@@ -72,6 +73,7 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SearchTestUtils;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.ZoneOffset;
@@ -82,10 +84,9 @@ import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class SearchManagerTest extends SearchSpringTestBase {
@@ -97,16 +98,16 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
   IFileIndexer fileIndexer;
 
-  public @Rule TemporaryFolder randomFilefolder = new TemporaryFolder();
-  public @Rule TemporaryFolder indexfolder = new TemporaryFolder();
+  @TempDir public File randomFilefolder;
+  @TempDir public File indexfolder;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fileIndexer = new FileIndexer();
-    fileIndexer.setIndexFolderDirectly(indexfolder.getRoot());
+    fileIndexer.setIndexFolderDirectly(indexfolder);
     fileIndexer.init(true);
     getTargetObject(fileIndexSearcher.getFileSearchStrategy(), LuceneSearchStrategy.class)
-        .setIndexFolderDirectly(indexfolder.getRoot());
+        .setIndexFolderDirectly(indexfolder);
     perFactory = new DefaultPermissionFactory();
     sampleTemplateDao.resetDefaultTemplateOwner();
   }
@@ -279,7 +280,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     WorkspaceListingConfig cfg = createSimpleFullTextSearchCfg("commentxyz");
     ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results);
-    assertTrue("doc was not retrieved", results.getResults().contains(sd));
+    assertTrue(results.getResults().contains(sd), "doc was not retrieved");
   }
 
   @Test
@@ -2034,15 +2035,13 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals(numRecords + numRecordsUpdated, results.getResults().size());
   }
 
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void testFormSearchForAnotherUsersForm() throws Exception {
     final int length = 10, numFolders = 0, numRecords = 1;
     User user = createAndSaveUserIfNotExists(getRandomName(length));
     initialiseContentWithExampleContent(user);
-
     User user2 = createAndSaveUserIfNotExists(getRandomName(length));
     initialiseContentWithExampleContent(user2);
-
     // Create a form with some documents
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user.getUsername(), TESTPASSWD);
     Folder root = folderDao.getRootRecordForUser(user);
@@ -2051,19 +2050,24 @@ public class SearchManagerTest extends SearchSpringTestBase {
     formMgr.save(form, user);
     addNFoldersAndMRecords(root, numFolders, numRecords, user, form);
     flushToSearchIndices();
-
     // Login as user2 and search for the documents from that form
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user2.getUsername(), TESTPASSWD);
-    searchMgr.searchWorkspaceRecords(createSimpleFormSearchCfg(form.getOid().getIdString()), user2);
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            searchMgr.searchWorkspaceRecords(
+                createSimpleFormSearchCfg(form.getOid().getIdString()), user2));
   }
 
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void testFormSearchForNotExistingForm() throws Exception {
     final int length = 10;
     User user = createAndSaveUserIfNotExists(getRandomName(length));
     initialiseContentWithExampleContent(user);
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user.getUsername(), TESTPASSWD);
-    searchMgr.searchWorkspaceRecords(createSimpleFormSearchCfg("FM425346143"), user);
+    assertThrows(
+        AuthorizationException.class,
+        () -> searchMgr.searchWorkspaceRecords(createSimpleFormSearchCfg("FM425346143"), user));
   }
 
   @Test
@@ -2118,22 +2122,22 @@ public class SearchManagerTest extends SearchSpringTestBase {
         searchMgr.searchUserRecordsWithSimpleQuery(user, "testDocTag", null);
     assertNotNull(results);
     // one hit from created doc, another possible from auto-generated ontology tags doc
-    assertTrue("testDocTag should be found", results.getTotalHits().intValue() > 0);
+    assertTrue(results.getTotalHits().intValue() > 0, "testDocTag should be found");
 
     results = searchMgr.searchUserRecordsWithSimpleQuery(user, "testFolderTag", null);
     assertNotNull(results);
     // one hit from created folder, another possible from auto-generated ontology tags doc
-    assertTrue("testFolderTag should be found", results.getTotalHits().intValue() > 0);
+    assertTrue(results.getTotalHits().intValue() > 0, "testFolderTag should be found");
 
     results = searchMgr.searchUserRecordsWithSimpleQuery(user, "testNotebookTag", null);
     assertNotNull(results);
     // one hit from created notebook, another possible from auto-generated ontology tags doc
-    assertTrue("testNotebookTag should be found", results.getTotalHits().intValue() > 0);
+    assertTrue(results.getTotalHits().intValue() > 0, "testNotebookTag should be found");
 
     results = searchMgr.searchUserRecordsWithSimpleQuery(user, "tagged", null);
     assertNotNull(results);
     // three hits from created records + one possible from auto-generated ontology doc
-    assertTrue("tagged content should be found", results.getTotalHits().intValue() >= 3);
+    assertTrue(results.getTotalHits().intValue() >= 3, "tagged content should be found");
   }
 
   @Test

@@ -97,7 +97,11 @@ if (typeof HTMLCanvasElement !== "undefined") {
         rect: () => {},
         clip: () => {},
         fillRect: () => {},
-        getImageData: () => ({ data: [] }),
+        getImageData: (_sx: number, _sy: number, sw: number, sh: number) => ({
+          data: new Uint8ClampedArray(sw * sh * 4),
+          width: sw,
+          height: sh,
+        }),
         putImageData: () => {},
         createLinearGradient: () => ({
           addColorStop: () => {},
@@ -117,15 +121,8 @@ if (typeof HTMLCanvasElement !== "undefined") {
   HTMLCanvasElement.prototype.toDataURL = () =>
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
 
-  HTMLCanvasElement.prototype.toBlob = (callback: BlobCallback) => {
-    // Create a 1x1 pixel PNG blob
-    const bytes = [
-      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00,
-      0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xde, 0x00, 0x00, 0x00, 0x0c, 0x49,
-      0x44, 0x41, 0x54, 0x08, 0x57, 0x63, 0xf8, 0x0f, 0x00, 0x00, 0x01, 0x00, 0x01, 0x48, 0x89, 0x63, 0xf8, 0x0f, 0x00,
-      0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
-    ];
-    callback(new Blob([new Uint8Array(bytes)], { type: "image/png" }));
+  HTMLCanvasElement.prototype.toBlob = (callback: BlobCallback, type?: string) => {
+    callback(new Blob([new Uint8Array([0])], { type: type ?? "image/png" }));
   };
 
   // Add width and height properties

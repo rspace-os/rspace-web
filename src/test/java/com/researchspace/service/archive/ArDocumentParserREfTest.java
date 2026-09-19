@@ -3,29 +3,25 @@ package com.researchspace.service.archive;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.DAYS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
 import java.util.Date;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ArDocumentParserREfTest {
   ArchivalDocumentParserRef parserRef;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     parserRef = new ArchivalDocumentParserRef();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGetFileList() {

@@ -24,7 +24,7 @@ export type GroupMemberRole = "DEFAULT" | "RS_LAB_ADMIN" | "PI" | "GROUP_OWNER";
 
 export interface ApiSysadminGroupCreateRequest {
   displayName: string;
-  type: "LAB_GROUP";
+  type: "LAB_GROUP" | "PROJECT_GROUP";
   users: Array<{ username: string; roleInGroup: GroupMemberRole }>;
 }
 
@@ -38,6 +38,15 @@ export interface ApiSysadminGroup {
 
 export interface ApiIgsnSettingsUpdate {
   provider: "IGSN_DATACITE";
+  enabled: "true";
+  serverUrl: string;
+  username: string;
+  password: string;
+  repositoryPrefix: string;
+}
+
+export interface ApiPidinstSettingsUpdate {
+  provider: "PIDINST_DATACITE" | "PIDINST_B2INST";
   enabled: "true";
   serverUrl: string;
   username: string;

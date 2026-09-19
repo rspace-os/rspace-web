@@ -20,7 +20,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -49,7 +49,7 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
 
   protected MockMvc mockMvc;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
     super.setUp();

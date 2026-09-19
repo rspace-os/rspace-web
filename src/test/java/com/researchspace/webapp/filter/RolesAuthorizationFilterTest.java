@@ -1,27 +1,23 @@
 package com.researchspace.webapp.filter;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
 import com.researchspace.service.impl.ShiroTestUtils;
 import java.io.IOException;
 import org.apache.shiro.subject.Subject;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class RolesAuthorizationFilterTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   static ShiroTestUtils shiroUtils;
 
   AnyOfRolesAuthorizationFilter filter;
@@ -29,13 +25,7 @@ public class RolesAuthorizationFilterTest {
   MockHttpServletResponse response;
   @Mock Subject subjct;
 
-  @BeforeClass
-  public static void beforeClass() {}
-
-  @AfterClass
-  public static void afterClass() {}
-
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     shiroUtils = new ShiroTestUtils();
     shiroUtils.setSubject(subjct);
@@ -44,7 +34,7 @@ public class RolesAuthorizationFilterTest {
     response = new MockHttpServletResponse();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     shiroUtils.clearSubject();
   }

@@ -1,7 +1,8 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
@@ -17,22 +18,16 @@ import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class DeleteFromSharedFolderExecutorTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @InjectMocks DeleteFromSharedFolderExecutor executor;
   @Mock RecordSharingManager sharingMgr;
   @Mock FolderManager folderMgr;
@@ -41,7 +36,7 @@ public class DeleteFromSharedFolderExecutorTest {
   Folder parentFolder, toDelete, child;
   List<BaseRecord> pathElements1 = new ArrayList<>();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     anyUser = createAnyUser("any");
@@ -53,15 +48,12 @@ public class DeleteFromSharedFolderExecutorTest {
     pathElements1 = Arrays.asList(new BaseRecord[] {parentFolder, toDelete, child});
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void rejectFinalItemToDeleteIfNotFolder() {
     RSPath path = new RSPath(pathElements1);
     plan = new DeletionPlan(anyUser, path, parentFolder);
     plan.add(aDocument());
-    executor.execute(anyResults(), plan);
+    assertThrows(IllegalStateException.class, () -> executor.execute(anyResults(), plan));
   }
 
   @Test
@@ -72,7 +64,7 @@ public class DeleteFromSharedFolderExecutorTest {
     CompositeRecordOperationResult result = anyResults();
     executor.execute(result, plan);
     // unshare not called as we're deleting a single folder
-    Mockito.verifyZeroInteractions(sharingMgr);
+    Mockito.verifyNoInteractions(sharingMgr);
     assertEquals(1, result.getRecords().size());
   }
 
@@ -86,7 +78,7 @@ public class DeleteFromSharedFolderExecutorTest {
     CompositeRecordOperationResult result = anyResults();
     executor.execute(result, plan);
     // unshare not called as we're deleting  folders
-    Mockito.verifyZeroInteractions(sharingMgr);
+    Mockito.verifyNoInteractions(sharingMgr);
     // child folder removed
     Mockito.verify(folderMgr).removeBaseRecordFromFolder(child, toDelete.getId());
     assertEquals(2, result.getRecords().size());

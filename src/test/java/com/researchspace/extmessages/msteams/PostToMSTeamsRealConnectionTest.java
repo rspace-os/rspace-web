@@ -1,26 +1,23 @@
 package com.researchspace.extmessages.msteams;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.extmessages.base.AbstractExternalWebhookMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.net.URI;
 import java.net.URISyntaxException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-@RunWith(ConditionalTestRunner.class)
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
 
   @Value("${msteams.realConnectionTest.webhookUrl}")
@@ -68,16 +65,12 @@ public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
 
   BasicMsTeamsPoster poster = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     poster = new BasicMsTeamsPoster();
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void postToMSTeam() throws URISyntaxException {
     AdaptiveCard card = new AdaptiveCard();
     card.getBody().add(TextBlock.heading("From Bob Smith"));
@@ -97,7 +90,7 @@ public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
     ResponseEntity<String> response =
         poster.doSendMessage(payload.toJSON(), new URI(msTeamsTestWebhookUrl));
     assertTrue(
-        "Workflows webhook should accept the Adaptive Card",
-        response.getStatusCode().is2xxSuccessful());
+        response.getStatusCode().is2xxSuccessful(),
+        "Workflows webhook should accept the Adaptive Card");
   }
 }

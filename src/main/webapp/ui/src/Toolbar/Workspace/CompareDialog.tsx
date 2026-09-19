@@ -27,7 +27,7 @@ import type { GlobalId } from "@/stores/definitions/BaseRecord";
 import createAccentedTheme from "../../accentedTheme";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog } from "../../components/DialogBoundary";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import UserDetails from "../../components/UserDetails";
 import useOauthToken from "../../hooks/auth/useOauthToken";
@@ -500,11 +500,9 @@ export default function Wrapper(): React.ReactNode {
       <ErrorBoundary topOfViewport>
         <Portal>
           <Alerts>
-            <DialogBoundary>
-              <ThemeProvider theme={createAccentedTheme(COLOR)}>
-                <CompareDialog />
-              </ThemeProvider>
-            </DialogBoundary>
+            <ThemeProvider theme={createAccentedTheme(COLOR)}>
+              <CompareDialog />
+            </ThemeProvider>
           </Alerts>
         </Portal>
       </ErrorBoundary>

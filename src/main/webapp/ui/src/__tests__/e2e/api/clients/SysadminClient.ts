@@ -1,6 +1,7 @@
 import { env } from "@/__tests__/e2e/env";
 import type {
   ApiIgsnSettingsUpdate,
+  ApiPidinstSettingsUpdate,
   ApiSysadminGroup,
   ApiSysadminGroupCreateRequest,
   ApiSysadminUser,
@@ -9,7 +10,7 @@ import type {
 import { BaseApiClient } from "./BaseApiClient";
 
 export class SysadminClient extends BaseApiClient {
-  readonly createdUserIds: number[] = [];
+  private readonly managedUsers = new Map<string, number>();
 
   async createUser(user: ApiSysadminUserCreateRequest): Promise<ApiSysadminUser> {
     env.assertGlobalMutationsAllowed("createUser");
@@ -17,8 +18,20 @@ export class SysadminClient extends BaseApiClient {
       data: user,
       action: "createSysadminUser",
     });
-    this.createdUserIds.push(created.id);
+    this.managedUsers.set(user.username, created.id);
     return created;
+  }
+
+  /** Call once a scenario has itself removed a tracked user, so teardown skips it. */
+  releaseUser(username: string): void {
+    if (!this.managedUsers.delete(username)) {
+      throw new Error(`releaseUser("${username}") called for a user this client never created.`);
+    }
+  }
+
+  /** Ids still owned by this client and needing teardown cleanup, most-recently-created first. */
+  get pendingCleanup(): Array<{ username: string; id: number }> {
+    return [...this.managedUsers.entries()].map(([username, id]) => ({ username, id })).reverse();
   }
 
   async disableUser(id: number): Promise<void> {
@@ -26,6 +39,7 @@ export class SysadminClient extends BaseApiClient {
   }
 
   async createGroup(group: ApiSysadminGroupCreateRequest): Promise<ApiSysadminGroup> {
+    env.assertGlobalMutationsAllowed("createGroup");
     return this.requestJson("post", "/api/v1/sysadmin/groups", { data: group, action: "createSysadminGroup" });
   }
 
@@ -40,6 +54,20 @@ export class SysadminClient extends BaseApiClient {
   async testIgsnConnection(): Promise<boolean> {
     return this.requestJson("get", "/api/inventory/v1/identifiers/testIgsnConnection", {
       action: "testIgsnConnection",
+    });
+  }
+
+  async configurePidinst(settings: ApiPidinstSettingsUpdate): Promise<void> {
+    env.assertGlobalMutationsAllowed("configurePidinst");
+    await this.requestVoid("put", "/api/inventory/v1/system/settings", {
+      data: settings,
+      action: "configurePidinst",
+    });
+  }
+
+  async testPidinstConnection(): Promise<boolean> {
+    return this.requestJson("get", "/api/inventory/v1/identifiers/testPidinstConnection", {
+      action: "testPidinstConnection",
     });
   }
 }

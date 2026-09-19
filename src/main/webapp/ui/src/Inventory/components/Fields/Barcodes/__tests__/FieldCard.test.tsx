@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
+import "@/__tests__/__mocks__/barcode-detection-api";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory/mocking";
@@ -151,6 +152,29 @@ describe("FieldCard", () => {
         />,
       );
       expect(screen.getByLabelText("inventory:fields.barcodes.actions.scan")).toBeVisible();
+    });
+    test("Tapping the add button opens a scanner dialog with an accessible name.", async () => {
+      const user = userEvent.setup();
+      vi.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() => Promise.resolve());
+      render(
+        <FieldCard
+          fieldOwner={{
+            isFieldEditable: () => true,
+            fieldValues: {
+              barcodes: [],
+            },
+            setFieldsDirty: () => {},
+            canChooseWhichToEdit: false,
+            setFieldEditable: () => {},
+            noValueLabel: { barcodes: null },
+          }}
+          factory={mockFactory()}
+        />,
+      );
+
+      await user.click(screen.getByLabelText("inventory:fields.barcodes.actions.scan"));
+
+      expect(screen.getByRole("dialog", { name: "inventory:barcodeScanner.heading" })).toBeVisible();
     });
   });
 });

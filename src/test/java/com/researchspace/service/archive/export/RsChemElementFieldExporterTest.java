@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class RsChemElementFieldExporterTest {
@@ -34,7 +34,7 @@ public class RsChemElementFieldExporterTest {
 
   private File archiveRecordFolder;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     support = Mockito.mock(FieldExporterSupport.class);

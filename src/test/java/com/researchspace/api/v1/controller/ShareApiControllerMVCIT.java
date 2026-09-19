@@ -42,8 +42,8 @@ import com.researchspace.testutils.TestGroup;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -55,7 +55,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
   @Autowired private RecordGroupSharingDao recordSharingDao;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }

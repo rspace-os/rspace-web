@@ -1,8 +1,8 @@
 package com.researchspace.files.service.egnyte;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.axiope.search.FileSearchResult;
 import com.researchspace.egnyte.api.model.EgnyteSearchResult;
@@ -10,21 +10,20 @@ import com.researchspace.egnyte.api.model.SearchResultItem;
 import com.researchspace.egnyte.api2.EgnyteResult;
 import com.researchspace.files.service.ExternalFileStoreLocator;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+@ExtendWith(MockitoExtension.class)
 public class EgnyteFileSearcherTest {
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock ExternalFileStoreLocator extFSLocator;
   EgnyteFileSearcher searcher;
 
-  @Before
+  @BeforeEach
   public void setup() {
     searcher =
         new EgnyteFileSearcher("https://some.egnyte.deomain.com", "/filestore/root/", extFSLocator);

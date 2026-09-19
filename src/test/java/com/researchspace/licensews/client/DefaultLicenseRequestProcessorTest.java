@@ -1,29 +1,25 @@
 package com.researchspace.licensews.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.model.Role;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.service.LicenseRequestResult;
 import java.util.Calendar;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DefaultLicenseRequestProcessorTest {
 
   DefaultLicenseRequestProcessor handler;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     handler = new DefaultLicenseRequestProcessor();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   private void setUpDates(License license2) {
     Calendar cal = Calendar.getInstance();

@@ -1,20 +1,20 @@
 package com.researchspace.service.impl;
 
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import java.io.File;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class LoggingInitializerTest {
 
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
+  @TempDir public File folder;
   LoggingInitializer loggingInit;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     loggingInit = new LoggingInitializer();
   }
@@ -24,9 +24,9 @@ public class LoggingInitializerTest {
     loggingInit.init();
     assertEquals(".", loggingInit.getLoggingDir());
     // ok set
-    loggingInit.setLoggingDir(folder.getRoot().getAbsolutePath());
+    loggingInit.setLoggingDir(folder.getAbsolutePath());
     loggingInit.init();
-    assertEquals(folder.getRoot().getAbsolutePath(), loggingInit.getLoggingDir());
+    assertEquals(folder.getAbsolutePath(), loggingInit.getLoggingDir());
   }
 
   @Test

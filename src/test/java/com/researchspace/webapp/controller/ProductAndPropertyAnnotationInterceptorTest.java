@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.ProductType;
@@ -9,9 +9,9 @@ import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -73,13 +73,13 @@ public class ProductAndPropertyAnnotationInterceptorTest extends SpringTransacti
   MockHttpServletRequest httpRequest;
   MockHttpServletResponse httpResponse;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     httpRequest = new MockHttpServletRequest();
     httpResponse = new MockHttpServletResponse();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     properties.setStandalone("true");
   }

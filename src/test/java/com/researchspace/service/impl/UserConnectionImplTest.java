@@ -2,11 +2,11 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.service.impl.UserConnectionManagerImpl.SAVE_CONNECTION_SPEL;
 import static com.researchspace.testutils.SpringELTestUtils.evaluateSpel;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class UserConnectionImplTest {
 

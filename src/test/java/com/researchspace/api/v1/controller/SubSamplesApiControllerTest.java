@@ -45,8 +45,8 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -67,7 +67,7 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
 
   final int EXPECTED_SS_LINK_COUNT = 3; // self + thumbnail + image
 
-  @Before
+  @BeforeEach
   public void setUp() {
     openMocks(this);
     sampleTemplateDao.resetDefaultTemplateOwner();

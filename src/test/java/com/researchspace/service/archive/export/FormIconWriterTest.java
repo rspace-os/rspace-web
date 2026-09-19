@@ -1,8 +1,8 @@
 package com.researchspace.service.archive.export;
 
 import static com.researchspace.core.testutil.FileTestUtils.assertFolderHasFile;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 
 import com.researchspace.dao.IconImgDao;
@@ -14,42 +14,36 @@ import java.io.File;
 import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class FormIconWriterTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
-  public @Rule TemporaryFolder tempFolder = new TemporaryFolder();
+  @TempDir public File tempFolder;
   @Mock IconImgDao imgDao;
   @InjectMocks FormIconWriter writer;
   StructuredDocument doc;
   File imageFile;
   final long ICON_ID = 1L;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     doc = TestFactory.createAnySD();
     imageFile = RSpaceTestUtils.getResource("mainLogo3.png");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testWriteFormIconEntityFileHandlesMissingIconFile() throws IOException {
     doc.getForm().setIconId(ICON_ID);
     doc.getForm().setId(2L);
     Mockito.when(imgDao.getIconEntity(ICON_ID)).thenReturn(null);
-    writer.writeFormIconEntityFile(doc.getForm(), tempFolder.getRoot());
+    writer.writeFormIconEntityFile(doc.getForm(), tempFolder);
     assertNFilesInExportFolder(0);
   }
 
@@ -57,7 +51,7 @@ public class FormIconWriterTest {
   public void testWriteFormIconEntityFileHandlesNullIconFile() throws IOException {
     doc.getForm().setIconId(-1L);
     doc.getForm().setId(2L);
-    writer.writeFormIconEntityFile(doc.getForm(), tempFolder.getRoot());
+    writer.writeFormIconEntityFile(doc.getForm(), tempFolder);
     Mockito.verify(imgDao, never()).getIconEntity(-1L);
     assertNFilesInExportFolder(0);
   }
@@ -71,9 +65,9 @@ public class FormIconWriterTest {
     doc.getForm().setIconId(ICON_ID);
     doc.getForm().setId(2L);
     Mockito.when(imgDao.getIconEntity(ICON_ID)).thenReturn(icon);
-    writer.writeFormIconEntityFile(doc.getForm(), tempFolder.getRoot());
+    writer.writeFormIconEntityFile(doc.getForm(), tempFolder);
     assertNFilesInExportFolder(1);
-    assertFolderHasFile(tempFolder.getRoot(), "formIcon_2.png");
+    assertFolderHasFile(tempFolder, "formIcon_2.png");
   }
 
   @Test
@@ -88,6 +82,6 @@ public class FormIconWriterTest {
   private void assertNFilesInExportFolder(int expectedFileCount) {
     assertEquals(
         expectedFileCount,
-        FileUtils.listFiles(tempFolder.getRoot(), FileFilterUtils.trueFileFilter(), null).size());
+        FileUtils.listFiles(tempFolder, FileFilterUtils.trueFileFilter(), null).size());
   }
 }

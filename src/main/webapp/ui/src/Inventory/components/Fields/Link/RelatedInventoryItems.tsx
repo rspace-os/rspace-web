@@ -5,7 +5,8 @@ import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import useReferencingInventoryItems from "@/eln/gallery/useReferencingInventoryItems";
+import { useReferencingInventoryItemsQuery } from "@/eln/gallery/queries";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 
 /**
  * The "Related inventory items" section of {@link ElnRecordInfoDialog}: the
@@ -16,14 +17,18 @@ import useReferencingInventoryItems from "@/eln/gallery/useReferencingInventoryI
  */
 export default function RelatedInventoryItems({
   globalId,
-  recordTypeName,
+  recordType,
 }: {
   globalId: string;
-  /** Lower-case noun for the empty message, e.g. "document", "notebook", "gallery file". */
-  recordTypeName: string;
+  recordType: "document" | "notebook" | "galleryFile";
 }): React.ReactElement {
-  const { t } = useTranslation("inventory");
-  const { items, loading, errorMessage } = useReferencingInventoryItems(globalId);
+  const { t } = useTranslation(["inventory", "gallery"]);
+  const referencingItems = useReferencingInventoryItemsQuery({
+    globalId,
+  });
+  const items = referencingItems.data ?? [];
+  const loading = referencingItems.isPending;
+  const errorMessage = referencingItems.isError ? t("gallery:referencingInventoryItems.loadFailed") : null;
 
   return (
     <Box>
@@ -37,25 +42,34 @@ export default function RelatedInventoryItems({
       {!loading && !errorMessage && items.length === 0 && (
         <Typography variant="body2">
           {t("fields.link.relatedInventoryItems.none", {
-            recordTypeName,
+            recordType,
           })}
         </Typography>
       )}
       {items.length > 0 && (
         <List dense disablePadding sx={{ pl: 3, my: 0.5, listStyleType: "disc" }}>
-          {items.map((item, index) => (
-            // one row per link FIELD: a source item linking through two
-            // fields repeats its globalId, so the key needs the index too
-            <ListItem key={`${item.globalId}-${index}`} disableGutters sx={{ display: "list-item", py: 0 }}>
-              <Link href={`/globalId/${item.globalId}`} target="_blank" rel="noopener noreferrer">
-                {item.globalId}
-              </Link>
-              {`: ${item.name}`}
-              {item.relationType ? (
-                <Typography variant="caption" component="em">{` (${item.relationType})`}</Typography>
-              ) : null}
-            </ListItem>
-          ))}
+          {items.map((item, index) => {
+            const relationKind = item.isAttachment ? "attachment" : item.relationType ? "relation" : "none";
+            return (
+              // one row per link FIELD: a source item linking through two
+              // fields repeats its globalId, so the key needs the index too
+              <ListItem key={`${item.globalId}-${index}`} disableGutters sx={{ display: "list-item", py: 0 }}>
+                <TransRichText
+                  i18nKey="inventory:fields.link.relatedInventoryItems.row"
+                  values={{
+                    globalId: item.globalId,
+                    name: item.name,
+                    relationKind,
+                    relationType: item.relationType,
+                  }}
+                  components={{
+                    globalId: <Link href={`/globalId/${item.globalId}`} target="_blank" rel="noopener noreferrer" />,
+                    relation: <Typography variant="caption" component="em" />,
+                  }}
+                />
+              </ListItem>
+            );
+          })}
         </List>
       )}
     </Box>

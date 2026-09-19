@@ -19,8 +19,8 @@ import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -34,7 +34,7 @@ public class InventorySearchApiControllerTest extends SpringTransactionalTest {
   private BindingResult mockBindingResult = mock(BindingResult.class);
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     sampleTemplateDao.resetDefaultTemplateOwner();
 

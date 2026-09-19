@@ -1,3 +1,4 @@
+import { menuClasses } from "@mui/material/Menu";
 import { modalClasses } from "@mui/material/Modal";
 import { type Locator, page } from "vitest/browser";
 
@@ -7,7 +8,12 @@ export class SidebarPage {
   }
 
   get menu(): Locator {
-    return page.getByRole("menu");
+    return page.getByRole("menu", { name: "Create", exact: true });
+  }
+
+  /** Counts MUI menu lists to distinguish an unmounted menu from one hidden by a modal. */
+  mountedMenuCount(): number {
+    return document.querySelectorAll(`.${menuClasses.list}`).length;
   }
 
   get dmptool(): Locator {

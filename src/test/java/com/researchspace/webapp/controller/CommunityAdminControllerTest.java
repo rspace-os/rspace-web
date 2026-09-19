@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,14 +22,12 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ExtendedModelMap;
@@ -37,8 +35,8 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 
+@ExtendWith(MockitoExtension.class)
 public class CommunityAdminControllerTest {
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   private CommunityAdminController controller;
 
   @Mock private CommunityServiceManager mockCommService;
@@ -50,7 +48,7 @@ public class CommunityAdminControllerTest {
   Model model;
   User subject;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     controller = new CommunityAdminController();
     ReflectionTestUtils.setField(
@@ -63,9 +61,6 @@ public class CommunityAdminControllerTest {
     controller.setPublisher(publisher);
     subject = TestFactory.createAnyUser("any");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testRemoveGroup() {

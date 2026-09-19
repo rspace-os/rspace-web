@@ -262,6 +262,57 @@ describe("ImageEditingDialog", () => {
     expect(submitHandler).not.toHaveBeenCalled();
   });
   /*
+   * For each supported input MIME type, rotating and saving should produce a
+   * blob whose type matches the expected output format.  GIF and BMP use
+   * custom in-process encoders; JPEG and PNG go through canvas.toBlob.
+   * The x-bmp and x-ms-bmp variants are normalised to image/bmp by the
+   * BMP encoder branch.
+   */
+  test.each([
+    ["image/jpeg", "image/jpeg"],
+    ["image/png", "image/png"],
+    ["image/gif", "image/gif"],
+    ["image/bmp", "image/bmp"],
+    ["image/x-bmp", "image/bmp"],
+    ["image/x-ms-bmp", "image/bmp"],
+  ])("Rotating and saving a %s image produces a blob with type %s", async (inputType, expectedOutputType) => {
+    const user = userEvent.setup();
+    const inputBlob = new Blob([new Uint8Array(4)], { type: inputType });
+    const submitHandler = vi.fn();
+
+    render(
+      <ImageEditingDialog
+        imageFile={inputBlob}
+        open={true}
+        close={() => {}}
+        submitHandler={submitHandler}
+        alt="dummy alt text"
+      />,
+    );
+
+    await screen.findByRole("img");
+    await waitFor(() => {
+      expect((screen.getByRole("img") as HTMLImageElement).naturalWidth).toBeGreaterThan(0);
+    });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "common:imageEditingDialog.rotateClockwise",
+      }),
+    );
+    await waitFor(() => {
+      expect((screen.getByRole("img") as HTMLImageElement).complete).toBe(true);
+    });
+
+    await user.click(screen.getByRole("button", { name: "common:actions.done" }));
+    await waitFor(() => expect(submitHandler).toHaveBeenCalled());
+
+    const outputBlob = submitHandler.mock.calls[0][0] as Blob;
+    expect(outputBlob).toBeInstanceOf(Blob);
+    expect(outputBlob.type).toBe(expectedOutputType);
+  });
+
+  /*
    * Testing the cropping functionality was attempted but it seems to be
    * impossible to get the keyDown events for moving the anchors around to
    * trigger react-image-crop's onChange event handler. There is a console

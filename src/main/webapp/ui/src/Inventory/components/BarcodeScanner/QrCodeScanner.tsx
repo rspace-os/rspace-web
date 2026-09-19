@@ -10,10 +10,10 @@ import BarcodeScannerSkeleton, { type BarcodeInput } from "./BarcodeScannerSkele
 type QrCodeScannerArgs = {
   onClose: () => void;
   onScan: (scannedBarcodeInput: BarcodeInput) => void;
-  buttonPrefix: string;
+  cameraErrorMessage?: string;
 };
 
-export default function QrCodeScanner({ onClose, onScan, buttonPrefix }: QrCodeScannerArgs): React.ReactNode {
+export default function QrCodeScanner({ onClose, onScan, cameraErrorMessage }: QrCodeScannerArgs): React.ReactNode {
   const { uiStore } = useStores();
   const { t } = useTranslation("inventory");
   const [loading, setLoading] = useState<boolean>(true);
@@ -64,16 +64,16 @@ export default function QrCodeScanner({ onClose, onScan, buttonPrefix }: QrCodeS
     <BarcodeScannerSkeleton
       onClose={onClose}
       onScan={onScan}
-      buttonPrefix={buttonPrefix}
       beforeScanHelpText={t("barcodeScanner.supportedFormats.qr")}
       videoElem={videoElem}
       barcode={barcode}
-      setBarcode={setBarcode}
       loading={loading}
       warning={
         !loading &&
         (error || !barcode?.rawValue) && (
-          <Alert severity="warning">{error ? t("barcodeScanner.cameraError") : t("barcodeScanner.otherFormats")}</Alert>
+          <Alert severity="warning">
+            {error ? (cameraErrorMessage ?? t("barcodeScanner.cameraError")) : t("barcodeScanner.otherFormats")}
+          </Alert>
         )
       }
       error={error}

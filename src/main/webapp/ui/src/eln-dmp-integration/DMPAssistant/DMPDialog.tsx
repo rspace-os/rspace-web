@@ -4,7 +4,6 @@ import Checkbox from "@mui/material/Checkbox";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { DataGrid, type GridRenderCellParams, GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
@@ -13,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
 import AppBar from "../../components/AppBar";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog } from "../../components/DialogBoundary";
 import NoValue from "../../components/NoValue";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
@@ -326,21 +325,17 @@ export default function DMPDialog({ open, setOpen }: DMPDialogArgs): React.React
 
   return (
     <DMPDialogThemeProvider accentColor={ACCENT_COLOR}>
-      <Portal>
-        <DialogBoundary>
-          <CustomDialog
-            onClose={() => {
-              setOpen(false);
-            }}
-            open={open}
-            maxWidth="lg"
-            fullWidth
-            fullScreen={isViewportSmall}
-          >
-            <DMPDialogContent setOpen={setOpen} />
-          </CustomDialog>
-        </DialogBoundary>
-      </Portal>
+      <CustomDialog
+        onClose={() => {
+          setOpen(false);
+        }}
+        open={open}
+        maxWidth="lg"
+        fullWidth
+        fullScreen={isViewportSmall}
+      >
+        <DMPDialogContent setOpen={setOpen} />
+      </CustomDialog>
     </DMPDialogThemeProvider>
   );
 }

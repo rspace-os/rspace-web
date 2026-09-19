@@ -5,7 +5,6 @@ import { MemoryRouter } from "react-router";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
 import Alerts from "@/components/Alerts/Alerts";
-import { DialogBoundary } from "@/components/DialogBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import type { GalleryFile } from "@/eln/gallery/useGalleryListing";
 import AlertContext, { type Alert } from "@/stores/contexts/Alert";
@@ -46,18 +45,16 @@ const GalleryEntrypoint = ({
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Alerts>
           <AlertBridge onAlertReady={onAlertReady} />
-          <DialogBoundary>
-            <MemoryRouter>
-              <LandmarksProvider>
-                <GalleryPicker
-                  open={open}
-                  onClose={onClose ?? (() => {})}
-                  onSubmit={onSubmit}
-                  validateSelection={validateSelection}
-                />
-              </LandmarksProvider>
-            </MemoryRouter>
-          </DialogBoundary>
+          <MemoryRouter>
+            <LandmarksProvider>
+              <GalleryPicker
+                open={open}
+                onClose={onClose ?? (() => {})}
+                onSubmit={onSubmit}
+                validateSelection={validateSelection}
+              />
+            </LandmarksProvider>
+          </MemoryRouter>
         </Alerts>
       </ThemeProvider>
     </StyledEngineProvider>

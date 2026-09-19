@@ -21,7 +21,7 @@ import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTest
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.createWorkflowInvocationSummaryStatusResponseForState;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.makeGalaxyDataAssertions;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.makeGalaxyDataAssertionsWithInvocation;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -71,8 +71,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -119,7 +119,7 @@ public class GalaxyServiceTest {
   private GalaxyService galaxyService;
   private WorkflowInvocationSummaryStatusResponse workflowInvocationSummaryStatusResponse;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
     openMocks(this);
     when(user.getUsername()).thenReturn("userName");

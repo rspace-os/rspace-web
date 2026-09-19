@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -135,7 +136,7 @@ class LinkTargetResolverImplTest {
 
   @Test
   void elnDocumentTargetReadableResolvesTrue() {
-    BaseRecord document = org.mockito.Mockito.mock(BaseRecord.class);
+    BaseRecord document = mock(BaseRecord.class);
     when(document.getOid()).thenReturn(new GlobalIdentifier("SD123"));
     when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
         .thenReturn(List.of(document));
@@ -161,9 +162,9 @@ class LinkTargetResolverImplTest {
 
   @Test
   void notebookAndGalleryTargetsResolveViaBaseRecordManager() {
-    BaseRecord notebook = org.mockito.Mockito.mock(BaseRecord.class);
+    BaseRecord notebook = mock(BaseRecord.class);
     when(notebook.getOid()).thenReturn(new GlobalIdentifier("NB7"));
-    BaseRecord galleryFile = org.mockito.Mockito.mock(BaseRecord.class);
+    BaseRecord galleryFile = mock(BaseRecord.class);
     when(galleryFile.getOid()).thenReturn(new GlobalIdentifier("GL55"));
     when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
         .thenReturn(List.of(notebook), List.of(galleryFile));
@@ -176,7 +177,7 @@ class LinkTargetResolverImplTest {
   void versionSuffixIsStrippedBeforeResolving() {
     ArgumentCaptor<List<GlobalIdentifier>> captor = ArgumentCaptor.forClass(List.class);
     when(baseRecordManager.getByGlobalIdsAndReadPermission(captor.capture(), eq(user)))
-        .thenReturn(List.of(org.mockito.Mockito.mock(BaseRecord.class)));
+        .thenReturn(List.of(mock(BaseRecord.class)));
 
     resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD123v5"), user);
 
@@ -191,7 +192,7 @@ class LinkTargetResolverImplTest {
     // the workspace loader resolves by numeric id alone, so "GL150" loads
     // whatever record has id 150 (e.g. folder FL150); only a record whose own
     // oid prefix matches the requested one may count as the link target
-    BaseRecord folder = org.mockito.Mockito.mock(BaseRecord.class);
+    BaseRecord folder = mock(BaseRecord.class);
     when(folder.getOid()).thenReturn(new GlobalIdentifier("FL150"));
     when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
         .thenReturn(List.of(folder));

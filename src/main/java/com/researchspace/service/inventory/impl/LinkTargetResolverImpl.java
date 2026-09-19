@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
@@ -12,6 +13,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +67,31 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
     return false;
   }
 
+  @Override
+  public boolean targetIsLiveAndReadable(GlobalIdentifier target, User user) {
+    if (target == null) {
+      return false;
+    }
+    permissionUtils.refreshCacheIfNotified();
+    GlobalIdentifier base =
+        target.hasVersionId() ? new GlobalIdentifier(target.getPrefix(), target.getDbId()) : target;
+    GlobalIdPrefix prefix = base.getPrefix();
+    if (INVENTORY_PREFIXES.contains(prefix)) {
+      try {
+        InventoryRecord record =
+            inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
+        return !record.isDeleted()
+            && inventoryPermissionUtils.canUserReadInventoryRecord(record, user);
+      } catch (NotFoundException e) {
+        return false;
+      }
+    }
+    if (ELN_BASE_RECORD_PREFIXES.contains(prefix)) {
+      return liveReadableElnRecord(base, user).isPresent();
+    }
+    return false;
+  }
+
   private boolean isInventoryReadable(GlobalIdentifier target, User user) {
     try {
       return inventoryPermissionUtils.canUserReadInventoryRecord(target, user);
@@ -74,6 +101,14 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
   }
 
   private boolean isElnReadable(GlobalIdentifier target, User user) {
+    return readableElnRecord(target, user).isPresent();
+  }
+
+  private Optional<BaseRecord> liveReadableElnRecord(GlobalIdentifier target, User user) {
+    return readableElnRecord(target, user).filter(record -> !record.isDeleted());
+  }
+
+  private Optional<BaseRecord> readableElnRecord(GlobalIdentifier target, User user) {
     try {
       List<BaseRecord> readable =
           baseRecordManager.getByGlobalIdsAndReadPermission(
@@ -84,12 +119,12 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
       // counts as the link target
       for (BaseRecord record : readable) {
         if (record.getOid() != null && record.getOid().getPrefix() == target.getPrefix()) {
-          return true;
+          return Optional.of(record);
         }
       }
-      return false;
+      return Optional.empty();
     } catch (ObjectRetrievalFailureException | AuthorizationException e) {
-      return false;
+      return Optional.empty();
     }
   }
 }

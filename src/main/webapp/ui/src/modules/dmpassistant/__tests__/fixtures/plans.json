@@ -1,0 +1,13 @@
+{
+  "2001": {
+    "title": "Marine Biology Data Plan",
+    "created": "2024-03-01T00:00:00Z",
+    "modified": "2024-03-05T00:00:00Z",
+    "contact": { "name": "Ada Lovelace", "affiliation": { "name": "Ocean Institute" } }
+  },
+  "2002": {
+    "title": "Climate Modelling Plan",
+    "created": "2024-04-01T00:00:00Z",
+    "modified": "2024-04-02T00:00:00Z"
+  }
+}

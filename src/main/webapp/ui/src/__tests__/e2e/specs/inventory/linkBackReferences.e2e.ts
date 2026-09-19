@@ -3,12 +3,7 @@ import type { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsCo
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import type { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { tags } from "@/__tests__/e2e/tags";
-import { uniqueName } from "@/__tests__/e2e/testData";
-
-const TINY_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64",
-);
+import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
 async function createSampleLinkingTo(
   pageInventory: InventoryPage,

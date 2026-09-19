@@ -1,0 +1,14 @@
+{
+  "1001": {
+    "title": "Physics Research Data Plan",
+    "description": "A plan for managing physics research data.",
+    "created": "2024-01-01T00:00:00Z",
+    "modified": "2024-01-02T00:00:00Z"
+  },
+  "1002": {
+    "title": "Genomics Study Plan",
+    "description": "A plan for managing genomics study data.",
+    "created": "2024-02-01T00:00:00Z",
+    "modified": "2024-02-03T00:00:00Z"
+  }
+}

@@ -4,7 +4,10 @@ import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRecordLinks;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.b2inst.model.response.B2instSearchResult;
+import java.util.Optional;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Test double capturing the payload sent to B2INST; always configured and enabled. Mirrors {@code
@@ -31,6 +34,17 @@ public class B2instConnectorDummy implements B2instConnector {
     return draft;
   }
 
+  /** Captures the rebuilt payload, so a test can assert on what an on-save update would send. */
+  @Getter private B2instDoi doiUpdateSentToB2inst;
+
+  @Override
+  public B2instDraftRecord updateDraftDoi(String rid, B2instDoi doi) {
+    this.doiUpdateSentToB2inst = doi;
+    B2instDraftRecord draft = new B2instDraftRecord();
+    draft.setId(rid);
+    return draft;
+  }
+
   @Override
   public boolean deleteDoi(String rid) {
     return true;
@@ -44,6 +58,53 @@ public class B2instConnectorDummy implements B2instConnector {
   @Override
   public B2instRequestResponse retractDoi(String rid) {
     throw new UnsupportedOperationException("B2INST has no retract operation");
+  }
+
+  @Override
+  public Optional<B2instRequestResponse> getReviewOf(String rid) {
+    return Optional.empty();
+  }
+
+  /** The one published record this double knows, answered by search and by id; null means none. */
+  @Setter private B2instDraftRecord publishedRecord;
+
+  @Override
+  public B2instSearchResult searchRecords(String query, int size) {
+    B2instSearchResult result = new B2instSearchResult();
+    if (publishedRecord != null) {
+      result.getHits().getHits().add(publishedRecord);
+    }
+    result.getHits().setTotal(result.getHits().getHits().size());
+    return result;
+  }
+
+  /**
+   * Nothing published unless a test set {@code publishedRecord}: {@link #publishDoi(String)} here
+   * does not move the record on, so a record this double created is still only a draft.
+   */
+  @Override
+  public Optional<B2instDraftRecord> getPublishedRecord(String rid) {
+    return publishedRecord != null && rid.equals(publishedRecord.getId())
+        ? Optional.of(publishedRecord)
+        : Optional.empty();
+  }
+
+  /**
+   * The draft {@link #registerDoi(B2instDoi)} created, so the double agrees with its own state: a
+   * test that registers and then refreshes gets the truthful "still a draft" answer instead of
+   * landing on the record-gone error path. Any other id is unknown to this double.
+   */
+  @Override
+  public Optional<B2instDraftRecord> getDraftRecord(String rid) {
+    if (!DUMMY_RID.equals(rid)) {
+      return Optional.empty();
+    }
+    B2instDraftRecord draft = new B2instDraftRecord();
+    draft.setId(DUMMY_RID);
+    B2instRecordLinks links = new B2instRecordLinks();
+    links.setSelfHtml(DUMMY_SELF_HTML);
+    draft.setLinks(links);
+    return Optional.of(draft);
   }
 
   @Override

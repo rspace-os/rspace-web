@@ -1,14 +1,13 @@
 package com.researchspace.service.archive.export;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RecordIdExtractorTest {
   RecordIdExtractor processor;
@@ -16,7 +15,7 @@ public class RecordIdExtractorTest {
   Folder folder;
   StructuredDocument sd;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     processor = new RecordIdExtractor();
     user = TestFactory.createAnyUser("any");
@@ -25,9 +24,6 @@ public class RecordIdExtractorTest {
     sd.setOwner(user);
     sd.setId(1L);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testProcess() {

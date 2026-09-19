@@ -1,9 +1,9 @@
 package com.researchspace.service.archive;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchiveFolder;
 import com.researchspace.archive.ExportRecordList;
@@ -12,17 +12,9 @@ import com.researchspace.model.core.RecordType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ExportRecordListTest {
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void attachmentGlobalIdsIgnoreVersions() {

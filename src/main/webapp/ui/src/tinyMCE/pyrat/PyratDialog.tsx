@@ -12,13 +12,14 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import React, { useEffect, useMemo, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AppBar from "@/components/AppBar";
 import useLocalStorage from "@/hooks/browser/useLocalStorage";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
-import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { getHeader } from "@/util/axios";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
@@ -84,15 +85,20 @@ function useAuthenticatedServers() {
 
 const SUPPORTED_PYRAT_API_VERSION = 3;
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-let VISIBLE_HEADER_CELLS: any[] = [];
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-let PYRAT_URL: any = null;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-let PYRAT_ALIAS: any = null;
+type PyratServer = { alias: string; url: string };
+type HeaderCell = { id: string; numeric: boolean; label: string; sortable?: boolean };
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; setSelectedAnimals: any }) {
+function PyratListing({
+  serverAlias,
+  setSelectedAnimals,
+  setVisibleHeaderCells,
+}: {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  serverAlias: any;
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  setSelectedAnimals: any;
+  setVisibleHeaderCells: (cells: HeaderCell[]) => void;
+}) {
   const pyrat = axios.create({
     baseURL: "/apps/pyrat",
     timeout: 15000,
@@ -285,7 +291,7 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
   useEffect(() => {
     pyrat
       .get(
-        `locations?serverAlias=${serverAlias}&s=full_name:asc&k=building_id&k=full_name&type=building&=status=available`,
+        `locations?serverAlias=${serverAlias}&s=full_name:asc&k=building_id&k=full_name&type=building&status=available`,
       )
       .then((response) => {
         if (response.data) {
@@ -298,13 +304,13 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
             { None: "" },
           );
 
-          setFilterSpecial({
-            ...filterSpecial,
+          setFilterSpecial((prev) => ({
+            ...prev,
             building_id: {
-              ...filterSpecial.building_id,
+              ...prev.building_id,
               enumObj,
             },
-          });
+          }));
         }
       })
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -407,10 +413,14 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
     fetchAnimals();
   }, [filterCounter, makeQueryString]);
 
-  VISIBLE_HEADER_CELLS = useMemo(
+  const visibleHeaderCells = useMemo(
     () => tableHeaderCells.filter((cell) => visibleColumnIds.includes(cell.id)),
     [tableHeaderCells, visibleColumnIds],
   );
+
+  useEffect(() => {
+    setVisibleHeaderCells(visibleHeaderCells);
+  }, [visibleHeaderCells, setVisibleHeaderCells]);
 
   React.useEffect(() => {
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -447,10 +457,11 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
 
           if (response.data) {
             const enumObj = Object.fromEntries(response.data.map(multiReq[filterKey].renderFunc));
-            setFilterMultiReq({
-              ...filterMultiReq,
-              [filterKey]: { ...multiReq[filterKey], enumObj },
-            });
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+            setFilterMultiReq((prev: any) => ({
+              ...prev,
+              [filterKey]: { ...prev[filterKey], enumObj },
+            }));
           }
         } catch (error) {
           handlePyratError(error);
@@ -496,7 +507,7 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
         <ResultsTable
           page={page}
           onPageChange={handleChangePage}
-          visibleHeaderCells={VISIBLE_HEADER_CELLS}
+          visibleHeaderCells={visibleHeaderCells}
           animals={animals}
           selectedAnimalIds={selectedAnimalIds}
           setSelectedAnimalIds={setSelectedAnimalIds}
@@ -518,20 +529,16 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClose: any }) {
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  const [serverAlias, setServerAlias] = React.useState<any>(null);
+  const [selectedServer, setSelectedServer] = React.useState<PyratServer | null>(null);
   const servers = useAuthenticatedServers();
   const { t } = useTranslation(["apps", "common", "workspace"]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [selectedAnimals, setSelectedAnimals] = React.useState<any[]>([]);
+  const [visibleHeaderCells, setVisibleHeaderCells] = React.useState<HeaderCell[]>([]);
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  FetchingData.getSuccessValue(servers as any).do((servers: any) => {
-    if (servers.length === 1) {
-      PYRAT_URL = servers[0].url;
-      PYRAT_ALIAS = servers[0].alias;
-    }
-  });
+  const activeServer: PyratServer | null = FetchingData.getSuccessValue(servers as FetchingData.Fetched<PyratServer[]>)
+    .map((all) => (all.length === 1 ? all[0] : selectedServer))
+    .orElse(selectedServer);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
@@ -554,8 +561,21 @@ export default function PyratDialog({ editor, open, onClose }: { editor: any; op
           // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           success: (servers: any) => {
             if (servers.length === 1)
-              return <PyratListing serverAlias={servers[0].alias} setSelectedAnimals={setSelectedAnimals} />;
-            if (serverAlias) return <PyratListing serverAlias={serverAlias} setSelectedAnimals={setSelectedAnimals} />;
+              return (
+                <PyratListing
+                  serverAlias={servers[0].alias}
+                  setSelectedAnimals={setSelectedAnimals}
+                  setVisibleHeaderCells={setVisibleHeaderCells}
+                />
+              );
+            if (selectedServer)
+              return (
+                <PyratListing
+                  serverAlias={selectedServer.alias}
+                  setSelectedAnimals={setSelectedAnimals}
+                  setVisibleHeaderCells={setVisibleHeaderCells}
+                />
+              );
             return (
               <>
                 <Typography variant="body1" gutterBottom>
@@ -565,20 +585,18 @@ export default function PyratDialog({ editor, open, onClose }: { editor: any; op
                   <Divider />
                   {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
                   {servers.map((server: any) => (
-                    <>
-                      <ListItem disablePadding key={server.alias}>
+                    <React.Fragment key={server.alias}>
+                      <ListItem disablePadding>
                         <ListItemButton
                           onClick={() => {
-                            setServerAlias(server.alias);
-                            PYRAT_URL = server.url;
-                            PYRAT_ALIAS = server.alias;
+                            setSelectedServer({ alias: server.alias, url: server.url });
                           }}
                         >
                           <ListItemText primary={server.alias} secondary={server.url} />
                         </ListItemButton>
                       </ListItem>
                       <Divider />
-                    </>
+                    </React.Fragment>
                   ))}
                 </List>
               </>
@@ -593,7 +611,11 @@ export default function PyratDialog({ editor, open, onClose }: { editor: any; op
           color="callToAction"
           variant="contained"
           onClick={() => {
-            editor.execCommand("mceInsertContent", false, createTinyMceTable(selectedAnimals).outerHTML);
+            editor.execCommand(
+              "mceInsertContent",
+              false,
+              createTinyMceTable(selectedAnimals, visibleHeaderCells, activeServer).outerHTML,
+            );
             onClose();
           }}
         >
@@ -604,36 +626,47 @@ export default function PyratDialog({ editor, open, onClose }: { editor: any; op
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-function createTinyMceTable(selectedAnimals: any[]) {
+function createTinyMceTable(
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  selectedAnimals: any[],
+  visibleHeaderCells: HeaderCell[],
+  server: PyratServer | null,
+) {
   const pyratTable = document.createElement("table");
   pyratTable.setAttribute("data-tableSource", "pyrat");
-  pyratTable.style = "font-size: 0.7em";
+  pyratTable.style.fontSize = "0.7em";
 
-  if (!PYRAT_URL) throw new Error("PYRAT_URL is not known");
-  if (!PYRAT_ALIAS) throw new Error("PYRAT_ALIAS is not known");
+  if (!server) throw new Error("PyRAT server is not known");
 
-  const link = PYRAT_URL.slice(0, PYRAT_URL.lastIndexOf("/api/"));
+  const link = server.url.slice(0, server.url.lastIndexOf("/api/"));
 
   const linkRow = document.createElement("tr");
   const linkCell = document.createElement("th");
-  linkCell.appendChild(document.createTextNode("Imported from "));
-  const anchor = document.createElement("a");
-  anchor.href = link;
-  anchor.appendChild(document.createTextNode(`${PYRAT_ALIAS} (${link})`));
-  anchor.setAttribute("rel", "noreferrer");
-  linkCell.appendChild(anchor);
-  linkCell.appendChild(document.createTextNode(" on "));
-  linkCell.appendChild(document.createTextNode(new Date().toDateString()));
-  linkCell.appendChild(document.createTextNode(" "));
-  linkCell.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
-  linkCell.setAttribute("colspan", String(VISIBLE_HEADER_CELLS.length));
-  linkCell.style = "font-weight: 400";
+  const timestamp = new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
+    dateStyle: "medium",
+    timeStyle: "medium",
+  }).format(new Date());
+  linkCell.innerHTML = renderToStaticMarkup(
+    <TransRichText
+      i18n={i18n}
+      i18nKey="workspace:tinymce.pyrat.importedFrom"
+      values={{ server: `${server.alias} (${link})`, timestamp }}
+      components={{
+        serverLink: (
+          <a href={link} rel="noreferrer">
+            {server.alias}
+          </a>
+        ),
+      }}
+    />,
+  );
+  linkCell.setAttribute("colspan", String(visibleHeaderCells.length));
+  linkCell.style.fontWeight = "400";
   linkRow.appendChild(linkCell);
   pyratTable.appendChild(linkRow);
 
   const tableHeader = document.createElement("tr");
-  VISIBLE_HEADER_CELLS.forEach((cell) => {
+  visibleHeaderCells.forEach((cell) => {
     const columnName = document.createElement("th");
     columnName.textContent = cell.label;
     tableHeader.appendChild(columnName);
@@ -644,8 +677,7 @@ function createTinyMceTable(selectedAnimals: any[]) {
   selectedAnimals.forEach((animal: any) => {
     const row = document.createElement("tr");
 
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    VISIBLE_HEADER_CELLS.forEach((headerCell: any) => {
+    visibleHeaderCells.forEach((headerCell) => {
       const cell = document.createElement("td");
 
       const textContent = animal[headerCell.id];

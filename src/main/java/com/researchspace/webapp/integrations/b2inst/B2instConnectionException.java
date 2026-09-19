@@ -1,27 +1,34 @@
 package com.researchspace.webapp.integrations.b2inst;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Thrown when a call to the B2INST API fails. Mirrors the role of {@code
  * com.researchspace.datacite.model.DataCiteConnectionException} for the DataCite connector.
  *
  * <p>Carries the failure {@link #getReason() reason} separately from the message. The message is
- * the developer-facing sentence that names the operation and goes to the logs, and it may contain
- * internal detail such as a deployment property name. The reason is the part that is safe and
- * useful to show a user, and it is what callers interpolate into a localized string. Keeping them
- * apart is the point of this class: interpolating the message would put an English developer prefix
- * inside a translated sentence and duplicate what that sentence already says.
+ * developer-facing, goes to the logs, and may name internal detail such as a deployment property.
+ * The reason is what a caller interpolates into a localized string for the user.
  *
- * <p>There is deliberately <strong>no</strong> convenience constructor that omits the reason, and
- * {@link #getReason()} deliberately does <strong>not</strong> fall back to the message. An earlier
- * version had both, and the result was that two throw sites which never supplied a reason silently
- * leaked their full developer message, including an internal property name, into a user-facing
- * string with no compile error and no failing test. A new provider-failure throw site must now
- * state its reason or fail to compile.
+ * <p>Deliberately no constructor that omits the reason, and {@link #getReason()} deliberately does
+ * not fall back to the message. An earlier version had both, and two throw sites that supplied no
+ * reason silently leaked an internal property name into user-facing text, with no compile error and
+ * no failing test. A new throw site must now state its reason or fail to compile.
  *
- * <p>The reason often originates at B2INST and so cannot be translated. That is accepted: the
- * provider's own words are more useful to the user, and to support, than losing them.
+ * <p>A reason is either B2INST's own words, parsed from its error body, or one of RSpace's own
+ * sentences resolved from the message catalogue. Never the underlying exception's message, which
+ * carries the request URL and host.
+ *
+ * <p>The reason is length-bounded here rather than by whoever displays it. B2INST's half of it is
+ * derived from a response body that nothing upstream bounds, and it reaches a user through five
+ * separate call sites, at least one of them a toast that waits to be dismissed. Bounding it at
+ * construction is the same argument the connector makes for redacting the bearer token at a single
+ * exit: a display site added later cannot forget to do it.
  */
 public class B2instConnectionException extends RuntimeException {
+
+  /** Matches the width the connector already abbreviates the same text to on its log path. */
+  private static final int MAX_REASON_LENGTH = 500;
 
   private final String reason;
 
@@ -43,7 +50,8 @@ public class B2instConnectionException extends RuntimeException {
    */
   public B2instConnectionException(String message, String reason, Throwable cause) {
     super(message, cause);
-    this.reason = reason;
+    // every constructor delegates here, so this is the one place the bound has to hold
+    this.reason = StringUtils.abbreviate(reason, MAX_REASON_LENGTH);
   }
 
   /**

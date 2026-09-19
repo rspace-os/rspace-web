@@ -9,7 +9,7 @@ function TemplateIcon({ sx }: { sx?: SxProps<Theme> }): React.ReactNode {
       viewBox="0 0 16 16"
       sx={mergeSx({ fontSize: "inherit", verticalAlign: "-0.2em", width: 14, height: 14 }, sx)}
     >
-      <path d="M13 0H2c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm-1 2v2h-4v8h-2v-8h-4v-2h10z" />
+      <path d="M14 1H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm-1 2v2h-4v8h-2v-8h-4v-2h10z" />
     </SvgIcon>
   );
 }

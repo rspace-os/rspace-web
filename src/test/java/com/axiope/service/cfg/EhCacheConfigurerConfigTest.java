@@ -1,26 +1,19 @@
 package com.axiope.service.cfg;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.researchspace.testutils.WithSpringContext;
 import javax.cache.CacheManager;
 import org.ehcache.Cache;
 import org.ehcache.config.ResourceType;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 @ContextConfiguration(classes = {CacheConfig.class})
-public class EhCacheConfigurerConfigTest extends AbstractJUnit4SpringContextTests {
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
+@WithSpringContext
+public class EhCacheConfigurerConfigTest {
 
   // from ehcache.xml
   static final long DEFAULT_FILEPROPERTY_SIZE = 2500;
@@ -32,7 +25,7 @@ public class EhCacheConfigurerConfigTest extends AbstractJUnit4SpringContextTest
 
   static Cache<?, ?> getNativeCache(String name, CacheManager cacheMgr) {
     javax.cache.Cache<?, ?> jcache = cacheMgr.getCache(name);
-    assertNotNull("Cache " + name + " not found", jcache);
+    assertNotNull(jcache, "Cache " + name + " not found");
     return (Cache<?, ?>) jcache.unwrap(Cache.class);
   }
 

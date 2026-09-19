@@ -1,10 +1,11 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.licensews.LicenseExpiredException;
@@ -17,9 +18,9 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.controller.ServiceLoggerAspct;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class FolderManagerSpringTest extends SpringTransactionalTest {
@@ -30,14 +31,14 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
   private @Autowired ServiceLoggerAspct aspect;
   private @Autowired SharingHandler sharingHandler;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("fuser"));
     initialiseContentWithEmptyContent(user);
     assertTrue(user.isContentInitialized());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     aspect.setLicenseService(licenseService); // restore default
     super.tearDown();
@@ -179,19 +180,24 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
             .get());
   }
 
-  @Test(expected = LicenseExpiredException.class)
+  @Test
   public void folderCreationRequireActiveLicense() {
     aspect.setLicenseService(new InactiveLicenseTestService());
     logoutAndLoginAs(user);
-    folderMgr.createNewFolder(user.getRootFolder().getId(), "any", user);
+    assertThrows(
+        LicenseExpiredException.class,
+        () -> folderMgr.createNewFolder(user.getRootFolder().getId(), "any", user));
   }
 
-  @Test(expected = LicenseExpiredException.class)
+  @Test
   public void notebookCreationRequireActiveLicense() {
     aspect.setLicenseService(new InactiveLicenseTestService());
     logoutAndLoginAs(user);
-    folderMgr.createNewNotebook(
-        user.getRootFolder().getId(), "any", new DefaultRecordContext(), user);
+    assertThrows(
+        LicenseExpiredException.class,
+        () ->
+            folderMgr.createNewNotebook(
+                user.getRootFolder().getId(), "any", new DefaultRecordContext(), user));
   }
 
   @Test

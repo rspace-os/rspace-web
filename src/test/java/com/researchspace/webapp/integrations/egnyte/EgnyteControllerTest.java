@@ -15,9 +15,9 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
@@ -31,13 +31,13 @@ public class EgnyteControllerTest extends SpringTransactionalTest {
   @Autowired private EgnyteAuthConnector autowiredConnector;
   private EgnyteAuthConnector mockConnector;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     mockConnector = Mockito.mock(EgnyteAuthConnectorImpl.class);
     controller.setEgnyteConnector(mockConnector);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     controller.setEgnyteConnector(autowiredConnector);
   }

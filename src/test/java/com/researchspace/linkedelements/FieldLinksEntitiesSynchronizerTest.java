@@ -1,7 +1,7 @@
 package com.researchspace.linkedelements;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,18 +21,16 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.impl.FieldLinksEntitySyncImpl;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class FieldLinksEntitiesSynchronizerTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
   @Mock FieldParser parser;
   @Mock FieldDao fieldDao;
   @Mock FieldManager fieldMgr;
@@ -52,7 +50,7 @@ public class FieldLinksEntitiesSynchronizerTest {
   Field f1;
   @InjectMocks FieldLinksEntitySyncImpl sync;
 
-  @Before
+  @BeforeEach
   public void setup() {
     sourceDoc = TestFactory.createAnySD();
     targetDoc = TestFactory.createAnySD();
@@ -83,7 +81,7 @@ public class FieldLinksEntitiesSynchronizerTest {
     // f1 has an image. we'll simulate that the text link has been
     // removed....
     permanentField1.addMediaFileLink(el);
-    assertTrue(" media link was not added!", permanentField1.getLinkedMediaFiles().size() == 1);
+    assertTrue(permanentField1.getLinkedMediaFiles().size() == 1, " media link was not added!");
     // we'll simulate that the text link has been removed....
     final FieldContentDelta removedDelta = new FieldContentDelta(new FieldContents(), removed);
     Mockito.when(parser.findFieldElementChanges(permanentField1.getFieldData(), incomingData))
@@ -92,8 +90,8 @@ public class FieldLinksEntitiesSynchronizerTest {
         .thenReturn(new FieldContents());
     sync.syncFieldWithEntitiesOnautosave(permanentField1, tempField1, incomingData, anyUser);
     assertTrue(
-        "media link was not marked deleted!",
-        permanentField1.getLinkedMediaFiles().iterator().next().isDeleted());
+        permanentField1.getLinkedMediaFiles().iterator().next().isDeleted(),
+        "media link was not marked deleted!");
     verify(fieldDao).save(permanentField1);
   }
 
@@ -180,7 +178,7 @@ public class FieldLinksEntitiesSynchronizerTest {
 
   private void assertInternalLinkNotDeleted() {
     verify(internalLinkDao, never()).deleteInternalLink(sourceId, targetId);
-    Mockito.verifyZeroInteractions(internalLinkDao);
+    Mockito.verifyNoInteractions(internalLinkDao);
   }
 
   private void assertInternalLinkDeleted() {

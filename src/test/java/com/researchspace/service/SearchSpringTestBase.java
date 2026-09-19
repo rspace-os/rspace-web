@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.axiope.search.SearchManager;
 import com.researchspace.Constants;
@@ -17,7 +17,7 @@ import java.io.IOException;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /** Base class with common utility functions for search */
@@ -47,7 +47,7 @@ public class SearchSpringTestBase extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(user);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws IOException {
     // make sure index is cleared for each test.
     SearchSession searchSession = Search.session(sessionFactory.getCurrentSession());

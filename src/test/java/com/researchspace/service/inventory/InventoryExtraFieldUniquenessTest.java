@@ -21,8 +21,8 @@ import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Manager-level coverage for the RSDEV-1066 uniqueness rule on ExtraField names across all
@@ -35,7 +35,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     sampleTemplateDao.resetDefaultTemplateOwner();
@@ -59,7 +59,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
 
   @Test
   public void containerCreateRejectsExtraFieldNamedAfterUILabel() {
-    // RSDEV-1066: Container's displayed-label set includes "Type", so core-model's
+    // RSDEV-1066: Container's displayed-label set includes "Type", so InventoryRecord's
     // verifyFieldNameAllowed rejects the field at addExtraField time with the legacy
     // reserved-name IAE.
     ApiContainer toCreate = new ApiContainer();
@@ -182,7 +182,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
 
   @Test
   public void sampleCreateRejectsExtraFieldNamedAfterUILabel() {
-    // Proves core-model verifyFieldNameAllowed is wired into the Sample create path.
+    // Proves InventoryRecord.verifyFieldNameAllowed is wired into the Sample create path.
     ApiSampleWithFullSubSamples toCreate = new ApiSampleWithFullSubSamples(getRandomName(10));
     toCreate.setExtraFields(List.of(extraField("Subsamples", "x")));
 

@@ -1,9 +1,9 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
@@ -20,9 +20,8 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class GroupDaoHibernateTest extends SpringTransactionalTest {
@@ -30,13 +29,10 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
   @Autowired UserGroupDao ugDao;
   PaginationCriteria<Group> pgCrit;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     pgCrit = PaginationCriteria.createDefaultForClass(Group.class);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testFindGroupByUname() {

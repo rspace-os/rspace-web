@@ -19,7 +19,6 @@ import DMPTool from "./integrations/DMPTool";
 import Dropbox from "./integrations/Dropbox";
 import Dryad from "./integrations/Dryad";
 import Egnyte from "./integrations/Egnyte";
-import Evernote from "./integrations/Evernote";
 import Fieldmark from "./integrations/Fieldmark";
 import Figshare from "./integrations/Figshare";
 import Galaxy from "./integrations/Galaxy";
@@ -168,15 +167,6 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
       });
     },
     [update, integrationStates.EGNYTE],
-  );
-
-  const evernoteUpdate = React.useCallback(
-    (newState: IntegrationStates["EVERNOTE"]) => {
-      void runInAction(async () => {
-        integrationStates.EVERNOTE = await update("EVERNOTE", newState);
-      });
-    },
-    [update, integrationStates.EVERNOTE],
   );
 
   const fieldmarkUpdate = React.useCallback(
@@ -375,9 +365,6 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
       {integrationStates.DSW.mode === mode && <DSW integrationState={integrationStates.DSW} update={dswUpdate} />}
       {integrationStates.EGNYTE.mode === mode && (
         <Egnyte integrationState={integrationStates.EGNYTE} update={egnyteUpdate} />
-      )}
-      {integrationStates.EVERNOTE.mode === mode && (
-        <Evernote integrationState={integrationStates.EVERNOTE} update={evernoteUpdate} />
       )}
       {integrationStates.FIELDMARK.mode === mode && (
         <Fieldmark integrationState={integrationStates.FIELDMARK} update={fieldmarkUpdate} />

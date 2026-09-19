@@ -2,7 +2,7 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
-import java.util.EnumSet;
+import com.researchspace.service.inventory.InventoryUrls;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 /** Given a globalID will attempt to look it up based on its type */
 @Controller("globalLookupController")
-@RequestMapping("/globalId")
+@RequestMapping(InventoryUrls.GLOBAL_ID_MAPPING)
 public class GlobalLookupController extends BaseController {
 
   protected static final String FORM_REDIRECT_URL = "/workspace/editor/form/edit/";
@@ -68,15 +68,13 @@ public class GlobalLookupController extends BaseController {
     prefixToUrl.put(GlobalIdPrefix.NT, "/inventory/instrumenttemplate/");
   }
 
-  /** Inventory record types whose version-suffixed global IDs open the versioned viewer. */
+  /**
+   * Inventory record types whose version-suffixed global IDs open the versioned viewer. Shared with
+   * the PIDINST related-identifier composer, which must never register a suffix this router cannot
+   * resolve.
+   */
   private static final Set<GlobalIdPrefix> VERSIONED_INVENTORY_PREFIXES =
-      EnumSet.of(
-          GlobalIdPrefix.SA,
-          GlobalIdPrefix.SS,
-          GlobalIdPrefix.IC,
-          GlobalIdPrefix.IT,
-          GlobalIdPrefix.IN,
-          GlobalIdPrefix.NT);
+      InventoryUrls.VERSIONED_PAGE_PREFIXES;
 
   private String getRedirect(GlobalIdentifier oid) {
     GlobalIdPrefix prefix = oid.getPrefix();

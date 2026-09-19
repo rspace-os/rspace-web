@@ -5,7 +5,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Popover from "@mui/material/Popover";
-import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import TablePagination from "@mui/material/TablePagination";
 import Typography from "@mui/material/Typography";
@@ -18,7 +17,7 @@ import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRi
 import { ACCENT_COLOR } from "../../assets/branding/argos";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog } from "../../components/DialogBoundary";
 import DropdownButton from "../../components/DropdownButton";
 import StringField from "../../components/Inputs/StringField";
 import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
@@ -341,7 +340,13 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
     />
   );
 }
-function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): React.ReactNode {
+function DMPDialogContent({
+  setOpen,
+  onImport,
+}: {
+  setOpen: (open: boolean) => void;
+  onImport?: () => void;
+}): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
   const { t } = useTranslation(["apps", "common"]);
@@ -358,6 +363,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
     setImporting(true);
     try {
       await importPlan(selectedPlan);
+      onImport?.();
       addAlert(
         mkAlert({
           title: t("dmpIntegrations.dialog.importSuccess"),
@@ -565,6 +571,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
 type DMPDialogArgs = {
   open: boolean;
   setOpen: (open: boolean) => void;
+  onImport?: () => void;
 };
 
 /*
@@ -575,33 +582,22 @@ type DMPDialogArgs = {
  * custom tabbing behaviour of the Gallery page takes control of the tab key
  * events away from the React+MUI tech stack. See ../../../../scripts/global.js
  */
-function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
+function DMPDialog({ open, setOpen, onImport }: DMPDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
-
-  /*
-   * We use DialogBoundary to wrap the Dialog so that Alerts can be shown atop the dialog whilst
-   * keeping them accessible to screen readers. We then have to manually add Portal back (Dialogs
-   * normally include a Portal) so that the Dialog isn't rendered inside the Menu where it will
-   * not be seen once the Menu is closed.
-   */
 
   return (
     <DMPDialogThemeProvider accentColor={ACCENT_COLOR}>
-      <Portal>
-        <DialogBoundary>
-          <CustomDialog
-            onClose={() => {
-              setOpen(false);
-            }}
-            open={open}
-            maxWidth="lg"
-            fullWidth
-            fullScreen={isViewportSmall}
-          >
-            <DMPDialogContent setOpen={setOpen} />
-          </CustomDialog>
-        </DialogBoundary>
-      </Portal>
+      <CustomDialog
+        onClose={() => {
+          setOpen(false);
+        }}
+        open={open}
+        maxWidth="lg"
+        fullWidth
+        fullScreen={isViewportSmall}
+      >
+        <DMPDialogContent setOpen={setOpen} onImport={onImport} />
+      </CustomDialog>
     </DMPDialogThemeProvider>
   );
 }

@@ -5,9 +5,9 @@ import static com.researchspace.testutils.TestFactory.createAnyGroup;
 import static com.researchspace.testutils.TestFactory.createAnyMessageForRecipientOfType;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static com.researchspace.testutils.TestFactory.createAnyUserWithRole;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.CommunicationDao;
@@ -22,18 +22,15 @@ import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.dtos.MessageTypeFilter;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
 import com.researchspace.service.impl.PiChangeHandlerImpl;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class PostPiChangeHandlerTest {
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock CommunicationManager commMgr;
   @Mock CommunicationDao commDao;
   @Mock SignatureDao sigDao;
@@ -41,12 +38,6 @@ public class PostPiChangeHandlerTest {
   @Mock IGroupPermissionUtils permUtils;
 
   @InjectMocks PiChangeHandlerImpl handler;
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void witnessesTransferred() {

@@ -3,26 +3,29 @@ package com.researchspace.testutils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
 
 /** Tidies up after transactional tests */
-@Component
 public class DatabaseCleaner {
 
-  public static JdbcTemplate jdbcTemplate;
+  private static final Map<Class<?>, JdbcTemplate> jdbcTemplates = new ConcurrentHashMap<>();
 
-  @Autowired
-  public void setDataSource(DataSource dataSource) {
-    jdbcTemplate = new JdbcTemplate(dataSource);
+  public static void register(Class<?> testClass, DataSource dataSource) {
+    jdbcTemplates.put(testClass, new JdbcTemplate(dataSource));
   }
 
   /** Manually deletes records and folders from tables. */
-  public static void cleanUp() {
+  public static void cleanUp(Class<?> testClass) {
+    JdbcTemplate jdbcTemplate = jdbcTemplates.remove(testClass);
+    if (jdbcTemplate == null) {
+      // Context failures can prevent @BeforeEach from registering the class.
+      return;
+    }
     // delete from Batch tables
-    deleteFromBatchTables();
+    deleteFromBatchTables(jdbcTemplate);
     // remove FK relationships so that items can be deleted from DB
     jdbcTemplate.update("update UserPreference set user_id = NULL");
     jdbcTemplate.update("update RSForm set previousVersion_id = NULL");
@@ -185,7 +188,7 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from REVINFO");
   }
 
-  private static void deleteFromBatchTables() {
+  private static void deleteFromBatchTables(JdbcTemplate jdbcTemplate) {
     // table ordering derived from drop-table-mysql in spring batch core jar package o.s.batch.core
     jdbcTemplate.update("delete from BATCH_STEP_EXECUTION_CONTEXT");
     jdbcTemplate.update("delete from BATCH_JOB_EXECUTION_CONTEXT");

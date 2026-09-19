@@ -29,6 +29,7 @@ export const env = {
   playwrightLog: optional("PW_LOG", "off") as "trace" | "info" | "off",
 
   mockBaseUrl: `http://localhost:${optional("E2E_MOCK_PORT", "9099")}`,
+  mailpitBaseUrl: optional("MAILPIT_HTTP_URL", "http://localhost:8025"),
 
   get mockBackendBaseUrl(): string {
     return optional("E2E_MOCK_BACKEND_URL", this.mockBaseUrl);
@@ -54,10 +55,30 @@ export const env = {
   pyratApiKey: optional("PYRAT_API_KEY", ""),
   omeroUsername: optional("OMERO_USERNAME", ""),
   omeroPassword: optional("OMERO_PASSWORD", ""),
+  caliraUsername: optional("CALIRA_USERNAME", ""),
+  caliraPassword: optional("CALIRA_PASSWORD", ""),
+  nextcloudUsername: optional("NEXTCLOUD_USERNAME", ""),
+  nextcloudPassword: optional("NEXTCLOUD_PASS", ""),
+  ownCloudUsername: optional("OWNCLOUD_USERNAME", ""),
+  ownCloudPassword: optional("OWNCLOUD_PASS", ""),
+  msteamsWebhookUrl: optional("MSTEAMS_WEBHOOK_URL", ""),
+  boxUsername: optional("BOX_USERNAME", ""),
+  boxPassword: optional("BOX_PASSWD", ""),
+  dropboxUsername: optional("DROPBOX_USERNAME", ""),
+  dropboxPassword: optional("DROPBOX_PASSWD", ""),
+  onedriveUsername: optional("ONEDRIVE_USERNAME", ""),
+  onedrivePassword: optional("ONEDRIVE_PASSWORD", ""),
+  protocolsioUsername: optional("PROTOCOLIO_USERNAME", ""),
+  protocolsioPassword: optional("PROTOCOLIO_PASSWORD", ""),
+  orcidUsername: optional("RSPACE_DEV_ORCID_EMAIL", ""),
+  orcidPassword: optional("RSPACE_DEV_ORCID_PASS", ""),
   igsnAccountId: optional("IGSN_ACCOUNT_ID", ""),
   igsnPassword: optional("IGSN_PASSWORD", ""),
   igsnRepoPrefix: optional("IGSN_REPO_PREFIX", ""),
   igsnServerUrl: optional("IGSN_SERVER_URL", "https://api.test.datacite.org"),
+  pidinstB2instCommunityId: optional("PIDINST_B2INST_COMMUNITY_ID", ""),
+  pidinstB2instToken: optional("PIDINST_B2INST_TOKEN", ""),
+  pidinstB2instServerUrl: optional("PIDINST_B2INST_SERVER_URL", "https://b2inst-test.gwdg.de"),
 
   // Some fixtures create real sysadmin-owned accounts or overwrite instance-global
   // settings (IGSN/DataCite config) with no restore step. Only safe against a

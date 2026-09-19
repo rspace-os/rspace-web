@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.model.User;
@@ -21,9 +22,9 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -36,10 +37,13 @@ import org.springframework.validation.BindingResult;
  * PIDINST-mapped field content to B2INST. A {@link B2instConnectorDummy} captures the payload, so
  * no B2INST instance is contacted.
  *
- * <p>Link-field narratives ("Measurement technique", "Calibration") are covered by {@code
- * RspaceToExternalProviderAdapterImplTest}; building an {@code InventoryLink} target through the
- * API would need a second record and relation setup, which adds nothing to the plumbing this test
- * exercises.
+ * <p>The two link fields ("Measurement technique", "Calibration") are deliberately absent here.
+ * They stopped being documentation-only in RSDEV-1253 and now map to RelatedIdentifier entries, but
+ * their value comes from a linked record rather than the field's own content, so exercising them
+ * needs a second record and relation setup that this template-copy flow does not otherwise use.
+ * They are covered against real persistence by {@code
+ * InventoryIdentifierApiManagerRelatedIdentifierTest}, which resolves the link through Hibernate
+ * for both providers, and by {@code RspaceToExternalProviderAdapterImplTest} for the mapping rules.
  */
 @WebAppConfiguration
 public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_InventoryTestBase {
@@ -50,18 +54,40 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
   private final B2instConnectorDummy b2instDummy = new B2instConnectorDummy();
   private final BindingResult mockBindingResult = mock(BindingResult.class);
   private Object realB2instConnector;
+  private ApiInventorySystemSettings.IdentifierSettings originalB2instSettings;
+  private ApiInventorySystemSettings.IdentifierSettings originalPidinstDataCiteSettings;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     realB2instConnector = ReflectionTestUtils.getField(identifierApiManager, "b2instConnector");
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", b2instDummy);
     super.setUp();
+    // these are system properties in the shared dev database, so put them back afterwards
+    originalB2instSettings =
+        captureIdentifierSettings(settingsController, IdentifierType.PIDINST_B2INST);
+    // DataCite too: enabling one PIDINST provider disables the other, so turning B2INST on below
+    // switches the DataCite PIDINST provider off as a side effect and it has to be put back
+    originalPidinstDataCiteSettings =
+        captureIdentifierSettings(settingsController, IdentifierType.PIDINST_DATACITE);
     setB2instEnabled("true");
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
-    setB2instEnabled("false");
+    /*
+     * Both providers, and in this order. Enabling a PIDINST provider disables its sibling (see
+     * updateInventorySettings), so this test switched the DataCite PIDINST provider off on the way
+     * in and must switch it back. B2INST goes first because restoring it is what leaves the enabled
+     * flag free for DataCite to reclaim.
+     *
+     * Leaving DataCite off is not a harmless default: this is the shared dev database, and the
+     * developer who owns it would find their instrument PIDs quietly going to the wrong provider,
+     * or nowhere, with nothing in the diff to explain it.
+     */
+    restoreIdentifierSettings(
+        settingsController, IdentifierType.PIDINST_B2INST, originalB2instSettings);
+    restoreIdentifierSettings(
+        settingsController, IdentifierType.PIDINST_DATACITE, originalPidinstDataCiteSettings);
     // identifierApiManager is a singleton in a Spring context cached across test classes, so the
     // dummy has to be swapped back out or later MVC tests silently run against it.
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", realB2instConnector);
@@ -87,7 +113,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
   /*
    * Mirrors the private helper in InventoryIdentifiersApiControllerMVCIT, but returns the raw result
-   * rather than a deserialized DTO. providerUrl and publicUrl are @JsonProperty READ_ONLY on
+   * rather than a deserialized DTO. state, providerUrl and publicUrl are @JsonProperty READ_ONLY on
    * ApiInventoryDOI, so Jackson emits them but ignores them on the way in; getFromJsonResponseBody is
    * a plain readValue, so reading them off a deserialized DTO would silently yield null and the
    * assertion would pass vacuously. The response JSON is the only place they can be observed.
@@ -176,13 +202,16 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
     assertNotNull(registeredDoi);
     assertEquals(B2instConnectorDummy.DUMMY_RID, registeredDoi.getDoi());
-    assertEquals("draft", registeredDoi.getState());
     /*
-     * The B2INST record page is captured from the create-draft response and persisted, so the UI can
-     * link a PIDINST identifier from registration onwards, not only once it is published. Asserted on
-     * the response JSON, not the DTO: see registerNewIdentifier for why the DTO cannot show these two.
+     * state and the two URLs are asserted on the response JSON, not the DTO: state is READ_ONLY
+     * since the parallel review (a record update carrying "state" could otherwise open the public
+     * page), so it too would deserialize to null. See registerNewIdentifier.
+     *
+     * The B2INST record page is captured from the create-draft response and persisted, so the UI
+     * can link a PIDINST identifier from registration onwards, not only once it is published.
      */
     JsonNode doiJson = new ObjectMapper().readTree(doiResult.getResponse().getContentAsString());
+    assertEquals("draft", doiJson.path("state").asText());
     assertEquals(B2instConnectorDummy.DUMMY_SELF_HTML, doiJson.path("providerUrl").asText());
     assertTrue(
         doiJson.path("publicUrl").isNull() || doiJson.path("publicUrl").isMissingNode(),
@@ -204,19 +233,28 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     assertEquals(List.of("Air temperature"), sent.getMeasuredVariable());
     /*
      * The one template field that deliberately does NOT copy across: a landing page names exactly
-     * one physical instrument, so the new instrument gets its own address instead of the template's
-     * (RSDEV-1307). That own address is what gets registered.
+     * one physical instrument, so a landing page inherited from the template must never be
+     * registered for the instrument created from it (RSDEV-1307). Nothing refills it either, since
+     * the auto-fill that used to write a /globalId/ address is retired (ADR 0006 item 3), so at this
+     * point the field is blank and what reaches B2INST is the identifier's own public landing page.
      *
-     * Note this assertion no longer discriminates the landing page mapping itself: the mapped-field
-     * branch and the GlobalIdUrls fallback both produce this same "/globalId/..." string, so it
-     * would still pass if the field mapping were dropped. The mapping is pinned discriminatingly by
-     * the unit tests in RspaceToExternalProviderAdapterImplTest (see
-     * landingPageFromTheFieldSurvivesAnUnsetServerUrl); what this MVCIT pins is that a landing page
-     * reaches B2INST at all on the create-from-template path.
+     * This is the one assertion that composes the whole RSDEV-1254 invariant end to end: the suffix
+     * registered with B2INST is the same suffix the entity's publicLink adopted. The two halves are
+     * pinned separately by unit tests (InventoryIdentifierApiManagerImplUnitTest for DTO->payload,
+     * ApiIdentifiersHelperTest for DTO->entity), but only a full request exercises the seam between
+     * them - and that seam is fragile, because publicLinkSuffix is @JsonIgnore, so the DTO has to
+     * survive from createNewB2instDoi to the entity by object identity. Any serialisation
+     * round-trip introduced on that path would silently drop the suffix, the entity would
+     * self-generate a different one, and a "contains /public/inventory/" assertion would still
+     * pass while the registered address 404s forever.
      */
+    assertNotNull(registeredDoi.getRsPublicId(), "the identifier must expose its public link");
     assertTrue(
-        sent.getLandingPage().endsWith("/globalId/" + instrumentGlobalId),
-        "expected the instrument's own landing page, got: " + sent.getLandingPage());
+        sent.getLandingPage().endsWith("/public/inventory/" + registeredDoi.getRsPublicId()),
+        "the address registered with B2INST must name the page RSpace will serve; registered: "
+            + sent.getLandingPage()
+            + ", identifier publicLink: "
+            + registeredDoi.getRsPublicId());
     assertEquals("Other", sent.getAlternateIdentifier().get(0).getAlternateIdentifierType());
     assertEquals(
         "INV-2025-0042", sent.getAlternateIdentifier().get(0).getAlternateIdentifierValue());

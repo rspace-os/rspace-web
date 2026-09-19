@@ -6,6 +6,7 @@ import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FieldAttachment;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
@@ -14,6 +15,7 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Record;
 import com.researchspace.service.FieldManager;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
@@ -32,6 +34,7 @@ public class FieldManagerImpl implements FieldManager {
   private @Autowired RecordDao recordDao;
   private @Autowired IPermissionUtils permUtils;
   private @Autowired RecordGroupSharingDao recordSharingDao;
+  private @Autowired MessageSourceUtils messages;
 
   @Autowired
   public void setUserDao(FieldDao fieldDao) {
@@ -53,7 +56,42 @@ public class FieldManagerImpl implements FieldManager {
 
   @Override
   public List<Field> getFieldsByRecordId(long id, User user) {
+    assertFieldAccessPermitted(
+        id, user, PermissionType.READ, "errors.authorization.failure.readFields");
     return fieldDao.getFieldFromStructuredDocument(id);
+  }
+
+  @Override
+  public List<Field> getAutoSavedFieldsByRecordId(long id, User user) {
+    // RSDEV-1329: WRITE, not READ. PermissionUtils.isPermitted short-circuits READ to true for
+    // any user on a published record, so READ would expose the owner's unsaved editing buffer to
+    // every logged-in account once a document is published.
+    assertFieldAccessPermitted(
+        id, user, PermissionType.WRITE, "errors.authorization.failure.readDraftFields");
+    return fieldDao.getFieldFromStructuredDocument(id);
+  }
+
+  /**
+   * RSDEV-1329: fail closed — null user, the anonymous published-view guest, unknown record and
+   * insufficient permission are all indistinguishable to the caller.
+   */
+  private void assertFieldAccessPermitted(
+      long id, User user, PermissionType permType, String failureMessageKey) {
+    boolean permitted =
+        user != null
+            && !user.isAnonymousGuestAccount()
+            && recordDao
+                .getSafeNull(id)
+                .map(record -> permUtils.isRecordAccessPermitted(user, record, permType))
+                .orElse(false);
+    if (!permitted) {
+      throw new AuthorizationException(
+          messages.getMessage(
+              failureMessageKey,
+              new Object[] {
+                user == null ? RecordGroupSharing.ANONYMOUS_USER : user.getUsername(), id
+              }));
+    }
   }
 
   @Override

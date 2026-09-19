@@ -254,7 +254,6 @@
     "dryad": "i1xvubndhm-dryad-integration",
     "dsw": "6adimrmy9m-dsw-fair-wizard-integration",
     "editLocationsInVisualContainers": "jya8j336dt-edit-locations-in-visual-containers",
-    "evernote": "9ckpmfdq8m-evernote-integration",
     "fieldmark": "idbaaggghu-fieldmark-integration",
     "figshare": "ir4ybsamcn-figshare-integration",
     "formsRadiosAndPicklists": "rozak8tlwr-forms#radios_and_picklists",
@@ -350,8 +349,8 @@
       "notFound": "Please contact an Admin: Calira returned HTTP status 404. Is Calira endpoint set correctly?"
     },
     "omero": {
-      "notFound": "The requested data was not found on this instance of Omero",
-      "sessionExpired": "Your session with Omero has expired. Please re-connect to Omero on the Apps page."
+      "notConnected": "You are not connected to Omero. Please connect to Omero on the Apps page.",
+      "notFound": "The requested data was not found on this instance of Omero"
     },
     "serverUnavailable": "The {appName} server at <serverLink>{url}</serverLink> is down, or CORS for this server has not been configured properly. If you are responsible for setting up the {appName} integration, open developer tools and have a look at the console and/or the network tab to find out what the issue is.",
     "timeout": "Request timed out.",
@@ -878,7 +877,6 @@
     "displayingLockedVersion": "Displaying version {version} of the document - this is locked for editing.",
     "folder": "Folder",
     "folderIcon": "Folder icon",
-    "fromEvernote": "From Evernote",
     "fromForm": "From Form",
     "fromProtocolsIo": "From Protocols.io",
     "fromTemplate": "From Template",

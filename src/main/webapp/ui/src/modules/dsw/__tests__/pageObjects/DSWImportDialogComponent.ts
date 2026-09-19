@@ -3,10 +3,15 @@ import type { Locator, Page } from "@playwright/test";
 export class DSWImportDialogComponent {
   readonly root: Locator;
   readonly importButton: Locator;
+  /**
+   * Matches "Close", which replaces "Cancel" after a successful import clears the selected plan.
+   */
+  readonly dismissButton: Locator;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Import a DMP into the Gallery" });
     this.importButton = this.root.getByRole("button", { name: "Import" });
+    this.dismissButton = this.root.getByRole("button", { name: "Close", exact: true });
   }
 
   planRadio(name: string): Locator {
@@ -29,6 +34,11 @@ export class DSWImportDialogComponent {
     if (!label?.startsWith("Select plan: ")) throw new Error("The first DSW plan has no accessible name.");
     await radio.click();
     return label.replace("Select plan: ", "");
+  }
+
+  async dismiss(): Promise<void> {
+    await this.dismissButton.click();
+    await this.root.waitFor({ state: "detached" });
   }
 
   async clickImport(): Promise<void> {

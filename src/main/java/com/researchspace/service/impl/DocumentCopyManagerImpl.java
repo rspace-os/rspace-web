@@ -47,12 +47,12 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -482,17 +482,13 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
   }
 
   private String createNewFileName(FileProperty sourceFileProperty) {
-    String originalFileName = sourceFileProperty.getFileName();
-    String result = "";
-    Date date = new Date();
-    // This replaces all _epochMilli timestamps that have been added to the filename previously
-    result = originalFileName.replaceAll("_\\d{13,}", "");
-    result =
-        result.substring(0, result.lastIndexOf('.'))
-            + "_"
-            + date.getTime()
-            + result.substring(result.lastIndexOf('.'));
-    return result;
+    // Remove timestamps previously appended when copying the file.
+    String name = sourceFileProperty.getFileName().replaceAll("_\\d{13,}", "");
+    String extension = FilenameUtils.getExtension(name);
+    return FilenameUtils.getBaseName(name)
+        + "_"
+        + System.currentTimeMillis()
+        + (extension.isEmpty() ? "" : "." + extension);
   }
 
   /* copies and updates content link to media files / thumbnails / av */

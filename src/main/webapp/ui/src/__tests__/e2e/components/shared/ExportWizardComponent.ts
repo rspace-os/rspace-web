@@ -46,6 +46,13 @@ export class ExportWizardComponent {
     }
   }
 
+  async setReportToRaid(enabled: boolean): Promise<void> {
+    const toggle = this.root.getByRole("checkbox", { name: "Report to RAiD", exact: true });
+    if ((await toggle.isChecked()) !== enabled) {
+      await toggle.click();
+    }
+  }
+
   async selectRepository(repoDisplayName: string, alias?: string): Promise<void> {
     const accessibleName = alias === undefined ? repoDisplayName : `${repoDisplayName} - ${alias}`;
     await this.root.getByRole("radio", { name: accessibleName, exact: true }).click();
@@ -69,14 +76,27 @@ export class ExportWizardComponent {
     await this.root.page().getByRole("option", { name: license, exact: true }).click();
   }
 
+  async fillAbstract(text: string): Promise<void> {
+    await this.root.getByRole("textbox", { name: "Add an abstract", exact: true }).fill(text);
+  }
+
+  async selectResearchDomain(domain: string): Promise<void> {
+    await this.root.getByRole("combobox", { name: "Research Domain", exact: false }).click();
+    await this.root.page().getByRole("option", { name: domain, exact: true }).click();
+  }
+
+  async selectGrantingOrganization(query: string, optionName: string): Promise<void> {
+    const input = this.root.getByRole("combobox", { name: "Granting Organization", exact: false });
+    await input.fill(query);
+    await this.root.page().getByRole("option", { name: optionName, exact: true }).click();
+  }
+
   async fillFileName(name: string): Promise<void> {
     await this.root.getByRole("textbox", { name: "File name", exact: true }).fill(name);
   }
 
   async selectLinkedDocumentsDepth(depth: LinkedDocumentsDepth): Promise<void> {
-    await this.root
-      .getByRole("combobox", { name: "Should linked RSpace documents be included in export?", exact: true })
-      .click();
+    await this.root.locator('[data-test-id="include-links"]').getByRole("combobox").click();
     await this.root.page().getByRole("option", { name: LINKED_DOCUMENTS_OPTION_TEXT[depth] }).click();
   }
 

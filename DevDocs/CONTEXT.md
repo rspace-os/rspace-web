@@ -23,6 +23,30 @@ these causes, and the state is indistinguishable from "record does not exist"
 so that existence is never disclosed (see ADR-0002).
 _Avoid_: Item unshared, unshared, hidden
 
+**Allowed relationship types**:
+The whitelist a template's Link field declares, naming which DataCite relation
+types items created from that template may use. An empty whitelist means all of
+them. It constrains choice; it does not supply a value.
+_Avoid_: permitted relations, relation options
+
+**Default link**:
+The complete relation-type-and-target pair a template's Link field may carry,
+stamped onto every item created from that template as that item's own ordinary,
+editable link. Its relation type must be one the same field allows. Both halves
+are set together or not at all: a relation type without a target, or a target
+without a relation type, is not a link and cannot be a default (RSDEV-1246).
+Distinct from the **allowed relationship types**, which constrain what an item
+may choose rather than choosing for it.
+_Avoid_: default target, default relation, template link, pre-set link
+
+**Stamped**:
+Copied onto an item at the moment that item is created from a template, after
+which the copy belongs to the item alone. A later edit to the template's default
+link never reaches items already created, and an item updated to a newer
+template version is never re-stamped. The same word already describes how a
+custom field's default value reaches a new item.
+_Avoid_: inherited, synced, propagated, applied
+
 **Open (link card action)**:
 Navigates to the link target. Offered only when following it lands somewhere
 useful: removed for deleted or inaccessible ELN targets (their routes produce

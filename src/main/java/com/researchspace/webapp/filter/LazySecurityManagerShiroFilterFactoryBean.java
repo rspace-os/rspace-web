@@ -9,14 +9,18 @@ import org.springframework.beans.factory.BeanFactoryAware;
  * A {@link ShiroFilterFactoryBean} that resolves the securityManager bean on first use instead of
  * having it injected at construction.
  *
- * <p>ShiroFilterFactoryBean is a BeanPostProcessor, so it is created before context refresh
- * completes. A direct securityManager property reference would instantiate the realms' entire
- * service-bean dependency graph inside that early window, where annotation-driven advice
- * (@Transactional, Shiro's authorization annotations) is silently skipped; see the AOP notes in
- * applicationContext-service.xml. {@link #getSecurityManager()} is first called from {@code
- * createInstance()} when the servlet container initialises the filter, which is safely after
- * refresh, and hands the real securityManager instance to the filter so downstream code (e.g. casts
- * to DefaultSecurityManager) behaves exactly as with direct injection.
+ * <p>Under Shiro 2, ShiroFilterFactoryBean was itself a BeanPostProcessor, so it was created before
+ * context refresh completed. A direct securityManager property reference would instantiate the
+ * realms' entire service-bean dependency graph inside that early window, where annotation-driven
+ * advice (@Transactional, Shiro's authorization annotations) is silently skipped; see the AOP notes
+ * in applicationContext-service.xml. Shiro 3 moved the post-processing into a separate
+ * ShiroFilterFactoryBeanPostProcessor (not used here), so the filter itself no longer instantiates
+ * early. The companion advisor still does (see
+ * LazySecurityManagerAuthorizationAttributeSourceAdvisor), and keeping the filter lazy as well is a
+ * cheap guard against the early window reappearing. {@link #getSecurityManager()} is first called
+ * from {@code createInstance()} when the servlet container initialises the filter, which is safely
+ * after refresh, and hands the real securityManager instance to the filter so downstream code (e.g.
+ * casts to DefaultSecurityManager) behaves exactly as with direct injection.
  */
 public class LazySecurityManagerShiroFilterFactoryBean extends ShiroFilterFactoryBean
     implements BeanFactoryAware {

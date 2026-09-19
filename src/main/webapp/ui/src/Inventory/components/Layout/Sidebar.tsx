@@ -527,9 +527,9 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
     max: isSysAdmin ? 9 : 8,
   });
 
+  // Must not set the visible panel: the create-new flow does that itself (createNewHelper).
   const afterClick = () => {
     if (!uiStore.alwaysVisibleSidebar) uiStore.toggleSidebar(false);
-    uiStore.setVisiblePanel("right");
   };
 
   return (

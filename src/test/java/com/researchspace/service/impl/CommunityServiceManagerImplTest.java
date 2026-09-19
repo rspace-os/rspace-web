@@ -2,8 +2,8 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createAnyUserWithRole;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -12,17 +12,15 @@ import com.researchspace.dao.UserDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class CommunityServiceManagerImplTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   @Mock UserDao userDao;
   @Mock CommunityDao communityDao;
@@ -30,7 +28,7 @@ public class CommunityServiceManagerImplTest {
 
   User communityAdmin1, communityAdmin2;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     communityAdmin1 = createAnyUserWithRole("any", Constants.ADMIN_ROLE);
     communityAdmin1.setId(1L);

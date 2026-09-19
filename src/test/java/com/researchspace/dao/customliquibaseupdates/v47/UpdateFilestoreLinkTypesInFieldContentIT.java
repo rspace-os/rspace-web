@@ -1,8 +1,8 @@
 package com.researchspace.dao.customliquibaseupdates.v47;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.User;
@@ -15,8 +15,8 @@ import java.io.IOException;
 import java.util.List;
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.SetupException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers {
@@ -26,7 +26,7 @@ public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers 
   private UpdateFilestoreLinkTypesInFieldContent updater;
   private User user;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -91,16 +91,16 @@ public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers 
   }
 
   private void assertOldStyleLink(String fieldContent) {
-    assertTrue(fieldContent, fieldContent.contains("<a class=\"nfs_file mceNonEditable\" href"));
+    assertTrue(fieldContent.contains("<a class=\"nfs_file mceNonEditable\" href"), fieldContent);
     assertFalse(
-        fieldContent,
-        fieldContent.contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href"));
+        fieldContent.contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href"),
+        fieldContent);
   }
 
   private void assertNewStyleLink(String fieldContent) {
-    assertFalse(fieldContent, fieldContent.contains("<a class=\"nfs_file mceNonEditable\" href"));
+    assertFalse(fieldContent.contains("<a class=\"nfs_file mceNonEditable\" href"), fieldContent);
     assertTrue(
-        fieldContent,
-        fieldContent.contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href"));
+        fieldContent.contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href"),
+        fieldContent);
   }
 }

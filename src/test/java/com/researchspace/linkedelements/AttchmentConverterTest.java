@@ -1,7 +1,7 @@
 package com.researchspace.linkedelements;
 
 import static com.researchspace.core.util.FieldParserConstants.ATTACHMENT_CLASSNAME;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.dao.EcatDocumentFileDao;
 import com.researchspace.model.EcatDocumentFile;
@@ -11,31 +11,25 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.jsoup.nodes.Element;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class AttchmentConverterTest extends AbstractParserTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   private @Mock EcatDocumentFileDao docDao;
 
   @InjectMocks AttachmentConverter attachmentConverter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void parse() {

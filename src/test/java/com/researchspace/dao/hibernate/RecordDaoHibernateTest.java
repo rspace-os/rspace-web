@@ -16,26 +16,26 @@ public class RecordDaoHibernateTest {
 
   @Test
   public void editInfoFieldsGetPathPrefix() {
-    assertEquals(" order by editInfo.name ASC", RecordDaoHibernate.makeOrderBy(pgCrit("name")));
+    assertEquals(" order by br.editInfo.name ASC", RecordDaoHibernate.makeOrderBy(pgCrit("name")));
     assertEquals(
-        " order by editInfo.creationDateMillis ASC",
+        " order by br.editInfo.creationDateMillis ASC",
         RecordDaoHibernate.makeOrderBy(pgCrit("creationDateMillis")));
     assertEquals(
-        " order by editInfo.modificationDateMillis ASC",
+        " order by br.editInfo.modificationDateMillis ASC",
         RecordDaoHibernate.makeOrderBy(pgCrit("modificationDateMillis")));
   }
 
   @Test
   public void otherFieldsArePassedThroughUnchanged() {
-    assertEquals(" order by id ASC", RecordDaoHibernate.makeOrderBy(pgCrit("id")));
+    assertEquals(" order by br.id ASC", RecordDaoHibernate.makeOrderBy(pgCrit("id")));
     assertEquals(
-        " order by editInfo.name ASC", RecordDaoHibernate.makeOrderBy(pgCrit("editInfo.name")));
+        " order by br.editInfo.name ASC", RecordDaoHibernate.makeOrderBy(pgCrit("editInfo.name")));
   }
 
   @Test
   public void missingOrderByDefaultsToLastModifiedDesc() {
     assertEquals(
-        " order by editInfo.modificationDateMillis DESC",
+        " order by br.editInfo.modificationDateMillis DESC",
         RecordDaoHibernate.makeOrderBy(pgCrit(null)));
   }
 }

@@ -52,7 +52,7 @@ const templateWithLandingPage = () => {
  * The request shape this describes is the contract the backend relies on: because the creation form
  * always sends `fields`, a blanked Landing page reaches
  * `InstrumentEntityApiManagerImpl.saveNewApiFieldsIntoInstrumentFields`, which must treat the blank
- * as "fill this for me" rather than as a missing mandatory value (RSDEV-1307).
+ * as "leave this empty" rather than as a missing mandatory value (RSDEV-1307).
  */
 describe("InstrumentModel.paramsForBackend for an instrument created from a template", () => {
   test("sends the fields list, so the blanked Landing page reaches the backend", async () => {

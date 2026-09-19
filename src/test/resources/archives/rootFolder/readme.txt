@@ -1,0 +1,1 @@
+This folder tree is used to test the zipping utilities for zipping archives.

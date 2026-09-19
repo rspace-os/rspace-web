@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.session.SessionAttributeUtils.USER_INFO;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -425,11 +424,6 @@ public abstract class BaseController implements ServletContextAware {
 
   protected Boolean isProtocolsIOEnabled(User subject) {
     IntegrationInfo info = integrationsHandler.getIntegration(subject, PROTOCOLS_IO_APP_NAME);
-    return info.isAvailable() && info.isEnabled();
-  }
-
-  protected Boolean isEvernoteEnabled(User subject) {
-    IntegrationInfo info = integrationsHandler.getIntegration(subject, EVERNOTE_APP_NAME);
     return info.isAvailable() && info.isEnabled();
   }
 

@@ -46,7 +46,7 @@ import { type AttachmentJson, newExistingAttachment } from "./AttachmentModel";
 import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
 import type { ContainerInContainerParams } from "./ContainerModel";
 import ExtraFieldModel from "./ExtraFieldModel";
-import IdentifierModel from "./IdentifierModel";
+import IdentifierModel, { externalMetadataUpdateAlerts } from "./IdentifierModel";
 import type { SampleInContainerParams } from "./SampleModel";
 
 export type InventoryBaseRecordEditableFields = {
@@ -1142,6 +1142,11 @@ export default class InventoryBaseRecord
         );
       }
       this.populateFromJson(this.factory.newFactory(), data as object);
+      /*
+       * Read before setEditing: with refresh it refetches the record, and the outcome of the
+       * external PIDINST update is response-only data the fresh GET does not carry (ADR 0008).
+       */
+      const externalUpdateAlerts = externalMetadataUpdateAlerts(this.identifiers);
       await this.setEditing(false, refresh);
       getRootStore().searchStore.search.replaceResult(this);
       getRootStore().uiStore.addAlert(
@@ -1150,6 +1155,9 @@ export default class InventoryBaseRecord
           variant: "success",
         }),
       );
+      externalUpdateAlerts.forEach((alert) => {
+        getRootStore().uiStore.addAlert(alert);
+      });
       if (this.recordType === "instrument" || this.recordType === "instrumentTemplate") {
         const type = this.recordType === "instrument" ? "instrument" : "instrument_template";
         getRootStore().trackingStore.trackEvent(`user:edit:${type}:inventory`);
@@ -1385,6 +1393,12 @@ export default class InventoryBaseRecord
         });
         const newIGSN = new IdentifierModel(response.data, globalId, ApiService);
         this.identifiers = this.identifiers.concat(newIGSN);
+        // Registering a PIDINST also writes the identifier's public landing page into the
+        // instrument's Landing page field, server-side (RSDEV-1254, ADR 0006 item 4). Appending the
+        // identifier does not bring that field back, so without a refetch the user is shown a blank
+        // Landing page for a record that now has one. Mirrors the assign-existing-IGSN path, which
+        // already refetches.
+        await this.fetchAdditionalInfo();
         getRootStore().searchStore.search.replaceResult(this);
         getRootStore().uiStore.addAlert(
           mkAlert({
@@ -1428,6 +1442,9 @@ export default class InventoryBaseRecord
         if (response.data) {
           const index = this.identifiers.findIndex((identifier) => identifier.id === id);
           this.identifiers.splice(index, 1);
+          // Deleting the identifier clears the Landing page it wrote (ADR 0006 item 5), so the same
+          // refetch is needed here or the cleared field goes on showing the old address.
+          await this.fetchAdditionalInfo();
           getRootStore().uiStore.addAlert(
             mkAlert({
               message: i18n.t("inventory:identifiers.alerts.draftDeleted"),

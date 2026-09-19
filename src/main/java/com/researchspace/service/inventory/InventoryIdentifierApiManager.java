@@ -41,6 +41,22 @@ public interface InventoryIdentifierApiManager {
 
   ApiInventoryRecordInfo retractIdentifier(GlobalIdentifier invRecOid, User user);
 
+  /**
+   * Re-reads the identifier's status from its external provider and persists any change, so the
+   * state RSpace shows matches what the provider holds (RSDEV-1260). Meaningful for PIDINST_B2INST
+   * identifiers, whose community review is decided outside RSpace. Identifiers of other types are
+   * returned unchanged, without a provider call.
+   */
+  ApiInventoryRecordInfo refreshIdentifier(GlobalIdentifier invRecOid, User user);
+
+  /**
+   * Attaches a linked identifier (a PID minted outside RSpace, {@code linked == true}) to the
+   * record without any provider call, as the last step of an instrument import (RSDEV-1326, ADR
+   * 0009). Refuses a record that already carries an identifier, exactly like registration does.
+   */
+  ApiInventoryRecordInfo linkExternalIdentifier(
+      GlobalIdentifier invRecOid, ApiInventoryDOI linkedIdentifier, User user);
+
   /* for testing */
   void setDataCiteConnector(DataCiteConnector dataCiteConnector);
 }

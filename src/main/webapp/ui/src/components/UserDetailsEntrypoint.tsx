@@ -13,7 +13,7 @@ declare global {
 
   interface Window {
     ___UserDetailsEntrypointInitialised?: boolean;
-    RS: RSGlobal;
+    RS?: RSGlobal;
   }
 }
 

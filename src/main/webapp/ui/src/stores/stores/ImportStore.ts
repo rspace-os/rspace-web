@@ -3,7 +3,7 @@ import type RsSet from "../../util/set";
 import Import, { type State } from "../models/ImportModel";
 import type { RootStore } from "./RootStore";
 
-export type ImportRecordType = "SAMPLES" | "CONTAINERS" | "SUBSAMPLES";
+export type ImportRecordType = "SAMPLES" | "CONTAINERS" | "SUBSAMPLES" | "INSTRUMENTS";
 
 export const IMPORT_PATHNAME = "/inventory/import";
 
@@ -24,7 +24,12 @@ export default class ImportStore {
 
     if (isImportPage()) {
       const recordType = new URLSearchParams(window.location.search).get("recordType");
-      if (recordType === "CONTAINERS" || recordType === "SAMPLES" || recordType === "SUBSAMPLES")
+      if (
+        recordType === "CONTAINERS" ||
+        recordType === "SAMPLES" ||
+        recordType === "SUBSAMPLES" ||
+        recordType === "INSTRUMENTS"
+      )
         this.initializeNewImport(recordType);
     }
   }

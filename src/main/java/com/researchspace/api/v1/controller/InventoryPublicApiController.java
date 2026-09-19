@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.InventoryPublicApi;
+import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import com.researchspace.api.v1.model.ApiSample;
@@ -48,6 +49,11 @@ public class InventoryPublicApiController extends BaseApiInventoryController
           || orgRecord.getType().equals(ApiInventoryRecordType.SAMPLE_TEMPLATE)) {
         ApiSample sample = (ApiSample) orgRecord;
         ((ApiSample) copy).setFields(sample.getFields());
+      }
+      if (orgRecord.getType().equals(ApiInventoryRecordType.INSTRUMENT)
+          || orgRecord.getType().equals(ApiInventoryRecordType.INSTRUMENT_TEMPLATE)) {
+        ApiInstrumentEntity instrument = (ApiInstrumentEntity) orgRecord;
+        ((ApiInstrumentEntity) copy).setFields(instrument.getFields());
       }
     }
 

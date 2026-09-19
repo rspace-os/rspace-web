@@ -1,8 +1,8 @@
 package com.researchspace.webapp.integrations.wopi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -13,21 +13,19 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.service.impl.ShiroTestUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
-import org.apache.shiro.session.mgt.SimpleSession;
 import org.apache.shiro.subject.Subject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+@ExtendWith(MockitoExtension.class)
 public class WopiControllerTestMVCIT extends MVCTestBase {
 
   @Autowired private WopiProofKeyValidationInterceptor proofKeyInterceptor;
@@ -42,11 +40,9 @@ public class WopiControllerTestMVCIT extends MVCTestBase {
   private User testUser;
   private ShiroTestUtils shiroTestUtils;
 
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
-
   @Mock private Subject subject;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
 
@@ -56,13 +52,12 @@ public class WopiControllerTestMVCIT extends MVCTestBase {
     setUpUserWithInitialisedContent(testUser);
     shiroTestUtils = new ShiroTestUtils();
     shiroTestUtils.setSubject(subject);
-    Mockito.when(subject.getSession()).thenReturn(new SimpleSession());
 
     // proof keys only validated in a specific test
     proofKeyInterceptor.setProofKeyValidationEnabled("false");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     shiroTestUtils.clearSubject();
   }

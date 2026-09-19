@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import type { PidinstPublishingState } from "../../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockInstrument } from "../../../../../stores/models/__tests__/InstrumentModel/mocking";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { IdentifiersList } from "../Identifiers";
 import { mockIGSNIdentifier } from "./mocking";
@@ -10,6 +11,18 @@ import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 
 import materialTheme from "../../../../../theme";
+
+/*
+ * Exact accessible names, not loose regexes: i18next runs in cimode, so a button's name is its
+ * catalog key. "deleteOrRetract.retract" contains the word "delete", and "actions.republish"
+ * contains "publish", so /delete|retract/i and /publish/i each match both labels and would pass
+ * for the wrong button.
+ */
+const PUBLISH = "common:actions.publish";
+const REPUBLISH = "common:actions.republish";
+const RETRACT = "inventory:fields.identifiers.list.deleteOrRetract.retract";
+const PREVIEW = "inventory:fields.identifiers.list.preview";
+const DELETE = "inventory:fields.identifiers.list.deleteOrRetract.delete";
 
 const sample1: InventoryRecord = makeMockSample();
 sample1.identifiers = [mockIGSNIdentifier("sample")];
@@ -38,6 +51,48 @@ describe("Identifiers section", () => {
       expect(container).toHaveTextContent("Material Sample");
     });
   });
+  describe("When an instrument has a PIDINST_B2INST identifier", () => {
+    test("Required/Recommended Identifier Properties sections are not rendered", () => {
+      const instrument1: InventoryRecord = makeMockInstrument();
+      instrument1.identifiers = [{ ...mockIGSNIdentifier("instrument"), doiType: "PIDINST_B2INST" }];
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument1} />
+        </ThemeProvider>,
+      );
+      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.recommended.title");
+    });
+
+    /*
+     * A registered PIDINST does get an RSpace landing page, so the Inventory Fields choice is real
+     * here. Pinned because the section is withheld for a LINKED identifier, and that gate must key
+     * on `linked` alone rather than on the provider (RSDEV-1326).
+     */
+    test("the Inventory Fields section is still offered", () => {
+      const instrument1: InventoryRecord = makeMockInstrument();
+      instrument1.identifiers = [{ ...mockIGSNIdentifier("instrument"), doiType: "PIDINST_B2INST" }];
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument1} />
+        </ThemeProvider>,
+      );
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.inventoryFields.title");
+    });
+  });
+  describe("When an instrument has a PIDINST_DATACITE identifier", () => {
+    test("Required/Recommended Identifier Properties sections are rendered", () => {
+      const instrument1: InventoryRecord = makeMockInstrument();
+      instrument1.identifiers = [{ ...mockIGSNIdentifier("instrument"), doiType: "PIDINST_DATACITE" }];
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument1} />
+        </ThemeProvider>,
+      );
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
+    });
+  });
   describe("When viewing a historical version", () => {
     test("Preview, Publish/Republish and Delete/Retract are all disabled", () => {
       const historicalSample: InventoryRecord = makeMockSample({
@@ -50,9 +105,9 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={historicalSample} />
         </ThemeProvider>,
       );
-      expect(screen.getByRole("button", { name: "inventory:fields.identifiers.list.preview" })).toBeDisabled();
-      expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
-      expect(screen.getByRole("button", { name: /delete|retract/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: PREVIEW })).toBeDisabled();
+      expect(screen.getByRole("button", { name: REPUBLISH })).toBeDisabled();
+      expect(screen.getByRole("button", { name: RETRACT })).toBeDisabled();
     });
   });
 
@@ -119,25 +174,13 @@ describe("Identifiers section", () => {
       expect(screen.getByTestId("identifier-state")).toHaveTextContent("under_embargo");
     });
 
-    test("Publish is disabled while a community review is open", () => {
-      const instrument: InventoryRecord = makeMockSample();
-      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "submitted" }];
-
-      render(
-        <ThemeProvider theme={materialTheme}>
-          <IdentifiersList activeResult={instrument} />
-        </ThemeProvider>,
-      );
-
-      expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
-    });
-
     /*
-     * B2INST has no retract operation, so retractDoi throws for every review state, and Delete is
-     * only offered for "draft". The button rendering at all is new: these states used to throw during
-     * render. It must therefore be disabled rather than offer an action that always errors.
+     * B2INST has no retract operation, so retractDoi throws for every review state. Closed reviews
+     * (declined, cancelled, expired) offer Delete instead (see "Delete for closed B2INST reviews"
+     * below); the open and published states must stay disabled rather than offer an action that
+     * always errors.
      */
-    test.each<PidinstPublishingState>(["created", "submitted", "accepted", "declined", "cancelled", "expired"])(
+    test.each<PidinstPublishingState>(["created", "submitted", "accepted"])(
       "Retract is disabled for the '%s' review state, since B2INST cannot retract",
       (state) => {
         const instrument: InventoryRecord = makeMockSample();
@@ -330,17 +373,152 @@ describe("Identifiers section", () => {
       );
     });
 
-    test("Publish stays enabled for a draft PIDINST identifier", () => {
+    test("an accepted identifier gets the published highlight", () => {
       const instrument: InventoryRecord = makeMockSample();
-      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "draft" }];
-
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "accepted" }];
       render(
         <ThemeProvider theme={materialTheme}>
           <IdentifiersList activeResult={instrument} />
         </ThemeProvider>,
       );
+      const stateCell = screen.getByTestId("identifier-state");
+      // theme.palette.modifiedHighlight is "teal"; jsdom reports the computed rgb equivalent
+      expect(materialTheme.palette.modifiedHighlight).toBe("teal");
+      expect(stateCell).toHaveStyle({ color: "rgb(0, 128, 128)" });
+    });
+  });
 
-      expect(screen.getByRole("button", { name: /republish|publish/i })).toBeEnabled();
+  describe("Delete for closed B2INST reviews", () => {
+    test.each(["declined", "cancelled", "expired"] as const)("state '%s' offers an enabled Delete", (state) => {
+      const instrument: InventoryRecord = makeMockSample();
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state }];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("button", { name: DELETE })).toBeEnabled();
+    });
+
+    test("a created identifier explains itself", () => {
+      const instrument: InventoryRecord = makeMockSample();
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "created" }];
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument} />
+        </ThemeProvider>,
+      );
+      expect(container).toHaveTextContent("fields.identifiers.list.stateInfo.pidinstCreated");
+    });
+  });
+
+  /*
+   * RSDEV-1326. An imported PID is minted outside RSpace, which owns nothing on the provider side,
+   * so the server refuses publish, retract and refresh on it with a 422 (ADR 0009). The row
+   * therefore withdraws Publish, Refresh and Preview, shows Retract disabled, never shows Delete
+   * (unlinking stays an API operation for now), and claims no missing details.
+   *
+   * Both registries are exercised, hence the parameterised describe: a linked DataCite PID is
+   * findable, so nothing else in the row would have disabled its Retract button, and every one of
+   * these used to be wrong for that case alone.
+   */
+  describe.each([
+    { registry: "B2INST", doiType: "PIDINST_B2INST", state: "accepted" },
+    { registry: "DataCite", doiType: "PIDINST_DATACITE", state: "findable" },
+  ] as const)("When an instrument has a LINKED $registry identifier", ({ doiType, state }) => {
+    const linkedInstrument = (): InventoryRecord => {
+      const instrument: InventoryRecord = makeMockInstrument();
+      instrument.identifiers = [
+        {
+          ...mockIGSNIdentifier("instrument"),
+          doiType,
+          state,
+          linked: true,
+          // the server stores no RSpace landing page for a linked identifier
+          url: null,
+          publisher: "",
+          publicationYear: "",
+        },
+      ];
+      return instrument;
+    };
+
+    test("no publish action is offered", () => {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      expect(screen.queryByRole("button", { name: PUBLISH })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: REPUBLISH })).not.toBeInTheDocument();
+    });
+
+    test("Retract is offered but disabled, whichever registry minted the PID", () => {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      const retract = screen.getByRole("button", { name: RETRACT });
+      expect(retract).toBeInTheDocument();
+      /*
+       * ADR 0009 keeps unlinking an API-only operation for now, so the panel must not offer it.
+       * What it must not do either is offer an action the server refuses: a linked DataCite PID is
+       * findable, so nothing else in the row disabled this button and pressing it always 422'd.
+       */
+      expect(retract).toBeDisabled();
+      expect(screen.queryByRole("button", { name: DELETE })).not.toBeInTheDocument();
+    });
+
+    test("no RSpace landing page is advertised or offered for preview", () => {
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      /*
+       * The server serves no public page for a linked identifier, so the panel must not explain it
+       * as one or offer to preview it. Both used to happen, because an imported PID carries the
+       * provider's own findable/accepted state.
+       */
+      expect(container).toHaveTextContent("fields.identifiers.list.stateInfo.linkedPidinst");
+      expect(container).not.toHaveTextContent("fields.identifiers.list.stateInfo.findablePidinst");
+      expect(container).not.toHaveTextContent("fields.identifiers.list.stateInfo.pidinstAccepted");
+      expect(screen.queryByRole("button", { name: PREVIEW })).not.toBeInTheDocument();
+    });
+
+    test("no minting metadata section, so nothing claims details are missing", () => {
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      // the section itself must be gone, not merely the warning: RSpace cannot push an edit to a
+      // record it does not own, so an editable Publisher field would be a lie
+      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).not.toHaveTextContent("fields.identifiers.missingDetails");
+    });
+
+    /*
+     * The Inventory Fields checkbox chooses what an RSpace landing page shows, and its own copy
+     * promises "the item's landing page" and asks the user to check the fields "before publishing
+     * the PIDINST". A linked identifier has neither: no page is stored for it (`url` is null) and
+     * findPublishedItemVersionByPublicLink refuses to serve one, so the public address 404s, and
+     * RSpace never publishes it. Withdrawn rather than disabled, like Preview, Publish and Refresh
+     * (RSDEV-1326).
+     */
+    test("no Inventory Fields section: there is no RSpace landing page to put them on", () => {
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.inventoryFields.title");
+      expect(
+        screen.queryByRole("checkbox", {
+          name: "inventory:fields.identifiers.wrapper.inventoryFields.includeOnPage",
+        }),
+      ).not.toBeInTheDocument();
     });
   });
 });

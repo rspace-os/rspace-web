@@ -16,34 +16,34 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.LuceneSearchStrategy;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class AttachmentSearchTest extends SearchSpringTestBase {
 
-  public @Rule TemporaryFolder tempIndexFolder = new TemporaryFolder();
+  @TempDir public File tempIndexFolder;
   @Autowired FileIndexSearcher searcher;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
-    fileIndexer.setIndexFolderDirectly(tempIndexFolder.getRoot());
+    fileIndexer.setIndexFolderDirectly(tempIndexFolder);
 
     LuceneSearchStrategy searchSTrategy = new LuceneSearchStrategy();
-    searchSTrategy.setIndexFolderDirectly(tempIndexFolder.getRoot());
+    searchSTrategy.setIndexFolderDirectly(tempIndexFolder);
     searcher.setFileSearchStrategy(searchSTrategy);
 
     initialiseFileIndexer();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws IOException {
     super.tearDown();
   }

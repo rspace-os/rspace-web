@@ -1657,47 +1657,6 @@ paths:
                 $ref: "#/components/schemas/DocumentInfo"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
-  /import/evernote:
-    post:
-      summary: Imports Evernote XML files in 'enex' format into an RSpace folder. Each
-        'Note' is imported as an RSpace Basic Document.
-      description: >
-        This reproduces the web UI functionality whereby Evernote exports can be
-        imported into RSpace.
-
-        The request parameters for this operation are  the same as for `import/word`
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  description: An Evenote export file in '.enex' format to upload.
-                  type: string
-                  format: binary
-                folderId:
-                  description: Unique identifier for the Folder. See restrictions as for import
-                    from Word
-                  type: integer
-                  format: int64
-                imageFolderId:
-                  description: An optional ID of a folder in the image gallery where any images
-                    extracted from the Evernote  file will be placed.
-                  type: integer
-              required:
-                - file
-        required: true
-      tags:
-        - Import
-      responses:
-        "201":
-          description: Success. Returned object represents newly created RSpace folder
-            created from  Evernote file.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Folder"
   /activity:
     get:
       summary: Get recent activity from RSpace. This is the same information as

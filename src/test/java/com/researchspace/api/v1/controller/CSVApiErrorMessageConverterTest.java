@@ -1,14 +1,13 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.apiutils.ApiError;
 import java.io.IOException;
 import java.text.ParseException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.mock.http.MockHttpOutputMessage;
@@ -17,13 +16,10 @@ public class CSVApiErrorMessageConverterTest {
 
   CSVApiErrorMessageConverter csvConverter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     csvConverter = new CSVApiErrorMessageConverter();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testSupportsApiError() {

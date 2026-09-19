@@ -13,8 +13,6 @@ import type BasketModel from "../../../stores/models/Basket";
 import type { SavedSearch } from "../../../stores/stores/SearchStore";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
-import { isInventoryPermalink } from "../../../util/Util";
-import BarcodeScanner from "../../components/BarcodeScanner/BarcodeScanner";
 import PeopleField from "../../components/Inputs/PeopleField";
 import SavedList from "./SavedList";
 import StatusFilter from "./StatusFilter";
@@ -65,7 +63,6 @@ function SearchParameterControls(): React.ReactNode {
   const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(null);
   const [ownerDropdown, setOwnerDropdown] = useState<HTMLElement | null>(null);
   const [benchDropdown, setBenchDropdown] = useState<HTMLElement | null>(null);
-  const [scanDropdown, setScanDropdown] = useState<HTMLElement | null>(null);
   const [savedSearchesDropdown, setSavedSearchesDropdown] = useState<HTMLElement | null>(null);
   const [savedBasketsDropdown, setSavedBasketsDropdown] = useState<HTMLElement | null>(null);
   const [tagsDropdown, setTagsDropdown] = useState<HTMLElement | null>(null);
@@ -144,30 +141,6 @@ function SearchParameterControls(): React.ReactNode {
             if (search.fetcher.deletedItems !== status) search.setDeletedItems(status);
           }}
         />
-      </DropdownButton>
-      <DropdownButton
-        name="Barcode"
-        disabled={!search.showBarcodeScan}
-        onClick={({ target }) => {
-          setScanDropdown(target as HTMLElement);
-        }}
-      >
-        <Panel anchorEl={scanDropdown} onClose={() => setScanDropdown(null)}>
-          <BarcodeScanner
-            onClose={() => setScanDropdown(null)}
-            onScan={(barcode) => {
-              if (isInventoryPermalink(barcode.rawValue)) {
-                window.location.href = barcode.rawValue;
-              } else {
-                const params = search.fetcher.generateNewQuery({
-                  query: barcode.rawValue,
-                });
-                navigate(`/inventory/search?${params.toString()}`);
-              }
-            }}
-            buttonPrefix="Search"
-          />
-        </Panel>
       </DropdownButton>
       <DropdownButton
         name="Tags"

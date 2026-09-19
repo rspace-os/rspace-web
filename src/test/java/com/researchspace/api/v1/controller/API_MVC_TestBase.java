@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.controller;
 
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
@@ -19,7 +19,7 @@ import com.researchspace.webapp.controller.MVCTestBase;
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.util.zip.ZipInputStream;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
@@ -164,7 +164,7 @@ public class API_MVC_TestBase extends MVCTestBase {
    * @throws Exception
    */
   protected <T> T getErrorFromJsonResponseBody(MvcResult result, Class<T> clazz) throws Exception {
-    Assert.assertNotNull(result.getResolvedException());
+    Assertions.assertNotNull(result.getResolvedException());
     String content = result.getResponse().getContentAsString();
     return (new ObjectMapper()).readValue(content, clazz);
   }
@@ -190,9 +190,9 @@ public class API_MVC_TestBase extends MVCTestBase {
             .anyMatch(e -> e.toLowerCase().contains(msgFragment.toLowerCase()));
     String concatenatedMsges = error.getErrors().stream().collect(joining(","));
     assertTrue(
+        errorMatch,
         String.format(
-            "Expected '%s' to be present in error messages - %s", msgFragment, concatenatedMsges),
-        errorMatch);
+            "Expected '%s' to be present in error messages - %s", msgFragment, concatenatedMsges));
   }
 
   /**

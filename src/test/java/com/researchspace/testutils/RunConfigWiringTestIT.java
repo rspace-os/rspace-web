@@ -1,6 +1,6 @@
 package com.researchspace.testutils;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.auth.GlobalInitSysadminAuthenticationToken;
@@ -22,9 +22,8 @@ import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -45,17 +44,12 @@ public class RunConfigWiringTestIT extends MVCTestBase {
   @Qualifier("globalInitSysadminRealm")
   private Realm sysadminRealm;
 
-  @BeforeClass
-  public static void BeforeClass() throws Exception {
-    TestRunnerController.ignoreIfFastRun();
-  }
-
   /**
    * Override base-class reset to use a security manager that includes the GlobalInitSysadminRealm.
    * The run-profile security manager may have other realms (e.g. ShiroRealm) that would interfere
    * with GlobalInitSysadminAuthenticationToken authentication.
    */
-  @Before
+  @BeforeEach
   @Override
   public void resetSecurityManager() {
     DefaultSecurityManager sm =

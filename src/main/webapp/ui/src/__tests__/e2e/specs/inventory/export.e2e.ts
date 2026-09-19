@@ -34,6 +34,40 @@ test.describe(`Inventory export`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => 
     expect(await download.text()).toContain(sampleName);
   });
 
+  test(`As a user, I can export an instrument as CSV`, async ({ pageInventory, clientInventory, page }) => {
+    const instrumentName = uniqueName("e2e-export-instrument");
+
+    await clientInventory.createInstrument({ name: instrumentName });
+
+    await page.goto("/inventory/search?resultType=INSTRUMENT");
+    await pageInventory.searchPanel.search(instrumentName);
+    await pageInventory.searchPanel.open(instrumentName);
+
+    const exportDialog = await pageInventory.detailsPanel.openExportDialog();
+    await exportDialog.selectFileType("Single CSV");
+    const job = await exportDialog.export();
+
+    const download = await downloadExport(page, job);
+    expect(await download.text()).toContain(instrumentName);
+  });
+
+  test(`As a user, I can export an instrument template as CSV`, async ({ pageInventory, clientInventory, page }) => {
+    const templateName = uniqueName("e2e-export-instrument-template");
+
+    await clientInventory.createInstrumentTemplate({ name: templateName });
+
+    await page.goto("/inventory/search?resultType=INSTRUMENT_TEMPLATE");
+    await pageInventory.searchPanel.search(templateName);
+    await pageInventory.searchPanel.open(templateName);
+
+    const exportDialog = await pageInventory.detailsPanel.openExportDialog();
+    await exportDialog.selectFileType("Single CSV");
+    const job = await exportDialog.export();
+
+    const download = await downloadExport(page, job);
+    expect(await download.text()).toContain(templateName);
+  });
+
   test(`As a user, I can export all my Inventory data as CSV`, async ({ pageInventory, clientInventory, page }) => {
     const sampleName = uniqueName("e2e-export-all-csv");
     await clientInventory.createSample({ name: sampleName });

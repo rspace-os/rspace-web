@@ -1,26 +1,25 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import type React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import { server } from "@/__tests__/mswServer";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import materialTheme from "../../../../../theme";
 
 const getLinkedByRecords = vi.fn();
 const getPublicLink = vi.fn();
-const useReferencingInventoryItems = vi.fn();
 
 vi.mock("@/modules/workspace/linkedRecords", () => ({
   getLinkedByRecords: (...args: Array<unknown>) => getLinkedByRecords(...args) as unknown,
 }));
 vi.mock("@/modules/workspace/publicLink", () => ({
   getPublicLink: (...args: Array<unknown>) => getPublicLink(...args) as unknown,
-}));
-vi.mock("@/eln/gallery/useReferencingInventoryItems", () => ({
-  default: (...args: Array<unknown>) => useReferencingInventoryItems(...args) as unknown,
 }));
 
 import DocumentSections from "../DocumentSections";
@@ -50,34 +49,32 @@ const baseInfo: WorkspaceRecordInformation = {
 beforeEach(() => {
   getLinkedByRecords.mockReset();
   getPublicLink.mockReset();
-  useReferencingInventoryItems.mockReset();
   // Sensible defaults; individual tests override.
   getLinkedByRecords.mockResolvedValue({ readable: [], privateByOwner: [] });
   getPublicLink.mockResolvedValue(null);
-  useReferencingInventoryItems.mockReturnValue({
-    items: [],
-    loading: false,
-    errorMessage: null,
-  });
+  server.use(
+    http.get("/workspace/getReferencingInventoryItems/:globalId", () => HttpResponse.json({ referencingItems: [] })),
+  );
 });
-
-afterEach(cleanup);
 
 function renderDoc(props: Partial<React.ComponentProps<typeof DocumentSections>> = {}) {
   return render(
     <ThemeProvider theme={materialTheme}>
-      <DocumentSections info={baseInfo} isNotebook={false} {...props} />
+      <QueryClientProvider client={createQueryClient()}>
+        <DocumentSections info={baseInfo} isNotebook={false} {...props} />
+      </QueryClientProvider>
     </ThemeProvider>,
   );
 }
 
-// The public-link sentence is rendered via TransRichText, embedding a rich link in
-// the translated copy; cimode returns the raw key with no tag to embed, so these
-// two tests render against the real English bundle instead.
+// Rich-text translations need the real bundle because cimode returns keys without
+// the tags that embed links.
 async function renderDocWithRealI18n(props: Partial<React.ComponentProps<typeof DocumentSections>> = {}) {
   return renderWithRealI18n(
     <ThemeProvider theme={materialTheme}>
-      <DocumentSections info={baseInfo} isNotebook={false} {...props} />
+      <QueryClientProvider client={createQueryClient()}>
+        <DocumentSections info={baseInfo} isNotebook={false} {...props} />
+      </QueryClientProvider>
     </ThemeProvider>,
     { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
   );
@@ -131,24 +128,25 @@ describe("DocumentSections (structured document)", () => {
     expect(screen.getByText("inventory:fields.link.documentSections.linkedBy.privateDocs")).toBeInTheDocument();
   });
 
-  it("renders related inventory items from the referencing-items hook", () => {
-    useReferencingInventoryItems.mockReturnValue({
-      items: [
-        {
-          globalId: "SA1",
-          name: "Buffer",
-          type: "SAMPLE",
-          relationType: "IsPartOf",
-          permalinkHref: "/globalId/SA1",
-          linkableRecord: {},
-        },
-      ],
-      loading: false,
-      errorMessage: null,
-    });
-    renderDoc();
-    expect(useReferencingInventoryItems).toHaveBeenCalledWith("SD123");
-    const invLink = screen.getByRole("link", { name: "SA1" });
+  it("renders related inventory items returned by the server", async () => {
+    server.use(
+      http.get("/workspace/getReferencingInventoryItems/SD123", () =>
+        HttpResponse.json({
+          referencingItems: [
+            {
+              sourceGlobalId: "SA1",
+              sourceName: "Buffer",
+              sourceType: "SAMPLE",
+              relationType: "IsPartOf",
+            },
+          ],
+        }),
+      ),
+    );
+
+    await renderDocWithRealI18n();
+
+    const invLink = await screen.findByRole("link", { name: "SA1" });
     expect(invLink).toHaveAttribute("href", "/globalId/SA1");
     expect(screen.getByText(/buffer/i)).toBeInTheDocument();
   });
@@ -250,11 +248,7 @@ describe("DocumentSections (notebook)", () => {
   };
 
   function renderNotebook() {
-    return render(
-      <ThemeProvider theme={materialTheme}>
-        <DocumentSections info={notebookInfo} isNotebook={true} />
-      </ThemeProvider>,
-    );
+    return renderDoc({ info: notebookInfo, isNotebook: true });
   }
 
   it("does not render the form/template rows for notebooks", () => {
@@ -269,3 +263,6 @@ describe("DocumentSections (notebook)", () => {
     expect(await screen.findByText("inventory:fields.link.documentSections.sharing.notPublished")).toBeInTheDocument();
   });
 });
+function createQueryClient(): QueryClient {
+  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
+}

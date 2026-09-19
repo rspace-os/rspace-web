@@ -44,7 +44,7 @@
     			hibernate.javax.cache.missing_cache_strategy=create-warn
 			hibernate.search.indexing.plan.synchronization.strategy=sync
     			<!-- Id generation for TABLE-strategy entities: every such entity carries an explicit
-    			     @TableGenerator in rspace-core-model, keyed to its own row in hibernate_sequences.
+    			     @TableGenerator, keyed to its own row in hibernate_sequences.
     			     Generators declared without pkColumnValue segment by the entity's physical table
     			     name (Hibernate defaults prefer_entity_table_as_segment_value=true for
     			     annotation-defined table generators), preserving the one-counter-per-table layout

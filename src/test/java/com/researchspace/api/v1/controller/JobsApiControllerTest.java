@@ -1,10 +1,10 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiExportJobResult;
@@ -19,21 +19,19 @@ import com.researchspace.service.aws.S3ExportUtilities;
 import com.researchspace.testutils.TestFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 
+@ExtendWith(MockitoExtension.class)
 public class JobsApiControllerTest {
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock JobsApiHandler handler;
   @Mock IPropertyHolder props;
   @Mock S3ExportUtilities s3ExportUtils;
@@ -41,14 +39,11 @@ public class JobsApiControllerTest {
   User exporter = TestFactory.createAnyUser("any");
   MockHttpServletResponse response;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
     controller.messages = new MessageSourceUtils(new JsonMessageSource());
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testS3enabledDownloadLinkSuccess() throws BindException, MalformedURLException {

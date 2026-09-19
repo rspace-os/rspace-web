@@ -26,8 +26,8 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -39,7 +39,7 @@ public class InventoryBulkOperationsApiControllerTest extends SpringTransactiona
   private BindingResult mockBindingResult = mock(BindingResult.class);
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createInitAndLoginAnyUser();
     assertTrue(testUser.isContentInitialized());

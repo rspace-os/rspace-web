@@ -1,6 +1,6 @@
 package com.researchspace.export.pdf;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -36,19 +36,17 @@ import java.io.IOException;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.velocity.app.VelocityEngine;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.ResourceLoader;
 
+@ExtendWith(MockitoExtension.class)
 public class ImageRetrieverHelperTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock private ResourceLoader resource;
   @Mock RSChemElementManager chemMgr;
   @Mock EcatImageAnnotationManager imageMgr;
@@ -74,7 +72,7 @@ public class ImageRetrieverHelperTest {
 
   @InjectMocks private ImageRetrieverHelperTSS imgRetrieverTSS;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     textupdater = new RichTextUpdater();
     exporter = TestFactory.createAnyUser("any");
@@ -109,7 +107,6 @@ public class ImageRetrieverHelperTest {
   @Test
   public void testIncludeChemImageResource() throws IOException {
     RSChemElement chemElement = setUpChemElement();
-    setPermissionsToReturn(chemElement, true);
     when(chemMgr.get(2L, config.getExporter())).thenReturn(chemElement);
     String chemLink = textupdater.generateURLStringForRSChemElementLink(2L, 1L, 50, 50);
     assertNotNull(imgRetriever.getImageBytesFromImgSrc(chemLink, config));
@@ -171,7 +168,6 @@ public class ImageRetrieverHelperTest {
     // pdf config ignores annotations, so we want original image or working image...
     // here is working mage
     EcatImage rawimg = TestFactory.createEcatImage(5L);
-    setPermissionsToReturn(rawimg, true);
     annotation.setImageId(rawimg.getId());
     rawimg.setWorkingImage(new ImageBlob(getAnyPngImage()));
     config.setAnnotations(false);
@@ -192,7 +188,9 @@ public class ImageRetrieverHelperTest {
     // nothing returned if permissions return false
     setPermissionsToReturn(annotation, false);
     assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));
-    // throwing auth exception handled as well.
+
+    // authorization failures retrieving the original image also return the fallback image
+    setPermissionsToReturn(annotation, true);
     when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true))
         .thenThrow(AuthorizationException.class);
     assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));

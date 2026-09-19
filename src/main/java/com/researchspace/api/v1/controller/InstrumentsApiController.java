@@ -7,12 +7,17 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
+import com.researchspace.api.v1.model.ApiPidinstImportPost;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import com.researchspace.service.inventory.InventoryIdentifierExternalUpdateService;
+import com.researchspace.service.inventory.PidinstLookupManager;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
@@ -37,6 +42,9 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Autowired private InstrumentApiPostFullValidator instrumentApiPostFullValidator;
   @Autowired private InstrumentApiPutValidator instrumentApiPutValidator;
   @Autowired private InventoryAuditApiManager inventoryAuditMgr;
+  @Autowired private InventoryIdentifierExternalUpdateService externalUpdateService;
+  @Autowired private PidinstLookupManager pidinstLookupMgr;
+  @Autowired private ApiAvailabilityHandler apiHandler;
 
   @Data
   @AllArgsConstructor
@@ -157,8 +165,39 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     instrumentApiMgr.assertUserCanEditInstrument(id, user);
 
     ApiInstrument updated = instrumentApiMgr.updateApiInstrument(incomingInstrument, user);
+    pushExternalMetadataUpdates(updated, user);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
+  }
+
+  /**
+   * Sends the instrument's remapped PIDINST metadata to any provider record registered for it
+   * (RSDEV-1251, ADR 0008).
+   *
+   * <p>Called from the two controller methods that change what a provider holds, and from {@link
+   * InventoryBulkOperationsApiController} once a single-transaction batch of those operations has
+   * committed. Nowhere else: every identifier operation that updates an instrument internally -
+   * register, publish, retract, refresh, template sync - re-enters {@code updateApiInstrument} at
+   * the manager level, below this seam, so none of them can trigger a push, let alone a recursive
+   * one.
+   *
+   * <p>Package-private for that bulk caller. The manager is transactional and a controller is not,
+   * so on a single-record request the edit has committed by this point and the provider call runs
+   * outside any transaction. That does <strong>not</strong> hold when a bulk batch re-enters these
+   * methods with rollbackOnError, which runs the whole batch in one transaction; the service
+   * declines a push from inside one, and the bulk controller pushes after it commits instead.
+   *
+   * <p>Guarded rather than allowed to propagate: the instrument is already saved, and a provider
+   * outage or a bug in the push must not turn that into an error response. The failure is reported
+   * on the identifier in the response body by the service itself.
+   */
+  void pushExternalMetadataUpdates(ApiInstrument updated, User user) {
+    try {
+      externalUpdateService.pushMetadataUpdates(updated, user);
+    } catch (RuntimeException e) {
+      log.error(
+          "Could not update the external PIDINST metadata of instrument {}", updated.getId(), e);
+    }
   }
 
   @Override
@@ -203,6 +242,11 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     instrumentApiMgr.assertUserCanTransferInstrument(id, user);
 
     ApiInstrument updated = instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, user);
+    // A transfer really does change what the provider holds: RspaceToExternalProviderAdapterImpl
+    // maps ownerContact from the record owner's email unconditionally, and ownerName from the same
+    // owner unless the Owner field overrides it. Left unpushed, the registered record keeps the
+    // previous owner's address, which is exactly the drift this ticket exists to stop.
+    pushExternalMetadataUpdates(updated, user);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
   }
@@ -215,6 +259,21 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     ApiInstrument copy = instrumentApiMgr.duplicateInstrument(id, user);
     buildAndAddInventoryRecordLinks(copy);
     return copy;
+  }
+
+  @Override
+  public ApiInstrument importPidinst(
+      @RequestBody @Valid ApiPidinstImportPost post,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+    throwBindExceptionIfErrors(errors);
+    apiHandler.assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
+    ApiInstrument created =
+        pidinstLookupMgr.importInstrument(post.getPid(), post.getNewTargetLocation(), user);
+    // no external metadata push: the identifier is linked, and the service skips it anyway
+    buildAndAddInventoryRecordLinks(created);
+    return created;
   }
 
   @Override

@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.lowagie.text.pdf.PdfReader;
 import com.researchspace.Constants;
@@ -19,30 +19,30 @@ import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.SearchTestUtils;
+import java.io.File;
 import java.io.IOException;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
 
-  public @Rule TemporaryFolder tempExportFolder = new TemporaryFolder();
+  @TempDir public File tempExportFolder;
 
   private @Autowired ExportImport exportImportMgr;
   private @Autowired InternalFileStore fStore;
   private @Autowired RecordDeletionManager delMgr;
   private @Autowired RecordManager recordMgr;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -139,7 +139,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     reader = new PdfReader(ecatDocumentFile.getFileUri());
     int pages = reader.getNumberOfPages();
     assertTrue(
-        "There were " + pages + " pages", pages >= NUMBER_OF_PAGES_IN_INITIALIZED_USER_WORK_EXPORT);
+        pages >= NUMBER_OF_PAGES_IN_INITIALIZED_USER_WORK_EXPORT, "There were " + pages + " pages");
   }
 
   @Test
@@ -198,7 +198,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     reader = new PdfReader(ecatDocumentFile.getFileUri());
     int pages = reader.getNumberOfPages();
     assertTrue(
-        "There were " + pages + " pages", pages >= NUMBER_OF_PAGES_IN_INITIALIZED_USER_WORK_EXPORT);
+        pages >= NUMBER_OF_PAGES_IN_INITIALIZED_USER_WORK_EXPORT, "There were " + pages + " pages");
   }
 
   @Test

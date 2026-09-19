@@ -1989,11 +1989,8 @@ function initGalleryFileUpload() {
       if (data.fileInput.hasClass("fileReplaceInput")) {
         // retrieve latest attachment details and update current view
         _updateAttachedMediaFileWithLastestVersionDetails(data.fileInput.attr('mediaFileId'));
-        var isGalleryDialog = $("#galleryContentDiv").hasClass('ui-dialog-content') && $("#galleryContentDiv").dialog('isOpen');
         var isRecordInfoDialog = $("#recordInfoDialog").hasClass('ui-dialog-content') && $("#recordInfoDialog").dialog('isOpen');
-        if (isGalleryDialog) {
-          gallery();
-        } else if (isRecordInfoDialog) {
+        if (isRecordInfoDialog) {
           $("#recordInfoDialog").dialog("close");
         }
         return;

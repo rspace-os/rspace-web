@@ -9,6 +9,7 @@ export const ID_TOKEN_KEY = "id_token";
 export const TOKEN_EXPIRY_BUFFER_SECONDS = 300;
 
 const JWT_TOKEN_PATTERN = /^.+\..+\..+$/;
+let pendingOauthTokenRequest: Promise<string> | null = null;
 
 function getSessionStorage(): Storage | null {
   try {
@@ -40,6 +41,16 @@ export function clearStoredToken(): void {
   } catch {
     // Ignore storage access failures in non-browser or restricted environments.
   }
+}
+
+/**
+ * @deprecated For new usages, use the TanStack Query `useOauthTokenQuery` hook instead.
+ */
+export function fetchOauthToken(fetchToken: () => Promise<string>): Promise<string> {
+  pendingOauthTokenRequest ??= fetchToken().finally(() => {
+    pendingOauthTokenRequest = null;
+  });
+  return pendingOauthTokenRequest;
 }
 
 export function secondsToExpiry(token: string): number {

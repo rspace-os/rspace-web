@@ -55,7 +55,7 @@ Default target: `http://localhost:8080` (local dev stack). Override:
 RSPACE_BASE_URL=https://pangolin8086.researchspace.com pnpm run test-e2e
 ```
 
-Tests that mutate instance-global state (`flowIgsnConfig`, `dynamicUserTest`,
+Tests that mutate instance-global state (`flowIgsnConfig`, `flowPidinstDataciteConfig`, `flowPidinstB2instConfig`, `dynamicUserTest`,
 anything creating sysadmin-owned accounts) refuse to run against a non-local
 `RSPACE_BASE_URL` — those mutations have no teardown/restore step and would
 corrupt a shared instance. Set `E2E_ALLOW_GLOBAL_MUTATIONS=true` only if you
@@ -97,6 +97,21 @@ File suffix drives `testMatch` in the config — wrong suffix = silently never r
 Authentication is provided by each project's `storageState`. Use
 `pageLogin`/`pageWorkspace` directly only when login is the behaviour under
 test or when a deliberately unauthenticated context is required.
+
+## Must: deleting a dynamic user leaves a dangling reference unless you release it
+
+`users.deleteUser(username)` removes the account from RSpace, but `clientSysadmin` still holds its
+id and will try to disable it at teardown — a disable-by-id against a user that's already gone,
+which the backend answers with an uncaught 500, not a not-found. Delete and release together:
+
+```ts
+import { deleteDynamicUser } from "@/__tests__/e2e/deleteDynamicUser";
+await deleteDynamicUser(users, clientSysadmin, username); // deletes + releases the id, together
+```
+
+Teardown cleanup failures aren't just logged anymore, either: an unexpected one now **fails the
+test**, even one that otherwise passed. Deliberate — a silently-swallowed cleanup failure used to
+let leaked/broken accounts pass CI invisibly.
 
 ## Must: import style — relative within a folder, `@/` across feature folders
 
@@ -261,13 +276,18 @@ mutate persistent account-level state which affects later rendering.
 
 It only resizes the viewport — it can't set user agent, touch support,
 `isMobile`, or device pixel ratio, all of which real mobile browsers set and
-which some responsive code paths key off. For genuine mobile emulation use the
-shared device preset with `test.use`:
+which some responsive code paths key off.
+
+The `mobile` Playwright project (see `playwright-e2e.config.ts`) already
+applies the shared device preset from `viewports.ts` to every test it runs,
+so genuine mobile emulation only requires opting a spec into that project by
+tagging its top-level `describe` with `tags.MOBILE`:
 
 ```ts
-test.describe("mobile", () => {
-  test.use(MOBILE_DEVICE);
-  // tests tagged with tags.MOBILE
+import { tags } from "@/__tests__/e2e/tags";
+
+test.describe("Gallery", { tag: tags.MOBILE }, () => {
+  // ...
 });
 ```
 

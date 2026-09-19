@@ -3,7 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,7 +43,7 @@ class InventoryLinkManagerImplReferencingTest {
     actor = new User("viewer");
     // these tests cover the source query, so the target read-permission gate is open;
     // InventoryLinkManagerImplUnitTest covers the gate itself
-    lenient().when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
   }
 
   @Test
@@ -76,20 +76,21 @@ class InventoryLinkManagerImplReferencingTest {
     verify(linkDao).findReferencingLinkFields(GlobalIdPrefix.SA, 42L);
   }
 
-  private InventoryRecord parent(String globalIdString, String name, boolean deleted) {
-    InventoryRecord rec = mock(InventoryRecord.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
-    org.mockito.Mockito.lenient()
-        .when(rec.getOid())
-        .thenReturn(new com.researchspace.model.core.GlobalIdentifier(globalIdString));
-    org.mockito.Mockito.lenient().when(rec.getName()).thenReturn(name);
-    org.mockito.Mockito.lenient().when(rec.isDeleted()).thenReturn(deleted);
+  private InventoryRecord parent(boolean deleted) {
+    InventoryRecord rec = mock(InventoryRecord.class, RETURNS_DEEP_STUBS);
+    when(rec.isDeleted()).thenReturn(deleted);
     return rec;
+  }
+
+  private void stubSourceIdentity(InventoryRecord record, String globalId, String name) {
+    when(record.getOid()).thenReturn(new com.researchspace.model.core.GlobalIdentifier(globalId));
+    when(record.getName()).thenReturn(name);
   }
 
   private ExtraLinkField extraFieldRow(InventoryRecord rec, InventoryLink link) {
     ExtraLinkField field = mock(ExtraLinkField.class);
-    org.mockito.Mockito.lenient().when(field.getInventoryRecord()).thenReturn(rec);
-    org.mockito.Mockito.lenient().when(field.getLink()).thenReturn(link);
+    when(field.getInventoryRecord()).thenReturn(rec);
+    when(field.getLink()).thenReturn(link);
     return field;
   }
 
@@ -105,8 +106,9 @@ class InventoryLinkManagerImplReferencingTest {
   void buildsRowsOnlyForSourcesTheActorCanRead() {
     // inverting or dropping this filter would leak names/ids of items the
     // caller may not read into the back-links panels
-    InventoryRecord readable = parent("SA10", "visible sample", false);
-    InventoryRecord hidden = parent("SA11", "secret sample", false);
+    InventoryRecord readable = parent(false);
+    InventoryRecord hidden = parent(false);
+    stubSourceIdentity(readable, "SA10", "visible sample");
     InventoryLink linkA = linkWith("References", 2L, new Date(1700000000000L));
     InventoryLink linkB = linkWith("Cites", null, null);
     // build the field mocks BEFORE stubbing linkDao: stubbing inside thenReturn
@@ -131,7 +133,7 @@ class InventoryLinkManagerImplReferencingTest {
 
   @Test
   void skipsSoftDeletedSourceRecords() {
-    InventoryRecord deleted = parent("SA12", "binned sample", true);
+    InventoryRecord deleted = parent(true);
     ExtraLinkField row = extraFieldRow(deleted, linkWith("References", null, null));
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SD, 123L)).thenReturn(List.of(row));
 
@@ -140,7 +142,8 @@ class InventoryLinkManagerImplReferencingTest {
 
   @Test
   void toleratesRowWithoutModificationDate() {
-    InventoryRecord rec = parent("SA13", "no date", false);
+    InventoryRecord rec = parent(false);
+    stubSourceIdentity(rec, "SA13", "no date");
     ExtraLinkField row = extraFieldRow(rec, linkWith("References", null, null));
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SD, 123L)).thenReturn(List.of(row));
     when(permissionUtils.canUserReadInventoryRecord(rec, actor)).thenReturn(true);
@@ -156,11 +159,12 @@ class InventoryLinkManagerImplReferencingTest {
     // template-defined link fields are first-class links; a sample linking to
     // the target through one must appear in the back-references like an
     // extra-field link does
-    InventoryRecord sample = parent("SA20", "templated sample", false);
+    InventoryRecord sample = parent(false);
+    stubSourceIdentity(sample, "SA20", "templated sample");
     InventoryLink link = linkWith("IsPartOf", null, null);
     InventoryLinkField structured = mock(InventoryLinkField.class);
-    org.mockito.Mockito.lenient().when(structured.getInventoryRecord()).thenReturn(sample);
-    org.mockito.Mockito.lenient().when(structured.getLink()).thenReturn(link);
+    when(structured.getInventoryRecord()).thenReturn(sample);
+    when(structured.getLink()).thenReturn(link);
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SD, 123L))
         .thenReturn(java.util.Collections.emptyList());
     when(linkDao.findReferencingStructuredLinkFields(GlobalIdPrefix.SD, 123L))

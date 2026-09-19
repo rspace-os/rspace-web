@@ -5,7 +5,6 @@ import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/rspace/workspace";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import Alerts from "./Alerts/Alerts";
-import { DialogBoundary } from "./DialogBoundary";
 import { ShareDialog } from "./ShareDialog";
 
 export function NoPreviousShares() {
@@ -13,9 +12,7 @@ export function NoPreviousShares() {
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Portal>
         <Alerts>
-          <DialogBoundary>
-            <ShareDialog open onClose={() => {}} globalIds={["SD1"]} names={["Sample Document 1"]} />
-          </DialogBoundary>
+          <ShareDialog open onClose={() => {}} globalIds={["SD1"]} names={["Sample Document 1"]} />
         </Alerts>
       </Portal>
     </ThemeProvider>
@@ -27,9 +24,7 @@ export function SharedWithAnotherUser() {
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Portal>
         <Alerts>
-          <DialogBoundary>
-            <ShareDialog open onClose={() => {}} globalIds={["SD2"]} names={["A shared document"]} />
-          </DialogBoundary>
+          <ShareDialog open onClose={() => {}} globalIds={["SD2"]} names={["A shared document"]} />
         </Alerts>
       </Portal>
     </ThemeProvider>
@@ -41,9 +36,7 @@ export function SharedWithAGroup() {
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Portal>
         <Alerts>
-          <DialogBoundary>
-            <ShareDialog open onClose={() => {}} globalIds={["SD3"]} names={["Another shared document"]} />
-          </DialogBoundary>
+          <ShareDialog open onClose={() => {}} globalIds={["SD3"]} names={["Another shared document"]} />
         </Alerts>
       </Portal>
     </ThemeProvider>
@@ -55,9 +48,7 @@ export function SharedSnippetWithAGroup() {
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Portal>
         <Alerts>
-          <DialogBoundary>
-            <ShareDialog open onClose={() => {}} globalIds={["SD3"]} names={["Another shared snippet"]} isSnippet />
-          </DialogBoundary>
+          <ShareDialog open onClose={() => {}} globalIds={["SD3"]} names={["Another shared snippet"]} isSnippet />
         </Alerts>
       </Portal>
     </ThemeProvider>
@@ -69,14 +60,12 @@ export function MultipleDocuments() {
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Portal>
         <Alerts>
-          <DialogBoundary>
-            <ShareDialog
-              open
-              onClose={() => {}}
-              globalIds={["SD2", "SD3"]}
-              names={["A shared document", "Another shared document"]}
-            />
-          </DialogBoundary>
+          <ShareDialog
+            open
+            onClose={() => {}}
+            globalIds={["SD2", "SD3"]}
+            names={["A shared document", "Another shared document"]}
+          />
         </Alerts>
       </Portal>
     </ThemeProvider>
@@ -88,9 +77,7 @@ export function DocumentThatHasBeenSharedIntoANotebook() {
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Portal>
         <Alerts>
-          <DialogBoundary>
-            <ShareDialog open onClose={() => {}} globalIds={["SD4"]} names={["A shared notebook document"]} />
-          </DialogBoundary>
+          <ShareDialog open onClose={() => {}} globalIds={["SD4"]} names={["A shared notebook document"]} />
         </Alerts>
       </Portal>
     </ThemeProvider>
@@ -110,9 +97,7 @@ export function SharedWithAControlledOpenState() {
           <button type="button" onClick={() => setOpen(false)}>
             {"Close share dialog"}
           </button>
-          <DialogBoundary>
-            <ShareDialog open={open} onClose={() => setOpen(false)} globalIds={["SD1"]} names={["Sample Document 1"]} />
-          </DialogBoundary>
+          <ShareDialog open={open} onClose={() => setOpen(false)} globalIds={["SD1"]} names={["Sample Document 1"]} />
         </Alerts>
       </Portal>
     </ThemeProvider>
@@ -136,14 +121,7 @@ export function SharedWithAnalyticsCapture() {
               },
             }}
           >
-            <DialogBoundary>
-              <ShareDialog
-                open={open}
-                onClose={() => setOpen(false)}
-                globalIds={["SD1"]}
-                names={["Sample Document 1"]}
-              />
-            </DialogBoundary>
+            <ShareDialog open={open} onClose={() => setOpen(false)} globalIds={["SD1"]} names={["Sample Document 1"]} />
           </AnalyticsContext.Provider>
         </Alerts>
       </Portal>

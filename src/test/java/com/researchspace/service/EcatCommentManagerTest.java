@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
@@ -9,9 +9,9 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ public class EcatCommentManagerTest extends SpringTransactionalTest {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IllegalAddChildOperation {
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
     initialiseContentWithExampleContent(user);
@@ -33,7 +33,7 @@ public class EcatCommentManagerTest extends SpringTransactionalTest {
     logoutAndLoginAs(user);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     RSpaceTestUtils.logout();
     super.tearDown();

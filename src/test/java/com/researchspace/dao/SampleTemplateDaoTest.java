@@ -12,18 +12,18 @@ import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SampleTemplateDaoTest extends SpringTransactionalTest {
 
-  @Before
+  @BeforeEach
   public void setUp() {
     sampleTemplateDao.resetDefaultTemplateOwner();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
     // don't leak an owner cached during this (rolled-back) transaction into later tests
@@ -69,7 +69,7 @@ public class SampleTemplateDaoTest extends SpringTransactionalTest {
     // On a fresh DB the test user may itself be the default-templates owner (it was the first user
     // initialised and createSampleTemplates() assigned the built-ins to it). On an aged DB an
     // older user owns them. Either case must pass.
-    // @Before already called resetDefaultTemplateOwner(), so the cache is clear.
+    // @BeforeEach already called resetDefaultTemplateOwner(), so the cache is clear.
     String defaultOwner = sampleTemplateDao.getDefaultTemplatesOwner();
     // defaultOwner may be null (no templates yet) or any username – do NOT assume it differs
     // from user.getUsername().

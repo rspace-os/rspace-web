@@ -90,8 +90,9 @@ export type WorkspaceGetRecordInformationResponse = v.InferOutput<typeof Workspa
 /**
  * A single row from `getLinkedByRecords` / gallery `getLinkedDocuments`. The server
  * returns the full {@link WorkspaceRecordInformation} for records the caller may read,
- * but for records the caller cannot read it returns ONLY the owner's name/username (no
- * `id`/`oid`). The presence of `id` is therefore the readable-vs-private discriminator.
+ * but for records the caller cannot read it returns ONLY the owner's full name (no
+ * `id`/`oid`, and no `ownerUsername` since usernames are login identifiers). The
+ * presence of `id` is therefore the readable-vs-private discriminator.
  */
 export const WorkspaceLinkedRecordSchema = v.objectWithRest(
   {
@@ -118,6 +119,7 @@ export type WorkspaceLinkedRecordsResponse = v.InferOutput<typeof WorkspaceLinke
 
 /** An ELN record the caller can read, reduced to what a link row renders. */
 export type ReadableLinkedRecord = {
+  id: number;
   globalId: string;
   name: string;
   ownerFullName: string | null;
