@@ -221,6 +221,26 @@ public class FormDaoTest extends BaseDaoTestCase {
   }
 
   @Test
+  public void userFormsOnlyWithUnrelatedPermissions() throws InterruptedException {
+    User owner = createAndSaveUserWithNoPermissions("any");
+    owner.addPermission(parser.resolvePermission("FORM:READ"));
+    // a real user carries permissions in other domains too; those are skipped when the form
+    // query is built, so nothing they contribute may be left behind in it
+    owner.addPermission(parser.resolvePermission("RECORD:READ"));
+    owner.addPermission(parser.resolvePermission("COMMS:READ"));
+    setUpDBWith4Forms(owner);
+    flushDatabaseState();
+
+    FormSearchCriteria fsc = new FormSearchCriteria();
+    fsc.setIncludeSystemForm(false);
+    fsc.setInUserMenu(false);
+    fsc.setPublishedOnly(false);
+    fsc.setUserFormsOnly(true);
+
+    assertEquals(4, countReadableForms(owner, fsc, getAllPgCrit()));
+  }
+
+  @Test
   public void testByPermission() throws InterruptedException {
     User user = createAndSaveUserWithNoPermissions("any");
 
