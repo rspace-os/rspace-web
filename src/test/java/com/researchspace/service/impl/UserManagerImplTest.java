@@ -51,6 +51,8 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   public void setUp() throws Exception {
     ReflectionTestUtils.setField(
         userManager, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ReflectionTestUtils.setField(userManager, "communityDao", communityDao);
+    ReflectionTestUtils.setField(userManager, "analyticsManager", analyticsManager);
   }
 
   @Test

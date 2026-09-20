@@ -13,7 +13,7 @@ import com.researchspace.model.User;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import javassist.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
