@@ -211,7 +211,6 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
               if (instrumentField.isOptionsStoringField()) {
                 instrumentField.setSelectedOptions(Arrays.asList(value));
               } else if (ApiFieldType.LINK.equals(instrumentField.getType())) {
-                // see CsvSampleImporter: the absent-column sentinel is no link, not a bad one
                 if (!InventoryItemCsvExporter.isAbsentCsvValue(value)) {
                   instrumentField.setLink(linkParser.parse(value));
                 }

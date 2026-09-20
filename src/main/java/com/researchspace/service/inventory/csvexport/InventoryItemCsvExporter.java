@@ -40,8 +40,6 @@ public abstract class InventoryItemCsvExporter {
    * the row does not have. A multi-record export gives every row the union of all columns, so an
    * extra-field or per-template column carries the sentinel on every unrelated row; a reader that
    * took it for real data would not survive the round trip its own export produced.
-   *
-   * <p>Recogniser kept beside the value it recognises, so the two cannot drift apart.
    */
   public static boolean isAbsentCsvValue(String value) {
     return StringUtils.isBlank(value) || CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY.equals(value.trim());
@@ -128,8 +126,6 @@ public abstract class InventoryItemCsvExporter {
       return "";
     }
     String versionSuffix = link.getVersionPin() == null ? "" : "v" + link.getVersionPin();
-    // one home for the /globalId/ segment and the server-URL normalisation, shared with the
-    // importer that has to recognise this cell again: a second copy could disagree
     return InventoryUrls.globalIdPageUrl(
             properties.getServerUrl(), link.getTargetGlobalId() + versionSuffix)
         .map(url -> link.getRelationType() + " " + url)

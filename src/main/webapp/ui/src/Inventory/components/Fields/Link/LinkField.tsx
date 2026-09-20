@@ -85,8 +85,8 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   // CSV-imported dangling link, RSDEV-1354) is reported as deleted=true, so
   // it shows "Target deleted" (ADR-0002 amendment).
   const noAccess = targetSummary?.readable === false && !targetIsInventory;
-  // a target that never existed here resolves to a summary with no name or type
-  // (RSDEV-1354): a trashed inventory item still reports both
+  // a trashed inventory item still reports its name and type; one that never
+  // existed here reports neither
   const targetNeverExisted = targetDeleted && targetSummary?.name == null && targetSummary?.type == null;
   // deleted inventory items live on in the trash and their viewer works, so
   // only deleted or unreadable ELN targets lose Open (their routes are just
