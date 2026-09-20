@@ -25,7 +25,6 @@ type ContextActionsArgs = {
   onSelectOptions?: Array<SplitButtonOption>;
   menuID: (typeof menuIDs)[keyof typeof menuIDs];
   basketSearch: boolean;
-  /** inventory.operations.available is ALLOWED. Seeded DENIED, so Process is off by default. */
   processAvailable: boolean;
 };
 

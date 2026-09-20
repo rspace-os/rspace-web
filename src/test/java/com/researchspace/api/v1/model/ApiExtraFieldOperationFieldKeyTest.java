@@ -8,12 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.inventory.field.ExtraTextField;
 import org.junit.jupiter.api.Test;
 
-/**
- * {@code operationFieldKey} identifies the field a PREVIOUS run of an operation generated. Resolved
- * field names interpolate user input and are localized, so matching on the name is unreliable
- * across locales; the key travels explicitly instead, is persisted and returned on GET, and is
- * read-only on the API - only the server's request builder sets one.
- */
 class ApiExtraFieldOperationFieldKeyTest {
 
   private final ObjectMapper mapper = new ObjectMapper();
@@ -54,8 +48,6 @@ class ApiExtraFieldOperationFieldKeyTest {
 
   @Test
   void aCopiedFieldKeepsItsKey() {
-    // Provenance travels with a copy, so a sample created from a template that carries an
-    // operation-generated field is still recognised by a later run of that operation.
     ExtraTextField original = new ExtraTextField();
     original.setId(3L);
     original.setName("Passage number");

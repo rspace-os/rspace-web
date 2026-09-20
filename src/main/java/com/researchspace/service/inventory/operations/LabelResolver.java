@@ -5,7 +5,6 @@ import java.util.Locale;
 import java.util.Map;
 import org.springframework.context.MessageSource;
 
-/** Resolves an i18n key to a display name, interpolating args as ICU MessageFormat. */
 @FunctionalInterface
 public interface LabelResolver {
 
@@ -16,10 +15,9 @@ public interface LabelResolver {
   }
 
   /**
-   * Reads the pattern from the {@code inventory:} catalog, falling back to the key itself when
-   * missing, and ICU-formats it only when args are supplied - an unconditional format() would
-   * mangle a literal apostrophe in an argument-free name, since ICU MessageFormat treats it as an
-   * escape character.
+   * ICU-formats the pattern only when args are supplied: an unconditional format() would mangle a
+   * literal apostrophe in an argument-free name, since ICU MessageFormat treats it as an escape
+   * character.
    */
   static LabelResolver fromMessageSource(MessageSource messages, Locale locale) {
     return (key, args) -> {

@@ -8,8 +8,6 @@ import type { InventoryOperation } from "../operationsConfig";
 import type { OperationInputs } from "../types";
 import { operations } from "./testOperations";
 
-// Stub UnitSelect (real one reads the MobX unitStore) with a native <select> that exposes its
-// disabled state and plays a chosen unitId back through handleChange.
 vi.mock("@/components/Inputs/UnitSelect", () => ({
   default: ({
     disabled,
@@ -82,6 +80,14 @@ const nameOperation = {
   effect: { ...operation.effect, processNameFrom: "processName", nameFrom: "sampleName" },
 } as unknown as InventoryOperation;
 
+/** The derive operation reshaped into a single temperature input, which is all these tests read. */
+const tempOp = (bounds: { minCelsius?: number; maxCelsius?: number }): InventoryOperation =>
+  ({
+    ...operation,
+    inputs: [{ key: "storageTemp", type: "temperature", labelKey: "operations.fields.storageTemp", ...bounds }],
+    effect: { ...operation.effect, storageTempFrom: "storageTemp" },
+  }) as unknown as InventoryOperation;
+
 describe("OperationDetailsStep", () => {
   it("renders the quantity unit dropdowns enabled (user can pick the unit)", () => {
     render(
@@ -139,8 +145,6 @@ describe("OperationDetailsStep", () => {
   });
 
   it("bounds the count input to whole numbers within the definition's own min and max", () => {
-    // Driven by the real aliquot definition, not a hand-written fixture, so a future drift between
-    // the config's max and this cap would fail here.
     const aliquot = operations.find((o) => o.key === "aliquot");
     if (!aliquot) throw new Error("the aliquot definition must exist in operationsConfig");
     const countInput = aliquot.inputs.find((i) => i.key === "count");
@@ -257,11 +261,7 @@ describe("OperationDetailsStep", () => {
   });
 
   it("shows an error on the temperature field when it exceeds the configured maximum", () => {
-    const cryoOp = {
-      ...operation,
-      inputs: [{ key: "storageTemp", type: "temperature", labelKey: "operations.fields.storageTemp", maxCelsius: -18 }],
-      effect: { ...operation.effect, storageTempFrom: "storageTemp" },
-    } as unknown as InventoryOperation;
+    const cryoOp = tempOp({ maxCelsius: -18 });
     const { rerender } = render(
       <OperationDetailsStep
         operation={cryoOp}
@@ -284,11 +284,7 @@ describe("OperationDetailsStep", () => {
   });
 
   it("shows an error on the temperature field when it is below the configured minimum", () => {
-    const reviveOp = {
-      ...operation,
-      inputs: [{ key: "storageTemp", type: "temperature", labelKey: "operations.fields.storageTemp", minCelsius: 4 }],
-      effect: { ...operation.effect, storageTempFrom: "storageTemp" },
-    } as unknown as InventoryOperation;
+    const reviveOp = tempOp({ minCelsius: 4 });
     const { rerender } = render(
       <OperationDetailsStep
         operation={reviveOp}
@@ -418,9 +414,6 @@ describe("OperationDetailsStep (amount modes)", () => {
   });
 
   it("flags any positive per-origin amount for an origin whose quantity was never set", () => {
-    // A subsample whose quantity is null holds nothing (getValue reads null as 0), so 1 ml from it
-    // is over-removal; the unit select still gets a category (the default ml unit) so the field
-    // renders rather than crashing.
     const unset = { globalId: "SS9", name: "Vial Z", quantity: null } as unknown as SubSampleModel;
     renderPool({
       amountMode: "perSubsample",
@@ -479,11 +472,7 @@ describe("OperationDetailsStep count errors and temperature unit", () => {
   });
 
   it("stores a typed temperature in Celsius (unit 8) without clamping a sub-zero value", () => {
-    const cryoOp = {
-      ...operation,
-      inputs: [{ key: "storageTemp", type: "temperature", labelKey: "operations.fields.storageTemp", maxCelsius: -18 }],
-      effect: { ...operation.effect, storageTempFrom: "storageTemp" },
-    } as unknown as InventoryOperation;
+    const cryoOp = tempOp({ maxCelsius: -18 });
     const onChange = vi.fn();
     render(
       <OperationDetailsStep
@@ -499,8 +488,6 @@ describe("OperationDetailsStep count errors and temperature unit", () => {
 });
 
 describe("OperationDetailsStep inline field errors", () => {
-  // Each predicate below is unit-tested in operationValidation.test.ts; what was untested is that
-  // its outcome reaches the FIELD, and that the four-way helper-text precedence picks the right one.
   const renderWith = (props: Partial<React.ComponentProps<typeof OperationDetailsStep>>) =>
     render(
       <OperationDetailsStep
@@ -526,22 +513,8 @@ describe("OperationDetailsStep inline field errors", () => {
   });
 
   it("prefers the unstorable-temperature message over the out-of-range one on the same field", () => {
-    // -300 is below absolute zero AND below the configured minimum: the precedence chain puts
-    // storageTempInvalid first, because a value the backend cannot store at all is the more
-    // specific complaint.
-    const reviveOp = {
-      ...operation,
-      inputs: [
-        {
-          key: "storageTemp",
-          type: "temperature",
-          labelKey: "operations.fields.storageTemp",
-          minCelsius: 4,
-          maxCelsius: 120,
-        },
-      ],
-      effect: { ...operation.effect, storageTempFrom: "storageTemp" },
-    } as unknown as InventoryOperation;
+    // -300 is below absolute zero AND below the configured minimum of 4.
+    const reviveOp = tempOp({ minCelsius: 4, maxCelsius: 120 });
     render(
       <OperationDetailsStep
         operation={reviveOp}
@@ -555,14 +528,8 @@ describe("OperationDetailsStep inline field errors", () => {
   });
 });
 
-// Editing a sub-zero temperature (cryopreserve runs at -18 °C or colder) means passing through a
-// lone minus sign, both when clearing the digits of an existing value and when typing a new one.
 describe("OperationDetailsStep sub-zero temperature entry", () => {
-  const cryoOp = {
-    ...operation,
-    inputs: [{ key: "storageTemp", type: "temperature", labelKey: "operations.fields.storageTemp", maxCelsius: -18 }],
-    effect: { ...operation.effect, storageTempFrom: "storageTemp" },
-  } as unknown as InventoryOperation;
+  const cryoOp = tempOp({ maxCelsius: -18 });
 
   // The wizard feeds every edit straight back down as new props, so the field has to survive that
   // round trip rather than only hold the sign in its own state.

@@ -3,22 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import ContextDialog from "../ContextDialog";
 
-// ContextDialog only reads uiStore.isTouchDevice for its paper positioning.
 vi.mock("@/stores/use-stores", () => ({
   default: () => ({ uiStore: { isTouchDevice: false } }),
 }));
 
 /**
- * Clicks the backdrop through the full pointer sequence.
- *
- * `fireEvent.click` dispatches one synthetic click and nothing else, but MUI's Dialog decides
- * whether a backdrop click closes it by tracking where the MOUSEDOWN landed, so that a drag ending
- * on the backdrop does not close the dialog. Driving it with userEvent exercises the sequence the
- * component was actually built around, instead of a partial one that could break on an MUI upgrade
- * with no product bug, or stay green while real clicks stopped working.
- *
- * The class selector stays: the backdrop is aria-hidden presentation with no role or name, so there
- * is nothing semantic to query it by.
+ * MUI's Dialog decides whether a backdrop click closes it by tracking where the mousedown landed,
+ * so this needs the full pointer sequence, not a lone synthetic click. The class selector stays:
+ * the backdrop is aria-hidden presentation with no role or name to query it by.
  */
 async function clickBackdrop() {
   const backdrop = document.querySelector(".MuiBackdrop-root");
@@ -50,9 +42,6 @@ describe("ContextDialog", () => {
   });
 
   it("still closes on Escape when disableBackdropClick is set", async () => {
-    // The guard narrows on reason === "backdropClick" precisely so Escape keeps working; written as
-    // `if (disableBackdropClick) return;` it would break Escape too, and both backdrop tests above
-    // would still pass.
     const onClose = vi.fn();
     render(
       <ContextDialog open onClose={onClose} disableBackdropClick>

@@ -35,14 +35,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
-/**
- * End-to-end coverage for the RSDEV-1231 operation endpoints (POST /operations/{operation}). A
- * single POST carries the origins with their amounts and the values the user typed; the server
- * builds one new Sample parenting N subsamples from them and the operation's own rules, puts a
- * provenance link back to each origin on the new Sample, and reduces each origin subsample by the
- * amount taken from it (never increasing it), all in one transaction. The live-state rules of that
- * transaction are exercised here against a real database. See DevDocs/adr/0011.
- */
 @WebAppConfiguration
 public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
@@ -63,18 +55,12 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     enableOperations();
   }
 
-  /**
-   * RSDEV-1231 seeds {@code inventory.operations.available} DENIED, so each test turns it on first:
-   * what is under test in this class is the operation, not the toggle.
-   */
   private void enableOperations() {
     systemPropertyManager.save(
         SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE,
         HierarchicalPermission.ALLOWED,
         getSysAdminUser());
   }
-
-  // --- request bodies, in the shape the wizard sends ---
 
   private ResultActions post(String operation, String operationJson) throws Exception {
     return mockMvc.perform(
@@ -86,7 +72,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     return "{\"numericValue\":" + value + ",\"unitId\":" + unitId + "}";
   }
 
-  /** One origin; a null amountTakenJson leaves the property absent, as Passage and Destroy send. */
   private static String originJson(ApiSubSample origin, String amountTakenJson) {
     return "{\"globalId\":\""
         + origin.getGlobalId()
@@ -95,7 +80,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         + "}";
   }
 
-  /** The fields every creating operation carries. */
   private static String creatingFields(String sampleName, int count, String eachAmountJson) {
     return "\"sampleName\":\""
         + sampleName
@@ -105,7 +89,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         + eachAmountJson;
   }
 
-  /** topLevelExtras is appended verbatim, e.g. {@code ,"templateId":5}. */
   private static String singleOriginBody(
       String originJson, String fieldsJson, String topLevelExtras) {
     return "{\"origin\":" + originJson + "," + fieldsJson + topLevelExtras + "}";
@@ -115,7 +98,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     return "{\"origins\":[" + originsJson + "]," + fieldsJson + "}";
   }
 
-  /** A Derive taking the given amount from the origin into {@code count} children of eachAmount. */
   private static String deriveJson(
       ApiSubSample origin,
       String amountTakenJson,
@@ -137,7 +119,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         topLevelExtras);
   }
 
-  /** An Aliquot taking the given amount, in the origin's own unit, into one child of the same. */
   private static String aliquotTakingJson(ApiSubSample origin, String amount) {
     int unitId = origin.getQuantity().getUnitId();
     return aliquotJsonWith(origin, quantityJson(amount, unitId), quantityJson(amount, unitId), "");
@@ -146,8 +127,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   private ApiSampleWithFullSubSamples createdSample(MvcResult result) throws Exception {
     return getFromJsonResponseBody(result, ApiInventoryOperationResult.class).getSample();
   }
-
-  // --- the edit-session lock the controller holds around Perform (RSDEV-1231 S2/S3) ---
 
   /** A stand-in for another user's open edit session (the tracker only needs a username). */
   private User aColleague() {
@@ -164,7 +143,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   public void anOriginHeldByAnotherUserIsRefusedWithoutTouchingIt() throws Exception {
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
     User colleague = aColleague();
     editLockTracker.attemptToLockForEdit(origin.getGlobalId(), colleague);
 
@@ -177,13 +155,11 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         error.getMessage().contains(colleague.getUsername())
             || error.getMessage().contains(colleague.getFirstName()),
         () -> "the conflict must name the holder, got " + error.getMessage());
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertEquals(0, originalAmount.compareTo(reloaded.getQuantity().getNumericValue()));
+    assertQuantityUnchanged(origin);
     editLockTracker.attemptToUnlock(origin.getGlobalId(), colleague);
     post("aliquot", aliquotTakingJson(origin, "0.1")).andExpect(status().isCreated());
   }
 
-  /** The sibling case: the colleague holds the PARENT sample, not the origin itself. */
   @Test
   public void aParentSampleHeldByAnotherUserIsRefused() throws Exception {
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
@@ -199,7 +175,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     editLockTracker.attemptToUnlock(source.getGlobalId(), colleague);
   }
 
-  /** The caller's own lock must not refuse the caller's own Perform, and must survive it. */
   @Test
   public void theCallersOwnClientLockNeitherBlocksNorIsReleasedByPerform() throws Exception {
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
@@ -214,18 +189,11 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     editLockTracker.attemptToUnlock(origin.getGlobalId(), anyUser);
   }
 
-  // --- the in-flight claim: a second request on an origin still being operated on (RSDEV-1231) ---
-
-  /**
-   * The same user's double submit, made deterministic: the first request is stood in for by a claim
-   * held on the origin for the duration of the second.
-   */
   @Test
   public void anOriginStillBeingOperatedOnByTheSameUserIsRefusedWithoutTouchingIt()
       throws Exception {
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
     try (InventoryOperationInFlightOrigins.Claim firstRequest =
         inFlightOrigins.claim(java.util.List.of(origin.getGlobalId()))) {
 
@@ -235,9 +203,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
       assertTrue(
           error.getMessage().contains(origin.getGlobalId()),
           () -> "the conflict must name the origin, got " + error.getMessage());
-      ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-      assertEquals(0, originalAmount.compareTo(reloaded.getQuantity().getNumericValue()));
-      // the refused request took no edit lock either
+      assertQuantityUnchanged(origin);
       assertNull(editLockTracker.getLockOwnerForItem(origin.getGlobalId()));
       assertNull(editLockTracker.getLockOwnerForItem(source.getGlobalId()));
     }
@@ -246,7 +212,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     assertFalse(inFlightOrigins.isInFlight(origin.getGlobalId()));
   }
 
-  /** A Pool naming one origin still in flight is refused whole, and its other origin stays free. */
   @Test
   public void aPoolWithOneOriginStillBeingOperatedOnIsRefusedWhole() throws Exception {
     ApiSubSample first = createBasicSampleForUser(anyUser).getSubSamples().get(0);
@@ -294,15 +259,12 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     assertEquals("IsDerivedFrom", sampleLink.getLink().getRelationType());
     assertEquals(originGlobalId, sampleLink.getLink().getTargetGlobalId());
 
-    // ... while the created subsamples carry only their quantity: the operation's links and text
-    // fields live on the sample.
     assertEquals(2, created.getSubSamples().size());
     for (ApiSubSample ss : created.getSubSamples()) {
       assertTrue(
           ss.getExtraFields().isEmpty(), "the operation puts no extra fields on its subsamples");
     }
 
-    // registerApiSubSampleUsage subtracts and clamps at zero, so the origin can never increase.
     java.math.BigDecimal expectedAfter =
         originalAmount.subtract(new java.math.BigDecimal("0.6")).max(java.math.BigDecimal.ZERO);
     ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(originId, anyUser);
@@ -316,16 +278,8 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
     Integer unitId = origin.getQuantity().getUnitId();
-    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
-    templatePost.setName("operation target template");
-    templatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
-    MvcResult templateResult =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
-            .andExpect(status().isCreated())
-            .andReturn();
-    ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
+    ApiSampleTemplate template =
+        createTemplate("operation target template", RSUnitDef.GRAM.getId());
 
     String operationJson =
         deriveJson(
@@ -346,14 +300,11 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsTakingMoreThanTheOriginHolds() throws Exception {
-    // DevDocs/adr/0011: taking more than the origin currently holds must be rejected (400), not
-    // clamped, and must leave the origin untouched.
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
-    Long originId = origin.getId();
     Integer unitId = origin.getQuantity().getUnitId();
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
-    java.math.BigDecimal tooMuch = originalAmount.add(java.math.BigDecimal.ONE);
+    java.math.BigDecimal tooMuch =
+        origin.getQuantity().getNumericValue().add(java.math.BigDecimal.ONE);
 
     String operationJson =
         deriveJson(
@@ -365,10 +316,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             "");
 
     post("derive", operationJson).andExpect(status().isBadRequest());
-    ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(originId, anyUser);
-    assertTrue(
-        originalAmount.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
-        "origin quantity must be unchanged when over-removal is rejected");
+    assertQuantityUnchanged(origin);
   }
 
   @Test
@@ -377,7 +325,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
     Integer unitId = origin.getQuantity().getUnitId();
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
 
     MvcResult result =
         post(
@@ -396,10 +343,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         errors.stream().anyMatch(message -> message.startsWith("documentedByGlobalId:")),
         () -> "expected documentedByGlobalId, got " + errors);
 
-    ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertTrue(
-        originalAmount.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
-        "origin quantity must be untouched");
+    assertQuantityUnchanged(origin);
   }
 
   @Test
@@ -436,7 +380,21 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + " material already made from it");
   }
 
-  /** POST /samples with one subsample holding exactly the given quantity; returns the sample. */
+  private ApiSampleTemplate createTemplate(
+      String name, int defaultUnitId, ApiInventoryEntityField... fields) throws Exception {
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName(name);
+    templatePost.setDefaultUnitId(defaultUnitId);
+    templatePost.getFields().addAll(List.of(fields));
+    MvcResult templateResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
+  }
+
   private ApiSampleWithFullSubSamples createSampleHolding(String name, String value, int unitId)
       throws Exception {
     String sampleJson =
@@ -460,19 +418,11 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
       throws Exception {
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
-    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
-    templatePost.setName("passage template with its own counter");
-    templatePost.setDefaultUnitId(unitId);
-    templatePost
-        .getFields()
-        .add(createBasicApiSampleField("Passage number", ApiFieldType.TEXT, ""));
-    MvcResult templateResult =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
-            .andExpect(status().isCreated())
-            .andReturn();
-    ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
+    ApiSampleTemplate template =
+        createTemplate(
+            "passage template with its own counter",
+            unitId,
+            createBasicApiSampleField("Passage number", ApiFieldType.TEXT, ""));
 
     String operationJson =
         singleOriginBody(
@@ -504,7 +454,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsPoolingAVolumeOriginWithAMassOrigin() throws Exception {
-    // The wizard blocks mixed-category pooling; the endpoint must too
     ApiSubSample volumeOrigin =
         createSampleHolding("F4a volume", "5", RSUnitDef.MILLI_LITRE.getId())
             .getSubSamples()
@@ -522,28 +471,20 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     post("pool", operationJson).andExpect(status().isBadRequest());
 
     for (ApiSubSample origin : List.of(volumeOrigin, massOrigin)) {
-      ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-      assertTrue(
-          origin.getQuantity().getNumericValue().compareTo(reloaded.getQuantity().getNumericValue())
-              == 0,
-          "origins must be unchanged when the category mismatch is rejected");
+      assertQuantityUnchanged(origin);
     }
   }
 
   @Test
   public void rejectsAnOriginTheCallerCannotEditThroughTheFullStack() throws Exception {
-    // The unit tests pin authz-before-read with mocks; this pins it through the
-    // real controller, Shiro and permission utils. An unrelated user can neither read nor edit the
-    // origin, so the Inventory API answers its 404 (a foreign id is indistinguishable from a
-    // missing one) and nothing is written.
+    // An unrelated user can neither read nor edit the origin, so the Inventory API answers its 404
+    // (a foreign id is indistinguishable from a missing one) and nothing is written.
     User otherUser = createInitAndLoginAnyUser();
     ApiSubSample foreignOrigin = createBasicSampleForUser(otherUser).getSubSamples().get(0);
     ApiSubSample ownOrigin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = foreignOrigin.getQuantity().getUnitId();
     post("aliquot", aliquotTakingJson(foreignOrigin, "1")).andExpect(status().isNotFound());
 
-    // Pool over one origin the caller owns and one it does not: the whole request is refused
-    // before either origin is decremented
     String poolJson =
         poolBody(
             originJson(ownOrigin, quantityJson("1", unitId))
@@ -561,27 +502,22 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             .getNumericValue()
             .compareTo(reloadedForeign.getQuantity().getNumericValue()),
         "the foreign origin must be untouched");
-    ApiSubSample reloadedOwn = subSampleApiManager.getApiSubSampleById(ownOrigin.getId(), anyUser);
-    assertEquals(
-        0,
-        ownOrigin
-            .getQuantity()
-            .getNumericValue()
-            .compareTo(reloadedOwn.getQuantity().getNumericValue()),
-        "the caller's own origin must be untouched when a sibling origin is refused");
+    assertQuantityUnchanged(ownOrigin);
   }
 
-  /** Posts the Aliquot body, expects a 400, asserts the origin was left untouched. */
-  private MvcResult assertRejectedLeavingOriginUnchanged(ApiSubSample origin, String operationJson)
+  private void assertRejectedLeavingOriginUnchanged(ApiSubSample origin, String operationJson)
       throws Exception {
-    java.math.BigDecimal before = origin.getQuantity().getNumericValue();
-    MvcResult result =
-        post("aliquot", operationJson).andExpect(status().isBadRequest()).andReturn();
+    post("aliquot", operationJson).andExpect(status().isBadRequest());
+    assertQuantityUnchanged(origin);
+  }
+
+  /** Reloads the origin and asserts the request left its quantity alone. */
+  private void assertQuantityUnchanged(ApiSubSample origin) {
     ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertTrue(
-        before.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+    assertEquals(
+        0,
+        origin.getQuantity().getNumericValue().compareTo(reloaded.getQuantity().getNumericValue()),
         "origin must be unchanged when the request is rejected");
-    return result;
   }
 
   private ApiExtraField findLinkField(List<ApiExtraField> extraFields) {
@@ -627,16 +563,8 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   public void rejectsANewSubSampleOutsideTheChosenTemplatesCategory() throws Exception {
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
-    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
-    templatePost.setName("RSDEV-1231 volume template");
-    templatePost.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
-    MvcResult templateResult =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
-            .andExpect(status().isCreated())
-            .andReturn();
-    ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
+    ApiSampleTemplate template =
+        createTemplate("RSDEV-1231 volume template", RSUnitDef.MILLI_LITRE.getId());
     assertRejectedLeavingOriginUnchanged(
         origin,
         aliquotJsonWith(
@@ -670,8 +598,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void acceptsAmountTakenInAnotherUnitOfTheOriginsCategory() throws Exception {
-    // The origin's category is fixed, not its unit: the rejection tests above must not have
-    // tightened into unit equality.
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
     post(
@@ -694,13 +620,10 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         () -> "origin should be reduced by 1 g, got " + reloaded.getQuantity().getNumericValue());
   }
 
-  // --- the inventory.operations.available toggle (RSDEV-1231) ---
-
   @Test
   public void everyRouteIsRefusedWhileOperationsAreDenied() throws Exception {
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
     systemPropertyManager.save(
         SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE,
         HierarchicalPermission.DENIED,
@@ -727,7 +650,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
           operation);
     }
 
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertEquals(0, originalAmount.compareTo(reloaded.getQuantity().getNumericValue()));
+    assertQuantityUnchanged(origin);
   }
 }

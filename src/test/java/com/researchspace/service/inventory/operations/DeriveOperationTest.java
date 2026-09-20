@@ -16,7 +16,6 @@ class DeriveOperationTest {
 
   private static final DeriveOperation DERIVE = new DeriveOperation();
 
-  /** Formats the real catalog patterns, which is what makes an unsupplied argument visible. */
   private static final LabelResolver CATALOG =
       (key, args) -> {
         String pattern =

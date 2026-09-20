@@ -697,9 +697,6 @@ public class UserProfileController extends BaseController {
   public AjaxReturnObject<String> updatePreferenceValue(
       @RequestParam(value = "preference") String preferenceName,
       @RequestParam(value = "value") String value,
-      // Optional: with a key, only that key of the UI_JSON_SETTINGS object is written, merged
-      // server-side. Without one the whole preference value is replaced, which is
-      // what every other preference and every legacy JSP caller means.
       @RequestParam(value = "key", required = false) String key,
       Principal principal,
       HttpServletRequest req,

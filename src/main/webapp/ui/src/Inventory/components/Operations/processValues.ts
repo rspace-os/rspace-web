@@ -1,9 +1,3 @@
-/**
- * Pure helpers for the per-process "remember" bundle: the collected input values, template choice,
- * and documentation link, saved under the process's rememberKey and re-applied when that process
- * name is used again.
- */
-
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 import type { DocumentationSelection } from "./DocumentationStep";
 import type { TemplateDefault, TemplateMode } from "./templateResolution";
@@ -57,8 +51,6 @@ function normalizeTemplateDefault(stored: unknown): TemplateDefault {
     quantityCategory?: unknown;
   };
   if (!TEMPLATE_MODES.has(mode as string)) return UNSELECTED_TEMPLATE;
-  // A "pick" is only meaningful with a real id; without one it would restore as a chosen template
-  // that cannot be resolved.
   const id = typeof templateId === "number" && Number.isFinite(templateId) ? templateId : null;
   if (mode === "pick" && id === null) return UNSELECTED_TEMPLATE;
   const result: TemplateDefault = { mode: mode as TemplateMode, templateId: id };

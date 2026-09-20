@@ -4,25 +4,21 @@ import type { FacadeRequest } from "./buildOperationRequest";
 import type { InventoryOperation } from "./operationsConfig";
 import type { ResolveLabel } from "./types";
 
-/** Minimal view of the created sample returned by an operation endpoint. */
 export type OperationResult = { id: number; globalId: string; name: string };
 
 /**
- * The part of the endpoints' envelope the wizard reads. They also return the origins as they
- * stand afterwards, which the wizard re-fetches from its own stores instead.
- */
-type OperationEnvelope = { sample: OperationResult | null };
-
-/**
- * POST an operation to its own endpoint. The /api/inventory/v1/ prefix is already applied by
- * InvApiService, so the resource is just "operations/<key>". Resolves to null for a terminal
- * operation (Destroy), which creates no sample.
+ * The /api/inventory/v1/ prefix is already applied by InvApiService, so the resource is just
+ * "operations/<key>". Resolves to null for a terminal operation (Destroy), which creates no
+ * sample.
  */
 export async function performOperation(
   operation: InventoryOperation,
   body: FacadeRequest,
 ): Promise<OperationResult | null> {
-  const { data } = await ApiService.post<OperationEnvelope | null>(`operations/${operation.key}`, body);
+  const { data } = await ApiService.post<{ sample: OperationResult | null } | null>(
+    `operations/${operation.key}`,
+    body,
+  );
   return data?.sample ?? null;
 }
 
@@ -30,11 +26,10 @@ export async function performOperation(
 const BARE_KEY_PREFIX = /^([A-Za-z_]\w*):\s*/;
 
 /**
- * The reason a Perform was rejected, worded for the wizard. An error against one of the
- * operation's own fields comes back keyed by that bare field name ("sampleName: Required by this
- * operation."), so the key is swapped for the input's label as the wizard shows it. Anything else
- * (an origin error under "origins[0].amountTaken", a 409, a bare message) is left to
- * getApiErrorDetail, which strips a dotted path and falls back to the response message.
+ * An error against one of the operation's own fields comes back keyed by that bare field name
+ * ("sampleName: Required by this operation."), so the key is swapped for the input's label as the
+ * wizard shows it. Anything else (an origin error under "origins[0].amountTaken", a 409, a bare
+ * message) is left to getApiErrorDetail.
  */
 export function describeOperationError(
   error: unknown,

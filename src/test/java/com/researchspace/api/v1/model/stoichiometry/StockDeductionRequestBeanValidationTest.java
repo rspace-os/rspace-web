@@ -12,10 +12,9 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 /**
- * The stock-deduction endpoint binds its body as {@code @Valid StockDeductionRequest}. The list
- * itself is constrained, but without an element-level constraint {@code {"linkIds":[null]}} reaches
- * the manager, turning a malformed public request into a 500. Uses the plain Jakarta validator, the
- * same engine Spring's request-body validation delegates to.
+ * The stock-deduction endpoint binds its body as {@code @Valid StockDeductionRequest}. Exercised
+ * through the plain Jakarta validator, the same engine Spring's request-body validation delegates
+ * to.
  */
 class StockDeductionRequestBeanValidationTest {
 

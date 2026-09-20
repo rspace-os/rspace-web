@@ -10,17 +10,11 @@ import OperationWizard from "../OperationWizard";
 import { operations } from "./testOperations";
 
 /*
- * The unit store starts empty on a fresh profile: SAVED_UNITS reads localStorage, which has no
- * "units" entry until GET /units has resolved once, so UnitStore.getUnit returns undefined for
- * every id in that window. SubSampleModel.quantityCategory throws "Could not get unit category"
- * when it does.
- *
- * ProcessAction mounts this wizard whenever the selection is processable, NOT only while the dialog
- * is open, so the wizard's body runs as soon as a context menu opens. A throw there took out the
- * whole menu before the operation picker had appeared.
- *
- * The store is therefore mocked as a fresh profile here - getUnit answering undefined for every id
- * - which is the one thing OperationWizard.test.tsx's category-aware mock cannot express.
+ * The store is mocked as a fresh profile - getUnit answering undefined for every id - which is the
+ * one thing OperationWizard.test.tsx's category-aware mock cannot express. In that window
+ * SubSampleModel.quantityCategory throws, and ProcessAction mounts this wizard as soon as the
+ * selection is processable, NOT only while the dialog is open, so the throw took out the whole
+ * context menu.
  */
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
@@ -47,7 +41,6 @@ vi.mock("../../ContextMenu/ContextDialog", () => ({
   default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div>{children}</div> : null),
 }));
 
-/** The Pool definition from the real config, the one operation with a per-subsample amount mode. */
 const poolOperation = (() => {
   const pool = operations.find((o) => o.key === "pool");
   if (!pool) throw new Error("the test config must declare pool");
@@ -60,16 +53,28 @@ function render(ui: React.ReactElement) {
 }
 
 describe("OperationWizard while the unit store is still loading", () => {
-  it("mounts for a closed dialog without dereferencing the unit store", () => {
-    expect(() =>
-      render(<OperationWizard open={false} onClose={vi.fn()} origins={[makeMockSubSample({})]} />),
-    ).not.toThrow();
+  /*
+   * Molarity (unit ids 11-14) and concentration (15-17) are real, server-supported inventory units
+   * (RSUnitDef), and the sample/subsample API applies no category restriction, so a subsample can
+   * genuinely hold one. The static unit table only knows volume, mass and dimensionless, so
+   * toCommonUnit -> atomicUnitOfSameCategory THROWS "Unknown unit: N" for them.
+   */
+  it.each([
+    ["a single origin", [makeMockSubSample({})]],
+    ["a multi-origin (Pool) selection", [makeMockSubSample({}), makeMockSubSample({})]],
+    ["a molarity origin", [makeMockSubSample({ quantity: { numericValue: 1, unitId: 11 } })]],
+    [
+      "multiple origins holding concentration quantities",
+      [
+        makeMockSubSample({ id: 1, globalId: "SS1", quantity: { numericValue: 2, unitId: 15 } }),
+        makeMockSubSample({ id: 2, globalId: "SS2", quantity: { numericValue: 1, unitId: 15 } }),
+      ],
+    ],
+  ])("mounts a closed dialog for %s without throwing", (_name, origins) => {
+    expect(() => render(<OperationWizard open={false} onClose={vi.fn()} origins={origins} />)).not.toThrow();
   });
 
   it("renders the per-subsample amount inputs without dereferencing the unit store", () => {
-    // Pool -> Per subsample renders one amount input per origin, each with its own unit select.
-    // That select asked the origin for its category through the throwing getter, so the amounts
-    // step crashed while /units was still in flight.
     expect(() =>
       render(
         <OperationDetailsStep
@@ -87,54 +92,9 @@ describe("OperationWizard while the unit store is still loading", () => {
       ),
     ).not.toThrow();
   });
-
-  it("mounts for a multi-origin (Pool) selection without dereferencing the unit store", () => {
-    expect(() =>
-      render(
-        <OperationWizard open={false} onClose={vi.fn()} origins={[makeMockSubSample({}), makeMockSubSample({})]} />,
-      ),
-    ).not.toThrow();
-  });
 });
 
 describe("OperationWizard for an origin whose unit has no atomic unit", () => {
-  /*
-   * Molarity (unit ids 11-14) and concentration (15-17) are real, server-supported inventory units
-   * (RSUnitDef), and the sample/subsample API applies no category restriction, so a subsample can
-   * genuinely hold one. The static unit table only knows volume, mass and dimensionless, so
-   * toCommonUnit -> atomicUnitOfSameCategory THROWS "Unknown unit: N" for them.
-   *
-   * That is the same shape as the quantityCategory throw above, and it reaches the same place: the
-   * wizard picks its representative origin during render, and ProcessAction mounts the wizard as
-   * soon as the selection is processable, so the throw takes out the whole context menu.
-   */
-  it("mounts for a molarity origin without throwing", () => {
-    expect(() =>
-      render(
-        <OperationWizard
-          open={false}
-          onClose={vi.fn()}
-          origins={[makeMockSubSample({ quantity: { numericValue: 1, unitId: 11 } })]}
-        />,
-      ),
-    ).not.toThrow();
-  });
-
-  it("mounts for a multi-origin selection holding concentration quantities without throwing", () => {
-    expect(() =>
-      render(
-        <OperationWizard
-          open={false}
-          onClose={vi.fn()}
-          origins={[
-            makeMockSubSample({ id: 1, globalId: "SS1", quantity: { numericValue: 2, unitId: 15 } }),
-            makeMockSubSample({ id: 2, globalId: "SS2", quantity: { numericValue: 1, unitId: 15 } }),
-          ]}
-        />,
-      ),
-    ).not.toThrow();
-  });
-
   it("explains, on the details step, why Next is disabled for a molarity origin", async () => {
     // The dedup effect fires this once a process name exists; answer it so nothing is unhandled.
     server.use(

@@ -7,11 +7,8 @@ import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 
 /**
  * An i18next instance carrying the real en-US catalogs, for the few tests that must see the
- * assembled English sentence rather than its key.
- *
- * The global test setup puts the shared singleton in cimode, which returns keys and drops every
- * interpolated parameter, so a test there cannot tell "{origin}: {amount}" from a message that
- * silently lost its arguments. This instance is deliberately separate: it is passed through
+ * assembled English sentence rather than its key: the global test setup puts the shared singleton
+ * in cimode, which returns keys and drops every interpolated parameter. It is passed through
  * I18nextProvider rather than initReactI18next, so it never becomes react-i18next's default and
  * cannot change what any other test sees.
  */

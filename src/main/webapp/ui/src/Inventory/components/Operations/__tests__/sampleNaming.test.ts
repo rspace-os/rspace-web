@@ -12,7 +12,6 @@ describe("derivedSampleName", () => {
   });
 
   it("does not re-append the process name when it is already the tail of the origin name", () => {
-    // otherwise repeated runs grow the name: "SUB PROC" -> "SUB PROC PROC" -> ...
     expect(derivedSampleName("SUB PROC", "PROC")).toBe("SUB PROC");
     expect(derivedSampleName("Blood dna extraction", "dna extraction")).toBe("Blood dna extraction");
   });
@@ -25,7 +24,6 @@ describe("derivedSampleName", () => {
 
   it("still appends the process when it is not the tail of the origin name", () => {
     expect(derivedSampleName("SUB", "PROC")).toBe("SUB PROC");
-    // must be a trailing word, not merely a substring at the end
     expect(derivedSampleName("SUBPROC", "PROC")).toBe("SUBPROC PROC");
   });
 
@@ -60,9 +58,6 @@ describe("firstAvailableName", () => {
   });
 
   it("gives up after a bounded number of attempts and falls back to the base name", async () => {
-    // The availability endpoint also answers false for an INVALID name (e.g. one over the length
-    // limit), in which case every suffixed candidate is equally unavailable; without a cap the
-    // probe would spin forever, one HTTP request per iteration.
     const isAvailable = vi.fn((_name: string) => Promise.resolve(false));
     expect(await firstAvailableName("Very long name", isAvailable)).toBe("Very long name");
     expect(isAvailable.mock.calls.length).toBeLessThanOrEqual(30);

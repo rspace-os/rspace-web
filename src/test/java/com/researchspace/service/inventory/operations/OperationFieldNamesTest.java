@@ -7,11 +7,6 @@ import com.researchspace.model.record.BaseRecord;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/**
- * The uniqueness rule itself is pinned to its TypeScript twin by {@code
- * FieldNameUniquenessParityTest}, against shared cases. What is left here is the column bound,
- * which only the server has to honour.
- */
 class OperationFieldNamesTest {
 
   @Test
