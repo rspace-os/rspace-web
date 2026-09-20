@@ -58,6 +58,7 @@ export function DraftMarker({
       onChange={onChange}
       tone={creation.eventKind === "MAINTENANCE" ? "maintenance" : "booking"}
       testId="compact-booking-draft-marker"
+      abovePopovers={false}
     />
   );
 }

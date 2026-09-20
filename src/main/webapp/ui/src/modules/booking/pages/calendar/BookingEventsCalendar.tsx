@@ -28,6 +28,7 @@ import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import { BookingActions } from "./BookingEventActions";
@@ -570,18 +571,33 @@ function ResourceSchedule({
     () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
     [resourceConfigurations],
   );
-  const editConfigurationLink = (resource: BookingCalendarResource, configuration?: BookableItemOption) => {
+  const editConfigurationLink = (
+    resource: BookingCalendarResource,
+    configuration?: BookableItemOption,
+    size: "icon-xs" | "icon-sm" = "icon-xs",
+  ) => {
     if (configuration?.capabilities?.canEditConfiguration !== true) return null;
+    const label = t("bookableItemDetails.edit");
     return (
-      <Link
-        className={buttonVariants({ variant: "outline", size: "xs", className: "w-full" })}
-        to="/booking/bookable-items/$globalId/{-$tab}"
-        params={{ globalId: resource.globalId, tab: "details" }}
-        search={{ edit: true }}
-      >
-        <PencilIcon aria-hidden="true" />
-        {t("bookableItemDetails.edit")}
-      </Link>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Link
+              aria-label={label}
+              className={cn(buttonVariants({ variant: "outline", size }))}
+              data-slot="button"
+              to="/booking/bookable-items/$globalId/{-$tab}"
+              params={{ globalId: resource.globalId, tab: "details" }}
+              search={{ edit: true }}
+            />
+          }
+        >
+          <PencilIcon aria-hidden="true" />
+        </TooltipTrigger>
+        <TooltipContent role="tooltip" side="left">
+          {label}
+        </TooltipContent>
+      </Tooltip>
     );
   };
   return (
@@ -613,22 +629,19 @@ function ResourceSchedule({
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="border-r bg-muted/30 p-1">
-                    <div className="space-y-1">
-                      <InventoryItem
-                        locationPlacement="below"
-                        name={resource.value.name}
-                        globalId={resource.globalId}
-                        href={`/globalId/${resource.globalId}`}
-                        idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
-                        size="xs"
-                      >
-                        <InventoryLocationLink
-                          name={resource.value.parentContainerName}
-                          globalId={resource.value.parentContainerGlobalId}
-                        />
-                      </InventoryItem>
-                      {editConfigurationLink(resource, configuration)}
-                    </div>
+                    <InventoryItem
+                      locationPlacement="below"
+                      name={resource.value.name}
+                      globalId={resource.globalId}
+                      href={`/globalId/${resource.globalId}`}
+                      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+                      size="xs"
+                    >
+                      <InventoryLocationLink
+                        name={resource.value.parentContainerName}
+                        globalId={resource.value.parentContainerGlobalId}
+                      />
+                    </InventoryItem>
                   </header>
                   <div className="relative grid min-h-32 min-w-0">
                     <div className="grid min-w-0" aria-hidden={isLoading || undefined} inert={isLoading}>
@@ -658,7 +671,7 @@ function ResourceSchedule({
                     </div>
                     {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
                   </div>
-                  <div className="flex items-center border-l p-2">
+                  <div className="flex flex-col items-center justify-center gap-1 border-l p-2">
                     <Button
                       type="button"
                       size="icon-sm"
@@ -674,6 +687,7 @@ function ResourceSchedule({
                     >
                       <PlusIcon aria-hidden="true" />
                     </Button>
+                    {editConfigurationLink(resource, configuration, "icon-sm")}
                   </div>
                 </section>
               );

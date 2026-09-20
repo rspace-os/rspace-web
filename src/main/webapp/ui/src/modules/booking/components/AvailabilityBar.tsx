@@ -1,17 +1,14 @@
-import { Link } from "@tanstack/react-router";
-import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
+import { CalendarClockIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
 import {
   type AvailabilityInterval,
   type AvailabilitySource,
   type AvailabilityState,
   buildAvailabilitySlices,
 } from "@/modules/booking/domain/availability";
-import { buttonVariants } from "@/modules/common/ui/button";
-import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@/modules/common/ui/popover";
-import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
 
 export type { AvailabilityInterval } from "@/modules/booking/domain/availability";
@@ -127,116 +124,6 @@ function SlicePopover({
       />
       {children}
     </Popover>
-  );
-}
-
-function BookingSourceAccordion({
-  accordionName,
-  item,
-  period,
-  showBookingContextDetails,
-  source,
-}: {
-  accordionName: string;
-  item: AvailabilityBarProps["item"];
-  period: string;
-  showBookingContextDetails: boolean;
-  source: DetailedBookingSource;
-}) {
-  const { t } = useTranslation("booking");
-  const maintenance = source.booking.kind === "MAINTENANCE";
-  const actor = maintenance ? source.booking.createdBy : source.booking.bookedBy;
-
-  return (
-    <li className="min-w-0 overflow-hidden rounded-sm border bg-background">
-      <details name={accordionName} className="group">
-        <summary
-          aria-label={t("dayTimeline.event.showDetails", {
-            title: maintenance ? t("bookings.maintenanceLabel") : item.name,
-            period,
-          })}
-          className="flex min-w-0 cursor-pointer list-none items-center gap-2 px-2 py-1.5 outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden"
-        >
-          <span
-            className={cn(
-              "flex size-7 shrink-0 items-center justify-center rounded-sm",
-              maintenance
-                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
-                : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-            )}
-          >
-            {maintenance ? (
-              <WrenchIcon className="size-4" aria-hidden="true" />
-            ) : (
-              <CalendarClockIcon className="size-4" aria-hidden="true" />
-            )}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-xs font-medium">
-              {maintenance
-                ? t("bookings.maintenanceLabel")
-                : actor
-                  ? t("availabilityBar.slice.bookedBy", { user: actor })
-                  : t("availabilityBar.slice.sources.booking")}
-            </span>
-            <span className="block text-[11px] text-muted-foreground">{period}</span>
-          </span>
-          <ChevronRightIcon
-            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
-            aria-hidden="true"
-          />
-        </summary>
-        <div className="border-border border-t">
-          <dl className="divide-y divide-border px-2 text-sm">
-            {maintenance || showBookingContextDetails ? (
-              <div className="py-2">
-                <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
-                <dd>
-                  <InventoryItem
-                    name={item.name}
-                    globalId={item.globalId}
-                    href={`/globalId/${item.globalId}`}
-                    idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: item.globalId })}
-                    idPlacement="title"
-                    className="p-0"
-                  >
-                    {item.location ? (
-                      <InventoryLocationLink name={item.location.name} globalId={item.location.globalId} />
-                    ) : null}
-                  </InventoryItem>
-                </dd>
-              </div>
-            ) : null}
-            {actor && (maintenance || showBookingContextDetails) ? (
-              <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
-                <dt className="text-xs text-muted-foreground">
-                  {t(maintenance ? "dayTimeline.expanded.createdBy" : "dayTimeline.expanded.bookedBy")}
-                </dt>
-                <dd className="min-w-0">
-                  <UserBadge name={actor} />
-                </dd>
-              </div>
-            ) : null}
-            <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
-              <dt className="text-xs text-muted-foreground">
-                {t(maintenance ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
-              </dt>
-              <dd className="text-xs leading-4">{source.booking.purpose ?? t("bookings.details.noneProvided")}</dd>
-            </div>
-          </dl>
-          <Link
-            to="/booking/calendar/bookings/$id"
-            params={{ id: String(source.booking.id) }}
-            className={cn(
-              buttonVariants({ variant: "link", size: "xs" }),
-              "h-auto w-full rounded-none border-t-border py-2",
-            )}
-          >
-            {t("availabilityBar.slice.details")}
-          </Link>
-        </div>
-      </details>
-    </li>
   );
 }
 
@@ -457,17 +344,32 @@ export function AvailabilityBar({
                     </PopoverDescription>
                   </div>
                   <ul className="space-y-1">
-                    {contributors.map(({ kind, source }) =>
-                      hasBookingDetails(source) ? (
-                        <BookingSourceAccordion
-                          key={source.id}
-                          accordionName={accordionName}
-                          item={item}
-                          period={formatTimeRange(source)}
-                          showBookingContextDetails={showBookingContextDetails}
-                          source={source}
-                        />
-                      ) : (
+                    {contributors.map(({ kind, source }) => {
+                      if (hasBookingDetails(source)) {
+                        const maintenance = source.booking.kind === "MAINTENANCE";
+                        const actor = maintenance ? source.booking.createdBy : source.booking.bookedBy;
+                        return (
+                          <BookingSummaryAccordion
+                            key={source.id}
+                            accordionName={accordionName}
+                            heading={maintenance ? t("bookings.maintenanceLabel") : item.name}
+                            summaryLabel={
+                              maintenance
+                                ? t("bookings.maintenanceLabel")
+                                : actor
+                                  ? t("availabilityBar.slice.bookedBy", { user: actor })
+                                  : t("availabilityBar.slice.sources.booking")
+                            }
+                            period={formatTimeRange(source)}
+                            purpose={source.booking.purpose}
+                            maintenance={maintenance}
+                            item={maintenance || showBookingContextDetails ? item : undefined}
+                            actor={maintenance || showBookingContextDetails ? actor : undefined}
+                            detailsBookingId={source.booking.id}
+                          />
+                        );
+                      }
+                      return (
                         <li
                           key={source.id}
                           className="flex min-w-0 items-center gap-2 rounded-sm border bg-background px-2 py-1.5"
@@ -495,8 +397,8 @@ export function AvailabilityBar({
                             <span className="block text-[11px] text-muted-foreground">{formatTimeRange(source)}</span>
                           </span>
                         </li>
-                      ),
-                    )}
+                      );
+                    })}
                   </ul>
                 </PopoverContent>
               </SlicePopover>

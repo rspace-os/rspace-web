@@ -62,7 +62,21 @@ the subject owns the preference and the actor remains available for audit contex
 
 ## Loading layouts
 
-The Booking index redirects to Calendar. Date picker buttons show the selected
+The Booking index shows the dashboard. Its upcoming list and monthly overview use
+independent queries for the authenticated requester. The monthly calendar shows six
+Monday-first weeks in the display timezone, including adjacent-month days. Booking
+ends are exclusive, so a reservation ending at midnight is not counted on the next day.
+Monthly reads follow at most ten API pages of 100 bookings; an interval exceeding
+1,000 bookings shows an explicit limit state instead of partial results. Offset
+pagination remains best effort during concurrent changes.
+
+Calendar badges show exact counts up to 99 and `99+` above that, while accessible
+labels and popups retain the exact total. Day popups page the loaded bookings five
+at a time, using previous/next controls without additional requests. Their hover
+delays are zero, and the paginated list reserves space for five collapsed rows so
+the controls remain stable on short final pages.
+
+Date picker buttons show the selected
 date, and successful creation returns to the submitted start date rather than
 the date originally supplied in the URL. Item headers label the display timezone;
 the Booking rules section retains the separate scheduling timezone.

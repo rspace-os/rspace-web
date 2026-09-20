@@ -185,7 +185,15 @@ function ExpandedEventCard({
               {event.title}
             </p>
           ) : null}
-          <PopoverTitle className="font-semibold text-lg tabular-nums leading-tight">{exactPeriod}</PopoverTitle>
+          <div className="flex flex-wrap items-baseline gap-x-1.5">
+            <PopoverTitle className="font-semibold text-lg tabular-nums leading-tight">{exactPeriod}</PopoverTitle>
+            <PopoverDescription className={cn("text-xs", isBlockout ? "text-amber-800" : "text-primary-foreground")}>
+              {t("dayTimeline.expanded.duration", {
+                hours: Math.floor(duration / 60),
+                minutes: duration % 60,
+              })}
+            </PopoverDescription>
+          </div>
           {spansMultipleDates ? (
             <dl className="mt-1.5 grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs leading-4">
               <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>
@@ -216,12 +224,6 @@ function ExpandedEventCard({
               {formatDayDate(startDate)}
             </time>
           )}
-          <PopoverDescription className={cn("mt-1 text-xs", isBlockout ? "text-amber-800" : "text-primary-foreground")}>
-            {t("dayTimeline.expanded.duration", {
-              hours: Math.floor(duration / 60),
-              minutes: duration % 60,
-            })}
-          </PopoverDescription>
         </div>
         <PopoverClose
           type="button"
@@ -235,8 +237,8 @@ function ExpandedEventCard({
         </PopoverClose>
       </div>
 
-      <dl className="divide-y divide-border px-4 text-sm">
-        <div className="py-2">
+      <dl className="divide-y divide-border text-sm">
+        <div className="px-4 py-2">
           <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
           <dd>
             <InventoryItem
@@ -254,21 +256,21 @@ function ExpandedEventCard({
           </dd>
         </div>
         {event.kind === "booking" ? (
-          <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
+          <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
             <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.bookedBy")}</dt>
             <dd className="min-w-0">
               <UserBadge name={event.bookedBy} />
             </dd>
           </div>
         ) : event.createdBy ? (
-          <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
+          <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
             <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.createdBy")}</dt>
             <dd className="min-w-0">
               <UserBadge name={event.createdBy} />
             </dd>
           </div>
         ) : null}
-        <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
+        <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
           <dt className="text-muted-foreground text-xs">
             {t(isBlockout ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
           </dt>

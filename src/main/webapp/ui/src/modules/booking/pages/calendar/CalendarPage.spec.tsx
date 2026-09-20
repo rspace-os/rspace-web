@@ -69,17 +69,44 @@ describe("Calendar page", () => {
     }
   });
 
-  test.each(["day", "week"] as const)("places configuration editing below each %s resource card", async (view) => {
+  test("places icon-only configuration editing below the day-row booking action", async () => {
     render(<CalendarPageStory history={history} />);
-    if (view === "week") await calendar.week.click();
+
+    const edit = calendar.resourceSchedule.getByRole("link", { name: "Edit configuration", exact: true }).first();
+    const add = calendar.resourceSchedule.getByRole("button", {
+      name: "Add booking for Confocal microscope",
+      exact: true,
+    });
+    await expect.element(edit).toBeVisible();
+    expect(edit.element().getAttribute("href")).toBe("/booking/bookable-items/IN123/details?edit=true");
+    expect(edit.element().textContent).toBe("");
+    const editBox = edit.element().getBoundingClientRect();
+    const addBox = add.element().getBoundingClientRect();
+    const editStyle = getComputedStyle(edit.element());
+    const addStyle = getComputedStyle(add.element());
+    expect(editBox.top).toBeGreaterThanOrEqual(addBox.bottom);
+    expect(Math.abs(editBox.x + editBox.width / 2 - (addBox.x + addBox.width / 2))).toBeLessThanOrEqual(1);
+    expect(editStyle.border).toBe(addStyle.border);
+    expect(editStyle.backgroundColor).toBe(addStyle.backgroundColor);
+
+    await edit.hover();
+    await expect.element(page.getByRole("tooltip", { name: "Edit configuration" })).toBeVisible();
+  });
+
+  test("keeps icon-only configuration editing available in the week resource card", async () => {
+    render(<CalendarPageStory history={history} />);
+    await calendar.week.click();
 
     const edit = calendar.resourceSchedule.getByRole("link", { name: "Edit configuration", exact: true }).first();
     await expect.element(edit).toBeVisible();
     expect(edit.element().getAttribute("href")).toBe("/booking/bookable-items/IN123/details?edit=true");
-
+    expect(edit.element().textContent).toBe("");
     const card = calendar.resourceSchedule.element().querySelector<HTMLElement>("[data-inventory-item]");
     if (!card) throw new Error("Expected a resource inventory card");
     expect(edit.element().getBoundingClientRect().top).toBeGreaterThanOrEqual(card.getBoundingClientRect().bottom);
+
+    await edit.hover();
+    await expect.element(page.getByRole("tooltip", { name: "Edit configuration" })).toBeVisible();
   });
 
   test.each(["date", "layout", "period"])("resets an isolated %s change to Calendar defaults", async (control) => {
@@ -369,6 +396,13 @@ describe("Calendar page", () => {
     await calendar.showEventDetails("Confocal microscope").click();
     await expect.element(event.getByRole("button", { name: /Hide details/ })).toHaveAttribute("aria-expanded", "true");
     const expandedPosition = indicator?.getBoundingClientRect();
+    const details = page.getByRole("dialog").filter({ hasText: "Confocal microscope" }).element();
+    const facts = details.querySelector("dl");
+    const firstFact = facts?.firstElementChild;
+    expect(facts).not.toBeNull();
+    expect(firstFact).not.toBeNull();
+    expect(firstFact?.getBoundingClientRect().left).toBe(facts?.getBoundingClientRect().left);
+    expect(firstFact?.getBoundingClientRect().right).toBe(facts?.getBoundingClientRect().right);
 
     expect(expandedPosition?.top).toBe(collapsedPosition?.top);
     expect(expandedPosition?.right).toBe(collapsedPosition?.right);
@@ -601,6 +635,21 @@ describe("Calendar page", () => {
     await expect.element(dialog).toBeVisible();
     const marker = page.getByTestId("compact-booking-draft-marker");
     await expect.element(marker).toBeVisible();
+    await expect
+      .poll(() => {
+        const dialogBounds = dialog.element().getBoundingClientRect();
+        const markerBounds = marker.element().getBoundingClientRect();
+        const left = Math.max(dialogBounds.left, markerBounds.left);
+        const right = Math.min(dialogBounds.right, markerBounds.right);
+        const top = Math.max(dialogBounds.top, markerBounds.top);
+        const bottom = Math.min(dialogBounds.bottom, markerBounds.bottom);
+        if (left >= right || top >= bottom) return "no-overlap";
+        const topmost = document.elementFromPoint((left + right) / 2, (top + bottom) / 2);
+        if (topmost && dialog.element().contains(topmost)) return "dialog";
+        if (topmost && marker.element().contains(topmost)) return "marker";
+        return "other";
+      })
+      .toBe("dialog");
     await expect
       .poll(() => {
         const canvasBounds = canvases[0].element().getBoundingClientRect();

@@ -206,10 +206,12 @@ const regularCalendarBookings = [-1, 0, 1].flatMap((monthOffset) =>
 const stressCalendarBookings = [
   { date: 7, count: 10 },
   { date: 14, count: 5 },
+  { date: 21, count: 99 },
+  { date: 22, count: 100 },
 ].flatMap(({ date, count }) =>
   Array.from({ length: count }, (_, index) => {
     const booking = upcomingBookings[index % upcomingBookings.length];
-    const hour = 7 + Math.floor(index / 2);
+    const hour = 7 + (Math.floor(index / 2) % 12);
     const minute = (index % 2) * 30;
     return {
       ...booking,
@@ -269,7 +271,7 @@ function BookingsCalendarDay(props: React.ComponentProps<typeof CalendarDayButto
           aria-hidden="true"
           className="absolute right-0.5 top-0.5 h-4 min-w-4 rounded-full px-1 py-0 text-[10px] leading-none"
         >
-          {bookings.length}
+          {bookings.length > 99 ? "99+" : bookings.length}
         </Badge>
       </PopoverTrigger>
       <PopoverContent

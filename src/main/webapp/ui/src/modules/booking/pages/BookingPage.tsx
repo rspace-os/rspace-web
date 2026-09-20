@@ -30,7 +30,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
-import { Heading } from "@/modules/common/ui/typography";
+import BookingDashboardPage from "./dashboard/BookingDashboardPage";
 
 const breadcrumbLinkClassName =
   "rounded-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -268,19 +268,8 @@ export function createBookingIndexRoute<TParentRoute extends AnyRoute>(bookingRo
   return createRoute({
     getParentRoute: () => bookingRoute,
     path: "/",
-    component: BookingDashboard,
+    component: BookingDashboardPage,
   });
-}
-
-function BookingDashboard() {
-  const { t } = useTranslation("booking");
-  return (
-    <main className="space-y-6 p-4 sm:p-8">
-      <Heading level={3} as="h1">
-        {t("sidebar.dashboard")}
-      </Heading>
-    </main>
-  );
 }
 
 export default function BookingPage() {
