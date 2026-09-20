@@ -9,11 +9,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
-/** Builds the fields an operation generates, and keeps their names unique and storable. */
 public final class OperationFieldNames {
 
-  /** Fixed key, not an operation's own: the documentation link is the wizard's. */
   public static final String DOCUMENTATION_LINK_KEY = "operations.documentationLink";
 
   private OperationFieldNames() {}
@@ -42,8 +41,7 @@ public final class OperationFieldNames {
 
   /**
    * Suffixes each name in a colliding group to make it unique - a link by the target global id,
-   * everything else by an ordinal - since two pooled origins sharing a name previously produced
-   * duplicate field names and a guaranteed 400.
+   * everything else by an ordinal.
    */
   public static List<ApiExtraField> withUniqueFieldNames(List<ApiExtraField> fields) {
     Map<String, Integer> occurrences = new HashMap<>();
@@ -58,11 +56,7 @@ public final class OperationFieldNames {
                   && field.getType() == ApiExtraField.ExtraFieldTypeEnum.LINK
               ? " (" + field.getLink().getTargetGlobalId() + ")"
               : "";
-      String candidate = fit(resolved, suffix.length()) + suffix;
-      for (int ordinal = 2; used.contains(comparable(candidate)); ordinal++) {
-        String ordinalSuffix = suffix + " (" + ordinal + ")";
-        candidate = fit(resolved, ordinalSuffix.length()) + ordinalSuffix;
-      }
+      String candidate = unique(resolved, suffix, used::contains);
       used.add(comparable(candidate));
       field.setName(candidate);
     }
@@ -78,15 +72,19 @@ public final class OperationFieldNames {
    */
   public static String freeLinkName(ApiExtraField link, Set<String> taken) {
     String suffix = " (" + link.getLink().getTargetGlobalId() + ")";
-    String candidate = fit(link.getName(), suffix.length()) + suffix;
-    for (int ordinal = 2; taken.contains(comparable(candidate)); ordinal++) {
+    return unique(link.getName(), suffix, taken::contains);
+  }
+
+  private static String unique(String base, String suffix, Predicate<String> taken) {
+    String candidate = fit(base, suffix.length()) + suffix;
+    for (int ordinal = 2; taken.test(comparable(candidate)); ordinal++) {
       String ordinalSuffix = suffix + " (" + ordinal + ")";
-      candidate = fit(link.getName(), ordinalSuffix.length()) + ordinalSuffix;
+      candidate = fit(base, ordinalSuffix.length()) + ordinalSuffix;
     }
     return candidate;
   }
 
-  /** Names as the duplicate-name check compares them: trimmed and lowercased. */
+  /** Names as the duplicate-name check compares them. */
   public static String comparable(String name) {
     return name == null ? "" : name.trim().toLowerCase(Locale.ROOT);
   }
@@ -94,10 +92,8 @@ public final class OperationFieldNames {
   /**
    * Truncates a composed name to leave {@code reserve} characters for the uniqueness suffix.
    * Generated names can interpolate an origin's own name, which may already be at the 255-char
-   * column limit; without this bound, an over-long name failed at the INSERT as a 500 after the
-   * origins had already been decremented. Truncated rather than rejected because pooling near-limit
-   * names must stay possible and only the display name is affected, not the link target. Cutting
-   * before the suffix, not after, keeps the suffix that makes the name unique.
+   * column limit. Truncated rather than rejected because pooling near-limit names must stay
+   * possible and only the display name is affected, not the link target.
    */
   static String fit(String name, int reserve) {
     int room = Math.max(0, BaseRecord.DEFAULT_VARCHAR_LENGTH - reserve);

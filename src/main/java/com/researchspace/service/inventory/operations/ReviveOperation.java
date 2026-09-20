@@ -11,10 +11,8 @@ import org.springframework.validation.Errors;
 @Component
 public class ReviveOperation extends CreatingOperation<ApiInventoryOperationRequests.Revive> {
 
-  /** Refrigerated, the temperature revived stock is held at unless the caller says otherwise. */
+  /** Refrigerated. */
   private static final BigDecimal DEFAULT_CELSIUS = new BigDecimal("4");
-
-  private static final BigDecimal MIN_CELSIUS = DEFAULT_CELSIUS;
 
   /** Above this is sterilisation, not incubation. */
   private static final BigDecimal MAX_CELSIUS = new BigDecimal("120");
@@ -38,7 +36,7 @@ public class ReviveOperation extends CreatingOperation<ApiInventoryOperationRequ
   public void validate(ApiInventoryOperationRequests.Revive request, Errors errors) {
     super.validate(request, errors);
     OperationQuantityRules.temperature(
-        request.getStorageTemp(), "storageTemp", MIN_CELSIUS, MAX_CELSIUS, errors);
+        request.getStorageTemp(), "storageTemp", DEFAULT_CELSIUS, MAX_CELSIUS, errors);
   }
 
   @Override

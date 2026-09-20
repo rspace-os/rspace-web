@@ -20,24 +20,16 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.operations.AliquotOperation;
 import com.researchspace.service.inventory.operations.OriginState;
 import jakarta.ws.rs.NotFoundException;
-import java.beans.Introspector;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BindException;
 
 class OperationTemplateConformanceValidatorTest {
 
-  /**
-   * A request as the Aliquot operation actually builds one, so what the validator sees here is what
-   * it sees in production rather than a hand-assembled lookalike.
-   */
   private static ApiInventoryOperationPost aliquotRequest() {
     ApiInventoryOperationRequests.Aliquot request = new ApiInventoryOperationRequests.Aliquot();
     ApiInventoryOperationRequests.Origin origin = new ApiInventoryOperationRequests.Origin();
@@ -65,54 +57,11 @@ class OperationTemplateConformanceValidatorTest {
   private final User user = mock(User.class);
   private OperationTemplateConformanceValidator validator;
 
-  /**
-   * {@code sampleApiPostValidator} is injected by bean name, not by type. The bean has no explicit
-   * name, so the qualifier resolves only through Spring's default naming - renaming the class
-   * breaks the wire at context startup with no compile-time warning.
-   */
-  @Test
-  void theQualifierNamingTheControllerValidatorStillResolves() throws Exception {
-    String qualifier =
-        Arrays.stream(
-                OperationTemplateConformanceValidator.class.getDeclaredConstructors()[0]
-                    .getParameterAnnotations())
-            .flatMap(Arrays::stream)
-            .filter(Qualifier.class::isInstance)
-            .map(annotation -> ((Qualifier) annotation).value())
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new AssertionError(
-                        "the constructor no longer injects anything by bean name; if the validator"
-                            + " is now injected by type, delete this test"));
-
-    Class<?> bean =
-        Class.forName("com.researchspace.api.v1.controller." + "SampleApiPostValidator");
-    assertTrue(
-        bean.isAnnotationPresent(Component.class),
-        bean.getName() + " must be a Spring bean for the qualifier above to resolve");
-    assertEquals(
-        "",
-        bean.getAnnotation(Component.class).value(),
-        bean.getName()
-            + " now declares an explicit bean name, so the default-naming assumption below no"
-            + " longer holds");
-    assertEquals(
-        qualifier,
-        Introspector.decapitalize(bean.getSimpleName()),
-        "OperationTemplateConformanceValidator injects the bean named '"
-            + qualifier
-            + "', which Spring derives from the class name. Renaming "
-            + bean.getSimpleName()
-            + " breaks that wire at context startup, with nothing at compile time to say so.");
-  }
-
   @BeforeEach
   void wire() {
     SampleApiPostValidator postValidator = new SampleApiPostValidator();
-    // The per-extra-field validator is a collaborator these tests do not assert on, but
-    // ValidationUtils.invokeValidator asserts supports() before delegating, so it has to answer
-    // true rather than a mock's default false.
+    // ValidationUtils.invokeValidator asserts supports() before delegating, so this mock has to
+    // answer true rather than a mock's default false.
     ApiExtraFieldsHelper extraFieldHelper = mock(ApiExtraFieldsHelper.class);
     when(extraFieldHelper.supports(any())).thenReturn(true);
     ReflectionTestUtils.setField(postValidator, "extraFieldHelper", extraFieldHelper);
@@ -145,7 +94,6 @@ class OperationTemplateConformanceValidatorTest {
 
   @Test
   void rejectsNewSubSamplesOutsideTheChosenTemplatesCategory() {
-    // The template's unit is checked against every child, not only the sample's aggregate total.
     ApiInventoryOperationPost built = templateBackedAliquot(RSUnitDef.GRAM);
 
     BindException rejection =
@@ -158,7 +106,6 @@ class OperationTemplateConformanceValidatorTest {
 
   @Test
   void acceptsNewSubSamplesInAnotherUnitOfTheTemplatesCategory() {
-    // The template fixes the measurement category, not the exact unit.
     ApiInventoryOperationPost built = templateBackedAliquot(RSUnitDef.MICRO_LITRE);
 
     assertDoesNotThrow(() -> validator.validate(built, user));

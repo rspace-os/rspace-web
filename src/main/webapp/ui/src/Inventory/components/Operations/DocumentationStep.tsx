@@ -7,11 +7,6 @@ import ElnRecordPicker from "@/Inventory/components/Fields/Link/ElnRecordPicker"
 
 export type DocumentationSelection = { globalId: string; name: string } | null;
 
-/**
- * Optional step: link the new records to an ELN document via an IsDocumentedBy link. Fully
- * controlled - the wizard owns the selection and persists it; this component only presents and
- * edits the current value.
- */
 export default function DocumentationStep({
   value,
   onChange,

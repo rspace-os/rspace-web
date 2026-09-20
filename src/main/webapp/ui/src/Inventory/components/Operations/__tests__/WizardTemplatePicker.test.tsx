@@ -3,8 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import WizardTemplatePicker from "../WizardTemplatePicker";
 
-// The picker is `observer`, but `results` is set before render so the initial render already sees it
-// (no reactive update needed).
 const state = vi.hoisted(() => ({
   results: [] as Array<{ id: number; name: string; globalId: string }>,
   loading: false,
@@ -25,7 +23,6 @@ vi.mock("@/stores/models/Search", () => ({
   },
 }));
 vi.mock("@/stores/models/Factory/AlwaysNewFactory", () => ({ default: class {} }));
-// The shared GlobalId pill drags in record-type icons and navigation; the boundary is enough here.
 vi.mock("@/components/GlobalId", () => ({
   default: ({ record }: { record: { globalId: string | null } }) => (
     <span data-testid="global-id-pill">{record.globalId}</span>
@@ -95,7 +92,6 @@ describe("WizardTemplatePicker clearing", () => {
     const setTemplate = vi.fn();
     const user = userEvent.setup();
     render(<WizardTemplatePicker setTemplate={setTemplate} selectedTemplateId={5} selectedTemplateName="Cells" />);
-    // MUI only reveals the clear button once the field has focus, as it would for a real user.
     await user.click(screen.getByRole("combobox"));
     await user.click(screen.getByRole("button", { name: /clear/i }));
     expect(setTemplate).toHaveBeenCalledWith(null);

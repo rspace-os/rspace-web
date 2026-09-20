@@ -96,7 +96,6 @@ describe("templateBlockReason", () => {
     name: "Protocol",
     mandatory: true,
     type: "link",
-    // A link field's data column is unused: the server never stores content for one.
     content: "",
     link,
   });
@@ -159,7 +158,6 @@ describe("templateSelectionFor", () => {
         templateName: "T5",
         quantityCategory: "mass",
         remember: true,
-        // Restored unchecked: the stored name may be stale and the template may have been trashed.
         pendingCheck: true,
       },
     );
@@ -186,17 +184,12 @@ describe("templateStepValid", () => {
   });
 
   it("holds a remembered template invalid until its restore-time check has passed", () => {
-    // The stored id was written by a previous run, not by a check, so the template may since have
-    // been renamed, trashed, or have gained a mandatory field with no default. Until the wizard
-    // re-checks it against the server the step is incomplete.
     const restored = templateSelectionFor({ mode: "pick", templateId: 5, templateName: "T5" });
     expect(templateStepValid(restored)).toBe(false);
     expect(templateStepValid({ ...restored, pendingCheck: false })).toBe(true);
   });
 
   it("holds fromSample to the same id rule as pick", () => {
-    // Both end in a sample created against a concrete template, so both must clear the
-    // mandatory-without-default check first, and only a passing check writes the id.
     expect(templateStepValid({ mode: "fromSample", templateId: null })).toBe(false);
     expect(templateStepValid({ mode: "fromSample", templateId: 9 })).toBe(true);
   });

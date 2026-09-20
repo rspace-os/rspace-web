@@ -41,7 +41,7 @@ public class ApiListOfMaterials {
   /**
    * Each material that decrements stock costs a read and an update cycle, so an uncapped list is an
    * uncapped amount of work from one call. 250 is well above any real list and well below a denial
-   * of service; the operations endpoint caps its origins at 100 for the same reason.
+   * of service.
    */
   @Size(max = 250, message = "{errors.inventory.listOfMaterials.tooManyMaterials}")
   @JsonProperty("materials")

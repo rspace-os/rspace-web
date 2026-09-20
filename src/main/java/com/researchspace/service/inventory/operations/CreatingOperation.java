@@ -22,9 +22,6 @@ import org.springframework.validation.Errors;
 public abstract class CreatingOperation<R extends ApiInventoryOperationRequests.Creating>
     implements InventoryOperation<R> {
 
-  /** Absent means one, so a caller that only wants a single subsample may omit the count. */
-  private static final int DEFAULT_COUNT = 1;
-
   static final String DOCUMENTATION_FIELD_KEY = "operations.documentation.fieldName";
 
   /** The relation the created sample carries back to each origin, e.g. {@code IsPartOf}. */
@@ -35,29 +32,21 @@ public abstract class CreatingOperation<R extends ApiInventoryOperationRequests.
 
   /**
    * What that key interpolates beyond {@code originName}, for an operation whose link field name
-   * quotes one of the caller's own values (Derive's process name). The wizard's confirmation screen
-   * renders the same pattern against the whole request, so anything it shows there has to be
-   * supplied here too or the stored name keeps the placeholder.
+   * quotes one of the caller's own values (Derive's process name).
    */
   protected Map<String, Object> linkFieldNameArgs(R request) {
     return Map.of();
   }
 
-  /** Text fields the operation adds to the created sample; empty for most. */
   protected List<ApiExtraField> textFields(
       R request, List<OriginState> origins, LabelResolver labels) {
     return List.of();
   }
 
-  /** The temperature the created sample is stored at, or null when the operation sets none. */
   protected ApiQuantityInfo storageTemp(R request) {
     return null;
   }
 
-  /**
-   * What this operation takes from one origin. The default is the amount the caller chose for it;
-   * an operation deciding for itself overrides this.
-   */
   protected ApiQuantityInfo amountTakenFrom(R request, OriginState origin, int index) {
     ApiQuantityInfo chosen = request.originList().get(index).getAmountTaken();
     return chosen == null
@@ -119,7 +108,7 @@ public abstract class CreatingOperation<R extends ApiInventoryOperationRequests.
     ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples(request.getSampleName());
     sample.setTemplateId(request.getTemplateId());
     sample.getExtraFields().addAll(OperationFieldNames.withUniqueFieldNames(fields));
-    int count = request.getCount() == null ? DEFAULT_COUNT : request.getCount().intValue();
+    int count = request.getCount() == null ? 1 : request.getCount().intValue();
     for (int i = 0; i < count; i++) {
       ApiSubSample subSample = new ApiSubSample();
       subSample.setQuantity(Amounts.copy(request.getEachAmount()));

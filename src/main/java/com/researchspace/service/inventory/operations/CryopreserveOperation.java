@@ -9,14 +9,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 
-/** Cryopreserve: freezes part of a subsample down, optionally recording the cryomedium used. */
 @Component
 public class CryopreserveOperation
     extends CreatingOperation<ApiInventoryOperationRequests.Cryopreserve> {
 
   static final String CRYOMEDIUM_FIELD_KEY = "operations.cryopreserve.cryomediumField";
 
-  /** Above this, the sample is not cryopreserved in any useful sense. */
   private static final BigDecimal MAX_CELSIUS = new BigDecimal("-18");
 
   @Override

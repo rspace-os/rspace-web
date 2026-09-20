@@ -239,9 +239,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void mergeUiJsonSettingKeepsTheKeysItWasNotAskedToChange() throws Exception {
-    // The whole UI_JSON_SETTINGS blob is one column, so the client used to read it, merge one key
-    // and post the lot back. Two overlapping writers each merged into the same snapshot and the
-    // later post dropped the earlier one's key. The merge happens here instead.
     User user = userWithUiJsonSettings("{\"GALLERY_VIEW_MODE\":{\"value\":\"grid\"}}");
     when(userDao.save(user)).thenReturn(user);
 
@@ -265,10 +262,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void mergeUiJsonSettingRejectsAKeyThatIsNotAPreferenceName() {
-    // The key is written verbatim into the user's single settings column, so an unconstrained one
-    // lets a caller fill that column with arbitrary names until it hits the TEXT limit, after which
-    // every keyed write for that user fails for good. Only a name the client actually declares is
-    // accepted.
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting("../evil key", "{}", "jbloggs"));
@@ -278,11 +271,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting(null, "{}", "jbloggs"));
-    verify(userDao, never()).save(Mockito.any(User.class));
-  }
-
-  @Test
-  public void mergeUiJsonSettingRejectsAWellFormedKeyThatNoPreferenceDeclares() {
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting("AAAAAAAA", "{}", "jbloggs"));
@@ -296,18 +284,14 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private static final Path UI_PREFERENCES_SOURCE =
       Path.of("src/main/webapp/ui/src/hooks/api/useUiPreference.tsx");
 
-  /** An entry of that file's PREFERENCES map, e.g. {@code GALLERY_VIEW_MODE: Symbol.for("...")}. */
   private static final Pattern DECLARED_PREFERENCE =
       Pattern.compile("(\\w+):\\s*Symbol\\.for\\(\"(\\w+)\"\\)");
 
   /**
-   * The names the frontend declares, read from its source at test time.
-   *
-   * <p>Deliberately NOT a hand-written copy. Transcribing them here made a third copy of one list
-   * (the TS map, the Java allowlist, this test), and a third copy cannot catch the drift the test
-   * exists to catch: adding a preference to the TS map and forgetting UI_JSON_SETTINGS_KEYS left
-   * every Java test green while the new preference silently stopped persisting. Reading the real
-   * file is the same technique InventoryOperationsErrorCatalogTest uses.
+   * Deliberately NOT a hand-written copy. A third copy of the one list (the TS map, the Java
+   * allowlist, this test) cannot catch the drift the test exists to catch: adding a preference to
+   * the TS map and forgetting UI_JSON_SETTINGS_KEYS leaves every Java test green while the new
+   * preference silently stops persisting.
    */
   private static List<String> declaredPreferenceNames() throws IOException {
     String source = Files.readString(UI_PREFERENCES_SOURCE);
@@ -365,10 +349,8 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   @Test
   public void mergeUiJsonSettingRejectsASingleValueAboveThePerKeyCeiling() {
     // The column-level guard above only fires once the MERGED blob overflows, so one allowed key
-    // holding a near-65535-char value passes it and then makes every later keyed write for that
-    // user overflow permanently: the same wedge the allowlist exists to prevent, reached through
-    // one key instead of many. The per-key ceiling is checked before the user is even read, so an
-    // oversized value never reaches the database.
+    // holding a near-65535-char value passes it and then wedges every later keyed write for that
+    // user. The per-key ceiling is checked before the user is even read.
     String oversized = "{\"value\":\"" + "x".repeat(9_000) + "\"}";
     assertThrows(
         IllegalArgumentException.class,
@@ -379,8 +361,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void mergeUiJsonSettingRejectsAValueThatIsNotJson() {
-    // The value is stored verbatim inside the blob, so an unparseable one would corrupt every
-    // other key in it on the next read.
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "not json", "jbloggs"));

@@ -40,13 +40,6 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
     }
   }
 
-  /**
-   * The unit is resolved here, so an absent or unknown unit id has to be rejected rather than left
-   * to throw out of {@link RSUnitDef#getUnitById} as an unchecked exception: a temperature object
-   * of {@code {}} was surfacing as a 500 instead of a field-scoped 400. The magnitude is checked
-   * because the column is DECIMAL(19,3): a value outside it would be stored as a different
-   * temperature, or overflow.
-   */
   private QuantityInfo validatedTemperature(
       com.researchspace.api.v1.model.ApiQuantityInfo temperature, String field, Errors errors) {
     if (temperature == null) {
@@ -58,9 +51,8 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
       errors.rejectValue(field, "errors.inventory.temperature.invalidUnit");
       return null;
     }
-    // A missing number stays unresolved: whether a temperature is required at all is each caller's
-    // own rule, but the min/max comparison below dereferences the number, so returning the value
-    // here turned a malformed request into a 500.
+    // A missing number stays unresolved: whether a temperature is required at all is each
+    // caller's own rule, and the min/max comparison below dereferences the number.
     if (temperature.getNumericValue() == null) {
       return null;
     }

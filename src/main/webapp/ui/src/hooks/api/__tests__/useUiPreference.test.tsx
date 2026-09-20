@@ -1,15 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import AlertContext from "@/stores/contexts/Alert";
 import useUiPreference, { PREFERENCES, UiPreferences } from "../useUiPreference";
 
-/**
- * Wraps a `renderHook` under test with both providers a real page supplies: `UiPreferences` (always
- * present) and `AlertContext` with a caller-supplied `addAlert` (present everywhere - Gallery and
- * Sysadmin mount the generic Alerts component, Inventory its own adapter).
- */
 function withAlerts(addAlert: (alert: unknown) => void) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
@@ -20,7 +15,55 @@ function withAlerts(addAlert: (alert: unknown) => void) {
   };
 }
 
+/** A POST that never resolves for `key`, so a later write of another key has to overtake it. */
+function stallOn(key: string) {
+  let release: () => void = () => {};
+  const stalled = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const posted: Array<string> = [];
+  server.use(
+    http.post("/userform/ajax/preference", async ({ request }) => {
+      const form = await request.formData();
+      const posting = String(form.get("key"));
+      if (posting === key) await stalled;
+      posted.push(posting);
+      return HttpResponse.json({});
+    }),
+  );
+  return { posted, release: () => release() };
+}
+
+/** A POST that fails once, then records the value of every write that follows. */
+function failFirstPost() {
+  const posted: Array<string> = [];
+  let attempts = 0;
+  server.use(
+    http.post("/userform/ajax/preference", async ({ request }) => {
+      const form = await request.formData();
+      const value = JSON.parse(String(form.get("value"))) as { value: string };
+      if (++attempts === 1) return HttpResponse.error();
+      posted.push(value.value);
+      return HttpResponse.json({});
+    }),
+  );
+  return posted;
+}
+
+async function renderPref(
+  preference: symbol,
+  wrapper: React.ComponentType<{ children: React.ReactNode }> = UiPreferences,
+) {
+  const rendered = renderHook(() => useUiPreference<string | null>(preference, { defaultValue: null }), { wrapper });
+  await waitFor(() => expect(rendered.result.current).not.toBeNull());
+  return rendered;
+}
+
 describe("useUiPreference", () => {
+  beforeEach(() => {
+    server.use(http.get("/userform/ajax/preference", () => HttpResponse.json({})));
+  });
+
   it("writes one key at a time and never re-reads the whole object first", async () => {
     let stored: Record<string, unknown> = {};
     const postedKeys: Array<string> = [];
@@ -65,7 +108,6 @@ describe("useUiPreference", () => {
   it("sends the preference name, the key and the timestamped value", async () => {
     const fields: Array<Record<string, string>> = [];
     server.use(
-      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
       http.post("/userform/ajax/preference", async ({ request }) => {
         const form = await request.formData();
         fields.push({
@@ -77,11 +119,7 @@ describe("useUiPreference", () => {
       }),
     );
 
-    const { result } = renderHook(
-      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
-      { wrapper: UiPreferences },
-    );
-    await waitFor(() => expect(result.current).not.toBeNull());
+    const { result } = await renderPref(PREFERENCES.GALLERY_VIEW_MODE);
 
     act(() => {
       result.current[1]("grid");
@@ -101,7 +139,6 @@ describe("useUiPreference", () => {
     const firstInFlight = new Promise<void>((resolve) => (releaseFirst = resolve));
     let seen = 0;
     server.use(
-      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
       http.post("/userform/ajax/preference", async ({ request }) => {
         const form = await request.formData();
         const value = JSON.parse(String(form.get("value"))) as { value: string };
@@ -112,11 +149,7 @@ describe("useUiPreference", () => {
       }),
     );
 
-    const { result } = renderHook(
-      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
-      { wrapper: UiPreferences },
-    );
-    await waitFor(() => expect(result.current).not.toBeNull());
+    const { result } = await renderPref(PREFERENCES.GALLERY_VIEW_MODE);
 
     act(() => {
       result.current[1]("grid");
@@ -129,27 +162,10 @@ describe("useUiPreference", () => {
   });
 
   it("keeps writing a key after one of its writes fails", async () => {
-    // The .catch on the chain is what stops a failed write wedging that key forever: without it the
-    // rejected promise becomes every later write's `previous`, dropping every subsequent save.
-    const posted: Array<string> = [];
-    let attempts = 0;
-    server.use(
-      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
-      http.post("/userform/ajax/preference", async ({ request }) => {
-        const form = await request.formData();
-        const value = JSON.parse(String(form.get("value"))) as { value: string };
-        if (++attempts === 1) return HttpResponse.error();
-        posted.push(value.value);
-        return HttpResponse.json({ data: "{}" });
-      }),
-    );
+    const posted = failFirstPost();
     const reportedErrors = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const { result } = renderHook(
-      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
-      { wrapper: UiPreferences },
-    );
-    await waitFor(() => expect(result.current).not.toBeNull());
+    const { result } = await renderPref(PREFERENCES.GALLERY_VIEW_MODE);
 
     act(() => result.current[1]("grid"));
     await waitFor(() => expect(reportedErrors).toHaveBeenCalled());
@@ -160,23 +176,7 @@ describe("useUiPreference", () => {
   });
 
   it("does not let a stalled write of one key block a different key", async () => {
-    // Sharing one chain across every key in a provider would make a single hung request block
-    // every other preference in that provider for the rest of the session.
-    let releaseHungWrite: () => void = () => {};
-    const hungWrite = new Promise<void>((resolve) => {
-      releaseHungWrite = resolve;
-    });
-    const posted: Array<string> = [];
-    server.use(
-      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
-      http.post("/userform/ajax/preference", async ({ request }) => {
-        const form = await request.formData();
-        const key = String(form.get("key"));
-        if (key === "GALLERY_VIEW_MODE") await hungWrite;
-        posted.push(key);
-        return HttpResponse.json({});
-      }),
-    );
+    const { posted, release } = stallOn("GALLERY_VIEW_MODE");
 
     const { result } = renderHook(
       () => ({
@@ -195,38 +195,14 @@ describe("useUiPreference", () => {
     });
 
     await waitFor(() => expect(posted).toEqual(["SYSADMIN_USERS_TABLE_COLUMNS"]));
-    releaseHungWrite();
+    release();
   });
 
   it("does not let one provider's stalled write block another provider's", async () => {
-    // A module-level chain (rather than one per provider) would serialise every preference write
-    // in the app: one hung request would stall unrelated writes for the rest of the session.
-    let releaseHungWrite: () => void = () => {};
-    const hungWrite = new Promise<void>((resolve) => {
-      releaseHungWrite = resolve;
-    });
-    const posted: Array<string> = [];
-    server.use(
-      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
-      http.post("/userform/ajax/preference", async ({ request }) => {
-        const form = await request.formData();
-        const key = String(form.get("key"));
-        if (key === "GALLERY_VIEW_MODE") await hungWrite;
-        posted.push(key);
-        return HttpResponse.json({});
-      }),
-    );
+    const { posted, release } = stallOn("GALLERY_VIEW_MODE");
 
-    const stalled = renderHook(
-      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
-      { wrapper: UiPreferences },
-    );
-    const independent = renderHook(
-      () => useUiPreference<string | null>(PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS, { defaultValue: null }),
-      { wrapper: UiPreferences },
-    );
-    await waitFor(() => expect(stalled.result.current).not.toBeNull());
-    await waitFor(() => expect(independent.result.current).not.toBeNull());
+    const stalled = await renderPref(PREFERENCES.GALLERY_VIEW_MODE);
+    const independent = await renderPref(PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS);
 
     act(() => {
       stalled.result.current[1]("grid");
@@ -236,23 +212,15 @@ describe("useUiPreference", () => {
     });
 
     await waitFor(() => expect(posted).toEqual(["SYSADMIN_USERS_TABLE_COLUMNS"]));
-    releaseHungWrite();
+    release();
   });
 
   it("reports a failed write instead of swallowing it", async () => {
-    // A visible alert, not just a console log, is what makes a failed save visible to the user.
     const addAlert = vi.fn();
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    server.use(
-      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
-      http.post("/userform/ajax/preference", () => HttpResponse.error()),
-    );
+    server.use(http.post("/userform/ajax/preference", () => HttpResponse.error()));
 
-    const { result } = renderHook(
-      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
-      { wrapper: withAlerts(addAlert) },
-    );
-    await waitFor(() => expect(result.current).not.toBeNull());
+    const { result } = await renderPref(PREFERENCES.GALLERY_VIEW_MODE, withAlerts(addAlert));
 
     act(() => {
       result.current[1]("grid");
@@ -266,31 +234,13 @@ describe("useUiPreference", () => {
   });
 
   it("keeps writing a key even when raising the failure alert itself throws", async () => {
-    // A throw inside this .catch handler would reject the promise stored in `pendingWrites`, so
-    // every later write of that key would chain onto an already-rejected promise and silently skip
-    // its POST, forever.
     const throwingAddAlert = vi.fn(() => {
       throw new Error("no alert host mounted");
     });
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    const posted: Array<string> = [];
-    let attempts = 0;
-    server.use(
-      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
-      http.post("/userform/ajax/preference", async ({ request }) => {
-        const form = await request.formData();
-        const value = JSON.parse(String(form.get("value"))) as { value: string };
-        if (++attempts === 1) return HttpResponse.error();
-        posted.push(value.value);
-        return HttpResponse.json({});
-      }),
-    );
+    const posted = failFirstPost();
 
-    const { result } = renderHook(
-      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
-      { wrapper: withAlerts(throwingAddAlert) },
-    );
-    await waitFor(() => expect(result.current).not.toBeNull());
+    const { result } = await renderPref(PREFERENCES.GALLERY_VIEW_MODE, withAlerts(throwingAddAlert));
 
     act(() => result.current[1]("grid"));
     await waitFor(() => expect(throwingAddAlert).toHaveBeenCalled());

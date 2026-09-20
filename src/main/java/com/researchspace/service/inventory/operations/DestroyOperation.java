@@ -6,11 +6,10 @@ import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.stereotype.Component;
-import org.springframework.validation.Errors;
 
 /**
  * Destroy: empties each origin and creates nothing, recording the disposal date on the origin
- * itself. The only terminal operation, and the only one with no request values of its own.
+ * itself.
  */
 @Component
 public class DestroyOperation implements InventoryOperation<ApiInventoryOperationRequests.Destroy> {
@@ -30,11 +29,6 @@ public class DestroyOperation implements InventoryOperation<ApiInventoryOperatio
   @Override
   public boolean emptiesOrigin(ApiInventoryOperationRequests.Destroy request) {
     return true;
-  }
-
-  @Override
-  public void validate(ApiInventoryOperationRequests.Destroy request, Errors errors) {
-    // Nothing beyond the origin rules every operation shares: Destroy takes no values.
   }
 
   @Override

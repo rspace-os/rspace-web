@@ -20,15 +20,10 @@ import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 /**
- * Reconciling an operation's generated fields with the fields the created sample inherits from its
- * template.
- *
- * <p>A template may legitimately declare a field the operation also produces ("Passage number",
+ * A template may legitimately declare a field the operation also produces ("Passage number",
  * "Cryomedium"). Adding the generated one alongside it makes two fields with the same name, which
- * {@code InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames} rejects, so the
- * operation always failed for such a template and the wizard offered no way to repair the generated
- * name. Renaming the generated field instead would break the Passage counter, which finds the
- * previous number by looking the field up by name.
+ * {@code InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames} rejects; renaming the
+ * generated one instead would break the Passage counter, which finds the previous number by name.
  */
 class SampleApiManagerImplTemplateFieldMergeTest {
 
@@ -37,8 +32,8 @@ class SampleApiManagerImplTemplateFieldMergeTest {
     field.setName(name);
     field.setContent(content);
     field.setNewFieldRequest(true);
-    // Only the server's request builder can set a key (the DTO property is READ_ONLY), which is
-    // what distinguishes a generated field from a user's own.
+    // The key is what distinguishes a generated field from a user's own, and only the server's
+    // request builder can set one (the DTO property is READ_ONLY).
     field.setOperationFieldKey("operations.passage.numberField");
     return field;
   }
@@ -71,9 +66,6 @@ class SampleApiManagerImplTemplateFieldMergeTest {
 
   @Test
   void renamesAGeneratedLinkThatCollidesWithAnInheritedFieldName() {
-    // A link cannot be merged into a text field, so a template that happens to declare a field
-    // named like the documentation link left both active and the request died at the duplicate-name
-    // check, with no way for the user to repair a template and a target that are each valid.
     ApiSampleWithFullSubSamples sample = sampleWith(generatedLink("Documented by", "SD123"));
     List<InventoryEntityField> templateFields = inherited("Documented by");
 
@@ -94,16 +86,12 @@ class SampleApiManagerImplTemplateFieldMergeTest {
 
     SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(sample, templateFields);
 
-    // so the next Passage still finds it by name.
     assertEquals("4", templateFields.get(0).getFieldData());
-    // so the uniqueness check passes.
     assertTrue(sample.getExtraFields().isEmpty(), "the generated duplicate should be absorbed");
   }
 
   @Test
   void matchesInheritedNamesTheWayTheUniquenessCheckDoes() {
-    // The duplicate check trims and lowercases, so the merge has to agree with it or a name that
-    // collides there would survive here and still be rejected.
     ApiSampleWithFullSubSamples sample = sampleWith(operationField("  passage NUMBER ", "7"));
     List<InventoryEntityField> templateFields = inherited("Passage number");
 
@@ -126,8 +114,6 @@ class SampleApiManagerImplTemplateFieldMergeTest {
 
   @Test
   void leavesFieldsThatDidNotComeFromAnOperationAlone() {
-    // A user's own extra field on POST /samples keeps the existing behaviour, a duplicate-name
-    // rejection, rather than silently overwriting a template field's content.
     ApiExtraField userField = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
     userField.setName("Passage number");
     userField.setContent("9");
@@ -143,8 +129,6 @@ class SampleApiManagerImplTemplateFieldMergeTest {
 
   @Test
   void neverMergesIntoAnInheritedLinkField() {
-    // A link field holds a structured InventoryLink, not text, so its content cannot be set from a
-    // generated text field; leave the collision to the duplicate-name check rather than corrupt it.
     ApiSampleWithFullSubSamples sample = sampleWith(operationField("Related", "text"));
     List<InventoryEntityField> templateFields = new ArrayList<>();
     InventoryLinkField linkField = new InventoryLinkField();
@@ -172,11 +156,6 @@ class SampleApiManagerImplTemplateFieldMergeTest {
 
   @Test
   void leavesAGeneratedFieldAloneWhenTheInheritedFieldRejectsItsContent() {
-    // Matching on the name alone says nothing about the inherited field's TYPE. A template may
-    // declare a number field called "Cryomedium"; Cryopreserve then generates a text field of that
-    // name whose content is "10% DMSO". setFieldData validates before storing, so merging it threw
-    // IllegalArgumentException out of the manager instead of letting the request reach the
-    // duplicate-name rejection that reports a controlled error.
     ApiSampleWithFullSubSamples sample = sampleWith(operationField("Cryomedium", "10% DMSO"));
     List<InventoryEntityField> templateFields = new ArrayList<>();
     templateFields.add(new InventoryNumberField("Cryomedium"));
@@ -189,8 +168,6 @@ class SampleApiManagerImplTemplateFieldMergeTest {
 
   @Test
   void stillMergesWhenTheInheritedFieldAcceptsTheGeneratedContent() {
-    // The counterpart: a number field named "Passage number" is exactly what the Passage counter
-    // merge exists for, so a numeric content must still be absorbed.
     ApiSampleWithFullSubSamples sample = sampleWith(operationField("Passage number", "4"));
     List<InventoryEntityField> templateFields = new ArrayList<>();
     templateFields.add(new InventoryNumberField("Passage number"));

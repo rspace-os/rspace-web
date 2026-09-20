@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.operations;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.KEYS;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.celsius;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.errorsFor;
+import static com.researchspace.service.inventory.operations.OperationTestFixtures.kelvin;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.millilitres;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.originState;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.requestOrigin;
@@ -84,9 +85,7 @@ class CryopreserveOperationTest {
   void judgesTheBoundOnTheTemperatureDenotedNotTheRawNumber() {
     ApiInventoryOperationRequests.Cryopreserve request = request();
     // 200 K is -73 C, comfortably cryogenic, though 200 read as a number is not.
-    request.setStorageTemp(
-        new com.researchspace.api.v1.model.ApiQuantityInfo(
-            new BigDecimal("200"), com.researchspace.model.units.RSUnitDef.KELVIN.getId()));
+    request.setStorageTemp(kelvin("200"));
     BeanPropertyBindingResult errors = errorsFor(request);
 
     CRYOPRESERVE.validate(request, errors);

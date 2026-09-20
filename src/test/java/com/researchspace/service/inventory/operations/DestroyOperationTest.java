@@ -24,14 +24,17 @@ class DestroyOperationTest {
     return request;
   }
 
+  private static ApiInventoryOperationPost built() {
+    return DESTROY.build(
+        request(),
+        List.of(originState(100, "7.5")),
+        OperationTestFixtures.KEYS,
+        LocalDate.parse("2026-08-20"));
+  }
+
   @Test
   void takesTheOriginsWholeLiveQuantityAndCreatesNothing() {
-    ApiInventoryOperationPost built =
-        DESTROY.build(
-            request(),
-            List.of(originState(100, "7.5")),
-            OperationTestFixtures.KEYS,
-            LocalDate.parse("2026-08-20"));
+    ApiInventoryOperationPost built = built();
 
     assertNull(built.getNewSample(), "Destroy creates no sample");
     assertEquals(1, built.getOrigins().size());
@@ -42,14 +45,7 @@ class DestroyOperationTest {
 
   @Test
   void recordsTheCallersDateOnTheOriginItself() {
-    ApiInventoryOperationPost built =
-        DESTROY.build(
-            request(),
-            List.of(originState(100, "7.5")),
-            OperationTestFixtures.KEYS,
-            LocalDate.parse("2026-08-20"));
-
-    List<ApiExtraField> originFields = built.getOrigins().get(0).getExtraFields();
+    List<ApiExtraField> originFields = built().getOrigins().get(0).getExtraFields();
     assertEquals(1, originFields.size());
     ApiExtraField disposed = originFields.get(0);
     assertEquals("operations.destroy.disposedField", disposed.getOperationFieldKey());

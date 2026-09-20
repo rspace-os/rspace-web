@@ -2,11 +2,6 @@ import { type OperationFunctionArgs, operationFunctions } from "./operationFunct
 import type { ComputedArgSource, InventoryKey, InventoryOperation } from "./operationsConfig";
 import type { OperationInputs } from "./types";
 
-/**
- * `operationFieldKey` is the field's STABLE identity when an operation generated it; `name` is a
- * localized resolution of that key, so it changes with the locale and with any rewording of the
- * translation. Absent (null/undefined) on every hand-created field.
- */
 type SampleField = {
   name: string | null;
   content: string | number | Date;
@@ -15,7 +10,6 @@ type SampleField = {
 
 export type ComputedContext = {
   parentFields: ReadonlyArray<SampleField>;
-  /** The current input values, for `input` args, and where each result is written. */
   values: OperationInputs;
   resolveFieldName: (key: InventoryKey) => string;
 };
@@ -33,21 +27,15 @@ function resolveArg(source: ComputedArgSource, ctx: ComputedContext): string | n
   if ("parentSampleField" in source) {
     return parentFieldValue(ctx.parentFields, source.parentSampleField, ctx.resolveFieldName(source.parentSampleField));
   }
-  if ("constant" in source) return source.constant;
-  const value = ctx.values[source.input];
-  return typeof value === "string" || typeof value === "number" ? value : undefined;
+  return source.constant;
 }
 
-/**
- * Because results are written back, a later computed value can read an earlier one via an `input`
- * arg (chaining follows the array order).
- */
 export function applyComputedValues(operation: InventoryOperation, ctx: ComputedContext): OperationInputs {
   let values = ctx.values;
   for (const computed of operation.effect.computed ?? []) {
     const args: OperationFunctionArgs = {};
     for (const [name, source] of Object.entries(computed.args)) {
-      args[name] = resolveArg(source, { ...ctx, values });
+      args[name] = resolveArg(source, ctx);
     }
     const def = operationFunctions[computed.fn];
     values = { ...values, [computed.into]: def.fn(args) };

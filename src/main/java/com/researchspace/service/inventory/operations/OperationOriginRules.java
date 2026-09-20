@@ -23,16 +23,11 @@ public final class OperationOriginRules {
 
   private OperationOriginRules() {}
 
-  /** The caller's field name for the origin at {@code index}. */
   public static String originField(boolean singleOrigin, int index) {
     return singleOrigin ? "origin" : "origins[" + index + "]";
   }
 
-  /**
-   * Validates the origin list and the documentation target of any operation's request. Where the
-   * operation takes no caller-chosen amount, an amount sent anyway is a contradiction rather than a
-   * value to honour, and is refused with the operation's own reason.
-   */
+  /** Validates the origin list and the documentation target of any operation's request. */
   public static <R extends ApiInventoryOperationRequests.Request> void validate(
       InventoryOperation<R> operation, R request, Errors errors) {
     boolean singleOrigin = !operation.requiresMultiple();

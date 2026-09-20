@@ -31,7 +31,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.collections.CollectionUtils;
@@ -74,7 +74,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               parentFields(subSample.getSample())));
     }
 
-    // Values are checked before any origin is written to, so a bad request touches nothing.
     BeanPropertyBindingResult valueErrors =
         new BeanPropertyBindingResult(request, "apiInventoryOperationPost");
     operation.validate(request, valueErrors);
@@ -94,9 +93,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
     ApiSampleWithFullSubSamples created = execute(built, user);
 
-    // The origins as they stand afterwards, read HERE rather than by the caller: still inside this
-    // transaction, so they are one consistent snapshot of what this operation produced, and one
-    // transaction rather than one per origin against a 100-origin cap.
+    // The origins as they stand afterwards, read here rather than by the caller: still inside
+    // this transaction, so they are one consistent snapshot of what this operation produced.
     List<ApiSubSample> originsAfter = new ArrayList<>();
     for (Long originId : originIds) {
       originsAfter.add(subSampleApiMgr.getApiSubSampleById(originId, user));
@@ -129,8 +127,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    */
   ApiSampleWithFullSubSamples execute(ApiInventoryOperationPost request, User user)
       throws BindException {
-    // Inside this transaction and before any origin is read, so the template validated is the
-    // template the sample is created from.
     templateConformance.validate(request, user);
     // The validator guarantees unique, non-null ids by this point.
     List<ApiInventoryOperationOriginUpdate> originsById =
@@ -141,8 +137,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     checkOriginLiveState(request, originsById, user);
 
     // Reduce each origin BEFORE creating the new sample, so the new subsample is the
-    // most-recently-modified record and sorts first in a modification-date listing. Coordinated
-    // here, in the same transaction as the sample creation, rather than as a separate step.
+    // most-recently-modified record and sorts first in a modification-date listing.
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
       subSampleApiMgr.registerApiSubSampleUsage(
           origin.getId(), origin.getAmountTaken().toQuantityInfo(), user);
@@ -163,12 +158,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
-   * The live-state rules (DevDocs/adr/0011): every origin must currently hold something, the amount
-   * taken may not exceed what an origin holds, and an origin-emptying operation (e.g. Destroy) must
-   * take exactly what the origin holds. Permission is asserted BEFORE reading state, so an
+   * The live-state rules (DevDocs/adr/0011). Permission is asserted BEFORE reading state, so an
    * under-permissioned caller gets an authorization failure, not a misleading "origin empty" 400.
-   * Violations surface as the same field-scoped 400 (BindException) the structural validator
-   * produces, under {@code origins[i]} in request order.
    */
   private void checkOriginLiveState(
       ApiInventoryOperationPost request,
@@ -178,12 +169,11 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     boolean emptiesOrigin = request.isEmptiesOrigin();
     BeanPropertyBindingResult errors =
         new BeanPropertyBindingResult(request, "apiInventoryOperationPost");
-    // Origins are processed in id order but reported at their REQUEST index. Keyed by identity: a
-    // list scan per origin is quadratic at the 100-origin cap, and these are Lombok @Data values,
-    // so two equal origins would both resolve to the first one's index.
-    Map<ApiInventoryOperationOriginUpdate, Integer> requestIndex = new IdentityHashMap<>();
+    // Origins are processed in id order but reported at their REQUEST index. Keyed by the id the
+    // validator has already guaranteed unique and non-null, so no list scan per origin.
+    Map<Long, Integer> requestIndex = new HashMap<>();
     for (int i = 0; i < request.getOrigins().size(); i++) {
-      requestIndex.put(request.getOrigins().get(i), i);
+      requestIndex.put(request.getOrigins().get(i).getId(), i);
     }
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
       subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
@@ -191,7 +181,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
     QuantityInfo firstOriginQuantity = null;
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
-      errors.pushNestedPath(String.format("origins[%d]", requestIndex.get(origin)));
+      errors.pushNestedPath(String.format("origins[%d]", requestIndex.get(origin.getId())));
       try {
         QuantityInfo currentQuantity = subSampleApiMgr.getIfExists(origin.getId()).getQuantity();
         if (originHoldsNothing(currentQuantity)) {
@@ -223,9 +213,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               "errors.inventory.operation.amountTakenExceedsOrigin",
               "Cannot take more from an origin than it currently holds.");
         } else if (amountTakenLostToRounding(origin.getAmountTaken(), currentQuantity)) {
-          // The remainder fits no unit in its category, so registerApiSubSampleUsage would store
-          // it rounded and silently lose the decrement. Checked with the same subtraction the
-          // decrement itself uses, so the two can never disagree.
           errors.rejectValue(
               "amountTaken",
               "errors.inventory.operation.amountTakenNotSubtractable",
@@ -244,12 +231,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
-   * A documentation target the caller cannot read is a field error on {@code documentedByGlobalId},
-   * the field they sent it in.
-   *
-   * <p>Checked here, alongside the operation's own value rules and before any origin is written to,
-   * so a request already known to be bad changes nothing. The record KIND is checked earlier, on
-   * shape alone; this is the existence and read-permission half, which needs the acting user.
+   * The record KIND is checked earlier, on shape alone; this is the existence and read-permission
+   * half, which needs the acting user.
    */
   private void rejectUnreadableDocumentationTarget(
       String documentedByGlobalId, User user, BeanPropertyBindingResult errors) {
@@ -302,10 +285,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     }
   }
 
-  /**
-   * Whether an origin currently holds nothing. No operation may act on such an origin: there is
-   * nothing to take, pool, preserve or destroy.
-   */
   static boolean originHoldsNothing(Quantifiable originQuantity) {
     return originQuantity == null
         || originQuantity.getNumericValue() == null
@@ -313,29 +292,26 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
-   * Whether the amount taken exceeds the origin's current quantity, unit-aware within a measurement
-   * category (e.g. 0.006 kg against a 5 g origin). A null amount, or a pair in different
-   * categories, is not treated as over-removal. A null/absent origin quantity means the origin
-   * holds nothing, so any positive amount taken from it is over-removal.
+   * The amount taken against the origin's current quantity, unit-aware within a measurement
+   * category (e.g. 0.006 kg against a 5 g origin), or null when the two cannot be compared.
    */
+  private static Integer compareAmountToOrigin(
+      ApiQuantityInfo amountTaken, Quantifiable originQuantity) {
+    if (amountTaken == null
+        || amountTaken.getNumericValue() == null
+        || originQuantity == null
+        || originQuantity.getNumericValue() == null
+        || !quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
+      return null;
+    }
+    return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity);
+  }
+
+  /** Whether the amount taken exceeds the origin's current quantity. */
   static boolean amountTakenExceedsOrigin(
       ApiQuantityInfo amountTaken, Quantifiable originQuantity) {
-    if (amountTaken == null || amountTaken.getNumericValue() == null) {
-      return false;
-    }
-    if (originQuantity == null || originQuantity.getNumericValue() == null) {
-      // Unreachable from the only production caller: checkOriginLiveState tests
-      // originHoldsNothing(currentQuantity) first and takes a different branch, and that covers
-      // exactly the null / null-numericValue cases handled here. Kept so this stays a total
-      // function
-      // of its two arguments rather than one with an undocumented precondition, which is how its
-      // direct unit test exercises it.
-      return amountTaken.getNumericValue().signum() > 0;
-    }
-    if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
-      return false;
-    }
-    return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity) > 0;
+    Integer comparison = compareAmountToOrigin(amountTaken, originQuantity);
+    return comparison != null && comparison > 0;
   }
 
   /**
@@ -349,11 +325,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    *
    * <p>The check compares the exact remainder against the value {@code subtract} would actually
    * persist, both expressed in the origin's unit, so it tracks whatever that method does rather
-   * than restating its rules. Conversions use exact power-of-ten unit factors, so nothing is lost
-   * before the comparison. Over-removal is rejected before this runs, so the remainder is never
-   * negative. Missing values, a zero amount and incomparable categories are handled by their own
-   * rules; two quantities in the SAME unit are both already stored at 3dp, so their difference is
-   * exact and needs no check at all.
+   * than restating its rules. Two quantities in the SAME unit are both already stored at 3dp, so
+   * their difference is exact and needs no check at all.
    */
   static boolean amountTakenLostToRounding(
       ApiQuantityInfo amountTaken, QuantityInfo originQuantity) {
@@ -390,23 +363,13 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
-   * Whether the amount taken equals the origin's current quantity, unit-aware within a measurement
-   * category (0.005 kg empties a 5 g origin, and 0.01 l a 10 ml one). This is what the
-   * mustEmptyOrigin rule checks: an emptying operation whose amount does not match the live
-   * quantity is a 400. Missing values or incomparable categories never count as emptying, so an
-   * incomparable pair is left to the category check that runs before this one.
+   * Whether the amount taken equals the origin's current quantity (0.005 kg empties a 5 g origin,
+   * and 0.01 l a 10 ml one). An incomparable pair is left to the category check that runs before
+   * this one.
    */
   static boolean amountTakenEmptiesOrigin(
       ApiQuantityInfo amountTaken, Quantifiable originQuantity) {
-    if (amountTaken == null
-        || amountTaken.getNumericValue() == null
-        || originQuantity == null
-        || originQuantity.getNumericValue() == null) {
-      return false;
-    }
-    if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
-      return false;
-    }
-    return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity) == 0;
+    Integer comparison = compareAmountToOrigin(amountTaken, originQuantity);
+    return comparison != null && comparison == 0;
   }
 }

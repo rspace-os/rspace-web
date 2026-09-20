@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.validation.BeanPropertyBindingResult;
 
-/** Shared builders for the per-operation tests: an origin, an amount, a label resolver. */
 final class OperationTestFixtures {
 
   static final LabelResolver KEYS = (key, args) -> args.isEmpty() ? key : key + " " + args;
@@ -23,6 +22,10 @@ final class OperationTestFixtures {
     return new ApiQuantityInfo(new BigDecimal(value), RSUnitDef.CELSIUS.getId());
   }
 
+  static ApiQuantityInfo kelvin(String value) {
+    return new ApiQuantityInfo(new BigDecimal(value), RSUnitDef.KELVIN.getId());
+  }
+
   static OriginState originState(long id, String quantityMl) {
     return new OriginState(id, "SS" + id, "subsample " + id, millilitres(quantityMl), List.of());
   }
@@ -31,7 +34,6 @@ final class OperationTestFixtures {
     return requestOrigin("SS" + id, amountTaken);
   }
 
-  /** An origin named by a literal global id, for the spellings that alias to the same subsample. */
   static ApiInventoryOperationRequests.Origin requestOrigin(
       String globalId, ApiQuantityInfo amountTaken) {
     ApiInventoryOperationRequests.Origin origin = new ApiInventoryOperationRequests.Origin();

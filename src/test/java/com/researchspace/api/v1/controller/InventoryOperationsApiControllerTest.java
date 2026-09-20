@@ -62,6 +62,9 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.http.HttpHeaders;
@@ -74,12 +77,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
-/**
- * Unit coverage for what the controller owns: the shape rules it applies at the door, the
- * edit-session lock it holds around the manager, and the renaming of the core's field paths back to
- * the fields the caller sent. Real operations over a mocked manager, so only a request that passed
- * every door check reaches the transactional core.
- */
 class InventoryOperationsApiControllerTest {
 
   private final InventoryOperationsApiController controller =
@@ -186,7 +183,6 @@ class InventoryOperationsApiControllerTest {
     return new BeanPropertyBindingResult(request, "request");
   }
 
-  /** The origin as the manager reports it afterwards; the controller does not re-read it. */
   private static ApiSubSample originAfter(long id) {
     ApiSubSample after = new ApiSubSample();
     after.setId(id);
@@ -227,7 +223,6 @@ class InventoryOperationsApiControllerTest {
 
   // --- the in-flight claim that refuses a second overlapping request, whoever sent it ---
 
-  /** The same user's double submit: the edit lock would extend, the claim refuses. */
   @Test
   void anOriginAnotherRequestIsOperatingOnIsRefusedBeforeAnyLockOrManagerCall() {
     InventoryOperationInFlightOrigins.Claim otherRequest = inFlightOrigins.claim(List.of("SS100"));
@@ -260,11 +255,6 @@ class InventoryOperationsApiControllerTest {
     assertFalse(inFlightOrigins.isInFlight("SS100"));
   }
 
-  /**
-   * The claim outlives the edit locks: were it released first, a second request could claim the
-   * origin and then meet this request's still-held parent-sample lock, or pass it as the same user
-   * and run on after this request's release had stripped the locks from under it.
-   */
   @Test
   void theClaimIsStillHeldWhileTheEditLocksAreGivenBack() throws Exception {
     managerCreates(new ApiSampleWithFullSubSamples("Aliquots"), 100L);
@@ -296,7 +286,6 @@ class InventoryOperationsApiControllerTest {
     assertFalse(inFlightOrigins.isInFlight("SS100"));
   }
 
-  /** A Pool refused on its second origin must not leave its first origin claimed. */
   @Test
   void aPoolRefusedOnOneOriginHoldsNoneOfThem() {
     originExists(300L, 20L);
@@ -314,7 +303,6 @@ class InventoryOperationsApiControllerTest {
 
   // --- the edit-session lock the controller holds around the manager ---
 
-  /** Locks every origin plus every distinct parent sample, in ascending global-id order. */
   @Test
   void locksEveryOriginAndParentSampleInAscendingOrder() throws Exception {
     originExists(300L, 20L);
@@ -362,7 +350,6 @@ class InventoryOperationsApiControllerTest {
     verifyNoInteractions(operationManager);
   }
 
-  /** A rejected operation must not leave the origins locked for the next five minutes. */
   @Test
   void releasesTheLocksWhenTheManagerRejectsTheRequest() throws Exception {
     when(operationManager.performOperation(any(), any(), any(), eq(user)))
@@ -377,10 +364,6 @@ class InventoryOperationsApiControllerTest {
     verify(tracker).attemptToUnlock("SA10", user);
   }
 
-  /**
-   * Permission is asserted on every origin before the first lock is taken, so a caller who may not
-   * edit an origin cannot hold other users' records for the duration of the request.
-   */
   @Test
   void assertsEditPermissionOnEveryOriginBeforeTakingAnyLock() {
     when(subSampleApiMgr.assertUserCanEditSubSample(100L, user))
@@ -464,42 +447,26 @@ class InventoryOperationsApiControllerTest {
 
   // --- shape rules the endpoint applies at the door ---
 
-  @Test
-  void rejectsAnOriginThatIsNotASubsampleGlobalId() {
-    for (String notASubSample : new String[] {"SA100", "IC7", "100", "garbage", null}) {
-      ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
-      request.getOrigin().setGlobalId(notASubSample);
-      BindException rejection =
-          assertThrows(
-              BindException.class,
-              () -> controller.aliquot(request, bindingResultFor(request), user),
-              String.valueOf(notASubSample));
-      assertEquals(
-          "errors.inventory.operation.originGlobalIdInvalid",
-          rejection.getFieldErrors("origin.globalId").get(0).getCode(),
-          String.valueOf(notASubSample));
-    }
-    verifyNoInteractions(operationManager);
-  }
+  // Strict "SS" + digits: a lenient parse could resolve to a different subsample's id.
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(
+      strings = {
+        "SA100", "IC7", "100", "garbage", "ss100", " SS100", "SS100 ", "SS-1", "SS1.5", "SS", "",
+        "SS 100", "S100", "SSS100"
+      })
+  void rejectsAnOriginThatIsNotASubsampleGlobalId(String notASubSample) {
+    ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
+    request.getOrigin().setGlobalId(notASubSample);
 
-  @Test
-  void rejectsEveryNearMissOfASubsampleGlobalId() {
-    // Strict "SS" + digits: a lenient parse could resolve to a different subsample's id.
-    for (String nearMiss :
-        List.of(
-            "ss100", " SS100", "SS100 ", "SS-1", "SS1.5", "SS", "", "SS 100", "S100", "SSS100")) {
-      ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
-      request.getOrigin().setGlobalId(nearMiss);
-      BindException rejection =
-          assertThrows(
-              BindException.class,
-              () -> controller.aliquot(request, bindingResultFor(request), user),
-              "[" + nearMiss + "]");
-      assertEquals(
-          "errors.inventory.operation.originGlobalIdInvalid",
-          rejection.getFieldErrors("origin.globalId").get(0).getCode(),
-          "[" + nearMiss + "]");
-    }
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () -> controller.aliquot(request, bindingResultFor(request), user));
+
+    assertEquals(
+        "errors.inventory.operation.originGlobalIdInvalid",
+        rejection.getFieldErrors("origin.globalId").get(0).getCode());
     verifyNoInteractions(operationManager);
   }
 
@@ -675,10 +642,6 @@ class InventoryOperationsApiControllerTest {
     assertTrue(rejection.getFieldErrors("origins[0].amountTaken").isEmpty());
   }
 
-  /**
-   * The BindException catch renames the core's field errors; a held lock is not one of them and
-   * must reach the caller as the 409 it is, not as a 400 with no field to correct.
-   */
   @Test
   void aHeldLockPassesThroughTheRenameUnchanged() {
     when(tracker.attemptToLockForEdit(eq("SS100"), any()))

@@ -111,9 +111,7 @@ public class SampleApiPutValidatorTest extends InventoryRecordValidationTestBase
     e = resetErrorsAndValidate(apiSample);
     assertEquals(1, e.getErrorCount());
 
-    // set invalid unit, should be rejected, and only for being an invalid unit: a litre is not
-    // comparable to a temperature either, but reporting that as well told the user nothing they
-    // did not already have to fix.
+    // set invalid unit, should be rejected, and only for being an invalid unit
     apiSample.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(5L), RSUnitDef.LITRE));
     e = resetErrorsAndValidate(apiSample);
     assertEquals(1, e.getErrorCount(), "unexpected errors: " + e.getAllErrors());

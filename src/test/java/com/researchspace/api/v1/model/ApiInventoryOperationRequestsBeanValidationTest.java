@@ -15,10 +15,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-/**
- * The rules the request bodies carry themselves. These fire at binding, before any controller code
- * runs, so a generated client can enforce them and a malformed body never reaches an operation.
- */
 class ApiInventoryOperationRequestsBeanValidationTest {
 
   private static ValidatorFactory factory;
@@ -55,7 +51,6 @@ class ApiInventoryOperationRequestsBeanValidationTest {
     return request;
   }
 
-  /** The message template each violation carries, which is the catalog key the API resolves. */
   private static Set<String> keysFor(Object request, String property) {
     return validator.validate(request).stream()
         .filter(violation -> property.equals(violation.getPropertyPath().toString()))
