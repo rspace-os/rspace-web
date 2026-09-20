@@ -140,7 +140,7 @@ anchored on the class or method it sat on.
   instead, and an amount sent alongside is a 400." Removed as a duplicate of ADR 0011 D5, which
   states the take-all wire contract and the 400.
 
-## src/main/webapp/ui/src/Inventory/components/Operations/operationsConfig.ts
+## src/main/webapp/ui/src/Inventory/components/Operations/operations.ts
 
 - `OriginFieldSpec` — removed comment "Subsample custom fields support only text and number (no
   native date type), so a date value is stored as a text field holding an ISO date." Already

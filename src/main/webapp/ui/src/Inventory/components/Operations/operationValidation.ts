@@ -2,7 +2,7 @@ import type { Quantity } from "@/stores/definitions/HasQuantity";
 import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
-import type { InventoryOperation, OperationInputConfig } from "./operationsConfig";
+import type { InventoryOperation, OperationInput } from "./operations";
 import type { OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
 import { UNSET_UNIT } from "./types";
 
@@ -24,19 +24,19 @@ export function validSubSampleCount(count: unknown, min = 1, max?: number): bool
   return Number.isInteger(n) && n >= min && (max === undefined || n <= max);
 }
 
-export function temperatureExceedsMax(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
+export function temperatureExceedsMax(input: OperationInput, value: OperationQuantity | undefined): boolean {
   if (input.type !== "temperature" || input.maxCelsius === undefined) return false;
   if (!value || !Number.isFinite(value.numericValue)) return false;
   return value.numericValue > input.maxCelsius;
 }
 
-export function temperatureBelowMin(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
+export function temperatureBelowMin(input: OperationInput, value: OperationQuantity | undefined): boolean {
   if (input.type !== "temperature" || input.minCelsius === undefined) return false;
   if (!value || !Number.isFinite(value.numericValue)) return false;
   return value.numericValue < input.minCelsius;
 }
 
-export function temperatureNotStorable(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
+export function temperatureNotStorable(input: OperationInput, value: OperationQuantity | undefined): boolean {
   if (input.type !== "temperature") return false;
   if (!value || !Number.isFinite(value.numericValue)) return false;
   return value.numericValue < -273.15 || !amountIsStorable(value.numericValue);

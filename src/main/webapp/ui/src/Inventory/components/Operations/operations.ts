@@ -13,7 +13,7 @@ import type { AmountMode } from "./types";
 
 export type InventoryKey = ParseKeys<"inventory">;
 
-export type OperationInputConfig = {
+export type OperationInput = {
   key: string;
   type: "text" | "integer" | "quantity" | "temperature";
   labelKey: InventoryKey;
@@ -69,7 +69,7 @@ export type InventoryOperation = {
   defaultAmountMode?: AmountMode;
   noOutput?: boolean;
   steps?: ReadonlyArray<"details" | "template" | "amounts" | "documentation" | "confirm">;
-  inputs: ReadonlyArray<OperationInputConfig>;
+  inputs: ReadonlyArray<OperationInput>;
   effect: Effect;
   confirmSummary: ReadonlyArray<ConfirmSummaryField>;
 };
@@ -79,7 +79,7 @@ const sampleName = {
   type: "text",
   labelKey: "operations.fields.sampleName",
   required: true,
-} as const satisfies OperationInputConfig;
+} as const satisfies OperationInput;
 
 // The backend's own bound (ApiInventoryOperationRequests.Creating), repeated here so the wizard
 // stops the user at the field rather than at Perform. The two are hand-kept in step; a drift
@@ -91,21 +91,21 @@ const count = {
   min: 1,
   max: 100,
   default: 1,
-} as const satisfies OperationInputConfig;
+} as const satisfies OperationInput;
 
 const eachAmount = {
   key: "eachAmount",
   type: "quantity",
   labelKey: "operations.fields.eachAmount",
   required: true,
-} as const satisfies OperationInputConfig;
+} as const satisfies OperationInput;
 
 const amountTaken = (labelKey: InventoryKey) =>
   ({
     key: "amountTaken",
     type: "quantity",
     labelKey,
-  }) as const satisfies OperationInputConfig;
+  }) as const satisfies OperationInput;
 
 /**
  * The seven operations, mirroring the Java classes in

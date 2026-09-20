@@ -4,7 +4,7 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import OperationDetailsStep from "../OperationDetailsStep";
-import type { InventoryOperation } from "../operationsConfig";
+import type { InventoryOperation } from "../operations";
 import type { OperationInputs } from "../types";
 import { operations } from "./testOperations";
 
@@ -146,7 +146,7 @@ describe("OperationDetailsStep", () => {
 
   it("bounds the count input to whole numbers within the definition's own min and max", () => {
     const aliquot = operations.find((o) => o.key === "aliquot");
-    if (!aliquot) throw new Error("the aliquot definition must exist in operationsConfig");
+    if (!aliquot) throw new Error("the aliquot definition must exist in operations");
     const countInput = aliquot.inputs.find((i) => i.key === "count");
     if (!countInput) throw new Error("aliquot must declare a count input");
     render(
@@ -428,7 +428,7 @@ describe("OperationDetailsStep (amount modes)", () => {
 
 describe("OperationDetailsStep count errors and temperature unit", () => {
   const aliquot = operations.find((o) => o.key === "aliquot");
-  if (!aliquot) throw new Error("the aliquot definition must exist in operationsConfig");
+  if (!aliquot) throw new Error("the aliquot definition must exist in operations");
   const renderCount = (count: number, onChange: (v: OperationInputs) => void = () => undefined) =>
     render(
       <OperationDetailsStep

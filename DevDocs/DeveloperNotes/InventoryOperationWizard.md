@@ -39,7 +39,7 @@ to turn the property on first, as the operation MVCITs do in their `setup()`.
 ## How it fits together
 
 ```
-operationsConfig.ts (a hand-typed constant)
+operations.ts (a hand-typed constant)
           │
           ▼
 OperationWizard (UI) ──collects the operation's values──► buildFacadeRequest.ts
@@ -82,7 +82,7 @@ Files:
   `ApiInventoryOperationRequests`, and the internal carrier
   `ApiInventoryOperationPost` / `ApiInventoryOperationOriginUpdate`.
 - Frontend: `src/main/webapp/ui/src/Inventory/components/Operations/`
-  - `operationsConfig.ts` — the `operations` constant, one entry per Java class, plus
+  - `operations.ts` — the `operations` constant, one entry per Java class, plus
     the helpers the wizard derives from it. Label and field-name keys are typed as the
     `inventory:` catalog's own key union, so a mistyped key fails at compile time.
     `MAX_ORIGINS` repeats the Pool body's own ceiling.
@@ -123,7 +123,7 @@ Files:
    controller delegating to `perform(theOperation, request, errors, user)`, and one
    `@Autowired` field for the operation. The controller has no per-operation logic.
 
-4. **Add the wizard entry** to the `operations` constant in `operationsConfig.ts`,
+4. **Add the wizard entry** to the `operations` constant in `operations.ts`,
    mirroring the Java class: which inputs the wizard collects, the effect wiring the
    confirmation preview reads, and which summary rows to show. The picker, the steps,
    the request builder and the preview pick it up from there.
@@ -168,7 +168,7 @@ increment: {
 ```
 
 ```ts
-// operationsConfig.ts — which function, how to source its args, where the result goes
+// operations.ts — which function, how to source its args, where the result goes
 effect: {
   computed: [{
     fn: "increment",

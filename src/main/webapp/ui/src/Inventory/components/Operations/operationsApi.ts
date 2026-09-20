@@ -1,7 +1,7 @@
 import ApiService from "@/common/InvApiService";
 import { getApiErrorDetail } from "@/util/error";
 import type { FacadeRequest } from "./buildOperationRequest";
-import type { InventoryOperation } from "./operationsConfig";
+import type { InventoryOperation } from "./operations";
 import type { ResolveLabel } from "./types";
 
 export type OperationResult = { id: number; globalId: string; name: string };

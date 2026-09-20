@@ -20,10 +20,10 @@ import type SubSampleModel from "@/stores/models/SubSampleModel";
 import {
   amountKeysFor,
   type InventoryOperation,
-  type OperationInputConfig,
+  type OperationInput,
   resolveProcessName,
   usesAmountModes,
-} from "./operationsConfig";
+} from "./operations";
 import {
   amountTakenExceedsOrigin,
   originBlockedReason,
@@ -140,7 +140,7 @@ function OperationDetailsStep({
   const processName = resolveProcessName(operation, values);
   const sampleNameDisabled = operation.effect.processNameFrom ? processName === "" : false;
 
-  const renderInput = (input: OperationInputConfig): React.ReactNode => {
+  const renderInput = (input: OperationInput): React.ReactNode => {
     if (input.type === "text") {
       if (input.key === operation.effect.processNameFrom) {
         return (
