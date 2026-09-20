@@ -84,6 +84,7 @@ class ApiV2AuditLogTest {
     query.setDateFrom(Date.from(Instant.parse("2025-12-01T00:00:00Z")));
     query.setDateTo(Date.from(Instant.parse("2026-01-02T23:59:59.999Z")));
     query.setActions(new HashSet<>(Set.of(AuditAction.WRITE)));
+    query.setSearch("PayloadMarker");
 
     var page = auditLog.search(resource, "7", query, actor);
 
@@ -98,6 +99,8 @@ class ApiV2AuditLogTest {
     assertEquals("things:7", request.getValue().oid());
     assertEquals(Set.of(AuditDomain.RECORD), request.getValue().domains());
     assertEquals(Set.of(AuditAction.WRITE), request.getValue().actions());
+    assertEquals("payloadmarker", request.getValue().search());
+    assertEquals(Set.of("id", "name"), request.getValue().searchableFields());
     assertEquals(Instant.parse("2025-12-01T00:00:00Z"), request.getValue().fromInclusive());
     assertEquals(Instant.parse("2026-01-03T00:00:00Z"), request.getValue().toExclusive());
   }

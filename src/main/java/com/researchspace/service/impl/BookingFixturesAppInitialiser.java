@@ -24,13 +24,17 @@ import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -46,6 +50,9 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private static final String FIXTURE_DESCRIPTION_KEY = "bookingFixtures.description";
   private static final ZoneId FIXTURE_DATE_ZONE = ZoneId.of("Europe/Berlin");
   private static final Locale FIXTURE_LOCALE = Locale.forLanguageTag("en-US");
+  private static final int BUSY_CALENDAR_INSTRUMENT_COUNT = 500;
+  private static final int BUSY_CALENDAR_EVENTS_PER_INSTRUMENT = 2;
+  private static final int SEARCH_EVENT_FIXTURE_COUNT = 3;
   private static final BookingSchedulingSettings.Patch BLOCKOUT_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(null, "08:00", "17:00", null, null, null, null);
 
@@ -85,6 +92,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
 
     List<Instrument> instruments = new ArrayList<>();
     List<Instrument> bookingCardInstruments = new ArrayList<>();
+    List<Instrument> busyCalendarInstruments;
     try {
       login(new UsernamePasswordToken(FIXTURE_USER, devUserPassword, false));
       Instrument confocal =
@@ -142,6 +150,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           ensureInstrument(message("bookingFixtures.instruments.bookingCardDisabled"), owner));
       bookingCardInstruments.add(
           ensureInstrument(message("bookingFixtures.instruments.bookingCardArchived"), owner));
+
+      busyCalendarInstruments = ensureBusyCalendarInstruments(owner);
     } finally {
       logout();
     }
@@ -176,6 +186,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     instruments.add(restrictedLocation);
 
     List<BookingConfiguration> configurations;
+    List<BookingConfiguration> busyCalendarConfigurations;
     try {
       login(new UsernamePasswordToken(SYSADMIN_UNAME, SYSADMIN_PWD, false));
       configurations =
@@ -195,6 +206,14 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           bookingCardInstruments.get(2), false, BookingConfigurationState.ACTIVE, sysadmin);
       ensureConfigurationState(
           bookingCardInstruments.get(3), true, BookingConfigurationState.ARCHIVED, sysadmin);
+
+      busyCalendarConfigurations =
+          busyCalendarInstruments.stream()
+              .map(
+                  instrument ->
+                      ensureConfigurationState(
+                          instrument, true, BookingConfigurationState.ACTIVE, sysadmin))
+              .toList();
     } finally {
       logout();
     }
@@ -262,9 +281,88 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           30,
           message("bookingFixtures.purposes.overnightAnalysis"),
           owner);
+
+      LocalDate busyCalendarWeekStart = fixtureDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+      String busyCalendarPurpose = message("bookingFixtures.purposes.busyCalendar");
+      for (int instrumentIndex = 0;
+          instrumentIndex < busyCalendarInstruments.size();
+          instrumentIndex++) {
+        LocalDate bookingDate = busyCalendarWeekStart.plusDays(instrumentIndex % 7);
+        for (int eventIndex = 0; eventIndex < BUSY_CALENDAR_EVENTS_PER_INSTRUMENT; eventIndex++) {
+          int startHour = 8 + (instrumentIndex % 4) + (eventIndex * 5);
+          ensureBooking(
+              busyCalendarInstruments.get(instrumentIndex),
+              busyCalendarConfigurations.get(instrumentIndex),
+              bookingDate,
+              startHour,
+              0,
+              startHour,
+              45,
+              busyCalendarPurpose,
+              owner);
+        }
+      }
+      ensureBooking(
+          busyCalendarInstruments.get(0),
+          busyCalendarConfigurations.get(0),
+          busyCalendarWeekStart,
+          18,
+          0,
+          18,
+          45,
+          message("bookingFixtures.purposes.auroraCalibration"),
+          owner);
+      ensureBooking(
+          busyCalendarInstruments.get(1),
+          busyCalendarConfigurations.get(1),
+          busyCalendarWeekStart.plusDays(1),
+          18,
+          0,
+          18,
+          45,
+          message("bookingFixtures.purposes.beaconCellImaging"),
+          owner);
+      ensureBooking(
+          busyCalendarInstruments.get(2),
+          busyCalendarConfigurations.get(2),
+          busyCalendarWeekStart.plusDays(2),
+          18,
+          0,
+          18,
+          45,
+          message("bookingFixtures.purposes.cometProteomics"),
+          owner);
+      log.info(
+          "Ensured {} instruments and {} events for the busy calendar week starting {}",
+          BUSY_CALENDAR_INSTRUMENT_COUNT,
+          BUSY_CALENDAR_INSTRUMENT_COUNT * BUSY_CALENDAR_EVENTS_PER_INSTRUMENT
+              + SEARCH_EVENT_FIXTURE_COUNT,
+          busyCalendarWeekStart);
     } finally {
       logout();
     }
+  }
+
+  private List<Instrument> ensureBusyCalendarInstruments(User owner) {
+    String fixtureDescription = message(FIXTURE_DESCRIPTION_KEY);
+    Map<String, Instrument> existingByName =
+        instrumentDao.getAll().stream()
+            .filter(instrument -> !instrument.isDeleted())
+            .filter(instrument -> owner.getId().equals(instrument.getOwner().getId()))
+            .filter(instrument -> fixtureDescription.equals(instrument.getDescription()))
+            .collect(
+                Collectors.toMap(
+                    Instrument::getName, instrument -> instrument, (first, duplicate) -> first));
+    List<Instrument> instruments = new ArrayList<>(BUSY_CALENDAR_INSTRUMENT_COUNT);
+    for (int index = 1; index <= BUSY_CALENDAR_INSTRUMENT_COUNT; index++) {
+      String name =
+          messages.getMessage(
+              "bookingFixtures.instruments.busyCalendar", new Object[] {index}, FIXTURE_LOCALE);
+      instruments.add(
+          existingByName.computeIfAbsent(
+              name, ignored -> createInstrument(name, fixtureDescription, owner)));
+    }
+    return instruments;
   }
 
   private Instrument ensureInstrument(String name, User owner) {
@@ -273,14 +371,15 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
         .filter(instrument -> !instrument.isDeleted())
         .filter(instrument -> fixtureDescription.equals(instrument.getDescription()))
         .findFirst()
-        .orElseGet(
-            () -> {
-              ApiInstrument request = new ApiInstrument();
-              request.setName(name);
-              request.setDescription(fixtureDescription);
-              ApiInstrument created = instrumentManager.createNewApiInstrument(request, owner);
-              return instrumentDao.get(created.getId());
-            });
+        .orElseGet(() -> createInstrument(name, fixtureDescription, owner));
+  }
+
+  private Instrument createInstrument(String name, String description, User owner) {
+    ApiInstrument request = new ApiInstrument();
+    request.setName(name);
+    request.setDescription(description);
+    ApiInstrument created = instrumentManager.createNewApiInstrument(request, owner);
+    return instrumentDao.get(created.getId());
   }
 
   private Container ensureContainer(String name, User owner, boolean includeDeleted) {

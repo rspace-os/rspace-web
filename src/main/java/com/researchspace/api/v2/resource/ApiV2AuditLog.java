@@ -161,7 +161,12 @@ public final class ApiV2AuditLog {
                   Set.of(),
                   actor,
                   resultCeiling,
-                  resource.auditBypassesActorDirectory()))
+                  resource.auditBypassesActorDirectory(),
+                  query.getSearch(),
+                  searchableAuditFields(
+                      resource.description(),
+                      target.readableFields(),
+                      resource.relatedAuditFields())))
           .stream()
           .map(
               result ->
@@ -261,6 +266,32 @@ public final class ApiV2AuditLog {
         .computeIfAbsent(entityType, ApiV2AuditLog::inspect)
         .flatMap(value -> value.identifier(target.entity()))
         .map(identifier -> new AuditTarget(valueDomain(entityType), identifier, target.fields()));
+  }
+
+  private static Set<String> searchableAuditFields(
+      CollectionDescription<?> description,
+      FieldSelection readableFields,
+      Set<String> relatedAuditFields) {
+    Set<String> fields = new LinkedHashSet<>();
+    fields.add(description.idField());
+    description
+        .fields()
+        .forEach(
+            field -> {
+              if (readableFields.includes(field.name(), description.idField())) {
+                fields.add(field.name());
+              }
+            });
+    description
+        .relationships()
+        .forEach(
+            relationship -> {
+              if (readableFields.includes(relationship.name(), description.idField())) {
+                fields.add(relationship.name());
+              }
+            });
+    fields.addAll(relatedAuditFields);
+    return Set.copyOf(fields);
   }
 
   private static AuditDomain valueDomain(Class<?> entityType) {

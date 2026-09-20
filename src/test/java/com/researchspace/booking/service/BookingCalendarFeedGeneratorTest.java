@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.booking.service.BookingCalendarFeedGenerator.CalendarTooLargeException;
 import com.researchspace.booking.service.TimeSlotBookingManager.CalendarEvent;
 import com.researchspace.booking.service.TimeSlotBookingManager.CalendarSource;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingPrivacy;
 import com.researchspace.service.MessageSourceUtils;
 import java.io.ByteArrayInputStream;
@@ -37,10 +38,10 @@ class BookingCalendarFeedGeneratorTest {
 
   @BeforeEach
   void setUp() {
-    when(messages.getMessageForLocale("booking:calendar.feed.booked", Locale.ENGLISH))
-        .thenReturn("Booked");
-    when(messages.getMessageForLocale("booking:calendar.feed.busy", Locale.ENGLISH))
-        .thenReturn("Busy");
+    when(messages.getMessageForLocale("booking:calendar.feed.booking", Locale.ENGLISH))
+        .thenReturn("Booking");
+    when(messages.getMessageForLocale("booking:calendar.feed.maintenance", Locale.ENGLISH))
+        .thenReturn("Maintenance");
     when(messages.getMessageForLocale("booking:calendar.feed.myBookings", Locale.ENGLISH))
         .thenReturn("My RSpace bookings");
     when(messages.getMessage(anyString(), any(Object[].class), any(Locale.class)))
@@ -48,11 +49,8 @@ class BookingCalendarFeedGeneratorTest {
             invocation -> {
               String key = invocation.getArgument(0);
               Object[] arguments = invocation.getArgument(1);
-              if (key.endsWith("downloadTitle")) {
-                return arguments[0] + " - RSpace Booking";
-              }
               if (key.endsWith("itemSummary")) {
-                return arguments[0] + " — " + arguments[1];
+                return arguments[0] + " - " + arguments[1];
               }
               return (key.endsWith("bookedBy") ? "Booked by: " : "Purpose: ") + arguments[0];
             });
@@ -100,7 +98,9 @@ class BookingCalendarFeedGeneratorTest {
     VEvent full = events.get(0);
     assertEquals(
         "booking-7@rspace.example.com", full.getProperty(Property.UID).orElseThrow().getValue());
-    assertEquals("Booked", full.getProperty(Property.SUMMARY).orElseThrow().getValue());
+    assertEquals(
+        "Microscope, A;\nRoom - Booking",
+        full.getProperty(Property.SUMMARY).orElseThrow().getValue());
     String description = full.getProperty(Property.DESCRIPTION).orElseThrow().getValue();
     assertTrue(description.contains("Ada (ada)"));
     assertTrue(description.contains("Plate, 4;\\test"));
@@ -113,17 +113,18 @@ class BookingCalendarFeedGeneratorTest {
     assertEquals("OPAQUE", full.getProperty(Property.TRANSP).orElseThrow().getValue());
 
     VEvent busy = events.get(1);
-    assertEquals("Busy", busy.getProperty(Property.SUMMARY).orElseThrow().getValue());
+    assertEquals(
+        "Microscope, A;\nRoom - Booking",
+        busy.getProperty(Property.SUMMARY).orElseThrow().getValue());
     assertFalse(busy.getProperty(Property.DESCRIPTION).isPresent());
     assertFalse(busy.getProperty(Property.URL).isPresent());
     String busyText = busy.toString();
     assertFalse(busyText.contains("Ada"));
     assertFalse(busyText.contains("Plate"));
-    assertFalse(busyText.contains("Booked"));
   }
 
   @Test
-  void namesDownloadedCalendarAfterTheInstrumentAndRSpaceBooking() throws Exception {
+  void namesDownloadedBookingAfterTheInstrument() throws Exception {
     CalendarSource source =
         new CalendarSource(
             "Microscope", "UTC", List.of(event(7L, BookingPrivacy.BUSY, null, null, false)));
@@ -135,7 +136,48 @@ class BookingCalendarFeedGeneratorTest {
                     generator.generateDownload(source, SERVER, Locale.ENGLISH, 100_000)));
 
     assertEquals(
-        "Microscope - RSpace Booking", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
+        "Microscope - Booking", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
+    assertEquals(
+        "Microscope - Booking",
+        parsed
+            .<VEvent>getComponents(Component.VEVENT)
+            .get(0)
+            .getProperty(Property.SUMMARY)
+            .orElseThrow()
+            .getValue());
+  }
+
+  @Test
+  void namesDownloadedMaintenanceAfterTheInstrument() throws Exception {
+    CalendarSource source =
+        new CalendarSource(
+            "Microscope",
+            "UTC",
+            List.of(
+                event(
+                    7L,
+                    BookingEventKind.MAINTENANCE,
+                    BookingPrivacy.FULL,
+                    "Ada (ada)",
+                    null,
+                    true)));
+
+    Calendar parsed =
+        new CalendarBuilder()
+            .build(
+                new ByteArrayInputStream(
+                    generator.generateDownload(source, SERVER, Locale.ENGLISH, 100_000)));
+
+    assertEquals(
+        "Microscope - Maintenance", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
+    assertEquals(
+        "Microscope - Maintenance",
+        parsed
+            .<VEvent>getComponents(Component.VEVENT)
+            .get(0)
+            .getProperty(Property.SUMMARY)
+            .orElseThrow()
+            .getValue());
   }
 
   @Test
@@ -160,7 +202,7 @@ class BookingCalendarFeedGeneratorTest {
             date("2026-08-25T11:00:00Z"),
             date("2026-08-20T12:00:00Z"),
             date("2026-08-24T12:00:00Z"),
-            com.researchspace.model.booking.BookingEventKind.BOOKING,
+            BookingEventKind.BOOKING,
             BookingPrivacy.FULL,
             "Ada (ada)",
             "Ada (ada)",
@@ -178,7 +220,7 @@ class BookingCalendarFeedGeneratorTest {
 
     assertEquals("My RSpace bookings", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
     assertEquals(
-        "Confocal microscope — Booked",
+        "Confocal microscope - Booking",
         parsed
             .<VEvent>getComponents(Component.VEVENT)
             .get(0)
@@ -220,16 +262,29 @@ class BookingCalendarFeedGeneratorTest {
 
   private static CalendarEvent event(
       Long id, BookingPrivacy privacy, String bookedBy, String purpose, boolean canEdit) {
+    return event(id, BookingEventKind.BOOKING, privacy, bookedBy, purpose, canEdit);
+  }
+
+  private static CalendarEvent event(
+      Long id,
+      BookingEventKind kind,
+      BookingPrivacy privacy,
+      String bookedBy,
+      String purpose,
+      boolean canEdit) {
     return new CalendarEvent(
         id,
         date("2026-08-25T10:00:00Z"),
         date("2026-08-25T11:00:00Z"),
         date("2026-08-20T12:00:00Z"),
         date("2026-08-24T12:00:00Z"),
+        kind,
         privacy,
         bookedBy,
+        bookedBy,
         purpose,
-        canEdit);
+        canEdit,
+        null);
   }
 
   private static Date date(String value) {

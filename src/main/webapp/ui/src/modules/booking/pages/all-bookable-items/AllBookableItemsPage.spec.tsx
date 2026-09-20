@@ -136,7 +136,15 @@ describe("the All Bookable Items page", () => {
       await expect.element(pageObj.tableElement).not.toBeVisible();
       await expect.element(pageObj.card("Confocal microscope")).toBeVisible();
       await expect.element(pageObj.effectiveTimeZone).not.toBeInTheDocument();
+      await expect.element(pageObj.confocalAvailabilityText).toBeVisible();
       await expect.element(pageObj.confocalAvailability).toBeVisible();
+      await expect
+        .poll(
+          () =>
+            pageObj.confocalAvailabilityText.element().getBoundingClientRect().bottom <=
+            pageObj.confocalAvailability.element().getBoundingClientRect().top,
+        )
+        .toBe(true);
       await expect.element(pageObj.search).toBeVisible();
       await expect.element(pageObj.filtersButton).toBeVisible();
       await expect.element(pageObj.availableNow).toBeVisible();

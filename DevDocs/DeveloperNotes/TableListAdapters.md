@@ -12,8 +12,14 @@ If a page owns table filters, pagination, and extra controls in one route search
 pass `onReset` to `TableList`. That callback replaces the default per-feature resets,
 including `filterButtons.onReset`; it must reset the complete view in one update.
 For example, the booking catalogue clears its date, availability, target, search,
-and page together while retaining the selected page size. Independent state owners
+type filters, and page together while retaining the selected page size. Independent state owners
 can omit the callback and keep the built-in reset behavior.
+
+Booking catalogue text search matches instrument names, descriptions, readable immediate-parent
+location names, and exact `IN` global IDs. Creation pickers send the required `capability` so
+permission filtering happens before pagination and totals are calculated. Empty result sets
+have no type facets. The administration collection also accepts exact instrument IDs in its
+text search; invalid or out-of-range IDs remain ordinary name searches.
 
 ## Design summary
 

@@ -15,6 +15,7 @@ describe("InventoryItem", () => {
       <InventoryItem
         name="Confocal microscope"
         nameAs="h1"
+        nameClassName="text-2xl font-semibold"
         globalId="IN123"
         href="/globalId/IN123"
         idPlacement="title"
@@ -23,6 +24,7 @@ describe("InventoryItem", () => {
     );
 
     const heading = screen.getByRole("heading", { level: 1, name: "Confocal microscope" });
+    expect(heading).toHaveClass("text-2xl", "font-semibold");
     expect(within(heading).queryByRole("link")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View Confocal microscope in Inventory" })).toHaveTextContent("IN123");
   });

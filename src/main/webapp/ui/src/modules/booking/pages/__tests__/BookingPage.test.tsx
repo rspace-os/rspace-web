@@ -9,7 +9,7 @@ import {
   RouterProvider,
   useMatches,
 } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -104,6 +104,11 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
             </main>
           ),
         }),
+        createRoute({
+          getParentRoute: () => bookingRoute,
+          path: "/calendar/bookings/add",
+          component: () => <main>{"Add booking destination"}</main>,
+        }),
         createBookableItemRoute(bookingRoute),
       ]),
     ]),
@@ -119,7 +124,30 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
   );
 }
 
-describe("booking sidebar", () => {
+describe("booking layout", () => {
+  it("omits breadcrumbs from the Booking root", async () => {
+    renderAt("/booking");
+
+    expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toBeVisible();
+    expect(screen.queryByRole("navigation", { name: "booking:breadcrumbs.label" })).not.toBeInTheDocument();
+  });
+
+  it("shows linked ancestors and the current page on nested Booking routes", async () => {
+    const { container } = renderAt("/booking/calendar/bookings/add");
+
+    const breadcrumbs = await screen.findByRole("navigation", { name: "booking:breadcrumbs.label" });
+    expect(within(breadcrumbs).getByRole("link", { name: "booking:sidebar.label" })).toHaveAttribute(
+      "href",
+      "/booking",
+    );
+    expect(within(breadcrumbs).getByRole("link", { name: "booking:calendar.title" })).toHaveAttribute(
+      "href",
+      "/booking/calendar",
+    );
+    expect(within(breadcrumbs).getByText("booking:bookings.addTitle")).toHaveAttribute("aria-current", "page");
+    await expectAccessible(container);
+  });
+
   it("keeps the shell mounted while preferences suspend the sidebar and inactive creation dialog", async () => {
     const preferences = Promise.withResolvers<void>();
     const { container } = renderAt("/booking", false, preferences.promise);
@@ -136,7 +164,10 @@ describe("booking sidebar", () => {
 
   it("is supplied to the shell by the booking route", async () => {
     const { container } = renderAt("/booking");
-    expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toHaveClass(
+      "text-2xl",
+      "font-semibold",
+    );
     expect(screen.getAllByRole("main")).toHaveLength(1);
 
     // i18next runs in cimode under vitest, so t() renders "<namespace>:<key>"

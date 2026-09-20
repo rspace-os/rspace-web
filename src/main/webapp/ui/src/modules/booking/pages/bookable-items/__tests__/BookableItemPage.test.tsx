@@ -258,10 +258,15 @@ describe("BookableItemPage", () => {
     );
     const { container } = renderPage();
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
+    const heading = await screen.findByRole("heading", { level: 1, name: "Confocal microscope" });
+    expect(heading).toHaveClass("text-2xl", "font-semibold");
     expect(screen.getByText("IN123")).toBeVisible();
     expect(screen.queryByRole("link", { name: "booking:bookableItemDetails.viewInventory" })).not.toBeInTheDocument();
     const facts = screen.getByRole("complementary", { name: "booking:bookableItemDetails.about" });
+    const tabList = screen.getByRole("tablist");
+    expect(heading.closest("section")?.parentElement).toBe(tabList.parentElement);
+    expect(facts.parentElement?.parentElement).toBe(tabList.parentElement);
+    expect(tabList.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(within(facts).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
     expect(within(facts).getByText("Grace Hopper (grace)")).toBeVisible();
     expect(within(facts).getByText("booking:bookableItemDetails.fields.createdAt")).toBeVisible();
@@ -270,7 +275,7 @@ describe("BookableItemPage", () => {
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toBeVisible();
-    expect(screen.getAllByText("UTC").length).toBeGreaterThan(0);
+    expect(within(heading.closest("section") as HTMLElement).queryByText("UTC")).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -282,7 +287,6 @@ describe("BookableItemPage", () => {
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     expect(screen.getByText("08:00–17:30")).toBeVisible();
     expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();
-    expect(screen.getByText("booking:bookableItemDetails.notAvailable")).toBeVisible();
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -638,12 +642,14 @@ describe("BookableItemPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.audit" }));
 
-    // TableList keeps both the table and card presentations mounted and picks
-    // between them with container queries, which jsdom does not evaluate, so
-    // every cell matches twice.
-    expect((await screen.findAllByText("Morgan Ellis (morgan.ellis)"))[0]).toBeVisible();
-    expect(screen.getAllByText("WRITE")[0]).toBeVisible();
-    expect(screen.getAllByText("booking:bookableItemDetails.audit.values.maximumDuration")[0]).toBeVisible();
+    const item = await screen.findByRole("article", { name: "Updated booking configuration IN123" });
+    expect(within(item).getByText("Morgan Ellis (morgan.ellis)")).toBeVisible();
+    expect(within(item).getByText("WRITE")).toBeVisible();
+    expect(
+      within(item).queryByText("booking:bookableItemDetails.audit.values.maximumDuration"),
+    ).not.toBeInTheDocument();
+    await user.click(within(item).getByRole("button", { name: "common:actions.expand" }));
+    expect(within(item).getByText("booking:bookableItemDetails.audit.values.maximumDuration")).toBeVisible();
     await waitFor(() => expect(auditRequests).toBe(1));
   });
 
@@ -675,7 +681,7 @@ describe("BookableItemPage", () => {
     await waitFor(() => expect(eventRequests).toBe(2));
   });
 
-  it("marks the configuration update timestamp as machine-readable time", async () => {
+  it("does not show the configuration update timestamp in booking rules", async () => {
     const updatedAt = "2026-08-10T12:00:00Z";
     server.use(
       http.get("/api/v2/booking-configurations", () =>
@@ -685,10 +691,8 @@ describe("BookableItemPage", () => {
     );
     renderPage("/booking/bookable-items/IN123/details");
 
-    const updatedTime = (await screen.findAllByRole("time")).find(
-      (element) => element.getAttribute("datetime") === updatedAt,
-    );
-    expect(updatedTime).toBeVisible();
+    await screen.findByText("booking:bookableItemDetails.rules");
+    expect(screen.queryByText("booking:bookableItemDetails.fields.updatedAt")).not.toBeInTheDocument();
   });
 
   it("reformats existing events after a configuration timezone refresh without refetching events", async () => {

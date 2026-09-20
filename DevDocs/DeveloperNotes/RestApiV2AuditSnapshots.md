@@ -4,6 +4,15 @@ The REST API v2 item-audit endpoint reads the file-backed audit trail into a dai
 
 This is not a retention limit and does not change the legacy Activity API. It applies only to one REST API v2 resource-audit request.
 
+The optional `search` parameter matches actor names, actions, descriptions, target IDs,
+and readable recorded values before pagination and the result ceiling. Matching is
+case-insensitive and treats the query as literal text. Unpublished audit fields are
+not searchable. Changing the query starts a new paged snapshot; clients must discard
+the previous page and fingerprint. The snapshot cutoff remains the previous UTC day.
+
+The Booking audit page combines text, date, and action filters on the server.
+Changing any applied filter resets pagination and discards the prior snapshot.
+
 Tail boundaries are read backward in 8 KiB blocks. This retains captured-size
 reads, file identity checks, append/rotation certification, and failure on an
 incomplete final line.

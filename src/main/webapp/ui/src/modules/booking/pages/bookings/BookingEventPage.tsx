@@ -15,6 +15,8 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
+import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
+import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import {
   ApiV2ProblemError,
   type BookingDetails,
@@ -191,6 +193,11 @@ function BookingEventContent() {
       return failureCount < 2;
     },
   });
+  const editing = pathname.endsWith("/edit");
+  const bookingItem = useBookableItemConfiguration(
+    editing && booking.data?.canEdit && booking.data.state === "CONFIRMED" ? booking.data.target.globalId : undefined,
+    token,
+  );
 
   const returnToMyBookings = (
     <Link className={buttonVariants({ variant: "outline" })} to="/booking/my-bookings" search={{ period: "upcoming" }}>
@@ -234,7 +241,6 @@ function BookingEventContent() {
   }
 
   const document = booking.data;
-  const editing = pathname.endsWith("/edit");
   const refreshBooking = async () => {
     await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
   };
@@ -261,6 +267,7 @@ function BookingEventContent() {
         <InventoryItem
           name={eventName}
           nameAs="h1"
+          nameClassName="text-2xl font-semibold"
           globalId={document.target.globalId}
           idPlacement="title"
           className="min-w-full flex-1 p-0 sm:min-w-0"
@@ -310,6 +317,12 @@ function BookingEventContent() {
         </div>
       </section>
 
+      {editing && bookingItem.data ? (
+        <div className="@2xl:hidden">
+          <BookingItemInformationCard as="section" item={bookingItem.data} displayTimezone={preferences.timeZone} />
+        </div>
+      ) : null}
+
       <BookingEventContext.Provider
         value={{
           booking: document,
@@ -322,9 +335,15 @@ function BookingEventContent() {
           refreshBooking,
         }}
       >
-        <div className={eventColumnsClassName}>
+        <div className={editing ? "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_24rem]" : eventColumnsClassName}>
           <Outlet />
-          <BookingMetadataAside booking={document} displayTimeZone={preferences.timeZone} />
+          {editing && bookingItem.data ? (
+            <div className="hidden @2xl:block">
+              <BookingItemInformationCard item={bookingItem.data} displayTimezone={preferences.timeZone} />
+            </div>
+          ) : (
+            <BookingMetadataAside booking={document} displayTimeZone={preferences.timeZone} />
+          )}
         </div>
       </BookingEventContext.Provider>
 

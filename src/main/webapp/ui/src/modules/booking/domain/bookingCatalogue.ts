@@ -90,6 +90,7 @@ type CatalogueSearch = {
   q?: string;
   where?: string;
   target?: string;
+  capability?: "CREATE_BOOKING" | "CREATE_BLOCKOUT";
   types?: readonly string[];
   locations?: readonly string[];
   page?: number;
@@ -112,6 +113,7 @@ export async function fetchBookingCatalogue(
   if (search.q?.trim()) parameters.set("q", search.q.trim());
   if (search.where) parameters.set("where", search.where);
   if (search.target) parameters.set("target", search.target);
+  if (search.capability) parameters.set("capability", search.capability);
   appendAll(parameters, "type", search.types);
   appendAll(parameters, "location", search.locations);
   const response = await fetch(`/api/v2/booking-catalogue?${parameters}`, {

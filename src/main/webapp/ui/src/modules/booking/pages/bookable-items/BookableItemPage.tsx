@@ -68,11 +68,11 @@ function BookableItemSkeleton() {
       <p role="status" className="sr-only">
         {t("loading")}
       </p>
-      <div className="@container" aria-hidden="true">
+      <div className="@container space-y-6" aria-hidden="true">
+        <Skeleton className="h-11 w-full" />
+        <Skeleton className="h-10 w-full" />
         <div className={itemColumnsClassName}>
-          <div className="min-w-0 space-y-6">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-10 w-full" />
+          <div className="min-w-0">
             <Skeleton className="h-90 w-full" />
           </div>
           <div data-slot="bookable-item-facts" className="space-y-4">
@@ -162,12 +162,10 @@ function SpotlightHeader({
   configuration,
   target,
   action,
-  displayTimeZone,
 }: {
   configuration: BookingConfiguration;
   target: NonNullable<BookingConfiguration["target"]>;
   action?: ReactNode;
-  displayTimeZone: string;
 }) {
   const { t } = useTranslation("booking");
   return (
@@ -175,12 +173,11 @@ function SpotlightHeader({
       <InventoryItem
         name={target.value.name}
         nameAs="h1"
+        nameClassName="text-2xl font-semibold"
         globalId={target.globalId}
         idPlacement="title"
         className="min-w-full flex-1 p-0 sm:min-w-64"
-      >
-        <span>{t("myBookings.timezone", { timezone: displayTimeZone })}</span>
-      </InventoryItem>
+      />
       <div
         data-slot="bookable-item-header-actions"
         className="flex w-full min-w-0 flex-wrap items-center gap-3 sm:w-auto sm:shrink-0 [&_[data-slot=badge]]:h-[30px] [&_button]:h-[30px] [&_button]:min-h-[30px]"
@@ -211,29 +208,10 @@ function PageTab({ value, disabled, children }: { value: BookableItemTab; disabl
   );
 }
 
-function RulesReadOut({
-  configuration,
-  displayTimeZone,
-}: {
-  configuration: BookingConfiguration;
-  displayTimeZone: string;
-}) {
-  const { t, i18n } = useTranslation("booking");
-  const updatedAt =
-    configuration.updatedAt === null || configuration.updatedAt === undefined ? (
-      t("bookableItemDetails.notAvailable")
-    ) : (
-      <time dateTime={configuration.updatedAt}>
-        {new Intl.DateTimeFormat(i18n.language, {
-          dateStyle: "medium",
-          timeStyle: "short",
-          timeZone: displayTimeZone,
-        }).format(new Date(configuration.updatedAt))}
-      </time>
-    );
+function RulesReadOut({ configuration }: { configuration: BookingConfiguration }) {
+  const { t } = useTranslation("booking");
   const facts: Array<[string, ReactNode]> = [
     [t("bookableItemDetails.fields.timezone"), configuration.timezone],
-    [t("bookableItemDetails.fields.updatedAt"), updatedAt],
     [t("bookableItemDetails.fields.openingHours"), `${configuration.openingStart}–${configuration.openingEnd}`],
     [
       t("bookableItemDetails.fields.granularity"),
@@ -534,187 +512,186 @@ function LoadedBookableItemPage({
   return (
     <main className={itemPageClassName}>
       <div className="@container">
-        <div className={itemColumnsClassName}>
-          <Tabs.Root
-            value={tab}
-            onValueChange={(value) => {
-              if (updateMutation.isPending) return;
-              const nextTab = value === "details" || value === "audit" || value === "access" ? value : "bookings";
-              setTab(nextTab);
-            }}
-            className="min-w-0 space-y-6"
-          >
-            {restoreMutation.isError ? (
-              <p role="alert" className="text-sm text-destructive">
-                {t(lifecycleErrorKey(restoreMutation.error, "bookableItemDetails.lifecycleErrors.restore"))}
-              </p>
-            ) : null}
-            <SpotlightHeader
-              displayTimeZone={preferences.timeZone}
-              configuration={configuration}
-              target={target}
-              action={
-                <>
-                  {active &&
-                  (configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout) ? (
-                    <BookingCreationButtonGroup
-                      ownerId={`bookable-item-${configuration.id}`}
-                      target={bookableItemOption({ ...configuration, target })}
-                      lockTarget
-                      disabled={!configuration.enabled}
-                    />
-                  ) : null}
-                  {configuration.capabilities.canSubscribeCalendar ? (
-                    <CalendarSubscriptionPopover configurationId={configuration.id} token={token} archived={!active} />
-                  ) : null}
-                  {active && configuration.capabilities.canLeaveConfiguration ? (
-                    <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
-                      {t("bookableItemDetails.actions.leave")}
-                    </Button>
-                  ) : null}
-                  <BookingConfigurationActionsMenu
-                    configuration={configuration}
-                    itemName={target.value.name}
-                    directSysadmin={directSysadmin}
-                    disabled={
-                      archiveMutation.isPending || restoreMutation.isPending || permanentDeleteMutation.isPending
-                    }
-                    triggerRef={actionsButtonRef}
-                    onAction={handleLifecycleAction}
+        <Tabs.Root
+          value={tab}
+          onValueChange={(value) => {
+            if (updateMutation.isPending) return;
+            const nextTab = value === "details" || value === "audit" || value === "access" ? value : "bookings";
+            setTab(nextTab);
+          }}
+          className="min-w-0 space-y-6"
+        >
+          {restoreMutation.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t(lifecycleErrorKey(restoreMutation.error, "bookableItemDetails.lifecycleErrors.restore"))}
+            </p>
+          ) : null}
+          <SpotlightHeader
+            configuration={configuration}
+            target={target}
+            action={
+              <>
+                {active &&
+                (configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout) ? (
+                  <BookingCreationButtonGroup
+                    ownerId={`bookable-item-${configuration.id}`}
+                    target={bookableItemOption({ ...configuration, target })}
+                    lockTarget
+                    disabled={!configuration.enabled}
                   />
-                </>
-              }
-            />
-
-            <Tabs.List className="flex flex-wrap border-b">
-              <PageTab value="bookings" disabled={updateMutation.isPending}>
-                {t("bookableItemDetails.tabs.bookings")}
-              </PageTab>
-              <PageTab value="details" disabled={updateMutation.isPending}>
-                {t("bookableItemDetails.tabs.details")}
-              </PageTab>
-              {configuration.capabilities.canViewAudit ? (
-                <PageTab value="audit" disabled={updateMutation.isPending}>
-                  {t("bookableItemDetails.tabs.audit")}
-                </PageTab>
-              ) : null}
-              {configuration.capabilities.canViewAccess ? (
-                <PageTab value="access" disabled={updateMutation.isPending}>
-                  {t("bookableItemDetails.tabs.access")}
-                </PageTab>
-              ) : null}
-            </Tabs.List>
-
-            <Tabs.Panel value="bookings" className="space-y-8 outline-none">
-              <section className="space-y-4" aria-labelledby="upcoming-events-heading">
-                <Heading level={3} as="h2" id="upcoming-events-heading">
-                  {t("bookableItemDetails.upcoming")}
-                </Heading>
-                <BookingEventList
-                  globalId={globalId}
-                  timezone={preferences.timeZone}
-                  period="upcoming"
-                  cutoff={cutoff}
+                ) : null}
+                {configuration.capabilities.canSubscribeCalendar ? (
+                  <CalendarSubscriptionPopover configurationId={configuration.id} token={token} archived={!active} />
+                ) : null}
+                {active && configuration.capabilities.canLeaveConfiguration ? (
+                  <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
+                    {t("bookableItemDetails.actions.leave")}
+                  </Button>
+                ) : null}
+                <BookingConfigurationActionsMenu
+                  configuration={configuration}
+                  itemName={target.value.name}
+                  directSysadmin={directSysadmin}
+                  disabled={archiveMutation.isPending || restoreMutation.isPending || permanentDeleteMutation.isPending}
+                  triggerRef={actionsButtonRef}
+                  onAction={handleLifecycleAction}
                 />
-              </section>
+              </>
+            }
+          />
 
-              <section className="space-y-4" aria-labelledby="past-events-heading">
-                <Heading level={3} as="h2" id="past-events-heading">
-                  {t("bookableItemDetails.past")}
-                </Heading>
-                <BookingEventList globalId={globalId} timezone={preferences.timeZone} period="past" cutoff={cutoff} />
-              </section>
-            </Tabs.Panel>
+          <Tabs.List className="flex flex-wrap border-b">
+            <PageTab value="bookings" disabled={updateMutation.isPending}>
+              {t("bookableItemDetails.tabs.bookings")}
+            </PageTab>
+            <PageTab value="details" disabled={updateMutation.isPending}>
+              {t("bookableItemDetails.tabs.details")}
+            </PageTab>
+            {configuration.capabilities.canViewAudit ? (
+              <PageTab value="audit" disabled={updateMutation.isPending}>
+                {t("bookableItemDetails.tabs.audit")}
+              </PageTab>
+            ) : null}
+            {configuration.capabilities.canViewAccess ? (
+              <PageTab value="access" disabled={updateMutation.isPending}>
+                {t("bookableItemDetails.tabs.access")}
+              </PageTab>
+            ) : null}
+          </Tabs.List>
 
-            <Tabs.Panel value="details" keepMounted className="outline-none">
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("bookableItemDetails.rules")}</CardTitle>
-                  {active && canEdit ? (
-                    <CardAction className="flex gap-3">
-                      {editing ? (
-                        <>
+          <div className={itemColumnsClassName}>
+            <div className="min-w-0">
+              <Tabs.Panel value="bookings" className="space-y-8 outline-none">
+                <section className="space-y-4" aria-labelledby="upcoming-events-heading">
+                  <Heading level={3} as="h2" id="upcoming-events-heading">
+                    {t("bookableItemDetails.upcoming")}
+                  </Heading>
+                  <BookingEventList
+                    globalId={globalId}
+                    timezone={preferences.timeZone}
+                    period="upcoming"
+                    cutoff={cutoff}
+                  />
+                </section>
+
+                <section className="space-y-4" aria-labelledby="past-events-heading">
+                  <Heading level={3} as="h2" id="past-events-heading">
+                    {t("bookableItemDetails.past")}
+                  </Heading>
+                  <BookingEventList globalId={globalId} timezone={preferences.timeZone} period="past" cutoff={cutoff} />
+                </section>
+              </Tabs.Panel>
+
+              <Tabs.Panel value="details" keepMounted className="outline-none">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t("bookableItemDetails.rules")}</CardTitle>
+                    {active && canEdit ? (
+                      <CardAction className="flex gap-3">
+                        {editing ? (
+                          <>
+                            <Button
+                              key="save"
+                              ref={saveButtonRef}
+                              type="submit"
+                              size="sm"
+                              form={formId}
+                              disabled={updateMutation.isPending}
+                              aria-busy={updateMutation.isPending}
+                            >
+                              {t("bookableItems.actions.save")}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              disabled={updateMutation.isPending}
+                              onClick={cancelEdit}
+                            >
+                              {t("bookableItemDetails.cancelEdit")}
+                            </Button>
+                          </>
+                        ) : (
                           <Button
-                            key="save"
-                            ref={saveButtonRef}
-                            type="submit"
-                            size="sm"
-                            form={formId}
-                            disabled={updateMutation.isPending}
-                            aria-busy={updateMutation.isPending}
-                          >
-                            {t("bookableItems.actions.save")}
-                          </Button>
-                          <Button
+                            key="edit"
+                            ref={editButtonRef}
                             type="button"
                             size="sm"
                             variant="ghost"
-                            disabled={updateMutation.isPending}
-                            onClick={cancelEdit}
+                            onClick={() => setEdit(true)}
                           >
-                            {t("bookableItemDetails.cancelEdit")}
+                            <PencilIcon aria-hidden="true" />
+                            {t("bookableItemDetails.edit")}
                           </Button>
-                        </>
-                      ) : (
-                        <Button
-                          key="edit"
-                          ref={editButtonRef}
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setEdit(true)}
-                        >
-                          <PencilIcon aria-hidden="true" />
-                          {t("bookableItemDetails.edit")}
-                        </Button>
-                      )}
-                    </CardAction>
-                  ) : null}
-                </CardHeader>
-                <CardContent>
-                  {editing ? (
-                    <BookableItemConfigurationForm
-                      configuration={configuration}
-                      globalId={globalId}
-                      formId={formId}
-                      pending={updateMutation.isPending}
-                      staleEdit={staleEdit}
-                      failed={updateMutation.isError}
-                      onSubmit={(input, version) => updateMutation.mutateAsync({ input, version })}
-                    />
-                  ) : (
-                    <RulesReadOut configuration={configuration} displayTimeZone={preferences.timeZone} />
-                  )}
-                </CardContent>
-              </Card>
-            </Tabs.Panel>
-
-            {configuration.capabilities.canViewAudit ? (
-              <Tabs.Panel value="audit" className="outline-none">
-                <BookableItemAuditLog configurationId={configuration.id} />
-              </Tabs.Panel>
-            ) : null}
-
-            {configuration.capabilities.canViewAccess ? (
-              <Tabs.Panel value="access" className="outline-none">
-                <Card>
-                  <CardContent className="pt-6">
-                    <ResourceAccessEditor
-                      key={configuration.id}
-                      resource="booking-configurations"
-                      resourceId={configuration.id}
-                      token={token}
-                      adapter={bookingResourceAccessAdapter(t)}
-                      readOnly={!active}
-                      onLeave={() => void navigate({ to: "/booking", ignoreBlocker: true })}
-                    />
+                        )}
+                      </CardAction>
+                    ) : null}
+                  </CardHeader>
+                  <CardContent>
+                    {editing ? (
+                      <BookableItemConfigurationForm
+                        configuration={configuration}
+                        globalId={globalId}
+                        formId={formId}
+                        pending={updateMutation.isPending}
+                        staleEdit={staleEdit}
+                        failed={updateMutation.isError}
+                        onSubmit={(input, version) => updateMutation.mutateAsync({ input, version })}
+                      />
+                    ) : (
+                      <RulesReadOut configuration={configuration} />
+                    )}
                   </CardContent>
                 </Card>
               </Tabs.Panel>
-            ) : null}
-          </Tabs.Root>
-          <FactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
-        </div>
+
+              {configuration.capabilities.canViewAudit ? (
+                <Tabs.Panel value="audit" className="outline-none">
+                  <BookableItemAuditLog configurationId={configuration.id} />
+                </Tabs.Panel>
+              ) : null}
+
+              {configuration.capabilities.canViewAccess ? (
+                <Tabs.Panel value="access" className="outline-none">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <ResourceAccessEditor
+                        key={configuration.id}
+                        resource="booking-configurations"
+                        resourceId={configuration.id}
+                        token={token}
+                        adapter={bookingResourceAccessAdapter(t)}
+                        readOnly={!active}
+                        onLeave={() => void navigate({ to: "/booking", ignoreBlocker: true })}
+                      />
+                    </CardContent>
+                  </Card>
+                </Tabs.Panel>
+              ) : null}
+            </div>
+            <FactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
+          </div>
+        </Tabs.Root>
       </div>
 
       <AlertDialog open={archiveOpen} onOpenChange={(open) => !archiveMutation.isPending && setArchiveOpen(open)}>

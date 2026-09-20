@@ -8,6 +8,12 @@ import java.util.Map;
 /** Read-only, caller-relative catalogue of resources that can be discovered in Booking. */
 public interface BookingCatalogueManager {
 
+  /** Capability required by a caller that is selecting a catalogue item for an event. */
+  enum Capability {
+    CREATE_BOOKING,
+    CREATE_BLOCKOUT
+  }
+
   record Location(String globalId, String name) {}
 
   record Item(
@@ -59,6 +65,7 @@ public interface BookingCatalogueManager {
       FilterExpression filter,
       List<String> targetTypes,
       List<String> locationGlobalIds,
+      Capability capability,
       int page,
       int limit,
       User caller);

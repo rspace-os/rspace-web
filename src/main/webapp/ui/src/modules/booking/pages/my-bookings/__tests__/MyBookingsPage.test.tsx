@@ -84,7 +84,7 @@ describe("My Bookings page", () => {
     renderPage(initialPath, 84, (url) => requests.push(url));
     const user = userEvent.setup();
 
-    expect(await screen.findByRole("heading", { name: "Test user bookings" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Test user bookings" })).toHaveClass("text-2xl", "font-semibold");
     await waitFor(() =>
       expect(
         requests.some((request) => request.searchParams.get("where")?.includes("target.name=contains=scope")),
@@ -200,7 +200,7 @@ describe("My Bookings page", () => {
     expect(await table.findByRole("button", { name: "booking:calendar.file.accessibleLabel" })).toBeVisible();
   });
 
-  it("keeps icon-only page actions accessible by name", async () => {
+  it("keeps page actions accessible by name", async () => {
     renderPage();
 
     const upcoming = await screen.findByRole("button", { name: "booking:myBookings.period.upcoming" });
@@ -211,8 +211,11 @@ describe("My Bookings page", () => {
     const calendarFile = table.getByRole("button", { name: "booking:calendar.file.accessibleLabel" });
     const cancel = table.getByRole("button", { name: "booking:bookings.actions.cancel" });
 
-    expect(within(upcoming).queryByText("booking:myBookings.period.upcoming")).not.toBeInTheDocument();
-    expect(within(past).queryByText("booking:myBookings.period.past")).not.toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "booking:myBookings.period.legend" })).toContainElement(upcoming);
+    expect(screen.queryByRole("heading", { name: "booking:myBookings.plural" })).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:myBookings.description")).not.toBeInTheDocument();
+    expect(within(upcoming).getByText("booking:myBookings.period.upcoming")).toBeVisible();
+    expect(within(past).getByText("booking:myBookings.period.past")).toBeVisible();
     expect(within(viewDetails).queryByText("booking:myBookings.actions.viewDetails")).not.toBeInTheDocument();
     expect(within(edit).queryByText("booking:myBookings.actions.edit")).not.toBeInTheDocument();
     expect(within(calendarFile).queryByText("booking:calendar.file.label")).not.toBeInTheDocument();

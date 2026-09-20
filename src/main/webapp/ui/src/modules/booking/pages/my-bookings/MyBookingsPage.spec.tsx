@@ -46,8 +46,6 @@ describe("the My Bookings page", () => {
     render(<MyBookingsPageStory history={history} />);
 
     const controls = [
-      [pageObj.upcoming, "Upcoming"],
-      [pageObj.past, "Past"],
       [pageObj.confocalDetails, "View details"],
       [pageObj.confocalItemCalendar, "View item calendar"],
       [pageObj.confocalEdit, "Edit"],
@@ -59,6 +57,19 @@ describe("the My Bookings page", () => {
       await control.hover();
       await expect.element(pageObj.tooltip(label)).toBeVisible();
     }
+  });
+
+  test("shows the upcoming count inside its period button", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    await expect.element(pageObj.upcomingCount).toBeVisible();
+    const buttonRect = pageObj.upcoming.element().getBoundingClientRect();
+    const badgeRect = pageObj.upcomingCount.element().getBoundingClientRect();
+
+    expect(badgeRect.left).toBeGreaterThanOrEqual(buttonRect.left);
+    expect(badgeRect.top).toBeGreaterThanOrEqual(buttonRect.top);
+    expect(badgeRect.right).toBeLessThanOrEqual(buttonRect.right);
+    expect(badgeRect.bottom).toBeLessThanOrEqual(buttonRect.bottom);
   });
 
   test("navigates from a booking row to the bookable item details page", async () => {

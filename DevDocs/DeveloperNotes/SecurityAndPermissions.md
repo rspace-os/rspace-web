@@ -157,6 +157,10 @@ duplicate rows. Page-level access and capability fields are batch-resolved. Do n
 constraint as client query syntax, filter unauthorized rows in memory, or add one permission query
 per result. An unreadable direct resource is concealed as 404.
 
+The assignment directory matches usernames, individual name parts, and the displayed
+first-name/last-name combination. These searches retain the same assignable-principal
+scope and literal wildcard escaping used by the shared directory.
+
 Access replacement is an atomic complete-set `PUT`: clients read an `ETag`, send it in
 `If-Match`, and receive 412 for a stale version. Assignment snapshots retain enough identity text
 for audit after a principal is hard-deleted, but snapshots never grant access. Availability,

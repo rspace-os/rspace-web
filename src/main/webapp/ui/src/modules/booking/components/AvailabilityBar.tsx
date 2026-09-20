@@ -27,6 +27,8 @@ export type AvailabilityBarProps = {
   periodStart: Date;
   periodEnd?: Date;
   now?: Date;
+  /** Show the item and actor rows when a standard booking is expanded. */
+  showBookingContextDetails?: boolean;
   showCurrentAvailability?: boolean;
   showPeriodLabels?: boolean;
   timeZone: string;
@@ -108,7 +110,7 @@ function SlicePopover({
         type="button"
         openOnHover
         delay={0}
-        closeDelay={200}
+        closeDelay={500}
         aria-label={label}
         onFocus={() => {
           if (suppressRestoredFocusRef.current) {
@@ -132,11 +134,13 @@ function BookingSourceAccordion({
   accordionName,
   item,
   period,
+  showBookingContextDetails,
   source,
 }: {
   accordionName: string;
   item: AvailabilityBarProps["item"];
   period: string;
+  showBookingContextDetails: boolean;
   source: DetailedBookingSource;
 }) {
   const { t } = useTranslation("booking");
@@ -169,7 +173,11 @@ function BookingSourceAccordion({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-xs font-medium">
-              {maintenance ? t("bookings.maintenanceLabel") : t("availabilityBar.slice.sources.booking")}
+              {maintenance
+                ? t("bookings.maintenanceLabel")
+                : actor
+                  ? t("availabilityBar.slice.bookedBy", { user: actor })
+                  : t("availabilityBar.slice.sources.booking")}
             </span>
             <span className="block text-[11px] text-muted-foreground">{period}</span>
           </span>
@@ -180,24 +188,26 @@ function BookingSourceAccordion({
         </summary>
         <div className="border-border border-t">
           <dl className="divide-y divide-border px-2 text-sm">
-            <div className="py-2">
-              <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
-              <dd>
-                <InventoryItem
-                  name={item.name}
-                  globalId={item.globalId}
-                  href={`/globalId/${item.globalId}`}
-                  idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: item.globalId })}
-                  idPlacement="title"
-                  className="p-0"
-                >
-                  {item.location ? (
-                    <InventoryLocationLink name={item.location.name} globalId={item.location.globalId} />
-                  ) : null}
-                </InventoryItem>
-              </dd>
-            </div>
-            {actor ? (
+            {maintenance || showBookingContextDetails ? (
+              <div className="py-2">
+                <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
+                <dd>
+                  <InventoryItem
+                    name={item.name}
+                    globalId={item.globalId}
+                    href={`/globalId/${item.globalId}`}
+                    idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: item.globalId })}
+                    idPlacement="title"
+                    className="p-0"
+                  >
+                    {item.location ? (
+                      <InventoryLocationLink name={item.location.name} globalId={item.location.globalId} />
+                    ) : null}
+                  </InventoryItem>
+                </dd>
+              </div>
+            ) : null}
+            {actor && (maintenance || showBookingContextDetails) ? (
               <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
                 <dt className="text-xs text-muted-foreground">
                   {t(maintenance ? "dayTimeline.expanded.createdBy" : "dayTimeline.expanded.bookedBy")}
@@ -235,6 +245,7 @@ export function AvailabilityBar({
   periodStart,
   periodEnd,
   now,
+  showBookingContextDetails = true,
   showCurrentAvailability = false,
   showPeriodLabels = false,
   timeZone,
@@ -433,8 +444,7 @@ export function AvailabilityBar({
                   sideOffset={8}
                   collisionPadding={8}
                   sticky
-                  showArrow
-                  className="max-h-[min(32rem,var(--available-height))] w-80 gap-3 overflow-y-auto overscroll-contain rounded-sm p-3"
+                  className="max-h-[min(32rem,var(--available-height))] w-80 gap-3 overflow-y-auto overscroll-contain rounded-sm p-3 duration-0 data-closed:animate-none data-open:animate-none"
                 >
                   <div className="min-w-0">
                     <PopoverTitle className="text-base font-semibold leading-tight">
@@ -454,6 +464,7 @@ export function AvailabilityBar({
                           accordionName={accordionName}
                           item={item}
                           period={formatTimeRange(source)}
+                          showBookingContextDetails={showBookingContextDetails}
                           source={source}
                         />
                       ) : (

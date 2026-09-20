@@ -11,7 +11,11 @@ export type BookableItemOption = {
   bufferAfterMinutes: number;
   maxBookingDurationMinutes: number;
   allowDoubleBooking: boolean;
-  capabilities?: { canCreateBlockout: boolean };
+  capabilities?: {
+    canCreateBlockout: boolean;
+    canCreateBooking?: boolean;
+    canEditConfiguration?: boolean;
+  };
 };
 
 type CompleteBookableItemOptionSource = Omit<

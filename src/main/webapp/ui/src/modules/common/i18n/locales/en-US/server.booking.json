@@ -12,7 +12,8 @@
       "bookingCardSetup": "Booking card: Set up booking",
       "bookingCardBook": "Booking card: Book",
       "bookingCardDisabled": "Booking card: Open (disabled)",
-      "bookingCardArchived": "Booking card: Open (archived)"
+      "bookingCardArchived": "Booking card: Open (archived)",
+      "busyCalendar": "Busy calendar instrument {0,number,000}"
     },
     "containers": {
       "imagingLab": "Imaging lab",
@@ -27,7 +28,11 @@
       "ultrastructureImaging": "Ultrastructure imaging",
       "proteomicsRun": "Proteomics run",
       "cellSorting": "Cell sorting",
-      "overnightAnalysis": "Overnight analysis"
+      "overnightAnalysis": "Overnight analysis",
+      "busyCalendar": "Busy calendar fixture",
+      "auroraCalibration": "Aurora calibration session",
+      "beaconCellImaging": "Beacon cell imaging study",
+      "cometProteomics": "Comet proteomics analysis"
     }
   }
 }

@@ -35,7 +35,9 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
         new StringBuilder("select user from User user where user.enabled = true ")
             .append("and (lower(user.username) like :query escape '\\' ")
             .append("or lower(user.firstName) like :query escape '\\' ")
-            .append("or lower(user.lastName) like :query escape '\\')");
+            .append("or lower(user.lastName) like :query escape '\\' ")
+            .append(
+                "or lower(concat(user.firstName, ' ', user.lastName)) like :query escape '\\')");
     if (!sysadmin) {
       userQuery
           .append(" and exists (select candidateMembership.id from UserGroup candidateMembership ")

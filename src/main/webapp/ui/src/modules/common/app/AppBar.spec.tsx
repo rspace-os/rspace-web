@@ -11,6 +11,20 @@ afterEach(() => {
 });
 
 describe("AppBar", () => {
+  test("stays at the top of the viewport while the page scrolls", async () => {
+    render(<AppBarStory />);
+    await expect.element(appBar.header).toBeVisible();
+    const top = appBar.headerTop();
+
+    try {
+      await appBar.scrollDocumentTo(200);
+
+      await expect.poll(() => appBar.headerTop()).toBe(top);
+    } finally {
+      await appBar.scrollDocumentTo(0);
+    }
+  });
+
   test("keeps every header control inside a 320 CSS pixel viewport", async () => {
     const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     await page.viewport(320, 900);

@@ -138,6 +138,28 @@ describe("BookableItemPage", () => {
     }
   });
 
+  test("places About below the full-width heading and tabs", async () => {
+    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
+    await page.viewport(1440, 900);
+    render(<BookableItemPageStory history={history} />);
+    try {
+      await expect.element(pageObj.heading).toBeVisible();
+      const headingRow = pageObj.heading.element().closest("section");
+      const tabList = pageObj.bookingsTab.element().parentElement;
+      const facts = page.getByRole("complementary", { name: "About" }).element();
+      expect(headingRow).not.toBeNull();
+      expect(tabList).not.toBeNull();
+      const headingBox = headingRow?.getBoundingClientRect();
+      const tabsBox = tabList?.getBoundingClientRect();
+      const factsBox = facts.getBoundingClientRect();
+      expect(headingBox?.right).toBeGreaterThan(factsBox.left);
+      expect(Math.abs((headingBox?.right ?? 0) - factsBox.right)).toBeLessThanOrEqual(2);
+      expect(factsBox.top).toBeGreaterThanOrEqual(tabsBox?.bottom ?? 0);
+    } finally {
+      await page.viewport(originalViewport.width, originalViewport.height);
+    }
+  });
+
   test("uses one height for header action buttons and status badges", async () => {
     render(<BookableItemPageStory history={history} />);
     await expect.element(pageObj.heading).toBeVisible();
@@ -453,6 +475,28 @@ describe("BookableItemPage", () => {
     await pageObj.bookingsTab.click();
     await expect.element(pageObj.bookingsTab).toHaveAttribute("aria-selected", "true");
     await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123");
+  });
+
+  test("expands audit recorded values and keeps Changed by beside ID", async () => {
+    render(<BookableItemPageStory history={history} />);
+    await expect.element(pageObj.heading).toBeVisible();
+    await pageObj.auditTab.click();
+
+    const item = page.getByRole("article", { name: "Updated booking configuration IN123" });
+    await expect.element(item).toBeVisible();
+    const actorLabel = item.getByText("Changed by", { exact: true }).element().getBoundingClientRect();
+    const idLabel = item.getByText("ID", { exact: true }).element().getBoundingClientRect();
+    expect(Math.abs(actorLabel.top - idLabel.top)).toBeLessThanOrEqual(1);
+    await expect.element(item.getByText("Recorded values", { exact: true })).not.toBeInTheDocument();
+
+    const expand = item.getByRole("button", { name: "Expand" });
+    await expect.element(expand).toHaveAttribute("aria-expanded", "false");
+    await expand.click();
+
+    await expect.element(item.getByRole("button", { name: "Collapse" })).toHaveAttribute("aria-expanded", "true");
+    await expect.element(item.getByText("Recorded values", { exact: true })).toBeVisible();
+    await expect.element(item.getByText("Maximum duration (minutes)", { exact: true })).toBeVisible();
+    await expectNoAxeViolations();
   });
 
   test.each([

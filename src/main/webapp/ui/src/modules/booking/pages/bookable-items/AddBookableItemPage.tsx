@@ -218,7 +218,7 @@ function AddBookableItemForm({
   return (
     <main className="p-4 sm:p-8">
       <DirtyNavigationGuard dirty={isDirty(form) && !createMutation.isSuccess} />
-      <Heading level={2} as="h1" className="mb-5">
+      <Heading level={3} as="h1" className="mb-5">
         {t("bookableItems.addTitle")}
       </Heading>
       <Separator className="mb-8 h-px bg-gray-300" />

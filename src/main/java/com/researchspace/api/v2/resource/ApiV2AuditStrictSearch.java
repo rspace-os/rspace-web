@@ -388,7 +388,56 @@ public final class ApiV2AuditStrictSearch {
         && restricted.getDomains().contains(line.domain())
         && restricted.getActions().contains(line.action())
         && (request.oid() == null || line.rawData().contains("\"" + request.oid() + "\""))
-        && actorMatches(restricted, line.username());
+        && actorMatches(restricted, line.username())
+        && textMatches(line, request);
+  }
+
+  private static boolean textMatches(ParsedLine line, Request request) {
+    String search = request.search();
+    if (search == null) {
+      return true;
+    }
+    HistoricData event = line.result().getEvent();
+    return containsIgnoreCase(line.username(), search)
+        || containsIgnoreCase(event.getFullName(), search)
+        || containsIgnoreCase(event.getDescription(), search)
+        || containsIgnoreCase(line.action().name(), search)
+        || containsData(event.getData().getData(), request.searchableFields(), search);
+  }
+
+  private static boolean containsIgnoreCase(String value, String search) {
+    return value != null && value.toLowerCase(Locale.ROOT).contains(search);
+  }
+
+  private static boolean containsData(Map<String, Object> data, Set<String> fields, String search) {
+    return data.entrySet().stream()
+        .filter(entry -> fields.contains(entry.getKey()))
+        .anyMatch(
+            entry ->
+                containsIgnoreCase(entry.getKey(), search)
+                    || containsValue(entry.getValue(), search));
+  }
+
+  private static boolean containsValue(Object value, String search) {
+    if (value == null) {
+      return false;
+    }
+    if (value instanceof Map<?, ?> map) {
+      return map.entrySet().stream()
+          .anyMatch(
+              entry ->
+                  containsIgnoreCase(String.valueOf(entry.getKey()), search)
+                      || containsValue(entry.getValue(), search));
+    }
+    if (value instanceof Iterable<?> iterable) {
+      for (Object item : iterable) {
+        if (containsValue(item, search)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    return containsIgnoreCase(value.toString(), search);
   }
 
   private static boolean actorMatches(AuditTrailSearchElement restricted, String username) {
@@ -500,7 +549,9 @@ public final class ApiV2AuditStrictSearch {
       Set<String> requestedUsernames,
       User actor,
       int ceiling,
-      boolean bypassActorDirectory) {
+      boolean bypassActorDirectory,
+      String search,
+      Set<String> searchableFields) {
 
     public Request(
         Instant fromInclusive,
@@ -520,7 +571,58 @@ public final class ApiV2AuditStrictSearch {
           requestedUsernames,
           actor,
           ceiling,
-          false);
+          false,
+          null,
+          Set.of());
+    }
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling,
+        boolean bypassActorDirectory) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          bypassActorDirectory,
+          null,
+          Set.of());
+    }
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling,
+        boolean bypassActorDirectory,
+        String search) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          bypassActorDirectory,
+          search,
+          Set.of());
     }
 
     public Request {
@@ -539,6 +641,9 @@ public final class ApiV2AuditStrictSearch {
       domains = Set.copyOf(domains);
       actions = Set.copyOf(actions);
       requestedUsernames = Set.copyOf(requestedUsernames);
+      search = search == null ? null : search.trim().toLowerCase(Locale.ROOT);
+      search = search == null || search.isBlank() ? null : search;
+      searchableFields = Set.copyOf(searchableFields);
     }
   }
 

@@ -243,8 +243,14 @@ public final class ApiV2Fixture {
 
   /** Creates an instrument owned by {@code owner}. Instruments have no HTTP create route. */
   public long instrument(User owner, String name) {
+    return instrument(owner, name, null);
+  }
+
+  /** Creates an instrument with an optional searchable description. */
+  public long instrument(User owner, String name, String description) {
     ApiInstrument requested = new ApiInstrument();
     requested.setName(name);
+    requested.setDescription(description);
     return instrumentManager.createNewApiInstrument(requested, owner).getId();
   }
 

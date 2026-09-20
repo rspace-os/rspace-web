@@ -67,6 +67,7 @@ describe("BookableItemPicker", () => {
     const page = await loadBookableItems({ target: "IN12" }, "token", new AbortController().signal);
 
     expect(requestUrl?.searchParams.get("target")).toBe("IN12");
+    expect(requestUrl?.searchParams.get("capability")).toBe("CREATE_BOOKING");
     expect(requestUrl?.searchParams.get("page")).toBe("1");
     expect(requestUrl?.searchParams.get("limit")).toBe("20");
     expect(page.options[0]).toEqual({
@@ -91,6 +92,22 @@ describe("BookableItemPicker", () => {
     const page = await loadBookableItems({ eventKind: "MAINTENANCE" }, "token", new AbortController().signal);
     expect(page.options.map((item) => item.globalId)).toEqual(["IN12"]);
     expect(page.options[0].capabilities?.canCreateBlockout).toBe(true);
+  });
+
+  it("asks the catalogue to paginate only items with the selected capability", async () => {
+    let requestUrl: URL | undefined;
+    server.use(
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        requestUrl = new URL(request.url);
+        return HttpResponse.json(cataloguePage([configuration(12, "Bookable")], 1, 1));
+      }),
+    );
+
+    const page = await loadBookableItems({ eventKind: "BOOKING" }, "token", new AbortController().signal);
+
+    expect(requestUrl?.searchParams.get("capability")).toBe("CREATE_BOOKING");
+    expect(page.totalPages).toBe(1);
+    expect(page.options).toHaveLength(1);
   });
 
   it("excludes view-only items from both search and preselected targets", async () => {

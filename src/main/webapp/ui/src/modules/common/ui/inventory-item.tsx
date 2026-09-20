@@ -74,6 +74,7 @@ function InventoryLocationLink({
 function InventoryItem({
   name,
   nameAs: Name = "span",
+  nameClassName,
   globalId,
   href,
   idLink,
@@ -88,6 +89,7 @@ function InventoryItem({
   name: React.ReactNode;
   /** Semantic element used for the record name. The default preserves the existing inline title. */
   nameAs?: "span" | "h1";
+  nameClassName?: string;
   globalId: string;
   href?: string;
   /** Router-aware link element for SPA destinations. */
@@ -119,7 +121,7 @@ function InventoryItem({
       </ItemMedia>
       <ItemContent>
         <ItemTitle>
-          <Name className="min-w-0 truncate">{name}</Name>
+          <Name className={cn("min-w-0 truncate", nameClassName)}>{name}</Name>
           {idInTitle ? badge : null}
         </ItemTitle>
         {/*

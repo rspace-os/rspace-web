@@ -75,6 +75,12 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
   List<Instrument> searchEligibleBookingTargets(String query, int limit, User subject);
 
   /**
+   * Finds active Instrument identifiers whose name, description, or readable immediate parent name
+   * contains the supplied Booking catalogue query.
+   */
+  Set<Long> searchBookingCatalogueTargetIds(String query, User subject);
+
+  /**
    * Returns active Instrument identifiers stored directly in readable Containers whose database
    * type matches the supplied global-ID prefix.
    */

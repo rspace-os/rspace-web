@@ -304,7 +304,7 @@ export const bookingConfigurationConfig = {
   },
   useAsTitle: "target",
   defaultColumns: ["target", "state", "enabled", "updatedAt"],
-  listSearchableFields: ["target.name"],
+  listSearchableFields: ["target.name", "target.globalId"],
   fields: [
     { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
     {

@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
+import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetType;
@@ -23,6 +24,7 @@ import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResourceRoleScheme;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,16 +38,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
 
   private final BookingConfigurationManager configurations;
+  private final BookingConfigurationDao configurationDao;
   private final InstrumentDao instruments;
   private final FeatureFlagManager featureFlags;
   private final BookingResourceRoleScheme roleScheme;
 
   public BookingCatalogueManagerImpl(
       BookingConfigurationManager configurations,
+      BookingConfigurationDao configurationDao,
       InstrumentDao instruments,
       FeatureFlagManager featureFlags,
       BookingResourceRoleScheme roleScheme) {
     this.configurations = configurations;
+    this.configurationDao = configurationDao;
     this.instruments = instruments;
     this.featureFlags = featureFlags;
     this.roleScheme = roleScheme;
@@ -58,6 +63,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       FilterExpression filter,
       List<String> targetTypes,
       List<String> locationGlobalIds,
+      Capability capability,
       int page,
       int limit,
       User caller) {
@@ -73,8 +79,30 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     filters.add(comparison("enabled", Operator.EQUAL, true));
     filters.add(comparison("state", Operator.EQUAL, BookingConfigurationState.ACTIVE));
     filters.add(comparison("target.deleted", Operator.EQUAL, false));
+    if (capability != null && !caller.hasSysadminRole()) {
+      Set<String> roles = roleScheme.rolesWithCapability(capability.name());
+      Set<Long> capableTargetIds = configurationDao.findBookableInstrumentIds(caller, roles);
+      if (capableTargetIds.isEmpty()) {
+        return emptyPage(page, limit);
+      }
+      filters.add(
+          new FilterExpression.Comparison(
+              "target.value", Operator.IN, List.copyOf(capableTargetIds), false));
+    }
     if (query != null && !query.isBlank()) {
-      filters.add(comparison("target.name", Operator.CONTAINS, query.trim()));
+      Set<Long> matchingTargetIds =
+          new HashSet<>(instruments.searchBookingCatalogueTargetIds(query, caller));
+      ResourceReference<BookableTargetType, Long> globalIdTarget =
+          instrumentReference(query.trim().toUpperCase(java.util.Locale.ROOT));
+      if (globalIdTarget != null) {
+        matchingTargetIds.add(globalIdTarget.id());
+      }
+      if (matchingTargetIds.isEmpty()) {
+        return emptyPage(page, limit);
+      }
+      filters.add(
+          new FilterExpression.Comparison(
+              "target.value", Operator.IN, List.copyOf(matchingTargetIds), false));
     }
     if (targetGlobalId != null && !targetGlobalId.isBlank()) {
       ResourceReference<BookableTargetType, Long> target = instrumentReference(targetGlobalId);
@@ -123,7 +151,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
         page,
         limit,
         result.total(),
-        new Facets(List.of("INSTRUMENT")));
+        new Facets(result.total() == 0 ? List.of() : List.of("INSTRUMENT")));
   }
 
   @Override
@@ -159,7 +187,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
   }
 
   private static Page emptyPage(int page, int limit) {
-    return new Page(List.of(), page, limit, 0, new Facets(List.of("INSTRUMENT")));
+    return new Page(List.of(), page, limit, 0, new Facets(List.of()));
   }
 
   private List<ResourceReference<BookableTargetType, Long>> visibleLocationTargets(

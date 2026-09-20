@@ -513,6 +513,7 @@ class ApiV2OpenApiGeneratorTest {
             "id",
             "dateFrom",
             "dateTo",
+            "search",
             "actions",
             "snapshotDate",
             "snapshotFingerprint",
@@ -537,7 +538,7 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> auditCount =
         objectMap(objectMap(paths.get("/api/v2/maintenances/{id}/audit/count")).get("get"));
     assertEquals(
-        List.of("id", "dateFrom", "dateTo", "actions"),
+        List.of("id", "dateFrom", "dateTo", "search", "actions"),
         objectMapList(auditCount.get("parameters")).stream()
             .map(parameter -> parameter.get("name"))
             .toList());

@@ -5,6 +5,7 @@ import type { ResolvedCollectionConfig } from "@/modules/common/collection/colle
 import { Button } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { cn } from "@/modules/common/utils/cn";
 import type { TableListFeatures, TableListFilterButtons } from "../tableListState";
 
 export type TableListControlPanel = "filters" | "sorting" | "columns";
@@ -105,6 +106,7 @@ export function TableListToolbar<TDocument>({
   filterCount,
   filterButtons,
   hideFilterPanel = false,
+  debounceSearch = false,
   onPanelChange,
   onReset,
   resetView,
@@ -118,6 +120,8 @@ export function TableListToolbar<TDocument>({
   filterButtons?: TableListFilterButtons;
   /** Hides the filter panel for a data source that only honours free-text search. */
   hideFilterPanel?: boolean;
+  /** Debounce client-side search when its value also drives remote work. */
+  debounceSearch?: boolean;
   onPanelChange: (panel: TableListControlPanel) => void;
   onReset: () => void;
   resetView?: () => void;
@@ -158,13 +162,16 @@ export function TableListToolbar<TDocument>({
     <div
       role="toolbar"
       aria-label={collectionLabel}
-      className="flex flex-col flex-wrap gap-2 border-b py-2 lg:flex-row lg:items-center"
+      className={cn(
+        "flex flex-col flex-wrap gap-2 border-b py-2",
+        !filterButtons?.controlsOnSeparateRow && "lg:flex-row lg:items-center",
+      )}
     >
       {features.filtering !== false && (config.listSearchableFields?.length ?? 0) > 0 ? (
         <SearchRecordsInput
           value={features.filtering.value.search}
           collectionLabel={collectionLabel}
-          debounceMs={clientSide ? 0 : remoteSearchDebounceMs}
+          debounceMs={clientSide && !debounceSearch ? 0 : remoteSearchDebounceMs}
           resetSignal={searchResetSignal}
           onCommit={(search) => {
             if (features.filtering !== false) {

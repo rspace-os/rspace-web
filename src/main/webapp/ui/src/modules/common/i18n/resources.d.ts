@@ -844,6 +844,7 @@ export default interface Resources {
         "overlap": "Booked and blocked out: {ranges}."
       },
       "slice": {
+        "bookedBy": "Booked by {user}",
         "count": "{count, plural, one {# event} other {# events}}",
         "details": "Details",
         "sources": {
@@ -875,6 +876,7 @@ export default interface Resources {
       },
       "archived": "Archived",
       "audit": {
+        "allActions": "All actions",
         "apply": "Load audit events",
         "conflict": {
           "description": "This snapshot can no longer be paged reliably. Restart from the first page to avoid missing or duplicate events.",
@@ -1169,7 +1171,6 @@ export default interface Resources {
         "title": "Cancel booking?"
       },
       "compact": {
-        "bookingDescription": "Choose a bookable item and time for the new booking.",
         "bookingTitle": "New Booking",
         "discard": "Discard changes",
         "discardDescription": "Your unsaved event changes will be lost.",
@@ -1285,12 +1286,22 @@ export default interface Resources {
         "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
         "typeBooking": "Booking"
       },
+      "itemInformation": {
+        "buffer": "Buffer",
+        "bufferAfter": "{count}m after",
+        "bufferBefore": "{count}m before",
+        "doubleBookingAllowed": "Double booking allowed",
+        "title": "Item information"
+      },
       "loading": "Loading booking.",
       "loadingConfiguration": "Loading bookable item settings.",
       "maintenanceLabel": "Maintenance blockout",
       "warnings": {
         "past": "This booking is in the past. You can still create it."
       }
+    },
+    "breadcrumbs": {
+      "label": "Breadcrumbs"
     },
     "calendar": {
       "actions": {
@@ -1300,6 +1311,7 @@ export default interface Resources {
         "label": "Booking actions",
         "viewDetails": "View details"
       },
+      "additionalEventResources": "{count, plural, one {# additional resource with a matching event is shown.} other {# additional resources with matching events are shown.}} Pagination applies to catalogue items.",
       "agenda": "Booking agenda",
       "availability": "Availability",
       "availabilityLoading": "Loading availability",
@@ -1315,13 +1327,12 @@ export default interface Resources {
       "displayControls": "Calendar display controls",
       "event": "Booking event",
       "feed": {
-        "booked": "Booked",
         "bookedBy": "Booked by: {0}",
+        "booking": "Booking",
         "busy": "Busy",
         "createdBy": "Created by: {0}",
-        "downloadTitle": "{0} - RSpace Booking",
-        "itemSummary": "{0} — {1}",
-        "maintenance": "Maintenance blockout",
+        "itemSummary": "{0} - {1}",
+        "maintenance": "Maintenance",
         "myBookings": "My RSpace bookings",
         "purpose": "Purpose: {0}"
       },
@@ -1378,7 +1389,12 @@ export default interface Resources {
       "title": "Calendar",
       "today": "Today",
       "toolbar": "Calendar controls",
-      "unavailable": "Booking events are unavailable."
+      "unavailable": "Booking events are unavailable.",
+      "windowEditor": {
+        "end": "Change booking end time",
+        "move": "Move booking time",
+        "start": "Change booking start time"
+      }
     },
     "dayTimeline": {
       "event": {
@@ -6637,6 +6653,7 @@ export default interface Resources {
         "bookingCardBook": "Booking card: Book",
         "bookingCardDisabled": "Booking card: Open (disabled)",
         "bookingCardSetup": "Booking card: Set up booking",
+        "busyCalendar": "Busy calendar instrument {0,number,000}",
         "confocal": "Confocal microscope",
         "deletedLocationSequencer": "Deleted-location sequencer",
         "electronMicroscope": "Electron microscope",
@@ -6646,9 +6663,13 @@ export default interface Resources {
         "restrictedLocationPlateReader": "Restricted-location plate reader"
       },
       "purposes": {
+        "auroraCalibration": "Aurora calibration session",
+        "beaconCellImaging": "Beacon cell imaging study",
+        "busyCalendar": "Busy calendar fixture",
         "calibrationRun": "Calibration run",
         "cellImaging": "Cell imaging",
         "cellSorting": "Cell sorting",
+        "cometProteomics": "Comet proteomics analysis",
         "overnightAnalysis": "Overnight analysis",
         "proteomicsRun": "Proteomics run",
         "ultrastructureImaging": "Ultrastructure imaging"

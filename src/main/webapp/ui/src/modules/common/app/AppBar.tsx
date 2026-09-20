@@ -27,7 +27,7 @@ import { useNextMaintenanceQuery } from "./queries/nextMaintenance";
 export function PublicAppBar({ renderHamburger }: AppBarConfig) {
   const { t } = useTranslation("common");
   return (
-    <header className="border-b bg-background">
+    <header className="sticky top-0 z-50 border-b bg-background">
       <div className="flex h-12 items-center gap-2 px-3">
         {renderHamburger?.()}
         <a href="/login" className="flex h-8 shrink-0 items-center">
@@ -112,7 +112,7 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
   ];
 
   return (
-    <header className="border-b bg-background">
+    <header className="sticky top-0 z-50 border-b bg-background">
       <div className="flex h-12 items-center gap-0 px-1 sm:gap-2 sm:px-3">
         {renderHamburger?.()}
         <a href="/workspace" className="flex h-8 shrink-0 items-center">

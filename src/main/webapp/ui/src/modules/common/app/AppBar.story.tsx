@@ -38,10 +38,13 @@ const storyUser: CurrentUser = {
 
 function AppBarRoute() {
   return (
-    <AppBar
-      currentPage="workspace"
-      renderHamburger={() => <button type="button" aria-label="Menu" className="size-8 shrink-0" />}
-    />
+    <>
+      <AppBar
+        currentPage="workspace"
+        renderHamburger={() => <button type="button" aria-label="Menu" className="size-8 shrink-0" />}
+      />
+      <main aria-label="Scrollable content" className="h-[200vh]" />
+    </>
   );
 }
 

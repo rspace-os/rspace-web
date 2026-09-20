@@ -2,6 +2,7 @@ package com.researchspace.api.v2.model;
 
 import com.researchspace.core.util.DateRangeAdjustable;
 import com.researchspace.model.audittrail.AuditAction;
+import jakarta.validation.constraints.Size;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -22,6 +23,9 @@ public final class ApiV2AuditQuery extends ApiV2PaginationCriteria implements Da
   private Date dateTo;
 
   private Set<AuditAction> actions = new HashSet<>();
+
+  @Size(max = 255)
+  private String search;
 
   private String snapshotDate;
 

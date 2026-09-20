@@ -21,4 +21,13 @@ export class AppBarPage {
         return bounds.left >= 0 && bounds.right <= window.innerWidth;
       });
   }
+
+  headerTop(): number {
+    return this.header.element().getBoundingClientRect().top;
+  }
+
+  async scrollDocumentTo(top: number): Promise<void> {
+    window.scrollTo({ top });
+    await new Promise(requestAnimationFrame);
+  }
 }

@@ -87,6 +87,8 @@ describe("fetchBookingConfigurationAudit", () => {
       page: 1,
       dateFrom: "2026-08-01T00:00:00.000Z",
       dateTo: "2026-08-25T23:59:59.999Z",
+      search: " PurposeMarker ",
+      actions: ["WRITE"],
       snapshot: { snapshotDate: "2026-08-25", snapshotFingerprint: fingerprint },
       token: "secret",
     });
@@ -97,6 +99,8 @@ describe("fetchBookingConfigurationAudit", () => {
       limit: "20",
       dateFrom: "2026-08-01T00:00:00.000Z",
       dateTo: "2026-08-25T23:59:59.999Z",
+      search: "PurposeMarker",
+      actions: "WRITE",
       snapshotDate: "2026-08-25",
       snapshotFingerprint: fingerprint,
     });

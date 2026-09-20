@@ -341,6 +341,57 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void textSearchMatchesRecordedValuesBeforeApplyingTheResultCeiling() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1")
+            + "\n"
+            + event("01 Jan 2026 13:00:00,000", "BC1")
+                .replace("\"name\":\"item\"", "\"name\":\"PayloadMarker\"")
+            + "\n");
+
+    List<AuditTrailSearchResult> results =
+        search(ReadObserver.NONE, 1).search(request(1, "payloadmarker"));
+
+    assertEquals(1, results.size());
+    assertEquals(
+        Instant.parse("2026-01-01T13:00:00Z").toEpochMilli(), results.get(0).getTimestamp());
+  }
+
+  @Test
+  void textSearchMatchesDecodedTargetAndPurposeValues() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1")
+                .replace(
+                    "\"name\":\"item\"", "\"target\":\"bookings:41\",\"purpose\":\"PurposeMarker\"")
+            + "\n");
+
+    assertEquals(
+        1,
+        search(ReadObserver.NONE, 10).search(request(10, "bookings:41", Set.of("target"))).size());
+    assertEquals(
+        1,
+        search(ReadObserver.NONE, 10)
+            .search(request(10, "purposemarker", Set.of("purpose")))
+            .size());
+  }
+
+  @Test
+  void textSearchDoesNotInspectUnpublishedAuditFields() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1")
+                .replace("\"name\":\"item\"", "\"name\":\"Visible\",\"secret\":\"PrivateMarker\"")
+            + "\n");
+
+    assertTrue(
+        search(ReadObserver.NONE, 10)
+            .search(request(10, "privatemarker", Set.of("name")))
+            .isEmpty());
+  }
+
+  @Test
   void blockTailReadPreservesUtf8AcrossBlocksAndTrailingBlankLines() throws IOException {
     String description = "é".repeat(5_000);
     write(
@@ -367,6 +418,25 @@ class ApiV2AuditStrictSearchTest {
         Set.of(),
         sysadmin,
         ceiling);
+  }
+
+  private Request request(int ceiling, String search) {
+    return request(ceiling, search, Set.of("name"));
+  }
+
+  private Request request(int ceiling, String search, Set<String> searchableFields) {
+    return new Request(
+        FROM,
+        TO,
+        Set.of(AuditDomain.UNKNOWN),
+        Set.of(AuditAction.CREATE),
+        "BC1",
+        Set.of(),
+        sysadmin,
+        ceiling,
+        false,
+        search,
+        searchableFields);
   }
 
   private Path write(String filename, String content) throws IOException {

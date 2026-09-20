@@ -465,6 +465,31 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
+  public Set<Long> searchBookingCatalogueTargetIds(String search, User subject) {
+    if (search == null || search.isBlank()) {
+      return Set.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(subject);
+    String hql =
+        "select distinct instrument.id from Instrument instrument "
+            + "left join instrument.parentLocation location "
+            + "left join location.container parent "
+            + "where type(instrument) = Instrument and instrument.deleted = false "
+            + "and (lower(instrument.editInfo.name) like :search escape '\\' "
+            + "or lower(instrument.editInfo.description) like :search escape '\\' "
+            + "or (location.storedInstrument.id = instrument.id and parent.deleted = false and "
+            + context.readableContainerPredicate(this, "parent")
+            + " and lower(parent.editInfo.name) like :search escape '\\'))";
+    Query<Long> query =
+        getSession()
+            .createQuery(hql, Long.class)
+            .setParameter(
+                "search", "%" + LikeEscaper.escape(search.trim().toLowerCase(Locale.ROOT)) + "%");
+    context.bind(query, null);
+    return Set.copyOf(query.getResultList());
+  }
+
+  @Override
   public Set<Long> findByReadableImmediateParentIds(
       Set<Long> containerIds, Set<Long> workbenchIds, User caller) {
     if (containerIds.isEmpty() && workbenchIds.isEmpty()) {

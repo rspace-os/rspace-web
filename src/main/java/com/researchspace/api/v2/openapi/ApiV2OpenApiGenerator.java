@@ -791,6 +791,14 @@ public final class ApiV2OpenApiGenerator {
             false,
             ordered("type", "string", "format", "date-time"),
             "Latest event time."));
+    parameters.add(
+        parameter(
+            "search",
+            "query",
+            false,
+            ordered("type", "string", "maxLength", 255),
+            "Case-insensitive text contained in the actor, action, description, target, or "
+                + "recorded values."));
     Map<String, Object> actions =
         parameter(
             "actions",

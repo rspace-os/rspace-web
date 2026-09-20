@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
@@ -29,6 +30,8 @@ const calendarResourceConfig = resolveCollectionConfig({
   pagination: { defaultLimit: 20, limits: [10, 20, 30, 40, 50] },
 } as const);
 
+const calendarSearchParser = parseAsString.withDefault("").withOptions({ history: "replace", clearOnDefault: true });
+
 export default function CalendarPage() {
   return (
     <React.Suspense fallback={<CalendarSkeleton />}>
@@ -56,11 +59,13 @@ function CalendarSkeleton() {
 function CalendarContent() {
   const { date } = useSearch({ from: "/booking/calendar" });
   const navigate = useNavigate({ from: "/booking/calendar" });
+  const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
   const [view, setView] = React.useState<CalendarView>("day");
   const [layout, setLayout] = React.useState<CalendarLayout>("resources");
   const [resettingControls, setResettingControls] = React.useState(false);
+  const [eventScopeIsFiltered, setEventScopeIsFiltered] = React.useState(() => calendarSearch.trim() !== "");
   const preferences = useBookingDisplayPreferences();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
@@ -88,14 +93,18 @@ function CalendarContent() {
         };
       },
     },
-    initialState: { visibleFields: ["target"] },
+    initialState: { filters: { search: calendarSearch, expression: null }, visibleFields: ["target"] },
     features: { sorting: false, columns: false },
-    queryString: { parameterPrefix: "calendar-resources", tableId: "booking-calendar-resources" },
+    queryString: false,
   });
+  React.useEffect(() => {
+    if (resourceTable.state.filters.search === calendarSearch) return;
+    resourceTable.setFilters({ ...resourceTable.state.filters, search: calendarSearch });
+  }, [calendarSearch, resourceTable.setFilters, resourceTable.state.filters]);
   const resourceConfigurations = React.useMemo(
     () =>
       resourceTable.tableProps.rows.flatMap((row) => {
-        if (!row.capabilities.canCreateBooking) return [];
+        if (!row.capabilities.canCreateBooking && !row.capabilities.canEditConfiguration) return [];
         const option = bookableItemOption(row);
         return option ? [option] : [];
       }),
@@ -110,7 +119,7 @@ function CalendarContent() {
     dates.at(-1) ?? dates[0],
     preferences.timeZone,
     token,
-    layout === "resources" ? resourceTargetIds : undefined,
+    layout === "resources" && !eventScopeIsFiltered ? resourceTargetIds : undefined,
     !resettingControls &&
       (layout !== "resources" ||
         (resourceTable.tableProps.status !== "loading" && resourceTable.tableProps.status !== "refreshing")),
@@ -129,6 +138,11 @@ function CalendarContent() {
       resources={resourceTargets}
       resourceConfigurations={resourceConfigurations}
       resourceTableProps={resourceTable.tableProps}
+      searchControl={{
+        value: calendarSearch,
+        onChange: (search) => void setCalendarSearch(search || null),
+      }}
+      onEventScopeChange={setEventScopeIsFiltered}
       currentUserId={currentUser.id}
       isLoading={events.isPending && resourceTable.tableProps.status !== "error"}
       isError={events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")}
@@ -178,6 +192,7 @@ function CalendarContent() {
           initialDate: selectedDate,
           window,
           lockTarget: true,
+          timelineAdjustable: trigger.matches('[data-testid="day-timeline-scroller"]'),
         });
       }}
     />

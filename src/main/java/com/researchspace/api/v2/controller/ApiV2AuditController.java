@@ -11,6 +11,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Date;
 import java.util.Set;
@@ -58,11 +59,13 @@ public final class ApiV2AuditController {
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
       @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Date dateFrom,
       @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Date dateTo,
-      @RequestParam(required = false) Set<AuditAction> actions) {
+      @RequestParam(required = false) Set<AuditAction> actions,
+      @RequestParam(required = false) @Size(max = 255) String search) {
     ApiV2AuditQuery query = new ApiV2AuditQuery();
     query.setDateFrom(dateFrom);
     query.setDateTo(dateTo);
     query.setActions(actions == null ? Set.of() : actions);
+    query.setSearch(search);
     query.setPage(1);
     query.setLimit(1);
     return new ApiV2CountResult(

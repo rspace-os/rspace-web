@@ -112,6 +112,26 @@ class BookingCatalogueControllerMVCIT {
   }
 
   @Test
+  void searchesByGlobalIdNameDescriptionAndReadableLocation() throws Exception {
+    String nameMarker = "CatalogueNameMarker " + fixture.marker();
+    String descriptionMarker = "CatalogueDescriptionMarker " + fixture.marker();
+    String locationMarker = "CatalogueLocationMarker " + fixture.marker();
+    long byName = fixture.instrument(fixture.user(), nameMarker);
+    long byDescription =
+        fixture.instrument(fixture.user(), "Unrelated instrument", descriptionMarker);
+    ApiContainer parent = fixture.container(fixture.user(), locationMarker);
+    long byLocation = fixture.instrumentIn(fixture.user(), "Another instrument", parent);
+    fixture.bookingConfiguration(byName, "UTC", fixture.userKey());
+    fixture.bookingConfiguration(byDescription, "UTC", fixture.userKey());
+    fixture.bookingConfiguration(byLocation, "UTC", fixture.userKey());
+
+    assertCatalogueSearch(nameMarker, "IN" + byName);
+    assertCatalogueSearch(descriptionMarker, "IN" + byDescription);
+    assertCatalogueSearch(locationMarker, "IN" + byLocation);
+    assertCatalogueSearch("IN" + byDescription, "IN" + byDescription);
+  }
+
+  @Test
   void filtersByExactReadableImmediateParentAndPagesLocationOptions() throws Exception {
     ApiContainer parent = fixture.container(fixture.user(), "Imaging lab " + fixture.marker());
     String parentGlobalId = "IC" + parent.getId();
@@ -160,6 +180,30 @@ class BookingCatalogueControllerMVCIT {
   }
 
   @Test
+  void unsupportedTypeDoesNotAdvertiseInstrumentFacet() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v2/booking-catalogue")
+                .queryParam("type", "NOTATYPE")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(0))
+        .andExpect(jsonPath("$.facets.types").isEmpty());
+  }
+
+  @Test
+  void noMatchDoesNotAdvertiseInstrumentFacet() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v2/booking-catalogue")
+                .queryParam("q", "no catalogue item has this marker " + fixture.marker())
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(0))
+        .andExpect(jsonPath("$.facets.types").isEmpty());
+  }
+
+  @Test
   void catalogueIsHiddenWhenBookingIsDisabled() throws Exception {
     setBookingEnabled(false);
 
@@ -175,6 +219,17 @@ class BookingCatalogueControllerMVCIT {
 
   private User sysadmin() {
     return userManager.getUserByUsername(AbstractAppInitializor.SYSADMIN_UNAME);
+  }
+
+  private void assertCatalogueSearch(String query, String expectedGlobalId) throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v2/booking-catalogue")
+                .queryParam("q", query)
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.items[0].globalId").value(expectedGlobalId));
   }
 
   private void setBookingEnabled(boolean enabled) {

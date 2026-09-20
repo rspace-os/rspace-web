@@ -9,8 +9,10 @@ import { UIStoreProvider } from "@/modules/common/stores/uiStore";
 import { UserSessionStoreProvider } from "@/modules/common/stores/userSessionStore";
 import { TooltipProvider } from "@/modules/common/ui/tooltip";
 import { router } from "./router";
+import { withStaleOauthTokenRedirect } from "./staleOauthTokenRedirect";
 
 const queryClient = new QueryClient();
+globalThis.fetch = withStaleOauthTokenRedirect(globalThis.fetch);
 
 const appElement = document.getElementById("app");
 if (appElement) {

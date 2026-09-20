@@ -30,6 +30,27 @@ export type AuditDateValidation =
   | { valid: true; range: AuditDateRange }
   | { valid: false; fields: Partial<Record<AuditDateField, AuditDateError>> };
 
+export const AUDIT_ACTIONS = [
+  "CREATE",
+  "DELETE",
+  "DOWNLOAD",
+  "DUPLICATE",
+  "EXPORT",
+  "MOVE",
+  "READ",
+  "RENAME",
+  "RESTORE",
+  "SEARCH",
+  "SHARE",
+  "SIGN",
+  "TRANSFER",
+  "UNSHARE",
+  "VIEW",
+  "WITNESSED",
+  "WRITE",
+] as const;
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
 const AuditPageSchema = v.object({
   docs: v.array(AuditEventSchema),
   totalDocs: v.pipe(v.number(), v.integer(), v.minValue(0)),
@@ -101,6 +122,8 @@ export async function fetchBookingConfigurationAudit(input: {
   configurationId: number;
   dateFrom?: string;
   dateTo?: string;
+  search?: string;
+  actions?: readonly AuditAction[];
   page: number;
   snapshot?: AuditSnapshot;
   token: string;
@@ -120,6 +143,8 @@ export async function fetchBookingConfigurationAudit(input: {
   });
   if (input.dateFrom !== undefined) parameters.set("dateFrom", input.dateFrom);
   if (input.dateTo !== undefined) parameters.set("dateTo", input.dateTo);
+  if (input.search !== undefined && input.search.trim() !== "") parameters.set("search", input.search.trim());
+  for (const action of input.actions ?? []) parameters.append("actions", action);
   if (input.snapshot !== undefined) {
     parameters.set("snapshotDate", input.snapshot.snapshotDate);
     parameters.set("snapshotFingerprint", input.snapshot.snapshotFingerprint);

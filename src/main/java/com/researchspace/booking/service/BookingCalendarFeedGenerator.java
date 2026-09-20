@@ -56,11 +56,10 @@ public final class BookingCalendarFeedGenerator {
   }
 
   byte[] generateDownload(CalendarSource source, URI serverBaseUrl, Locale locale, int maxBytes) {
-    String title =
-        messages.getMessage(
-            "booking:calendar.feed.downloadTitle", new Object[] {source.itemName()}, locale);
+    String title = eventTitle(source.events().get(0), source.itemName(), locale);
     return generate(
         new CalendarSource(title, source.timeZone(), source.events()),
+        source.itemName(),
         serverBaseUrl,
         locale,
         maxBytes);
@@ -68,6 +67,16 @@ public final class BookingCalendarFeedGenerator {
 
   /** Builds and validates one complete UTF-8 calendar within the supplied byte limit. */
   public byte[] generate(CalendarSource source, URI serverBaseUrl, Locale locale, int maxBytes) {
+    return generate(
+        source, source.translateName() ? null : source.itemName(), serverBaseUrl, locale, maxBytes);
+  }
+
+  private byte[] generate(
+      CalendarSource source,
+      String calendarItemName,
+      URI serverBaseUrl,
+      Locale locale,
+      int maxBytes) {
     PropertyList properties =
         new PropertyList()
             .add(new ProdId(PROD_ID))
@@ -82,7 +91,7 @@ public final class BookingCalendarFeedGenerator {
             .add(new XProperty("X-WR-TIMEZONE", source.timeZone()));
     ComponentList<CalendarComponent> events = new ComponentList<>();
     for (CalendarEvent event : source.events()) {
-      events = events.add(event(event, serverBaseUrl, locale));
+      events = events.add(event(event, calendarItemName, serverBaseUrl, locale));
     }
     if (source.events().isEmpty()) {
       // RFC 5545 requires a component. UTC metadata keeps an empty feed valid without fake events.
@@ -113,22 +122,11 @@ public final class BookingCalendarFeedGenerator {
     return bytes.toByteArray();
   }
 
-  private VEvent event(CalendarEvent source, URI serverBaseUrl, Locale locale) {
+  private VEvent event(
+      CalendarEvent source, String calendarItemName, URI serverBaseUrl, Locale locale) {
     Instant stamp = timestamp(source);
     boolean full = source.privacy() == BookingPrivacy.FULL;
-    String summary =
-        messages.getMessageForLocale(
-            source.kind() == BookingEventKind.MAINTENANCE
-                ? "booking:calendar.feed.maintenance"
-                : full ? "booking:calendar.feed.booked" : "booking:calendar.feed.busy",
-            locale);
-    if (source.itemName() != null && !source.itemName().isBlank()) {
-      summary =
-          messages.getMessage(
-              "booking:calendar.feed.itemSummary",
-              new Object[] {source.itemName(), summary},
-              locale);
-    }
+    String summary = eventTitle(source, calendarItemName, locale);
     PropertyList properties =
         new PropertyList()
             .add(new Uid("booking-" + source.id() + "@" + serverBaseUrl.getHost()))
@@ -167,6 +165,23 @@ public final class BookingCalendarFeedGenerator {
     properties =
         properties.add(new Status(Status.VALUE_CONFIRMED)).add(new Transp(Transp.VALUE_OPAQUE));
     return new VEvent(properties);
+  }
+
+  private String eventTitle(CalendarEvent source, String calendarItemName, Locale locale) {
+    String kind =
+        messages.getMessageForLocale(
+            source.kind() == BookingEventKind.MAINTENANCE
+                ? "booking:calendar.feed.maintenance"
+                : "booking:calendar.feed.booking",
+            locale);
+    String itemName = source.itemName();
+    if (itemName == null || itemName.isBlank()) {
+      itemName = calendarItemName;
+    }
+    return itemName == null || itemName.isBlank()
+        ? kind
+        : messages.getMessage(
+            "booking:calendar.feed.itemSummary", new Object[] {itemName, kind}, locale);
   }
 
   private static Instant timestamp(CalendarEvent event) {

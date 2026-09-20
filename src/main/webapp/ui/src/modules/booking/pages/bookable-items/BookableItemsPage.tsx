@@ -676,6 +676,7 @@ function BookableItemsContent() {
       ) : null}
       <TableList
         {...table.tableProps}
+        headingClassName="text-2xl font-semibold"
         status={
           table.tableProps.status === "error" || (ownerAttentionOnly && ownerAttention.isError)
             ? "error"

@@ -35,6 +35,7 @@ public class BookingCatalogueController {
       @RequestParam(required = false) String where,
       @RequestParam(name = "type", required = false) List<String> targetTypes,
       @RequestParam(name = "location", required = false) List<String> locations,
+      @RequestParam(required = false) BookingCatalogueManager.Capability capability,
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
@@ -48,6 +49,7 @@ public class BookingCatalogueController {
             .filter(),
         targetTypes == null ? List.of() : targetTypes,
         locations == null ? List.of() : locations,
+        capability,
         page,
         limit,
         caller.subject());

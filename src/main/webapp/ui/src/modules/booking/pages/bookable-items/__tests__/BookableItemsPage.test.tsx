@@ -267,7 +267,10 @@ describe("BookableItemsPage", () => {
     expect(
       within(targetCell as HTMLTableCellElement).queryByRole("link", { name: "common:tableList.filters.openRecord" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "booking:bookableItems.plural" })).toHaveClass(
+      "text-2xl",
+      "font-semibold",
+    );
     expect(screen.getByText("booking:bookableItems.ownerHealth.needsOwner")).toBeVisible();
     expect(collectionRequests[0]?.headers.get("Authorization")).toBe("Bearer new-token");
     expect(new URL(collectionRequests[0]?.url ?? "http://localhost").searchParams.get("depth")).toBe("1");

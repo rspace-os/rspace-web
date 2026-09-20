@@ -24,7 +24,13 @@ export async function loadBookableItems(
   signal: AbortSignal,
 ): Promise<{ options: readonly BookableItemOption[]; totalPages: number }> {
   const result = await fetchBookingCatalogue(
-    { q: search.term, target: search.target, page: search.page, pageSize: 20 },
+    {
+      q: search.term,
+      target: search.target,
+      capability: search.eventKind === "MAINTENANCE" ? "CREATE_BLOCKOUT" : "CREATE_BOOKING",
+      page: search.page,
+      pageSize: 20,
+    },
     token,
     signal,
   );

@@ -164,6 +164,8 @@ describe("AddBookingPage", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.errors.targetUnavailable");
     expect(screen.getByRole("combobox", { name: "booking:bookings.form.item" })).toBeEnabled();
+    expect(screen.getByLabelText("booking:bookings.form.startDate")).toHaveValue("2026-08-17");
+    expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue("2026-08-17");
     expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
   });
 
@@ -181,15 +183,19 @@ describe("AddBookingPage", () => {
     const { queryClient, router } = renderPage();
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");
 
-    const rulesAside = await screen.findByRole("complementary", {
-      name: "booking:bookableItemDetails.rules",
+    const itemInformation = await screen.findByRole("complementary", {
+      name: "booking:bookings.itemInformation.title",
     });
-    expect(within(rulesAside).getByText("booking:bookableItemDetails.fields.openingHours")).toBeVisible();
-    expect(within(rulesAside).getByText("booking:bookableItemDetails.fields.doubleBooking")).toBeVisible();
-    const rulesDisclosure = screen.getByRole("button", { name: "booking:bookableItemDetails.rules" });
-    expect(rulesDisclosure).toHaveAttribute("aria-expanded", "false");
-    await user.click(rulesDisclosure);
-    expect(rulesDisclosure).toHaveAttribute("aria-expanded", "true");
+    expect(within(itemInformation).getByText("Confocal microscope")).toBeVisible();
+    expect(within(itemInformation).getByText("booking:bookableItemDetails.fields.openingHours")).toBeVisible();
+    expect(within(itemInformation).getByText("booking:bookings.itemInformation.doubleBookingAllowed")).toBeVisible();
+    expect(within(itemInformation).queryByText("booking:bookings.itemInformation.buffer")).not.toBeInTheDocument();
+    expect(within(itemInformation).queryByText("booking:bookableItemDetails.fields.timezone")).not.toBeInTheDocument();
+    const mobileItemInformation = screen.getByRole("region", {
+      name: "booking:bookings.itemInformation.title",
+    });
+    expect(within(mobileItemInformation).getByText("booking:bookableItemDetails.fields.openingHours")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "booking:bookings.itemInformation.title" })).not.toBeInTheDocument();
     expect(screen.queryByText("booking:bookings.form.openingHours")).not.toBeInTheDocument();
     await expectAccessible(document.body);
     expect(screen.getAllByRole("combobox")).toHaveLength(1);
@@ -211,6 +217,42 @@ describe("AddBookingPage", () => {
     });
     expect(router.state.location.search).toMatchObject({ date: "2026-08-18", target: "IN123" });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
+  });
+
+  it.each([
+    [5, 0, "booking:bookings.itemInformation.bufferBefore", "booking:bookings.itemInformation.bufferAfter"],
+    [0, 10, "booking:bookings.itemInformation.bufferAfter", "booking:bookings.itemInformation.bufferBefore"],
+  ])("shows only the non-zero buffer side", async (before, after, shown, hidden) => {
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/booking-catalogue", () =>
+        HttpResponse.json(page([{ ...catalogueOption, bufferBeforeMinutes: before, bufferAfterMinutes: after }])),
+      ),
+    );
+    renderPage();
+
+    const itemInformation = await screen.findByRole("complementary", {
+      name: "booking:bookings.itemInformation.title",
+    });
+    expect(within(itemInformation).getByText("booking:bookings.itemInformation.buffer")).toBeVisible();
+    expect(within(itemInformation).getByText(shown)).toBeVisible();
+    expect(within(itemInformation).queryByText(hidden)).not.toBeInTheDocument();
+  });
+
+  it("shows the item timezone only when it differs from the user's default", async () => {
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/booking-catalogue", () =>
+        HttpResponse.json(page([{ ...catalogueOption, timezone: "America/New_York" }])),
+      ),
+    );
+    renderPage();
+
+    const itemInformation = await screen.findByRole("complementary", {
+      name: "booking:bookings.itemInformation.title",
+    });
+    expect(within(itemInformation).getByText("booking:bookableItemDetails.fields.timezone")).toBeVisible();
+    expect(within(itemInformation).getByText("America/New_York")).toBeVisible();
   });
 
   it("retains input and maps an overlap conflict to localized text", async () => {
@@ -257,7 +299,7 @@ describe("AddBookingPage", () => {
     );
     renderPage(true);
 
-    expect(await screen.findByRole("complementary", { name: "booking:bookableItemDetails.rules" })).toBeVisible();
+    expect(await screen.findByRole("complementary", { name: "booking:bookings.itemInformation.title" })).toBeVisible();
     expect(screen.queryByRole("group", { name: "booking:bookings.form.type" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "booking:bookings.form.typeBlockout" })).not.toBeInTheDocument();
 
@@ -281,7 +323,7 @@ describe("AddBookingPage", () => {
     );
     renderPage();
 
-    expect(await screen.findByRole("complementary", { name: "booking:bookableItemDetails.rules" })).toBeVisible();
+    expect(await screen.findByRole("complementary", { name: "booking:bookings.itemInformation.title" })).toBeVisible();
     expect(screen.queryByRole("group", { name: "booking:bookings.form.type" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "booking:bookings.form.typeBlockout" })).not.toBeInTheDocument();
   });

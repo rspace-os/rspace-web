@@ -92,6 +92,7 @@
       "overlap": "Booked and blocked out: {ranges}."
     },
     "slice": {
+      "bookedBy": "Booked by {user}",
       "count": "{count, plural, one {# event} other {# events}}",
       "details": "Details",
       "sources": {
@@ -123,6 +124,7 @@
       "title": "Archive bookable item?"
     },
     "audit": {
+      "allActions": "All actions",
       "apply": "Load audit events",
       "conflict": {
         "description": "This snapshot can no longer be paged reliably. Restart from the first page to avoid missing or duplicate events.",
@@ -417,7 +419,6 @@
       "title": "Cancel booking?"
     },
     "compact": {
-      "bookingDescription": "Choose a bookable item and time for the new booking.",
       "bookingTitle": "New Booking",
       "discard": "Discard changes",
       "discardDescription": "Your unsaved event changes will be lost.",
@@ -533,12 +534,22 @@
       "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
       "typeBooking": "Booking"
     },
+    "itemInformation": {
+      "buffer": "Buffer",
+      "bufferAfter": "{count}m after",
+      "bufferBefore": "{count}m before",
+      "doubleBookingAllowed": "Double booking allowed",
+      "title": "Item information"
+    },
     "loading": "Loading booking.",
     "loadingConfiguration": "Loading bookable item settings.",
     "maintenanceLabel": "Maintenance blockout",
     "warnings": {
       "past": "This booking is in the past. You can still create it."
     }
+  },
+  "breadcrumbs": {
+    "label": "Breadcrumbs"
   },
   "calendar": {
     "actions": {
@@ -548,6 +559,7 @@
       "label": "Booking actions",
       "viewDetails": "View details"
     },
+    "additionalEventResources": "{count, plural, one {# additional resource with a matching event is shown.} other {# additional resources with matching events are shown.}} Pagination applies to catalogue items.",
     "agenda": "Booking agenda",
     "availability": "Availability",
     "availabilityLoading": "Loading availability",
@@ -563,13 +575,12 @@
     "displayControls": "Calendar display controls",
     "event": "Booking event",
     "feed": {
-      "booked": "Booked",
       "bookedBy": "Booked by: {0}",
+      "booking": "Booking",
       "busy": "Busy",
       "createdBy": "Created by: {0}",
-      "downloadTitle": "{0} - RSpace Booking",
-      "itemSummary": "{0} — {1}",
-      "maintenance": "Maintenance blockout",
+      "itemSummary": "{0} - {1}",
+      "maintenance": "Maintenance",
       "myBookings": "My RSpace bookings",
       "purpose": "Purpose: {0}"
     },
@@ -626,7 +637,12 @@
     "title": "Calendar",
     "today": "Today",
     "toolbar": "Calendar controls",
-    "unavailable": "Booking events are unavailable."
+    "unavailable": "Booking events are unavailable.",
+    "windowEditor": {
+      "end": "Change booking end time",
+      "move": "Move booking time",
+      "start": "Change booking start time"
+    }
   },
   "dayTimeline": {
     "event": {

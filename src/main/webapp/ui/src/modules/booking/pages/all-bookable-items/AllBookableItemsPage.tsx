@@ -188,6 +188,7 @@ function AllBookableItemsContent({
     target,
     where,
     q,
+    types,
     page = 1,
     pageSize = 20,
   } = useSearch({ from: "/booking/all-items" });
@@ -228,8 +229,8 @@ function AllBookableItemsContent({
   const serverFilter = resolveAvailabilityFilters(filters.expression, quickIndex.data);
   const serverWhere = serverFilter ? serializeRsqlExpression(serverFilter) : undefined;
   const catalogue = useQuery({
-    queryKey: ["api-v2", "booking-catalogue", "all-items", token, q, serverWhere, page, pageSize],
-    queryFn: ({ signal }) => fetchBookingCatalogue({ q, where: serverWhere, page, pageSize }, token, signal),
+    queryKey: ["api-v2", "booking-catalogue", "all-items", token, q, types, serverWhere, page, pageSize],
+    queryFn: ({ signal }) => fetchBookingCatalogue({ q, types, where: serverWhere, page, pageSize }, token, signal),
     enabled: !invalidFilter && (!usesAvailability || quickIndex.data !== undefined),
     staleTime: 30_000,
   });
@@ -264,6 +265,7 @@ function AllBookableItemsContent({
         target: undefined,
         where: undefined,
         q: undefined,
+        types: undefined,
         page: undefined,
       }),
       replace: true,
@@ -410,6 +412,7 @@ function AllBookableItemsContent({
 
   const availabilityFilters: TableListFilterButtons = {
     legend: t("allBookableItems.quickFilters.legend"),
+    controlsOnSeparateRow: true,
     controls: (
       <BookingDateControls
         date={selectedDate}
@@ -426,7 +429,7 @@ function AllBookableItemsContent({
         onDateChange={setDate}
       />
     ),
-    hasChanges: selectedDate !== userToday,
+    hasChanges: selectedDate !== userToday || Boolean(types?.length),
     buttons: (["available-now", "free-later-today"] as const).map((mode) => ({
       id: mode,
       label: (
@@ -482,6 +485,7 @@ function AllBookableItemsContent({
       ) : null}
       <TableList
         {...tableProps}
+        headingClassName="text-2xl font-semibold"
         onReset={resetView}
         rows={quickFilterPending || quickFilterError ? [] : rows}
         filterButtons={availabilityFilters}
@@ -517,6 +521,7 @@ function AllBookableItemsContent({
                     periodStart={new Date(quickEntry.bounds.start)}
                     periodEnd={new Date(quickEntry.bounds.end)}
                     now={quickIndex.now}
+                    showBookingContextDetails={false}
                     showCurrentAvailability
                     showPeriodLabels
                     timeZone={preferences.timeZone}
@@ -542,6 +547,8 @@ function AllBookableItemsContent({
                   periodStart={new Date(bounds.start)}
                   periodEnd={new Date(bounds.end)}
                   now={selectedDate === userToday ? quickIndex.now : undefined}
+                  showBookingContextDetails={false}
+                  showCurrentAvailability
                   showPeriodLabels
                   timeZone={preferences.timeZone}
                   item={item}

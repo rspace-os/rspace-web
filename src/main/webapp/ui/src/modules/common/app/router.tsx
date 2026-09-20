@@ -74,6 +74,10 @@ export const router = createRouter({
   defaultStaleReloadMode: "blocking",
 });
 
+router.subscribe("onBeforeNavigate", ({ hashChanged, hrefChanged, pathChanged }) => {
+  if (hrefChanged && !pathChanged && !hashChanged) router.shouldViewTransition = false;
+});
+
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;

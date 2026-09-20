@@ -144,6 +144,8 @@ function searchValues<TDocument extends Record<string, unknown>>(
   if (dot < 0) return [row[name]];
   const relationship = row[name.slice(0, dot)];
   if (typeof relationship !== "object" || relationship === null || Array.isArray(relationship)) return [];
+  const relationshipField = (relationship as Record<string, unknown>)[name.slice(dot + 1)];
+  if (relationshipField !== undefined) return [relationshipField];
   const value = (relationship as Record<string, unknown>).value;
   const targets = Array.isArray(value) ? value : [value];
   return targets.flatMap((target) =>

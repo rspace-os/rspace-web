@@ -20,8 +20,10 @@ import { TableList, type TableListRowActions } from "@/modules/common/table-list
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { Heading } from "@/modules/common/ui/typography";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./routes";
@@ -249,68 +251,52 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
     <TooltipProvider delay={250}>
       <main className="space-y-6 p-4 sm:p-8">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold">{title}</h1>
-          <p className="text-sm text-muted-foreground">{t("myBookings.description")}</p>
+          <Heading level={3} as="h1">
+            {title}
+          </Heading>
           <p className="text-sm text-muted-foreground">
             {t("myBookings.timezone", { timezone: preferences.timeZone })}
           </p>
         </header>
         <div className="space-y-2">
-          <fieldset>
-            <legend className="sr-only">{t("myBookings.period.legend")}</legend>
-            <div className="flex gap-3">
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      className={`relative ${period === "upcoming" ? "border-foreground bg-muted text-foreground" : ""}`}
-                      aria-label={t("myBookings.period.upcoming")}
-                      aria-pressed={period === "upcoming"}
-                      onClick={() => selectPeriod("upcoming")}
-                    />
-                  }
+          <ButtonGroup aria-label={t("myBookings.period.legend")}>
+            <Button
+              type="button"
+              size="sm"
+              variant={period === "upcoming" ? "secondary" : "outline"}
+              aria-label={t("myBookings.period.upcoming")}
+              aria-pressed={period === "upcoming"}
+              onClick={() => selectPeriod("upcoming")}
+            >
+              <CalendarClockIcon aria-hidden="true" />
+              {t("myBookings.period.upcoming")}
+              {upcomingCount.isSuccess && (
+                <Badge
+                  variant={period === "upcoming" ? "secondary" : "outline"}
+                  className="pointer-events-none min-w-5 px-1"
+                  aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
                 >
-                  <CalendarClockIcon aria-hidden="true" />
-                  {upcomingCount.isSuccess && (
-                    <Badge
-                      variant={period === "upcoming" ? "secondary" : "outline"}
-                      className="pointer-events-none absolute -top-2 -right-2 min-w-5 px-1"
-                      aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
-                    >
-                      {upcomingCount.data}
-                    </Badge>
-                  )}
-                  {upcomingCount.isPending && (
-                    <span role="status" className="sr-only">
-                      {t("myBookings.count.loading")}
-                    </span>
-                  )}
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{t("myBookings.period.upcoming")}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      className={period === "past" ? "border-foreground bg-muted text-foreground" : undefined}
-                      aria-label={t("myBookings.period.past")}
-                      aria-pressed={period === "past"}
-                      onClick={() => selectPeriod("past")}
-                    />
-                  }
-                >
-                  <HistoryIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{t("myBookings.period.past")}</TooltipContent>
-              </Tooltip>
-            </div>
-          </fieldset>
+                  {upcomingCount.data}
+                </Badge>
+              )}
+              {upcomingCount.isPending && (
+                <span role="status" className="sr-only">
+                  {t("myBookings.count.loading")}
+                </span>
+              )}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={period === "past" ? "secondary" : "outline"}
+              aria-label={t("myBookings.period.past")}
+              aria-pressed={period === "past"}
+              onClick={() => selectPeriod("past")}
+            >
+              <HistoryIcon aria-hidden="true" />
+              {t("myBookings.period.past")}
+            </Button>
+          </ButtonGroup>
           {upcomingCount.isError && (
             <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
               <span>{t("myBookings.count.error")}</span>
@@ -339,6 +325,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
           presentations={{ table: "wide", cards: "narrow" }}
           emptyDescription={t(emptyDescriptionKeys[period])}
           rowActions={rowActions}
+          hideHeader
         />
       </main>
     </TooltipProvider>
