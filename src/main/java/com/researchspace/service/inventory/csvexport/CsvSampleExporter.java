@@ -7,7 +7,6 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import com.researchspace.model.inventory.field.InventoryLinkField;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -175,10 +174,7 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
 
     if (CsvExportMode.FULL.equals(exportMode) && sample.getActiveExtraFields() != null) {
       for (InventoryEntityField sf : sample.getActiveFields()) {
-        String valueForProp =
-            sf instanceof InventoryLinkField
-                ? csvValueForLink(((InventoryLinkField) sf).getLink())
-                : sf.getData();
+        String valueForProp = csvValueForField(sf);
         int columnIndexForValue = csvColumnNames.indexOf(getColumnNameForSampleField(sf));
         itemProperties.set(columnIndexForValue, valueForProp != null ? valueForProp : "");
       }

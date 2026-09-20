@@ -8,7 +8,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryUrls;
@@ -121,6 +123,13 @@ public abstract class InventoryItemCsvExporter {
    * when the field holds no link. The version pin travels as the {@code vN} suffix so a single
    * Global ID URL carries the whole link.
    */
+  /** CSV cell for a template-defined field: its link if it holds one, its plain data otherwise. */
+  protected String csvValueForField(InventoryEntityField field) {
+    return field instanceof InventoryLinkField linkField
+        ? csvValueForLink(linkField.getLink())
+        : field.getData();
+  }
+
   protected String csvValueForLink(InventoryLink link) {
     if (link == null) {
       return "";
@@ -205,8 +214,8 @@ public abstract class InventoryItemCsvExporter {
     if (CsvExportMode.FULL.equals(exportMode) && item.getActiveExtraFields() != null) {
       for (ExtraField ef : item.getActiveExtraFields()) {
         String valueForProp =
-            ef instanceof ExtraLinkField
-                ? csvValueForLink(((ExtraLinkField) ef).getLink())
+            ef instanceof ExtraLinkField linkField
+                ? csvValueForLink(linkField.getLink())
                 : ef.getData();
         int columnIndexForValue = csvColumnNames.indexOf(getColumnNameForExtraField(ef));
         itemProperties.set(columnIndexForValue, valueForProp != null ? valueForProp : "");
