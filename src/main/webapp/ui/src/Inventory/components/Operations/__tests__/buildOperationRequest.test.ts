@@ -1,7 +1,7 @@
 import sharedCases from "@testresources/inventory/fieldNameUniquenessCases.json";
 import { describe, expect, it } from "vitest";
 import { buildFacadeRequest, withUniqueFieldNames } from "../buildOperationRequest";
-import type { InventoryOperation } from "../operationsConfig";
+import type { InventoryOperation } from "../operations";
 import type { OperationExtraField, OperationInputs, OperationOrigin } from "../types";
 import { operations } from "./testOperations";
 

@@ -1,4 +1,4 @@
-import type { InventoryKey } from "./operationsConfig";
+import type { InventoryKey } from "./operations";
 
 export type OperationQuantity = { numericValue: number; unitId: number };
 

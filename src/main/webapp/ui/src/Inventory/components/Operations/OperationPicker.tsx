@@ -6,7 +6,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import { type InventoryOperation, operationAvailability } from "./operationsConfig";
+import { type InventoryOperation, operationAvailability } from "./operations";
 import { resolveLabelFrom } from "./types";
 
 export default function OperationPicker({
