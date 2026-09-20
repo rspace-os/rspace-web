@@ -343,15 +343,11 @@ next run).
 
 ## The amount model (DevDocs/adr/0011)
 
-The wizard captures the **amount taken from the origin** (a **positive** decrement).
-The backend reduces the origin by it, so an operation can only ever decrease the
-origin, never increase it. Taking **more than the origin holds is rejected** (DevDocs/adr/0011),
-unit-aware, both in the wizard (Next blocked, inline message) and at the endpoint (HTTP
-400) — the zero-clamp in `registerApiSubSampleUsage` remains only as defence-in-depth.
-Each created subsample's amount is an independent input; the created total need not
-equal what was taken (material may be added). The unit is part of the amount: it must be
-chosen (a blank unit blocks the amounts step), and switching to a new process name clears
-both the numbers and the units.
+DevDocs/adr/0011 D5 has the model: a positive decrement, over-removal rejected rather
+than clamped, and created amounts independent of the amount taken. The wizard enforces
+it a step earlier than the endpoint does, and adds two rules of its own: the unit is part
+of the amount, so a blank unit blocks the amounts step, and switching to a new process
+name clears both the numbers and the units.
 
 ## Links
 
@@ -399,25 +395,14 @@ fields in the wizard is deferred.
 
 ## Testing
 
-- Backend, per operation: `AliquotOperationTest`, `PassageOperationTest`,
-  `PoolOperationTest` (incl. `takeAll`), `CryopreserveOperationTest`,
-  `ReviveOperationTest`, `DestroyOperationTest` — what each builds and what it
-  rejects. Shared rules: `OperationQuantityRulesTest`, `OperationOriginRulesTest`,
-  `OperationFieldNamesTest`, `FieldNameUniquenessParityTest`.
-- Backend, shared: `ApiInventoryOperationRequestsBeanValidationTest` (the annotations
-  on the request bodies), `InventoryOperationsApiControllerTest` (the shape rules, the
-  edit lock, the error-path renaming), `InventoryOperationManagerImplTest` (the
-  transactional core, incl. decrement-before-create order),
-  `InventoryOperationsErrorCatalogTest` (every raised code has a catalog entry).
-  `mvn test -Dtest=... -Dfast=true`.
-- Backend, end to end: `InventoryOperationsApiControllerMVCIT` and
-  `InventoryOperationFacadesMVCIT`. Run with
+- Backend unit and validator tests: `src/test/java/com/researchspace/service/inventory/operations`,
+  plus the `InventoryOperation*Test` classes elsewhere under `src/test/java` (the request
+  bodies' annotations, the controller, the transactional core, the error catalog).
+  `mvn test -Dtest='*Operation*Test' -Dfast=true`.
+- Backend, end to end: the operation `*MVCIT` classes. Run with
   `mvn verify -Denvironment=drop-recreate-db -Dtest=A,B`; this resets the database.
-- Frontend, pure: `buildOperationRequest.test.ts`, `operationsApi.test.ts`,
-  `sampleNaming.test.ts` (derive + dedup), `processValues.test.ts` (the remember
-  bundle), `templateResolution.test.ts`, `operationValidation.test.ts`. Component and
-  flow: `OperationWizard.test.tsx`, `OperationDetailsStep.test.tsx`,
-  `TemplateStep.test.tsx`. `pnpm test <path>` from the repo root.
+- Frontend: `src/main/webapp/ui/src/Inventory/components/Operations/__tests__`, plus the
+  pure helpers' own tests beside the helpers. `pnpm test <path>` from the repo root.
 - The field-name uniqueness rule is implemented in both languages, and
   `src/test/resources/inventory/fieldNameUniquenessCases.json` is the only thing tying
   them together: `FieldNameUniquenessParityTest` and `buildOperationRequest.test.ts` both

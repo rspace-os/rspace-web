@@ -4,11 +4,7 @@ import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
-/**
- * Derive: makes a new sample from part of one subsample by a named process. The process name is
- * what the user is asked to record about the transformation; the sample itself is created exactly
- * as any other derived sample is.
- */
+/** Derive: makes a new sample from part of one subsample by a named process. */
 @Component
 public class DeriveOperation extends CreatingOperation<ApiInventoryOperationRequests.Derive> {
 

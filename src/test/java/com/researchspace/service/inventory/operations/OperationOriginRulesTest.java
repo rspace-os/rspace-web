@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.operations;
 
+import static com.researchspace.service.inventory.operations.OperationTestFixtures.errorsFor;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.millilitres;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.requestOrigin;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.MapBindingResult;
 
-/** The origin-list and documentation-target rules every operation shares. */
 class OperationOriginRulesTest {
 
   private static final AliquotOperation ALIQUOT = new AliquotOperation();
@@ -38,10 +38,6 @@ class OperationOriginRulesTest {
     request.setEachAmount(millilitres("1"));
     request.setOrigins(origins);
     return request;
-  }
-
-  private static BeanPropertyBindingResult errorsFor(Object request) {
-    return new BeanPropertyBindingResult(request, "request");
   }
 
   @Test
@@ -68,9 +64,6 @@ class OperationOriginRulesTest {
 
   @Test
   void refusesTheSameSubsampleUnderTwoSpellingsOfItsGlobalId() {
-    // GlobalIdentifier parses SS100, SS0100 and SS100v1 all to db id 100, so a caller can name one
-    // subsample three ways. Every amount is checked against the origin's pre-operation quantity,
-    // so aliases would each pass and each be decremented.
     ApiInventoryOperationRequests.Pool request =
         pool(
             List.of(

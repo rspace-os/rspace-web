@@ -99,9 +99,7 @@ describe("describeOperationError", () => {
     ).toBe("Sample name: Required by this operation.");
   });
 
-  it("strips a dotted origin path but keeps which origin it was, through the catalog (FE11, A4)", () => {
-    // The marker is a translated sentence, not English welded onto a localized reason: a non-English
-    // user got their reason back with " (origin 3)" appended in English.
+  it("strips a dotted origin path but keeps which origin it was, through the catalog", () => {
     expect(
       describeOperationError(
         rejectedWith("origins[0].amountTaken: Cannot take more from an origin than it currently holds"),
@@ -126,9 +124,6 @@ describe("describeOperationError", () => {
   });
 
   it("strips a dotted `inputs.<key>` path to the bare reason, without the input's label", () => {
-    // The server addresses an input by its bare key, never by a dotted map path (Spring cannot bind
-    // one). Should it ever send one, getApiErrorDetail strips the path first, so the bare-key match
-    // never sees a key to swap: the user gets the reason alone rather than a raw path.
     const withCount = {
       ...operation,
       inputs: [...operation.inputs, { key: "count", type: "integer", labelKey: "operations.fields.count" }],
@@ -141,8 +136,6 @@ describe("describeOperationError", () => {
   });
 
   it("reports a network failure (no response at all) by the error's own message", () => {
-    // Axios rejects a connection failure with an Error carrying no `response`; the field-scoped
-    // path has nothing to read, so the message itself is what the wizard shows.
     expect(describeOperationError(new Error("Network Error"), operation, resolveLabel, "failed")).toBe("Network Error");
   });
 

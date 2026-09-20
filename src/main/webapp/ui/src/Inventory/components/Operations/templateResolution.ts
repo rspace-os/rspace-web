@@ -3,16 +3,13 @@ import type { UnitCategory } from "@/stores/stores/UnitStore";
 
 // "remembered" is a specific template restored from the user's saved default: it resolves to a
 // concrete templateId like "pick", but is presented as a banner with no radio selected so the user
-// can override it. "unselected" is the initial state when nothing is remembered: no radio is
-// selected and the user must make an explicit choice before Next is enabled.
+// can override it.
 export type TemplateMode = "none" | "pick" | "fromSample" | "remembered" | "unselected";
 
 export type TemplateSelection = {
   mode: TemplateMode;
   templateId: number | null;
   templateName?: string;
-  // Set when the user picks a specific template, so the amounts step offers that template's units
-  // instead of the origin subsample's. Undefined falls back to the origin.
   quantityCategory?: UnitCategory;
   remember: boolean;
   /**
@@ -53,11 +50,6 @@ export function templateSelectionFor(remembered: TemplateDefault | undefined): T
   };
 }
 
-/**
- * Preselects "fromSample" when the origin's parent has its own template (the common case);
- * otherwise "unselected", so the user must choose explicitly. Callers pass parentHasTemplate=false
- * for a multi-origin operation, since "the parent" is ambiguous across origins.
- */
 export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSelection {
   return {
     mode: parentHasTemplate ? "fromSample" : "unselected",
@@ -72,9 +64,6 @@ export function templateStepValid(selection: {
   pendingCheck?: boolean;
 }): boolean {
   if (selection.mode === "unselected") return false;
-  // A restored template's id came from the stored bundle, not a check, so it counts only once the
-  // restore-time check clears pendingCheck. Otherwise a renamed template could show its old name,
-  // or a trashed one be offered for Perform.
   if (selection.mode === "remembered") return !selection.pendingCheck;
   if (selection.mode === "pick" || selection.mode === "fromSample") return selection.templateId !== null;
   return true;
@@ -86,7 +75,6 @@ export function resolveTemplateId(params: {
   originSampleTemplateId: number | null;
 }): number | null {
   const { mode, pickedTemplateId, originSampleTemplateId } = params;
-  // "unselected" is unreachable here (Next is disabled first); resolved to no template defensively.
   if (mode === "none" || mode === "unselected") return null;
   if (mode === "pick" || mode === "remembered") return pickedTemplateId;
   return originSampleTemplateId;
@@ -112,12 +100,6 @@ type TemplateFieldsLike = {
   }>;
 };
 
-/**
- * Field-type aware: a LINK field's default lives in `link.targetGlobalId`, not `content` (which is
- * always empty for links), so a content-only check marked every populated mandatory link as
- * missing. Blank counts as absent for content and link target alike, matching the server's own
- * mandatory-field check.
- */
 function fieldHasDefault(field: TemplateFieldsLike["fields"][number]): boolean {
   if ((field.selectedOptions?.length ?? 0) > 0) return true;
   if (field.type === "link") return (field.link?.targetGlobalId ?? "").trim() !== "";

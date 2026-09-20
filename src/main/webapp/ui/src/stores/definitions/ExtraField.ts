@@ -23,14 +23,7 @@ export type ExtraFieldAttrs = {
   initial?: boolean;
   newFieldRequest?: boolean;
   link?: ExtraInventoryLink | null;
-  /**
-   * The Inventory operation definition key that generated this field, when one did. Read-only: the
-   * server sets it when an operation builds a field, the API returns it and ignores it in every
-   * request, and `paramsForBackend` deliberately omits it so an ordinary save never echoes it back.
-   *
-   * Its purpose is identity: a generated field's NAME is a localized resolution of this key, so a
-   * later run of the same operation has to match on the key to recognise the previous generation.
-   */
+  /** Read-only: the server sets it, and `paramsForBackend` omits it. */
   operationFieldKey?: string | null;
 };
 

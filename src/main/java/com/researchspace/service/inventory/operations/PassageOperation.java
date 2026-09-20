@@ -5,12 +5,11 @@ import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import org.springframework.stereotype.Component;
 
 /**
  * Passage: carries a culture forward a generation. It creates a new sample derived from the origin
- * and stamps it with the next passage number, but takes nothing from the origin.
+ * and stamps it with the next passage number.
  */
 @Component
 public class PassageOperation extends CreatingOperation<ApiInventoryOperationRequests.Passage> {
@@ -60,14 +59,8 @@ public class PassageOperation extends CreatingOperation<ApiInventoryOperationReq
             nextPassageNumber(origins.get(0), labels)));
   }
 
-  /**
-   * The parent's passage number plus one, or 1 when it has none that reads as a count.
-   *
-   * <p>Matched by operation key first (stable across locale and rewording), falling back to the
-   * localized name, which picks up a field the user created by hand.
-   */
   private static String nextPassageNumber(OriginState origin, LabelResolver labels) {
-    String wanted = labels.resolve(NUMBER_FIELD_KEY, Map.of()).trim().toLowerCase(Locale.ROOT);
+    String wanted = labels.resolve(NUMBER_FIELD_KEY).trim().toLowerCase(Locale.ROOT);
     String current =
         origin.parentSampleFields().stream()
             .filter(field -> NUMBER_FIELD_KEY.equals(field.operationFieldKey()))

@@ -33,9 +33,8 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
     quantity: Quantity | null;
 
     /**
-     * Whether the user has edited the quantity since it was last loaded from the server. The
-     * client only sends a quantity that was actually edited, rather than always resending the
-     * loaded value.
+     * The client only sends a quantity that was actually edited, rather than always resending the
+     * value it loaded.
      */
     quantityEdited: boolean;
 
@@ -64,10 +63,6 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
       super.setAttributesDirty(params);
     }
 
-    /**
-     * The quantity assignment and the quantityEdited reset must stay together: clearing the flag
-     * without refreshing the value it is a baseline for leaves it out of sync.
-     */
     populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
       super.populateFromJson(factory, passedParams, defaultParams);
       const params = { ...defaultParams, ...passedParams };

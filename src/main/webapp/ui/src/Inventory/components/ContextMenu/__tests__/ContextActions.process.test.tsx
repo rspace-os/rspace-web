@@ -34,8 +34,6 @@ describe("ContextActions: the Process entry", () => {
     for (const menuID of [menuIDs.RESULTS, menuIDs.CARD, menuIDs.CONTENT, menuIDs.STEPPER]) {
       expect(processIsOffered(menuID, selection), `expected Process in the ${menuID} menu`).toBe(true);
     }
-    // The picker chooses a record for another form; running an operation from it would leave the
-    // form pointing at material the operation just consumed.
     expect(processIsOffered(menuIDs.PICKER, selection)).toBe(false);
   });
 
@@ -52,8 +50,6 @@ describe("ContextActions: the Process entry", () => {
     expect(processIsOffered(menuIDs.RESULTS, [makeMockSubSample({ deleted: true })])).toBe(false);
   });
 
-  // inventory.operations.available is seeded DENIED, so the entry is absent until a sysadmin
-  // turns it on, whatever the selection.
   it("is hidden while inventory.operations.available is not ALLOWED", () => {
     expect(processIsOffered(menuIDs.RESULTS, [makeMockSubSample({})], false)).toBe(false);
   });

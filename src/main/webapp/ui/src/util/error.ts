@@ -92,13 +92,13 @@ const FIELD_PATH_PREFIX = /^[A-Za-z_]\w*(?:\[\d+\]|\.\w+)+:\s*/;
  *
  * @arg error     Anything; the detail is extracted if it is an Axios error carrying one.
  * @arg fallback  Passed through to {@link getErrorMessage} when there is no detail.
- * @arg formatOriginIndex  Renders "which origin", given the reason and a 1-based index. Omit it and
- *   the index is dropped; see {@link ORIGIN_INDEX}.
+ * @arg formatOriginIndex  Renders "which origin", given the reason and a 1-based index.
+ *   See {@link ORIGIN_INDEX}.
  */
 export function getApiErrorDetail(
   error: unknown,
   fallback: string,
-  formatOriginIndex?: (reason: string, index: number) => string,
+  formatOriginIndex: (reason: string, index: number) => string,
 ): string {
   return Parsers.objectPath(["response", "data", "errors"], error)
     .flatMap(Parsers.isArray)
@@ -114,21 +114,16 @@ export function getApiErrorDetail(
 const ORIGIN_INDEX = /^origins\[(\d+)\]/;
 
 /**
- * The reason, with the request path stripped - except that an origin's index is kept.
- *
- * Stripping the whole path turned a Pool rejection into "Cannot take more than the subsample holds"
- * with no indication which of five origins was at fault, leaving the user to guess.
- * The index is 1-based here because it is read by a person, not sent back.
+ * The reason, with the request path stripped - except that an origin's index is kept, so that a
+ * rejection of one of several origins says which one. The index is 1-based here because it is read
+ * by a person, not sent back.
  *
  * The WORDING is the caller's, because this module has no `t` and the reason it is being appended to
- * was already localized by the server: concatenating " (origin 3)" here shipped half an English
- * sentence to every non-English user, and not every locale writes an aside in trailing parentheses.
- * A caller that passes no formatter is saying it has no way to word one, so
- * the index is dropped rather than guessed at in English.
+ * was already localized by the server.
  */
-function withOriginIndex(detail: string, format?: (reason: string, index: number) => string): string {
+function withOriginIndex(detail: string, format: (reason: string, index: number) => string): string {
   const origin = ORIGIN_INDEX.exec(detail);
   const reason = detail.replace(FIELD_PATH_PREFIX, "").trim();
-  if (!origin || !format || reason.length === 0) return reason;
+  if (!origin || reason.length === 0) return reason;
   return format(reason, Number(origin[1]) + 1);
 }

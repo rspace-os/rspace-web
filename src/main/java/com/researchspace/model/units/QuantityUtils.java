@@ -245,18 +245,6 @@ public class QuantityUtils {
             Arrays.asList(quantity, divisorAsQuantity), new QuantityDividingVisitor()));
   }
 
-  /**
-   * The single exit from the arithmetic: choose the unit the result reads best in, then build the
-   * {@link QuantityInfo}.
-   *
-   * <p>{@link #convertToMoreUsefulUnit} is about READABILITY - a sub-unit result reads better one
-   * step down, and 2000 mg reads better as 2 g. Storability is a separate question with a different
-   * answer, so it is applied by {@link #subtract} alone rather than here.
-   *
-   * <p>The value is carried across as a {@link BigDecimal} whenever the arithmetic produced one,
-   * rather than through {@code doubleValue()}. A double cannot represent every terminating decimal,
-   * so that round trip could introduce error before {@link QuantityInfo} has even seen the value.
-   */
   private QuantityInfo asQuantityInfo(Quantity<?> result) {
     Quantity<?> inBestUnit = convertToMoreUsefulUnit(result);
     return QuantityInfo.of(
@@ -277,13 +265,8 @@ public class QuantityUtils {
    * three places and drops the scale by three, and any terminating decimal that fits the ladder at
    * all fits at 3dp somewhere on it.
    *
-   * <p>Bounded and terminating: each step consumes one rung and the ladder is finite. Normal work
-   * never enters the loop, because 5 g and 250 ml already fit - it fires only where the alternative
-   * is losing stock to rounding.
-   *
-   * <p>Returns the quantity UNCONVERTED when no unit on the ladder holds it, for example 1 kg less
-   * 0.0005 pg. That amount is genuinely unrepresentable, and relabelling buys nothing; rejecting it
-   * is the caller's job ({@code InventoryOperationManagerImpl.amountTakenLostToRounding}).
+   * <p>Returns the quantity UNCONVERTED when no unit on the ladder holds it; rejecting such an
+   * amount is the caller's job.
    */
   private QuantityInfo convertToStorableUnit(Quantity<?> result) {
     RSUnitDef originalUnit = RSUnitDef.getUnitDefByUnit(result.getUnit()).get();
@@ -305,10 +288,9 @@ public class QuantityUtils {
   }
 
   /**
-   * The exact factor converting one unit into another in the same category. Read off the unit
-   * definitions rather than assumed to be 1000, and applied with {@link BigDecimal}, so no step of
-   * the ladder loses precision. Raw-typed because the unit definitions are wildcard-typed; callers
-   * assert comparability first, so the conversion cannot mix categories.
+   * The exact factor converting one unit into another in the same category. Raw-typed because the
+   * unit definitions are wildcard-typed; callers assert comparability first, so the conversion
+   * cannot mix categories.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static BigDecimal exactUnitFactor(RSUnitDef from, RSUnitDef to) {

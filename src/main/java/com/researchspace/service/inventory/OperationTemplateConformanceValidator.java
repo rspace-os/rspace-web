@@ -16,13 +16,13 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.Validator;
 
 /**
- * Template conformance for an operation's new sample, mirroring {@code POST /samples}
- * (SamplesApiController.validateCreateSampleInput): a template-based sample must reference a
- * readable template, and its fields and quantity unit must match that template, so a mismatch is a
- * clean 400 instead of a 500 inside the manager transaction.
+ * Template conformance for an operation's new sample, mirroring {@code POST /samples}: a
+ * template-based sample must reference a readable template, and its fields and quantity unit must
+ * match that template, so a mismatch is a clean 400 instead of a 500 inside the manager
+ * transaction.
  *
- * <p>Must run inside the operation's transaction, on the request the server built, before any
- * origin is read, so the template it checks is the one the sample is actually created from.
+ * <p>Must run inside the operation's transaction, before any origin is read, so the template it
+ * checks is the one the sample is actually created from.
  */
 @Component
 public class OperationTemplateConformanceValidator {
@@ -49,10 +49,6 @@ public class OperationTemplateConformanceValidator {
     this.sampleApiPostFullValidator = sampleApiPostFullValidator;
   }
 
-  /**
-   * @throws BindException naming the offending field, so the endpoint reports it as the same
-   *     field-scoped 400 its structural checks produce
-   */
   public void validate(ApiInventoryOperationPost built, User user) throws BindException {
     if (built.getNewSample() == null) {
       return;
@@ -74,9 +70,7 @@ public class OperationTemplateConformanceValidator {
     }
     if (!errors.hasErrors()) {
       // Both validators, as POST /samples runs them: sampleApiPostValidator carries the length, tag
-      // and extra-field checks that inputValidator alone does not enforce, so skipping it let an
-      // over-long sampleName reach EditInfo.name (varchar(255)) inside the transaction, after the
-      // origins were already decremented.
+      // and extra-field checks that inputValidator alone does not enforce.
       //
       // Both validators name fields relative to the sample (name, quantity,
       // subSamples[i].quantity), but this BindingResult is rooted at the request - nest the path or

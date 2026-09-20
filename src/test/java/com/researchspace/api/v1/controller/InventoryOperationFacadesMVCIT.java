@@ -26,15 +26,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
-/**
- * The seven typed operation endpoints (DevDocs/adr/0011 D3), each posted in the shape frozen in
- * DevDocs/adr/0011: the created sample and each origin's remaining quantity come back in one
- * envelope (D2), a creating operation answers 201 with a Location, Destroy 200; plus the
- * facade-only rules a unit test cannot reach end to end: every error names a field the caller sent,
- * and the server defaults apply.
- *
- * <p>Not run automatically (extends a real-transaction MVC base).
- */
 @WebAppConfiguration
 public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
 
@@ -57,18 +48,13 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
     enableOperations();
   }
 
-  /**
-   * RSDEV-1231 seeds {@code inventory.operations.available} DENIED, so each test turns it on first:
-   * what is under test in this class is the operation, not the toggle.
-   */
+  /** {@code inventory.operations.available} is seeded DENIED, so each test turns it on first. */
   private void enableOperations() {
     systemPropertyManager.save(
         SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE,
         HierarchicalPermission.ALLOWED,
         getSysAdminUser());
   }
-
-  // --- the seven happy paths ---
 
   @Test
   public void aliquotCreatesTwoChildrenAndReportsTheOriginsRemainder() throws Exception {
@@ -208,8 +194,6 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
         () -> "expected the disposed date on the origin, got " + after.getExtraFields());
   }
 
-  // --- the facade-only rules ---
-
   @Test
   public void anAbsentCountDefaultsToOneChild() throws Exception {
     ApiInventoryOperationResult result =
@@ -225,7 +209,6 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
 
   @Test
   public void aSingleOriginErrorNamesTheFieldTheCallerSent() throws Exception {
-    // The core reports the live-state rule under origins[0]; an aliquot client sent origin.
     ApiSubSample origin = origin();
     List<String> errors =
         errorsOf(
@@ -248,22 +231,17 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void aPoolErrorKeepsTheIndexAndNamesTheGlobalId() throws Exception {
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "pool",
-                "{\"origins\":["
-                    + originJson(origin, q("1", GRAM))
-                    + ","
-                    + originJson(origin, q("1", GRAM))
-                    + "],\"sampleName\":\"Twice\",\"eachAmount\":"
-                    + q("2", GRAM)
-                    + "}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("origins[1].globalId:")),
-        () -> "expected origins[1].globalId, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "origins[1].globalId",
+        origin,
+        "pool",
+        "{\"origins\":["
+            + originJson(origin, q("1", GRAM))
+            + ","
+            + originJson(origin, q("1", GRAM))
+            + "],\"sampleName\":\"Twice\",\"eachAmount\":"
+            + q("2", GRAM)
+            + "}");
   }
 
   @Test
@@ -299,31 +277,25 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   public void anOriginThatIsNotASubsampleIsRejectedAtBinding() throws Exception {
     ApiSubSample origin = origin();
     String sampleGlobalId = "SA" + origin.getSampleInfo().getId();
-    List<String> errors =
-        errorsOf(post("destroy", "{\"origin\":{\"globalId\":\"" + sampleGlobalId + "\"}}", 400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("origin.globalId:")),
-        () -> "expected origin.globalId, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "origin.globalId",
+        origin,
+        "destroy",
+        "{\"origin\":{\"globalId\":\"" + sampleGlobalId + "\"}}");
   }
 
   @Test
   public void aMissingRequiredInputNamesTheInputKey() throws Exception {
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "derive",
-                "{\"origin\":"
-                    + originJson(origin, q("1", GRAM))
-                    + ",\"sampleName\":\"No process\",\"eachAmount\":"
-                    + q("0.5", GRAM)
-                    + "}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("processName:")),
-        () -> "expected processName, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "processName",
+        origin,
+        "derive",
+        "{\"origin\":"
+            + originJson(origin, q("1", GRAM))
+            + ",\"sampleName\":\"No process\",\"eachAmount\":"
+            + q("0.5", GRAM)
+            + "}");
   }
 
   @Test
@@ -332,29 +304,22 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
     // Jackson's, and only a request that actually crosses the HTTP boundary exercises the mapper
     // the endpoint is wired to.
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "aliquot",
-                "{\"origin\":"
-                    + originJson(origin, q("1", GRAM))
-                    + ",\"sampleName\":\"Fractional\",\"count\":1.9,\"eachAmount\":"
-                    + q("0.5", GRAM)
-                    + "}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("count:")),
-        () -> "expected count, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "count",
+        origin,
+        "aliquot",
+        "{\"origin\":"
+            + originJson(origin, q("1", GRAM))
+            + ",\"sampleName\":\"Fractional\",\"count\":1.9,\"eachAmount\":"
+            + q("0.5", GRAM)
+            + "}");
   }
 
   @Test
   public void anAmountTakenTheOriginsOwnUnitCannotExpressRedenominatesTheOrigin() throws Exception {
     // 4999.999 mg from a 5 g origin leaves 0.000001 g, which the origin's own unit cannot store.
     // It IS 0.001 mg, and the descent stops at the FIRST unit that fits, so the remainder is stored
-    // in milligrams, not micrograms, rather than the operation being refused. This is the
-    // end-to-end version: over HTTP, through the real validator, the real decrement and the real
-    // column.
+    // in milligrams, not micrograms, rather than the operation being refused.
     ApiSubSample origin = origin();
 
     ApiInventoryOperationResult result =
@@ -381,143 +346,103 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void aPerSubsampleAmountWhoseTotalTheColumnCannotHoldIsRejected() throws Exception {
     // Each of the two children fits the DECIMAL(19,3) quantity column on its own; the parent total
-    // the created sample recalculates from them does not. That recompute happens during
-    // persistence, so the request passed validation, decremented the origins, and then failed
-    // inside the transaction as a 500.
+    // the created sample recalculates from them does not.
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "passage",
-                "{\"origin\":"
-                    + originJson(origin, null)
-                    + ",\"sampleName\":\"Overflowing\",\"count\":2,\"eachAmount\":"
-                    + q("6E+15", GRAM)
-                    + "}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("eachAmount:")),
-        () -> "expected eachAmount, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "eachAmount",
+        origin,
+        "passage",
+        "{\"origin\":"
+            + originJson(origin, null)
+            + ",\"sampleName\":\"Overflowing\",\"count\":2,\"eachAmount\":"
+            + q("6E+15", GRAM)
+            + "}");
   }
 
   @Test
   public void anEachAmountCarryingOnlyAUnitIsRejectedRatherThanCreatingEmptyStock()
       throws Exception {
     // @NotNull asserts eachAmount is present, not that it carries a number, so {"unitId":..} alone
-    // passed every rule; the null was copied into each created subsample while the origin was
-    // still decremented.
+    // passes every other rule.
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "aliquot",
-                "{\"origin\":"
-                    + originJson(origin, q("1", GRAM))
-                    + ",\"sampleName\":\"Numberless\",\"eachAmount\":{\"unitId\":"
-                    + GRAM
-                    + "}}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("eachAmount:")),
-        () -> "expected eachAmount, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "eachAmount",
+        origin,
+        "aliquot",
+        "{\"origin\":"
+            + originJson(origin, q("1", GRAM))
+            + ",\"sampleName\":\"Numberless\",\"eachAmount\":{\"unitId\":"
+            + GRAM
+            + "}}");
   }
 
   @Test
   public void aStorageTempCarryingOnlyAUnitIsRejectedRatherThanFailingDuringPersistence()
       throws Exception {
     // The sample's own @ValidTemperature treats a number-less temperature as unresolved and lets
-    // it through, so this reached the INSERT and came back as a 500.
+    // it through.
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "cryopreserve",
-                "{\"origin\":"
-                    + originJson(origin, q("1", GRAM))
-                    + ",\"sampleName\":\"Numberless\",\"count\":1,\"eachAmount\":"
-                    + q("0.5", GRAM)
-                    + ",\"storageTemp\":{\"unitId\":"
-                    + CELSIUS
-                    + "}}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("storageTemp:")),
-        () -> "expected storageTemp, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "storageTemp",
+        origin,
+        "cryopreserve",
+        "{\"origin\":"
+            + originJson(origin, q("1", GRAM))
+            + ",\"sampleName\":\"Numberless\",\"count\":1,\"eachAmount\":"
+            + q("0.5", GRAM)
+            + ",\"storageTemp\":{\"unitId\":"
+            + CELSIUS
+            + "}}");
   }
 
   @Test
   public void aStorageTempBelowAbsoluteZeroIsRejectedThoughItIsUnderTheOperationsCeiling()
       throws Exception {
-    // Cryopreserve sets no lower bound, so -300 C sat under its -18 C ceiling and passed here;
-    // only the entity's @ValidTemperature caught it, once the transaction was already writing.
+    // Cryopreserve sets no lower bound, so -300 C sits under its -18 C ceiling.
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "cryopreserve",
-                "{\"origin\":"
-                    + originJson(origin, q("1", GRAM))
-                    + ",\"sampleName\":\"Impossible\",\"count\":1,\"eachAmount\":"
-                    + q("0.5", GRAM)
-                    + ",\"storageTemp\":"
-                    + q("-300", CELSIUS)
-                    + "}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("storageTemp:")),
-        () -> "expected storageTemp, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "storageTemp",
+        origin,
+        "cryopreserve",
+        "{\"origin\":"
+            + originJson(origin, q("1", GRAM))
+            + ",\"sampleName\":\"Impossible\",\"count\":1,\"eachAmount\":"
+            + q("0.5", GRAM)
+            + ",\"storageTemp\":"
+            + q("-300", CELSIUS)
+            + "}");
   }
 
   @Test
   public void anUnreadableDocumentationTargetNamesTheFieldTheCallerSent() throws Exception {
-    // Resolved only while the built sample's link was created, deep in the transaction, this came
-    // back as a bare 422 with no field path on it.
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "aliquot",
-                "{\"origin\":"
-                    + originJson(origin, q("1", GRAM))
-                    + ",\"sampleName\":\"Documented\",\"eachAmount\":"
-                    + q("0.5", GRAM)
-                    + ",\"documentedByGlobalId\":\"SD999999999\"}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("documentedByGlobalId:")),
-        () -> "expected documentedByGlobalId, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "documentedByGlobalId",
+        origin,
+        "aliquot",
+        "{\"origin\":"
+            + originJson(origin, q("1", GRAM))
+            + ",\"sampleName\":\"Documented\",\"eachAmount\":"
+            + q("0.5", GRAM)
+            + ",\"documentedByGlobalId\":\"SD999999999\"}");
   }
 
   @Test
   public void oneSubsampleNamedTwiceUnderDifferentSpellingsTakesNothingFromIt() throws Exception {
-    // SS<id> and SS<id>v1 name one subsample. The duplicate check deduped on the raw string, so
-    // both spellings got past it, each was checked against the origin's pre-operation quantity,
-    // and each was decremented: 5 g lost 2 g to a request that asked for 1 g.
+    // SS<id> and SS<id>v1 name one subsample.
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "pool",
-                "{\"origins\":["
-                    + originJson(origin.getGlobalId(), q("1", GRAM))
-                    + ","
-                    + originJson(origin.getGlobalId() + "v1", q("1", GRAM))
-                    + "],\"sampleName\":\"Aliased\",\"count\":1,\"eachAmount\":"
-                    + q("2", GRAM)
-                    + "}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("origins[1].globalId:")),
-        () -> "expected origins[1].globalId, got " + errors);
-    assertUnchanged(origin);
+    assertRejectedOn(
+        "origins[1].globalId",
+        origin,
+        "pool",
+        "{\"origins\":["
+            + originJson(origin.getGlobalId(), q("1", GRAM))
+            + ","
+            + originJson(origin.getGlobalId() + "v1", q("1", GRAM))
+            + "],\"sampleName\":\"Aliased\",\"count\":1,\"eachAmount\":"
+            + q("2", GRAM)
+            + "}");
   }
-
-  // --- helpers ---
 
   /** A fresh 5 g origin. */
   private ApiSubSample origin() {
@@ -582,6 +507,18 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   private void assertUnchanged(ApiSubSample origin) {
     ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
     assertEquals(0, quantityOf(origin).compareTo(quantityOf(reloaded)), "origin must be untouched");
+  }
+
+  /**
+   * Asserts the request is refused with a 400 naming {@code field}, and the origin is untouched.
+   */
+  private void assertRejectedOn(String field, ApiSubSample origin, String operation, String json)
+      throws Exception {
+    List<String> errors = errorsOf(post(operation, json, 400));
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith(field + ":")),
+        () -> "expected " + field + ", got " + errors);
+    assertUnchanged(origin);
   }
 
   private List<String> errorsOf(MvcResult result) throws Exception {
