@@ -70,9 +70,7 @@ describe("computed: paramsForBackend", () => {
 
     test("is sent on a create even though the user never touched it.", () => {
       // A record with no id yet is being created, so its quantity is part of what is being created
-      // rather than an echo of something stored. Every other case here uses the fixture's id of 1,
-      // so without this a simplification to quantityEdited alone would create subsamples holding
-      // nothing.
+      // rather than an echo of something stored.
       const subSample = makeMockSubSample({ id: null });
       subSample.setEditable(new Set(["name", "quantity"]), true);
 

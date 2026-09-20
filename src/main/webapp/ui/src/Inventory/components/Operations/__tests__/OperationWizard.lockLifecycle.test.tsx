@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render as renderWithoutQueryClient, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
@@ -35,48 +35,19 @@ function render(ui: React.ReactElement) {
   return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
-/**
- * The wizard renews its origins' edit locks as the user steps through it. Renewal is a POST that
- * recreates a five-minute lock, so it has to be ordered against the release the close performs
- * (RSDEV-1231).
- */
 describe("OperationWizard lock renewal and close ordering", () => {
-  it("does not close until an in-flight lock renewal has settled", async () => {
-    // Next fires a renewal POST. Closing while it is still in flight lets the caller's DELETE win
-    // the race, and the late POST then recreates a lock on a wizard that is already gone, leaving
-    // the origin locked for five minutes with nothing left to release it.
+  beforeEach(() => {
+    // The dedup effect fires this once a process name exists; answer it so nothing is unhandled.
     server.use(
       http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
     );
-    const origin = makeMockSubSample({});
-    let finishRenewal: (status: "LOCKED_OK") => void = () => {};
-    vi.spyOn(origin, "acquireEditLock").mockReturnValue(
-      new Promise<"LOCKED_OK">((resolve) => {
-        finishRenewal = resolve;
-      }),
-    );
-    const onClose = vi.fn();
-    const user = userEvent.setup();
-    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
-
-    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
-    await user.click(screen.getByRole("button", { name: /actions\.next/i }));
-
-    await user.click(screen.getByRole("button", { name: /actions\.cancel/i }));
-    expect(onClose).not.toHaveBeenCalled();
-
-    finishRenewal("LOCKED_OK");
-    await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
-  it("waits for every pending renewal, including one that settles after a later one", async () => {
-    // Next starts renewal A and Back starts renewal B. Tracking only the most recent batch drops A
-    // from the chain, so a close after B settles releases the locks while A's POST is still in
-    // flight, and A then recreates a five-minute lock on a wizard that is gone.
-    server.use(
-      http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
-    );
+  /**
+   * Drives the wizard to the step after details, where the first lock renewal has been started.
+   * `finish` collects one resolver per renewal, in the order the wizard started them.
+   */
+  async function wizardAtStepTwo() {
     const origin = makeMockSubSample({});
     const finish: Array<(status: "LOCKED_OK") => void> = [];
     vi.spyOn(origin, "acquireEditLock").mockImplementation(
@@ -92,10 +63,30 @@ describe("OperationWizard lock renewal and close ordering", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
     await user.click(screen.getByRole("button", { name: /actions\.next/i }));
+    return { finish, onClose, user };
+  }
+
+  it("does not close until an in-flight lock renewal has settled", async () => {
+    // Next fires a renewal POST. Closing while it is still in flight lets the caller's DELETE win
+    // the race, and the late POST then recreates a lock on a wizard that is already gone, leaving
+    // the origin locked for five minutes with nothing left to release it.
+    const { finish, onClose, user } = await wizardAtStepTwo();
+
+    await user.click(screen.getByRole("button", { name: /actions\.cancel/i }));
+    expect(onClose).not.toHaveBeenCalled();
+
+    finish[0]("LOCKED_OK");
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it("waits for every pending renewal, including one that settles after a later one", async () => {
+    // Next starts renewal A and Back starts renewal B. Tracking only the most recent batch drops A
+    // from the chain, so a close after B settles releases the locks while A's POST is still in
+    // flight, and A then recreates a five-minute lock on a wizard that is gone.
+    const { finish, onClose, user } = await wizardAtStepTwo();
     await user.click(screen.getByRole("button", { name: /actions\.back/i }));
     expect(finish).toHaveLength(2);
 
-    // B settles first; A is still in flight, so close must still be held.
     finish[1]("LOCKED_OK");
     await user.click(screen.getByRole("button", { name: /actions\.cancel/i }));
     expect(onClose).not.toHaveBeenCalled();
@@ -108,27 +99,9 @@ describe("OperationWizard lock renewal and close ordering", () => {
     // Close captures the renewals outstanding at that instant, so a batch started afterwards would
     // not be waited for and could land behind the caller's release. Nothing may start one: a wizard
     // that is closing has no lock left to keep alive.
-    server.use(
-      http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
-    );
-    const origin = makeMockSubSample({});
-    const finish: Array<(status: "LOCKED_OK") => void> = [];
-    vi.spyOn(origin, "acquireEditLock").mockImplementation(
-      () =>
-        new Promise<"LOCKED_OK">((resolve) => {
-          finish.push(resolve);
-        }),
-    );
-    const onClose = vi.fn();
-    const user = userEvent.setup();
-    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
-
-    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
-    await user.click(screen.getByRole("button", { name: /actions\.next/i }));
+    const { finish, onClose, user } = await wizardAtStepTwo();
     expect(finish).toHaveLength(1);
 
-    // Close is now waiting on that first renewal; a step taken while it waits must renew nothing.
     await user.click(screen.getByRole("button", { name: /actions\.cancel/i }));
     await user.click(screen.getByRole("button", { name: /actions\.back/i }));
     expect(finish).toHaveLength(1);

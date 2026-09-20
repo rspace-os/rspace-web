@@ -64,8 +64,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 })
 public class ApiSampleWithFullSubSamples extends ApiSampleWithoutSubSamples {
 
-  // @Valid cascades so each subsample's own constraints (e.g. image size, note length) are
-  // enforced.
   @Valid
   @Size(max = 100, message = "{errors.inventory.sample.tooManySubSamples}")
   @JsonProperty("subSamples")

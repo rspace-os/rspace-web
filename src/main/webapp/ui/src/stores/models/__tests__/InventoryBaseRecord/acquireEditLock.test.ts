@@ -22,11 +22,6 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
 
 const owner = { firstName: "Carol", lastName: "Holder", username: "carol" };
 
-/**
- * The operation wizard needs the same edit-session lock the form takes, but none of the rest of
- * setEditing: the origins are not being edited, so they must not enter edit state or refetch
- * (RSDEV-1231).
- */
 describe("acquireEditLock", () => {
   test("takes the lock without putting the record into edit state", async () => {
     const subsample = makeMockSubSample();
@@ -57,8 +52,6 @@ describe("acquireEditLock", () => {
 
     expect(subsample.lockExpiry.getTime()).toBeGreaterThan(Date.now());
     expect(subsample.lockExpired).toBe(false);
-    // the form's timer prompts to keep editing and otherwise discards the edit; the wizard has no
-    // edit to keep, so it must never run
     expect(expiryCheck).not.toHaveBeenCalled();
   });
 

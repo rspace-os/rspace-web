@@ -18,6 +18,7 @@ import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Unit
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
+import type TemplateModel from "@/stores/models/TemplateModel";
 import getRootStore from "@/stores/stores/getRootStore";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 import { showToastWhilstPending } from "@/util/alerts";
@@ -79,8 +80,6 @@ function buildInitialValues(operation: InventoryOperation, origin: SubSampleMode
     } else if (input.type === "quantity") {
       values[input.key] = { numericValue: 0, unitId };
     } else {
-      // Temperature: start at the input's configured default (revive: 4 °C, in its 4..120 range), or
-      // -80 °C for an unconfigured one (cryopreserve), so the field opens on a valid value.
       values[input.key] = {
         numericValue: typeof input.default === "number" ? input.default : -80,
         unitId: CELSIUS,
@@ -90,18 +89,19 @@ function buildInitialValues(operation: InventoryOperation, origin: SubSampleMode
   return values;
 }
 
-function blankAmounts(operation: InventoryOperation, origin: SubSampleModel): OperationInputs {
-  const out: OperationInputs = {};
-  const unitId = getUnitId(origin.quantity);
-  // A terminal operation (Destroy) declares no count/each-amount; only set those that exist.
-  if (operation.effect.countFrom) out[operation.effect.countFrom] = 1;
-  if (operation.effect.eachAmountFrom) out[operation.effect.eachAmountFrom] = { numericValue: 1, unitId };
-  if (operation.effect.amountTakenFrom) out[operation.effect.amountTakenFrom] = { numericValue: 1, unitId };
-  return out;
-}
+const stepLabelKeys = {
+  details: "operations.wizard.step.details",
+  template: "operations.wizard.step.template",
+  amounts: "operations.wizard.step.amounts",
+  documentation: "operations.wizard.step.documentation",
+} as const;
 
 function freshValues(operation: InventoryOperation, origin: SubSampleModel, current: OperationInputs): OperationInputs {
-  const values = { ...buildInitialValues(operation, origin), ...blankAmounts(operation, origin) };
+  const values = buildInitialValues(operation, origin);
+  const unitId = getUnitId(origin.quantity);
+  if (operation.effect.countFrom) values[operation.effect.countFrom] = 1;
+  if (operation.effect.eachAmountFrom) values[operation.effect.eachAmountFrom] = { numericValue: 1, unitId };
+  if (operation.effect.amountTakenFrom) values[operation.effect.amountTakenFrom] = { numericValue: 1, unitId };
   const nameFrom = operation.effect.nameFrom;
   if (nameFrom) values[nameFrom] = current[nameFrom] ?? "";
   const pnFrom = operation.effect.processNameFrom;
@@ -119,9 +119,6 @@ function toOrigin(origin: SubSampleModel): OperationOrigin {
 }
 
 /**
- * A subsample's quantity in its category's atomic unit, or 0 when it has no quantity or holds one
- * this module cannot convert.
- *
  * toCommonUnit throws for any unit outside volume/mass/dimensionless, and molarity/concentration
  * units are real, server-supported units a subsample can hold - so gate with categoryOfUnit first.
  * 0 is the safe fallback: an unconvertible origin sorts as smallest, and allSameCategory is already
@@ -134,9 +131,8 @@ function commonQuantity(origin: SubSampleModel): number {
 }
 
 /**
- * The origin the wizard treats as representative for a (possibly multi-origin) run: the one holding
- * the *least* material. Because a Pool takes the same shared amount from every origin, the smallest
- * origin is the binding constraint, so checking against it is equivalent to checking every origin.
+ * Because a Pool takes the same shared amount from every origin, the smallest origin is the binding
+ * constraint, so checking against it is equivalent to checking every origin.
  */
 function representativeOrigin(origins: Array<SubSampleModel>): SubSampleModel {
   return origins.reduce((smallest, o) => (commonQuantity(o) < commonQuantity(smallest) ? o : smallest));
@@ -150,7 +146,6 @@ function OperationWizard({
 }: {
   open: boolean;
   onClose: () => void;
-  /** The selected origin subsamples: one for a single-origin operation, two or more for Pool. */
   origins: Array<SubSampleModel>;
   /**
    * Where to publish the outstanding lock renewals, so a caller that releases the locks without
@@ -167,9 +162,8 @@ function OperationWizard({
   // returns null instead for an unset or unrecognised unit.
   const categoryOf = (subSample: SubSampleModel): UnitCategory | null => categoryOfUnit(getUnitId(subSample.quantity));
   const originCategory = categoryOf(origin);
-  // Pool requires every selected origin to share one measurement category. An undeterminable
-  // category is not a match: it must leave Pool disabled rather than enable it on two nulls
-  // comparing equal.
+  // An undeterminable category is not a match: it must leave Pool disabled rather than enable it
+  // on two nulls comparing equal.
   const allSameCategory = originCategory !== null && origins.every((o) => categoryOf(o) === originCategory);
   const { isViewportSmall } = useViewportDimensions();
   const [operation, setOperation] = React.useState<InventoryOperation | null>(null);
@@ -181,8 +175,6 @@ function OperationWizard({
   // When a complete remembered bundle loads, step one offers Perform straight away; "reviewing" is set
   // once the user chooses to step through the wizard instead (DevDocs/adr/0011).
   const [reviewing, setReviewing] = React.useState(false);
-  // Whether the user has hand-edited the derived sample name; once they have, the wizard stops
-  // re-deriving it from the process name.
   const [sampleNameEdited, setSampleNameEdited] = React.useState(false);
   const [activeStep, setActiveStep] = React.useState(0);
   const [submitting, setSubmitting] = React.useState(false);
@@ -192,9 +184,8 @@ function OperationWizard({
     remember: false,
   });
   // Each operation type has its own collection: useUiPreference derives its value fresh from
-  // context every render rather than caching it in a useState, so passing a DIFFERENT preference
-  // key as `operation` changes reads that operation's data immediately rather than a stale mirror
-  // of whichever operation was selected first.
+  // context every render rather than caching it, so a DIFFERENT preference key reads that
+  // operation's data immediately rather than a stale mirror of the first one selected.
   const [processValues, setProcessValues] = useUiPreference<Record<string, ProcessValues>>(
     processValuesPreferenceFor(operation?.key ?? ""),
     { defaultValue: {} },
@@ -213,13 +204,7 @@ function OperationWizard({
   );
 
   const stepKeys: ReadonlyArray<string> = operation
-    ? (operation.steps ?? [
-        "details",
-        "template",
-        "amounts",
-        ...(operation.documentationStep ? ["documentation"] : []),
-        "confirm",
-      ])
+    ? (operation.steps ?? ["details", "template", "amounts", "documentation", "confirm"])
     : [];
   const isLast = activeStep === stepKeys.length - 1;
 
@@ -242,6 +227,33 @@ function OperationWizard({
   const [parentTemplateChecking, setParentTemplateChecking] = React.useState(false);
   const parentCheckIdRef = React.useRef(0);
 
+  /**
+   * Both template checks want the same three answers from one lookup: the template is gone or
+   * unreadable, it is in the trash, or it has a mandatory field with no default. Only the trashed
+   * wording and what the caller does with the result differ.
+   */
+  const checkTemplate = React.useCallback(
+    async (
+      id: number,
+      deletedMessage: (name: string) => string,
+    ): Promise<{ error: string } | { template: TemplateModel }> => {
+      try {
+        const template = await getRootStore().searchStore.getTemplate(id, null, new AlwaysNewFactory());
+        // A trashed template is still readable (soft deletion), so the flag is the only signal.
+        if (template.deleted) return { error: deletedMessage(template.name) };
+        const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
+        if (reason.blocked)
+          return {
+            error: t("operations.template.mandatoryFieldsError", { count: reason.count, fields: reason.fields }),
+          };
+        return { template };
+      } catch {
+        return { error: t("operations.template.lookupFailed") };
+      }
+    },
+    [t, i18n.resolvedLanguage, i18n.language],
+  );
+
   const needsParentTemplateCheck =
     parentHasTemplate &&
     parentTemplateId !== null &&
@@ -259,41 +271,20 @@ function OperationWizard({
     setParentTemplateError(null);
     setParentTemplateChecking(true);
     void (async () => {
-      try {
-        const template = await getRootStore().searchStore.getTemplate(parentTemplateId, null, new AlwaysNewFactory());
-        if (checkId !== parentCheckIdRef.current) return;
-        // A trashed template is still readable (soft deletion) and its mandatory fields stay intact,
-        // so it would otherwise pass here and be offered as "From <sample name>", only to be
-        // refused by the server at Perform.
-        if (template.deleted) {
-          setParentTemplateError(t("operations.template.templateDeleted", { name: template.name }));
-          return;
-        }
-        const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
-        if (reason.blocked) {
-          setParentTemplateError(
-            t("operations.template.mandatoryFieldsError", {
-              count: reason.count,
-              fields: reason.fields,
-            }),
-          );
-          return;
-        }
-        // Only a PASSING check writes the id, which is what makes templateStepValid's id test the
-        // signal that this step is done.
+      const result = await checkTemplate(parentTemplateId, (name) =>
+        t("operations.template.templateDeleted", { name }),
+      );
+      if (checkId !== parentCheckIdRef.current) return;
+      if ("error" in result) setParentTemplateError(result.error);
+      else
         setTemplateSelection((previous) =>
           previous.mode === "fromSample"
-            ? { ...previous, templateId: parentTemplateId, quantityCategory: template.quantityCategory }
+            ? { ...previous, templateId: parentTemplateId, quantityCategory: result.template.quantityCategory }
             : previous,
         );
-      } catch {
-        if (checkId !== parentCheckIdRef.current) return;
-        setParentTemplateError(t("operations.template.lookupFailed"));
-      } finally {
-        if (checkId === parentCheckIdRef.current) setParentTemplateChecking(false);
-      }
+      setParentTemplateChecking(false);
     })();
-  }, [needsParentTemplateCheck, parentTemplateId, t, i18n.language]);
+  }, [needsParentTemplateCheck, parentTemplateId, checkTemplate, t]);
 
   // A remembered template's id and name come from the stored bundle, not a check, so by now it may
   // have been renamed or moved to trash. One lookup settles both: the name is refreshed from the
@@ -328,41 +319,26 @@ function OperationWizard({
             : previous,
         );
       };
-      try {
-        const template = await getRootStore().searchStore.getTemplate(
-          rememberedTemplateId,
-          null,
-          new AlwaysNewFactory(),
-        );
-        if (checkId !== rememberedCheckIdRef.current) return;
-        // A trashed template still resolves (soft deletion), so the flag is the only signal.
-        if (template.deleted) {
-          reject(t("operations.template.rememberedDeleted", { name: template.name }));
-          return;
-        }
-        const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
-        if (reason.blocked) {
-          reject(t("operations.template.mandatoryFieldsError", { count: reason.count, fields: reason.fields }));
-          return;
-        }
-        // Passed: take the template's CURRENT name and category, and clear pendingCheck, which is
-        // what makes the step valid and re-offers the fast path.
-        setTemplateSelection((previous) =>
-          previous.mode === "remembered" && previous.templateId === rememberedTemplateId
-            ? {
-                ...previous,
-                pendingCheck: false,
-                templateName: template.name,
-                quantityCategory: template.quantityCategory,
-              }
-            : previous,
-        );
-      } catch {
-        if (checkId !== rememberedCheckIdRef.current) return;
-        reject(t("operations.template.lookupFailed"));
+      const result = await checkTemplate(rememberedTemplateId, (name) =>
+        t("operations.template.rememberedDeleted", { name }),
+      );
+      if (checkId !== rememberedCheckIdRef.current) return;
+      if ("error" in result) {
+        reject(result.error);
+        return;
       }
+      setTemplateSelection((previous) =>
+        previous.mode === "remembered" && previous.templateId === rememberedTemplateId
+          ? {
+              ...previous,
+              pendingCheck: false,
+              templateName: result.template.name,
+              quantityCategory: result.template.quantityCategory,
+            }
+          : previous,
+      );
     })();
-  }, [needsRememberedTemplateCheck, rememberedTemplateId, parentHasTemplate, t, i18n.language]);
+  }, [needsRememberedTemplateCheck, rememberedTemplateId, parentHasTemplate, checkTemplate, t]);
 
   const sampleNameBase = (op: InventoryOperation): string =>
     op.requiresMultiple ? resolveLabel(op.labelKey) : origin.sample.name;
@@ -406,9 +382,6 @@ function OperationWizard({
     const base = freshValues(op, origin, vals);
     if (bundle) {
       const restoredTemplate = restoredTemplateSelection(templateSelectionFor(bundle.template));
-      // A bundle is keyed by operation + process name only, so a bundle saved on a volume origin is
-      // offered on a mass one. Repair any restored amount whose category no longer fits before it
-      // reaches the form, or the wizard offers one-click Perform on a request the endpoint rejects.
       const reconciled = reconcileForOrigins(
         op,
         restoredTemplate,
@@ -442,8 +415,6 @@ function OperationWizard({
     const savedProcessName = (op.effect.processNameFrom ? (processNameDefaults?.[op.key] ?? "") : "").trim();
     if (op.effect.processNameFrom && savedProcessName) initial[op.effect.processNameFrom] = savedProcessName;
     const s = stateForKey(op, initial);
-    // Seed the derived sample name immediately; the dedup effect (below) refines it once existing
-    // names are fetched. A terminal operation (Destroy) has no name to derive, hence the guard.
     if (op.effect.nameFrom)
       s.values[op.effect.nameFrom] = derivedSampleName(sampleNameBase(op), resolveProcessName(op, s.values));
     setOperation(op);
@@ -483,8 +454,6 @@ function OperationWizard({
     setValues(next);
   };
 
-  // Ticking only marks the current form for saving on Perform. It must not reload the stored
-  // bundle: the user may have unticked, changed the values, and ticked again to save the new ones.
   const onRememberChange = (checked: boolean) => {
     if (!operation) return;
     setRemember(checked);
@@ -501,8 +470,6 @@ function OperationWizard({
   // unit, so a stale unit from the old category can't survive into the request. The amount taken
   // FROM the origin stays in the origin's own category, so its unit is untouched.
   const onTemplateSelectionChange = (next: React.SetStateAction<TemplateSelection>) => {
-    // The user is making their own choice, which answers the "choose another template" the dropped
-    // remembered template asked for.
     setRememberedTemplateError(null);
     const eachAmountFrom = operation?.effect.eachAmountFrom;
     const resolved = typeof next === "function" ? next(templateSelection) : next;
@@ -545,7 +512,6 @@ function OperationWizard({
    * The latest renewal is kept here and closeAfterRenewals waits for it (RSDEV-1231).
    */
   const ownRenewals = React.useRef<Promise<unknown>>(Promise.resolve());
-  // The caller's ref when it supplied one, so its own release can wait on the same batches.
   const renewals = pendingRenewals ?? ownRenewals;
 
   // Set the moment a close begins. Close waits for the renewals outstanding at that instant, so a
@@ -553,7 +519,6 @@ function OperationWizard({
   // A closing wizard has no lock left to keep alive, so it simply stops renewing.
   const closing = React.useRef(false);
 
-  /** Extends the edit-session lock on each origin as the wizard's steps complete (RSDEV-1231). */
   const extendOriginLocks = () => {
     if (closing.current) return;
     const batch = Promise.allSettled(
@@ -569,7 +534,6 @@ function OperationWizard({
     renewals.current = Promise.allSettled([renewals.current, batch]);
   };
 
-  /** Hands back to the caller only once no renewal can still land behind its release. */
   const closeAfterRenewals = () => {
     if (closing.current) return;
     closing.current = true;
@@ -593,8 +557,7 @@ function OperationWizard({
     setActiveStep((s) => s - 1);
   };
 
-  // "all" is always valid: every origin is fully emptied, so over-removal cannot occur. "same" and
-  // "perSubsample" are checked against the origin(s)' actual quantity.
+  // "all" is always valid: every origin is fully emptied, so over-removal cannot occur.
   const amountsStepValid = (): boolean => {
     if (!operation) return false;
     const sharedValid =
@@ -610,7 +573,6 @@ function OperationWizard({
       return origins.every((o) => {
         const q = perSubsampleAmounts[o.globalId ?? ""];
         if (!q || !Number.isFinite(q.numericValue) || q.unitId <= 0 || q.numericValue <= 0) return false;
-        // Same three-decimal rule as the shared amount: the endpoint rejects a finer value.
         if (!amountIsStorable(q.numericValue)) return false;
         return !quantityExceedsOrigin(q, toOrigin(o).quantity);
       });
@@ -708,8 +670,6 @@ function OperationWizard({
           ),
           template: templateSelectionToDefault(templateSelection),
           documentation,
-          // Amount mode and per-origin amounts are only meaningful for a multi-origin run, so store
-          // them only then; an older bundle without them keeps normalising to "same".
           ...(usesAmountModes(operation)
             ? { amountMode, perSubsampleAmounts: amountMode === "perSubsample" ? perSubsampleAmounts : {} }
             : {}),
@@ -741,20 +701,8 @@ function OperationWizard({
     }
   };
 
-  const stepLabel = (key: string): string => {
-    switch (key) {
-      case "details":
-        return t("operations.wizard.step.details");
-      case "template":
-        return t("operations.wizard.step.template");
-      case "amounts":
-        return t("operations.wizard.step.amounts");
-      case "documentation":
-        return t("operations.wizard.step.documentation");
-      default:
-        return t("operations.wizard.step.confirm");
-    }
-  };
+  const stepLabel = (key: string): string =>
+    t(stepLabelKeys[key as keyof typeof stepLabelKeys] ?? "operations.wizard.step.confirm");
 
   const stepContent = (key: string): React.ReactNode => {
     if (!operation) return null;
@@ -808,8 +756,6 @@ function OperationWizard({
     return confirmationStep();
   };
 
-  // Origins are passed as name + global id so a "per subsample" run can break the amounts down per
-  // origin.
   const confirmationStep = (): React.ReactNode => {
     if (!operation) return null;
     return (

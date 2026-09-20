@@ -50,13 +50,6 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
    * <p>This is the field's stable identity across runs, unlike its name: a generated name is a
    * localized label, so matching on it instead of this key would miss a previous run's field after
    * a locale or wording change and reset a computed counter rather than continue it.
-   *
-   * <p>Only the server sets this: {@code ApiExtraField.operationFieldKey} is read-only on the DTO,
-   * so a client-supplied value is dropped at binding rather than rejected. That annotation is the
-   * only thing enforcing it; there is no second check at the write point.
-   *
-   * <p>Only covers fields added as new extra fields; a field merged into an inherited template
-   * field has no such column and falls back to name matching.
    */
   private String operationFieldKey;
 

@@ -387,13 +387,9 @@ public class QuantityUtilsTest {
   }
 
   /**
-   * A remainder that will not fit 3dp in the unit it is expressed in usually fits in a smaller one.
-   *
-   * <p>The column stores a NUMBER AND A UNIT ID, not a number. 4.9975 g needs 4 decimal places, so
-   * DECIMAL(19,3) rounds it and 0.0005 g of stock disappears. The same value is 4997.5 mg, which
-   * needs one. Every category ladder steps by 1000, so moving one unit down shifts the point three
-   * places and drops the scale by three: any terminating decimal that fits the ladder at all fits
-   * at 3dp in some unit of it.
+   * The column stores a NUMBER AND A UNIT ID, not a number. 4.9975 g needs 4 decimal places, so
+   * DECIMAL(19,3) rounds it and 0.0005 g of stock disappears; the same value is 4997.5 mg, which
+   * needs one.
    */
   @Test
   public void aRemainderIsStoredInTheFinestUnitThatHoldsItExactly() {
@@ -407,18 +403,7 @@ public class QuantityUtilsTest {
   }
 
   @Test
-  public void theConversionStopsAtTheFirstUnitThatFits() {
-    QuantityInfo remainder =
-        qUtils.subtract(
-            QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM),
-            QuantityInfo.of(new BigDecimal("2.5"), RSUnitDef.MILLI_GRAM));
-
-    assertEquals(RSUnitDef.MILLI_GRAM.getId(), remainder.getUnitId());
-  }
-
-  @Test
   public void anOrdinaryQuantityKeepsItsUnit() {
-    // The regression that matters most: the conversion must not fire on normal work.
     QuantityInfo remainder =
         qUtils.subtract(
             QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM),

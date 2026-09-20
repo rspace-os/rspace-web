@@ -41,8 +41,6 @@ class LabelResolverTest {
 
   @Test
   void fallsBackToTheKeyWhenTheCatalogHasNoEntry() {
-    // Not a nicety: this string becomes the created sample's field name, which is why
-    // InventoryOperationsErrorCatalogTest asserts every label key exists.
     LabelResolver labels = resolving("operations.aliquot.linkFieldName", "Derived from");
 
     assertEquals("inventory:operations.absent.field", labels.resolve("operations.absent.field"));

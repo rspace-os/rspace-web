@@ -84,18 +84,19 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
+  /** A 409 carrying an already-resolved message, as every EDIT_CONFLICT handler reports it. */
+  private ResponseEntity<Object> conflict(final String message) {
+    final ApiError apiError =
+        new ApiError(HttpStatus.CONFLICT, ApiErrorCodes.EDIT_CONFLICT.getCode(), message, "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
   @ResponseStatus(HttpStatus.CONFLICT)
   @ExceptionHandler(PidinstAlreadyLinkedException.class)
   protected ResponseEntity<Object> handlePidinstAlreadyLinkedException(
       final PidinstAlreadyLinkedException ex, final WebRequest request) {
     logException(ex);
-    final ApiError apiError =
-        new ApiError(
-            HttpStatus.CONFLICT,
-            ApiErrorCodes.EDIT_CONFLICT.getCode(),
-            messages.getMessage(ex.getMessageKey(), ex.getArgs()),
-            "");
-    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+    return conflict(messages.getMessage(ex.getMessageKey(), ex.getArgs()));
   }
 
   @ResponseStatus(HttpStatus.CONFLICT)
@@ -103,15 +104,10 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleInventoryEditLockHeld(
       final InventoryEditLockHeldException ex, final WebRequest request) {
     log.warn("inventory edit lock held: {}", ex.getMessage());
-    final ApiError apiError =
-        new ApiError(
-            HttpStatus.CONFLICT,
-            ApiErrorCodes.EDIT_CONFLICT.getCode(),
-            messages.getMessage(
-                "errors.inventory.editLock.heldBy",
-                new Object[] {ex.getGlobalId(), ex.getOwnerDisplayName()}),
-            "");
-    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+    return conflict(
+        messages.getMessage(
+            "errors.inventory.editLock.heldBy",
+            new Object[] {ex.getGlobalId(), ex.getOwnerDisplayName()}));
   }
 
   @ResponseStatus(HttpStatus.CONFLICT)
@@ -119,14 +115,9 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleInventoryOperationInProgress(
       final InventoryOperationInProgressException ex, final WebRequest request) {
     log.warn("inventory operation already in progress: {}", ex.getMessage());
-    final ApiError apiError =
-        new ApiError(
-            HttpStatus.CONFLICT,
-            ApiErrorCodes.EDIT_CONFLICT.getCode(),
-            messages.getMessage(
-                "errors.inventory.operation.inProgress", new Object[] {ex.getGlobalId()}),
-            "");
-    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+    return conflict(
+        messages.getMessage(
+            "errors.inventory.operation.inProgress", new Object[] {ex.getGlobalId()}));
   }
 
   // 403

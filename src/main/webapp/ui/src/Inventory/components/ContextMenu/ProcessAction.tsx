@@ -12,10 +12,6 @@ import OperationWizard from "../Operations/OperationWizard";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
 import { displayErrorIfAllLocksCouldNotBeAcquired } from "./lockAlerts";
 
-/**
- * The single home for the gate; ContextMenu visibility (ContextActions) and this
- * action's own wizard mounting both use it, so they can never disagree.
- */
 export function isProcessableSelection(records: ReadonlyArray<InventoryRecord>): boolean {
   return records.length >= 1 && records.every((r) => r instanceof SubSampleModel);
 }
@@ -53,8 +49,7 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
 
     // The open wizard keeps its outstanding lock renewals here. A renewal is a POST that recreates
     // the lock, so releasing while one is in flight lets the DELETE go first and the late POST
-    // re-locks an origin nothing is left to release. The wizard's own close waits for these, and
-    // the unmount below has to wait for them the same way.
+    // re-locks an origin nothing is left to release.
     const renewals = React.useRef<Promise<unknown>>(Promise.resolve());
 
     // The toolbar owns the selection, so emptying it unmounts this action mid-acquisition. Nothing
@@ -82,8 +77,6 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
           const result = results[i];
           return result.status === "fulfilled" && result.value === "LOCKED_OK";
         });
-        // Unmounted while these were in flight: there is no wizard left to close, so give back
-        // whatever was granted rather than recording it against a component that is gone.
         if (unmounted.current) {
           await releaseAll(newlyLocked);
           return;
@@ -103,8 +96,7 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
         }
         // WAS_ALREADY_LOCKED names the holder by username alone, so the holder may be this user's
         // own edit form in another tab. That tab still holds the quantity the user typed there and
-        // will send it on save, overwriting whatever this operation commits. Refusing to start is
-        // the only guard: the lock cannot tell the two sessions apart.
+        // will send it on save, overwriting whatever this operation commits.
         if (newlyLocked.length < origins.length) {
           await releaseAll(newlyLocked);
           getRootStore().uiStore.addAlert(

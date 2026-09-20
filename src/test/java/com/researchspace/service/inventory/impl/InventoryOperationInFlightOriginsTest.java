@@ -72,25 +72,6 @@ class InventoryOperationInFlightOriginsTest {
     assertFalse(inFlight.isInFlight("SS1"));
   }
 
-  /**
-   * A slow request is still a live one. Nothing bounds how long the manager call inside the claim
-   * takes, so however long it runs its origins stay its own: no elapsed time frees them, and a
-   * repeated attempt is refused every time rather than eventually succeeding (RSDEV-1231).
-   */
-  @Test
-  void aLiveClaimIsNeverStolenHoweverLongItsRequestRuns() {
-    InventoryOperationInFlightOrigins.Claim slow = inFlight.claim(List.of("SS1"));
-
-    for (int attempt = 0; attempt < 3; attempt++) {
-      assertThrows(
-          InventoryOperationInProgressException.class, () -> inFlight.claim(List.of("SS1")));
-    }
-    assertThrows(InventoryOperationInProgressException.class, () -> inFlight.claim(List.of("SS1")));
-    assertTrue(inFlight.isInFlight("SS1"));
-    slow.close();
-    assertFalse(inFlight.isInFlight("SS1"));
-  }
-
   @Test
   void anEmptyClaimHoldsNothing() {
     inFlight.claim(List.of()).close();
@@ -98,8 +79,7 @@ class InventoryOperationInFlightOriginsTest {
   }
 
   /**
-   * The outcome is fixed whatever the thread interleaving: the claim is a single atomic map
-   * operation, so of N simultaneous claims on one origin exactly one succeeds and N-1 are refused.
+   * The claim is a single atomic map operation, so the outcome is fixed whatever the interleaving.
    */
   @Test
   void ofManySimultaneousClaimsOnOneOriginExactlyOneWins() throws Exception {

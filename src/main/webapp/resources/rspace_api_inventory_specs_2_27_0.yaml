@@ -2544,16 +2544,7 @@ paths:
         required: true
       responses:
         "201":
-          description: Success. The created sample, and the origin's remaining quantity.
-          headers:
-            Location:
-              description: URL of the created sample.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OperationResult"
+          $ref: "#/components/responses/OperationCreated"
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName`, `eachAmount` or the origin's
@@ -2695,16 +2686,7 @@ paths:
         required: true
       responses:
         "201":
-          description: Success. The created sample, and the origin's remaining quantity.
-          headers:
-            Location:
-              description: URL of the created sample.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OperationResult"
+          $ref: "#/components/responses/OperationCreated"
         "400":
           description: >
             Rejected, leaving the origin unchanged. `processName`, `sampleName`, `eachAmount` or
@@ -2749,16 +2731,7 @@ paths:
         required: true
       responses:
         "201":
-          description: Success. The created sample, and the origin's remaining quantity.
-          headers:
-            Location:
-              description: URL of the created sample.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OperationResult"
+          $ref: "#/components/responses/OperationCreated"
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName`, `eachAmount`, `storageTemp` or
@@ -2799,16 +2772,7 @@ paths:
         required: true
       responses:
         "201":
-          description: Success. The created sample, and the origin's remaining quantity.
-          headers:
-            Location:
-              description: URL of the created sample.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OperationResult"
+          $ref: "#/components/responses/OperationCreated"
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName`, `eachAmount` or the origin's
@@ -4213,6 +4177,17 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    OperationCreated:
+      description: Success. The created sample, and the origin's remaining quantity.
+      headers:
+        Location:
+          description: URL of the created sample.
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperationResult"
     OperationOriginBusy:
       description: >
         The operation did not start, and every origin is unchanged. Either another request is
@@ -5366,40 +5341,29 @@ components:
         not be more than the origin currently holds. Quantities are stored to three decimal
         places, so an amount that cannot be subtracted exactly at that precision is rejected
         rather than rounded.
-      properties:
-        globalId:
-          type: string
-          description: Global id of the origin subsample.
-          example: SS1234
-        amountTaken:
-          $ref: "#/components/schemas/Quantity"
-      required:
-        - globalId
-        - amountTaken
+      allOf:
+        - $ref: "#/components/schemas/OperationOrigin"
+        - properties:
+            amountTaken:
+              $ref: "#/components/schemas/Quantity"
+          required:
+            - amountTaken
     PoolOrigin:
       description: |
         An origin of a Pool, otherwise as `OperationOriginWithAmount`. `amountTaken` is required
         unless the request sets `takeAll`, in which case it must be absent: a pool either takes
         chosen amounts or pours every origin out completely.
-      properties:
-        globalId:
-          type: string
-          description: Global id of the origin subsample.
-          example: SS1234
-        amountTaken:
-          $ref: "#/components/schemas/Quantity"
-      required:
-        - globalId
-    AliquotOperation:
+      allOf:
+        - $ref: "#/components/schemas/OperationOrigin"
+        - properties:
+            amountTaken:
+              $ref: "#/components/schemas/Quantity"
+    CreatingOperationFields:
       description: |
-        Aliquot request. `count` is optional and defaults to 1; it may not exceed 100.
-        `templateId` and `documentedByGlobalId` are optional.
-
-        The new sample carries only what the operation produces. Tags, description, sharing mode,
-        barcodes, source and expiry are set afterwards with `PUT /samples/{sampleId}`.
+        The fields shared by every operation that creates a sample: the sample's name, how many
+        subsamples to create and how much each holds, and the optional template and documentation
+        link.
       properties:
-        origin:
-          $ref: "#/components/schemas/OperationOriginWithAmount"
         sampleName:
           type: string
           description: Name of the sample the operation creates.
@@ -5420,9 +5384,22 @@ components:
             Optional ELN document, notebook or Gallery file (`SD`, `NB` or `GL`) to link the new
             sample to with an `IsDocumentedBy` field.
       required:
-        - origin
         - sampleName
         - eachAmount
+    AliquotOperation:
+      description: |
+        Aliquot request. `count` is optional and defaults to 1; it may not exceed 100.
+        `templateId` and `documentedByGlobalId` are optional.
+
+        The new sample carries only what the operation produces. Tags, description, sharing mode,
+        barcodes, source and expiry are set afterwards with `PUT /samples/{sampleId}`.
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOriginWithAmount"
+          required:
+            - origin
       example:
         origin:
           globalId: SS1234
@@ -5440,32 +5417,13 @@ components:
       description: |
         Passage request. The origin takes no `amountTaken`: this operation does not decrement it.
         `count` is optional and defaults to 1; it may not exceed 100.
-      properties:
-        origin:
-          $ref: "#/components/schemas/OperationOrigin"
-        sampleName:
-          type: string
-          description: Name of the sample the operation creates.
-        count:
-          type: integer
-          description: Number of subsamples to create. Defaults to 1, at most 100.
-        eachAmount:
-          $ref: "#/components/schemas/Quantity"
-        templateId:
-          type: integer
-          format: int64
-          description: >
-            Optional sample template to create the new sample from. The created sample's fields
-            and quantity unit must match the template.
-        documentedByGlobalId:
-          type: string
-          description: >
-            Optional ELN document, notebook or Gallery file (`SD`, `NB` or `GL`) to link the new
-            sample to with an `IsDocumentedBy` field.
-      required:
-        - origin
-        - sampleName
-        - eachAmount
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOrigin"
+          required:
+            - origin
       example:
         origin:
           globalId: SS1234
@@ -5480,41 +5438,22 @@ components:
         optional and defaults to 1; it may not exceed 100.
 
         Either every origin carries its own `amountTaken`, or `takeAll` is true and none does.
-      properties:
-        origins:
-          type: array
-          minItems: 2
-          maxItems: 100
-          items:
-            $ref: "#/components/schemas/PoolOrigin"
-        takeAll:
-          type: boolean
-          description: >
-            Pool every origin's whole remaining quantity, read when the operation runs, leaving
-            each of them empty. No origin may then carry an `amountTaken`.
-        sampleName:
-          type: string
-          description: Name of the sample the operation creates.
-        count:
-          type: integer
-          description: Number of subsamples to create. Defaults to 1, at most 100.
-        eachAmount:
-          $ref: "#/components/schemas/Quantity"
-        templateId:
-          type: integer
-          format: int64
-          description: >
-            Optional sample template to create the new sample from. The created sample's fields
-            and quantity unit must match the template.
-        documentedByGlobalId:
-          type: string
-          description: >
-            Optional ELN document, notebook or Gallery file (`SD`, `NB` or `GL`) to link the new
-            sample to with an `IsDocumentedBy` field.
-      required:
-        - origins
-        - sampleName
-        - eachAmount
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origins:
+              type: array
+              minItems: 2
+              maxItems: 100
+              items:
+                $ref: "#/components/schemas/PoolOrigin"
+            takeAll:
+              type: boolean
+              description: >
+                Pool every origin's whole remaining quantity, read when the operation runs,
+                leaving each of them empty. No origin may then carry an `amountTaken`.
+          required:
+            - origins
       example:
         origins:
           - globalId: SS1234
@@ -5535,36 +5474,17 @@ components:
         Derive request. `processName` names the process that produced the new material and
         appears in the generated provenance field. `count` is optional and defaults to 1; it may
         not exceed 100.
-      properties:
-        origin:
-          $ref: "#/components/schemas/OperationOriginWithAmount"
-        processName:
-          type: string
-          description: The process the new material was produced by, e.g. "PCR".
-        sampleName:
-          type: string
-          description: Name of the sample the operation creates.
-        count:
-          type: integer
-          description: Number of subsamples to create. Defaults to 1, at most 100.
-        eachAmount:
-          $ref: "#/components/schemas/Quantity"
-        templateId:
-          type: integer
-          format: int64
-          description: >
-            Optional sample template to create the new sample from. The created sample's fields
-            and quantity unit must match the template.
-        documentedByGlobalId:
-          type: string
-          description: >
-            Optional ELN document, notebook or Gallery file (`SD`, `NB` or `GL`) to link the new
-            sample to with an `IsDocumentedBy` field.
-      required:
-        - origin
-        - processName
-        - sampleName
-        - eachAmount
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOriginWithAmount"
+            processName:
+              type: string
+              description: The process the new material was produced by, e.g. "PCR".
+          required:
+            - origin
+            - processName
       example:
         origin:
           globalId: SS1234
@@ -5582,40 +5502,21 @@ components:
         Cryopreserve request. `storageTemp` is required and must be at or below -18 degrees
         Celsius. `cryomedium` is optional. `count` is optional and defaults to 1; it may not
         exceed 100.
-      properties:
-        origin:
-          $ref: "#/components/schemas/OperationOriginWithAmount"
-        sampleName:
-          type: string
-          description: Name of the sample the operation creates.
-        count:
-          type: integer
-          description: Number of subsamples to create. Defaults to 1, at most 100.
-        eachAmount:
-          $ref: "#/components/schemas/Quantity"
-        cryomedium:
-          type: string
-          description: >
-            The cryoprotectant the material is frozen in, stored as a Cryomedium field on the new
-            sample.
-        storageTemp:
-          $ref: "#/components/schemas/Quantity"
-        templateId:
-          type: integer
-          format: int64
-          description: >
-            Optional sample template to create the new sample from. The created sample's fields
-            and quantity unit must match the template.
-        documentedByGlobalId:
-          type: string
-          description: >
-            Optional ELN document, notebook or Gallery file (`SD`, `NB` or `GL`) to link the new
-            sample to with an `IsDocumentedBy` field.
-      required:
-        - origin
-        - sampleName
-        - eachAmount
-        - storageTemp
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOriginWithAmount"
+            cryomedium:
+              type: string
+              description: >
+                The cryoprotectant the material is frozen in, stored as a Cryomedium field on the
+                new sample.
+            storageTemp:
+              $ref: "#/components/schemas/Quantity"
+          required:
+            - origin
+            - storageTemp
       example:
         origin:
           globalId: SS1234
@@ -5636,34 +5537,15 @@ components:
         Revive request. `storageTemp` is optional, defaults to 4 degrees Celsius, and must be
         between 4 and 120 degrees Celsius. `count` is optional and defaults to 1; it may not
         exceed 100.
-      properties:
-        origin:
-          $ref: "#/components/schemas/OperationOriginWithAmount"
-        sampleName:
-          type: string
-          description: Name of the sample the operation creates.
-        count:
-          type: integer
-          description: Number of subsamples to create. Defaults to 1, at most 100.
-        eachAmount:
-          $ref: "#/components/schemas/Quantity"
-        storageTemp:
-          $ref: "#/components/schemas/Quantity"
-        templateId:
-          type: integer
-          format: int64
-          description: >
-            Optional sample template to create the new sample from. The created sample's fields
-            and quantity unit must match the template.
-        documentedByGlobalId:
-          type: string
-          description: >
-            Optional ELN document, notebook or Gallery file (`SD`, `NB` or `GL`) to link the new
-            sample to with an `IsDocumentedBy` field.
-      required:
-        - origin
-        - sampleName
-        - eachAmount
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOriginWithAmount"
+            storageTemp:
+              $ref: "#/components/schemas/Quantity"
+          required:
+            - origin
       example:
         origin:
           globalId: SS1234

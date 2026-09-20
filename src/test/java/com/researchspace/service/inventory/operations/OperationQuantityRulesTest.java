@@ -15,8 +15,6 @@ import org.springframework.validation.MapBindingResult;
 
 class OperationQuantityRulesTest {
 
-  // A map-backed result, so a rule can be exercised on the field name it would use in production
-  // without standing up the request bean that carries it.
   private final MapBindingResult errors = new MapBindingResult(new HashMap<>(), "request");
 
   private String codeOn(String field) {
@@ -62,7 +60,7 @@ class OperationQuantityRulesTest {
   @Test
   void aCreatedAmountObjectSentWithoutANumberIsRejected() {
     // @NotNull asserts the object is present, not that it carries a number, so {unitId: 3} alone
-    // reaches here; unchecked it becomes subsamples holding null while the origin is decremented.
+    // reaches here.
     OperationQuantityRules.createdAmount(
         new ApiQuantityInfo(null, RSUnitDef.MILLI_LITRE.getId()), "eachAmount", errors);
 
@@ -78,8 +76,7 @@ class OperationQuantityRulesTest {
 
   @Test
   void aTemperatureObjectSentWithoutANumberIsRejected() {
-    // Cryopreserve's @NotNull only asserts storageTemp is present. A number-less one passed every
-    // rule here and every rule on the sample, then failed while the entity was persisted.
+    // Cryopreserve's @NotNull only asserts storageTemp is present.
     OperationQuantityRules.temperature(
         new ApiQuantityInfo(null, RSUnitDef.CELSIUS.getId()),
         "storageTemp",
@@ -92,8 +89,7 @@ class OperationQuantityRulesTest {
 
   @Test
   void aTemperatureBelowAbsoluteZeroIsRejectedEvenInsideTheOperationsBounds() {
-    // Cryopreserve sets no lower bound, so -300 C sits under its -18 C ceiling and passed; the
-    // sample's own @ValidTemperature would have caught it, but only once the entity was persisted.
+    // Cryopreserve sets no lower bound, so -300 C sits under its -18 C ceiling.
     OperationQuantityRules.temperature(
         celsius("-300"), "storageTemp", null, new BigDecimal("-18"), errors);
 
@@ -133,7 +129,6 @@ class OperationQuantityRulesTest {
 
   @Test
   void aTotalIsNotCheckedWhenTheAmountItselfWasAlreadyRejected() {
-    // One problem per field: the caller fixes the amount, then sees the total if it still fails.
     OperationQuantityRules.createdAmount(millilitres("0"), "eachAmount", errors);
     OperationQuantityRules.totalStorable(
         new BigDecimal("100"), millilitres("9999999999999999"), "eachAmount", errors);

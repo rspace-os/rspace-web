@@ -314,16 +314,11 @@ public class Container extends MovableInventoryRecord implements Serializable {
   }
 
   /**
-   * One past the highest coordinate in use, NOT one past how many locations there are.
-   *
-   * <p>A list container's coordinates are normally the contiguous 1..n that {@code
-   * resetListLayoutLocationCoords} restores after every removal, and for that state the two agree.
-   * They stop agreeing when the persisted rows have a gap: the count is then lower than the highest
-   * coordinate already occupied, and counting resolves to a location that holds a record. It recurs
-   * identically on every subsequent add, so the container can never be added to again. Reading the
-   * coordinates themselves steps past the gap instead, and the container heals.
-   *
-   * <p>The cause of the gap is not known, which is why the heal logs rather than staying silent.
+   * One past the highest coordinate in use, NOT one past how many locations there are. The two
+   * agree only while the coordinates are the contiguous 1..n that {@code
+   * resetListLayoutLocationCoords} restores; where the persisted rows have a gap, counting resolves
+   * to a location that holds a record, identically on every subsequent add, so the container can
+   * never be added to again.
    *
    * <p>The result cannot collide with an occupied location, so this needs no conflict handling: no
    * stored coordinate can equal one past the maximum, and {@code coordX} is a primitive on a NOT
@@ -333,15 +328,11 @@ public class Container extends MovableInventoryRecord implements Serializable {
     int highestInUse = locations.stream().mapToInt(ContainerLocation::getCoordX).max().orElse(0);
     if (highestInUse != locations.size()) {
       log.warn(
-          "Container {} holds {} locations but its highest coordinate in use is {}; adding the next"
-              + " record at {} rather than at {}. A list container's coordinates should be the"
-              + " contiguous 1..n that resetListLayoutLocationCoords restores, so these rows were"
-              + " written outside that invariant and whatever wrote them is still doing so.",
+          "Container {} has {} locations but highest coordX {}; adding at {}",
           getId(),
           locations.size(),
           highestInUse,
-          highestInUse + 1,
-          locations.size() + 1);
+          highestInUse + 1);
     }
     return highestInUse + 1;
   }

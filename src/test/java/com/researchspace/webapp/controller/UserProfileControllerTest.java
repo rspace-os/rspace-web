@@ -364,8 +364,6 @@ public class UserProfileControllerTest {
 
   @Test
   public void updatePreferenceValueWithKeyMergesInsteadOfReplacing() {
-    // The whole UI_JSON_SETTINGS blob is one column: replacing it from the client would drop every
-    // other key already stored. With a key the server merges just that one.
     when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
     UserPreference merged =
         new UserPreference(Preference.UI_JSON_SETTINGS, anyUser, "{\"A\":1,\"B\":2}");
@@ -386,8 +384,6 @@ public class UserProfileControllerTest {
 
   @Test
   public void updatePreferenceValueWithoutKeyStillReplacesTheWholeValue() {
-    // Legacy JSP callers post no key and every other preference is a single scalar, so the
-    // whole-value path has to keep working untouched.
     when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
     UserPreference replaced = new UserPreference(Preference.UI_JSON_SETTINGS, anyUser, "whole");
     when(usrMgr.setPreference(Preference.UI_JSON_SETTINGS, "whole", "any")).thenReturn(replaced);
@@ -407,9 +403,6 @@ public class UserProfileControllerTest {
 
   @Test
   public void updatePreferenceValueReturns400WhenTheKeyedValueIsRejected() {
-    // A value that is not JSON, or a key no preference declares, is refused by the merge with an
-    // IllegalArgumentException carrying the catalog text. Left to the web tier that is a 500;
-    // the caller sent a bad request and should be told so.
     when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
     when(usrMgr.mergeUiJsonSetting("BAD", "not json", "any"))
         .thenThrow(new IllegalArgumentException("not valid JSON"));
@@ -444,9 +437,6 @@ public class UserProfileControllerTest {
 
   @Test
   public void updatePreferenceValueRejectsAKeyOnAPreferenceThatIsNotTheJsonBlob() {
-    // Only UI_JSON_SETTINGS holds a JSON object. Quietly ignoring the key for any other preference
-    // would let a caller believe it merged one field while the whole value was replaced, so it is
-    // refused instead of silently doing something else.
     when(messages.getMessage(
             "errors.preference.keyNotSupported", new Object[] {"UI_CLIENT_SETTINGS"}))
         .thenReturn("not a keyed preference");
@@ -456,8 +446,6 @@ public class UserProfileControllerTest {
         userProfileController.updatePreferenceValue(
             "UI_CLIENT_SETTINGS", "whole", "B", () -> "any", mockRequest, servletResponse);
 
-    // 400 like the other rejected shapes: without the status a client would treat this rejected
-    // update as successful.
     assertEquals(400, servletResponse.getStatus());
     assertNull(response.getData());
     assertEquals("not a keyed preference", response.getErrorMsg().getErrorMessages().get(0));

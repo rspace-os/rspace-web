@@ -8,8 +8,7 @@ type ContextDialogArgs = {
   onClose: () => void;
   maxWidth?: "xs" | "sm" | "lg";
   fullWidth?: boolean;
-  /** When set, a click on the backdrop does not dismiss the dialog (Escape still closes it). Use for
-   *  a multi-step flow where an accidental outside click should not discard the user's progress. */
+  /** When set, a click on the backdrop does not dismiss the dialog (Escape still closes it). */
   disableBackdropClick?: boolean;
 };
 

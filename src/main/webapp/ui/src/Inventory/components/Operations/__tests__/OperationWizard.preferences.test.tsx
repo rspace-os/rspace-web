@@ -18,7 +18,6 @@ import OperationWizard from "../OperationWizard";
 const PREFERENCE_URL = "/userform/ajax/preference";
 const OPERATION_URL = "/api/inventory/v1/operations/:key";
 
-/** The server's UI_JSON_SETTINGS object, as the preference endpoint would persist it. */
 let stored: Record<string, { value: unknown; time: number }> = {};
 let writes = 0;
 
@@ -27,7 +26,6 @@ beforeEach(() => {
   writes = 0;
   server.use(
     http.get(PREFERENCE_URL, () => HttpResponse.json(stored)),
-    // Merges the one posted key, as the server does: the client no longer sends the whole object.
     http.post(PREFERENCE_URL, async ({ request }) => {
       const form = await request.formData();
       const key = String(form.get("key"));
@@ -45,8 +43,6 @@ beforeEach(() => {
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
-    // A remembered specific template is re-checked against the server on restore, so the bundles
-    // here resolve their template through this.
     searchStore: {
       search: { performSearch: vi.fn() },
       getTemplate: () => Promise.resolve({ id: 5, name: "T5", quantityCategory: "volume", deleted: false, fields: [] }),
@@ -71,8 +67,6 @@ vi.mock("../../ContextMenu/ContextDialog", () => ({
   default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div>{children}</div> : null),
 }));
 
-// Minimal step stubs: only the controls this flow drives. The wizard's own step behaviour is
-// covered in OperationWizard.test.tsx; here the subject is what Perform persists.
 vi.mock("../OperationDetailsStep", () => ({
   default: ({
     values,
@@ -156,7 +150,6 @@ describe("OperationWizard with the real preference hook", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // three separate single-key writes, so all three keys must survive on the server
     await waitFor(() => expect(writes).toBe(3));
     expect(Object.keys(stored).sort()).toEqual([
       "INVENTORY_OPERATION_PROCESS_NAMES",
@@ -175,10 +168,8 @@ describe("OperationWizard with the real preference hook", () => {
   });
 
   it("restores a bundle saved only under the new per-operation key on selecting that operation", async () => {
-    // selectOperation used to read `processValues` before it updated for the newly selected
-    // operation, so a bundle existing only under the new per-operation key (no legacy fallback to
-    // lean on) was never restored on the very pick that should load it. This reproduces that exactly:
-    // no typing, no manual Remember toggle.
+    // No typing and no manual Remember toggle: only the restore on selecting the operation can
+    // load this bundle.
     stored = {
       INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: { value: { derive: "dna extraction" }, time: 0 },
       INVENTORY_OPERATION_PROCESS_VALUES_DERIVE: {
@@ -210,8 +201,8 @@ describe("OperationWizard with the real preference hook", () => {
 
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled());
-    // The process name came back with the bundle. Step one is showing the confirmation (that is what
-    // the fast path means), so the details field holding it is only rendered once we step in.
+    // The fast path opens on the confirmation, so the details field is only rendered once we
+    // step in.
     await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
     expect(screen.getByTestId("proc")).toHaveValue("dna extraction");
   });

@@ -14,24 +14,16 @@ import type TemplateModel from "@/stores/models/TemplateModel";
 const SEARCH_DEBOUNCE_MS = 300;
 const MIN_SEARCH_CHARS = 2;
 
-/** `record` is the underlying model (null for a pre-filled placeholder that
- *  represents an already-chosen template not present in the current result page). */
+/** `record` is null for a pre-filled placeholder: an already-chosen template that is not in the
+ *  current result page, so no model for it is to hand. */
 type TemplateOption = { id: number; name: string; globalId: string; record: TemplateModel | null };
 
-/**
- * The wizard's server-backed, single-select template picker: typing re-queries the backend and only
- * a returned template can be chosen. Selecting one hands the record to the parent, which validates it
- * (a template with mandatory, defaultless fields is blocked there). Reuses the shared Search model,
- * so results are already permission-filtered to SAMPLE_TEMPLATE.
- */
 function WizardTemplatePicker({
   setTemplate,
   selectedTemplateId = null,
   selectedTemplateName,
 }: {
-  /** The chosen template, or null when the user clears the box (which must clear the parent too). */
   setTemplate: (template: TemplateModel | null) => void;
-  /** The already-chosen template (if any), so a reopened picker starts pre-filled on it. */
   selectedTemplateId?: number | null;
   selectedTemplateName?: string;
 }): React.ReactNode {
@@ -40,7 +32,6 @@ function WizardTemplatePicker({
     () =>
       new Search({
         factory: new AlwaysNewFactory(),
-        // Server does the filtering, so a small page is enough.
         // ponytail: no pager here, add one if template counts get big.
         fetcherParams: { resultType: "SAMPLE_TEMPLATE", pageSize: 25, orderBy: "name", order: "asc" },
         uiConfig: {
@@ -51,8 +42,6 @@ function WizardTemplatePicker({
       }),
   );
 
-  // The already-selected template, shown pre-filled. It may not be in the current result page, so it
-  // is carried as its own option with no record (selecting it again is a no-op; it is already chosen).
   const preselected: TemplateOption | null =
     selectedTemplateId != null
       ? { id: selectedTemplateId, name: selectedTemplateName ?? "", globalId: "", record: null }
@@ -60,13 +49,11 @@ function WizardTemplatePicker({
   const [value, setValue] = React.useState<TemplateOption | null>(preselected);
   const [inputValue, setInputValue] = React.useState(preselected?.name ?? "");
 
-  // Load an initial list as soon as the picker opens (empty query), so the dropdown is never empty.
   React.useEffect(() => {
     void search.fetcher.performInitialSearch(null);
   }, [search]);
 
-  // Debounced. Below MIN_SEARCH_CHARS, the initial (unfiltered) list is shown instead of sending a
-  // query that would 422.
+  // Below MIN_SEARCH_CHARS the unfiltered list is shown, rather than sending a query that would 422.
   const runSearch = React.useMemo(
     () =>
       debounce((query: string) => {
@@ -103,8 +90,7 @@ function WizardTemplatePicker({
       onChange={(_event, next) => {
         setValue(next);
         // Must call setTemplate(null) on clear, or the wizard keeps the previous template id even
-        // though the box looks empty. Re-picking the pre-filled placeholder (no record) is the one
-        // no-op: it is already the parent's selection.
+        // though the box looks empty.
         if (next === null) setTemplate(null);
         else if (next.record) setTemplate(next.record);
       }}
@@ -116,8 +102,6 @@ function WizardTemplatePicker({
       }}
       renderOption={(props, option) => (
         <li {...props} key={option.id}>
-          {/* The GlobalId pill needs the underlying record, so the pre-filled placeholder (record null)
-              shows the name only. */}
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", flex: 1 }}>
             <Typography variant="body2" component="span">
               {option.name}

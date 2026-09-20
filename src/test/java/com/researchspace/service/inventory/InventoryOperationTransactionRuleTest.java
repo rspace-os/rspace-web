@@ -40,53 +40,38 @@ class InventoryOperationTransactionRuleTest {
 
   private static final String BIND_EXCEPTION = "org.springframework.validation.BindException";
 
-  /** Each {@code tx:method} of the shared {@code txAdvice}, in declaration order. */
+  private static Map<String, String> txAdviceAttribute(Path context, String attribute)
+      throws IOException, SAXException, ParserConfigurationException {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setNamespaceAware(true);
+    Document document = factory.newDocumentBuilder().parse(context.toFile());
+    NodeList advices = document.getElementsByTagNameNS("*", "advice");
+    Map<String, String> values = new LinkedHashMap<>();
+    for (int i = 0; i < advices.getLength(); i++) {
+      Element advice = (Element) advices.item(i);
+      if (!"txAdvice".equals(advice.getAttribute("id"))) {
+        continue;
+      }
+      NodeList methods = advice.getElementsByTagNameNS("*", "method");
+      for (int j = 0; j < methods.getLength(); j++) {
+        Element method = (Element) methods.item(j);
+        values.put(method.getAttribute("name"), method.getAttribute(attribute));
+      }
+      return values;
+    }
+    return values;
+  }
+
   private static Map<String, String> txAdviceRollbackRules(Path context)
       throws IOException, SAXException, ParserConfigurationException {
-    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-    factory.setNamespaceAware(true);
-    Document document = factory.newDocumentBuilder().parse(context.toFile());
-    NodeList advices = document.getElementsByTagNameNS("*", "advice");
-    Map<String, String> rules = new LinkedHashMap<>();
-    for (int i = 0; i < advices.getLength(); i++) {
-      Element advice = (Element) advices.item(i);
-      if (!"txAdvice".equals(advice.getAttribute("id"))) {
-        continue;
-      }
-      NodeList methods = advice.getElementsByTagNameNS("*", "method");
-      for (int j = 0; j < methods.getLength(); j++) {
-        Element method = (Element) methods.item(j);
-        rules.put(method.getAttribute("name"), method.getAttribute("rollback-for"));
-      }
-      return rules;
-    }
-    return rules;
+    return txAdviceAttribute(context, "rollback-for");
   }
 
-  /** Each {@code tx:method} of the shared {@code txAdvice} with its declared timeout, if any. */
   private static Map<String, String> txAdviceTimeouts(Path context)
       throws IOException, SAXException, ParserConfigurationException {
-    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-    factory.setNamespaceAware(true);
-    Document document = factory.newDocumentBuilder().parse(context.toFile());
-    NodeList advices = document.getElementsByTagNameNS("*", "advice");
-    Map<String, String> timeouts = new LinkedHashMap<>();
-    for (int i = 0; i < advices.getLength(); i++) {
-      Element advice = (Element) advices.item(i);
-      if (!"txAdvice".equals(advice.getAttribute("id"))) {
-        continue;
-      }
-      NodeList methods = advice.getElementsByTagNameNS("*", "method");
-      for (int j = 0; j < methods.getLength(); j++) {
-        Element method = (Element) methods.item(j);
-        timeouts.put(method.getAttribute("name"), method.getAttribute("timeout"));
-      }
-      return timeouts;
-    }
-    return timeouts;
+    return txAdviceAttribute(context, "timeout");
   }
 
-  /** The pattern Spring would apply: an exact name wins, otherwise the longest match does. */
   private static String bestMatch(Map<String, String> rules, String methodName) {
     if (rules.containsKey(methodName)) {
       return methodName;
@@ -122,11 +107,6 @@ class InventoryOperationTransactionRuleTest {
             + unprotected);
   }
 
-  /**
-   * No {@code tx:method} may declare a timeout. txAdvice is shared by every {@code *Manager}
-   * advisor, so one here would cap unrelated manager calls; and the in-flight claim is released by
-   * its owner rather than on age, so nothing depends on an operation being bounded (RSDEV-1231).
-   */
   @Test
   void noTransactionRuleDeclaresATimeout() throws Exception {
     List<String> bounded =

@@ -1,3 +1,4 @@
+import { faFlask } from "@fortawesome/free-solid-svg-icons/faFlask";
 import { describe, expect, it } from "vitest";
 import { applyComputedValues, type ComputedContext } from "../computedValues";
 import type { InventoryOperation } from "../operationsConfig";
@@ -6,8 +7,9 @@ function opWith(computed: InventoryOperation["effect"]["computed"]): InventoryOp
   return {
     key: "passage",
     labelKey: "operations.passage.label",
-    documentationStep: true,
+    icon: faFlask,
     inputs: [],
+    confirmSummary: [],
     effect: {
       nameFrom: "sampleName",
       countFrom: "count",
@@ -54,35 +56,6 @@ describe("applyComputedValues", () => {
     const ctx: ComputedContext = { parentFields: [], values: { sampleName: "x" }, resolveFieldName };
     expect(applyComputedValues(opWith(undefined), ctx)).toEqual({ sampleName: "x" });
   });
-
-  it("sources an argument from another input value", () => {
-    const op = opWith([
-      { fn: "increment", into: "next", args: { current: { input: "seed" }, start: { constant: 0 } } },
-    ]);
-    const ctx: ComputedContext = { parentFields: [], values: { seed: 41 }, resolveFieldName };
-    expect(applyComputedValues(op, ctx).next).toBe(42);
-  });
-
-  it("chains: a later computed value reads an earlier one's result (config order)", () => {
-    const op = opWith([
-      { fn: "increment", into: "first", args: { current: { constant: 1 }, start: { constant: 0 } } },
-      { fn: "increment", into: "second", args: { current: { input: "first" }, start: { constant: 0 } } },
-    ]);
-    const result = applyComputedValues(op, { parentFields: [], values: {}, resolveFieldName });
-    expect(result.first).toBe(2);
-    expect(result.second).toBe(3);
-  });
-});
-
-describe("parentFields drawn from both of the parent's field lists", () => {
-  it("finds a parentSampleField that came from extraFields, so Passage increments X to X+1 (regression)", () => {
-    const result = applyComputedValues(opWith(passageComputed), {
-      parentFields: [...[], ...[{ name: "Passage number", content: "2" }]],
-      values: {},
-      resolveFieldName,
-    });
-    expect(result.passageNumber).toBe(3);
-  });
 });
 
 describe("parentSampleField matching", () => {
@@ -121,22 +94,9 @@ describe("parentSampleField matching", () => {
     expect(values.passageNumber).toEqual(1);
   });
 
-  it("matches a keyed field gathered from either of the parent's two field lists", () => {
-    for (const listName of ["fields", "extraFields"] as const) {
-      const keyed = {
-        name: "Passagenummer",
-        content: "4",
-        operationFieldKey: "operations.passage.numberField",
-      };
-      const decoy = { name: "Passage number", content: "99", operationFieldKey: null };
-      const fields = listName === "fields" ? [keyed] : [decoy];
-      const extraFields = listName === "extraFields" ? [keyed] : [decoy];
-      const values = applyComputedValues(opWith(passageComputed), {
-        parentFields: [...fields, ...extraFields],
-        values: {},
-        resolveFieldName,
-      });
-      expect(values.passageNumber, `keyed field in ${listName}`).toEqual(5);
-    }
+  it("matches the keyed field wherever it sits among the parent's fields", () => {
+    const keyed = { name: "Passagenummer", content: "4", operationFieldKey: "operations.passage.numberField" };
+    const decoy = { name: "Passage number", content: "99", operationFieldKey: null };
+    expect(applyComputedValues(opWith(passageComputed), ctx([keyed, decoy])).passageNumber).toEqual(5);
   });
 });

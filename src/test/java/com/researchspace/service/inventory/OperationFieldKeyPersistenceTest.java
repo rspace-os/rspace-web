@@ -19,13 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
-/**
- * Only an Inventory operation may persist an {@code operationFieldKey} (RSDEV-1231): a later run
- * trusts the key to identify the previous generation, so a caller able to set one could have an
- * unrelated field picked up as that generation. Enforced at binding - the DTO property is
- * READ_ONLY, so no request body on any endpoint can set one - rather than in each validator, since
- * the sample- and instrument-template validators never call the shared extra-field validation.
- */
 class OperationFieldKeyPersistenceTest {
 
   private ApiExtraFieldsHelper helper;
@@ -71,9 +64,6 @@ class OperationFieldKeyPersistenceTest {
 
   @Test
   void theKeyCannotBeSetFromJson() throws Exception {
-    // The whole construction rests on this. The forgery route is any endpoint binding extraFields,
-    // several of which never reach the shared extra-field validation, so the key is dropped at
-    // binding itself, by the API's mapper and by a strict one alike.
     for (ObjectMapper mapper :
         new ObjectMapper[] {Jackson2ObjectMapperBuilder.json().build(), new ObjectMapper()}) {
       ApiExtraField bound =

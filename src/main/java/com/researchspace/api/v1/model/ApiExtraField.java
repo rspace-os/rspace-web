@@ -77,13 +77,11 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
 
   /**
    * Identifies which entry of an operation definition produced this field. Resolved field names
-   * interpolate user input ({@code {processName}}, {@code {originName}}) and are localized, so the
-   * definition key, not the name, is the field's stable identity: the next run of an operation
-   * recognises the previous generation's field by this key.
+   * interpolate user input and are localized, so the definition key, not the name, is the field's
+   * stable identity.
    *
-   * <p>READ_ONLY: only the server sets it. A value in any request body is ignored at binding rather
-   * than rejected, so a client that GETs a record and sends it back is not 400ed for a value it
-   * never chose.
+   * <p>READ_ONLY: a value in any request body is ignored at binding rather than rejected, so a
+   * client that GETs a record and sends it back is not 400ed for a value it never chose.
    */
   @JsonProperty(value = "operationFieldKey", access = Access.READ_ONLY)
   private String operationFieldKey;

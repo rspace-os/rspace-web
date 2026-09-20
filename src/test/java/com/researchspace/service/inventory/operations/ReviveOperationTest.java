@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.validation.BeanPropertyBindingResult;
 
 class ReviveOperationTest {
@@ -39,29 +41,19 @@ class ReviveOperationTest {
             .getStorageTempMin());
   }
 
-  @Test
-  void rejectsATemperatureBelowTheRefrigeratedMinimum() {
+  @ParameterizedTest
+  @CsvSource({
+    "3, errors.inventory.operation.storageTempBelowMin",
+    "121, errors.inventory.operation.storageTempAboveMax"
+  })
+  void rejectsATemperatureOutsideTheRefrigeratedToIncubationRange(
+      String storageTempCelsius, String expectedCode) {
     ApiInventoryOperationRequests.Revive request = request();
-    request.setStorageTemp(celsius("3"));
+    request.setStorageTemp(celsius(storageTempCelsius));
     BeanPropertyBindingResult errors = errorsFor(request);
 
     REVIVE.validate(request, errors);
 
-    assertEquals(
-        "errors.inventory.operation.storageTempBelowMin",
-        errors.getFieldError("storageTemp").getCode());
-  }
-
-  @Test
-  void rejectsATemperatureAboveTheIncubationMaximum() {
-    ApiInventoryOperationRequests.Revive request = request();
-    request.setStorageTemp(celsius("121"));
-    BeanPropertyBindingResult errors = errorsFor(request);
-
-    REVIVE.validate(request, errors);
-
-    assertEquals(
-        "errors.inventory.operation.storageTempAboveMax",
-        errors.getFieldError("storageTemp").getCode());
+    assertEquals(expectedCode, errors.getFieldError("storageTemp").getCode());
   }
 }

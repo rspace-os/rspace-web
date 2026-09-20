@@ -11,13 +11,8 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
 }));
 
 /**
- * `operationFieldKey` travels INBOUND only (RSDEV-1231).
- *
- * The API returns it so a later run of an operation can recognise the field a previous run
- * generated; the server sets it and ignores it in every request. `paramsForBackend` builds an
- * explicit allowlist, so an ordinary save does not echo it back. Both halves are pinned here
- * because a refactor to `{...ef}` would look harmless and would start sending a read-only
- * property on every save of an operation-created sample.
+ * `operationFieldKey` travels INBOUND only: the API returns it so a later run of an operation can
+ * recognise the field a previous run generated, and the server ignores it in every request.
  */
 describe("paramsForBackend and operationFieldKey", () => {
   const operationCreatedField = {
