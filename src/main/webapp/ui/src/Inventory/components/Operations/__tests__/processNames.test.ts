@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PREFERENCES } from "@/hooks/api/useUiPreference";
-import type { InventoryOperation } from "../operationsConfig";
+import type { InventoryOperation } from "../operations";
 import {
   addProcessName,
   filterProcessNames,

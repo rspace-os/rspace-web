@@ -1,5 +1,5 @@
-import type { InventoryOperation } from "./operationsConfig";
-import { usesAmountModes } from "./operationsConfig";
+import type { InventoryOperation } from "./operations";
+import { usesAmountModes } from "./operations";
 import type {
   AmountMode,
   OperationExtraField,

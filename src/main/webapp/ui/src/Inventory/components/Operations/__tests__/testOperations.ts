@@ -1,1 +1,1 @@
-export { operations } from "../operationsConfig";
+export { operations } from "../operations";

@@ -1,6 +1,6 @@
 import { omit } from "es-toolkit";
 import { describe, expect, it } from "vitest";
-import type { InventoryOperation } from "../operationsConfig";
+import type { InventoryOperation } from "../operations";
 import {
   amountIsStorable,
   amountTakenExceedsOrigin,

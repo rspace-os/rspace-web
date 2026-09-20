@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { InEnglish } from "@/__tests__/realI18n";
 import appTheme from "@/theme";
 import OperationConfirmation from "../OperationConfirmation";
-import type { InventoryOperation } from "../operationsConfig";
+import type { InventoryOperation } from "../operations";
 import type { OriginBlockedReason } from "../operationValidation";
 import type { TemplateSelection } from "../TemplateStep";
 import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "../types";

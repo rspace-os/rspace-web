@@ -5,7 +5,7 @@
 import { createFilterOptions } from "@mui/material/Autocomplete";
 import { omit } from "es-toolkit";
 import { PREFERENCES } from "@/hooks/api/useUiPreference";
-import { type InventoryOperation, resolveProcessName } from "./operationsConfig";
+import { type InventoryOperation, resolveProcessName } from "./operations";
 
 export function rememberKey(operation: InventoryOperation, values: Record<string, unknown>): string {
   if (!operation.effect.processNameFrom) return operation.key;

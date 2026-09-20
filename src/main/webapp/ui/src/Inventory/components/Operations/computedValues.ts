@@ -1,5 +1,5 @@
 import { type OperationFunctionArgs, operationFunctions } from "./operationFunctions";
-import type { ComputedArgSource, InventoryKey, InventoryOperation } from "./operationsConfig";
+import type { ComputedArgSource, InventoryKey, InventoryOperation } from "./operations";
 import type { OperationInputs } from "./types";
 
 type SampleField = {
