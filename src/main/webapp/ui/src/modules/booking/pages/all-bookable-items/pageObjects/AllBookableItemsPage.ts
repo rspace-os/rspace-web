@@ -86,7 +86,7 @@ export class AllBookableItemsPage {
   }
 
   get availabilityBookingRows(): Locator {
-    return this.availabilityDetails.getByText("Booking", { exact: true });
+    return this.availabilityDetails.getByRole("listitem");
   }
 
   focusAvailabilitySlice(itemName: string, contributorCount: number): void {
