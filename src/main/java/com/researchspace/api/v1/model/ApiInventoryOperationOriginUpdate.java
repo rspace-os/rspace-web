@@ -5,10 +5,6 @@ import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * One origin as the transactional core will act on it. {@code amountTaken} is a non-negative
- * decrement, not an absolute value: the core reduces the origin's current quantity by it.
- */
 @Data
 @NoArgsConstructor
 public class ApiInventoryOperationOriginUpdate {

@@ -10,7 +10,6 @@ import {
 } from "../processNames";
 import { operations } from "./testOperations";
 
-// Operation keys never contain spaces, so a single space separates operation key from process name.
 const DERIVE_DNA = ["derive", "dna extraction"].join(" ");
 const DERIVE_BOIL = ["derive", "boil"].join(" ");
 function op(key: string): InventoryOperation {
@@ -81,21 +80,15 @@ describe("processValuesPreferenceFor", () => {
       ["destroy", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DESTROY],
     ] as const;
     for (const [key, expected] of keys) expect(processValuesPreferenceFor(key)).toBe(expected);
-    // distinct, not just present: no two operations were accidentally mapped to the same symbol
     expect(new Set(keys.map(([key]) => processValuesPreferenceFor(key))).size).toBe(keys.length);
   });
 
   it("derives the same name for an operation type the map does not list", () => {
-    // Only reachable if a new operation type is added before this map is. Deriving the name keeps
-    // the two halves of a bundle together; the backend's allowlist then refuses the write, which
-    // is the right answer for an operation that does not exist.
     expect(processValuesPreferenceFor("teleport")).toBe(Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_TELEPORT"));
   });
 });
 
 describe("processNameDefaultAfterPerform", () => {
-  // The wizard calls this only for a remembered Perform, so there is no "remember off" branch:
-  // unticking never deletes what was saved.
   it("stores the trimmed name as the operation's default", () => {
     expect(processNameDefaultAfterPerform({}, "derive", "  dna extraction  ")).toEqual({
       derive: "dna extraction",

@@ -20,8 +20,6 @@ type FakeTemplate = {
 let currentTemplate: FakeTemplate;
 const capturedSetTemplate: Array<(t: FakeTemplate) => void> = [];
 
-// Stub the wizard's template picker so this test does not mount its real Search/fetcher; clicking
-// it plays back the current fake template through the setTemplate prop.
 vi.mock("../WizardTemplatePicker", () => ({
   default: ({ setTemplate }: { setTemplate: (t: FakeTemplate | null) => void }) => {
     capturedSetTemplate.push(setTemplate);
@@ -59,6 +57,20 @@ const makeTemplate = (fields: Array<FakeField>): FakeTemplate => ({
   fetchAdditionalInfo: () => Promise.resolve(),
   fields,
 });
+
+/** A template whose lookup stays in flight until the returned resolver is called. */
+const pendingTemplate = (id: number, name: string): { template: FakeTemplate; resolve: () => void } => {
+  let settle: () => void = () => undefined;
+  return {
+    template: {
+      id,
+      name,
+      fetchAdditionalInfo: () => new Promise((r) => (settle = r)),
+      fields: [{ name: "F", mandatory: false, content: "x", selectedOptions: null }],
+    },
+    resolve: () => settle(),
+  };
+};
 
 describe("TemplateStep", () => {
   it("offers the three template choices (use parent, choose existing, none) and no remember checkbox", () => {
@@ -98,8 +110,7 @@ describe("TemplateStep", () => {
       />,
     );
     // cimode renders the key without its parameters, so the name itself is asserted in English
-    // below: the "Selected template: {name}" join moved into the catalog, because not every locale
-    // separates with a colon-space.
+    // below.
     expect(screen.getByRole("alert")).toHaveTextContent(/template\.selectedLabel/);
     for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
     expect(screen.queryByTestId("template-picker")).not.toBeInTheDocument();
@@ -140,8 +151,6 @@ describe("TemplateStep", () => {
   });
 
   it("keeps a change made while the template lookup was in flight", async () => {
-    // The write after an await must not spread a stale captured `value`, or a change made mid-lookup
-    // (like ticking "remember") is silently lost.
     let resolveLookup: () => void = () => undefined;
     currentTemplate = {
       id: 5,
@@ -156,8 +165,6 @@ describe("TemplateStep", () => {
     resolveLookup();
     await waitFor(() => expect(selectionsFrom(onChange)).toContainEqual(expect.objectContaining({ templateId: 5 })));
 
-    // The wizard's state moved on while the lookup was pending: remember was ticked. Resolving the
-    // step's write against THAT value must preserve it.
     const tickedMidLookup: TemplateSelection = { ...pickMode, remember: true };
     expect(selectionsFrom(onChange, tickedMidLookup)).toContainEqual(
       expect.objectContaining({ templateId: 5, remember: true }),
@@ -165,13 +172,7 @@ describe("TemplateStep", () => {
   });
 
   it("discards a stale template lookup that resolves after a newer pick (latest wins)", async () => {
-    let resolveA: () => void = () => undefined;
-    const templateA: FakeTemplate = {
-      id: 5,
-      name: "A",
-      fetchAdditionalInfo: () => new Promise((r) => (resolveA = r)),
-      fields: [{ name: "F", mandatory: false, content: "x", selectedOptions: null }],
-    };
+    const { template: templateA, resolve: resolveA } = pendingTemplate(5, "A");
     const templateB: FakeTemplate = {
       id: 6,
       name: "B",
@@ -187,7 +188,6 @@ describe("TemplateStep", () => {
     currentTemplate = templateB;
     await user.click(screen.getByTestId("template-picker"));
 
-    // B resolved immediately and applied; now the older A resolves and must be ignored.
     await waitFor(() => expect(selectionsFrom(onChange)).toContainEqual(expect.objectContaining({ templateId: 6 })));
     resolveA();
     await Promise.resolve();
@@ -195,15 +195,7 @@ describe("TemplateStep", () => {
   });
 
   it("abandons a pending template lookup when the step unmounts (wizard navigated away)", async () => {
-    // A late-resolving lookup from an unmounted step must not restore the abandoned template onto
-    // whatever selection replaced it.
-    let resolveA: () => void = () => undefined;
-    const templateA: FakeTemplate = {
-      id: 5,
-      name: "A",
-      fetchAdditionalInfo: () => new Promise((r) => (resolveA = r)),
-      fields: [{ name: "F", mandatory: false, content: "x", selectedOptions: null }],
-    };
+    const { template: templateA, resolve: resolveA } = pendingTemplate(5, "A");
     const onChange = vi.fn();
     const { unmount } = render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
     const user = userEvent.setup();
@@ -217,13 +209,7 @@ describe("TemplateStep", () => {
   });
 
   it("abandons a pending template lookup when the user switches mode (no stale restore)", async () => {
-    let resolveA: () => void = () => undefined;
-    const templateA: FakeTemplate = {
-      id: 5,
-      name: "A",
-      fetchAdditionalInfo: () => new Promise((r) => (resolveA = r)),
-      fields: [{ name: "F", mandatory: false, content: "x", selectedOptions: null }],
-    };
+    const { template: templateA, resolve: resolveA } = pendingTemplate(5, "A");
     const onChange = vi.fn();
     render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
     const user = userEvent.setup();
@@ -265,17 +251,11 @@ describe("TemplateStep in English", () => {
   });
 
   it("names the blocking fields as a list, not a bare join", async () => {
-    // The message is assembled by i18n, not in code: the field names go
-    // through Intl.ListFormat for the locale, so English reads "A, B, and C". cimode hides the
-    // interpolated parameters entirely, which is why these tests use the real catalogs.
     await blockedBy(["A", "B", "C"]);
     expect(await screen.findByText(/the required fields A, B, and C have no default value/)).toBeInTheDocument();
   });
 
   it("inflects the sentence for a single blocking field rather than writing 'field(s)'", async () => {
-    // "field(s) ... have" is a parenthetical plural, which only works in English and reads badly
-    // even there. The count decides the wording in the catalog, so a translator can inflect it the
-    // way their own language requires.
     await blockedBy(["Batch"]);
     expect(await screen.findByText(/the required field Batch has no default value/)).toBeInTheDocument();
   });
@@ -291,7 +271,6 @@ describe("TemplateStep failure and clearing paths", () => {
     render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
     await userEvent.setup().click(screen.getByTestId("template-picker"));
     expect(await screen.findByText(/template\.lookupFailed/)).toBeInTheDocument();
-    // so Next remains blocked rather than submitting a bad template
     expect(selectionsFrom(onChange)).not.toContainEqual(expect.objectContaining({ templateId: 5 }));
   });
 
@@ -309,8 +288,6 @@ describe("TemplateStep failure and clearing paths", () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ templateId: null, templateName: undefined }));
   });
 
-  // The "use parent template" check itself runs in OperationWizard, not here; this step only
-  // displays its outcome, accessibly, since both messages can appear with no user action at all.
   const fromSampleMode: TemplateSelection = { mode: "fromSample", templateId: null, remember: false };
 
   it("shows the wizard's parent-template spinner as a live status", async () => {
@@ -334,9 +311,7 @@ describe("TemplateStep failure and clearing paths", () => {
   });
 
   it("prefers its own pick error over the wizard's parent-template error", async () => {
-    // Only one of the two can be current: picking a template abandons the parent-template mode, so
-    // the pick error is the one that describes what the user just did. Both errors must be set here,
-    // or the assertion cannot distinguish the two orderings.
+    // Both errors must be set here, or the assertion cannot distinguish the two orderings.
     currentTemplate = makeTemplate([{ name: "Concentration", mandatory: true, content: "", selectedOptions: null }]);
     render(
       <TemplateStep

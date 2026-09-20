@@ -46,20 +46,12 @@ function OperationConfirmation({
   documentation: DocumentationSelection;
   templateSelection: TemplateSelection;
   originSampleName: string;
-  /** The origin subsample's own name, shown as the card title for a terminal operation (Destroy),
-   * which acts on the origin and creates no new sample. */
   originName: string;
-  /** Why the origin cannot be operated on, or null when it can. A terminal operation that empties
-   * its origin (`emptiesOrigin`) cannot run on a subsample holding nothing, nor on one whose unit is
-   * not an amount. Defaults to null (producing operations gate this on their details and amounts
-   * steps). */
   originBlocked?: OriginBlockedReason | null;
   amountMode?: AmountMode;
   perSubsampleAmounts?: PerSubsampleAmounts;
   origins?: Array<{ globalId: string; name: string }>;
   remember?: boolean;
-  /** When provided, the single "remember" checkbox is shown beneath the summary card; omitted when
-   *  there is nothing to remember (a terminal operation). */
   onRememberChange?: (remember: boolean) => void;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
@@ -69,26 +61,18 @@ function OperationConfirmation({
   const { effect } = operation;
   const unitLabel = (unitId: number): string => unitStore.getUnit(unitId)?.label ?? "";
 
-  // These describe the created sample; a terminal operation (noOutput) has none, so guard each read.
   const count = effect.countFrom ? Number(values[effect.countFrom]) : 0;
   const each = effect.eachAmountFrom ? (values[effect.eachAmountFrom] as OperationQuantity | undefined) : undefined;
   const after = effect.amountTakenFrom ? (values[effect.amountTakenFrom] as OperationQuantity) : null;
   const storageTemp = effect.storageTempFrom ? (values[effect.storageTempFrom] as OperationQuantity) : null;
   const name = effect.nameFrom ? String(values[effect.nameFrom] ?? "") : "";
   const processName = effect.processNameFrom ? String(values[effect.processNameFrom] ?? "").trim() : "";
-  // The link field name may interpolate {originName} (Pool's "Pooled from: {originName}"), which is
-  // not in `values` - it is injected per origin at build time. For a single-origin operation, supply
-  // the origin's name so the preview resolves (without it ICU throws on the missing argument and the
-  // raw template string is shown). A multi-origin operation lists every origin in the linkBack row
-  // below instead, so this single value is only its single-origin fallback.
+  // The link field name may interpolate {originName}, which is not in `values` - it is injected per
+  // origin at build time - and ICU throws on the missing argument, so supply the origin's name.
   const linkName = effect.links.length ? resolveLabel(effect.links[0].fieldNameKey, { ...values, originName }) : "";
-  // Preview the values the operation will compute (DevDocs/adr/0011) so the origin-field rows show real
-  // content. Computed here with no parent fields, which is exact for everything this card actually
-  // renders: the only computed value it surfaces is an origin field, and the sole operation with
-  // those (Destroy) computes `today`, which needs no parent fields. A parent-dependent computed value
-  // (Passage's passage number) is a sample textField the card never shows, so its parentless fallback
-  // is never displayed. Revisit if an origin field is ever sourced from a parent-dependent computed
-  // value: previewing it correctly would need the origin's parent fields loaded here.
+  // Computed with no parent fields, which is exact only because the sole computed value this card
+  // surfaces is an origin field needing none. An origin field sourced from a parent-dependent
+  // computed value would need the origin's parent fields loaded here.
   const displayValues = operation.effect.computed?.length
     ? applyComputedValues(operation, { parentFields: [], values, resolveFieldName: resolveLabel })
     : values;
@@ -100,8 +84,6 @@ function OperationConfirmation({
         : (templateSelection.templateName ?? "");
 
   type Row = { label: string; value: React.ReactNode };
-  // A builder returns null when its value is absent (e.g. no documentation linked), so the row is
-  // skipped, or an array to emit several rows (origin fields).
   const rowBuilders: Record<ConfirmSummaryField, () => Row | Array<Row> | null> = {
     process: () => (processName ? { label: t("operations.confirm.labels.process"), value: processName } : null),
     template: () => ({ label: t("operations.confirm.labels.template"), value: templateValue }),
@@ -159,13 +141,8 @@ function OperationConfirmation({
           }
         : null,
     linkBack: () => {
-      // Pool (multi-origin) links back to every pooled subsample, so list one line per origin to
-      // match the links buildOperationRequest actually creates, rather than only the representative
-      // origin.
       if (operation.requiresMultiple && origins.length && effect.links.length) {
         const { fieldNameKey, relationType } = effect.links[0];
-        // Two origins may share a name, and the server then suffixes each link name with its target;
-        // previewing the raw names would show two identical lines for fields stored apart.
         const names = withUniqueFieldNames(
           origins.map((o) => ({
             name: resolveLabel(fieldNameKey, { ...values, originName: o.name }),
@@ -200,20 +177,8 @@ function OperationConfirmation({
         value: String(displayValues[spec.contentFrom] ?? ""),
       })),
   };
-  const DEFAULT_SUMMARY: Array<ConfirmSummaryField> = [
-    "process",
-    "template",
-    "subsamples",
-    "amountTaken",
-    "linkBack",
-    "documentation",
-  ];
-  const content: Array<Row> = (operation.confirmSummary ?? DEFAULT_SUMMARY).flatMap(
-    (field) => rowBuilders[field]() ?? [],
-  );
+  const content: Array<Row> = operation.confirmSummary.flatMap((field) => rowBuilders[field]() ?? []);
 
-  // A terminal operation (Destroy) skips the details step, so its description is shown here as an
-  // info panel, and its "cannot operate on an empty subsample" guard also moves here.
   const infoText = operation.noOutput && operation.descriptionKey ? resolveLabel(operation.descriptionKey) : null;
   const originEmptyBlocked = Boolean(effect.emptiesOrigin) && originBlocked !== null;
 
@@ -250,8 +215,6 @@ function OperationConfirmation({
           <FormControlLabel
             control={<Checkbox checked={remember} onChange={(e) => onRememberChange(e.target.checked)} />}
             label={resolveLabel("operations.fields.rememberProcessValues", {
-              // resolveProcessName also covers a fixed process name (e.g. Cryopreserve's), which the
-              // row-level processName above deliberately leaves blank.
               name: resolveProcessName(operation, values),
             })}
           />

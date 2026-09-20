@@ -58,14 +58,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -403,14 +401,15 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
    *
    * <p>Only fields carrying an {@code operationFieldKey} are merged; a user's own extra field on
    * POST /samples has none and keeps the normal duplicate-name rejection. Link fields are never
-   * merged, since a link holds a structured {@code InventoryLink} rather than text. Names are
-   * matched trimmed and case-insensitively, the same way the uniqueness check compares them.
+   * merged, since a link holds a structured {@code InventoryLink} rather than text.
    */
   static void mergeOperationFieldsIntoInheritedTemplateFields(
       ApiSampleWithFullSubSamples apiSample, List<InventoryEntityField> inheritedFields) {
     if (apiSample == null
-        || CollectionUtils.isEmpty(apiSample.getExtraFields())
-        || CollectionUtils.isEmpty(inheritedFields)) {
+        || apiSample.getExtraFields() == null
+        || apiSample.getExtraFields().isEmpty()
+        || inheritedFields == null
+        || inheritedFields.isEmpty()) {
       return;
     }
     Map<String, InventoryEntityField> mergeTargets = new HashMap<>();
@@ -423,44 +422,46 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         mergeTargets.putIfAbsent(name.trim().toLowerCase(Locale.ROOT), inherited);
       }
     }
-    Iterator<ApiExtraField> generated = apiSample.getExtraFields().iterator();
-    while (generated.hasNext()) {
-      ApiExtraField field = generated.next();
-      if (field == null
-          || StringUtils.isBlank(field.getOperationFieldKey())
-          || ExtraFieldTypeEnum.LINK.equals(field.getType())
-          || StringUtils.isBlank(field.getName())) {
-        continue;
-      }
-      InventoryEntityField target =
-          mergeTargets.get(field.getName().trim().toLowerCase(Locale.ROOT));
-      // A name match doesn't guarantee the inherited field's type matches (e.g. a NUMBER template
-      // field vs. a generated text value). setFieldData throws on a mismatch, so validate first and
-      // leave an incompatible field in extraFields to fall back to the ordinary duplicate-name
-      // rejection instead of failing the request unpredictably.
-      if (target != null && !target.validate(field.getContent()).hasErrorMessages()) {
-        target.setFieldData(field.getContent());
-        generated.remove();
-      }
-    }
+    apiSample
+        .getExtraFields()
+        .removeIf(
+            field -> {
+              if (field == null
+                  || StringUtils.isBlank(field.getOperationFieldKey())
+                  || ExtraFieldTypeEnum.LINK.equals(field.getType())
+                  || StringUtils.isBlank(field.getName())) {
+                return false;
+              }
+              InventoryEntityField target =
+                  mergeTargets.get(field.getName().trim().toLowerCase(Locale.ROOT));
+              // A name match doesn't guarantee the inherited field's type matches (e.g. a NUMBER
+              // template field vs. a generated text value). setFieldData throws on a mismatch, so
+              // validate first and leave an incompatible field in extraFields to fall back to the
+              // ordinary duplicate-name rejection instead of failing the request unpredictably.
+              if (target == null || target.validate(field.getContent()).hasErrorMessages()) {
+                return false;
+              }
+              target.setFieldData(field.getContent());
+              return true;
+            });
     renameGeneratedLinksCollidingWithInheritedFields(apiSample, inheritedFields);
   }
 
   /**
    * Renames a generated link field whose name matches one the sample inherits from its template.
    * Such a link cannot be merged away by {@link #mergeOperationFieldsIntoInheritedTemplateFields},
-   * so without this a template that happens to declare a field named like the operation's link (a
-   * "Documented by" field plus a documentation target, say) left both active and failed {@link
+   * so without this both stay active and fail {@link
    * InventoryFieldNameUniquenessValidator#assertNoDuplicateFieldNames}, with nothing the user could
    * change to complete an otherwise valid request. All inherited names count here, link fields
    * included, because the duplicate check does not care about type.
    */
   private static void renameGeneratedLinksCollidingWithInheritedFields(
       ApiSampleWithFullSubSamples apiSample, List<InventoryEntityField> inheritedFields) {
-    Set<String> taken = new HashSet<>();
+    Set<String> inheritedNames = new HashSet<>();
     for (InventoryEntityField inherited : inheritedFields) {
-      taken.add(OperationFieldNames.comparable(inherited.getName()));
+      inheritedNames.add(OperationFieldNames.comparable(inherited.getName()));
     }
+    Set<String> taken = new HashSet<>(inheritedNames);
     for (ApiExtraField field : apiSample.getExtraFields()) {
       if (field != null && StringUtils.isNotBlank(field.getName())) {
         taken.add(OperationFieldNames.comparable(field.getName()));
@@ -477,13 +478,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
           || StringUtils.isBlank(field.getLink().getTargetGlobalId())) {
         continue;
       }
-      boolean collidesWithTemplate =
-          inheritedFields.stream()
-              .anyMatch(
-                  inherited ->
-                      OperationFieldNames.comparable(inherited.getName())
-                          .equals(OperationFieldNames.comparable(field.getName())));
-      if (collidesWithTemplate) {
+      if (inheritedNames.contains(OperationFieldNames.comparable(field.getName()))) {
         String free = OperationFieldNames.freeLinkName(field, taken);
         taken.add(OperationFieldNames.comparable(free));
         field.setName(free);

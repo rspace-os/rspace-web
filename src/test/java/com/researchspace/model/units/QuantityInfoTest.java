@@ -70,9 +70,7 @@ public class QuantityInfoTest {
 
   @Test
   void canStoreWithoutRoundingRejectsValuesTooLargeForTheColumn() {
-    // The column is DECIMAL(19,3), so 16 integer digits is the ceiling. A value above it used to
-    // pass this guard (1E+30 has a NEGATIVE scale, which is trivially <= 3) and only failed at the
-    // INSERT, turning a bad request into a 500.
+    // The column is DECIMAL(19,3), so 16 integer digits is the ceiling.
     assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("9999999999999999.999")));
     assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("1000000000000000")));
 

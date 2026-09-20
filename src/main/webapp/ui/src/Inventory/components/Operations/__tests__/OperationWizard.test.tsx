@@ -10,16 +10,11 @@ import { InEnglish } from "@/__tests__/realI18n";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
 
-// The wizard reads the operation definitions from a constant, but its steps still query the
-// server (templates, name availability), so every render needs a QueryClient; a fresh one per
-// render keeps tests isolated.
 function render(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
-// Shared, controllable preference store standing in for useUiPreference's persisted UI settings, so
-// the test can assert exactly what Perform persisted (and keyed by which process name).
 const prefs = vi.hoisted(() => ({ store: {} as Record<string, unknown> }));
 
 vi.mock("@/hooks/api/useUiPreference", () => ({
@@ -35,16 +30,11 @@ vi.mock("@/hooks/api/useUiPreference", () => ({
   useRawUiPreferences: () => prefs.store,
   readUiPreference: (uiPreferences: Record<string, unknown>, pref: symbol, defaultValue: unknown) => {
     const key = Symbol.keyFor(pref) ?? "";
-    // prefs.store holds values unwrapped, matching the `default` mock above; the real implementation
-    // unwraps a { value } envelope.
+    // prefs.store holds values unwrapped; the real implementation unwraps a { value } envelope.
     return key in uiPreferences ? uiPreferences[key] : defaultValue;
   },
 }));
 
-// The wizard talks to the backend through the real operationsApi client, answered here by MSW, so
-// the endpoint paths and response handling are exercised rather than mocked away. One handler
-// covers all seven, matching on the operation key. `posted` collects every request body (and the
-// key it went to); `taken` lists sample names the name check should report as in use.
 const OPERATION_URL = "/api/inventory/v1/operations/:key";
 const posted: Array<Record<string, unknown>> = [];
 const postedTo: Array<string> = [];
@@ -63,26 +53,22 @@ const operationHandlers = [
 ];
 
 const performSearch = vi.fn();
-// The wizard loads the origin sample's own template to validate "use parent template". Default
-// to a template with no defaultless mandatory field, i.e. a passing check.
-const getTemplate = vi.fn((_id?: number) =>
-  Promise.resolve({
-    id: 9,
-    name: "Parent template",
-    quantityCategory: "volume",
-    // RSpace soft-deletes, so a trashed template still resolves; only this flag distinguishes it.
-    deleted: false,
-    fields: [{ name: "Passage number", mandatory: true, content: "1", selectedOptions: null }],
-  }),
-);
+const getTemplate = vi.fn();
+const template = (o: Record<string, unknown> = {}) => ({
+  id: 9,
+  name: "Parent template",
+  quantityCategory: "volume",
+  deleted: false,
+  fields: [],
+  ...o,
+});
+const mandatoryField = (name: string, content: string) => ({ name, mandatory: true, content, selectedOptions: null });
 const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
     searchStore: { search: { performSearch }, getTemplate },
     uiStore: { addAlert },
-    // Category-aware, matching stores/definitions/Units: the wizard reconciles a restored bundle
-    // against the origin's category, so a mock without one silently skipped that whole path.
     unitStore: {
       getUnit: (id: number) => ({
         label: id === 7 ? "g" : "ml",
@@ -101,8 +87,7 @@ vi.mock("@/components/SubmitSpinnerButton", () => ({
   ),
 }));
 // ContextDialog wraps the content in a MUI Dialog; render its children inline when open. The
-// "dialog-close" button stands in for the dialog's own close paths (Escape), which reach the wizard
-// through this same onClose prop.
+// "dialog-close" button stands in for the dialog's own close paths (Escape).
 vi.mock("../../ContextMenu/ContextDialog", () => ({
   default: ({ open, children, onClose }: { open: boolean; children: React.ReactNode; onClose: () => void }) =>
     open ? (
@@ -114,9 +99,7 @@ vi.mock("../../ContextMenu/ContextDialog", () => ({
 }));
 
 // Stub the step bodies so the flow can be driven deterministically. The details stub renders all its
-// controls regardless of `section` (so a test can fill amounts while still on the details step) and
-// echoes `section`/`unitCategories` back via spans (the remember state is echoed by the
-// confirmation stub, where the checkbox lives).
+// controls regardless of `section`, so a test can fill amounts while still on the details step.
 vi.mock("../OperationDetailsStep", () => ({
   default: ({
     values,
@@ -150,43 +133,23 @@ vi.mock("../OperationDetailsStep", () => ({
         data-testid="edit-sample"
         onClick={() => onChange({ ...values, sampleName: "Custom name" })}
       />
-      <button
-        type="button"
-        data-testid="fill-amounts"
-        onClick={() =>
-          onChange({
-            ...values,
-            count: 1,
-            eachAmount: { numericValue: 5, unitId: 3 },
-            amountTaken: { numericValue: 1, unitId: 3 },
-          })
-        }
-      />
-      <button
-        type="button"
-        data-testid="fill-over-amounts"
-        onClick={() =>
-          onChange({
-            ...values,
-            count: 1,
-            eachAmount: { numericValue: 5, unitId: 3 },
-            amountTaken: { numericValue: 5, unitId: 3 },
-          })
-        }
-      />
-      {/* 3 ml shared: within a 5 ml origin, beyond a 1 ml one, so it tells which origin gates. */}
-      <button
-        type="button"
-        data-testid="fill-shared-3"
-        onClick={() =>
-          onChange({
-            ...values,
-            count: 1,
-            eachAmount: { numericValue: 5, unitId: 3 },
-            amountTaken: { numericValue: 3, unitId: 3 },
-          })
-        }
-      />
+      {/* Each fills the amounts with a different amount taken, in ml: 1 is within the mock origin,
+          5 over-removes from it, and 3 is within a 5 ml origin but beyond a 1 ml one. */}
+      {[1, 5, 3].map((taken) => (
+        <button
+          key={taken}
+          type="button"
+          data-testid={`fill-taken-${taken}`}
+          onClick={() =>
+            onChange({
+              ...values,
+              count: 1,
+              eachAmount: { numericValue: 5, unitId: 3 },
+              amountTaken: { numericValue: taken, unitId: 3 },
+            })
+          }
+        />
+      ))}
       <span data-testid="count">{String(values.count ?? "")}</span>
       <span data-testid="each-amount">{JSON.stringify(values.eachAmount ?? null)}</span>
       <span data-testid="amount-taken">{JSON.stringify(values.amountTaken ?? null)}</span>
@@ -227,7 +190,6 @@ vi.mock("../TemplateStep", () => ({
     <div>
       <span data-testid="tmpl-mode">{value.mode}</span>
       <span data-testid="tmpl-id">{String(value.templateId)}</span>
-      {/* The remembered banner renders this name, so a stale one is observable here. */}
       <span data-testid="tmpl-name">{value.templateName ?? ""}</span>
       <span data-testid="tmpl-checking">{String(Boolean(parentTemplateChecking))}</span>
       <span data-testid="tmpl-parent-error">{parentTemplateError ?? ""}</span>
@@ -257,9 +219,6 @@ vi.mock("../DocumentationStep", () => ({
     </div>
   ),
 }));
-// The confirmation stub echoes the remember state and offers a toggle: the single "remember"
-// checkbox lives on the summary & confirm step (and the step-one fast path, which renders the same
-// confirmation).
 vi.mock("../OperationConfirmation", () => ({
   default: ({ remember, onRememberChange }: { remember?: boolean; onRememberChange?: (remember: boolean) => void }) => (
     <div data-testid="confirm">
@@ -271,6 +230,12 @@ vi.mock("../OperationConfirmation", () => ({
   ),
 }));
 
+const DEFAULT_REMEMBERED_VALUES = {
+  count: 2,
+  eachAmount: { numericValue: 1, unitId: 3 },
+  amountTaken: { numericValue: 1, unitId: 3 },
+};
+
 const nextButton = () => screen.getByRole("button", { name: /actions\.next/i });
 const backButton = () => screen.getByRole("button", { name: /actions\.back/i });
 
@@ -281,31 +246,20 @@ beforeEach(() => {
   taken.length = 0;
   performSearch.mockClear();
   addAlert.mockClear();
-  // Reset, not merely cleared: mockClear drops call history but LEAVES a queued
-  // mockResolvedValueOnce/mockRejectedValueOnce, so an unconsumed Once would be handed to the next
-  // test, which matters because one test here asserts getTemplate is never called. mockReset also
-  // restores the implementation passed to vi.fn.
+  // Reset, not merely cleared: mockClear leaves a queued mockResolvedValueOnce/mockRejectedValueOnce
+  // for the next test, and one test here asserts getTemplate is never called.
   getTemplate.mockReset();
-  getTemplate.mockImplementation(() =>
-    Promise.resolve({
-      id: 9,
-      name: "Parent template",
-      quantityCategory: "volume",
-      deleted: false,
-      fields: [{ name: "Passage number", mandatory: true, content: "1", selectedOptions: null }],
-    }),
-  );
+  // Defaults to a template with no defaultless mandatory field, i.e. a passing parent-template check.
+  getTemplate.mockImplementation(() => Promise.resolve(template({ fields: [mandatoryField("Passage number", "1")] })));
   server.use(...operationHandlers);
 });
 
-/** Pick Derive, type a process name (which auto-derives the sample name), and fill the amounts. */
 async function fillDerive(user: ReturnType<typeof userEvent.setup>, processName: string) {
   await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
   await user.type(screen.getByTestId("proc"), processName);
-  await user.click(screen.getByTestId("fill-amounts"));
+  await user.click(screen.getByTestId("fill-taken-1"));
 }
 
-/** Drive Derive from the picker all the way to the Confirm step (template picked, amounts filled). */
 async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processName: string) {
   await fillDerive(user, processName);
   await user.click(nextButton()); // details -> template
@@ -313,6 +267,25 @@ async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processNam
   await user.click(nextButton()); // template -> amounts
   await user.click(nextButton()); // amounts -> documentation
   await user.click(nextButton()); // documentation -> confirm
+}
+
+/** The remembered bundle for "derive dna", the process name every test below types. */
+function rememberDerive(template: unknown, values: unknown = DEFAULT_REMEMBERED_VALUES) {
+  const bundle = { "derive dna": { values, template, documentation: null } };
+  prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = bundle;
+  return bundle;
+}
+
+/** A once-only rejection from the operation endpoint. */
+function rejectOnce(status: number, body: Record<string, unknown>) {
+  server.use(http.post(OPERATION_URL, () => HttpResponse.json(body, { status }), { once: true }));
+}
+
+/** An origin whose post-operation reload is stubbed out, as every performing test needs. */
+function mockOrigin(overrides: Parameters<typeof makeMockSubSample>[0] = {}) {
+  const origin = makeMockSubSample(overrides);
+  vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+  return origin;
 }
 
 describe("OperationWizard step flow", () => {
@@ -335,7 +308,6 @@ describe("OperationWizard step flow", () => {
       />,
     );
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    // a process name would normally enable Next (see the test above), but a zero-amount origin blocks it
     await user.type(screen.getByTestId("proc"), "dna");
     expect(nextButton()).toBeDisabled();
   });
@@ -375,26 +347,15 @@ describe("OperationWizard step flow", () => {
     await fillDerive(user, "dna");
     await user.click(nextButton()); // details -> template
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("fromSample");
-    // Preselected AND validated by the wizard: the parent's template can have a defaultless
-    // mandatory field just as a picked one can, so it is checked, and a passing check writes the id
-    // that enables Next.
     await waitFor(() => expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9"));
     expect(nextButton()).toBeEnabled();
     expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything());
   });
 
   it("validates the parent template at step one, so the one-click fast path is still offered", async () => {
-    // The gate (templateStepValid) is evaluated for EVERY step, but the wizard renders only the
-    // active one. A check owned by TemplateStep therefore never ran while the user was on step one,
-    // which is exactly where the fast path lives, so Perform was permanently disabled for the most
-    // common template mode. The check belongs to the wizard for that reason.
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
-        template: { mode: "fromSample", templateId: null },
-        documentation: null,
-      },
-    };
+    // The gate is evaluated for every step but only the active step renders, so a check owned by
+    // TemplateStep never ran on step one, which is exactly where the fast path lives.
+    rememberDerive({ mode: "fromSample", templateId: null });
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     origin.sample.templateId = 9;
@@ -407,23 +368,10 @@ describe("OperationWizard step flow", () => {
   });
 
   it("withholds the one-click fast path when the remembered template has been trashed", async () => {
-    // The stored bundle's template id is a snapshot from a previous run. The template may since have
-    // been moved to trash, and RSpace soft-deletes, so the lookup SUCCEEDS and only the deleted flag
-    // tells the wizard. Left unchecked, step one offered Perform against a trashed template.
-    getTemplate.mockResolvedValue({
-      id: 9,
-      name: "Cell line",
-      quantityCategory: "volume",
-      deleted: true,
-      fields: [],
-    });
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
-        template: { mode: "pick", templateId: 9, templateName: "Cell line" },
-        documentation: null,
-      },
-    };
+    // RSpace soft-deletes, so the lookup for a trashed template SUCCEEDS and only the deleted flag
+    // tells the wizard.
+    getTemplate.mockResolvedValue(template({ name: "Cell line", deleted: true }));
+    rememberDerive({ mode: "pick", templateId: 9, templateName: "Cell line" });
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
@@ -433,33 +381,16 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything()));
     expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
 
-    // On reaching the template step the selection has been dropped back to a first-run choice, so
-    // the user must pick another template, and the reason is shown rather than silently reverting.
     await user.click(nextButton());
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
     expect(screen.getByTestId("tmpl-remembered-error")).toHaveTextContent(/rememberedDeleted/);
   });
 
   it("never substitutes the parent's template for a trashed remembered one", async () => {
-    // The origin whose parent sample HAS a template is the common case: it is the subsample the
-    // bundle was saved from. Falling back to initialTemplateSelection there resolved to
-    // "fromSample", which the parent-template check then validated, which re-enabled one-click
-    // Perform against a DIFFERENT template ("From <sample name>") that the user never chose. The
-    // rejection must land on "unselected": the user has to pick a template themselves.
     getTemplate.mockImplementation((id?: number) =>
-      Promise.resolve(
-        id === 9
-          ? { id: 9, name: "Cell line", quantityCategory: "volume", deleted: true, fields: [] }
-          : { id: id ?? 4, name: "Parent template", quantityCategory: "volume", deleted: false, fields: [] },
-      ),
+      Promise.resolve(id === 9 ? template({ name: "Cell line", deleted: true }) : template({ id: id ?? 4 })),
     );
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
-        template: { mode: "pick", templateId: 9, templateName: "Cell line" },
-        documentation: null,
-      },
-    };
+    rememberDerive({ mode: "pick", templateId: 9, templateName: "Cell line" });
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     // The parent has its own template, which is what made the fallback reachable.
@@ -477,18 +408,7 @@ describe("OperationWizard step flow", () => {
   });
 
   it("blocks 'use parent template' when the parent's own template is in the trash", async () => {
-    // Reachable from the same user action: the origin's parent sample was usually created FROM the
-    // template being trashed, so origin.sample.templateId points at it. The parent check validated
-    // on mandatory fields alone, so the trashed template came back as "From <sample name>" and was
-    // one-click performable. The server rejects it at Perform (422), which is a worse place to find
-    // out than the step that offered it.
-    getTemplate.mockResolvedValue({
-      id: 9,
-      name: "Cell line",
-      quantityCategory: "volume",
-      deleted: true,
-      fields: [],
-    });
+    getTemplate.mockResolvedValue(template({ name: "Cell line", deleted: true }));
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     origin.sample.templateId = 9;
@@ -502,23 +422,9 @@ describe("OperationWizard step flow", () => {
   });
 
   it("shows the remembered template's current name after it has been renamed", async () => {
-    // The bundle stores the name alongside the id, and it was read straight back out, so a template
-    // renamed since the bundle was saved was shown - and confirmed on the one-click summary - under
-    // its old name. The name is display-only; only the id travels.
-    getTemplate.mockResolvedValue({
-      id: 9,
-      name: "Cell line v2",
-      quantityCategory: "volume",
-      deleted: false,
-      fields: [],
-    });
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
-        template: { mode: "pick", templateId: 9, templateName: "Cell line" },
-        documentation: null,
-      },
-    };
+    // The template name is display-only; only the id travels, so a rename must show through.
+    getTemplate.mockResolvedValue(template({ name: "Cell line v2" }));
+    rememberDerive({ mode: "pick", templateId: 9, templateName: "Cell line" });
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
@@ -534,14 +440,7 @@ describe("OperationWizard step flow", () => {
   });
 
   it("blocks and explains when the parent template has a defaultless mandatory field", async () => {
-    getTemplate.mockResolvedValueOnce({
-      id: 9,
-      name: "Parent template",
-      quantityCategory: "volume",
-      deleted: false,
-      // A mandatory field with no default: normal on a parent, and unusable for a new sample.
-      fields: [{ name: "Batch", mandatory: true, content: "", selectedOptions: null }],
-    });
+    getTemplate.mockResolvedValueOnce(template({ fields: [mandatoryField("Batch", "")] }));
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     origin.sample.templateId = 9;
@@ -597,18 +496,7 @@ describe("OperationWizard step flow", () => {
   });
 
   it("drops a restored 'use parent template' bundle when this run has no parent template", async () => {
-    // Reachable whenever a bundle is reused on a different origin, or on a Pool where "the parent"
-    // is ambiguous. Left as it was, the step wanted a validated id nothing could supply and the
-    // radio is disabled in that state, so Next stuck with no spinner, no message and nothing the
-    // user could change. Falling back to "unselected" asks for the one thing
-    // that resolves it.
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
-        template: { mode: "fromSample", templateId: null },
-        documentation: null,
-      },
-    };
+    rememberDerive({ mode: "fromSample", templateId: null });
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     origin.sample.templateId = null; // no parent template for this run
@@ -620,7 +508,6 @@ describe("OperationWizard step flow", () => {
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
     expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent("");
     expect(getTemplate).not.toHaveBeenCalled();
-    // And an explicit choice still resolves it, so the wizard is not stuck.
     await user.click(screen.getByTestId("tmpl-pick5"));
     expect(nextButton()).toBeEnabled();
   });
@@ -634,7 +521,6 @@ describe("OperationWizard step flow", () => {
     await user.click(nextButton()); // details -> template
     await waitFor(() => expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9"));
 
-    // The user picks a specific template instead; the earlier fromSample result must not come back.
     await user.click(screen.getByTestId("tmpl-pick5"));
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("pick");
     expect(screen.getByTestId("tmpl-id")).toHaveTextContent("5");
@@ -672,7 +558,7 @@ describe("OperationWizard step flow", () => {
   });
 
   it("blocks Next on the amounts step when the amount taken exceeds the origin (over-removal)", async () => {
-    // origin (makeMockSubSample) holds 1 ml; taking 5 ml must be blocked (DevDocs/adr/0011).
+    // origin (makeMockSubSample) holds 1 ml; taking 5 ml must be blocked.
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
@@ -680,9 +566,9 @@ describe("OperationWizard step flow", () => {
     await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
-    await user.click(screen.getByTestId("fill-over-amounts"));
+    await user.click(screen.getByTestId("fill-taken-5"));
     expect(nextButton()).toBeDisabled();
-    await user.click(screen.getByTestId("fill-amounts")); // within the origin's quantity
+    await user.click(screen.getByTestId("fill-taken-1")); // within the origin's quantity
     expect(nextButton()).toBeEnabled();
   });
 
@@ -698,9 +584,7 @@ describe("OperationWizard step flow", () => {
   });
 
   it("blocks Perform for a terminal operation (Destroy) on an empty origin, skipping template/amounts", async () => {
-    // Destroy declares steps ["confirm"], so it lands straight on the confirm step (no template or
-    // amounts step). Its empty-origin guard lives in stepValid(), which must gate Perform - not just
-    // show a message. Regression guard for the Perform button being gated only by `submitting`.
+    // Destroy's empty-origin guard lives in stepValid(), which must gate Perform, not just show a message.
     const user = userEvent.setup();
     render(
       <OperationWizard
@@ -717,8 +601,7 @@ describe("OperationWizard step flow", () => {
 
   it("blocks the details step for Pool when ANY pooled origin is empty, not just the smallest", async () => {
     // Pool's default amount mode is "all" (take each origin's full quantity), which would silently
-    // no-op an empty origin; the backend also rejects empty origins outright (DevDocs/adr/0011), so
-    // the wizard must gate on every origin's quantity.
+    // no-op an empty origin.
     const user = userEvent.setup();
     render(
       <OperationWizard
@@ -746,15 +629,10 @@ describe("OperationWizard step flow", () => {
   });
 
   it("surfaces a rejected Perform as an alert and keeps the wizard open for retry", async () => {
-    server.use(
-      http.post(OPERATION_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
-        once: true,
-      }),
-    );
+    rejectOnce(400, { message: "backend rejected the request" });
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await reachConfirm(user, "boom");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
@@ -766,23 +644,11 @@ describe("OperationWizard step flow", () => {
   // --- the edit-session lock the wizard holds on its origins ---
 
   it("keeps the wizard and its locks when the server reports the origin is held by someone else", async () => {
-    // A 409 carries the holder in `message`, not in a field-scoped `errors` entry: there is no
-    // field to correct, only somebody to wait for.
-    server.use(
-      http.post(
-        OPERATION_URL,
-        () =>
-          HttpResponse.json(
-            { message: "SS1 is currently being edited by Carol Holder.", errors: [""] },
-            { status: 409 },
-          ),
-        { once: true },
-      ),
-    );
+    // A 409 carries the holder in `message`, not in a field-scoped `errors` entry.
+    rejectOnce(409, { message: "SS1 is currently being edited by Carol Holder.", errors: [""] });
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    const refresh = vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     const release = vi.spyOn(origin, "releaseLock").mockResolvedValue(true);
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await reachConfirm(user, "held");
@@ -794,7 +660,7 @@ describe("OperationWizard step flow", () => {
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
     expect(release).not.toHaveBeenCalled();
-    await waitFor(() => expect(refresh).toHaveBeenCalled());
+    await waitFor(() => expect(origin.fetchAdditionalInfo).toHaveBeenCalled());
   });
 
   it("pushes the lock expiry out on each step, so a slow run does not lose its origins", async () => {
@@ -826,26 +692,14 @@ describe("OperationWizard step flow", () => {
   });
 
   it("shows the field-scoped reason for a rejection and reloads the origin", async () => {
-    // A BindException 400 puts "Errors detected: 1" in `message`; the reason the user can act on is
-    // in `errors[0]`, behind the path it applies to. Showing only `message` left them re-submitting
-    // against a quantity the wizard had not refreshed, so it could only fail the same way again.
-    server.use(
-      http.post(
-        OPERATION_URL,
-        () =>
-          HttpResponse.json(
-            {
-              message: "Errors detected: 1",
-              errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
-            },
-            { status: 400 },
-          ),
-        { once: true },
-      ),
-    );
+    // A BindException 400 puts "Errors detected: 1" in `message`; the actionable reason is in
+    // `errors[0]`, behind the path it applies to.
+    rejectOnce(400, {
+      message: "Errors detected: 1",
+      errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
+    });
     const user = userEvent.setup();
-    const origin = makeMockSubSample({});
-    const refresh = vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
     await reachConfirm(user, "stale");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
@@ -853,23 +707,13 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alert = addAlert.mock.calls[0][0] as { message: string; variant: string };
     expect(alert.variant).toBe("error");
-    // and it names WHICH origin, so a multi-origin rejection is actionable. The marker is
-    // worded from the catalog rather than concatenated in English, so under
-    // cimode it renders as the key; the assembled English is asserted in the InEnglish test below.
+    // Under cimode the marker renders as its key; the assembled English is asserted in the InEnglish test below.
     expect(alert.message).toBe("inventory:operations.wizard.originIndex");
-    // the amounts step validates against origin.quantity, so it has to be re-read or the user can
-    // only fail again
-    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(origin.fetchAdditionalInfo).toHaveBeenCalledTimes(1));
   });
 
   it("still reports the operation as failed when reloading the origin also fails", async () => {
-    // The refresh is best-effort: the alert above already names the real problem, and a refresh
-    // failure must not replace it with a less useful one.
-    server.use(
-      http.post(OPERATION_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
-        once: true,
-      }),
-    );
+    rejectOnce(400, { message: "backend rejected the request" });
     const restoreConsole = silenceConsole(["warn"], ["Could not refresh the origins"]);
     const user = userEvent.setup();
     const onClose = vi.fn();
@@ -891,9 +735,8 @@ describe("OperationWizard step flow", () => {
   });
 
   it("treats a successful Perform as done even when refreshing the origin afterwards fails", async () => {
-    // The POST committed (output created, origin decremented), so a failed
-    // refresh must not be reported as a failed operation with the wizard left open for a retry that
-    // would charge the origin twice. The wizard closes and the refresh failure is a warning.
+    // The POST committed, so a failed refresh must not be reported as a failed operation with the
+    // wizard left open for a retry that would charge the origin twice.
     const user = userEvent.setup();
     const onClose = vi.fn();
     const origin = makeMockSubSample({});
@@ -911,44 +754,25 @@ describe("OperationWizard step flow", () => {
   it("sends Destroy as a whole-origin claim with no inputs, leaving the disposed date to the server", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.destroy\.label/i }));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // Destroy empties the origin, so no amount travels at all: the server takes whatever is
-    // there at processing time. The disposed date is stamped server-side in the session's
-    // timezone (DevDocs/adr/0011), so nothing about it travels either.
     expect(postedTo[0]).toBe("destroy");
     expect(posted[0]).toEqual({ origin: { globalId: "SS1" } });
   });
 
   it("names a rejected input by its label rather than the bare key the server reports", async () => {
-    // The inputs shape reports an input error under its bare key ("sampleName: ..."), which is what a
-    // typed client sent but not what the wizard shows; the alert swaps it for the input's label.
-    server.use(
-      http.post(
-        OPERATION_URL,
-        () =>
-          HttpResponse.json(
-            { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] },
-            { status: 400 },
-          ),
-        { once: true },
-      ),
-    );
+    rejectOnce(400, { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] });
     const user = userEvent.setup();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
     await reachConfirm(user, "bare key");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alert = addAlert.mock.calls[0][0] as { message: string };
-    // The "<label>: <reason>" join goes through the catalog now, and cimode renders a key
-    // without its parameters, so all this branch can show is that the join message was chosen and
-    // the bare input key is gone. The sentence itself is asserted in English below.
+    // cimode renders a key without its parameters, so this can only show the join message was chosen.
     expect(alert.message).toMatch(/operations\.wizard\.fieldReason/);
     expect(alert.message).not.toMatch(/^sampleName:/);
   });
@@ -998,14 +822,11 @@ describe("OperationWizard step flow", () => {
     );
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await reachConfirm(user, "slow");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
-    // Cancel is disabled (MUI then makes it unclickable), and the dialog's own close path (Escape)
-    // is blocked too: both route through the same guard.
     await waitFor(() => expect(screen.getByRole("button", { name: /actions\.cancel/i })).toBeDisabled());
     await user.click(screen.getByTestId("dialog-close"));
     expect(onClose).not.toHaveBeenCalled();
@@ -1015,9 +836,7 @@ describe("OperationWizard step flow", () => {
   });
 
   it("re-gates Perform on every step when un-ticking remember resets the earlier ones", async () => {
-    // Un-ticking resets the template/documentation/values but stays on the confirm step. Gating
-    // Perform on the confirm step alone left it enabled with no template chosen, producing an
-    // avoidable backend rejection.
+    // Un-ticking resets the template/documentation/values but stays on the confirm step.
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await reachConfirm(user, "dna");
@@ -1029,9 +848,6 @@ describe("OperationWizard step flow", () => {
   });
 
   it("reads that heading as 'Derive: dna' in English", async () => {
-    // The key above proves the right branch rendered; only the real catalogs show that both
-    // parameters actually arrive rather than the heading being assembled in code. cimode renders
-    // the key alone and hides interpolation entirely.
     const user = userEvent.setup();
     render(
       <InEnglish>
@@ -1044,23 +860,9 @@ describe("OperationWizard step flow", () => {
   });
 
   it("reads a rejected input as 'New sample name: ...' in English", async () => {
-    // The cimode assertion above can only show that the catalog's join message was chosen; the real
-    // catalogs are what show both parameters arriving, rather than the sentence being assembled in
-    // code with a hard-coded ": " no other locale need use.
-    server.use(
-      http.post(
-        OPERATION_URL,
-        () =>
-          HttpResponse.json(
-            { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] },
-            { status: 400 },
-          ),
-        { once: true },
-      ),
-    );
+    rejectOnce(400, { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] });
     const user = userEvent.setup();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(
       <InEnglish>
         <OperationWizard open onClose={vi.fn()} origins={[origin]} />
@@ -1068,7 +870,7 @@ describe("OperationWizard step flow", () => {
     );
     await user.click(await screen.findByRole("button", { name: /^Derive/ }));
     await user.type(screen.getByTestId("proc"), "bare key");
-    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByTestId("fill-taken-1"));
     await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
@@ -1082,26 +884,12 @@ describe("OperationWizard step flow", () => {
   });
 
   it("reads an origin rejection as '... (origin 1)' in English", async () => {
-    // The cimode assertion above can only show the catalog's marker message was chosen. This is
-    // what shows BOTH parameters arriving, rather than the aside being welded on in English after a
-    // reason the server already localized.
-    server.use(
-      http.post(
-        OPERATION_URL,
-        () =>
-          HttpResponse.json(
-            {
-              message: "Errors detected: 1",
-              errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
-            },
-            { status: 400 },
-          ),
-        { once: true },
-      ),
-    );
+    rejectOnce(400, {
+      message: "Errors detected: 1",
+      errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
+    });
     const user = userEvent.setup();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(
       <InEnglish>
         <OperationWizard open onClose={vi.fn()} origins={[origin]} />
@@ -1109,7 +897,7 @@ describe("OperationWizard step flow", () => {
     );
     await user.click(await screen.findByRole("button", { name: /^Derive/ }));
     await user.type(screen.getByTestId("proc"), "stale");
-    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByTestId("fill-taken-1"));
     await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
@@ -1123,20 +911,11 @@ describe("OperationWizard step flow", () => {
   });
 
   it("inflects the parent-template block for one field and for several", async () => {
-    // The same message as TemplateStep's own pick error, so the count has to arrive from this call
-    // site too; "field(s) ... have" was a parenthetical plural no other language can follow.
-    // cimode renders the key alone, so only English shows the inflection.
     for (const [fields, expected] of [
       [["Batch"], "the required field Batch has no default value"],
       [["Batch", "Concentration"], "the required fields Batch and Concentration have no default value"],
     ] as Array<[Array<string>, string]>) {
-      getTemplate.mockResolvedValueOnce({
-        id: 9,
-        name: "Parent template",
-        quantityCategory: "volume",
-        deleted: false,
-        fields: fields.map((name) => ({ name, mandatory: true, content: "", selectedOptions: null })),
-      });
+      getTemplate.mockResolvedValueOnce(template({ fields: fields.map((name) => mandatoryField(name, "")) }));
       const user = userEvent.setup();
       const origin = makeMockSubSample({});
       origin.sample.templateId = 9;
@@ -1147,7 +926,7 @@ describe("OperationWizard step flow", () => {
       );
       await user.click(await screen.findByRole("button", { name: /^Derive/ }));
       await user.type(screen.getByTestId("proc"), "dna");
-      await user.click(screen.getByTestId("fill-amounts"));
+      await user.click(screen.getByTestId("fill-taken-1"));
       await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
       await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(expected));
       unmount();
@@ -1173,13 +952,12 @@ describe("OperationWizard remember bundle", () => {
   it("persists the whole bundle keyed by process name when remember is ticked", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
 
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna extraction");
-    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByTestId("fill-taken-1"));
     await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
@@ -1190,8 +968,6 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // Pin the posted body: Derive's own fields at the top level, the origin's amount on the
-    // origin, and the two wizard-level choices. No sample is assembled client-side.
     expect(postedTo[0]).toBe("derive");
     expect(posted[0]).toEqual({
       origin: { globalId: "SS1", amountTaken: { numericValue: 1, unitId: 3 } },
@@ -1223,7 +999,7 @@ describe("OperationWizard remember bundle", () => {
     render(<OperationWizard open onClose={onClose} origins={[first, second]} />);
 
     await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
-    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByTestId("fill-taken-1"));
     await user.click(nextButton()); // details -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // template -> amounts
@@ -1239,15 +1015,11 @@ describe("OperationWizard remember bundle", () => {
 
     const request = posted[0] as { origins: Array<{ globalId: string; amountTaken: unknown }> };
     expect(postedTo[0]).toBe("pool");
-    // BOTH origins are posted, each carrying its own amount: a Pool that sent one origin, or sent
-    // the same amount for both, would have passed every other test in this file.
     expect(request.origins).toEqual([
       { globalId: "SS1", amountTaken: { numericValue: 1, unitId: 3 } },
       { globalId: "SS2", amountTaken: { numericValue: 1, unitId: 3 } },
     ]);
 
-    // and the multi-origin half of the remember bundle round-trips: the mode and the per-origin
-    // amounts, keyed by global id, neither of which any single-origin run can exercise
     const bundle = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_POOL as Record<
       string,
       { amountMode?: string; perSubsampleAmounts?: Record<string, unknown> }
@@ -1263,8 +1035,7 @@ describe("OperationWizard remember bundle", () => {
   it("persists nothing when remember is left unticked", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await reachConfirm(user, "dna extraction");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
@@ -1275,37 +1046,28 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("loads a saved bundle (ticked) when its process name is entered", async () => {
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 2, unitId: 3 } },
-        template: { mode: "pick", templateId: 9, templateName: "T9" },
-        documentation: null,
+    rememberDerive(
+      { mode: "pick", templateId: 9, templateName: "T9" },
+      {
+        count: 4,
+        eachAmount: { numericValue: 7, unitId: 3 },
+        amountTaken: { numericValue: 2, unitId: 3 },
       },
-    };
+    );
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
-    // the loaded remember flag itself is observable on the confirm step / fast path (tested below)
     expect(screen.getByTestId("count")).toHaveTextContent("4");
     expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":3}');
   });
 
   it("resets a restored bundle's amounts when its units belong to another category", async () => {
-    // The bundle key is operation + process name only, so a bundle saved on a millilitre origin is
-    // offered on a gram one. Left alone it makes every step read as valid and offers one-click
-    // Perform on a request the endpoint is certain to reject (amountTakenCategoryMismatch).
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: {
-          count: 4,
-          eachAmount: { numericValue: 7, unitId: 3 },
-          amountTaken: { numericValue: 2, unitId: 3 },
-        },
-        template: null,
-        documentation: null,
-      },
-    };
+    rememberDerive(null, {
+      count: 4,
+      eachAmount: { numericValue: 7, unitId: 3 },
+      amountTaken: { numericValue: 2, unitId: 3 },
+    });
     const user = userEvent.setup();
     render(
       <OperationWizard
@@ -1317,29 +1079,20 @@ describe("OperationWizard remember bundle", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
 
-    // BOTH amounts have their unit cleared (unitId 0), not defaulted to the origin's. A defaulted
-    // unit is a valid amount, so nothing downstream blocked and the one-click fast path stayed armed
-    // on a number the user never chose - it would have removed 1 g where the bundle says 2 mL.
-    // An unset unit forces the amounts step, where the user picks the amount
-    // in the right category. The saved numbers are kept so the user sees what to re-enter.
+    // BOTH amounts have their unit cleared (unitId 0), not defaulted to the origin's: an unset unit
+    // forces the amounts step, where the user picks a unit in the right category. The saved numbers
+    // are kept so the user sees what to re-enter.
     expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":2,"unitId":0}');
     expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":0}');
-    // Everything not measured in the wrong units survives.
     expect(screen.getByTestId("count")).toHaveTextContent("4");
   });
 
   it("keeps a restored bundle intact when its units are a different unit of the SAME category", async () => {
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: {
-          count: 4,
-          eachAmount: { numericValue: 7, unitId: 4 },
-          amountTaken: { numericValue: 2, unitId: 4 },
-        },
-        template: null,
-        documentation: null,
-      },
-    };
+    rememberDerive(null, {
+      count: 4,
+      eachAmount: { numericValue: 7, unitId: 4 },
+      amountTaken: { numericValue: 2, unitId: 4 },
+    });
     const user = userEvent.setup();
     render(
       <OperationWizard
@@ -1357,13 +1110,14 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("resets to blank defaults (unticked) for a new, unsaved process name", async () => {
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 2, unitId: 3 } },
-        template: { mode: "pick", templateId: 9, templateName: "T9" },
-        documentation: null,
+    rememberDerive(
+      { mode: "pick", templateId: 9, templateName: "T9" },
+      {
+        count: 4,
+        eachAmount: { numericValue: 7, unitId: 3 },
+        amountTaken: { numericValue: 2, unitId: 3 },
       },
-    };
+    );
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
@@ -1371,53 +1125,48 @@ describe("OperationWizard remember bundle", () => {
     expect(screen.getByTestId("count")).toHaveTextContent("4");
     await user.type(screen.getByTestId("proc"), "x"); // "dnax" is unsaved
     expect(screen.getByTestId("count")).toHaveTextContent("1");
-    // fresh amounts are prefilled with the origin subsample's unit
     expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":1,"unitId":3}');
   });
 
   it("unticking remember (on the confirmation) resets the form but never deletes the saved bundle", async () => {
     // amountTaken must not exceed the mock origin's quantity (1), or over-removal blocks the
     // step-one fast path this test rides to reach the confirmation.
-    const saved = {
-      "derive dna": {
-        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
-        template: { mode: "pick", templateId: 9, templateName: "T9" },
-        documentation: null,
+    const saved = rememberDerive(
+      { mode: "pick", templateId: 9, templateName: "T9" },
+      {
+        count: 4,
+        eachAmount: { numericValue: 7, unitId: 3 },
+        amountTaken: { numericValue: 1, unitId: 3 },
       },
-    };
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = saved;
+    );
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks the saved bundle
-    // once the derived sample name settles, the whole run is valid, so the step-one fast path shows
-    // the confirmation, which carries the remember checkbox
     await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
     await user.click(screen.getByTestId("toggle-remember")); // untick
-    // unticking drops the fast path (nothing is remembered any more): back to the details step,
-    // with the form reset to defaults
     expect(screen.getByTestId("count")).toHaveTextContent("1");
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toEqual(saved); // store untouched
   });
 
   it("re-ticking remember keeps the values typed after unticking and saves those, not the old bundle", async () => {
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
-      "derive dna": {
-        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
-        template: { mode: "pick", templateId: 9, templateName: "T9" },
-        documentation: null,
+    rememberDerive(
+      { mode: "pick", templateId: 9, templateName: "T9" },
+      {
+        count: 4,
+        eachAmount: { numericValue: 7, unitId: 3 },
+        amountTaken: { numericValue: 1, unitId: 3 },
       },
-    };
+    );
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks the saved bundle
     await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
     await user.click(screen.getByTestId("toggle-remember")); // untick: back to details, defaults
-    await user.click(screen.getByTestId("fill-amounts")); // new data: eachAmount 5
+    await user.click(screen.getByTestId("fill-taken-1")); // new data: eachAmount 5
     await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
@@ -1438,8 +1187,6 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("pre-fills the last-used process name and, on Review / edit, shows its bundle", async () => {
-    // A complete remembered bundle loads on open, so the wizard offers the step-one fast path (DevDocs/adr/0011):
-    // the confirmation and Perform, with the details form only behind "Review / edit".
     prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
     prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive boil": {
@@ -1470,8 +1217,7 @@ describe("OperationWizard remember bundle", () => {
       },
     };
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     const user = userEvent.setup();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
@@ -1483,11 +1229,10 @@ describe("OperationWizard remember bundle", () => {
   it("persists a Cryopreserve bundle keyed by the operation (fixed process name)", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.cryopreserve\.label/i }));
-    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByTestId("fill-taken-1"));
     await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
@@ -1504,24 +1249,15 @@ describe("OperationWizard remember bundle", () => {
 
 describe("OperationWizard rejection paths and multi-origin gating", () => {
   it("keeps a Pool open on a non-field rejection, shows its message and re-reads every origin", async () => {
-    server.use(
-      http.post(
-        OPERATION_URL,
-        () => HttpResponse.json({ message: "The subsample's quantity changed", errors: [""] }, { status: 409 }),
-        { once: true },
-      ),
-    );
+    rejectOnce(409, { message: "The subsample's quantity changed", errors: [""] });
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const first = makeMockSubSample({});
-    const second = makeMockSubSample({ id: 2, globalId: "SS2" });
-    const refreshFirst = vi.spyOn(first, "fetchAdditionalInfo").mockResolvedValue(undefined);
-    const refreshSecond = vi.spyOn(second, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const first = mockOrigin();
+    const second = mockOrigin({ id: 2, globalId: "SS2" });
     render(<OperationWizard open onClose={onClose} origins={[first, second]} />);
 
-    // Pool opens on "take all", a whole-origin claim, so every origin's quantity is read.
     await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
-    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByTestId("fill-taken-1"));
     await user.click(nextButton()); // details -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // template -> amounts
@@ -1536,8 +1272,8 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     expect(alerts).toHaveLength(1);
     expect(alerts[0].variant).toBe("error");
     expect(alerts[0].message).toBe("The subsample's quantity changed");
-    await waitFor(() => expect(refreshFirst).toHaveBeenCalledTimes(1));
-    expect(refreshSecond).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(first.fetchAdditionalInfo).toHaveBeenCalledTimes(1));
+    expect(second.fetchAdditionalInfo).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
     expect(posted).toHaveLength(0);
@@ -1547,16 +1283,14 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     server.use(http.post(OPERATION_URL, () => HttpResponse.error(), { once: true }));
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    const refresh = vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await reachConfirm(user, "offline");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
-    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(origin.fetchAdditionalInfo).toHaveBeenCalledTimes(1));
     const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
-    // one error alert, worded from the error itself (there is no response body to read)
     expect(alerts).toHaveLength(1);
     expect(alerts[0].variant).toBe("error");
     expect(alerts[0].message).toBe("Network Error");
@@ -1566,15 +1300,13 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
   });
 
   it("gates a shared Pool amount on the SMALLEST origin, not on the first selected", async () => {
-    // representativeOrigin reduces to the origin holding the least. The Pool test above holds 1 ml
-    // in both origins, so its `<` branch never fired and `origins[0]` would have passed it. Here the
-    // larger origin comes FIRST, so only the reduce can find the 1 ml one.
+    // The larger origin comes FIRST, so only a reduce over every origin finds the 1 ml one.
     const user = userEvent.setup();
     const large = makeMockSubSample({ quantity: { numericValue: 5, unitId: 3 } });
     const small = makeMockSubSample({ id: 2, globalId: "SS2", quantity: { numericValue: 1, unitId: 3 } });
     render(<OperationWizard open onClose={vi.fn()} origins={[large, small]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
-    await user.click(screen.getByTestId("fill-shared-3")); // 3 ml from each: fine for 5 ml, over for 1 ml
+    await user.click(screen.getByTestId("fill-taken-3")); // 3 ml from each: fine for 5 ml, over for 1 ml
     await user.click(nextButton()); // details -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // template -> amounts
@@ -1582,7 +1314,7 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     expect(nextButton()).toBeEnabled();
     await user.click(screen.getByTestId("mode-same"));
     expect(nextButton()).toBeDisabled();
-    await user.click(screen.getByTestId("fill-amounts")); // 1 ml from each: within the smallest
+    await user.click(screen.getByTestId("fill-taken-1")); // 1 ml from each: within the smallest
     expect(nextButton()).toBeEnabled();
   });
 
@@ -1590,11 +1322,9 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     // Passage declares no amount-taken input and leaves the origin untouched.
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const origin = makeMockSubSample({});
-    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.passage\.label/i }));
-    // no amount-taken input exists, so nothing is prefilled for it
     expect(screen.getByTestId("amount-taken")).toHaveTextContent("null");
     await user.click(nextButton()); // details -> template (the sample name is seeded from the origin)
     await user.click(screen.getByTestId("tmpl-pick5"));

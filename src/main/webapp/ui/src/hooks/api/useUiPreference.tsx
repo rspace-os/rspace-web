@@ -17,9 +17,8 @@ export const PREFERENCES: { [pref: string]: symbol } = {
   GALLERY_SIDEBAR_OPEN: Symbol.for("GALLERY_SIDEBAR_OPEN"),
   INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for("INVENTORY_FORM_SECTIONS_EXPANDED"),
   INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
-  // One "remember" bundle collection per operation type, so one operation's heavy use cannot crowd
-  // out another's budget under a shared cap. Select the right one for the current operation with
-  // `processValuesPreferenceFor` (processNames.ts) rather than referencing these directly.
+  // Select the right one for the current operation with `processValuesPreferenceFor`
+  // (processNames.ts) rather than referencing these directly.
   INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT"),
   INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE"),
   INVENTORY_OPERATION_PROCESS_VALUES_POOL: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_POOL"),
@@ -116,7 +115,6 @@ export function readUiPreference<T>(
   return defaultValue;
 }
 
-/** The raw preferences map, for a caller that needs `readUiPreference` rather than one bound key. */
 export function useRawUiPreferences(): UiPreferencesContextType["uiPreferences"] {
   return React.useContext(UiPreferencesContext).uiPreferences;
 }
@@ -144,8 +142,6 @@ export default function useUiPreference<T>(
   // Not getRootStore().uiStore: this hook also serves Gallery and Sysadmin, which mount the generic
   // Alerts component, not Inventory's adapter - the only place that wires UiStore.addAlert to
   // anything real. Elsewhere it is a silent no-op, so a save failure never reached the user.
-  // AlertContext's default value is itself a safe no-op, so this is never
-  // undefined, unlike RootStore, which is not always bootstrapped outside Inventory.
   const { addAlert } = React.useContext(AlertContext);
   const { t } = useTranslation("common");
   const key = Symbol.keyFor(preference);
@@ -158,7 +154,6 @@ export default function useUiPreference<T>(
 
   return [
     v,
-    // Takes a VALUE, not React's SetStateAction.
     (newValue: T) => {
       setUiPreferences((old: { [k in keyof typeof PREFERENCES]: unknown } | null) => {
         if (old === null) return old;
@@ -177,9 +172,6 @@ export default function useUiPreference<T>(
       const write = previous.then(async () => {
         const formData = new FormData();
         formData.append("preference", "UI_JSON_SETTINGS");
-        // Only this key is sent; the server merges it into the stored object. Posting the whole
-        // object instead would let two overlapping writers both merge into the same snapshot,
-        // silently dropping one of their keys.
         formData.append("key", key);
         formData.append(
           "value",
@@ -190,8 +182,7 @@ export default function useUiPreference<T>(
         );
         await axios.post<unknown>("/userform/ajax/preference", formData);
       });
-      // Caught so a failure cannot block this key's chain (callers never await it), but reported
-      // two ways: logged for a developer, and alerted for the user.
+      // Caught so a failure cannot block this key's chain; callers never await it.
       pendingWrites.current.set(
         key,
         write.catch((e) => {

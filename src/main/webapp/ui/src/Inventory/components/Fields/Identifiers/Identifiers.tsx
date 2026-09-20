@@ -273,19 +273,12 @@ const IdentifierWrapper = observer(
 /*
  * B2INST has no retract operation at all, and Delete is only offered for "draft", so any non-draft
  * review state has to disable both.
- *
- * Keyed on the provider and "not a draft", NOT on a list of known states: the server stores whatever
- * status the provider reported, so a state this frontend has never heard of is expected here. A
- * state-keyed gate would leave such a value with an enabled "Retract" that always errors. Closed
- * reviews are carved back out by isDeletableClosedReview, an explicit allowlist.
  */
 const isB2instBeyondDraft = (id: Identifier): boolean => id.doiType === "PIDINST_B2INST" && id.state !== "draft";
 
 /*
- * A closed, unpublished B2INST review (declined, cancelled, expired): the record is still only a
- * draft on the provider side, so the identifier can be deleted to register a new one. Deliberately a
- * known-state allowlist, the inverse of isB2instBeyondDraft's catch-all: an unknown state must stay
- * disabled, not deletable.
+ * A closed, unpublished B2INST review: the record is still only a draft on the provider side, so
+ * the identifier can be deleted to register a new one.
  */
 const isDeletableClosedReview = (id: Identifier): boolean =>
   id.doiType === "PIDINST_B2INST" && B2INST_CLOSED_REVIEW_STATES.includes(id.state);
@@ -459,11 +452,6 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
               </Grid>
               <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px" }}>
                 <Grid sx={{ padding: "6px" }} size={6}>
-                  {/*
-                   * Keyed on the URLs available rather than on the state: a citable public URL wins
-                   * when present (DataCite, once findable), otherwise the provider's own record page
-                   * is used with the identifier as link text, otherwise plain text.
-                   */}
                   {id.publicUrl ? (
                     <a href={id.publicUrl} target="_blank" rel="noreferrer">
                       {id.publicUrl}

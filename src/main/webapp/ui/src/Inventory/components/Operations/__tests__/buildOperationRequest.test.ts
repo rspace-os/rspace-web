@@ -5,12 +5,6 @@ import type { InventoryOperation } from "../operationsConfig";
 import type { OperationExtraField, OperationInputs, OperationOrigin } from "../types";
 import { operations } from "./testOperations";
 
-/*
- * The wizard owns exactly two things here: the body it POSTs to an operation's endpoint, and the
- * field-name uniqueness rule the confirmation preview applies so it can show the names the server
- * will actually store. What the server builds is pinned server-side, by the per-operation tests.
- */
-
 function operationNamed(key: string): InventoryOperation {
   const operation = operations.find((o) => o.key === key);
   if (!operation) throw new Error(`no operation ${key}`);
@@ -25,6 +19,10 @@ const origin = (id: number): OperationOrigin => ({
   name: `Origin ${id}`,
   quantity: millilitres(1),
 });
+
+/** Every case but the first leaves the template and the documentation target unset. */
+const build = (args: Omit<Parameters<typeof buildFacadeRequest>[0], "templateId" | "documentedByGlobalId">) =>
+  buildFacadeRequest({ templateId: null, documentedByGlobalId: null, ...args });
 
 const deriveValues: OperationInputs = {
   sampleName: "Derived material",
@@ -56,14 +54,10 @@ describe("buildFacadeRequest, single-origin operations", () => {
   });
 
   it("sends only the operation's declared inputs, not everything the wizard is holding", () => {
-    // The body is built by walking operation.inputs, not values, so a value left over from an
-    // earlier step of a different operation cannot reach an endpoint that would 400 on it.
-    const request = buildFacadeRequest({
+    const request = build({
       operation: operationNamed("derive"),
       values: { ...deriveValues, cryomedium: "DMSO", storageTemp: { numericValue: -80, unitId: 8 } },
       origins: [origin(100)],
-      templateId: null,
-      documentedByGlobalId: null,
     });
 
     expect(request).not.toHaveProperty("cryomedium");
@@ -72,12 +66,10 @@ describe("buildFacadeRequest, single-origin operations", () => {
   });
 
   it("omits the template and the documentation target rather than sending null", () => {
-    const request = buildFacadeRequest({
+    const request = build({
       operation: operationNamed("derive"),
       values: deriveValues,
       origins: [origin(100)],
-      templateId: null,
-      documentedByGlobalId: null,
     });
 
     expect(request).not.toHaveProperty("templateId");
@@ -85,34 +77,27 @@ describe("buildFacadeRequest, single-origin operations", () => {
   });
 
   it("sends no amount for an operation that takes nothing from its origin", () => {
-    // Passage links the new sample back but leaves the origin alone, and the endpoint refuses an
-    // amount sent anyway.
-    const request = buildFacadeRequest({
+    const request = build({
       operation: operationNamed("passage"),
       values: { sampleName: "HeLa p4", count: 1, eachAmount: millilitres(5) },
       origins: [origin(100)],
-      templateId: null,
-      documentedByGlobalId: null,
     });
 
     expect(request.origin).toEqual({ globalId: "SS100" });
   });
 
   it("sends no amount for Destroy, which takes whatever the origin holds", () => {
-    const request = buildFacadeRequest({
+    const request = build({
       operation: operationNamed("destroy"),
       values: {},
       origins: [origin(100)],
-      templateId: null,
-      documentedByGlobalId: null,
     });
 
     expect(request).toEqual({ origin: { globalId: "SS100" } });
   });
 
   it("never sends the amount taken among the operation's own values", () => {
-    // It belongs to the origin, and an operation body has no field of that name.
-    const request = buildFacadeRequest({
+    const request = build({
       operation: operationNamed("aliquot"),
       values: {
         sampleName: "Aliquots",
@@ -121,8 +106,6 @@ describe("buildFacadeRequest, single-origin operations", () => {
         amountTaken: millilitres(1.5),
       },
       origins: [origin(100)],
-      templateId: null,
-      documentedByGlobalId: null,
     });
 
     expect(request).not.toHaveProperty("amountTaken");
@@ -130,7 +113,7 @@ describe("buildFacadeRequest, single-origin operations", () => {
   });
 
   it("sends a single-origin operation's cryogenic values as its own fields", () => {
-    const request = buildFacadeRequest({
+    const request = build({
       operation: operationNamed("cryopreserve"),
       values: {
         sampleName: "Frozen",
@@ -141,8 +124,6 @@ describe("buildFacadeRequest, single-origin operations", () => {
         storageTemp: { numericValue: -80, unitId: 8 },
       },
       origins: [origin(100)],
-      templateId: null,
-      documentedByGlobalId: null,
     });
 
     expect(request.cryomedium).toBe("10% DMSO");
@@ -161,12 +142,10 @@ describe("buildFacadeRequest, Pool", () => {
   const poolOrigins = [origin(100), origin(200)];
 
   it("copies the one shared amount onto every origin in `same` mode", () => {
-    const request = buildFacadeRequest({
+    const request = build({
       operation: pool,
       values: poolValues,
       origins: poolOrigins,
-      templateId: null,
-      documentedByGlobalId: null,
       amountMode: "same",
     });
 
@@ -178,12 +157,10 @@ describe("buildFacadeRequest, Pool", () => {
   });
 
   it("sends each origin its own amount in `perSubsample` mode", () => {
-    const request = buildFacadeRequest({
+    const request = build({
       operation: pool,
       values: poolValues,
       origins: poolOrigins,
-      templateId: null,
-      documentedByGlobalId: null,
       amountMode: "perSubsample",
       perSubsampleAmounts: { SS100: millilitres(0.2), SS200: millilitres(0.9) },
     });
@@ -195,14 +172,10 @@ describe("buildFacadeRequest, Pool", () => {
   });
 
   it("asks the server to take everything in `all` mode, sending no amounts", () => {
-    // The server reads each origin's live quantity at processing time, so the client never has to
-    // guess what "everything" was.
-    const request = buildFacadeRequest({
+    const request = build({
       operation: pool,
       values: poolValues,
       origins: poolOrigins,
-      templateId: null,
-      documentedByGlobalId: null,
       amountMode: "all",
     });
 
@@ -211,12 +184,10 @@ describe("buildFacadeRequest, Pool", () => {
   });
 
   it("sends an origin no amount when `perSubsample` mode recorded none for it", () => {
-    const request = buildFacadeRequest({
+    const request = build({
       operation: pool,
       values: poolValues,
       origins: poolOrigins,
-      templateId: null,
-      documentedByGlobalId: null,
       amountMode: "perSubsample",
       perSubsampleAmounts: { SS100: millilitres(0.2) },
     });
@@ -227,7 +198,7 @@ describe("buildFacadeRequest, Pool", () => {
   it("ignores a stale `all` carried by a single-origin operation's remembered bundle", () => {
     // The wizard restores a stored bundle's amountMode whatever the operation, and Aliquot offers
     // no modes; honouring it would empty the origin while the summary showed the typed amount.
-    const request = buildFacadeRequest({
+    const request = build({
       operation: operationNamed("aliquot"),
       values: {
         sampleName: "Aliquots",
@@ -236,8 +207,6 @@ describe("buildFacadeRequest, Pool", () => {
         amountTaken: millilitres(0.5),
       },
       origins: [origin(100)],
-      templateId: null,
-      documentedByGlobalId: null,
       amountMode: "all",
     });
 
@@ -298,7 +267,6 @@ describe("withUniqueFieldNames", () => {
   });
 
   it("treats names differing only by case or surrounding space as duplicates, as the backend does", () => {
-    // InventoryFieldNameUniquenessValidator compares trimmed and case-insensitively.
     const fields = [link("Pooled from: Aliquot", "SS1"), link("  pooled FROM: aliquot ", "SS2")];
     const names = withUniqueFieldNames(fields).map((f) => f.name);
     expect(names[0]).toBe("Pooled from: Aliquot (SS1)");

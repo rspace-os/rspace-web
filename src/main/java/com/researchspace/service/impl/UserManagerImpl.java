@@ -351,20 +351,14 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   /**
    * Aggregate ceiling for the whole merged object, in BYTES, matching {@code UserPreference.value}
-   * (MySQL TEXT, utf8mb4). Two gaps make this the only check the INSERT agrees with: the per-key
-   * ceiling above bounds one value, while eighteen of them each within it still add up past the
-   * column; and {@link com.researchspace.model.preference.SettingsType#validate} counts Java
-   * characters, while the column is bounded in bytes, so a blob of multi-byte characters passes it
-   * and then fails during persistence.
+   * (MySQL TEXT, utf8mb4). The per-key ceiling above bounds one value, and {@link
+   * com.researchspace.model.preference.SettingsType#validate} counts Java characters, so neither
+   * agrees with what the INSERT accepts.
    */
   private static final int MAX_UI_JSON_SETTINGS_BYTES = 65535;
 
   /**
-   * The keys a UI settings object may hold: exactly the names the client declares in its
-   * PREFERENCES map (src/main/webapp/ui/src/hooks/api/useUiPreference.tsx). Adding a preference
-   * there means adding it here.
-   *
-   * <p>An allowlist rather than a syntax rule: the key is written verbatim into the user's single
+   * An allowlist rather than a syntax rule: the key is written verbatim into the user's single
    * settings column and nothing ever deletes one, so an open-ended rule would let a caller add
    * names until the column hit its TEXT limit, after which the oversize guard permanently rejects
    * every later keyed write for that user.

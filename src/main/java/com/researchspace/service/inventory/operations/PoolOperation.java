@@ -4,13 +4,7 @@ import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import org.springframework.stereotype.Component;
 
-/**
- * Pool: combines part of several subsamples into one new sample.
- *
- * <p>The only multi-origin operation. Either each origin says how much it contributes, or {@code
- * takeAll} pours every origin out completely, in which case the amounts are the origins' own live
- * quantities read at processing time, exactly as Destroy does.
- */
+/** Pool: combines part of several subsamples into one new sample. The only multi-origin one. */
 @Component
 public class PoolOperation extends CreatingOperation<ApiInventoryOperationRequests.Pool> {
 

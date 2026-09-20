@@ -1097,7 +1097,6 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
         invLockTracker.attemptToLockForEdit(apiSubSample.getGlobalId(), piUser);
     assertEquals(ApiInventoryEditLockStatus.LOCKED_OK, apiLock.getStatus());
 
-    // a conflict (409 at the API boundary), not a bad request
     apiSubSample.setName("updated name");
     InventoryEditLockHeldException held =
         assertThrows(

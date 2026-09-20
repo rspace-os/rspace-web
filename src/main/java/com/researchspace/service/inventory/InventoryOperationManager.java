@@ -14,11 +14,7 @@ import org.springframework.validation.BindException;
  * everything back on any failure.
  *
  * <p>There is no per-operation logic here: what an operation validates and what it builds belong to
- * its own class ({@code com.researchspace.service.inventory.operations}). Transactionality comes
- * from the {@code service.inventory.*Manager} AOP advice (see {@code
- * applicationContext-service.xml}), whose pointcut matches this interface because it is in {@code
- * service.inventory} and named {@code *Manager} - moving or renaming it silently drops that
- * transaction boundary.
+ * its own class ({@code com.researchspace.service.inventory.operations}).
  */
 public interface InventoryOperationManager {
 

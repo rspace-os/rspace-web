@@ -11,9 +11,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -22,10 +20,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Guards the operation endpoint's error catalog: every message code the backend raises must have a
  * catalog entry, or the API would show users a raw code instead of a message.
- *
- * <p>Covers every code the endpoint can raise, not just the {@code errors.inventory.operation.*}
- * block: the validator also raises {@code errors.inventory.quantity.*}, the controller raises a
- * sample code, and the shared API advice raises the cross-cutting {@code api.errors.*} ones.
  */
 class InventoryOperationsErrorCatalogTest {
 
@@ -35,11 +29,9 @@ class InventoryOperationsErrorCatalogTest {
   private static final Path CONTROLLER_DIR =
       Path.of("src/main/java/com/researchspace/api/v1/controller");
 
-  /** Every operation class and shared rule holder; each raises codes of its own. */
   private static final Path OPERATIONS_DIR =
       Path.of("src/main/java/com/researchspace/service/inventory/operations");
 
-  /** The request bodies, whose annotations name catalog keys the same way Java code does. */
   private static final Path REQUESTS =
       Path.of("src/main/java/com/researchspace/api/v1/model/ApiInventoryOperationRequests.java");
 
@@ -88,7 +80,6 @@ class InventoryOperationsErrorCatalogTest {
   private static final Pattern RAISED_CODE =
       Pattern.compile("\"\\{?((?:errors|api)\\.[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)+)\\}?\"");
 
-  /** A field-label key in a string literal: operations.passage.numberField. */
   private static final Pattern LABEL_KEY =
       Pattern.compile("\"(operations\\.[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)*)\"");
 
@@ -109,15 +100,13 @@ class InventoryOperationsErrorCatalogTest {
         () ->
             "only "
                 + raised.size()
-                + " codes scanned, expected at least "
+                + " codes scanned, expected "
                 + MINIMUM_CODES_RAISED
-                + ". Did a refactor move error codes into a file not listed in"
-                + " the scanned set? Raised: "
+                + ": "
                 + new java.util.TreeSet<>(raised));
 
-    Map<String, String> catalog = loadServerCatalogs();
     Set<String> missing = new java.util.TreeSet<>(raised);
-    missing.removeAll(catalog.keySet());
+    missing.removeAll(loadServerCatalogs());
     assertTrue(
         missing.isEmpty(),
         "error codes raised in Java with no entry under " + CATALOG_DIR + ": " + missing);
@@ -148,18 +137,18 @@ class InventoryOperationsErrorCatalogTest {
         referenced.size() >= MINIMUM_LABELS_REFERENCED,
         () -> "only " + referenced.size() + " label keys scanned under " + OPERATIONS_DIR);
 
-    Map<String, String> catalog = new TreeMap<>();
+    Set<String> catalog = new HashSet<>();
     flatten(
         "", new ObjectMapper().readTree(CATALOG_DIR.resolve("inventory.json").toFile()), catalog);
     Set<String> missing = new java.util.TreeSet<>(referenced);
-    missing.removeAll(catalog.keySet());
+    missing.removeAll(catalog);
     assertTrue(
         missing.isEmpty(), "operation field labels with no entry in inventory.json: " + missing);
   }
 
   /** Flattens every server.*.json exactly as JsonMessageSource does, i.e. with no prefix. */
-  private static Map<String, String> loadServerCatalogs() throws IOException {
-    Map<String, String> flattened = new TreeMap<>();
+  private static Set<String> loadServerCatalogs() throws IOException {
+    Set<String> flattened = new HashSet<>();
     try (Stream<Path> files = Files.list(CATALOG_DIR)) {
       for (Path file :
           files.filter(f -> f.getFileName().toString().startsWith("server.")).toList()) {
@@ -169,7 +158,7 @@ class InventoryOperationsErrorCatalogTest {
     return flattened;
   }
 
-  private static void flatten(String prefix, JsonNode node, Map<String, String> target) {
+  private static void flatten(String prefix, JsonNode node, Set<String> target) {
     if (node.isObject()) {
       node.fields()
           .forEachRemaining(
@@ -179,7 +168,7 @@ class InventoryOperationsErrorCatalogTest {
                       field.getValue(),
                       target));
     } else if (node.isValueNode()) {
-      target.put(prefix, node.asText());
+      target.add(prefix);
     }
   }
 }

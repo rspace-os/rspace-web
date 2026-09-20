@@ -730,7 +730,7 @@ export default class InventoryBaseRecord
 
   /**
    * Takes (or extends) the edit-session lock without entering edit state or scheduling an
-   * expiry-check interval: those exist to protect an edit in progress, and this method starts none.
+   * expiry-check interval.
    */
   async acquireEditLock(): Promise<LockStatus> {
     const { status, lockOwner, remainingTimeInSeconds } = await this.checkLock(true);

@@ -1,13 +1,3 @@
-/**
- * Turns an operation plus the user's collected values into the body its endpoint takes.
- *
- * The server builds the created sample and its generated fields itself, so only what the user
- * chose travels: the operation's own values, each origin's amount taken, the template and the
- * documentation target.
- *
- * Each amount taken is a positive decrement; the backend rejects taking more than the origin
- * holds.
- */
 import type { InventoryOperation } from "./operationsConfig";
 import { usesAmountModes } from "./operationsConfig";
 import type {
@@ -22,10 +12,8 @@ import type {
 type FacadeOrigin = { globalId: string; amountTaken?: OperationQuantity };
 
 /**
- * A request body for `POST /operations/<key>`. The six single-origin operations send `origin`;
- * Pool sends `origins` and may send `takeAll`. The remaining fields are the operation's own, which
- * is why the rest of the body is open: each operation declares different ones, and the endpoint,
- * not this type, is what rejects a field it does not take.
+ * A request body for `POST /operations/<key>`. The rest of the body is open because each operation
+ * declares different fields, and the endpoint, not this type, rejects a field it does not take.
  */
 export type FacadeRequest = {
   origin?: FacadeOrigin;
@@ -37,19 +25,9 @@ export type FacadeRequest = {
 };
 
 /**
- * Makes every generated field name unique, the way the backend judges uniqueness.
- *
- * <p>A record cannot hold two fields with the same name, compared trimmed and case-insensitively
- * (InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload). Pool's link name interpolates
- * each origin's own name, and two origins can share one, which produced duplicate-named fields the
- * endpoint rejected.
- *
- * <p>Every member of a colliding group is suffixed, not just the later ones, so the names stay
- * symmetrical. The server applies the same rule when it builds the sample
- * (OperationFieldNames.withUniqueFieldNames), pinned across the two languages by
- * FieldNameUniquenessParityTest. It then also truncates each name to the 255-char column width
- * (OperationFieldNames.fit), which this does not, so a preview of a name composed from a very
- * long origin name can be longer than what is stored.
+ * Unlike the server (OperationFieldNames.fit), this does not truncate a name to the 255-char column
+ * width, so a preview of a name composed from a very long origin name can be longer than what is
+ * stored.
  */
 export function withUniqueFieldNames(fields: Array<OperationExtraField>): Array<OperationExtraField> {
   const comparable = (name: string): string => name.trim().toLowerCase();
@@ -76,23 +54,13 @@ export function withUniqueFieldNames(fields: Array<OperationExtraField>): Array<
 type BuildParams = {
   operation: InventoryOperation;
   values: OperationInputs;
-  /** One or more origin subsamples. A single-origin operation passes one; Pool passes several. */
   origins: Array<OperationOrigin>;
-  /** The template for the new sample, resolved by the wizard's template step. null = ad-hoc. */
   templateId: number | null;
-  /** The document chosen in the documentation step, linked as IsDocumentedBy; null for none. */
   documentedByGlobalId: string | null;
-  /** How the amount taken is decided across origins. Defaults to "same" (single shared amount),
-   *  which is also every single-origin operation's mode. */
   amountMode?: AmountMode;
-  /** Per-origin amounts (by origin global id) for "perSubsample" mode; ignored in other modes. */
   perSubsampleAmounts?: PerSubsampleAmounts;
 };
 
-/**
- * Computed values (Passage's counter, Destroy's disposed date) are the server's, and so is every
- * generated field; the origin owns the amount taken, so it is not repeated among the values.
- */
 export function buildFacadeRequest(params: BuildParams): FacadeRequest {
   const { operation, values, origins, templateId, documentedByGlobalId } = params;
   const { effect } = operation;
@@ -106,9 +74,6 @@ export function buildFacadeRequest(params: BuildParams): FacadeRequest {
   if (templateId !== null) request.templateId = templateId;
   if (documentedByGlobalId !== null) request.documentedByGlobalId = documentedByGlobalId;
 
-  // An operation that decides what it takes (Passage, Destroy, and Pool under takeAll) sends no
-  // amount at all: the server reads the origin's live quantity instead, and an amount sent
-  // alongside is a 400.
   const amountTakenFrom = effect.amountTakenFrom;
   const takeAll = takesWholeOrigins(params);
   const amountFor = (origin: OperationOrigin): OperationQuantity | undefined => {
@@ -132,15 +97,6 @@ export function buildFacadeRequest(params: BuildParams): FacadeRequest {
   return request;
 }
 
-/**
- * Whether this request empties its origins rather than taking chosen amounts: Destroy always, and
- * Pool in the runtime "take all" mode.
- *
- * amountMode is only meaningful for an operation that OFFERS it (a multi-origin operation that
- * takes an amount), but the wizard restores a stored bundle's amountMode for every operation, so
- * usesAmountModes gates it here too: a stale single-origin bundle carrying "all" must not empty
- * the origin while the summary still shows the typed amount.
- */
 function takesWholeOrigins({ operation, amountMode }: BuildParams): boolean {
   return Boolean(operation.effect.emptiesOrigin) || (amountMode === "all" && usesAmountModes(operation));
 }

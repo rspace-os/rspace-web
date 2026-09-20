@@ -9,7 +9,7 @@ import OperationConfirmation from "../OperationConfirmation";
 import type { InventoryOperation } from "../operationsConfig";
 import type { OriginBlockedReason } from "../operationValidation";
 import type { TemplateSelection } from "../TemplateStep";
-import type { OperationInputs } from "../types";
+import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "../types";
 import { operations } from "./testOperations";
 
 // i18n runs in cimode in tests, so t(key, params) renders the namespaced key with no interpolation;
@@ -29,6 +29,7 @@ const operation = {
     amountTakenFrom: "amountTaken",
     links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.derive.linkFieldName" }],
   },
+  confirmSummary: ["process", "template", "subsamples", "amountTaken", "linkBack", "documentation"],
 } as unknown as InventoryOperation;
 
 const values: OperationInputs = {
@@ -43,12 +44,16 @@ const renderConf = (overrides: {
   documentation?: { globalId: string; name: string } | null;
   op?: InventoryOperation;
   values?: OperationInputs;
+  originName?: string;
   originBlocked?: OriginBlockedReason | null;
+  amountMode?: AmountMode;
+  perSubsampleAmounts?: PerSubsampleAmounts;
+  origins?: Array<{ globalId: string; name: string }>;
   remember?: boolean;
   onRememberChange?: (remember: boolean) => void;
-}) =>
-  render(
-    // ThemeProvider supplies the app theme so the confirmation card can read palette.record.sample.
+  english?: boolean;
+}) => {
+  const card = (
     <ThemeProvider theme={appTheme}>
       <OperationConfirmation
         operation={overrides.op ?? operation}
@@ -56,13 +61,18 @@ const renderConf = (overrides: {
         documentation={overrides.documentation ?? null}
         templateSelection={overrides.templateSelection}
         originSampleName="S1"
-        originName="S1.01"
+        originName={overrides.originName ?? "S1.01"}
         originBlocked={overrides.originBlocked ?? null}
+        amountMode={overrides.amountMode ?? "same"}
+        perSubsampleAmounts={overrides.perSubsampleAmounts ?? {}}
+        origins={overrides.origins ?? []}
         remember={overrides.remember ?? false}
         onRememberChange={overrides.onRememberChange}
       />
-    </ThemeProvider>,
+    </ThemeProvider>
   );
+  return render(overrides.english ? <InEnglish>{card}</InEnglish> : card);
+};
 
 describe("OperationConfirmation", () => {
   it("shows the new sample name as the card title", () => {
@@ -72,22 +82,12 @@ describe("OperationConfirmation", () => {
 
   it("shows the remember checkbox (naming the process) and toggles it", async () => {
     const onRememberChange = vi.fn();
-    render(
-      <ThemeProvider theme={appTheme}>
-        <OperationConfirmation
-          operation={operation}
-          values={{ ...values, processName: "dna" }}
-          documentation={null}
-          templateSelection={{ mode: "none", templateId: null, remember: false }}
-          originSampleName="S1"
-          originName="S1.01"
-          remember={false}
-          onRememberChange={onRememberChange}
-        />
-      </ThemeProvider>,
-    );
-    // the label references the chosen process name (values are remembered per process name);
-    // anchor the match so it hits the label, not the sibling rememberProcessValuesHelp helper text
+    renderConf({
+      values: { ...values, processName: "dna" },
+      templateSelection: { mode: "none", templateId: null, remember: false },
+      onRememberChange,
+    });
+    // anchored so it hits the label, not the sibling rememberProcessValuesHelp helper text
     expect(screen.getByText(/rememberProcessValues$/)).toBeInTheDocument();
     expect(screen.getByText(/rememberProcessValuesHelp/)).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("checkbox"));
@@ -104,7 +104,6 @@ describe("OperationConfirmation", () => {
       templateSelection: { mode: "pick", templateId: 5, templateName: "T5", remember: false },
       documentation: { globalId: "SD1", name: "My SOP" },
     });
-    // a picked template shows its name verbatim (not through t())
     expect(screen.getByText("T5")).toBeInTheDocument();
     expect(screen.getByText(/confirm\.labels\.amountTaken/)).toBeInTheDocument();
     expect(screen.getByText(/confirm\.labels\.documentation/)).toBeInTheDocument();
@@ -130,18 +129,11 @@ describe("OperationConfirmation", () => {
 
   it("shows the process-name row when the operation has a process name", () => {
     const op = { ...operation, effect: { ...operation.effect, processNameFrom: "processName" } } as InventoryOperation;
-    render(
-      <ThemeProvider theme={appTheme}>
-        <OperationConfirmation
-          operation={op}
-          values={{ ...values, processName: "dna extraction" }}
-          documentation={null}
-          templateSelection={{ mode: "none", templateId: null, remember: false }}
-          originSampleName="S1"
-          originName="S1.01"
-        />
-      </ThemeProvider>,
-    );
+    renderConf({
+      op,
+      values: { ...values, processName: "dna extraction" },
+      templateSelection: { mode: "none", templateId: null, remember: false },
+    });
     expect(screen.getByText(/confirm\.labels\.process/)).toBeInTheDocument();
     expect(screen.getByText("dna extraction")).toBeInTheDocument();
   });
@@ -165,35 +157,21 @@ describe("OperationConfirmation", () => {
   } as unknown as InventoryOperation;
 
   it("shows the storage temperature for cryopreserve (a configured summary field)", () => {
-    render(
-      <ThemeProvider theme={appTheme}>
-        <OperationConfirmation
-          operation={cryoOp}
-          values={{ ...values, storageTemp: { numericValue: -80, unitId: 8 } }}
-          documentation={null}
-          templateSelection={{ mode: "none", templateId: null, remember: false }}
-          originSampleName="S1"
-          originName="S1.01"
-        />
-      </ThemeProvider>,
-    );
+    renderConf({
+      op: cryoOp,
+      values: { ...values, storageTemp: { numericValue: -80, unitId: 8 } },
+      templateSelection: { mode: "none", templateId: null, remember: false },
+    });
     expect(screen.getByText(/confirm\.labels\.storageTemp/)).toBeInTheDocument();
   });
 
   it("shows only the fields listed in the operation's confirmSummary", () => {
     const op = { ...cryoOp, confirmSummary: ["storageTemp"] } as unknown as InventoryOperation;
-    render(
-      <ThemeProvider theme={appTheme}>
-        <OperationConfirmation
-          operation={op}
-          values={{ ...values, storageTemp: { numericValue: -80, unitId: 8 } }}
-          documentation={null}
-          templateSelection={{ mode: "none", templateId: null, remember: false }}
-          originSampleName="S1"
-          originName="S1.01"
-        />
-      </ThemeProvider>,
-    );
+    renderConf({
+      op,
+      values: { ...values, storageTemp: { numericValue: -80, unitId: 8 } },
+      templateSelection: { mode: "none", templateId: null, remember: false },
+    });
     expect(screen.getByText(/confirm\.labels\.storageTemp/)).toBeInTheDocument();
     expect(screen.queryByText(/confirm\.labels\.template/)).not.toBeInTheDocument();
   });
@@ -212,22 +190,15 @@ describe("OperationConfirmation", () => {
   } as unknown as InventoryOperation;
 
   it("lists a linkBack line for every pooled subsample, not just the representative one", () => {
-    render(
-      <ThemeProvider theme={appTheme}>
-        <OperationConfirmation
-          operation={poolOp}
-          values={values}
-          documentation={null}
-          templateSelection={{ mode: "none", templateId: null, remember: false }}
-          originSampleName="S1"
-          originName="Vial A"
-          origins={[
-            { globalId: "SS1", name: "Vial A" },
-            { globalId: "SS2", name: "Vial B" },
-          ]}
-        />
-      </ThemeProvider>,
-    );
+    renderConf({
+      op: poolOp,
+      templateSelection: { mode: "none", templateId: null, remember: false },
+      originName: "Vial A",
+      origins: [
+        { globalId: "SS1", name: "Vial A" },
+        { globalId: "SS2", name: "Vial B" },
+      ],
+    });
     expect(screen.getByText(/confirm\.labels\.linkBack/)).toBeInTheDocument();
     expect(screen.getAllByText(/pool\.linkFieldName/)).toHaveLength(2);
     // Anchored so it does not also match ...amountTakenEach.
@@ -236,24 +207,17 @@ describe("OperationConfirmation", () => {
   });
 
   it("reads the amount-taken row as 'take all' for a Pool in 'all' mode, with no per-origin lines", () => {
-    render(
-      <ThemeProvider theme={appTheme}>
-        <OperationConfirmation
-          operation={poolOp}
-          values={values}
-          documentation={null}
-          templateSelection={{ mode: "none", templateId: null, remember: false }}
-          originSampleName="S1"
-          originName="Vial A"
-          amountMode="all"
-          origins={[
-            { globalId: "SS1", name: "Vial A" },
-            { globalId: "SS2", name: "Vial B" },
-          ]}
-          perSubsampleAmounts={{ SS1: { numericValue: 1, unitId: 3 } }}
-        />
-      </ThemeProvider>,
-    );
+    renderConf({
+      op: poolOp,
+      templateSelection: { mode: "none", templateId: null, remember: false },
+      originName: "Vial A",
+      amountMode: "all",
+      origins: [
+        { globalId: "SS1", name: "Vial A" },
+        { globalId: "SS2", name: "Vial B" },
+      ],
+      perSubsampleAmounts: { SS1: { numericValue: 1, unitId: 3 } },
+    });
     expect(screen.getByText(/confirm\.labels\.amountTakenEach/)).toBeInTheDocument();
     expect(screen.getByText(/confirm\.values\.takeAll/)).toBeInTheDocument();
     expect(screen.queryByText(/confirm\.values\.originAmount/)).not.toBeInTheDocument();
@@ -268,8 +232,6 @@ describe("OperationConfirmation", () => {
     expect(screen.queryByText(/undefined/)).not.toBeInTheDocument();
   });
 
-  // Destroy-shaped op: noOutput, so the card names the origin subsample, and the summary is the
-  // origin being emptied plus the disposed field it adds to the origin.
   const destroyOp = {
     key: "destroy",
     labelKey: "operations.destroy.label",
@@ -279,23 +241,18 @@ describe("OperationConfirmation", () => {
       emptiesOrigin: true,
       computed: [{ fn: "today", into: "disposedDate", args: {} }],
       links: [],
-      originFields: [{ nameKey: "operations.destroy.disposedField", contentFrom: "disposedDate", type: "text" }],
+      originFields: [{ nameKey: "operations.destroy.disposedField", contentFrom: "disposedDate" }],
     },
     confirmSummary: ["originEmptied", "originFields"],
   } as unknown as InventoryOperation;
 
   it("names the origin subsample and summarises the emptying and disposed field for a terminal op", () => {
     renderConf({ op: destroyOp, values: {}, templateSelection: { mode: "none", templateId: null, remember: false } });
-    // A terminal operation creates no sample, so the card title is the origin subsample name.
     expect(screen.getByText("S1.01")).toBeInTheDocument();
-    // ...and the subheader must not claim a "New sample": it uses the terminal-op variant.
     expect(screen.getByText(/confirm\.cardSubheaderTerminal/)).toBeInTheDocument();
     expect(screen.queryByText(/confirm\.cardSubheader$/)).not.toBeInTheDocument();
-    // The description shows here (moved off the now-skipped details step) as an info panel.
     expect(screen.getByText(/operations\.destroy\.description/)).toBeInTheDocument();
     expect(screen.getByText(/confirm\.labels\.originEmptied/)).toBeInTheDocument();
-    // The origin-field row is labelled by the field name (its i18n key in cimode) and shows today's
-    // date, computed for the preview.
     expect(screen.getByText(/operations\.destroy\.disposedField/)).toBeInTheDocument();
     expect(screen.getByText(/^\d{4}-\d{2}-\d{2}$/)).toBeInTheDocument();
   });
@@ -328,29 +285,21 @@ describe("OperationConfirmation in English", () => {
     // The line is assembled by i18n from the originAmount and amountTaken keys, not concatenated in
     // code. cimode renders the key and drops every parameter, so only the
     // real catalogs can show that the origin name and its amount both arrive.
-    render(
-      <InEnglish>
-        <ThemeProvider theme={appTheme}>
-          <OperationConfirmation
-            operation={poolOp}
-            values={values}
-            documentation={null}
-            templateSelection={{ mode: "none", templateId: null, remember: false }}
-            originSampleName="S1"
-            originName="Vial A"
-            amountMode="perSubsample"
-            origins={[
-              { globalId: "SS1", name: "Vial A" },
-              { globalId: "SS2", name: "Vial B" },
-            ]}
-            perSubsampleAmounts={{
-              SS1: { numericValue: 1, unitId: 3 },
-              SS2: { numericValue: 2.5, unitId: 3 },
-            }}
-          />
-        </ThemeProvider>
-      </InEnglish>,
-    );
+    renderConf({
+      op: poolOp,
+      templateSelection: { mode: "none", templateId: null, remember: false },
+      originName: "Vial A",
+      amountMode: "perSubsample",
+      origins: [
+        { globalId: "SS1", name: "Vial A" },
+        { globalId: "SS2", name: "Vial B" },
+      ],
+      perSubsampleAmounts: {
+        SS1: { numericValue: 1, unitId: 3 },
+        SS2: { numericValue: 2.5, unitId: 3 },
+      },
+      english: true,
+    });
     expect(screen.getByText("Vial A: 1 ml")).toBeInTheDocument();
     expect(screen.getByText("Vial B: 2.5 ml")).toBeInTheDocument();
   });
@@ -380,23 +329,14 @@ describe("the confirmation preview matches the names the server stores", () => {
       eachAmount: { numericValue: 2, unitId: 3 },
       amountTaken: { numericValue: 1, unitId: 3 },
     };
-    render(
-      <InEnglish>
-        <ThemeProvider theme={appTheme}>
-          <OperationConfirmation
-            operation={pool}
-            values={poolValues}
-            documentation={null}
-            templateSelection={noTemplate}
-            originSampleName="S1"
-            originName="Aliquot"
-            origins={origins.map(({ globalId, name }) => ({ globalId, name }))}
-          />
-        </ThemeProvider>
-      </InEnglish>,
-    );
-    // Both origins are named "Aliquot", so the interpolated link name collides; each member of the
-    // colliding group is suffixed with the global id it targets.
+    renderConf({
+      op: pool,
+      values: poolValues,
+      templateSelection: noTemplate,
+      originName: "Aliquot",
+      origins: origins.map(({ globalId, name }) => ({ globalId, name })),
+      english: true,
+    });
     for (const name of ["Pooled from: Aliquot (SS1)", "Pooled from: Aliquot (SS2)"]) {
       expect(screen.getByText(name)).toBeInTheDocument();
     }
@@ -413,20 +353,13 @@ describe("the confirmation preview matches the names the server stores", () => {
       eachAmount: { numericValue: 2, unitId: 3 },
       amountTaken: { numericValue: 1, unitId: 3 },
     };
-    render(
-      <InEnglish>
-        <ThemeProvider theme={appTheme}>
-          <OperationConfirmation
-            operation={derive}
-            values={deriveValues}
-            documentation={null}
-            templateSelection={noTemplate}
-            originSampleName="S1"
-            originName={origin.name}
-          />
-        </ThemeProvider>
-      </InEnglish>,
-    );
+    renderConf({
+      op: derive,
+      values: deriveValues,
+      templateSelection: noTemplate,
+      originName: origin.name,
+      english: true,
+    });
     expect(screen.getByText("Is Derived From using process: PCR")).toBeInTheDocument();
     expect(screen.getByText("Derived")).toBeInTheDocument();
   });

@@ -1,12 +1,11 @@
 package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.model.ApiUser;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
-/**
- * A conflict the caller can retry once the holder is done, not a bad request: the API boundary maps
- * it to 409.
- */
 @Getter
 public class InventoryEditLockHeldException extends RuntimeException {
 
@@ -21,12 +20,9 @@ public class InventoryEditLockHeldException extends RuntimeException {
 
   public String getOwnerDisplayName() {
     String name =
-        String.join(
-                " ",
-                java.util.stream.Stream.of(owner.getFirstName(), owner.getLastName())
-                    .filter(part -> part != null && !part.isBlank())
-                    .toList())
-            .trim();
+        Stream.of(owner.getFirstName(), owner.getLastName())
+            .filter(StringUtils::isNotBlank)
+            .collect(Collectors.joining(" "));
     return name.isEmpty() ? owner.getUsername() : name;
   }
 }

@@ -23,33 +23,11 @@ function TemplateStep({
   rememberedTemplateError = null,
 }: {
   value: TemplateSelection;
-  /**
-   * Accepts an updater as well as a value, since the post-lookup write below needs the latest
-   * state rather than what this render captured. The synchronous handlers keep passing a plain
-   * value.
-   */
   onChange: React.Dispatch<React.SetStateAction<TemplateSelection>>;
   originSampleName: string;
-  /**
-   * Whether the origin's parent sample has its own template. When it does not, the "use parent
-   * template" option is disabled: the wizard never creates one.
-   */
   parentHasTemplate?: boolean;
-  /**
-   * Status of the "use parent template" check, which the WIZARD runs, not this step.
-   *
-   * It has to live there: the wizard renders only the active step, so a check owned by this
-   * component never ran while the user was on step one - which is exactly where the one-click fast
-   * path is offered, and it stayed permanently disabled. This step only
-   * displays the outcome.
-   */
   parentTemplateChecking?: boolean;
   parentTemplateError?: string | null;
-  /**
-   * Why a remembered template was dropped: it has been trashed, has gone, or is no longer usable.
-   * Also owned by the wizard rather than this step, and for the same reason as the parent check: a
-   * remembered bundle is resolved at step one, which this step is not rendered for.
-   */
   rememberedTemplateError?: string | null;
 }): React.ReactNode {
   const { t, i18n } = useTranslation("inventory");
@@ -62,33 +40,6 @@ function TemplateStep({
     },
     [],
   );
-
-  const applyTemplateCheck = async (
-    token: string,
-    load: () => Promise<TemplateModel>,
-    describe: (template: TemplateModel) => Partial<TemplateSelection>,
-  ) => {
-    try {
-      const template = await load();
-      if (latestPickRef.current !== token) return;
-      const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
-      if (reason.blocked) {
-        setBlockError(
-          t("operations.template.mandatoryFieldsError", {
-            count: reason.count,
-            fields: reason.fields,
-          }),
-        );
-        return;
-      }
-      onChange((previous) => ({ ...previous, ...describe(template) }));
-    } catch {
-      if (latestPickRef.current !== token) return;
-      setBlockError(t("operations.template.lookupFailed"));
-    } finally {
-      if (latestPickRef.current === token) setChecking(false);
-    }
-  };
 
   const setMode = (mode: TemplateSelection["mode"]) => {
     setBlockError(null);
@@ -104,8 +55,6 @@ function TemplateStep({
   };
 
   const onPickTemplate = (template: TemplateModel | null) => {
-    // The picker was cleared: drop the selection so Next blocks again and the wizard cannot submit
-    // the template the box no longer shows.
     if (template === null) {
       latestPickRef.current = null;
       setBlockError(null);
@@ -119,30 +68,43 @@ function TemplateStep({
     setBlockError(null);
     setChecking(true);
     onChange({ ...value, templateId: null, templateName: template.name });
-    void applyTemplateCheck(
-      pickId,
-      async () => {
+    void (async () => {
+      try {
         // The picker's search results are partial, so the fields the check reads are fetched here.
         await template.fetchAdditionalInfo();
-        return template;
-      },
-      () => ({
-        templateId: Number(template.id),
-        templateName: template.name,
-        quantityCategory: template.quantityCategory,
-      }),
-    );
+        if (latestPickRef.current !== pickId) return;
+        const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
+        if (reason.blocked) {
+          setBlockError(
+            t("operations.template.mandatoryFieldsError", {
+              count: reason.count,
+              fields: reason.fields,
+            }),
+          );
+          return;
+        }
+        onChange((previous) => ({
+          ...previous,
+          templateId: Number(template.id),
+          templateName: template.name,
+          quantityCategory: template.quantityCategory,
+        }));
+      } catch {
+        if (latestPickRef.current !== pickId) return;
+        setBlockError(t("operations.template.lookupFailed"));
+      } finally {
+        if (latestPickRef.current === pickId) setChecking(false);
+      }
+    })();
   };
 
-  // Hand the picker a referentially stable callback (latest impl via ref), so re-renders of this
-  // step never churn the picker via a changing prop. The empty dependency array below is required,
-  // not incidental: the Picker fires onAddition from an effect keyed on the callback's identity, so
-  // an unstable callback plus a state update is an infinite render loop on selection.
+  // The Picker fires onAddition from an effect keyed on the callback's identity, so an unstable
+  // callback plus a state update is an infinite render loop on selection: the callback below must
+  // stay referentially stable, and its empty dependency array is required, not incidental.
   const onPickTemplateRef = React.useRef(onPickTemplate);
-  // Written in a layout effect, not in the render body. React 19 may discard a render pass, and a
-  // body assignment would leave the ref holding the abandoned render's closure over a stale `value`.
-  // useLayoutEffect rather than useEffect so the ref is current before any
-  // child effect - the Picker's included - can call it.
+  // Written in a layout effect, not the render body: React 19 may discard a render pass, and a
+  // body assignment would leave the ref holding that render's closure over a stale `value`. Layout
+  // rather than passive, so the ref is current before any child effect can call it.
   React.useLayoutEffect(() => {
     onPickTemplateRef.current = onPickTemplate;
   });

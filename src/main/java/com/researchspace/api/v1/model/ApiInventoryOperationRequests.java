@@ -14,27 +14,13 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * The request bodies of the seven typed operation endpoints, {@code POST /operations/<key>}: the
- * public API contract (shapes frozen in DevDocs/adr/0011). Each carries what is consumed ({@code
- * origin}, or {@code origins} for Pool, identified by global id), the values that operation needs,
- * and for a creating operation the template (numeric like {@code POST /samples}) and the
- * documentation target (no other sample metadata; set it with a follow-up {@code PUT}).
- *
- * <p>The annotations here are every rule that can be stated on a field in isolation: presence,
- * bounds, and the length of the column the value is stored in. A rule needing {@link
- * com.researchspace.model.units.RSUnitDef}, another field, or the origins' live state belongs to
- * the operation class instead ({@code com.researchspace.service.inventory.operations}).
- */
 public final class ApiInventoryOperationRequests {
 
   private ApiInventoryOperationRequests() {}
 
   /**
    * One origin subsample. {@code amountTaken} is what the operation removes from it, and is sent
-   * exactly when the operation takes a chosen amount: never for Passage or Destroy, and never on a
-   * Pool request that sets {@code takeAll}, where the server takes each origin's whole live
-   * quantity instead.
+   * exactly when the operation takes a chosen amount.
    */
   @Getter
   @Setter
@@ -46,9 +32,8 @@ public final class ApiInventoryOperationRequests {
     private ApiQuantityInfo amountTaken;
   }
 
-  /** What the endpoint reads off any of the seven, whatever their fields. */
   public interface Request {
-    /** The origins in request order; a single-origin request wraps its one origin. */
+    /** The origins in request order. */
     List<Origin> originList();
 
     default Long getTemplateId() {
@@ -96,7 +81,6 @@ public final class ApiInventoryOperationRequests {
     private String documentedByGlobalId;
   }
 
-  /** A creating operation over exactly one origin (singular {@code origin}). */
   @Getter
   @Setter
   public abstract static class SingleOriginCreating extends Creating {
@@ -110,13 +94,10 @@ public final class ApiInventoryOperationRequests {
     }
   }
 
-  /** {@code POST /operations/aliquot}. */
   public static class Aliquot extends SingleOriginCreating {}
 
-  /** {@code POST /operations/passage}. */
   public static class Passage extends SingleOriginCreating {}
 
-  /** {@code POST /operations/derive}. */
   @Getter
   @Setter
   public static class Derive extends SingleOriginCreating {
@@ -128,7 +109,6 @@ public final class ApiInventoryOperationRequests {
     private String processName;
   }
 
-  /** {@code POST /operations/cryopreserve}. */
   @Getter
   @Setter
   public static class Cryopreserve extends SingleOriginCreating {
@@ -142,7 +122,7 @@ public final class ApiInventoryOperationRequests {
     private ApiQuantityInfo storageTemp;
   }
 
-  /** {@code POST /operations/revive}: {@code storageTemp} defaults to 4 degrees Celsius. */
+  /** {@code storageTemp} defaults to 4 degrees Celsius. */
   @Getter
   @Setter
   public static class Revive extends SingleOriginCreating {
@@ -150,20 +130,12 @@ public final class ApiInventoryOperationRequests {
     private ApiQuantityInfo storageTemp;
   }
 
-  /**
-   * {@code POST /operations/pool}: the one multi-origin operation (plural {@code origins}).
-   *
-   * <p>Each origin normally carries its own {@code amountTaken}. {@code takeAll} instead takes
-   * every origin's whole live quantity, read at processing time as Destroy does, and then no origin
-   * may carry an amount.
-   */
   @Getter
   @Setter
   public static class Pool extends Creating {
     // Two constraints rather than one @Size(min, max) so each bound keeps its own message: a single
     // annotation carries a single message, which would report a 101-origin request as "requires at
-    // least two". The ceiling is at binding because the per-origin work downstream is bounded by
-    // the list Jackson has already materialised.
+    // least two".
     @NotNull(message = "{errors.inventory.operation.originsRequired}")
     @Size.List({
       @Size(min = 2, message = "{errors.inventory.operation.originCountMinimum}"),
@@ -185,7 +157,6 @@ public final class ApiInventoryOperationRequests {
     }
   }
 
-  /** {@code POST /operations/destroy}: empties the origin and creates nothing (200, not 201). */
   @Getter
   @Setter
   public static class Destroy implements Request {

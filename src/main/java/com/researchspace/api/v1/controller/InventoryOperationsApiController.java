@@ -42,15 +42,6 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 
-/**
- * Thin coordinator endpoint for the Inventory operations. Checks the request's shape, holds the
- * edit lock on everything the operation touches, then delegates to the transactional {@link
- * InventoryOperationManager}, which lets the operation validate its own values and build the
- * sample, and enforces the live-state rules inside its own transaction.
- *
- * <p>No per-operation logic lives here: each endpoint names its operation and nothing else (see
- * DevDocs/adr/0011).
- */
 @ApiController
 public class InventoryOperationsApiController extends BaseApiInventoryController
     implements InventoryOperationsApi {
@@ -70,7 +61,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   /**
    * {@link UnsupportedOperationException} is what {@code ApiControllerAdvice} already maps to a 404
    * with errorCode CONFIGURED_UNAVAILABLE, so a disabled feature is indistinguishable from one this
-   * build does not have. No sysadmin bypass.
+   * build does not have.
    */
   private void assertOperationsAvailable(User user) {
     if (!systemPropertyManager.isPropertyAllowed(
@@ -142,12 +133,6 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     return perform(destroyOperation, request, errors, user);
   }
 
-  /**
-   * One operation: the bean-validated body, then the shared origin rules, then the origin global
-   * ids parsed to subsample ids, then the manager with the edit lock held. The response is the
-   * created sample (null for Destroy) and each origin as it stands afterwards, read back inside the
-   * operation's own transaction.
-   */
   private <R extends ApiInventoryOperationRequests.Request>
       ResponseEntity<ApiInventoryOperationResult> perform(
           InventoryOperation<R> operation, R request, BindingResult errors, User user)
@@ -170,16 +155,46 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     }
     throwBindExceptionIfErrors(errors);
 
+    SortedSet<String> toLock = new TreeSet<>(ASCENDING_GLOBAL_ID);
+    List<String> originGlobalIds = new ArrayList<>();
+    for (Long originId : originIds) {
+      SubSample subSample = subSampleApiMgr.assertUserCanEditSubSample(originId, user);
+      originGlobalIds.add(subSample.getGlobalIdentifier());
+      toLock.add(subSample.getGlobalIdentifier());
+      SampleEntity parent = subSample.getSample();
+      if (parent != null) {
+        toLock.add(parent.getGlobalIdentifier());
+      }
+    }
+    List<String> taken = new ArrayList<>();
+    // The in-flight claim is what refuses a second overlapping request from the SAME user (a
+    // double submit), which the edit lock treats as an extension. Claimed first, released last:
+    // the claim must outlive the edit locks, or a second request could claim the origin and then
+    // meet this request's still-held parent-sample lock, or (same user) pass it and run on after
+    // this request's release had stripped the locks from under it.
     InventoryOperationManager.OperationOutcome outcome;
+    InventoryOperationInFlightOrigins.Claim claim = inFlightOrigins.claim(originGlobalIds);
     try {
-      outcome =
-          withOriginsLocked(
-              originIds,
-              user,
-              () ->
-                  inventoryOperationManager.performOperation(operation, request, originIds, user));
+      for (String globalId : toLock) {
+        ApiInventoryEditLock lock = tracker.attemptToLockForEdit(globalId, user);
+        if (ApiInventoryEditLockStatus.CANNOT_LOCK.equals(lock.getStatus())) {
+          throw new InventoryEditLockHeldException(globalId, lock.getOwner());
+        }
+        if (ApiInventoryEditLockStatus.LOCKED_OK.equals(lock.getStatus())) {
+          taken.add(globalId);
+        }
+      }
+      outcome = inventoryOperationManager.performOperation(operation, request, originIds, user);
     } catch (BindException coreRejection) {
       throw new BindException(facadeFieldNames(coreRejection.getBindingResult(), singleOrigin));
+    } finally {
+      try {
+        for (int i = taken.size() - 1; i >= 0; i--) {
+          tracker.attemptToUnlock(taken.get(i), user);
+        }
+      } finally {
+        claim.close();
+      }
     }
 
     ApiSampleWithFullSubSamples sample = outcome.sample();
@@ -200,66 +215,13 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     return ResponseEntity.created(location).body(result);
   }
 
-  @FunctionalInterface
-  private interface OperationCall {
-    InventoryOperationManager.OperationOutcome call() throws BindException;
-  }
-
   private static final Comparator<String> ASCENDING_GLOBAL_ID =
       Comparator.comparing((String id) -> new GlobalIdentifier(id).getPrefix())
           .thenComparing(id -> new GlobalIdentifier(id).getDbId());
 
   /**
-   * Runs the operation with every origin claimed as in flight and the Inventory edit-session lock
-   * held on every origin and every parent sample, in ascending id order. The claim is what refuses
-   * a second overlapping request from the SAME user (a double submit), which the edit lock treats
-   * as an extension; it is released after the manager's transaction has ended.
-   */
-  private InventoryOperationManager.OperationOutcome withOriginsLocked(
-      List<Long> originIds, User user, OperationCall work) throws BindException {
-    SortedSet<String> toLock = new TreeSet<>(ASCENDING_GLOBAL_ID);
-    List<String> originGlobalIds = new ArrayList<>();
-    for (Long originId : originIds) {
-      SubSample subSample = subSampleApiMgr.assertUserCanEditSubSample(originId, user);
-      originGlobalIds.add(subSample.getGlobalIdentifier());
-      toLock.add(subSample.getGlobalIdentifier());
-      SampleEntity parent = subSample.getSample();
-      if (parent != null) {
-        toLock.add(parent.getGlobalIdentifier());
-      }
-    }
-    List<String> taken = new ArrayList<>();
-    // Claimed first, released last: the claim must outlive the edit locks, or a second request
-    // could claim the origin and then meet this request's still-held parent-sample lock, or (same
-    // user) pass it and run on after this request's release had stripped the locks from under it.
-    InventoryOperationInFlightOrigins.Claim claim = inFlightOrigins.claim(originGlobalIds);
-    try {
-      for (String globalId : toLock) {
-        ApiInventoryEditLock lock = tracker.attemptToLockForEdit(globalId, user);
-        if (ApiInventoryEditLockStatus.CANNOT_LOCK.equals(lock.getStatus())) {
-          throw new InventoryEditLockHeldException(globalId, lock.getOwner());
-        }
-        if (ApiInventoryEditLockStatus.LOCKED_OK.equals(lock.getStatus())) {
-          taken.add(globalId);
-        }
-      }
-      return work.call();
-    } finally {
-      try {
-        for (int i = taken.size() - 1; i >= 0; i--) {
-          tracker.attemptToUnlock(taken.get(i), user);
-        }
-      } finally {
-        claim.close();
-      }
-    }
-  }
-
-  /**
-   * The core's errors with every field renamed to the one the caller sent ({@link #facadeField});
-   * codes, arguments and default message travel unchanged, so the resolved text is identical. Built
-   * as plain field errors rather than through rejectValue, which would resolve the renamed path
-   * against the built request it no longer fits.
+   * Built as plain field errors rather than through rejectValue, which would resolve the renamed
+   * path against the built request it no longer fits.
    */
   static BindingResult facadeFieldNames(BindingResult core, boolean singleOrigin) {
     BindingResult renamed = new BeanPropertyBindingResult(core.getTarget(), core.getObjectName());

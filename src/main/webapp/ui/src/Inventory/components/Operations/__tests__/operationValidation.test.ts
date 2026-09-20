@@ -12,14 +12,12 @@ import type { OperationInputs } from "../types";
 import { UNSET_UNIT } from "../types";
 import { operations } from "./testOperations";
 
-/** One of the real shipped definitions, exactly as the wizard reads it. */
 function real(key: string): InventoryOperation {
   const operation = operations.find((o) => o.key === key);
   if (!operation) throw new Error(`no configured operation ${key}`);
   return operation;
 }
 
-// A cryopreserve-shaped operation: it has a sub-zero temperature field and an optional cryomedium.
 const cryo = {
   key: "cryopreserve",
   inputs: [
@@ -120,7 +118,6 @@ describe("detailsValid temperature limit", () => {
     for (const numericValue of [-300, -80.0005]) {
       expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue, unitId: 8 } })).toBe(false);
     }
-    // absolute zero itself is storable and satisfies the ceiling
     expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -273.15, unitId: 8 } })).toBe(true);
   });
 });
@@ -160,8 +157,35 @@ describe("amountTakenExceedsOrigin", () => {
   });
 
   it("flags a positive amount taken from an origin that has no quantity (treated as zero available)", () => {
-    // A subsample whose volume was never set reads as 0, so taking any positive amount is over-removal.
     expect(amountTakenExceedsOrigin(cryo, validValues, null)).toBe(true);
+  });
+
+  it("is false for an operation with no amount-taken input (Passage), whatever the origin holds", () => {
+    const passage = real("passage");
+    const values: OperationInputs = { sampleName: "P2", count: 1, eachAmount: { numericValue: 1, unitId: ML } };
+    expect(amountTakenExceedsOrigin(passage, values, { numericValue: 0, unitId: ML })).toBe(false);
+    expect(amountTakenExceedsOrigin(passage, values, null)).toBe(false);
+  });
+
+  it("flags any positive amount against an origin whose quantity is explicitly zero, not only null", () => {
+    expect(amountTakenExceedsOrigin(cryo, validValues, { numericValue: 0, unitId: ML })).toBe(true);
+    expect(quantityExceedsOrigin({ numericValue: 1, unitId: ML }, { numericValue: 0, unitId: ML })).toBe(true);
+  });
+
+  it("answers 'not exceeding' for a cross-category amount taken, through the operation-level check", () => {
+    expect(
+      amountTakenExceedsOrigin(
+        cryo,
+        { ...validValues, amountTaken: { numericValue: 1e9, unitId: G } },
+        { numericValue: 1, unitId: ML },
+      ),
+    ).toBe(false);
+  });
+
+  it("does not flag an amount whose value is NaN", () => {
+    expect(quantityExceedsOrigin({ numericValue: Number.NaN, unitId: ML }, { numericValue: 5, unitId: ML })).toBe(
+      false,
+    );
   });
 });
 
@@ -185,6 +209,19 @@ describe("quantityExceedsOrigin", () => {
   it("flags any positive amount against an origin that holds nothing", () => {
     expect(quantityExceedsOrigin({ numericValue: 1, unitId: 3 }, null)).toBe(true);
   });
+
+  it("answers 'not exceeding' explicitly for cross-category input", () => {
+    // Each side converts to the atomic unit of its own category, so without the guard this compared
+    // picolitres against picograms and produced a meaningless verdict.
+    expect(quantityExceedsOrigin({ numericValue: 1, unitId: G }, { numericValue: 1, unitId: ML })).toBe(false);
+    expect(quantityExceedsOrigin({ numericValue: 1e9, unitId: G }, { numericValue: 1, unitId: ML })).toBe(false);
+  });
+
+  it("still compares normally within one category", () => {
+    expect(quantityExceedsOrigin({ numericValue: 2, unitId: ML }, { numericValue: 1, unitId: ML })).toBe(true);
+    expect(quantityExceedsOrigin({ numericValue: 0.5, unitId: ML }, { numericValue: 1, unitId: ML })).toBe(false);
+    expect(quantityExceedsOrigin({ numericValue: 1, unitId: L }, { numericValue: 1, unitId: ML })).toBe(true);
+  });
 });
 
 describe("amountIsStorable", () => {
@@ -205,13 +242,10 @@ describe("amountIsStorable", () => {
   });
 });
 
-// Unit ids from stores/definitions/Units: volume 3 = mL, 4 = L; mass 7 = g.
 const ML = 3;
 const L = 4;
 const G = 7;
 
-// A remembered bundle is keyed by operation plus process name only, so the same bundle can be offered
-// on a different-category origin; reconcileRestoredQuantities exists to catch that mismatch.
 describe("reconcileRestoredQuantities", () => {
   const reconcile = (
     values: OperationInputs,
@@ -322,8 +356,6 @@ describe("reconcileRestoredQuantities", () => {
   });
 
   it("leaves an amount for an origin this run does not include alone", () => {
-    // That amount belongs to the stored bundle, not to this request; editing it here would silently
-    // rewrite what a later run on a matching origin restores.
     const { perSubsampleAmounts } = reconcile(
       { amountTaken: { numericValue: 1, unitId: G }, eachAmount: { numericValue: 1, unitId: G } },
       {
@@ -332,21 +364,6 @@ describe("reconcileRestoredQuantities", () => {
       },
     );
     expect(perSubsampleAmounts.SS_ELSEWHERE).toEqual({ numericValue: 3, unitId: ML });
-  });
-});
-
-describe("quantityExceedsOrigin across categories", () => {
-  it("answers 'not exceeding' explicitly for cross-category input", () => {
-    // Each side converts to the atomic unit of its own category, so without the guard this compared
-    // picolitres against picograms and produced a meaningless verdict.
-    expect(quantityExceedsOrigin({ numericValue: 1, unitId: G }, { numericValue: 1, unitId: ML })).toBe(false);
-    expect(quantityExceedsOrigin({ numericValue: 1e9, unitId: G }, { numericValue: 1, unitId: ML })).toBe(false);
-  });
-
-  it("still compares normally within one category", () => {
-    expect(quantityExceedsOrigin({ numericValue: 2, unitId: ML }, { numericValue: 1, unitId: ML })).toBe(true);
-    expect(quantityExceedsOrigin({ numericValue: 0.5, unitId: ML }, { numericValue: 1, unitId: ML })).toBe(false);
-    expect(quantityExceedsOrigin({ numericValue: 1, unitId: L }, { numericValue: 1, unitId: ML })).toBe(true);
   });
 });
 
@@ -435,37 +452,5 @@ describe("detailsValid temperature unit", () => {
   it("rejects a temperature whose unit is unset or is not Celsius", () => {
     expect(detailsValid(cryopreserve, { ...cryoValues, storageTemp: { numericValue: -80, unitId: 0 } })).toBe(false);
     expect(detailsValid(cryopreserve, { ...cryoValues, storageTemp: { numericValue: -80, unitId: 9 } })).toBe(false);
-  });
-});
-
-describe("amountTakenExceedsOrigin edge cases", () => {
-  it("is false for an operation with no amount-taken input (Passage), whatever the origin holds", () => {
-    // Passage leaves the origin untouched, so there is nothing to compare: neither an empty origin
-    // nor one with no quantity at all is over-removal.
-    const passage = real("passage");
-    const values: OperationInputs = { sampleName: "P2", count: 1, eachAmount: { numericValue: 1, unitId: ML } };
-    expect(amountTakenExceedsOrigin(passage, values, { numericValue: 0, unitId: ML })).toBe(false);
-    expect(amountTakenExceedsOrigin(passage, values, null)).toBe(false);
-  });
-
-  it("flags any positive amount against an origin whose quantity is explicitly zero, not only null", () => {
-    expect(amountTakenExceedsOrigin(cryo, validValues, { numericValue: 0, unitId: ML })).toBe(true);
-    expect(quantityExceedsOrigin({ numericValue: 1, unitId: ML }, { numericValue: 0, unitId: ML })).toBe(true);
-  });
-
-  it("answers 'not exceeding' for a cross-category amount taken, through the operation-level check", () => {
-    expect(
-      amountTakenExceedsOrigin(
-        cryo,
-        { ...validValues, amountTaken: { numericValue: 1e9, unitId: G } },
-        { numericValue: 1, unitId: ML },
-      ),
-    ).toBe(false);
-  });
-
-  it("does not flag an amount whose value is NaN", () => {
-    expect(quantityExceedsOrigin({ numericValue: Number.NaN, unitId: ML }, { numericValue: 5, unitId: ML })).toBe(
-      false,
-    );
   });
 });
