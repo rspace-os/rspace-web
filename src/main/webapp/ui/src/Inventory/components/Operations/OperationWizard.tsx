@@ -30,7 +30,6 @@ import DocumentationStep from "./DocumentationStep";
 import OperationConfirmation from "./OperationConfirmation";
 import OperationDetailsStep from "./OperationDetailsStep";
 import OperationPicker from "./OperationPicker";
-import { describeOperationError, performOperation, sampleNameAvailable } from "./operationsApi";
 import {
   amountKeysFor,
   type InventoryOperation,
@@ -38,7 +37,8 @@ import {
   resolveDefaultAmountMode,
   resolveProcessName,
   usesAmountModes,
-} from "./operationsConfig";
+} from "./operations";
+import { describeOperationError, performOperation, sampleNameAvailable } from "./operationsApi";
 import {
   amountIsStorable,
   amountTakenExceedsOrigin,

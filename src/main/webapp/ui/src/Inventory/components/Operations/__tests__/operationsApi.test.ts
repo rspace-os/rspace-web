@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { InventoryOperation } from "../operations";
 import { describeOperationError, performOperation, sampleNameAvailable } from "../operationsApi";
-import type { InventoryOperation } from "../operationsConfig";
 import { operations } from "./testOperations";
 
 function operationNamed(key: string): InventoryOperation {

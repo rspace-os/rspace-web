@@ -34,7 +34,7 @@ implementing `InventoryOperation<R>`: what it takes from its origins, the value 
 request body cannot state, and the request the transactional core executes. The six
 creating operations share `CreatingOperation`. There is no registry: each endpoint names
 its own operation, which is what makes the generics type-safe. The wizard's operations
-are a hand-typed TypeScript array (`operationsConfig.ts`), not a fetched document: no
+are a hand-typed TypeScript array (`operations.ts`), not a fetched document: no
 request, no schema, no load state. Its label and field-name keys are typed as the
 `inventory:` catalog's key union, so a mistyped key fails at compile time.
 
