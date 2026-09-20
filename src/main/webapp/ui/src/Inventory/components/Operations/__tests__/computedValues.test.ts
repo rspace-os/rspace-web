@@ -1,7 +1,7 @@
 import { faFlask } from "@fortawesome/free-solid-svg-icons/faFlask";
 import { describe, expect, it } from "vitest";
 import { applyComputedValues, type ComputedContext } from "../computedValues";
-import type { InventoryOperation } from "../operationsConfig";
+import type { InventoryOperation } from "../operations";
 
 function opWith(computed: InventoryOperation["effect"]["computed"]): InventoryOperation {
   return {

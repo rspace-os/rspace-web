@@ -16,12 +16,7 @@ import useStores from "@/stores/use-stores";
 import { withUniqueFieldNames } from "./buildOperationRequest";
 import { applyComputedValues } from "./computedValues";
 import type { DocumentationSelection } from "./DocumentationStep";
-import {
-  type ConfirmSummaryField,
-  type InventoryOperation,
-  resolveProcessName,
-  usesAmountModes,
-} from "./operationsConfig";
+import { type ConfirmSummaryField, type InventoryOperation, resolveProcessName, usesAmountModes } from "./operations";
 import type { OriginBlockedReason } from "./operationValidation";
 import type { TemplateSelection } from "./TemplateStep";
 import type { AmountMode, OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
