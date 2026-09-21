@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -55,6 +56,55 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
       Pattern.compile(
           "^(?:https?://(?:dx\\.)?doi\\.org/)?(10\\.\\d{4,9}/\\S+)$", Pattern.CASE_INSENSITIVE);
 
+  /**
+   * A query that may be pasted into DataCite's {@code doi:*...*} wildcard. DataCite's {@code query}
+   * is Elasticsearch query-string syntax, so this is an allow-list of the characters that leave the
+   * wildcard a single term: it excludes whitespace and every character that would close the clause
+   * or start a new one ({@code " * ? : ( ) [ ] { } ^ ~ \ + = ! < > &} and {@code |}), so what the
+   * user typed cannot turn the retry into a different query.
+   *
+   * <p>It admits {@code /} and {@code -}, which <em>are</em> reserved in query-string syntax, on
+   * the evidence that DataCite accepts them inside a wildcard term rather than on the syntax alone:
+   * verified 2026-09-17 against api.datacite.org, where {@code doi:*qvtb/aw74*} answers 200 and
+   * {@code doi:*5281/zenodo*} (12.89M) narrows {@code doi:*5281*} (12.91M), so the wildcard really
+   * does span the slash, while {@code doi:*"broken*} answers 400. Keeping {@code /} is what lets a
+   * pasted prefix/suffix pair match; widening this class further needs the same kind of evidence.
+   */
+  static final Pattern DOI_FRAGMENT = Pattern.compile("^[A-Za-z0-9._/-]+$");
+
+  /**
+   * The characters DataCite's {@code query} reserves, escaped before a free-text search so the
+   * user's words are matched rather than parsed. Left unescaped they answer 400, not an empty page,
+   * and the dialog can only show that as an error: verified 2026-09-18 against api.datacite.org,
+   * where {@code foo"bar}, {@code foo[bar}, {@code foo{bar}, {@code (foo}, {@code foo!},
+   * {@code foo^} and {@code zeiss &&} all answer 400 while every escaped form answers 200.
+   *
+   * <p>{@code /} is deliberately absent although query-string syntax reserves it: DataCite answers
+   * 400 for {@code 10.5281\/zenodo} and 200 for {@code 10.5281/zenodo}, so escaping it would break
+   * the pasted DOI fragments this search exists to match. Escaping costs nothing where it is not
+   * needed, checked the same day: {@code \Zeiss} and {@code Zeiss} both answer 71,
+   * {@code spectrometer\*} and {@code spectrometer} both 146.
+   *
+   * <p>{@code <}, {@code >} and {@code =} are absent too, and cannot be added: a backslash before
+   * one is ignored, so escaping them is not available even in principle. They need no handling,
+   * because a range only exists attached to a field and {@code :} is escaped here, which is what
+   * builds one. Measured 2026-09-18: {@code publicationYear:>2020} answers 95,411,191 but
+   * {@code publicationYear\:>2020}, which is what this sends, answers 15, the same as the plain
+   * {@code publicationYear 2020}. Loose, {@code Zeiss>4} answers 6,539, which is exactly what
+   * {@code Zeiss 4} answers and what every separator the analyser splits on answers, so the
+   * character is inert rather than parsed. Comparing it against {@code Zeiss} alone (42,170) only
+   * measures the second term.
+   */
+  private static final Pattern DATACITE_RESERVED =
+      Pattern.compile("([\\\\+\\-&|!(){}\\[\\]^\"~*?:])");
+
+  /**
+   * The bare boolean operators, which no character class catches. A dangling one is a parse error
+   * in its own right ({@code abc OR} and {@code NOT} at the end both answer 400), and escaping the
+   * first letter is what stops the parser reading the word as an operator.
+   */
+  private static final Pattern DATACITE_OPERATOR = Pattern.compile("\\b(AND|OR|NOT)\\b");
+
   /** A Handle under an ePIC prefix (B2INST mints 21.xxx), bare or behind hdl.handle.net. */
   static final Pattern HANDLE_QUERY =
       Pattern.compile(
@@ -70,8 +120,12 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
 
   @Override
   public ApiPidinstSearchResult search(String query, User user) {
+    String q = StringUtils.trimToEmpty(query);
+    if (q.length() < MIN_QUERY_LENGTH) {
+      throw new ApiRuntimeException(
+          "errors.inventory.identifier.pidinstQueryTooShort", MIN_QUERY_LENGTH);
+    }
     IdentifierType provider = enabledProvider();
-    String q = query.trim();
     ApiPidinstSearchResult result = new ApiPidinstSearchResult();
     result.setProvider(provider.name());
     if (isPidOfTheOtherRegistry(q, provider)) {
@@ -85,8 +139,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     } else if (provider == IdentifierType.PIDINST_B2INST) {
       searchB2inst(q, result);
     } else {
-      DataCiteDoiSearchResult hits =
-          dataCiteConnector.searchInstrumentDois(q, MAX_HITS, InventorySettingType.PIDINST);
+      DataCiteDoiSearchResult hits = searchDataCite(q);
       // re-checked here as well as asked for in the request, so the rule holds whatever the index
       // returns (ADR 0009), and so this path cannot offer what fetchByPid would refuse
       hits.getData().stream()
@@ -165,6 +218,38 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         .forEach(result.getHits()::add);
     Integer total = page.getHits().getTotal();
     result.setTotal(total == null ? result.getHits().size() : total);
+  }
+
+  /**
+   * DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one, and
+   * a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an empty
+   * first page is retried that way (ADR 0009 decision 7).
+   *
+   * <p>The free-text call carries the query escaped and the retry does not: the retry's clause is
+   * composed here from what the user typed, and {@link #DOI_FRAGMENT} already limits that to
+   * characters which cannot close it. Both gates read the raw query, so escaping cannot change
+   * which searches retry.
+   */
+  private DataCiteDoiSearchResult searchDataCite(String query) {
+    DataCiteDoiSearchResult hits =
+        dataCiteConnector.searchInstrumentDois(
+            escapeForDataCite(query), MAX_HITS, InventorySettingType.PIDINST);
+    if (!hits.getData().isEmpty() || !DOI_FRAGMENT.matcher(query).matches()) {
+      return hits;
+    }
+    return dataCiteConnector.searchInstrumentDois(
+        "doi:*" + query + "*", MAX_HITS, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * What the user typed, as a literal term for DataCite's Elasticsearch {@code query}. Only the
+   * free-text call needs this: the wildcard retry composes its own clause and is already guarded by
+   * {@link #DOI_FRAGMENT}, which admits nothing that could close it.
+   */
+  private static String escapeForDataCite(String query) {
+    String escaped = DATACITE_RESERVED.matcher(query).replaceAll("\\\\$1");
+    // after the character pass, so the backslash it inserts is not escaped again
+    return DATACITE_OPERATOR.matcher(escaped).replaceAll("\\\\$1");
   }
 
   private IdentifierType enabledProvider() {
