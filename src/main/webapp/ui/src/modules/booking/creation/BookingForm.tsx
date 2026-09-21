@@ -9,6 +9,7 @@ import { BookableItemPicker } from "@/modules/booking/creation/BookableItemPicke
 import { BookingFormAlerts } from "@/modules/booking/creation/BookingFormAlerts";
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import type { BookingConflict } from "@/modules/booking/domain/availability";
 import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
 import {
   type BookingWindowDraft,
@@ -81,6 +82,8 @@ type BookingFormCommonProps = {
   token: string;
   pending: boolean;
   error?: string;
+  conflicts?: readonly BookingConflict[];
+  conflictSeverity?: "warning" | "error";
   submissionBlocked?: boolean;
   outcomeUncertain?: boolean;
   density?: "comfortable" | "compact";
@@ -353,6 +356,8 @@ export function BookingForm(props: BookingFormProps) {
         <BookingFormAlerts
           warning={bookingInPast ? t("bookings.warnings.past") : undefined}
           error={props.error}
+          conflicts={props.conflicts}
+          conflictSeverity={props.conflictSeverity}
           outcomeUncertain={props.outcomeUncertain}
         />
         <RenderFields fields={textFields} form={form} disabled={busy} density={props.density} layout="stacked" />

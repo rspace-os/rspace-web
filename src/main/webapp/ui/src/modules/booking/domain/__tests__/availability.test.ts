@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type AvailabilityInterval,
+  bookingConflicts,
   buildAvailabilitySegments,
   buildAvailabilitySlices,
   classifyCurrentDayAvailability,
@@ -15,6 +16,30 @@ const occupied = (from: string, to: string, kind: AvailabilityInterval["kind"] =
 });
 
 describe("availability", () => {
+  it("deduplicates booking sources and excludes the booking being edited", () => {
+    const source = (id: number) => ({
+      id: `booking:${id}`,
+      startsAt: new Date("2026-08-17T10:00:00Z"),
+      endsAt: new Date("2026-08-17T11:00:00Z"),
+      booking: {
+        id,
+        kind: "BOOKING" as const,
+        privacy: "full" as const,
+        purpose: `Purpose ${id}`,
+        bookedBy: null,
+      },
+    });
+    const intervals = [
+      { kind: "booking" as const, startsAt: start, endsAt: end, source: source(42) },
+      { kind: "booking" as const, startsAt: start, endsAt: end, source: source(42) },
+      { kind: "booking" as const, startsAt: start, endsAt: end, source: source(43) },
+    ];
+
+    expect(bookingConflicts(intervals, "UTC", 42)).toEqual([
+      expect.objectContaining({ id: 43, start: "2026-08-17T10:00:00.000Z", timezone: "UTC" }),
+    ]);
+  });
+
   it("classifies half-open current and future availability", () => {
     const intervals = [occupied("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")];
     expect(classifyCurrentDayAvailability(intervals, start, end, new Date("2026-08-17T09:00:00Z"))).toBe(

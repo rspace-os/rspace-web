@@ -1242,6 +1242,10 @@ export default interface Resources {
         "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
         "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
         "overlap": "This period overlaps another booking or a maintenance event.",
+        "overlapBooking": "Booking #{id}",
+        "overlapMaintenance": "Maintenance event #{id}",
+        "overlapReserved": "Reserved booking #{id}",
+        "overlapSummary": "This period overlaps:",
         "targetUnavailable": "This bookable item is unavailable.",
         "windowRequired": "Enter a valid start and end."
       },
