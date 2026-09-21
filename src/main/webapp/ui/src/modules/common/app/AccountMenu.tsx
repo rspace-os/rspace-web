@@ -147,7 +147,7 @@ export default function AccountMenu({
             {t("appBar.published")} <ExternalLinkIcon className="size-3" />
           </MenuLinkItem>
         )}
-        <MenuLinkItem render={<Link to="/about" viewTransition />}>{t("appBar.aboutRSpace")}</MenuLinkItem>
+        <MenuLinkItem render={<Link to="/about" />}>{t("appBar.aboutRSpace")}</MenuLinkItem>
         <MenuItem
           className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm text-destructive hover:bg-muted"
           onClick={handleLogout}

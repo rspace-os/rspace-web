@@ -11,7 +11,7 @@ const meta = {
     value: [],
     onValueChange: () => undefined,
     ariaLabel: "Values",
-    placeholder: "Select values",
+    placeholder: "",
     emptyMessage: "No matching values found",
     removeLabel: (label) => `Remove ${label}`,
   },
@@ -22,6 +22,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const timezones = ["America/New_York", "Asia/Tokyo", "Europe/Berlin", "Europe/London"];
+const manyValues = Array.from({ length: 24 }, (_, index) => `Value ${index + 1}`);
 
 function Example({ custom }: { custom: boolean }) {
   const [value, setValue] = useState<readonly string[]>([]);
@@ -32,7 +33,7 @@ function Example({ custom }: { custom: boolean }) {
       onValueChange={setValue}
       allowCustomValues={custom}
       ariaLabel={custom ? "Values" : "Time zones"}
-      placeholder={custom ? "Type a value and press Enter" : "Select values"}
+      placeholder={custom ? "Type a value and press Enter" : ""}
       emptyMessage={custom ? "Enter a value" : "No matching values found"}
       removeLabel={(label) => `Remove ${label}`}
       className="max-w-md rounded-sm"
@@ -46,4 +47,24 @@ export const ConstantOptions: Story = {
 
 export const ArbitraryText: Story = {
   render: () => <Example custom />,
+};
+
+function ManySelectedValuesExample() {
+  const [value, setValue] = useState<readonly string[]>(manyValues.slice(0, 18));
+  return (
+    <MultiSelect
+      options={manyValues}
+      value={value}
+      onValueChange={setValue}
+      ariaLabel="Values"
+      placeholder=""
+      emptyMessage="No matching values found"
+      removeLabel={(label) => `Remove ${label}`}
+      className="max-h-32 max-w-md overflow-y-auto rounded-sm"
+    />
+  );
+}
+
+export const ManySelectedValues: Story = {
+  render: () => <ManySelectedValuesExample />,
 };

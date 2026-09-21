@@ -70,12 +70,7 @@ export const routeTree = rootRoute.addChildren([bookingRoute, aboutRoute, mainte
 export const router = createRouter({
   routeTree,
   defaultPreload: "intent",
-  defaultViewTransition: true,
   defaultStaleReloadMode: "blocking",
-});
-
-router.subscribe("onBeforeNavigate", ({ hashChanged, hrefChanged, pathChanged }) => {
-  if (hrefChanged && !pathChanged && !hashChanged) router.shouldViewTransition = false;
 });
 
 declare module "@tanstack/react-router" {
