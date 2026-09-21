@@ -178,6 +178,10 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
    * the same reason the derivation paths do: a template may mark Landing page mandatory, and that
    * check would reject the blank.
    *
+   * <p>Only this path clears. {@link #unlinkIdentifiers} also deletes an identifier, when the
+   * instrument is trashed, and deliberately leaves the field alone (ADR 0010). The asymmetry is
+   * intended, not an oversight: trashing is reversible for everything except the link.
+   *
    * @return whether the instrument was changed, so the caller knows the update has content
    */
   static boolean clearLandingPageOfDeletedIdentifier(
@@ -474,6 +478,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         // Detach from parent container before marking deleted, so the container's
         // location slot and count are updated consistently (mirrors SubSampleApiManagerImpl).
         dbInstrument.removeFromCurrentParent();
+        unlinkIdentifiers(dbInstrument);
         dbInstrument.setRecordDeleted(true);
         instrumentDao.save(dbInstrument);
         publisher.publishEvent(new InventoryDeleteEvent(dbInstrument, user));
@@ -488,6 +493,36 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     populateOutgoingApiInstrumentEntity(apiInstrumentResult, dbInstrument, user);
     updateOntologyOnRecordChanges(apiInstrumentResult, user);
     return apiInstrumentResult;
+  }
+
+  /**
+   * Unlinks every identifier the instrument carries, so trashing it releases its PID and that PID
+   * can be imported again (RSDEV-1504). Without this the identifier stays active, and {@code
+   * DigitalObjectIdentifierDao.findActiveByIdentifierAndType} goes on reporting the PID as linked
+   * to an instrument nobody can see, which refuses a re-import with a 409 naming a trashed record.
+   *
+   * <p>Soft-deleted in RSpace and nowhere else: no provider call is made, for an identifier RSpace
+   * registered as much as for a linked one. A DOI already minted therefore keeps resolving and a
+   * published B2INST record is left standing, which is the only honest option for the registered
+   * case anyway - DataCite deletes drafts only, and B2INST refuses deletion outright (ADR 0009).
+   *
+   * <p>Not undone by {@link #restoreDeletedInstrument}, deliberately: the PID may have been
+   * imported onto another instrument while this one sat in the trash, and the
+   * one-identifier-per-record rule has to keep holding for whichever record ended up with it. A
+   * restored instrument comes back without its identifier, and the user re-imports or re-registers
+   * if they want one.
+   *
+   * <p>The Landing page field is left as it stands, unlike the explicit delete-identifier path,
+   * which clears an address RSpace wrote (ADR 0006). Trashing is reversible for everything except
+   * the link, and blanking a field the user can see would make the restore lossier than the ticket
+   * asks for.
+   *
+   * <p>Cascades from the record on save: the identifiers collection is mapped {@code
+   * CascadeType.ALL}, so the caller's {@code instrumentDao.save} persists these flags.
+   */
+  private void unlinkIdentifiers(InventoryRecord record) {
+    record.getActiveIdentifiers().forEach(doi -> doi.setDeleted(true));
+    record.refreshActiveIdentifiers();
   }
 
   @Override

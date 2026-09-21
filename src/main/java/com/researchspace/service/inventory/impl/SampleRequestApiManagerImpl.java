@@ -15,6 +15,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.events.SampleRequestStatusEvent;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
@@ -30,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service("sampleRequestApiManager")
@@ -41,6 +43,12 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   private @Autowired MessageSourceUtils messages;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
   private @Autowired UserDao userDao;
+  private @Autowired ApplicationEventPublisher publisher;
+
+  @Override
+  public void setPublisher(ApplicationEventPublisher publisher) {
+    this.publisher = publisher;
+  }
 
   private enum Actor {
     OWNER,
@@ -76,7 +84,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     assertRequestable(sample);
     SampleRequest request = new SampleRequest(sample, user, post.getNote());
     request.recordStatus(user, SampleRequestStatus.PENDING, null);
-    return toDetail(sampleRequestDao.save(request), user);
+    SampleRequest saved = sampleRequestDao.save(request);
+    publisher.publishEvent(new SampleRequestStatusEvent(saved, user));
+    return toDetail(saved, user);
   }
 
   @Override
@@ -126,7 +136,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     String reason = validatedReason(post, transition);
 
     request.recordStatus(user, post.getStatus(), reason);
-    return toDetail(sampleRequestDao.save(request), user);
+    SampleRequest saved = sampleRequestDao.save(request);
+    publisher.publishEvent(new SampleRequestStatusEvent(saved, user));
+    return toDetail(saved, user);
   }
 
   private void assertPermittedActor(SampleRequest request, User user, Transition transition) {

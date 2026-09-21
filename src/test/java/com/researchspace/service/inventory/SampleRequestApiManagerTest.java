@@ -18,6 +18,7 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.dao.SampleRequestDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.events.SampleRequestStatusEvent;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
@@ -28,15 +29,20 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 
 public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
   private @Autowired SampleRequestApiManager sampleRequestApiMgr;
   private @Autowired SystemPropertyManager systemPropertyMgr;
   private @Autowired SampleRequestDao sampleRequestDao;
+  private @Autowired ApplicationEventPublisher realPublisher;
 
   private User owner;
   private User requester;
@@ -56,6 +62,60 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
         SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
         HierarchicalPermission.ALLOWED,
         getSysAdminUser());
+  }
+
+  @AfterEach
+  public void restorePublisher() {
+    sampleRequestApiMgr.setPublisher(realPublisher);
+  }
+
+  @Test
+  public void createRequest_publishesStatusEventForAuditing() {
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+    sampleRequestApiMgr.setPublisher(mockPublisher);
+
+    ApiSampleRequest created = raiseRequest("Need 2ml for the binding assay");
+
+    ArgumentCaptor<SampleRequestStatusEvent> published =
+        ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
+    Mockito.verify(mockPublisher).publishEvent(published.capture());
+    assertEquals(created.getId(), published.getValue().getRequest().getId());
+    assertEquals(SampleRequestStatus.PENDING, published.getValue().getRequest().getStatus());
+    assertEquals(requester, published.getValue().getActor());
+  }
+
+  @Test
+  public void updateStatus_publishesStatusEventForAuditing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    // installed after raising, so only the transition's event is captured
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+    sampleRequestApiMgr.setPublisher(mockPublisher);
+
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ArgumentCaptor<SampleRequestStatusEvent> published =
+        ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
+    Mockito.verify(mockPublisher).publishEvent(published.capture());
+    assertEquals(raised.getId(), published.getValue().getRequest().getId());
+    assertEquals(SampleRequestStatus.APPROVED, published.getValue().getRequest().getStatus());
+    assertEquals(owner, published.getValue().getActor());
+  }
+
+  @Test
+  public void refusedTransitionPublishesNothingToAudit() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+    sampleRequestApiMgr.setPublisher(mockPublisher);
+
+    // the requester may not approve their own request
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), requester));
+
+    Mockito.verifyNoInteractions(mockPublisher);
   }
 
   @Test
