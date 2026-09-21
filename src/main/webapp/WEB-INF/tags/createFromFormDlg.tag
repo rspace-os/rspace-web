@@ -10,7 +10,9 @@
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
-<axt:paginate paginationList="${formsForCreateMenuPagination}"></axt:paginate>
+<div class="bootstrap-custom-flat">
+	<axt:paginate paginationList="${formsForCreateMenuPagination}"></axt:paginate>
+</div>
 <table>
 	<tr>
 		<th><spring:message code="workspace.list.name.header"/></th>

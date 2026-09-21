@@ -2,7 +2,6 @@
 	Builds Bootstrap-compliant pagination from a List<PaginationObject>
 --%>
 <%@ attribute name="paginationList" required="true" type="java.util.List" %>
-<%@ attribute name="isRegularLink" required="false"  type="java.lang.Boolean" %>
 <%@ attribute name="omitATagLinkId" required="false"  type="java.lang.Boolean" %>
 
 
@@ -13,11 +12,6 @@
  based handling to parse the link out of the ID--%>
 <ul class="pagination new">
   <c:forEach var="page" items="${paginationList}">
-    <c:set var="href" value="${page.link}"/>
-    <c:if test="${empty isRegularLink or isRegularLink eq 'false'}">
-      <c:set var="href" value="#"/>
-    </c:if>
-
     <c:choose>
       <c:when test="${page.link=='#'}">
         <li class="active"><span aria-current="page">${page.name}</span></li>
@@ -26,12 +20,12 @@
         <c:choose>
           <c:when test="${empty omitATagLinkId or omitATagLinkId eq 'false'}">
             <li>
-              <a class="${page.className}" id="page_${page.link}" href="${href}">${page.name}</a>
+              <a class="${page.className}" id="page_${page.link}" href="#">${page.name}</a>
             </li>
           </c:when>
           <c:otherwise>
             <li>
-              <a class="${page.className}" data-pageNumber="${page.pageNumber}" href="${href}">${page.name}</a>
+              <a class="${page.className}" data-pageNumber="${page.pageNumber}" href="#">${page.name}</a>
             </li>
           </c:otherwise>
       </c:choose>
