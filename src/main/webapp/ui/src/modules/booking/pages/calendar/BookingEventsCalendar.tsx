@@ -13,13 +13,7 @@ import { Button } from "@/modules/common/ui/button";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
-import {
-  CalendarFilterButtons,
-  CalendarFilterIssue,
-  type CalendarFilterIssueState,
-  CalendarFilterPanel,
-  type CalendarFilterPanelKind,
-} from "./CalendarFilterPanels";
+import { CalendarFilterIssue, type CalendarFilterIssueState } from "./CalendarFilterPanels";
 import { CalendarResourceSchedule, ResourceScheduleSkeleton } from "./CalendarResourceSchedule";
 import { CalendarTimeGrid } from "./CalendarTimeGrid";
 import type { BookingCalendarResource, CalendarLayout, CalendarView } from "./calendarLayoutUtils";
@@ -167,7 +161,6 @@ export function BookingEventsCalendar({
 }) {
   const { t } = useTranslation("booking");
   const todayValue = todayInTimeZone(timezone);
-  const [activeFilterPanel, setActiveFilterPanel] = React.useState<CalendarFilterPanelKind | null>(null);
   const eventConfig = eventFilterConfig ?? calendarEventFallbackConfig;
   const eventFiltering:
     | false
@@ -193,50 +186,17 @@ export function BookingEventsCalendar({
       (eventFiltering.value.search.trim() !== "" || eventFiltering.value.expression !== null));
   const changeMine = (next: boolean) => onMineChange?.(next);
   const filterControls = (
-    <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
-      <legend className="sr-only">{t("calendar.filterGroups.legend")}</legend>
-      {eventFilterConfig ? (
-        <CalendarFilterButtons
-          kind="events"
-          expression={eventFilterExpression}
-          active={activeFilterPanel === "events"}
-          onClick={() => setActiveFilterPanel((current) => (current === "events" ? null : "events"))}
-        />
-      ) : null}
-    </fieldset>
+    <CalendarFilterControls
+      date={date}
+      view={view}
+      layout={layout}
+      timezone={timezone}
+      today={todayValue}
+      onDateChange={onDateChange}
+      onViewChange={onViewChange}
+      onLayoutChange={onLayoutChange}
+    />
   );
-  const filterPanel =
-    activeFilterPanel === "items" && itemFilterConfig ? (
-      <CalendarFilterPanel<BookingConfiguration>
-        key={`items-${JSON.stringify(itemFilterExpression)}`}
-        kind="items"
-        config={itemFilterConfig}
-        expression={itemFilterExpression}
-        onApply={(next) => {
-          onItemFilterChange?.(next);
-          setActiveFilterPanel(null);
-        }}
-        onSelectRuntimeField={onSelectItemRuntimeField}
-        runtimeFieldDefinitions={itemRuntimeFieldDefinitions}
-        runtimeFieldAuthScope={itemRuntimeFieldAuthScope}
-        onClose={() => setActiveFilterPanel(null)}
-      />
-    ) : activeFilterPanel === "events" && eventFilterConfig ? (
-      <CalendarFilterPanel<BookingListDocument>
-        key={`events-${JSON.stringify(eventFilterExpression)}`}
-        kind="events"
-        config={eventFilterConfig}
-        expression={eventFilterExpression}
-        onApply={(next) => {
-          onEventFilterChange?.(next);
-          setActiveFilterPanel(null);
-        }}
-        onSelectRuntimeField={onSelectEventRuntimeField}
-        runtimeFieldDefinitions={eventRuntimeFieldDefinitions}
-        runtimeFieldAuthScope={eventRuntimeFieldAuthScope}
-        onClose={() => setActiveFilterPanel(null)}
-      />
-    ) : null;
   return (
     <main className="min-h-screen w-full min-w-0 space-y-5 overflow-hidden bg-background p-4 sm:p-8">
       {isLoading && !isError && (
@@ -269,26 +229,15 @@ export function BookingEventsCalendar({
         features={calendarFeatures}
         queryString={false}
         debounceSearch={true}
-        hideFilterPanel
         headingClassName="text-2xl font-semibold"
         createAction={creationAction}
+        onSelectRuntimeField={onSelectEventRuntimeField}
+        runtimeFieldDefinitions={eventRuntimeFieldDefinitions}
+        runtimeFieldAuthScope={eventRuntimeFieldAuthScope}
         filterButtons={{
           legend: t("calendar.quickFilters.legend"),
-          controls: (
-            <>
-              <CalendarFilterControls
-                date={date}
-                view={view}
-                layout={layout}
-                timezone={timezone}
-                today={todayValue}
-                onDateChange={onDateChange}
-                onViewChange={onViewChange}
-                onLayoutChange={onLayoutChange}
-              />
-              {filterControls}
-            </>
-          ),
+          controlsOnSeparateRow: true,
+          controls: filterControls,
           hasChanges:
             date !== todayValue ||
             view !== "day" ||
@@ -305,7 +254,6 @@ export function BookingEventsCalendar({
             },
           ],
           onReset: () => {
-            setActiveFilterPanel(null);
             changeMine(false);
             onControlsReset();
           },
@@ -315,7 +263,6 @@ export function BookingEventsCalendar({
           <>
             {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
             {eventFilterIssue ? <CalendarFilterIssue {...eventFilterIssue} /> : null}
-            {filterPanel}
             {layout === "time-grid" && (
               <CalendarTimeGrid
                 date={date}

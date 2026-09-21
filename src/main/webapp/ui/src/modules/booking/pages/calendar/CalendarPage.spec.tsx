@@ -71,7 +71,7 @@ describe("Calendar page", () => {
     expect(bookingPageRequests.collectionQueries.some((query) => query.includes("eventWhere=purpose=="))).toBe(true);
     expect(new URLSearchParams(history.location.search).get("calendar-resources.where")).toBe("target==IN123");
     await expect.element(page.getByRole("button", { name: "Bookable items, 1 applied" })).not.toBeInTheDocument();
-    await expect.element(calendar.filters).toHaveAccessibleName("Booking events, 1 applied");
+    await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
   });
 
   test("hides cached events and blocks requests for an unavailable saved item field", async () => {
@@ -170,6 +170,15 @@ describe("Calendar page", () => {
     const addBox = add.element().getBoundingClientRect();
     const editStyle = getComputedStyle(edit.element());
     const addStyle = getComputedStyle(add.element());
+    const actionContainer = edit.element().parentElement;
+    if (!actionContainer) throw new Error("Edit action must have a row action container");
+    expect(getComputedStyle(actionContainer).position).toBe("sticky");
+    expect(getComputedStyle(actionContainer).right).toBe("0px");
+    const instrumentLink = calendar.resourceSchedule.getByRole("link", { name: /Open inventory record/ }).first();
+    const instrumentHeader = instrumentLink.element().closest("header");
+    if (!instrumentHeader) throw new Error("Instrument link must have a row header");
+    expect(getComputedStyle(instrumentHeader).position).toBe("sticky");
+    expect(getComputedStyle(instrumentHeader).left).toBe("0px");
     expect(editBox.top).toBeGreaterThanOrEqual(addBox.bottom);
     expect(Math.abs(editBox.x + editBox.width / 2 - (addBox.x + addBox.width / 2))).toBeLessThanOrEqual(1);
     expect(editStyle.border).toBe(addStyle.border);
@@ -235,7 +244,7 @@ describe("Calendar page", () => {
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
     await page.getByRole("textbox", { name: "Value for filter 1" }).fill("no matching purpose");
     await page.getByRole("button", { name: "Apply filters" }).click();
-    await expect.element(calendar.filters).toHaveAccessibleName("Booking events, 1 applied");
+    await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
     await calendar.week.click();
     await expect.element(calendar.week).toHaveAttribute("aria-pressed", "true");
     const requestsBeforeReset = bookingPageRequests.calendarBookingRequests.length;
@@ -243,7 +252,7 @@ describe("Calendar page", () => {
     await expect.element(calendar.search).toHaveValue("");
     await expect.element(calendar.mine).toHaveAttribute("aria-pressed", "false");
     await expect.element(calendar.day).toHaveAttribute("aria-pressed", "true");
-    await expect.element(calendar.filters).toHaveAccessibleName("Booking events");
+    await expect.element(calendar.filters).toHaveAccessibleName("Filters, none applied");
     await expect.element(calendar.reset).not.toBeInTheDocument();
     expect(new URLSearchParams(history.location.search).has("calendar-resources.q")).toBe(false);
     await expect
