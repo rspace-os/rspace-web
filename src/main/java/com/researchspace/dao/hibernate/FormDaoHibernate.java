@@ -2,6 +2,7 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
+import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.AbstractFormDaoImpl;
 import com.researchspace.dao.FormDao;
 import com.researchspace.model.PaginationCriteria;
@@ -17,6 +18,7 @@ import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordFactory;
+import com.researchspace.model.sort.FormSort;
 import com.researchspace.model.views.FormSearchCriteria;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -91,6 +93,8 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       PaginationCriteria<RSForm> pagCriteria) {
 
     long start = System.currentTimeMillis();
+    FormSort sort =
+        pagCriteria == null ? FormSort.ID : FormSort.fromRequest(pagCriteria.getOrderBy());
 
     Set<Permission> usersPermissions = user.getAllPermissions(false, true);
     for (Role r : user.getRoles()) {
@@ -196,13 +200,8 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       }
 
       StringBuilder baseQuery = new StringBuilder(" select distinct form.id");
-      // for compatibility with older MySQL
-      if (isSortOrderSet(pagCriteria)) {
-        baseQuery
-            .append(pagCriteria.getOrderBy().equals("owner.username") ? ", " : ", form.")
-            .append(pagCriteria.getOrderBy())
-            .append(" ");
-      }
+      // the sort column must be selected for the union's order by to see it
+      baseQuery.append(sortSelectColumn(sort));
       baseQuery.append(
           " from RSForm form left join User owner on form.owner_id=owner.id"
               + " left join UserGroup up on up.user_id=owner.id"
@@ -247,7 +246,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
         sb.append(" union ");
       }
     }
-    sb.append(makeOrderBy(pagCriteria));
+    sb.append(makeOrderBy(sort, pagCriteria == null ? null : pagCriteria.getSortOrder()));
     allQuery = sb.toString();
     log.debug(" all clause is [{}]", allQuery);
 
@@ -272,7 +271,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     log.info("time taken for form permission queries is: {}", (end - start));
 
     List<RSForm> forms = new ArrayList<>();
-    if (!isSortOrderSet(pagCriteria)) {
+    if (sort == FormSort.ID) {
       // there is only a single result column
       List<Number> ids = query.list(); // preserve order
       for (Number id : ids) { // for debug purpose
@@ -311,31 +310,43 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return sb.toString();
   }
 
-  /**
-   * Builds the ORDER BY clause for the native form listing query. An unsafe sort field falls back
-   * to a stable {@code id} order so paging over the union stays deterministic.
-   */
-  String makeOrderBy(PaginationCriteria<RSForm> pagCriteria) {
-    if (pagCriteria == null || pagCriteria.getOrderBy() == null) {
-      return "";
+  /** The column a sort key orders the native form listing by. */
+  static String sortColumn(FormSort sort) {
+    switch (sort) {
+      case OWNER:
+        return "owner.username";
+      case PUBLISHING_STATE:
+        return "publishingState";
+      case MODIFICATION_DATE:
+        return "modificationDate";
+      case CREATION_DATE:
+        return "creationDate";
+      case CREATION_DATE_MILLIS:
+        return "creationDateMillis";
+      case MODIFICATION_DATE_MILLIS:
+        return "modificationDateMillis";
+      case NAME:
+        return "name";
+      case ID:
+      default:
+        return "id";
     }
-    if (!pagCriteria.isOrderBySafe(pagCriteria.getOrderBy())) {
-      log.warn("Ignoring unsafe orderBy value in form listing");
-      return " order by id ";
-    }
-    StringBuilder orderBy = new StringBuilder(" order by ");
-    orderBy.append(pagCriteria.getOrderBy()).append(" ");
-    if (pagCriteria.getSortOrder() != null) {
-      orderBy.append(pagCriteria.getSortOrder());
-    }
-    return orderBy.toString();
   }
 
-  private boolean isSortOrderSet(PaginationCriteria<RSForm> pagCriteria) {
-    return pagCriteria != null
-        && pagCriteria.getOrderBy() != null
-        && pagCriteria.isOrderBySafe(pagCriteria.getOrderBy())
-        && !(pagCriteria.getOrderBy().equals("id"));
+  /**
+   * Extra select-list entry so the sort column is visible to the ORDER BY applied after the union.
+   * Sorting by id needs nothing extra.
+   */
+  static String sortSelectColumn(FormSort sort) {
+    if (sort == FormSort.ID) {
+      return "";
+    }
+    String column = sortColumn(sort);
+    return ", " + (sort == FormSort.OWNER ? column : "form." + column) + " ";
+  }
+
+  static String makeOrderBy(FormSort sort, SortOrder sortOrder) {
+    return " order by " + sortColumn(sort) + " " + (sortOrder == null ? "" : sortOrder);
   }
 
   private String join(Collection<?> ids, boolean quote) {

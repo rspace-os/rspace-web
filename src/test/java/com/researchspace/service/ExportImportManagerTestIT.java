@@ -2456,7 +2456,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             user.getUsername(),
             PaginationCriteria.createDefaultForClass(CommunicationTarget.class));
     assertEquals(Integer.valueOf(2), newNotifications.getHits());
-    Notification xmlNotification = newNotifications.getLastResult();
+    // the notification listing is newest first, so the xml export leads the earlier html one
+    Notification xmlNotification = newNotifications.getFirstResult();
     String xmlExportNotificationMsg = xmlNotification.getNotificationMessage();
     assertThat(xmlExportNotificationMsg).as(xmlExportNotificationMsg).contains("-xml-");
     assertThat(xmlExportNotificationMsg).as(xmlExportNotificationMsg).contains("/export/report/");

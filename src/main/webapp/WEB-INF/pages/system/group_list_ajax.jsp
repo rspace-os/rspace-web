@@ -12,7 +12,7 @@
      <spring:argument value='<a class="orderBy" id="orderBySize" href="/system/groups/ajax/list?orderBy=memberCount&sortOrder=ASC&resultsPerPage=${pgCrit.resultsPerPage}">${groupListSizeLinkLabel}</a>'/>
    </spring:message></th>
   <th width="15%"><spring:message code="community.name"/></th>
-  <th width="15%"><a class="orderBy" id="orderByPi" href="/system/groups/ajax/list?orderBy=owner.lastName&sortOrder=ASC&resultsPerPage=${pgCrit.resultsPerPage}">
+  <th width="15%"><a class="orderBy" id="orderByPi" href="/system/groups/ajax/list?orderBy=owner&sortOrder=ASC&resultsPerPage=${pgCrit.resultsPerPage}">
     <spring:message code="groups.lead.label"/></a>
   </th>
   <th width=15%> <a class="orderBy" id="orderByUsage" href="/system/groups/ajax/list?orderBy=usage&sortOrder=DESC&resultsPerPage=${pgCrit.resultsPerPage}"><spring:message code="system.groupList.columns.fileUsage"/></a></th>

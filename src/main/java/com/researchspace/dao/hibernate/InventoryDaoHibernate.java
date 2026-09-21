@@ -1,11 +1,11 @@
 package com.researchspace.dao.hibernate;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
-import com.axiope.search.SearchUtils;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.sort.InventorySort;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.io.Serializable;
 import java.util.List;
@@ -82,16 +82,22 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
   protected String getOrderBySqlFragmentForInventoryRecord(
       PaginationCriteria<? extends InventoryRecord> pgCrit) {
     String orderByColumn;
-    if (SearchUtils.ORDER_BY_GLOBAL_ID.equals(pgCrit.getOrderBy())) {
-      /* querying a single type table here, so 'global id' ordering is same as 'id' ordering */
-      orderByColumn = "id";
-    } else if (SearchUtils.ORDER_BY_CREATION_DATE.equals(pgCrit.getOrderBy())
-        || SearchUtils.ORDER_BY_MODIFICATION_DATE.equals(pgCrit.getOrderBy())) {
-      /* creation/modificationDates are editInfo fields */
-      orderByColumn = "editInfo." + pgCrit.getOrderBy() + "Millis";
-    } else {
-      /* name/type/unknown order defaults to name ordering */
-      orderByColumn = "editInfo." + SearchUtils.ORDER_BY_NAME;
+    switch (InventorySort.fromRequest(pgCrit.getOrderBy())) {
+      case GLOBAL_ID:
+        /* querying a single type table here, so 'global id' ordering is same as 'id' ordering */
+        orderByColumn = "id";
+        break;
+      case CREATION_DATE:
+        orderByColumn = "editInfo.creationDateMillis";
+        break;
+      case MODIFICATION_DATE:
+        orderByColumn = "editInfo.modificationDateMillis";
+        break;
+      case NAME:
+      case TYPE: // a single-type table has nothing to order by type
+      default:
+        orderByColumn = "editInfo.name";
+        break;
     }
     return " order by " + orderByColumn + " " + pgCrit.getSortOrder();
   }
