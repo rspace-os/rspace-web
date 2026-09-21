@@ -74,9 +74,16 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
             ? auditManager.getObjectForRevision(cls, dbId, targetRevisionId)
             : auditManager.getNewestRevisionForEntity(cls, dbId);
     if (snapshot == null || snapshot.getEntity() == null) {
-      // Nothing to resolve: redacted, for every prefix. Nonexistent must look exactly like
-      // unreadable (ADR-0002), so the card says "No access" either way and a caller walking
-      // ids learns nothing about which records are there.
+      // No audit history does not mean no record: rows can be purged while the record lives on.
+      // Asking whether this actor can read it is permission-gated, so it reveals nothing they
+      // could not already see, and it keeps Open on a target whose page works.
+      if (linkTargetResolver.targetExistsAndIsReadable(new GlobalIdentifier(prefix, dbId), user)) {
+        summary.setReadable(true);
+        return summary;
+      }
+      // Otherwise redacted, for every prefix. Nonexistent must look exactly like unreadable
+      // (ADR-0002), so the card says "No access" either way and a caller walking ids learns
+      // nothing about which records are there.
       return summary;
     }
     Object entity = snapshot.getEntity();

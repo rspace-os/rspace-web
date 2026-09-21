@@ -147,6 +147,7 @@ class LinkTargetSnapshotResolverImplTest {
     // an inventory target with no snapshot is redacted exactly like an unreadable one, so a
     // caller walking ids learns nothing about which records exist (ADR-0002)
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -155,6 +156,21 @@ class LinkTargetSnapshotResolverImplTest {
     assertNull(summary.getName());
     assertNull(summary.getType());
     assertFalse(summary.isReadable());
+    assertFalse(summary.isDeleted());
+  }
+
+  @Test
+  void resolveSummaryKeepsALiveReadableTargetOpenableWhenItsAuditRowsArePurged() {
+    // audit history can be purged while the record lives on. Reporting it unreadable would put
+    // a "No access" pill and remove Open from a target whose page works perfectly well.
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertEquals("SA10", summary.getGlobalId());
+    assertTrue(summary.isReadable());
     assertFalse(summary.isDeleted());
   }
 

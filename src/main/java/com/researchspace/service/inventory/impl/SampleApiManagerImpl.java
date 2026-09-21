@@ -305,6 +305,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sample);
     Sample savedSample = sampleDao.persistNewSample(sample);
+    assertNoSelfLinkAfterSave(savedSample, savedSample.getActiveFields());
     saveIncomingSampleImage(savedSample, apiSample, user);
     publishAuditEventsForCreatedSample(user, savedSample);
 

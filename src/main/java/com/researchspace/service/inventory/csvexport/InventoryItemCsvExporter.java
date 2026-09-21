@@ -118,11 +118,6 @@ public abstract class InventoryItemCsvExporter {
   protected @Autowired MessageSourceUtils messages;
   protected @Autowired IPropertyHolder properties;
 
-  /**
-   * CSV cell for a link field: {@code "<RelationType> <serverUrl>/globalId/<GID>[vN]"}, or empty
-   * when the field holds no link. The version pin travels as the {@code vN} suffix so a single
-   * Global ID URL carries the whole link.
-   */
   /** CSV cell for a template-defined field: its link if it holds one, its plain data otherwise. */
   protected String csvValueForField(InventoryEntityField field) {
     return field instanceof InventoryLinkField linkField
@@ -130,6 +125,11 @@ public abstract class InventoryItemCsvExporter {
         : field.getData();
   }
 
+  /**
+   * CSV cell for a link field: {@code "<RelationType> <serverUrl>/globalId/<GID>[vN]"}, or empty
+   * when the field holds no link. The version pin travels as the {@code vN} suffix so a single
+   * Global ID URL carries the whole link.
+   */
   protected String csvValueForLink(InventoryLink link) {
     if (link == null) {
       return "";

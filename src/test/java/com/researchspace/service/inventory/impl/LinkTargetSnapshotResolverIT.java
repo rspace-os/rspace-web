@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * End-to-end Envers test for {@link LinkTargetSnapshotResolverImpl}, exercising real audit data:
@@ -88,5 +90,30 @@ public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase 
     assertEquals("SA" + sample.getId() + "v1", summary.getGlobalId());
     assertEquals(sample.getName(), summary.getName());
     assertEquals("SAMPLE", summary.getType());
+  }
+
+  /**
+   * RSDEV-1354: audit rows can be purged while the record they describe lives on. A missing
+   * snapshot used to be reported as the redacted "No access" summary unconditionally, which took
+   * Open away from a target whose page still works. The resolver now falls back to asking whether
+   * this actor can read the live record.
+   */
+  @Test
+  public void reportsLiveReadableTargetWhoseAuditRowsWerePurgedAsReadable() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    new JdbcTemplate(dataSource).update("DELETE FROM Sample_AUD WHERE id = ?", sample.getId());
+
+    // see resolvesLatestSnapshotFromNewestRevision: resolveSummary needs an active transaction
+    ApiInventoryLinkTargetSummary summary =
+        doInTransaction(
+            () -> {
+              return snapshotResolver.resolveSummary(
+                  GlobalIdPrefix.SA, sample.getId(), null, null, user);
+            });
+
+    assertTrue(
+        summary.isReadable(),
+        "a live record the actor can read stays readable when its audit rows are gone");
   }
 }

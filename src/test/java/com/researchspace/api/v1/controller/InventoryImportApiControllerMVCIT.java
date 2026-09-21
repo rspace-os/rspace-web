@@ -1673,6 +1673,108 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNull(sentinelLink.getLink(), "a sentinel cell means no link, not a malformed one");
   }
 
+  /**
+   * RSDEV-1354: CSV import deliberately does not check that a link target exists, so a crafted file
+   * can name the Global ID the sample it is creating is itself about to be given. The write-path
+   * self-link rejection cannot see that, because link fields are applied before the row exists and
+   * so before the record has an id; {@code assertNoSelfLinkAfterSave} is the backstop, and this is
+   * it firing through the real import endpoint.
+   *
+   * <p>The id an import will hand out cannot be read off anything beforehand, so it is calibrated
+   * rather than guessed: two identical throwaway imports show how many Sample ids one import of
+   * this shape consumes (its generated template plus its sample), and the third import is given
+   * that step applied once more as its link target. A wrong prediction makes the import succeed,
+   * which fails this test rather than passing it silently.
+   */
+  @Test
+  public void sampleCsvLinkingToItsOwnFutureGlobalIdIsRejected() throws Exception {
+    String serverUrl = propertyHolder.getServerUrl();
+    if (serverUrl.endsWith("/")) {
+      serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+    }
+    String probeCsv =
+        "Name,Related\nprobe sample,IsDerivedFrom " + serverUrl + "/globalId/SA999999\n";
+    String settingsJson = buildLinkColumnSampleImportSettings(probeCsv);
+
+    ApiInventoryImportSampleImportResult firstProbe = importSamplesCsv(probeCsv, settingsJson);
+    assertEquals(InventoryBulkOperationStatus.COMPLETED, firstProbe.getStatus());
+    ApiInventoryImportSampleImportResult secondProbe = importSamplesCsv(probeCsv, settingsJson);
+    assertEquals(InventoryBulkOperationStatus.COMPLETED, secondProbe.getStatus());
+    long firstProbeId = firstProbe.getResults().get(0).getRecord().getId();
+    long secondProbeId = secondProbe.getResults().get(0).getRecord().getId();
+    long idsPerImport = secondProbeId - firstProbeId;
+    long predictedSelfId = secondProbeId + idsPerImport;
+
+    int samplesBefore =
+        sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits().intValue();
+    String selfLinkCsv =
+        "Name,Related\nself linking sample,IsDerivedFrom "
+            + serverUrl
+            + "/globalId/SA"
+            + predictedSelfId
+            + "\n";
+
+    ApiInventoryImportSampleImportResult selfLinkResult =
+        importSamplesCsv(selfLinkCsv, settingsJson);
+
+    assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, selfLinkResult.getStatus());
+    assertEquals(0, selfLinkResult.getSuccessCount());
+    assertEquals(1, selfLinkResult.getErrorCount());
+    // the API reports the raw message key; the frontend i18n catalogue renders it
+    assertApiErrorContainsMessage(
+        selfLinkResult.getResults().get(0).getError(),
+        "errors.inventory.field.link.selfLinkForbidden");
+    assertEquals(
+        samplesBefore,
+        sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits().intValue(),
+        "no self-linked sample should survive the import");
+  }
+
+  /** Parses the CSV and turns the suggested template into an importFiles settings payload. */
+  private String buildLinkColumnSampleImportSettings(String csv) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/parseFile"))
+                    .file(
+                        new MockMultipartFile(
+                            "file", "links.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("recordType", "SAMPLES")
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiSampleTemplatePost templateInfo =
+        getFromJsonResponseBody(result, ApiInventoryImportSampleParseResult.class)
+            .getTemplateInfo();
+    assertEquals(ApiFieldType.LINK, templateInfo.getFields().get(1).getType());
+    templateInfo.setExpiryDate(null);
+    templateInfo.getFields().remove(0); // Name column maps to the sample name
+    return "{ \"sampleSettings\": { \"fieldMappings\": { \"Name\": \"name\"}, \"templateInfo\": "
+        + JacksonUtil.toJson(templateInfo)
+        + "} }";
+  }
+
+  private ApiInventoryImportSampleImportResult importSamplesCsv(String csv, String settingsJson)
+      throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
+                    .file(
+                        new MockMultipartFile(
+                            "samplesFile",
+                            "links.csv",
+                            "text/csv",
+                            csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("importSettings", settingsJson)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return getFromJsonResponseBody(result, ApiInventoryImportResult.class).getSampleResult();
+  }
+
   private ApiSampleWithFullSubSamples createSampleWithLinkTo(ApiSampleWithFullSubSamples target)
       throws Exception {
     ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
