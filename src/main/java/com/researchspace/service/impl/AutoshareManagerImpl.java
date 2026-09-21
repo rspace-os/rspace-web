@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import static org.apache.commons.collections4.ListUtils.removeAll;
 
 import com.ibm.icu.text.ListFormatter;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.dao.GroupMembershipEventDao;
 import com.researchspace.dao.RecordDao;
@@ -22,7 +23,6 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.AutoshareManager;
 import com.researchspace.service.CommunicationManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;

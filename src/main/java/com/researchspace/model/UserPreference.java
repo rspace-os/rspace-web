@@ -1,5 +1,6 @@
 package com.researchspace.model;
 
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.SettingsType;
 import jakarta.persistence.Column;
@@ -110,9 +111,10 @@ public class UserPreference implements Serializable {
 
     // for ENUM preference type run the validator to confirm that string value is correct
     if (preference.getPrefType().equals(SettingsType.ENUM)) {
-      String validationMsg = preference.getInvalidErrorMessageForValue(value);
-      if (validationMsg != null) {
-        throw new IllegalArgumentException(validationMsg);
+      LocalizedIllegalArgumentException validationException =
+          preference.getInvalidExceptionForValue(value);
+      if (validationException != null) {
+        throw validationException;
       }
     }
   }

@@ -106,6 +106,21 @@ public class UserPreferenceTest {
   }
 
   @Test
+  public void invalidNumberAndEnumPreferencesUseMessageCodes() {
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> createUserPref(Preference.WORKSPACE_RESULTS_PER_PAGE).setValue("not-number"));
+    assertEquals("validation.settings.invalidNumber", exception.getMessage());
+
+    exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> createUserPref(Preference.UI_PDF_PAGE_SIZE).setValue("not-page-size"));
+    assertEquals("validation.preference.unknownEnumValue", exception.getMessage());
+  }
+
+  @Test
   public void testValidLengthDependingOnPreferenceType() {
     String longStringValue = StringUtils.repeat("x", 300);
     String veryLongStringValue = StringUtils.repeat("x", 70000);
@@ -114,13 +129,13 @@ public class UserPreferenceTest {
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> createUserPref(Preference.UI_CLIENT_SETTINGS).setValue(longStringValue));
-    assertEquals("Value is too long, is 300 characters but max is 255", iae.getMessage());
+    assertEquals("validation.settings.valueTooLong", iae.getMessage());
 
     createUserPref(Preference.UI_JSON_SETTINGS).setValue(longStringValue);
     iae =
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> createUserPref(Preference.UI_JSON_SETTINGS).setValue(veryLongStringValue));
-    assertEquals("Text value is too long, is 70000 characters but max is 65535", iae.getMessage());
+    assertEquals("validation.settings.textTooLong", iae.getMessage());
   }
 }

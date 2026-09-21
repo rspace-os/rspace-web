@@ -7,9 +7,9 @@ import static com.axiope.search.SearchConstants.MODIFICATION_DATE_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
 
 import com.ibm.icu.text.ListFormatter;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
-import com.researchspace.service.ListFormatUtils;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;

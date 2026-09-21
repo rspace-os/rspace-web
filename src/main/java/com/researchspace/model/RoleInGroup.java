@@ -7,33 +7,28 @@ package com.researchspace.model;
 public enum RoleInGroup {
 
   /** No special roles, a regular group member */
-  DEFAULT("User"), // 0 in DB
+  DEFAULT("groups.roles.user"), // 0 in DB
 
   /** A principal investigator /lab head role, can see all records in the group. */
-  PI("PI"), // 1 in DB
+  PI("groups.roles.pi"), // 1 in DB
 
   /**
    * Can handle group admin roles (e.g., add/remove members, etc) without necessarily being able to
    * see in all record contents.
    */
-  RS_LAB_ADMIN("Lab Admin"), // 2 in DB
+  RS_LAB_ADMIN("groups.roles.labAdmin"), // 2 in DB
 
   /** Leads a user collaboration group. */
-  GROUP_OWNER("Group Owner");
+  GROUP_OWNER("groups.roles.groupOwner");
 
-  /**
-   * A display string for display to end-users
-   *
-   * @return
-   */
-  public String getLabel() {
-    return label;
+  public String getLabelKey() {
+    return labelKey;
   }
 
-  private String label;
+  private final String labelKey;
 
-  private RoleInGroup(String label) {
-    this.label = label;
+  RoleInGroup(String labelKey) {
+    this.labelKey = labelKey;
   }
 
   public static RoleInGroup getRoleFromString(String role) {

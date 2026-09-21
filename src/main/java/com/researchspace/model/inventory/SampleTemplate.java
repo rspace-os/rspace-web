@@ -2,6 +2,7 @@ package com.researchspace.model.inventory;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
@@ -107,6 +108,7 @@ public class SampleTemplate extends SampleEntity {
 
   @Override
   protected void assertCanStoreAttachments() {
-    throw new IllegalArgumentException("Sample Templates don't support file attachments yet");
+    throw new LocalizedIllegalArgumentException(
+        "errors.inventory.attachment.sampleTemplateUnsupported");
   }
 }

@@ -7,6 +7,7 @@ import static java.util.stream.Collectors.toSet;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.CommunicationDao;
 import com.researchspace.dao.FolderDao;
@@ -60,7 +61,6 @@ import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.RecordSharingManager;

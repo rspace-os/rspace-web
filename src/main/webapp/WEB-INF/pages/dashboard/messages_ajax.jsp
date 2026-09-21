@@ -54,6 +54,7 @@
         </div>
         <div id="allMessages" style="width:100%;padding-top:10px;">
             <c:forEach items="${messages}" var="message">
+                <spring:message code="${message.messageType.labelKey}" var="messageTypeLabel"/>
                 <table class="messageTable" cellspacing="0" style="width: 100%">
                 <tr class="notificationRow" id="messageID_${message.id}">
                     <td valign="top" class="leftInfo">
@@ -70,9 +71,9 @@
                                 </c:choose>
                             </c:if>
                             <c:if test="${not message.simpleMessage}">
-                                <spring:message code="messages.type.request" arguments="${message.messageType.label}"/>
+                                <spring:message code="messages.type.request" arguments="${messageTypeLabel}"/>
                             </c:if>
-                               <c:if test = "${fn:contains(message.messageType.label, 'Collaboration')}">
+                               <c:if test = "${message.messageType == 'REQUEST_EXTERNAL_SHARE' or message.messageType == 'REQUEST_JOIN_EXISTING_COLLAB_GROUP'}">
                               <spring:message code="common:help.collaborationBetweenLabs" var="collaborationHelpSlug"/>
                               <a rel="noreferrer" href="${f:helpDocsUrl(collaborationHelpSlug)}" target="_blank">
                               <img src ="images/info.png" width=12 height=12/> </a>
@@ -89,13 +90,13 @@
                             data-position="bottom_right"
                           ><a href="#" style="font-size: 14px; line-height:30px"><c:out value="${message.originator.firstName}" /> <c:out value="${message.originator.lastName}" /></a></span>
                             <c:choose>
-                            <c:when test="${message.messageType.label == JOIN_LABGROUP_REQUEST}">
+                            <c:when test="${message.messageType == JOIN_LABGROUP_REQUEST}">
                                 <p><spring:message code="messages.joinRequest.toJoin">
                                     <spring:argument value='<strong>${message.group.displayName}</strong>'/>
                                 </spring:message></p>
                                 <span class = "warning"><spring:message code="messages.joinLabGroup.warning"/></span>
                             </c:when>
-                            <c:when test="${message.messageType.label == JOIN_PROJECT_GROUP_REQUEST}">
+                            <c:when test="${message.messageType == JOIN_PROJECT_GROUP_REQUEST}">
                                 <p><spring:message code="messages.joinRequest.toJoin">
                                     <spring:argument value='<strong>${message.group.displayName}</strong>'/>
                                 </spring:message></p>
@@ -116,8 +117,8 @@
                                   <fmt:formatDate pattern="E dd MMM yyyy HH:mm" value="${message.requestedCompletionDate}"></fmt:formatDate>
                                   <a href="/messaging/ical?id=${message.id}"><img src="/images/ics-icon.png" style="margin-top: -4px;"/></a>
                               </c:if>
-                              <c:if test="${not empty message.messageType.moreInfo}">
-                                  <div class="messageMoreInfo">${message.messageType.moreInfo}</div>
+                              <c:if test="${not empty message.messageType.moreInfoKey}">
+                                  <div class="messageMoreInfo"><spring:message code="${message.messageType.moreInfoKey}"/></div>
                               </c:if>
                           </c:if>
                         </div>
@@ -161,10 +162,10 @@
                                         <c:if test="${message.status ne stat}">
                                             <c:choose>
                                                 <c:when
-                                                    test="${message.messageType.yesNoMessage and stat eq 'COMPLETED' and message.messageType.label != JOIN_LABGROUP_REQUEST}">
+                                                    test="${message.messageType.yesNoMessage and stat eq 'COMPLETED' and message.messageType != JOIN_LABGROUP_REQUEST}">
                                                     <option value="${stat}"><spring:message code="messages.status.accepted"/></option>
                                                 </c:when>
-                                                <c:when test="${message.messageType.label == JOIN_LABGROUP_REQUEST and stat eq 'COMPLETED'}">
+                                                <c:when test="${message.messageType == JOIN_LABGROUP_REQUEST and stat eq 'COMPLETED'}">
                                                     <option value="${stat}"><spring:message code="messages.status.acceptedShareWithPi"/></option>
                                                 </c:when>
                                                 <c:otherwise>

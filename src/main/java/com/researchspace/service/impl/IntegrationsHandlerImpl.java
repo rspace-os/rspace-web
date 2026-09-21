@@ -14,6 +14,7 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONF
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.integrations.galaxy.service.GalaxyAliasToServer;
 import com.researchspace.integrations.galaxy.service.GalaxyService;
 import com.researchspace.model.User;
@@ -31,7 +32,6 @@ import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.IntegrationsHandler;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyPermissionManager;

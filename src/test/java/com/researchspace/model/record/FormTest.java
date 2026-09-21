@@ -285,14 +285,18 @@ public class FormTest {
   public void testReorderRequiresSameNumberOfFields() {
     setUpFormWith3Fields();
     // too few args
-    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(toList(1L)));
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> form.reorderFields(toList(1L)));
+    assertEquals("validation.form.fieldCountMismatch", exception.getMessage());
   }
 
   @Test
   public void testReorderRequiresSameFieldIds() {
     setUpFormWith3Fields();
     // 4L is not in form
-    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(toList(1L, 2L, 4L)));
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> form.reorderFields(toList(1L, 2L, 4L)));
+    assertEquals("validation.form.inactiveFieldId", exception.getMessage());
   }
 
   @Test

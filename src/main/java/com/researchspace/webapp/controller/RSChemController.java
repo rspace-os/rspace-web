@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.PaginationCriteria;
@@ -15,7 +16,6 @@ import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import jakarta.validation.Valid;
 import java.io.ByteArrayInputStream;
@@ -99,7 +99,9 @@ public class RSChemController extends BaseController {
       ChemElementDataDto created = chemistryService.createChemicalElement(dto, subject);
       return new AjaxReturnObject<>(created);
     } catch (Exception e) {
-      String errorMsg = getText("chem.errors.createElementFailed", new Object[] {e.getMessage()});
+      String errorMsg =
+          getText(
+              "chem.errors.createElementFailed", new Object[] {messages.getExceptionMessage(e)});
       return new AjaxReturnObject<>(ErrorList.of(errorMsg));
     }
   }
@@ -216,7 +218,7 @@ public class RSChemController extends BaseController {
       ConvertedStructureDto convertedStruc = chemistryService.convert(input);
       return ResponseEntity.ok(convertedStruc);
     } catch (Exception e) {
-      return badConversion(e.getMessage());
+      return badConversion(messages.getExceptionMessage(e));
     }
   }
 
@@ -237,7 +239,9 @@ public class RSChemController extends BaseController {
       return new AjaxReturnObject<>(dto);
     } catch (Exception e) {
       String errorMsg =
-          getText("chem.errors.fileUnavailable", new Object[] {chemistryFileId, e.getMessage()});
+          getText(
+              "chem.errors.fileUnavailable",
+              new Object[] {chemistryFileId, messages.getExceptionMessage(e)});
       return new AjaxReturnObject<>(ErrorList.of(errorMsg));
     }
   }
@@ -260,7 +264,8 @@ public class RSChemController extends BaseController {
     } catch (Exception e) {
       String errorMsg =
           getText(
-              "chem.errors.elementsUnavailable", new Object[] {chemistryFileId, e.getMessage()});
+              "chem.errors.elementsUnavailable",
+              new Object[] {chemistryFileId, messages.getExceptionMessage(e)});
       return new AjaxReturnObject<>(ErrorList.of(errorMsg));
     }
   }
@@ -283,7 +288,8 @@ public class RSChemController extends BaseController {
           chemistryService.updateChemicalElementImages(dto, user);
       return new AjaxReturnObject<>(updatedChemElements);
     } catch (Exception e) {
-      String errorMsg = getText("chem.errors.imageUpdateFailed", new Object[] {e.getMessage()});
+      String errorMsg =
+          getText("chem.errors.imageUpdateFailed", new Object[] {messages.getExceptionMessage(e)});
       return new AjaxReturnObject<>(ErrorList.of(errorMsg));
     }
   }
