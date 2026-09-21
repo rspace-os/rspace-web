@@ -177,4 +177,28 @@ class SampleApiManagerImplTemplateFieldMergeTest {
     assertEquals(0, sample.getExtraFields().size(), "the generated field is absorbed");
     assertEquals("4", templateFields.get(0).getFieldData());
   }
+
+  @Test
+  void acceptsAnImmutableExtraFieldListFromTheCaller() {
+    ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples("Passaged");
+    sample.setExtraFields(List.of(operationField("Passage number", "4")));
+
+    List<InventoryEntityField> templateFields = inherited("Passage number");
+
+    SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(sample, templateFields);
+
+    assertEquals("4", templateFields.get(0).getFieldData());
+    assertTrue(sample.getExtraFields().isEmpty(), "the generated duplicate should be absorbed");
+  }
+
+  @Test
+  void acceptsAnImmutableExtraFieldListWhenNothingIsMerged() {
+    ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples("Complex");
+    sample.setExtraFields(List.of(operationField("Passage number", "4")));
+
+    SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(
+        sample, inherited("Batch"));
+
+    assertEquals(1, sample.getExtraFields().size(), "no collision, so nothing to absorb");
+  }
 }
