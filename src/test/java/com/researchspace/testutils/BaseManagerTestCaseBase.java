@@ -3,7 +3,6 @@ package com.researchspace.testutils;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toSet;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.axiope.search.IFileIndexer;
 import com.researchspace.Constants;
@@ -36,7 +35,6 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.auth.ShiroRealm;
 import com.researchspace.core.testutil.CoreTestUtils;
-import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.MediaUtils;
@@ -153,10 +151,8 @@ import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.util.ThreadContext;
-import org.hibernate.LazyInitializationException;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -1091,39 +1087,6 @@ public abstract class BaseManagerTestCaseBase {
     String embedContent = richTextUpdater.generateIframeEmbedFromJove();
     String newData = field.getFieldData() + embedContent;
     setDataAndSave(field, user, newData);
-  }
-
-  /**
-   * Asserts that a particular exception is thrown.
-   *
-   * @param invokable The code to be run that should throw an exception
-   * @param clazz The expected exception class
-   * @throws Exception
-   */
-  protected void assertExceptionThrown(Invokable invokable, Class<? extends Throwable> clazz)
-      throws Exception {
-    assertThrows(clazz, invokable::invoke);
-  }
-
-  /**
-   * Convenience method to assert that an arbitrary piece of code throws an AuthorizationException
-   *
-   * @param invokable
-   * @throws Exception
-   */
-  protected void assertAuthorisationExceptionThrown(Invokable invokable) throws Exception {
-    assertExceptionThrown(invokable, AuthorizationException.class);
-  }
-
-  /**
-   * Convenience method to assert that an arbitrary piece of code throws an
-   * LazyInitializationException, useful for testing lazy-loading strategies.
-   *
-   * @param invokable
-   * @throws Exception
-   */
-  protected void assertLazyInitializationExceptionThrown(Invokable invokable) throws Exception {
-    assertExceptionThrown(invokable, LazyInitializationException.class);
   }
 
   /**

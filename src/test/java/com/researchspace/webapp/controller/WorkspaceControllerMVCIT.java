@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -96,6 +97,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.search.mapper.orm.Search;
 import org.jsoup.Jsoup;
 import org.jsoup.parser.Tag;
@@ -358,8 +360,11 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals(2, getRecordCountInFolderForUser(grpFlderId));
     assertFalse(permissionUtils.isPermitted(sharedRecord, PermissionType.DELETE, extra));
     // attempting to delete has no effect - permissions block this
-    assertAuthorisationExceptionThrown(
-        () -> recordDeletionMgr.deleteRecord(null, sharedRecord.getId(), extra));
+    var sharedRecordId = sharedRecord.getId();
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordDeletionMgr.deleteRecord(null, sharedRecordId, extra));
 
     // still 2 shared records
     assertEquals(2, getRecordCountInFolderForUser(grpFlderId));
@@ -387,17 +392,14 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     RSpaceTestUtils.logoutCurrUserAndLoginAs(setup.user.getUsername(), TESTPASSWD);
     final WorkspaceSettings srchInput = new WorkspaceSettings();
     srchInput.setParentFolderId(root.getId());
-    assertAuthorisationExceptionThrown(
+    var documentIds = new Long[] {setup.structuredDocument.getId()};
+    var otherPrincipal = new MockPrincipal(setup.user.getUsername());
+
+    assertThrows(
+        AuthorizationException.class,
         () ->
             workspaceController.delete(
-                new Long[] {setup.structuredDocument.getId()},
-                null,
-                model,
-                srchInput,
-                request,
-                new MockPrincipal(setup.user.getUsername()),
-                session,
-                response));
+                documentIds, null, model, srchInput, request, otherPrincipal, session, response));
 
     // now relog in as original user; their doc is still there
     RSpaceTestUtils.logoutCurrUserAndLoginAs(piUser.getUsername(), TESTPASSWD);

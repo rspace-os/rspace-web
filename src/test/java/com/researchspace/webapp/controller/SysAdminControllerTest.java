@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.Constants.SYSADMIN_ROLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,7 +11,6 @@ import static org.mockito.Mockito.when;
 import com.researchspace.Constants;
 import com.researchspace.admin.service.SysAdminManager;
 import com.researchspace.admin.service.UsageListingDTO;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.model.Community;
@@ -84,7 +84,7 @@ public class SysAdminControllerTest {
     sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
 
     when(properties.getDeleteUser()).thenReturn(Boolean.FALSE.toString());
-    CoreTestUtils.assertIllegalStateExceptionThrown(() -> ctrller.removeUserAccount(2L));
+    assertThrows(IllegalStateException.class, () -> ctrller.removeUserAccount(2L));
     Mockito.verifyNoInteractions(userExportHandler);
     verify(delMgr, Mockito.never()).removeUser(2L, noRestriction(), sysadmin);
   }

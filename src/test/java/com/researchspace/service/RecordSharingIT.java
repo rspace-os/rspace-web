@@ -4,6 +4,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
@@ -43,6 +44,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -180,10 +182,12 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     final ShareConfigElement gsCommand = new ShareConfigElement(group.getId(), "write");
     logoutAndLoginAs(other);
 
-    assertAuthorisationExceptionThrown(
-        () ->
-            sharingMgr.shareRecord(
-                reloadPiUser(), recordToShare.getId(), new ShareConfigElement[] {gsCommand}));
+    User reloadedPi = reloadPiUser();
+    Long recordId = recordToShare.getId();
+    ShareConfigElement[] shareConfig = new ShareConfigElement[] {gsCommand};
+    assertThrows(
+        AuthorizationException.class,
+        () -> sharingMgr.shareRecord(reloadedPi, recordId, shareConfig));
 
     // now do sharing as the *owner*, which is permitted...
     logoutAndLoginAs(piUser);

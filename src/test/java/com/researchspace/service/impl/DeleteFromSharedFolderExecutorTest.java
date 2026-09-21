@@ -53,7 +53,8 @@ public class DeleteFromSharedFolderExecutorTest {
     RSPath path = new RSPath(pathElements1);
     plan = new DeletionPlan(anyUser, path, parentFolder);
     plan.add(aDocument());
-    assertThrows(IllegalStateException.class, () -> executor.execute(anyResults(), plan));
+    var results = anyResults();
+    assertThrows(IllegalStateException.class, () -> executor.execute(results, plan));
   }
 
   @Test

@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -127,7 +128,9 @@ public class GroupControllerMVCIT extends MVCTestBase {
     // make sure group can be deleted.
     grpMgr.removeGroup(g1.getId(), pi1);
     assertEquals(0, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // no rows after deletion
-    assertExceptionThrown(() -> grpMgr.getGroup(g1.getId()), ObjectRetrievalFailureException.class);
+    var groupId = g1.getId();
+
+    assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(groupId));
   }
 
   @Test
@@ -170,7 +173,9 @@ public class GroupControllerMVCIT extends MVCTestBase {
     // make sure group can be deleted.
     grpMgr.removeGroup(g1.getId(), pi1);
     assertEquals(0, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // no rows after deletion
-    assertExceptionThrown(() -> grpMgr.getGroup(g1.getId()), ObjectRetrievalFailureException.class);
+    var groupId = g1.getId();
+
+    assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(groupId));
   }
 
   @Test
@@ -538,8 +543,10 @@ public class GroupControllerMVCIT extends MVCTestBase {
         });
 
     logoutAndLoginAs(setup.user);
-    assertAuthorisationExceptionThrown(
-        () -> folderMgr.getFolder(grp.getCommunalGroupFolderId(), setup.user));
+    var groupFolderId = grp.getCommunalGroupFolderId();
+
+    assertThrows(
+        AuthorizationException.class, () -> folderMgr.getFolder(groupFolderId, setup.user));
   }
 
   @Test
@@ -789,8 +796,11 @@ public class GroupControllerMVCIT extends MVCTestBase {
 
     // member 1 doesnt have permission to remove him and pi1 from collab group
     logoutAndLoginAs(member1);
-    assertAuthorisationExceptionThrown(
-        () -> grpMgr.removeLabGroupMembersFromCollabGroup(collabGrp.getId(), member1));
+    var collabGroupId = collabGrp.getId();
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.removeLabGroupMembersFromCollabGroup(collabGroupId, member1));
 
     // butpi can delete him and member1
     logoutAndLoginAs(pi1);
@@ -804,8 +814,9 @@ public class GroupControllerMVCIT extends MVCTestBase {
     // now pi2 will remove himself; this will delete the group:
     logoutAndLoginAs(pi2);
     grpMgr.removeLabGroupMembersFromCollabGroup(collabGrp.getId(), pi2);
-    assertExceptionThrown(
-        () -> grpMgr.getGroup(collabGrp.getId()), ObjectRetrievalFailureException.class);
+    var deletedGroupId = collabGrp.getId();
+
+    assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(deletedGroupId));
   }
 
   @Test

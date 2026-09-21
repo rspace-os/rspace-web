@@ -12,6 +12,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,7 +72,8 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     Long idToDelete = cfg.getAppConfigElementSets().iterator().next().getId();
     // otherUser lacks permissions
     logoutAndLoginAs(otherUser);
-    assertAuthorisationExceptionThrown(
+    assertThrows(
+        AuthorizationException.class,
         () -> userAppCfgMgr.deleteAppConfigSet(idToDelete, otherUser));
     logoutAndLoginAs(u1);
     AppConfigElementSet deleted = userAppCfgMgr.deleteAppConfigSet(idToDelete, u1);
@@ -98,7 +100,8 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     UserAppConfig cfg = userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1);
     props.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL2);
     Long setId = cfg.getAppConfigElementSets().iterator().next().getId();
-    assertAuthorisationExceptionThrown(
+    assertThrows(
+        AuthorizationException.class,
         () -> userAppCfgMgr.saveAppConfigElementSet(props, setId, false, otherUser));
     cfg = userAppCfgMgr.saveAppConfigElementSet(props, setId, false, u1);
     assertEquals(
@@ -116,7 +119,8 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     props.put("ORCID_ID", "testId");
 
     // untrusted call to create new options
-    assertAuthorisationExceptionThrown(
+    assertThrows(
+        AuthorizationException.class,
         () -> userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1));
 
     // trusted call
@@ -128,8 +132,10 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     props.put("ORCID_ID", "testId2");
 
     // untrusted call to update existing options
-    assertAuthorisationExceptionThrown(
-        () -> userAppCfgMgr.saveAppConfigElementSet(props, elementSet.getId(), false, u1));
+    Long elementSetId = elementSet.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> userAppCfgMgr.saveAppConfigElementSet(props, elementSetId, false, u1));
 
     // trusted call executes fine
     cfg = userAppCfgMgr.saveAppConfigElementSet(props, elementSet.getId(), true, u1);

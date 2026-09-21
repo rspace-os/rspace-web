@@ -4,9 +4,9 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -541,10 +541,14 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(4, apiShareSearchResultWithFolders.getTotalHits().intValue());
 
     // attempt to list shares for pi's folder
+    Long piWorkspaceFolderId = piWorkspaceFolder.getId();
+    List<Long> sharedItemIds = List.of(piWorkspaceFolderId);
+    MockHttpServletRequestBuilder shareRequest =
+        createShareGetBuilder(sharer, apiKey)
+            .param("sharedItemIds", StringUtils.join(sharedItemIds, ","));
+    MvcResult listResult = mockMvc.perform(shareRequest).andReturn();
     AuthorizationException authEx =
-        assertThrows(
-            AuthorizationException.class,
-            () -> listSharesWithSharedItemIds(sharer, apiKey, List.of(piWorkspaceFolder.getId())));
+        assertInstanceOf(AuthorizationException.class, listResult.getResolvedException());
     assertEquals(
         String.format(
             "Unauthorized attempt by [%s] to list shares of record [%d]",

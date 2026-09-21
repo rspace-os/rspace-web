@@ -195,11 +195,12 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
     ApiInventoryFile uploadedFile = createAndUploadChemistryFile(user, apiSample);
     mockErrorChemistryWeb();
     MockHttpServletResponse resp = new MockHttpServletResponse();
+    Long uploadedFileId = uploadedFile.getId();
+    ApiInventoryFileImageRequest imageRequest = new ApiInventoryFileImageRequest();
+
     assertThrows(
         InternalServerErrorException.class,
-        () ->
-            invFilesApi.getImageBytes(
-                uploadedFile.getId(), new ApiInventoryFileImageRequest(), user, resp));
+        () -> invFilesApi.getImageBytes(uploadedFileId, imageRequest, user, resp));
   }
 
   private ApiInventoryFile createAndUploadChemistryFile(User user, ApiSampleInfo apiSample)

@@ -5,6 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -438,9 +439,10 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     // THEN
     expectedProjectGroup.setRaid(null);
     assertEquals(expectedProjectGroup, grpMgr.getGroup(newProjectGroupId));
-    assertExceptionThrown(
-        () -> raidServiceManager.getUserRaid(expectedCreatedUserRaid.getId()),
-        ObjectRetrievalFailureException.class);
+    var raidId = expectedCreatedUserRaid.getId();
+
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> raidServiceManager.getUserRaid(raidId));
   }
 
   @NotNull
