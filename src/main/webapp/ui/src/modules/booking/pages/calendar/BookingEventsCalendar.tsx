@@ -195,14 +195,6 @@ export function BookingEventsCalendar({
   const filterControls = (
     <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
       <legend className="sr-only">{t("calendar.filterGroups.legend")}</legend>
-      {itemFilterConfig ? (
-        <CalendarFilterButtons
-          kind="items"
-          expression={itemFilterExpression}
-          active={activeFilterPanel === "items"}
-          onClick={() => setActiveFilterPanel((current) => (current === "items" ? null : "items"))}
-        />
-      ) : null}
       {eventFilterConfig ? (
         <CalendarFilterButtons
           kind="events"

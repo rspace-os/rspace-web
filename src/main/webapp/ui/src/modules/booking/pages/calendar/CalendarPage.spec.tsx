@@ -70,7 +70,7 @@ describe("Calendar page", () => {
       .toBe(true);
     expect(bookingPageRequests.collectionQueries.some((query) => query.includes("eventWhere=purpose=="))).toBe(true);
     expect(new URLSearchParams(history.location.search).get("calendar-resources.where")).toBe("target==IN123");
-    await expect.element(page.getByRole("button", { name: "Bookable items, 1 applied" })).toBeVisible();
+    await expect.element(page.getByRole("button", { name: "Bookable items, 1 applied" })).not.toBeInTheDocument();
     await expect.element(calendar.filters).toHaveAccessibleName("Booking events, 1 applied");
   });
 
