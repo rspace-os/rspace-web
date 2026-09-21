@@ -153,8 +153,9 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             />
           )}
           {noAccess && (
-            // no "no longer" in the tooltip: the pill also shows for
-            // viewers who never had access (ADR-0002)
+            // the tooltip names both causes without saying which applies, and avoids
+            // implying the viewer once had access: the pill also shows to viewers who
+            // never did, and to ones whose target never existed (ADR-0002)
             <Tooltip title={t("fields.link.linkField.noPermission")}>
               <Chip
                 size="small"

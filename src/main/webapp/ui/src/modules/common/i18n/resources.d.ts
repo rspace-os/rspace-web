@@ -3255,7 +3255,7 @@ export default interface Resources {
           "editLink": "Edit link",
           "editToChangePinned": "Edit the link to change the pinned version",
           "noAccess": "No access",
-          "noPermission": "You do not have permission to view this item",
+          "noPermission": "This item is not available to you: it may not be shared with you, or it may no longer exist",
           "openLabel": "Open {globalId}",
           "pinVersionLabel": "Pin version for {globalId}",
           "showInfoLabel": "Show info for {globalId}",
