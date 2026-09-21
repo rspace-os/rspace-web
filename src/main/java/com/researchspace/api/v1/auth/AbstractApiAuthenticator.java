@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.UnavailableSecurityManagerException;
+import org.apache.shiro.lang.ShiroException;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
 
@@ -21,6 +21,8 @@ import org.apache.shiro.subject.Subject;
  */
 @Slf4j
 abstract class AbstractApiAuthenticator implements ApiAuthenticator {
+  record AuthenticationResult(User user, UserAuthenticationMethod method) {}
+
   /**
    * Retrieve token from HttpRequest, validating syntax as well
    *
@@ -29,20 +31,21 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
    */
   abstract String retrieveTokenFromHeader(HttpServletRequest request);
 
-  /** Retrieve user for given String token. */
-  abstract Function<String, Optional<User>> findUserForToken();
+  /** Retrieve the user and authentication method for the given token. */
+  abstract Function<String, Optional<AuthenticationResult>> findUserForToken();
 
   @Override
   public User authenticate(HttpServletRequest request) {
     String accessToken = retrieveTokenFromHeader(request);
-    Optional<User> userOpt = findUserForToken().apply(accessToken);
+    Optional<AuthenticationResult> result = findUserForToken().apply(accessToken);
 
-    if (!userOpt.isPresent()) {
+    if (!result.isPresent()) {
       throw new ApiAuthenticationException(
           "api.errors.authentication.tokenUnknown", abbreviate(accessToken, 4));
     }
 
-    User targetUser = userOpt.get();
+    User targetUser = result.get().user();
+    targetUser.setAuthenticatedBy(result.get().method());
     assertLoginAllowed(targetUser);
 
     if (UserAuthenticationMethod.UI_OAUTH_TOKEN.equals(targetUser.getAuthenticatedBy())) {
@@ -62,7 +65,11 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
         throw invalidUiToken();
       }
 
-      Session session = shiroSubject.getSession();
+      Session session = shiroSubject.getSession(false);
+      if (session == null) {
+        throw invalidUiToken();
+      }
+
       User sessionUser = (User) session.getAttribute(SessionAttributeUtils.USER);
       if (sessionUser == null || !sessionUser.getUsername().equals(targetUser.getUsername())) {
         throw invalidUiToken();
@@ -71,8 +78,9 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
       log.info(
           "Reusing the current session for API authentication, principal={}",
           targetUser.getUsername());
-      return sessionUser;
-    } catch (UnavailableSecurityManagerException e) {
+      return targetUser;
+    } catch (ShiroException e) {
+      log.warn("Unable to reuse browser session for UI OAuth token authentication", e);
       throw invalidUiToken();
     }
   }

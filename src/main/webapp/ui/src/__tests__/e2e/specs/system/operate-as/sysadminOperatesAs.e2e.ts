@@ -49,29 +49,27 @@ test.describe("Sysadmin Operate As", { tag: tags.SYSTEM }, () => {
       const staleToken = await page2.evaluate(() => sessionStorage.getItem("id_token"));
       expect(staleToken).toBeTruthy();
 
+      const staleTokenRejected = page2.waitForResponse(
+        (response) =>
+          response.url().endsWith("/api/v1/userDetails/whoami") &&
+          response.status() === 401 &&
+          response.request().headers().authorization === `Bearer ${staleToken}`,
+      );
+      const page2Reloaded = page2.waitForEvent("load");
       await workspace.releaseOperateAs();
-
-      const staleResponse = await page2.evaluate(async (token) => {
-        const response = await fetch("/api/v1/userDetails/whoami", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        return response.status;
-      }, staleToken);
-      expect(staleResponse).toBe(401);
-
-      await page2.reload();
+      await staleTokenRejected;
+      await page2Reloaded;
       await page2.getByRole("button", { name: "Templates", exact: true }).waitFor();
       await expect(page2.locator("span.header-info--right")).toBeHidden();
       const page2WhoAmI = await page2.evaluate(async () => {
-        const tokenResponse = await fetch("/userform/ajax/inventoryOauthToken");
-        const { data: token } = await tokenResponse.json();
-        sessionStorage.setItem("id_token", token);
+        const token = sessionStorage.getItem("id_token");
         const response = await fetch("/api/v1/userDetails/whoami", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        return response.json();
+        return { token, user: await response.json() };
       });
-      expect(page2WhoAmI.username).toBe(SYSADMIN.username);
+      expect(page2WhoAmI.token).not.toBe(staleToken);
+      expect(page2WhoAmI.user.username).toBe(SYSADMIN.username);
 
       await page1.reload();
       await page1.goto("/system");

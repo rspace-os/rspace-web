@@ -18,8 +18,11 @@ replacing the previous ESLint + Prettier setup.
   `fetchWithUiToken` from `modules/common/utils/fetchWithUiToken`. A rejected
   token triggers a session-token refresh and validation, then reloads the tab
   to discard caches and UI state belonging to the previous Operate As user.
-  Pending writes are not replayed under the replacement identity. If token
-  refresh or validation fails, the original response reaches the caller.
+  Axios calls (including `axios.create` instances) imported from `common/axios`
+  use the same recovery for same-origin API requests. Pending writes are never
+  replayed under the replacement identity. An expired browser session navigates
+  to login; other refresh or validation failures leave the original error with
+  the caller. Concurrent failures share recovery only when their tokens match.
 - Biome formats and lints JavaScript, TypeScript, JSX/TSX, JSON, and CSS (not Markdown).
 - Type-checking is done by `tsc`; Biome handles linting and formatting. Both run
   in CI and in the pre-commit hook, and any Biome info/warning/error fails the
