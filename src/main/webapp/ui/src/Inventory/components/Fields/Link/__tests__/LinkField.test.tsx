@@ -147,19 +147,19 @@ describe("LinkField", () => {
     expect(screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).toBeInTheDocument();
   });
 
-  it("shows the Target deleted pill and blocks Open for an inventory target that never existed", () => {
-    // a CSV-imported dangling link (RSDEV-1354): the record was never on this
-    // server, so unlike a trashed item there is no viewer to open, and the
-    // summary says so by reporting no name and no type
+  it("shows the No access pill and blocks Open for an unresolvable inventory target", () => {
+    // the server redacts an unreadable inventory target and one that never existed (a
+    // CSV-imported dangling link) identically, so the card treats both as No access rather
+    // than claiming a record it cannot see is deleted
     mockUseLinkTargetSummary.mockReturnValue({
       globalId: "SA42",
       name: null,
       type: null,
-      deleted: true,
-      readable: true,
+      deleted: false,
+      readable: false,
     });
     renderField();
-    expect(screen.getByText("inventory:fields.link.linkField.targetDeleted")).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.linkField.noAccess")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).not.toBeInTheDocument();
   });
 
@@ -201,9 +201,10 @@ describe("LinkField", () => {
     expect(await screen.findByText("inventory:fields.link.linkField.noPermission")).toBeInTheDocument();
   });
 
-  it("renders a normal card with Open for an unreadable inventory target", () => {
-    // every logged-in user keeps the limited-read view of inventory items,
-    // so Open still lands somewhere useful and no pill is warranted
+  it("shows the No access pill and removes Open for an unreadable inventory target", () => {
+    // an owner can restrict an item to an explicit access list or to themselves, so an
+    // inventory target really can be unresolvable; saying nothing left Open pointing at a
+    // permission error
     mockUseLinkTargetSummary.mockReturnValue({
       globalId: "SA42",
       name: null,
@@ -212,8 +213,8 @@ describe("LinkField", () => {
       readable: false,
     });
     renderField();
-    expect(screen.queryByText("inventory:fields.link.linkField.noAccess")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.linkField.noAccess")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).not.toBeInTheDocument();
   });
 
   it("renders no pill and keeps Open while the target state is unknown", () => {

@@ -32,18 +32,4 @@ public interface LinkTargetResolver {
    * @return true if the target resolves to a live (non-deleted) record the user can READ
    */
   boolean targetIsLiveAndReadable(GlobalIdentifier target, User user);
-
-  /**
-   * Whether the target can be shown, positively, not to exist on this server: the record kind is
-   * one we can probe without a permission check, and no row is there. False both for a target that
-   * does exist and for one whose kind we cannot probe, so a caller relaxing its rules for missing
-   * targets never relaxes them for a target that is merely unreadable.
-   *
-   * <p>Only Inventory prefixes are probed. Deciding the same for an ELN record would need a
-   * permission-free load of it, which is the disclosure ADR-0002 exists to prevent.
-   *
-   * @param target the parsed link target GlobalID (any version suffix is ignored)
-   * @return true only when the target's kind is probeable and no such record exists
-   */
-  boolean targetIsKnownMissing(GlobalIdentifier target);
 }

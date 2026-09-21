@@ -149,21 +149,20 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   /**
    * Rejects a link whose target does not resolve to a record the actor can READ, on both write
-   * paths. The CSV importer's leniency (RSDEV-1354) is narrowed here to the case it exists for: a
-   * target that provably does not exist stores as a dangling link, while one that exists but is
-   * unreadable is still rejected, so a hand-written CSV cell cannot forge a link to another user's
-   * record.
+   * paths. CSV import (RSDEV-1354) is exempt: it stores the link whatever state the target is in,
+   * because distinguishing "gone" from "not yours" is exactly the disclosure ADR-0002 prevents. The
+   * card reports either as "No access" at read time, so nothing is claimed that the viewer cannot
+   * verify, and one unresolvable target does not discard the rest of the import.
    */
   private void assertTargetAcceptable(ApiInventoryLink apiLink, User actor) {
+    if (apiLink.isSkipTargetCheck()) {
+      return;
+    }
     GlobalIdentifier gid = new GlobalIdentifier(apiLink.getTargetGlobalId());
-    if (linkTargetResolver.targetExistsAndIsReadable(gid, actor)) {
-      return;
+    if (!linkTargetResolver.targetExistsAndIsReadable(gid, actor)) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.linkTargetNotFound", apiLink.getTargetGlobalId());
     }
-    if (apiLink.isSkipTargetCheck() && linkTargetResolver.targetIsKnownMissing(gid)) {
-      return;
-    }
-    throw new ApiRuntimeException(
-        "errors.inventory.field.linkTargetNotFound", apiLink.getTargetGlobalId());
   }
 
   private void applyApiToEntity(ApiInventoryLink api, InventoryLink entity) {

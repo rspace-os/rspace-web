@@ -143,34 +143,39 @@ class LinkTargetSnapshotResolverImplTest {
   }
 
   @Test
-  void resolveSummaryReportsMissingInventoryTargetAsDeleted() {
-    // no audit snapshot AND no live record: the target never existed here (e.g. a CSV-imported
-    // dangling link, RSDEV-1354), so the card shows "Target deleted" (ADR-0002 amendment)
+  void resolveSummaryRedactsMissingInventoryTargetRatherThanCallingItDeleted() {
+    // an inventory target with no snapshot is redacted exactly like an unreadable one, so a
+    // caller walking ids learns nothing about which records exist (ADR-0002)
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
-    when(linkTargetResolver.targetIsKnownMissing(any())).thenReturn(true);
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
 
     assertEquals("SA10", summary.getGlobalId());
     assertNull(summary.getName());
-    assertTrue(summary.isDeleted());
-    assertTrue(summary.isReadable());
+    assertNull(summary.getType());
+    assertFalse(summary.isReadable());
+    assertFalse(summary.isDeleted());
   }
 
   @Test
-  void resolveSummaryDoesNotCallLiveInventoryTargetDeletedWhenAuditRowsArePurged() {
-    // a live record whose Envers rows were purged has no snapshot either. Calling it deleted
-    // would strip Open from a target whose page works perfectly well, so the absence of audit
-    // history alone must not decide: only a record that is really gone is reported deleted.
-    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
-    when(linkTargetResolver.targetIsKnownMissing(any())).thenReturn(false);
+  void resolveSummaryMakesUnreadableInventoryTargetIndistinguishableFromNonexistent() {
+    Sample rec = mock(Sample.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(rec.getOwner()).thenReturn(owner);
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
+        .thenReturn(null)
+        .thenReturn(new AuditedEntity<>(rec, 120));
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
+    when(user.getUsername()).thenReturn("bob");
 
-    ApiInventoryLinkTargetSummary summary =
+    ApiInventoryLinkTargetSummary nonexistent =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+    ApiInventoryLinkTargetSummary unreadable =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
 
-    assertEquals("SA10", summary.getGlobalId());
-    assertFalse(summary.isDeleted());
+    assertEquals(nonexistent, unreadable);
   }
 
   @Test
@@ -252,8 +257,6 @@ class LinkTargetSnapshotResolverImplTest {
     assertNull(s.getName());
     assertNull(s.getType());
     assertFalse(s.isReadable());
-    // pins the inventory half of the RSDEV-1354 asymmetry: an existing but unreadable
-    // inventory target stays redacted and undeleted, unlike a missing one
     assertFalse(s.isDeleted());
   }
 
@@ -262,7 +265,6 @@ class LinkTargetSnapshotResolverImplTest {
     // Non-disclosure invariant (ADR-0002): an ELN target the actor cannot read must
     // produce a payload field-for-field identical to one for a record that does
     // not exist, so probing the summary endpoint with guessed ids learns nothing.
-    // Inventory targets are exempt (see resolveSummaryReportsMissingInventoryTargetAsDeleted).
     StructuredDocument rec = mock(StructuredDocument.class);
     User owner = mock(User.class);
     when(owner.getUsername()).thenReturn("alice");

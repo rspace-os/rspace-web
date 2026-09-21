@@ -6,21 +6,20 @@ source says only what a maintainer of that code needs.
 
 ## src/main/java/com/researchspace/service/inventory/csvimport/CsvLinkValueParser.java
 
-`CsvLinkValueParser` (class javadoc) — the ELN round-trip asymmetry, now stated
-in `0002-link-target-state-non-disclosure.md`: an exported link whose inventory
-target has since gone re-imports as a dangling link, while one whose ELN target
-(SD/NB/GL) has gone fails its row. Storing the ELN one would need a
-permission-free existence probe, which is the disclosure ADR-0002 prevents, and
-a rejected row is recoverable where a disclosure is not. Both kinds still
-export. The parser itself does not implement this split — `LinkTargetResolver`
-`.targetIsKnownMissing` does — so the contract is documented there and in the ADR.
+`CsvLinkValueParser` (class javadoc) — an earlier design split CSV import by
+target state: an inventory target that provably did not exist imported as a
+dangling link, while an ELN one failed its row, because deciding the same for
+an ELN record would need the permission-free existence probe ADR-0002 prevents.
+That split is withdrawn. Import now stores the link whatever state the target
+is in, for every prefix, and the card reports an unresolvable target as
+"No access" at read time. See `0002-link-target-state-non-disclosure.md`.
 
 ## src/main/java/com/researchspace/service/inventory/impl/LinkTargetSnapshotResolverImpl.java
 
-`resolveSummary` (missing-target branch) — the disclosure trade-off, now stated
-in `0002-link-target-state-non-disclosure.md`: this is a deliberate carve-out
-from ADR-0002, not an application of it. An existing-but-unreadable inventory
-record still answers `readable=false`, so the two payloads differ and a caller
-walking ids learns which inventory ids are occupied. Name, type and owner stay
-unset either way, so the leak is the id high-water mark rather than any content,
-judged a fair price for not offering a dead Open link.
+`resolveSummary` (missing-target branch) — this branch once carved out
+inventory targets from ADR-0002, answering `readable=true, deleted=true` for a
+target with no live record and no audit snapshot so the card could say "Target
+deleted" instead of offering a dead Open. That payload differed from the
+existing-but-unreadable one, so a caller walking ids learned which inventory
+ids were occupied. The carve-out is withdrawn: every prefix now returns the
+same redacted summary, and the id high-water-mark leak is gone.

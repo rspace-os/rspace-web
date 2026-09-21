@@ -77,22 +77,13 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   // renders the card exactly as before the summary existed (no pill, Open on)
   const targetSummary = useLinkTargetSummary(props.link.targetGlobalId);
   const targetDeleted = targetSummary?.deleted === true;
-  // ELN targets the viewer cannot read get a "No access" pill; an unreadable
-  // inventory target does not, because its own page still shows the viewer
-  // whatever limited view they have, so the pill would be misleading. A
-  // redacted summary always has deleted=false, so the two pills can never
-  // co-occur. An inventory target that does not exist at all (e.g. a
-  // CSV-imported dangling link, RSDEV-1354) is reported as deleted=true, so
-  // it shows "Target deleted" (ADR-0002 amendment).
-  const noAccess = targetSummary?.readable === false && !targetIsInventory;
-  // a trashed inventory item still reports its name and type; one that never
-  // existed here reports neither
-  const targetNeverExisted = targetDeleted && targetSummary?.name == null && targetSummary?.type == null;
-  // deleted inventory items live on in the trash and their viewer works, so
-  // only deleted or unreadable ELN targets lose Open (their routes are just
-  // error pages) - plus an inventory target with nothing behind it at all,
-  // whose page is an error page too
-  const openBlocked = targetNeverExisted || (!targetIsInventory && (targetDeleted || noAccess));
+  // a target the viewer cannot resolve gets "No access", whatever its kind. The server
+  // redacts unreadable and nonexistent targets identically (ADR-0002), so this covers both
+  // and the card never claims a record is deleted when it cannot see whether it is.
+  const noAccess = targetSummary?.readable === false;
+  // deleted inventory items live on in the trash and their viewer works, so they keep Open;
+  // a deleted ELN target's route is just an error page, as is any unresolvable target's
+  const openBlocked = noAccess || (!targetIsInventory && targetDeleted);
 
   const openHref = openHrefForLink(props.link, targetIsInventory);
   return (

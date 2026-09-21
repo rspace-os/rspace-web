@@ -22,8 +22,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * CSV import stores links whose target no longer exists; a target that does exist still has to be
- * readable, on both the create and the update path.
+ * CSV import stores a link whatever state its target is in; the card reports an unresolvable target
+ * as "No access" at read time. Every other caller still needs a target it can read.
  */
 @ExtendWith(MockitoExtension.class)
 class InventoryLinkManagerImplSkipTargetCheckTest {
@@ -44,53 +44,22 @@ class InventoryLinkManagerImplSkipTargetCheckTest {
   }
 
   @Test
-  void skipTargetCheckStoresLinkWhoseTargetDoesNotExist() {
+  void importStoresLinkWhoseTargetDoesNotResolve() {
+    // missing and unreadable are one case here: the importer cannot tell them apart and must
+    // not try, so neither fails the row
     apiLink.setSkipTargetCheck(true);
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
-    when(linkTargetResolver.targetIsKnownMissing(any())).thenReturn(true);
     when(linkDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
     InventoryLink saved = manager.createLink(apiLink, actor);
 
     assertEquals("SA123", saved.getTargetGlobalId());
     assertEquals("Cites", saved.getRelationType());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
   }
 
   @Test
-  void skipTargetCheckStillRejectsTargetThatExistsButIsUnreadable() {
+  void updateStoresLinkWhoseTargetDoesNotResolveWhenImporting() {
     apiLink.setSkipTargetCheck(true);
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
-    when(linkTargetResolver.targetIsKnownMissing(any())).thenReturn(false);
-
-    assertThrows(ApiRuntimeException.class, () -> manager.createLink(apiLink, actor));
-    verify(linkDao, never()).save(any());
-  }
-
-  @Test
-  void skipTargetCheckDoesNotProbeExistenceWhenTargetIsReadable() {
-    apiLink.setSkipTargetCheck(true);
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
-    when(linkDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-    manager.createLink(apiLink, actor);
-
-    verify(linkTargetResolver, never()).targetIsKnownMissing(any());
-  }
-
-  @Test
-  void defaultStillRejectsUnresolvableTarget() {
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
-
-    assertThrows(ApiRuntimeException.class, () -> manager.createLink(apiLink, actor));
-    verify(linkDao, never()).save(any());
-    verify(linkTargetResolver, never()).targetIsKnownMissing(any());
-  }
-
-  @Test
-  void updateAlsoStoresLinkWhoseTargetDoesNotExistWhenImporting() {
-    apiLink.setSkipTargetCheck(true);
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
-    when(linkTargetResolver.targetIsKnownMissing(any())).thenReturn(true);
     when(linkDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
     InventoryLink saved = manager.updateLink(new InventoryLink(), apiLink, actor);
@@ -99,11 +68,27 @@ class InventoryLinkManagerImplSkipTargetCheckTest {
   }
 
   @Test
-  void updateStillRejectsUnreadableTargetForOrdinaryCallers() {
+  void createStillRejectsUnresolvableTargetForOrdinaryCallers() {
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
+
+    assertThrows(ApiRuntimeException.class, () -> manager.createLink(apiLink, actor));
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void updateStillRejectsUnresolvableTargetForOrdinaryCallers() {
     when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
 
     assertThrows(
         ApiRuntimeException.class, () -> manager.updateLink(new InventoryLink(), apiLink, actor));
     verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void ordinaryCallerWithReadableTargetStoresTheLink() {
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(linkDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    assertEquals("SA123", manager.createLink(apiLink, actor).getTargetGlobalId());
   }
 }

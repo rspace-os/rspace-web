@@ -1226,7 +1226,8 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
   /**
    * RSDEV-1354: a link column exported as "RelationType serverUrl/globalId/GID[vN]" is suggested as
    * a Link field on parse and re-imported as a link, even when the target does not exist on this
-   * server (a dangling link, rendered by the UI as a missing target).
+   * server (a dangling link, rendered by the UI as "No access", indistinguishable from a target
+   * that exists but is unreadable - see ADR-0002).
    */
   @Test
   public void parseAndImportSampleCsvWithLinkColumn() throws Exception {
@@ -1379,7 +1380,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(1L, link.getVersionPin());
 
     // the target is live and readable, so the card shows its name and type rather than the
-    // "Target deleted" state a dangling link produces
+    // redacted "No access" summary an unresolvable target produces
     ApiInventoryLinkTargetSummary summary =
         inventoryLinkManager.getTargetSummary(targetGlobalId, anyUser);
     assertEquals(target.getName(), summary.getName());
@@ -1399,6 +1400,102 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
               return referencing.get(0).getLink().getTargetRevisionId();
             });
     assertNotNull(storedRevision, "a pin to a version that exists must capture its revision");
+  }
+
+  /**
+   * RSDEV-1354: a CSV link whose target exists but is not readable by the importer imports rather
+   * than failing its row. Distinguishing "gone" from "not yours" is the disclosure ADR-0002
+   * prevents, so import cannot treat the two differently; the summary redacts the target for the
+   * importer and the owner's referencing-items query still finds the link.
+   */
+  @Test
+  public void parseAndImportSampleCsvWithLinkToUnreadableTarget() throws Exception {
+    User targetOwner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(targetOwner, "unreadable target");
+    String targetGlobalId = "SA" + target.getId();
+    logoutAndLoginAs(anyUser);
+
+    String serverUrl = propertyHolder.getServerUrl();
+    if (serverUrl.endsWith("/")) {
+      serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+    }
+    String csv =
+        "Name,Related\n"
+            + "linked sample,IsDerivedFrom "
+            + serverUrl
+            + "/globalId/"
+            + targetGlobalId
+            + "\n";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/parseFile"))
+                    .file(
+                        new MockMultipartFile(
+                            "file", "links.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("recordType", "SAMPLES")
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiInventoryImportSampleParseResult parseResult =
+        getFromJsonResponseBody(result, ApiInventoryImportSampleParseResult.class);
+    ApiSampleTemplatePost templateInfo = parseResult.getTemplateInfo();
+    assertEquals(ApiFieldType.LINK, templateInfo.getFields().get(1).getType());
+    templateInfo.setExpiryDate(null);
+    templateInfo.getFields().remove(0); // Name column maps to the sample name
+
+    String settingsJson =
+        "{ \"sampleSettings\": { \"fieldMappings\": { \"Name\": \"name\"}, \"templateInfo\": "
+            + JacksonUtil.toJson(templateInfo)
+            + "} }";
+    result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
+                    .file(
+                        new MockMultipartFile(
+                            "samplesFile",
+                            "links.csv",
+                            "text/csv",
+                            csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("importSettings", settingsJson)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    ApiInventoryImportResult importResult =
+        getFromJsonResponseBody(result, ApiInventoryImportResult.class);
+    ApiInventoryImportSampleImportResult sampleResults = importResult.getSampleResult();
+    assertEquals(InventoryBulkOperationStatus.COMPLETED, sampleResults.getStatus());
+    assertEquals(1, sampleResults.getSuccessCount());
+
+    ApiSampleWithFullSubSamples linked =
+        (ApiSampleWithFullSubSamples) sampleResults.getResults().get(0).getRecord();
+    ApiInventoryLink link = linked.getFields().get(0).getLink();
+    assertNotNull(link, "a link to an unreadable target must still be stored");
+    assertEquals(targetGlobalId, link.getTargetGlobalId());
+
+    // the importer's summary of that target is the redacted one: "No access", not "Target deleted"
+    ApiInventoryLinkTargetSummary summary =
+        inventoryLinkManager.getTargetSummary(targetGlobalId, anyUser);
+    assertEquals(targetGlobalId, summary.getGlobalId());
+    assertFalse(summary.isReadable());
+    assertFalse(summary.isDeleted(), "an unreadable target must not be reported as deleted");
+    assertNull(summary.getName());
+    assertNull(summary.getType());
+
+    // the owner's referencing-items view still resolves the inbound link without error
+    doInTransaction(
+        () -> {
+          List<InventoryLinkField> referencing =
+              inventoryLinkDao.findReferencingStructuredLinkFields(
+                  GlobalIdPrefix.SA, target.getId());
+          assertEquals(1, referencing.size());
+          return null;
+        });
   }
 
   /**
