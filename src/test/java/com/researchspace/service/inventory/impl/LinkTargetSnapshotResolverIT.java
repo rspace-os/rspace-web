@@ -9,6 +9,7 @@ import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +30,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase {
 
   private @Autowired LinkTargetSnapshotResolver snapshotResolver;
+  private @Autowired InventoryLinkManager linkManager;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -166,5 +168,24 @@ public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase 
     assertEquals("IT" + sample.getId(), summary.getGlobalId());
     assertFalse(
         summary.isReadable(), "a readable sample must not vouch for a template sharing its id");
+  }
+
+  /**
+   * RSDEV-1354: the purged-audit fallback must never run the ELN lookup. That lookup goes through
+   * transactional {@code *Manager} proxies and throws for a missing, unreadable or deleted record;
+   * the throw marks the caller's transaction rollback-only even though it is caught, so {@code
+   * getTargetSummary} would fail at commit with {@code UnexpectedRollbackException} rather than
+   * return the redacted summary. Import can store a link to a notebook that does not exist, so this
+   * is reachable from the UI. Exercised through the transactional manager, not the resolver, since
+   * that is where the rollback surfaces.
+   */
+  @Test
+  public void reportsDanglingNotebookTargetAsRedactedWithoutPoisoningTheTransaction() {
+    User user = createInitAndLoginAnyUser();
+
+    ApiInventoryLinkTargetSummary summary = linkManager.getTargetSummary("NB99999999", user);
+
+    assertEquals("NB99999999", summary.getGlobalId());
+    assertFalse(summary.isReadable(), "a target that cannot be resolved stays redacted");
   }
 }

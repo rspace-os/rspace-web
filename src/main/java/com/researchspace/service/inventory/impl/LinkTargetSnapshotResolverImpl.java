@@ -79,7 +79,18 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       // a readable sibling sharing the db id (SA/IT) both stay redacted. The check is
       // permission-gated, so it reveals nothing this actor could not already see, and it keeps
       // Open on a target whose page works.
-      if (linkTargetResolver.targetIsLiveAndReadable(new GlobalIdentifier(prefix, dbId), user)) {
+      //
+      // Inventory only. The ELN lookup resolves through transactional *Manager proxies
+      // (BaseRecordManager -> FolderManager) whose folderDao.get and read/not-deleted assertions
+      // throw for a missing, unreadable or deleted record. Catching the throw is not enough: it
+      // crosses a transactional proxy and marks the caller's transaction rollback-only, so
+      // getTargetSummary would fail at commit with UnexpectedRollbackException instead of
+      // returning the redacted summary below - the same trap isReadable's javadoc describes, and
+      // reachable here because import can store a link to a notebook that does not exist. The
+      // inventory lookup throws only its own NotFoundException from a non-transactional
+      // component, so it is safe to consult.
+      if (isInventoryPrefix(prefix)
+          && linkTargetResolver.targetIsLiveAndReadable(new GlobalIdentifier(prefix, dbId), user)) {
         summary.setReadable(true);
         return summary;
       }

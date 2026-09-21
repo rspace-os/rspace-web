@@ -217,21 +217,38 @@ class LinkTargetSnapshotResolverImplTest {
   }
 
   @Test
-  void resolveSummaryRedactsSoftDeletedElnTargetWhoseAuditRowsWerePurged() {
-    // a deleted ELN target's route is only an error page, so keeping Open on it is worse than
-    // for inventory, where the trash viewer still works
+  void resolveSummaryRedactsElnTargetWithNoSnapshotWithoutAnyLiveLookup() {
+    // the ELN live lookup runs through transactional *Managers (BaseRecordManager ->
+    // FolderManager), and folderDao.get plus the read/not-deleted assertions all throw for a
+    // missing, unreadable or deleted record. Catching that is not enough: the throw crosses a
+    // transactional proxy and marks the caller's transaction rollback-only, so getTargetSummary
+    // fails at commit with UnexpectedRollbackException instead of returning this redacted
+    // summary. Import can store a dangling NB link, so the path is reachable. Only inventory
+    // targets, whose lookup is non-transactional, take the fallback.
+    when(auditManager.getNewestRevisionForEntity(Folder.class, 42L)).thenReturn(null);
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.NB, 42L, null, null, user);
+
+    assertEquals("NB42", summary.getGlobalId());
+    assertNull(summary.getName());
+    assertNull(summary.getType());
+    assertFalse(summary.isReadable());
+    assertFalse(summary.isDeleted());
+    verify(linkTargetResolver, never()).targetIsLiveAndReadable(any(), any());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+  }
+
+  @Test
+  void resolveSummaryRedactsDocumentTargetWithNoSnapshotWithoutAnyLiveLookup() {
     when(auditManager.getNewestRevisionForEntity(StructuredDocument.class, 42L)).thenReturn(null);
-    lenient().when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
-    when(linkTargetResolver.targetIsLiveAndReadable(any(), any())).thenReturn(false);
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, user);
 
     assertEquals("SD42", summary.getGlobalId());
-    assertNull(summary.getName());
-    assertNull(summary.getType());
     assertFalse(summary.isReadable());
-    assertFalse(summary.isDeleted());
+    verify(linkTargetResolver, never()).targetIsLiveAndReadable(any(), any());
   }
 
   @Test
