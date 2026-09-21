@@ -3,7 +3,6 @@ package com.researchspace.api.v1.auth;
 import static com.researchspace.model.UserApiKey.APIKEY_REGEX;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.service.UserApiKeyManager;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,14 +31,10 @@ public class ApiKeyAuthenticator extends AbstractApiAuthenticator {
     return apiKey;
   }
 
-  Function<String, Optional<User>> findUserForToken() {
+  Function<String, Optional<AuthenticationResult>> findUserForToken() {
     return apiKey ->
         apiMgr
             .findUserByKey(apiKey)
-            .map(
-                user -> {
-                  user.setAuthenticatedBy(UserAuthenticationMethod.API_KEY);
-                  return user;
-                });
+            .map(user -> new AuthenticationResult(user, UserAuthenticationMethod.API_KEY));
   }
 }

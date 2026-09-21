@@ -16,6 +16,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
+import org.apache.shiro.session.InvalidSessionException;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
@@ -56,14 +57,15 @@ class OAuthTokenAuthenticatorTest {
   }
 
   @Test
-  void matchingUiTokenReusesAuthenticatedSession() {
-    User user = TestFactory.createAnyUser("matching");
-    givenTokenFor(user, OAuthTokenType.UI_TOKEN);
-    when(subject.getPrincipal()).thenReturn(user.getUsername());
-    when(subject.getSession()).thenReturn(session);
-    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(user);
+  void matchingUiTokenReturnsFreshTargetUser() {
+    User targetUser = TestFactory.createAnyUser("matching");
+    User sessionUser = TestFactory.createAnyUser("matching");
+    givenTokenFor(targetUser, OAuthTokenType.UI_TOKEN);
+    when(subject.getPrincipal()).thenReturn(sessionUser.getUsername());
+    when(subject.getSession(false)).thenReturn(session);
+    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(sessionUser);
 
-    assertSame(user, authenticator.authenticate(request));
+    assertSame(targetUser, authenticator.authenticate(request));
     verify(subject, never()).login(any());
   }
 
@@ -73,7 +75,7 @@ class OAuthTokenAuthenticatorTest {
     User sessionUser = TestFactory.createAnyUser("session-user");
     givenTokenFor(tokenUser, OAuthTokenType.UI_TOKEN);
     when(subject.getPrincipal()).thenReturn(sessionUser.getUsername());
-    when(subject.getSession()).thenReturn(session);
+    when(subject.getSession(false)).thenReturn(session);
     when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(sessionUser);
 
     ApiAuthenticationException exception =
@@ -84,13 +86,10 @@ class OAuthTokenAuthenticatorTest {
   }
 
   @Test
-  void runAsDoesNotAllowMismatchedUiToken() {
+  void uiTokenWithoutAuthenticatedPrincipalIsRejected() {
     User tokenUser = TestFactory.createAnyUser("token-user");
-    User sessionUser = TestFactory.createAnyUser("session-user");
     givenTokenFor(tokenUser, OAuthTokenType.UI_TOKEN);
-    when(subject.getPrincipal()).thenReturn(sessionUser.getUsername());
-    when(subject.getSession()).thenReturn(session);
-    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(sessionUser);
+    when(subject.getPrincipal()).thenReturn(null);
 
     assertEquals(
         "api.errors.authentication.oauthTokenInvalid",
@@ -102,7 +101,21 @@ class OAuthTokenAuthenticatorTest {
   void uiTokenWithoutAuthenticatedBrowserSessionIsRejected() {
     User tokenUser = TestFactory.createAnyUser("token-user");
     givenTokenFor(tokenUser, OAuthTokenType.UI_TOKEN);
-    when(subject.getPrincipal()).thenReturn(null);
+    when(subject.getPrincipal()).thenReturn(tokenUser.getUsername());
+    when(subject.getSession(false)).thenReturn(null);
+
+    assertEquals(
+        "api.errors.authentication.oauthTokenInvalid",
+        assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request))
+            .getMessageKey());
+  }
+
+  @Test
+  void uiTokenWithExpiredBrowserSessionIsRejected() {
+    User tokenUser = TestFactory.createAnyUser("token-user");
+    givenTokenFor(tokenUser, OAuthTokenType.UI_TOKEN);
+    when(subject.getPrincipal()).thenReturn(tokenUser.getUsername());
+    when(subject.getSession(false)).thenThrow(new InvalidSessionException());
 
     assertEquals(
         "api.errors.authentication.oauthTokenInvalid",
