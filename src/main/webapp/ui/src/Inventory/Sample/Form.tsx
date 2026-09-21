@@ -305,7 +305,7 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
             existingRequest.status === "PENDING" ? (
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} />
+                  <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} bordered />
                   <Button
                     size="small"
                     variant="outlined"
@@ -329,13 +329,15 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
                   })}
                 </Typography>
               </Box>
-            ) : existingRequest.status === "APPROVED" || existingRequest.status === "REJECTED" ? (
+            ) : existingRequest.status !== "APPROVED" ? (
+              // The button is available whenever the most recent request is in any state
+              // other than APPROVED (PENDING is handled separately, above).
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} />
+                <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} bordered />
                 <RequestSampleButton onClick={() => setDialogOpen(true)} />
               </Box>
             ) : (
-              <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} />
+              <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} bordered />
             )
           ) : (
             <RequestSampleButton onClick={() => setDialogOpen(true)} />

@@ -404,13 +404,6 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   public void updateStatus_isRefusedForAnIllegalTransition() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
 
-    // FULFILLED is only reachable from APPROVED
-    assertThrows(
-        ApiRuntimeException.class,
-        () ->
-            sampleRequestApiMgr.updateStatus(
-                raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null), owner));
-
     sampleRequestApiMgr.updateStatus(
         raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
 
@@ -429,6 +422,40 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
         () ->
             sampleRequestApiMgr.updateStatus(
                 raised.getId(), statusPost(SampleRequestStatus.REJECTED, "too late"), owner));
+  }
+
+  @Test
+  public void updateStatus_ownerFulfilsPendingRequestDirectly() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    // FULFILLED is reachable directly from PENDING, skipping a separate approval step
+    ApiSampleRequest fulfilled =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null), owner);
+
+    assertEquals(SampleRequestStatus.FULFILLED, fulfilled.getStatus());
+    ApiSampleRequestStatusChange latest = fulfilled.getStatusChanges().get(1);
+    assertEquals(SampleRequestStatus.FULFILLED, latest.getStatus());
+    assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
+    assertNull(latest.getReason());
+
+    // FULFILLED is terminal either way it was reached
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.REJECTED, "too late"), owner));
+  }
+
+  @Test
+  public void updateStatus_requesterCannotFulfilTheirOwnPendingRequest() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null), requester));
   }
 
   @Test

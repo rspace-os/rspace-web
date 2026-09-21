@@ -4120,8 +4120,11 @@ export default interface Resources {
       },
       "detail": {
         "approveButton": "Approve",
+        "approvedButton": "✓ Approved",
+        "cancelRequestHint": "Cancel this request if you no longer require this material.",
         "fields": {
           "additionalNotes": "Notes from requester",
+          "approvedMessage": "This request has been approved by {owner}. The requested materials are now being prepared for transfer to you.",
           "commentFromApprover": "Additional notes",
           "loadingLocations": "Loading locations…",
           "locationColumn": "Location",
@@ -4138,6 +4141,10 @@ export default interface Resources {
           "submitted": "Submitted",
           "subsampleColumn": "Subsample"
         },
+        "fulfilDialog": {
+          "fulfilButton": "Fulfil",
+          "message": "Are you sure you want to fulfil this request without transferring any materials?"
+        },
         "history": {
           "columns": {
             "additionalNotes": "Additional Notes",
@@ -4147,6 +4154,13 @@ export default interface Resources {
           },
           "sectionTitle": "Request History"
         },
+        "markAsFulfilledButton": "Mark as Fulfilled",
+        "preparationHint": {
+          "approvedNoSelection": "Select a subsample from the list below to prepare the sample for transfer. Mark the request fulfilled if it has been handled outside of RSpace.",
+          "approvedSelected": "{subsample} can now be prepared for transfer to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
+          "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer."
+        },
+        "prepareSampleButton": "Prepare Sample",
         "rejectButton": "Reject",
         "rejectDialog": {
           "reasonLabel": "Provide a reason for rejecting this request.",
@@ -4155,8 +4169,13 @@ export default interface Resources {
         },
         "sections": {
           "approvalResult": "Request Status",
-          "approveReject": "Approve/Reject",
+          "approveReject": "Actions",
           "details": "Details"
+        },
+        "statusHelp": {
+          "cancelled": "Closed by the requester. No action available.",
+          "fulfilled": "Closed. The requester can raise a new request from the sample.",
+          "rejected": "Closed. Your reason for rejecting is shown in the history."
         },
         "title": "Request {id}: {sampleName}"
       },

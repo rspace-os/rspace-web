@@ -50,7 +50,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   private record Transition(
       SampleRequestStatus to, SampleRequestStatus from, Actor actor, boolean reasonRequired) {}
 
-  /** The whole state machine. PENDING is absent: it is written only when a request is raised. */
+  /**
+   * The whole state machine. PENDING is absent: it is written only when a request is raised.
+   * FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a separate
+   * approval step), or after already approving the request.
+   */
   private static final List<Transition> TRANSITIONS =
       List.of(
           new Transition(
@@ -59,6 +63,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
               SampleRequestStatus.REJECTED, SampleRequestStatus.PENDING, Actor.OWNER, true),
           new Transition(
               SampleRequestStatus.CANCELLED, SampleRequestStatus.PENDING, Actor.REQUESTER, false),
+          new Transition(
+              SampleRequestStatus.FULFILLED, SampleRequestStatus.PENDING, Actor.OWNER, false),
           new Transition(
               SampleRequestStatus.FULFILLED, SampleRequestStatus.APPROVED, Actor.OWNER, false));
 
@@ -115,9 +121,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     }
     assertUserIsPartyToRequest(request, user);
 
-    Transition transition = transitionTo(post.getStatus());
+    Transition transition = transitionTo(request.getStatus(), post.getStatus());
     assertPermittedActor(request, user, transition);
-    assertLegalFrom(request, transition);
     String reason = validatedReason(post, transition);
 
     request.recordStatus(user, post.getStatus(), reason);
@@ -134,21 +139,25 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     }
   }
 
-  private Transition transitionTo(SampleRequestStatus target) {
-    return TRANSITIONS.stream()
-        .filter(t -> t.to().equals(target))
+  /**
+   * Some target statuses (e.g. FULFILLED) are reachable from more than one current status, so the
+   * legal transition depends on both. A target with no transitions at all is never settable; a
+   * target with transitions but none matching the current status is an illegal transition from here
+   * specifically.
+   */
+  private Transition transitionTo(SampleRequestStatus currentStatus, SampleRequestStatus target) {
+    List<Transition> toTarget =
+        TRANSITIONS.stream().filter(t -> t.to().equals(target)).collect(Collectors.toList());
+    if (toTarget.isEmpty()) {
+      throw new ApiRuntimeException("errors.inventory.sampleRequest.statusNotSettable", target);
+    }
+    return toTarget.stream()
+        .filter(t -> t.from().equals(currentStatus))
         .findFirst()
         .orElseThrow(
             () ->
                 new ApiRuntimeException(
-                    "errors.inventory.sampleRequest.statusNotSettable", target));
-  }
-
-  private void assertLegalFrom(SampleRequest request, Transition transition) {
-    if (!transition.from().equals(request.getStatus())) {
-      throw new ApiRuntimeException(
-          "errors.inventory.sampleRequest.illegalTransition", request.getStatus(), transition.to());
-    }
+                    "errors.inventory.sampleRequest.illegalTransition", currentStatus, target));
   }
 
   private String validatedReason(ApiSampleRequestStatusPut post, Transition transition) {

@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -75,7 +76,17 @@ function NamedRecordChip({ globalId, name }: { globalId: string; name: string })
  * Fetched from the existing GET /samples/{id} endpoint rather than extending
  * the SampleRequest API.
  */
-export default function RequestSampleLocations({ sampleId }: { sampleId: number }): React.ReactNode {
+export default function RequestSampleLocations({
+  sampleId,
+  selectable = false,
+  selectedSubsampleId = null,
+  onSelectSubsample,
+}: {
+  sampleId: number;
+  selectable?: boolean;
+  selectedSubsampleId?: number | null;
+  onSelectSubsample?: (subSample: { id: number; name: string }) => void;
+}): React.ReactNode {
   const { t } = useTranslation("inventory");
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
@@ -129,6 +140,7 @@ export default function RequestSampleLocations({ sampleId }: { sampleId: number 
       <Table size="small" stickyHeader>
         <TableHead>
           <TableRow>
+            {selectable && <TableCell padding="checkbox" />}
             <TableCell>{t("requestsManagement.detail.fields.subsampleColumn")}</TableCell>
             <TableCell>{t("requestsManagement.detail.fields.locationColumn")}</TableCell>
           </TableRow>
@@ -136,6 +148,15 @@ export default function RequestSampleLocations({ sampleId }: { sampleId: number 
         <TableBody>
           {subSamples.map((subSample) => (
             <TableRow key={subSample.id}>
+              {selectable && (
+                <TableCell padding="checkbox">
+                  <Radio
+                    checked={selectedSubsampleId === subSample.id}
+                    onChange={() => onSelectSubsample?.({ id: subSample.id, name: subSample.name })}
+                    size="small"
+                  />
+                </TableCell>
+              )}
               <TableCell>
                 <NamedRecordChip globalId={subSample.globalId} name={subSample.name} />
               </TableCell>

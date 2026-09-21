@@ -1,4 +1,5 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
@@ -9,7 +10,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
-import { useTheme } from "@mui/material/styles";
+import { darken, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
@@ -28,8 +29,18 @@ import ApiService from "../../common/InvApiService";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
 import type { ApiSampleRequestListItem } from "./RequestsList";
-import RequestsStatusChip from "./RequestsStatusChip";
+import RequestsStatusChip, { STATUS_BACKGROUND } from "./RequestsStatusChip";
 import { notifySampleRequestStatusChanged } from "./sampleRequestEvents";
+
+const STATUS_HELP_KEY = {
+  FULFILLED: "requestsManagement.detail.statusHelp.fulfilled",
+  REJECTED: "requestsManagement.detail.statusHelp.rejected",
+  CANCELLED: "requestsManagement.detail.statusHelp.cancelled",
+} as const;
+
+function statusHelpKey(status: string): (typeof STATUS_HELP_KEY)[keyof typeof STATUS_HELP_KEY] | null {
+  return status in STATUS_HELP_KEY ? STATUS_HELP_KEY[status as keyof typeof STATUS_HELP_KEY] : null;
+}
 
 function DetailField({
   label,
@@ -66,10 +77,15 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [approvalResultExpanded, setApprovalResultExpanded] = useState(true);
   const [requestHistoryExpanded, setRequestHistoryExpanded] = useState(true);
+  const [sampleLocationsExpanded, setSampleLocationsExpanded] = useState(true);
   const [status, setStatus] = useState(request?.status);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [fulfilDialogOpen, setFulfilDialogOpen] = useState(false);
+  const [selectedSubsampleId, setSelectedSubsampleId] = useState<number | null>(null);
+  const [selectedSubsampleName, setSelectedSubsampleName] = useState<string | null>(null);
   const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
+  const [sampleOwnerName, setSampleOwnerName] = useState<string | null>(null);
   const currentUser = useWhoAmI();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
     .map((user) => request != null && user.id === request.sample.owner.id)
@@ -78,10 +94,14 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   useEffect(() => {
     if (!request) return;
     let cancelled = false;
-    ApiService.get<{ statusChanges: Array<ApiSampleRequestStatusChangeItem> }>("sampleRequests", request.id)
+    ApiService.get<{
+      statusChanges: Array<ApiSampleRequestStatusChangeItem>;
+      sample: { owner: { firstName: string; lastName: string } };
+    }>("sampleRequests", request.id)
       .then(({ data }) => {
         if (cancelled) return;
         setStatusChanges(data.statusChanges);
+        setSampleOwnerName(`${data.sample.owner.firstName} ${data.sample.owner.lastName}`);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -148,6 +168,54 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       });
   };
 
+  const fulfilRequest = () => {
+    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
+      status: "FULFILLED",
+    })
+      .then(({ data }) => {
+        setStatus(data.status);
+        setFulfilDialogOpen(false);
+        notifySampleRequestStatusChanged();
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to fulfil sample request", error);
+      });
+  };
+
+  // Matches the "Cancel" button behaviour in the Sample form's "Request this sample" box:
+  // cancelling is only legal for the requester, and only while the request is PENDING.
+  const cancelRequest = () => {
+    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
+      status: "CANCELLED",
+    })
+      .then(({ data }) => {
+        setStatus(data.status);
+        notifySampleRequestStatusChanged();
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to cancel sample request", error);
+      });
+  };
+
+  const isActionableState = status === "PENDING" || status === "APPROVED";
+  const prepareSampleEnabled = isActionableState && selectedSubsampleId !== null;
+  const rejectColors = { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" };
+  const approveColors = { backgroundColor: "#0B72A3", borderColor: "#0B72A3", color: "white" };
+  const approvedDisabledColors = { color: "#4F6E7C", borderColor: "#C2D6E0", backgroundColor: "#EDF4F8" };
+  const markAsFulfilledColors = { color: "#3A4A52", borderColor: "#7D8D95", backgroundColor: "white" };
+  const statusHelpTranslationKey = status ? statusHelpKey(status) : null;
+  const infoBoxText =
+    status === "PENDING"
+      ? t("requestsManagement.detail.preparationHint.pending")
+      : status === "APPROVED"
+        ? selectedSubsampleId === null || selectedSubsampleName === null
+          ? t("requestsManagement.detail.preparationHint.approvedNoSelection")
+          : t("requestsManagement.detail.preparationHint.approvedSelected", {
+              subsample: selectedSubsampleName,
+              requester: `${request.requester.firstName} ${request.requester.lastName}`,
+            })
+        : null;
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, width: "100%", height: "100%", minWidth: 0 }}>
       <Box
@@ -206,12 +274,6 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               <DetailField label={t("requestsManagement.detail.fields.sampleRequested")}>
                 <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />
               </DetailField>
-              <DetailField
-                label={t("requestsManagement.detail.fields.sampleLocation")}
-                tooltip={t("requestsManagement.detail.fields.sampleLocationTooltip")}
-              >
-                <RequestSampleLocations sampleId={request.sample.id} />
-              </DetailField>
               <DetailField label={t("requestsManagement.detail.fields.additionalNotes")}>
                 {request.note ? request.note : <NoValue label={t("requestsManagement.detail.fields.noNotes")} />}
               </DetailField>
@@ -247,6 +309,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               <DetailField label={t("requestsManagement.detail.fields.status")}>
                 <RequestsStatusChip status={status ?? request.status} />
+                {status === "APPROVED" && sampleOwnerName && !isSampleOwner && (
+                  <Typography variant="body2" sx={{ mt: 1, wordBreak: "normal" }}>
+                    {t("requestsManagement.detail.fields.approvedMessage", { owner: sampleOwnerName })}
+                  </Typography>
+                )}
               </DetailField>
               <DetailField label={t("requestsManagement.detail.fields.commentFromApprover")}>
                 {comment ? comment : <NoValue label={t("requestsManagement.detail.fields.noComment")} />}
@@ -254,6 +321,176 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             </Box>
           </HeadingContext>
         </Collapse>
+        {isSampleOwner && (
+          <>
+            <Box sx={{ p: 1, backgroundColor: theme.palette.grey[100] }}>
+              <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approveReject")}</Typography>
+            </Box>
+            <Divider />
+            <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+              {isActionableState && infoBoxText && <Alert severity="info">{infoBoxText}</Alert>}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Button
+                  variant="outlined"
+                  disabled={!isActionableState}
+                  sx={
+                    isActionableState
+                      ? {
+                          "&&": {
+                            ...rejectColors,
+                            "&:hover": {
+                              borderColor: darken(rejectColors.borderColor, 0.2),
+                              backgroundColor: STATUS_BACKGROUND.REJECTED,
+                            },
+                          },
+                        }
+                      : undefined
+                  }
+                  onClick={() => setRejectDialogOpen(true)}
+                >
+                  {t("requestsManagement.detail.rejectButton")}
+                </Button>
+                <Button
+                  variant="contained"
+                  disabled={status !== "PENDING"}
+                  sx={
+                    status === "PENDING"
+                      ? {
+                          "&&": {
+                            ...approveColors,
+                            "&:hover": { backgroundColor: darken(approveColors.backgroundColor, 0.15) },
+                          },
+                        }
+                      : status === "APPROVED"
+                        ? { "&&": approvedDisabledColors }
+                        : undefined
+                  }
+                  onClick={approveRequest}
+                >
+                  {status === "APPROVED"
+                    ? t("requestsManagement.detail.approvedButton")
+                    : t("requestsManagement.detail.approveButton")}
+                </Button>
+                <Button
+                  variant="contained"
+                  disabled={!prepareSampleEnabled}
+                  sx={
+                    prepareSampleEnabled
+                      ? {
+                          "&&": {
+                            ...approveColors,
+                            "&:hover": { backgroundColor: darken(approveColors.backgroundColor, 0.15) },
+                          },
+                        }
+                      : undefined
+                  }
+                  onClick={() => {}}
+                >
+                  {t("requestsManagement.detail.prepareSampleButton")}
+                </Button>
+                <Button
+                  variant="outlined"
+                  disabled={status !== "APPROVED"}
+                  sx={
+                    status === "APPROVED"
+                      ? {
+                          "&&": {
+                            ...markAsFulfilledColors,
+                            "&:hover": {
+                              borderColor: darken(markAsFulfilledColors.borderColor, 0.2),
+                              backgroundColor: STATUS_BACKGROUND.FULFILLED,
+                            },
+                          },
+                        }
+                      : undefined
+                  }
+                  onClick={() => setFulfilDialogOpen(true)}
+                >
+                  {t("requestsManagement.detail.markAsFulfilledButton")}
+                </Button>
+              </Box>
+              {statusHelpTranslationKey && (
+                <Typography variant="body2" color="text.secondary">
+                  {t(statusHelpTranslationKey)}
+                </Typography>
+              )}
+            </Box>
+          </>
+        )}
+        {!isSampleOwner && status === "PENDING" && (
+          <>
+            <Box sx={{ p: 1, backgroundColor: theme.palette.grey[100] }}>
+              <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approveReject")}</Typography>
+            </Box>
+            <Divider />
+            <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+              <Typography variant="body2">{t("requestsManagement.detail.cancelRequestHint")}</Typography>
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Button
+                  variant="outlined"
+                  sx={{
+                    "&&": {
+                      color: theme.palette.grey[700],
+                      borderColor: theme.palette.grey[500],
+                      "&:hover": {
+                        borderColor: theme.palette.grey[700],
+                        backgroundColor: theme.palette.grey[100],
+                      },
+                    },
+                  }}
+                  onClick={cancelRequest}
+                >
+                  {t("sample.requestMaterialSection.cancelRequestButton")}
+                </Button>
+              </Box>
+            </Box>
+          </>
+        )}
+        {isSampleOwner && (
+          <>
+            <Box
+              sx={{
+                p: 1,
+                backgroundColor: theme.palette.grey[100],
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+              }}
+              onClick={() => setSampleLocationsExpanded(!sampleLocationsExpanded)}
+            >
+              <CustomTooltip title={t("requestsManagement.detail.fields.sampleLocationTooltip")}>
+                <Typography variant="subtitle1">{t("requestsManagement.detail.fields.sampleLocation")}</Typography>
+              </CustomTooltip>
+              <IconButton
+                size="small"
+                aria-label={
+                  sampleLocationsExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")
+                }
+                sx={{
+                  transform: sampleLocationsExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: theme.transitions.create("transform"),
+                }}
+              >
+                <ExpandMoreIcon />
+              </IconButton>
+            </Box>
+            <Divider />
+            <Collapse in={sampleLocationsExpanded}>
+              <Box sx={{ p: 2 }}>
+                <RequestSampleLocations
+                  sampleId={request.sample.id}
+                  selectable={status === "PENDING" || status === "APPROVED"}
+                  selectedSubsampleId={selectedSubsampleId}
+                  onSelectSubsample={(subSample) => {
+                    setSelectedSubsampleId(subSample.id);
+                    setSelectedSubsampleName(subSample.name);
+                  }}
+                />
+              </Box>
+            </Collapse>
+          </>
+        )}
         <Box
           sx={{
             p: 1,
@@ -281,27 +518,6 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         <Collapse in={requestHistoryExpanded}>
           <RequestHistoryTable statusChanges={statusChanges} />
         </Collapse>
-        {isSampleOwner && status === "PENDING" && (
-          <>
-            <Box sx={{ p: 1, backgroundColor: theme.palette.grey[100] }}>
-              <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approveReject")}</Typography>
-            </Box>
-            <Divider />
-            <Box sx={{ p: 2, display: "flex", gap: 2 }}>
-              <Button variant="contained" color="success" sx={{ "&&": { color: "white" } }} onClick={approveRequest}>
-                {t("requestsManagement.detail.approveButton")}
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                sx={{ "&&": { color: "white" } }}
-                onClick={() => setRejectDialogOpen(true)}
-              >
-                {t("requestsManagement.detail.rejectButton")}
-              </Button>
-            </Box>
-          </>
-        )}
       </Box>
       <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{t("requestsManagement.detail.rejectDialog.title")}</DialogTitle>
@@ -321,13 +537,47 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         <DialogActions>
           <Button onClick={() => setRejectDialogOpen(false)}>{t("common:actions.cancel")}</Button>
           <Button
-            color="error"
-            variant="contained"
-            sx={{ "&&": { color: "white" } }}
+            variant="outlined"
             disabled={!rejectReason.trim()}
+            sx={
+              rejectReason.trim()
+                ? {
+                    "&&": {
+                      ...rejectColors,
+                      "&:hover": {
+                        borderColor: darken(rejectColors.borderColor, 0.2),
+                        backgroundColor: STATUS_BACKGROUND.REJECTED,
+                      },
+                    },
+                  }
+                : undefined
+            }
             onClick={rejectRequest}
           >
             {t("requestsManagement.detail.rejectDialog.rejectRequestButton")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={fulfilDialogOpen} onClose={() => setFulfilDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogContent>
+          <Typography variant="body2">{t("requestsManagement.detail.fulfilDialog.message")}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFulfilDialogOpen(false)}>{t("common:actions.cancel")}</Button>
+          <Button
+            variant="outlined"
+            sx={{
+              "&&": {
+                ...markAsFulfilledColors,
+                "&:hover": {
+                  borderColor: darken(markAsFulfilledColors.borderColor, 0.2),
+                  backgroundColor: STATUS_BACKGROUND.FULFILLED,
+                },
+              },
+            }}
+            onClick={fulfilRequest}
+          >
+            {t("requestsManagement.detail.fulfilDialog.fulfilButton")}
           </Button>
         </DialogActions>
       </Dialog>
