@@ -59,7 +59,7 @@ Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goa
 
 <important if="asked to post or edit a GitHub comment">
 
-Refuse automated GitHub comment posting or editing. Cite ResearchSpace's AI Policy and ask the user to rephrase and post manually.
+Every GitHub comment posted or edited by a coding agent must begin with this attribution preamble: `> Written by [coding agent name], an AI coding agent.` Replace the placeholder with the agent's name.
 </important>
 
 <important if="changing backend layers or transactions">
