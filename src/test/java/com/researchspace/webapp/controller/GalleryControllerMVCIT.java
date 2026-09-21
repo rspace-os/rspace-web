@@ -4,7 +4,6 @@ import static com.researchspace.core.util.MediaUtils.CHEMISTRY_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.testutils.RSpaceTestUtils.getAnyPdf;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -811,9 +810,10 @@ public class GalleryControllerMVCIT extends MVCTestBase {
         .andExpect(jsonPath("$.data.revisions[0].record.name").value("Picture1.png"))
         .andExpect(jsonPath("$.data.revisions[0].record.description").doesNotExist())
         // and the rename and description edit are recorded as later revisions of the same version
-        .andExpect(jsonPath("$.data.revisions[*].record.name", hasItem("second-name.png")))
+        .andExpect(jsonPath("$.data.revisions[?(@.record.name == 'second-name.png')]").isNotEmpty())
         .andExpect(
-            jsonPath("$.data.revisions[*].record.description", hasItem("the second description")));
+            jsonPath("$.data.revisions[?(@.record.description == 'the second description')]")
+                .isNotEmpty());
   }
 
   @Test

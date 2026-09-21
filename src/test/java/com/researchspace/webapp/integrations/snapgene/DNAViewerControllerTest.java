@@ -5,9 +5,9 @@ import static com.researchspace.model.preference.HierarchicalPermission.DENIED;
 import static com.researchspace.model.preference.HierarchicalPermission.DENIED_BY_DEFAULT;
 import static com.researchspace.service.SystemPropertyName.SNAPGENE_AVAILABLE;
 import static com.researchspace.testutils.TestFactory.createAFileProperty;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -36,7 +36,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import org.apache.shiro.authz.AuthorizationException;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -91,9 +90,10 @@ public class DNAViewerControllerTest {
     mockErrorSnapgeneCall(HttpStatus.BAD_REQUEST);
     ResponseEntity<byte[]> bytes =
         dnaController.getPngView(1L, GeneratePngMapConfig.builder().build());
-    assertThat(
-        new String(bytes.getBody(), "UTF-8"),
-        Matchers.startsWith(messages.getMessage("connect.snapgene.errors.webserviceNoDetails")));
+    assertTrue(
+        new String(bytes.getBody(), "UTF-8")
+            .startsWith(messages.getMessage("connect.snapgene.errors.webserviceNoDetails")),
+        new String(bytes.getBody(), "UTF-8"));
     assertEquals(HttpStatus.BAD_REQUEST.value(), bytes.getStatusCodeValue());
   }
 
@@ -102,9 +102,11 @@ public class DNAViewerControllerTest {
     stubSnapgeneAllowed();
     mockErrorSnapgeneStatus(HttpStatus.NOT_FOUND);
     ResponseEntity<String> bytes = dnaController.status();
-    assertThat(
-        bytes.getBody(),
-        Matchers.startsWith(messages.getMessage("connect.snapgene.errors.webserviceNoDetails")));
+    assertTrue(
+        bytes
+            .getBody()
+            .startsWith(messages.getMessage("connect.snapgene.errors.webserviceNoDetails")),
+        bytes.getBody());
     assertEquals(HttpStatus.NOT_FOUND.value(), bytes.getStatusCodeValue());
   }
 

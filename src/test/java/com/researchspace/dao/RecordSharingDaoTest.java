@@ -1,8 +1,6 @@
 package com.researchspace.dao;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.testutils.matchers.TotalSearchResults.totalSearchResults;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -130,22 +128,22 @@ public class RecordSharingDaoTest extends BaseDaoTestCase {
     srchCrit.setAllFields("abcd");
     pg.setSearchCriteria(srchCrit);
 
-    assertThat(rShareDao.listSharedRecordsForUser(user, pg), totalSearchResults(1));
+    assertEquals(1, rShareDao.listSharedRecordsForUser(user, pg).getTotalHits().intValue());
     srchCrit.setAllFields("bcdefddddd");
-    assertThat(rShareDao.listSharedRecordsForUser(user, pg), totalSearchResults(0));
+    assertEquals(0, rShareDao.listSharedRecordsForUser(user, pg).getTotalHits().intValue());
     String globalIdString = rgs.getShared().getGlobalIdentifier();
     srchCrit.setAllFields(rgs.getShared().getGlobalIdentifier());
-    assertThat(rShareDao.listSharedRecordsForUser(user, pg), totalSearchResults(1));
+    assertEquals(1, rShareDao.listSharedRecordsForUser(user, pg).getTotalHits().intValue());
     // requires exact match to global ID
     srchCrit.setAllFields(
         StringAbbreviationUtils.abbreviate(globalIdString, globalIdString.length() - 1));
-    assertThat(rShareDao.listSharedRecordsForUser(user, pg), totalSearchResults(0));
+    assertEquals(0, rShareDao.listSharedRecordsForUser(user, pg).getTotalHits().intValue());
 
     srchCrit.setAllFields(globalIdString + "ddd");
-    assertThat(rShareDao.listSharedRecordsForUser(user, pg), totalSearchResults(0));
+    assertEquals(0, rShareDao.listSharedRecordsForUser(user, pg).getTotalHits().intValue());
 
     srchCrit.setAllFields("");
-    assertThat(rShareDao.listSharedRecordsForUser(user, pg), totalSearchResults(3));
+    assertEquals(3, rShareDao.listSharedRecordsForUser(user, pg).getTotalHits().intValue());
     // search name asc/desc
     pg.setSortOrder(SortOrder.DESC);
     assertFirstHitNameStartsWith(pg, "x");
