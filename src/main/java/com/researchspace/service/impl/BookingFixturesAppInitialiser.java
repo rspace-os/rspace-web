@@ -60,6 +60,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private static final int SEARCH_EVENT_FIXTURE_COUNT = 3;
   private static final BookingSchedulingSettings.Patch BLOCKOUT_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(null, "08:00", "17:00", null, null, null, null);
+  private static final BookingSchedulingSettings.Patch ALERT_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(15L, "08:00", "17:00", null, null, 60L, false);
 
   @Value("${default.user.password}")
   private String devUserPassword;
@@ -189,6 +191,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           ensureInstrument(message("bookingFixtures.instruments.bookingCardArchived"), owner));
 
       busyCalendarInstruments = ensureBusyCalendarInstruments(owner);
+      instruments.add(
+          ensureInstrument(message("bookingFixtures.instruments.bookingAlerts"), owner));
     } finally {
       logout();
     }
@@ -251,7 +255,9 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               ensureConfiguration(instruments.get(3), "Asia/Singapore", sysadmin),
               ensureConfiguration(instruments.get(4), "Europe/Berlin", sysadmin),
               ensureConfiguration(instruments.get(5), "Europe/Berlin", sysadmin),
-              ensureConfiguration(instruments.get(6), "Europe/Berlin", sysadmin));
+              ensureConfiguration(
+                  instruments.get(6), "Europe/Berlin", ALERT_FIXTURE_SETTINGS, sysadmin),
+              ensureConfiguration(instruments.get(7), "Europe/Berlin", sysadmin));
 
       ensureConfigurationState(
           bookingCardInstruments.get(1), true, BookingConfigurationState.ACTIVE, sysadmin);
@@ -391,6 +397,32 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           BUSY_CALENDAR_INSTRUMENT_COUNT * BUSY_CALENDAR_EVENTS_PER_INSTRUMENT
               + SEARCH_EVENT_FIXTURE_COUNT,
           busyCalendarWeekStart);
+    } finally {
+      logout();
+    }
+
+    try {
+      login(new UsernamePasswordToken(SYSADMIN_UNAME, SYSADMIN_PWD, false));
+      ensureBooking(
+          instruments.get(6),
+          configurations.get(6),
+          fixtureDate.minusDays(1),
+          10,
+          0,
+          11,
+          0,
+          message("bookingFixtures.purposes.bookingAlertsPast"),
+          sysadmin);
+      ensureBooking(
+          instruments.get(6),
+          configurations.get(6),
+          fixtureDate,
+          10,
+          0,
+          11,
+          0,
+          message("bookingFixtures.purposes.bookingAlertsOverlap"),
+          sysadmin);
     } finally {
       logout();
     }

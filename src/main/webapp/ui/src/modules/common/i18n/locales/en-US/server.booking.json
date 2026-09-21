@@ -13,6 +13,7 @@
       "bookingCardBook": "Booking card: Book",
       "bookingCardDisabled": "Booking card: Open (disabled)",
       "bookingCardArchived": "Booking card: Open (archived)",
+      "bookingAlerts": "Booking alerts test bench",
       "busyCalendar": "Busy calendar instrument {0,number,000}"
     },
     "containers": {
@@ -32,7 +33,9 @@
       "busyCalendar": "Busy calendar fixture",
       "auroraCalibration": "Aurora calibration session",
       "beaconCellImaging": "Beacon cell imaging study",
-      "cometProteomics": "Comet proteomics analysis"
+      "cometProteomics": "Comet proteomics analysis",
+      "bookingAlertsPast": "Booking alerts past fixture",
+      "bookingAlertsOverlap": "Booking alerts overlap fixture"
     }
   }
 }

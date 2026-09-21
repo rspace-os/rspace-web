@@ -18,13 +18,19 @@ export function BookingFormAlerts({ warning, error, outcomeUncertain }: BookingF
   return (
     <div className="space-y-2">
       {warning ? (
-        <Alert role="status">
+        <Alert
+          role="status"
+          className="border-amber-600 bg-amber-100 text-amber-950 *:data-[slot=alert-description]:text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-200 dark:*:data-[slot=alert-description]:text-amber-200"
+        >
           <TriangleAlertIcon aria-hidden="true" />
           <AlertDescription>{warning}</AlertDescription>
         </Alert>
       ) : null}
       {error ? (
-        <Alert variant="destructive">
+        <Alert
+          variant="destructive"
+          className="border-red-700 bg-red-100 text-red-950 *:data-[slot=alert-description]:text-red-950 dark:border-red-400 dark:bg-red-950 dark:text-red-200 dark:*:data-[slot=alert-description]:text-red-200"
+        >
           <TriangleAlertIcon aria-hidden="true" />
           <AlertDescription>
             {error}
@@ -32,7 +38,7 @@ export function BookingFormAlerts({ warning, error, outcomeUncertain }: BookingF
               <p className="mt-2">
                 {t("bookings.errors.outcomeUncertainGuidance")}{" "}
                 <Link
-                  className="font-medium text-primary underline underline-offset-4"
+                  className="font-medium underline underline-offset-4"
                   to="/booking/my-bookings"
                   search={{ period: "upcoming" }}
                 >
