@@ -17,9 +17,11 @@ import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryEditLockTrackerTest extends SpringTransactionalTest {
 
+  private @Autowired InventoryEditLockTracker invLockTracker;
   private User testUser;
 
   @BeforeEach

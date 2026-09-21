@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.SampleDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.field.ExtraNumberField;
@@ -24,6 +25,7 @@ public class CsvSampleExporterTest extends SpringTransactionalTest {
   @Qualifier("csvSampleExporter")
   private CsvSampleExporter sampleExporter;
 
+  @Autowired private SampleDao sampleDao;
   private User testUser = new User("testUser");
 
   @Test

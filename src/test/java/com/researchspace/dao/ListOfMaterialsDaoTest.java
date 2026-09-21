@@ -12,8 +12,12 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class ListOfMaterialsDaoTest extends SpringTransactionalTest {
+
+  private @Autowired ListOfMaterialsDao listOfMaterialsDao;
+  private @Autowired SampleDao sampleDao;
 
   @Test
   public void createReadUpdateDeleteNewSample() {

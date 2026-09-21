@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.dao.RSChemElementDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.StoichiometryDao;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.ChemElementsFormat;
@@ -26,6 +27,7 @@ public class StoichiometryInventoryLinkDaoHibernateTest extends SpringTransactio
   @Autowired private StoichiometryInventoryLinkDao dao;
   @Autowired private StoichiometryDao stoichDao;
   @Autowired private RSChemElementDao chemDao;
+  @Autowired private SampleTemplateDao sampleTemplateDao;
 
   @Test
   public void attemptToSaveSampleTemplateLinkTriggersPrePersist() {

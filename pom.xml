@@ -267,6 +267,8 @@
           </execution>
         </executions>
         <configuration>
+          <groups>${includedTestGroups}</groups>
+          <excludedGroups>${excludedTestGroups}</excludedGroups>
           <!-- ${argLine} parameter comes from JaCoCo plugin. -->
           <!-- 'add-opens' required when running on j17, until we upgrade xml jars -->
           <argLine>-Xmx1536m
@@ -2687,6 +2689,8 @@
     <frontend.maven.plugin.version>2.0.0</frontend.maven.plugin.version>
     <frontend.node.version>v24.15.0</frontend.node.version>
     <frontend.pnpm.version>11.18.0</frontend.pnpm.version>
+    <includedTestGroups></includedTestGroups>
+    <excludedTestGroups>chemistry</excludedTestGroups>
     <!-- jetty -->
     <jetty.version>12.1.11</jetty.version>
     <slf4j.version>2.0.2</slf4j.version>
