@@ -1053,6 +1053,25 @@ public class RecordManagerTest extends SpringTransactionalTest {
         recordMgr
             .move(doc.getId(), pi.getRootFolder().getId(), g.getCommunalGroupFolderId(), pi)
             .isSucceeded());
+    // attempt to move from shared folder into pi's private notebook should also fail
+    Notebook privateNotebook =
+        folderMgr.createNewNotebook(
+            pi.getRootFolder().getId(), "private notebook", new DefaultRecordContext(), pi);
+    assertFalse(
+        recordMgr
+            .move(doc.getId(), privateNotebook.getId(), g.getCommunalGroupFolderId(), pi)
+            .isSucceeded());
+    // sharing the notebook with another group must not make it a valid target
+    Group otherGroup = createGroup("other", pi);
+    addUsersToGroup(pi, otherGroup, anotherUser);
+    Notebook otherGroupNotebook =
+        folderMgr.createNewNotebook(
+            pi.getRootFolder().getId(), "other group notebook", new DefaultRecordContext(), pi);
+    assertTrue(shareNotebookWithGroup(pi, otherGroupNotebook, otherGroup, "write").isPresent());
+    assertFalse(
+        recordMgr
+            .move(doc.getId(), otherGroupNotebook.getId(), g.getCommunalGroupFolderId(), pi)
+            .isSucceeded());
     // attempt to move from shared folder into shared subfolder should be fine though
     Folder sharedSubfolder =
         folderMgr.createNewFolder(g.getCommunalGroupFolderId(), "sharedSubfolder", pi);
@@ -1060,6 +1079,74 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertTrue(
         recordMgr
             .move(doc.getId(), sharedSubfolder.getId(), g.getCommunalGroupFolderId(), pi)
+            .isSucceeded());
+    // and from there into a notebook shared with the same lab group
+    Notebook groupNotebook =
+        folderMgr.createNewNotebook(
+            pi.getRootFolder().getId(), "group notebook", new DefaultRecordContext(), pi);
+    assertTrue(shareNotebookWithGroup(pi, groupNotebook, g, "write").isPresent());
+    assertTrue(
+        recordMgr
+            .move(doc.getId(), groupNotebook.getId(), sharedSubfolder.getId(), pi)
+            .isSucceeded());
+  }
+
+  @Test
+  public void moveDocumentIntoNotebookWithinProjectGroupFolder() throws Exception {
+    User projectOwner = createAndSaveAPi();
+    User projectMember = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(projectOwner, projectMember);
+    Group projectGroup =
+        createProjectGroupForUsers(
+            projectOwner, projectOwner.getUsername(), "", projectOwner, projectMember);
+
+    logoutAndLoginAs(projectOwner);
+    Folder sharedFolder =
+        folderMgr.getFolder(projectGroup.getCommunalGroupFolderId(), projectOwner);
+    Notebook sharedNotebook =
+        folderMgr.createNewNotebook(
+            sharedFolder.getId(), "project notebook", new DefaultRecordContext(), projectOwner);
+    assertFalse(sharedNotebook.isShared());
+
+    StructuredDocument doc =
+        createBasicDocumentInRootFolderWithText(projectOwner, "project document");
+    assertTrue(doc.unsafeMove(projectOwner.getRootFolder(), sharedFolder, projectOwner));
+
+    assertTrue(
+        recordMgr
+            .move(doc.getId(), sharedNotebook.getId(), sharedFolder.getId(), projectOwner)
+            .isSucceeded());
+  }
+
+  @Test
+  public void moveIndividuallySharedDocumentOnlyIntoNotebookSharedWithRecipient() throws Exception {
+    User owner = createAndSaveAPi();
+    User recipient = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(owner, recipient);
+    Group group = createGroup("individual sharing", owner);
+    addUsersToGroup(owner, group, recipient);
+
+    logoutAndLoginAs(owner);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "shared document");
+    shareRecordWithUser(owner, doc, recipient);
+    Folder individualSharedFolder =
+        folderDao.getIndividualSharedFolderForUsers(owner, recipient, null);
+
+    Notebook privateNotebook =
+        folderMgr.createNewNotebook(
+            owner.getRootFolder().getId(), "private notebook", new DefaultRecordContext(), owner);
+    assertFalse(
+        recordMgr
+            .move(doc.getId(), privateNotebook.getId(), individualSharedFolder.getId(), owner)
+            .isSucceeded());
+
+    Notebook sharedNotebook =
+        folderMgr.createNewNotebook(
+            owner.getRootFolder().getId(), "shared notebook", new DefaultRecordContext(), owner);
+    assertTrue(shareNotebookWithGroupMember(owner, sharedNotebook, recipient).isPresent());
+    assertTrue(
+        recordMgr
+            .move(doc.getId(), sharedNotebook.getId(), individualSharedFolder.getId(), owner)
             .isSucceeded());
   }
 
