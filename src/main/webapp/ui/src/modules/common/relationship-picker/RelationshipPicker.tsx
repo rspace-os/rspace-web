@@ -104,7 +104,11 @@ export function RelationshipPicker({
   const sourceList = sources ?? (source === undefined ? [] : [source]);
   const hasSearchTerm = term.trim() !== "";
   const labels = useMemo(
-    () => ({ idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }), compact }),
+    () => ({
+      idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }),
+      unavailableLabel: (value: string) => t("relationshipPicker.unavailable", { value }),
+      compact,
+    }),
     [t, compact],
   );
 

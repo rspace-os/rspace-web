@@ -1334,7 +1334,8 @@ export default interface Resources {
         "itemSummary": "{0} - {1}",
         "maintenance": "Maintenance",
         "myBookings": "My RSpace bookings",
-        "purpose": "Purpose: {0}"
+        "purpose": "Purpose: {0}",
+        "unknownItem": "Unknown item"
       },
       "fields": {
         "bookedBy": "Booked by",
@@ -1357,6 +1358,12 @@ export default interface Resources {
         "failed": "The calendar file for {item}, {period} could not be downloaded. Nothing was saved; try again.",
         "label": ".ics file",
         "preparing": "Preparing the calendar file for {item}, {period}."
+      },
+      "filterGroups": {
+        "applied": "{group}, {count} applied",
+        "events": "Booking events",
+        "items": "Bookable items",
+        "legend": "Calendar filters"
       },
       "grid": "Calendar grid",
       "item": "Bookable item",
@@ -1386,6 +1393,7 @@ export default interface Resources {
       },
       "resourceSchedule": "Resource booking schedule",
       "retry": "Retry",
+      "rowAvailabilityUnavailable": "Availability could not be checked. Retry before adding a booking from a resource row.",
       "title": "Calendar",
       "today": "Today",
       "toolbar": "Calendar controls",
@@ -1590,12 +1598,13 @@ export default interface Resources {
     "preferences": {
       "actions": {
         "reset": "Reset to global defaults",
-        "save": "Save"
+        "save": "Save",
+        "saved": "Saved"
       },
       "availabilityWindow": {
         "description": "The times shown on each day's availability bars and timelines.",
         "end": "End time",
-        "endOfDay": "End of day (24:00)",
+        "endOfDay": "00:00 means midnight at the end of the day.",
         "legend": "Default availability window",
         "start": "Start time"
       },
@@ -1706,7 +1715,6 @@ export default interface Resources {
       "addBooking": "Add Booking",
       "administration": "Administration",
       "allItems": "All items",
-      "approvalQueue": "Approval Queue",
       "bookableItems": "Bookable Items",
       "calendar": "Calendar",
       "dashboard": "Dashboard",
@@ -2432,7 +2440,8 @@ export default interface Resources {
       "openOptions": "Show matching records",
       "openRecord": "Open record {globalId}",
       "remove": "Remove {item}",
-      "search": "Search by name or global ID"
+      "search": "Search by name or global ID",
+      "unavailable": "{value} (unavailable)"
     },
     "resourceAccess": {
       "actions": "Actions",
@@ -2448,6 +2457,8 @@ export default interface Resources {
       "conflictRefreshError": "The latest access could not be loaded. Try again before reviewing your draft.",
       "conflictTitle": "Access changed",
       "directRole": "Direct role",
+      "inherited": "Permissions are inherited from the Inventory item",
+      "inheritedOpenInventory": "Open Inventory permissions",
       "keepMine": "Keep mine",
       "kind": {
         "group": "Group",
@@ -2814,8 +2825,7 @@ export default interface Resources {
           "customPlaceholder": "Type a value and press Enter",
           "empty": "No matching values found",
           "enterValue": "Enter a value",
-          "remove": "Remove {value}",
-          "selectPlaceholder": "Select values"
+          "remove": "Remove {value}"
         },
         "noneApplied": "Filters, none applied",
         "openRecord": "Open {globalId}",
@@ -2844,6 +2854,7 @@ export default interface Resources {
           "value": "Enter a value"
         },
         "present": "is present",
+        "savedGroup": "Saved filter group",
         "suggestions": {
           "loading": "Searching…",
           "minimumLength": "Type {count} characters to search",
@@ -2866,6 +2877,12 @@ export default interface Resources {
       "results": "{first}–{last} of {total} records",
       "rows": "Rows",
       "rowsPerPage": "Rows per page",
+      "savedView": {
+        "invalid": "The saved view contains an invalid or unavailable field. Reset the view to continue.",
+        "loadFailed": "The saved view could not be loaded. Retry to keep its filters.",
+        "reset": "Reset saved view",
+        "retry": "Retry"
+      },
       "search": {
         "clear": "Clear search",
         "label": "Search {collection}",
@@ -6903,6 +6920,7 @@ export default interface Resources {
             "duplicateGrantee": "Each user or group can have only one direct role.",
             "forbidden": "You do not have permission to manage access to this resource.",
             "ifMatchRequired": "The current access version is required.",
+            "inheritedReadOnly": "Access to this resource is inherited and cannot be changed here.",
             "invalidGrantee": "The selected user or group is no longer available.",
             "invalidRole": "The selected role is not valid for this resource.",
             "ownerRequired": "At least one direct Owner must remain.",

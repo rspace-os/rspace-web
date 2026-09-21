@@ -6,7 +6,9 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { queryKeys } from "@/modules/common/hooks/auth";
 import type { RuntimeFieldDefinition } from "../../adapters/apiV2/runtimeFieldCatalog";
+import { TableListFilters } from "../../components/filters/TableListFilters";
 import { TableList } from "../../TableList";
+import type { FilterExpression } from "../../tableListState";
 import { config, emptyFilters, records } from "../fixtures/tableListFixtures";
 import { chooseFilterField, chooseFilterOperator, chooseFilterValue } from "./chooseFilterField";
 
@@ -36,6 +38,36 @@ const statusRecords: readonly StatusRecord[] = [
 ];
 
 describe("TableList filters", () => {
+  it("preserves nested Boolean groups when applying editable comparisons", async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const group: FilterExpression<StatusRecord> = {
+      kind: "or",
+      children: [
+        { kind: "comparison", field: "status", operator: "equals", value: "Draft" },
+        { kind: "comparison", field: "status", operator: "equals", value: "Published" },
+      ],
+    };
+    const comparison: FilterExpression<StatusRecord> = {
+      kind: "comparison",
+      field: "title",
+      operator: "contains",
+      value: "First",
+    };
+    render(
+      <TableListFilters
+        config={statusConfig}
+        expression={{ kind: "and", children: [group, comparison] }}
+        onApply={onApply}
+        onClose={() => undefined}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.applyFilters" }));
+    expect(onApply).toHaveBeenLastCalledWith({ kind: "and", children: [comparison, group] });
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.clearAll" }));
+    expect(onApply).toHaveBeenLastCalledWith(null);
+  });
+
   it("returns the complete loaded definition when reusing a runtime field", async () => {
     const user = userEvent.setup();
     const onSelectRuntimeField = vi.fn();
@@ -298,6 +330,7 @@ describe("TableList filters", () => {
     await chooseFilterField(user, /status/i);
     await chooseFilterOperator(user, "common:tableList.filters.operators.notIn");
     const values = screen.getByRole("combobox", { name: "common:tableList.filters.value" });
+    expect(values).toHaveAttribute("placeholder", "");
     await user.click(values);
     await user.click(await screen.findByRole("option", { name: "Draft" }));
     await user.click(values);
@@ -311,7 +344,7 @@ describe("TableList filters", () => {
     });
   });
 
-  it("selects an equals value from a field's constant options", async () => {
+  it("defaults select fields to equals for single-value filtering", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
@@ -332,7 +365,6 @@ describe("TableList filters", () => {
     await user.click(screen.getByRole("button", { name: "common:tableList.filters.noneApplied" }));
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
     await chooseFilterField(user, /status/i);
-    await chooseFilterOperator(user, "common:tableList.filters.operators.equals");
     await chooseFilterValue(user, "Draft");
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.applyFilters" }));
 

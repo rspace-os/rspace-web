@@ -28,6 +28,7 @@ import { fieldLabel } from "@/modules/common/collection/collectionConfig";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import type { RuntimeFieldDefinition } from "../../adapters/apiV2/runtimeFieldCatalog";
+import { serializeRsqlExpression } from "../../rsql/rsqlCodec";
 import type { FilterExpression, FilterValue } from "../../tableListState";
 import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
 import { FilterSelect, type FilterSelectOption } from "./FilterSelect";
@@ -131,6 +132,7 @@ function isActive<TDocument>(rule: DraftRule<TDocument>): boolean {
 }
 
 function defaultOperator<TDocument>(field: ResolvedFieldConfig<TDocument>): FilterOperator {
+  if (field.type === "select" && field.capabilities.filterOperators.includes("equals")) return "equals";
   return field.capabilities.filterOperators.includes("contains")
     ? "contains"
     : (field.capabilities.filterOperators[0] ?? "equals");
@@ -172,6 +174,7 @@ export function TableListFilters<TDocument>({
   onShowColumn,
   onSelectRuntimeField,
   runtimeFieldDefinitions,
+  runtimeFieldAuthScope,
   onClose,
 }: {
   config: ResolvedCollectionConfig<TDocument>;
@@ -180,6 +183,7 @@ export function TableListFilters<TDocument>({
   onApply: (expression: FilterExpression<TDocument> | null) => void;
   onShowColumn?: (field: SearchSelector<TDocument>, shown: boolean) => void;
   onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
+  runtimeFieldAuthScope?: string | number;
   runtimeFieldDefinitions?: readonly {
     namespace: string;
     definitions: readonly RuntimeFieldDefinition[];
@@ -209,6 +213,12 @@ export function TableListFilters<TDocument>({
     ? "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_auto_2rem]"
     : "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_2rem]";
   const [rules, setRules] = useState<readonly DraftRule<TDocument>[]>(() => comparisonNodes(expression));
+  // The row editor edits direct AND comparisons. Keep nested Boolean groups intact.
+  const [savedGroups, setSavedGroups] = useState(() =>
+    (expression?.kind === "and" ? expression.children : expression ? [expression] : []).filter(
+      (node) => node.kind !== "comparison",
+    ),
+  );
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
@@ -230,11 +240,12 @@ export function TableListFilters<TDocument>({
   for (const group of runtimeSourceGroups) {
     fieldOptions.push({
       value: sentinelFor(group.key),
-      label:
+      label: t("tableList.filters.customField.option"),
+      selectedLabel:
         group.viaLabel === ""
           ? t("tableList.filters.customField.option")
           : t("tableList.filters.customField.optionVia", { via: group.viaLabel }),
-      groupLabelKey: "tableList.fieldGroups.customFields",
+      groupLabelKey: group.viaLabel === "" ? "tableList.fieldGroups.customFields" : group.viaLabel,
     });
   }
   const fieldSelectLabels = {
@@ -279,6 +290,22 @@ export function TableListFilters<TDocument>({
         </Button>
       </div>
 
+      {savedGroups.map((group, index) => (
+        <div key={serializeRsqlExpression(group)} className="mt-3 flex items-start gap-2 rounded-sm border p-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm">{t("tableList.filters.savedGroup")}</p>
+            <code className="break-all text-xs">{serializeRsqlExpression(group)}</code>
+          </div>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            aria-label={t("tableList.actions.removeFilter", { number: rules.length + index + 1 })}
+            onClick={() => setSavedGroups((groups) => groups.filter((_, position) => position !== index))}
+          >
+            <Trash2Icon aria-hidden="true" />
+          </Button>
+        </div>
+      ))}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -305,6 +332,59 @@ export function TableListFilters<TDocument>({
               const field = chosen ?? fields[0];
               const awaitingDefinition = namespaceForSentinel(String(rule.field)) !== null;
               if (!field) return null;
+              const operatorControl = awaitingDefinition ? null : (
+                <FilterSelect
+                  ariaLabel={t("tableList.filters.operator", { number: index + 1 })}
+                  options={field.capabilities.filterOperators.map((operator) => ({
+                    value: operator,
+                    label: t(operatorKeys[operator]),
+                    groupLabelKey: null,
+                  }))}
+                  value={rule.operator}
+                  labels={operatorSelectLabels}
+                  onChange={(next) => {
+                    const operator = next as FilterOperator;
+                    updateRule(rule.id, {
+                      operator,
+                      value: valueForOperator(rule.value, rule.operator, operator),
+                    });
+                  }}
+                />
+              );
+              const valueControl = awaitingDefinition ? null : (
+                <FilterValueInput
+                  field={field}
+                  fields={config.fields}
+                  sources={config.relationshipSources}
+                  operator={rule.operator}
+                  value={rule.value}
+                  number={index + 1}
+                  onChange={(value) => updateRule(rule.id, { value })}
+                />
+              );
+              const runtimeFieldPicker = sourceGroup !== null && onSelectRuntimeField && (
+                <CustomFieldPicker
+                  key={sourceGroup.key}
+                  sources={sourceGroup.sources}
+                  ariaLabel={
+                    sourceGroup.viaLabel === ""
+                      ? t("tableList.filters.customField.searchLabel", { number: index + 1 })
+                      : t("tableList.filters.customField.searchLabelVia", {
+                          number: index + 1,
+                          via: sourceGroup.viaLabel,
+                        })
+                  }
+                  chosenLabel={awaitingDefinition ? undefined : fieldLabel(field, translate)}
+                  chosenSelector={awaitingDefinition ? undefined : String(rule.field)}
+                  known={runtimeFieldDefinitions ?? []}
+                  authScope={runtimeFieldAuthScope}
+                  onSelect={(namespace, definition) => {
+                    onSelectRuntimeField(namespace, definition);
+                    const selector = `${namespace}.${definition.id}` as SearchSelector<TDocument>;
+                    updateRule(rule.id, { field: selector, operator: "equals", value: "" });
+                  }}
+                />
+              );
               return (
                 <SortableFilterRow
                   key={rule.id}
@@ -330,35 +410,8 @@ export function TableListFilters<TDocument>({
                         updateRule(rule.id, { field: nextField.name, operator: defaultOperator(nextField), value: "" });
                     }}
                   />
-                  {awaitingDefinition ? null : (
-                    <FilterSelect
-                      ariaLabel={t("tableList.filters.operator", { number: index + 1 })}
-                      options={field.capabilities.filterOperators.map((operator) => ({
-                        value: operator,
-                        label: t(operatorKeys[operator]),
-                        groupLabelKey: null,
-                      }))}
-                      value={rule.operator}
-                      labels={operatorSelectLabels}
-                      onChange={(next) => {
-                        const operator = next as FilterOperator;
-                        updateRule(rule.id, {
-                          operator,
-                          value: valueForOperator(rule.value, rule.operator, operator),
-                        });
-                      }}
-                    />
-                  )}
-                  {awaitingDefinition ? null : (
-                    <FilterValueInput
-                      field={field}
-                      fields={config.fields}
-                      operator={rule.operator}
-                      value={rule.value}
-                      number={index + 1}
-                      onChange={(value) => updateRule(rule.id, { value })}
-                    />
-                  )}
+                  {sourceGroup === null ? operatorControl : <div className="sm:col-span-2">{runtimeFieldPicker}</div>}
+                  {sourceGroup === null ? valueControl : null}
                   {offersColumns && field.list !== false && !awaitingDefinition ? (
                     <label className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
                       <input
@@ -378,31 +431,10 @@ export function TableListFilters<TDocument>({
                   >
                     <Trash2Icon aria-hidden="true" />
                   </Button>
-                  {sourceGroup !== null && onSelectRuntimeField ? (
-                    <div className="sm:col-start-3 sm:col-span-3">
-                      <CustomFieldPicker
-                        sources={sourceGroup.sources}
-                        ariaLabel={
-                          sourceGroup.viaLabel === ""
-                            ? t("tableList.filters.customField.searchLabel", { number: index + 1 })
-                            : t("tableList.filters.customField.searchLabelVia", {
-                                number: index + 1,
-                                via: sourceGroup.viaLabel,
-                              })
-                        }
-                        hint={
-                          awaitingDefinition
-                            ? t("tableList.filters.customField.onlySelectionAttaches")
-                            : t("tableList.filters.customField.attached")
-                        }
-                        chosenLabel={awaitingDefinition ? undefined : fieldLabel(field, translate)}
-                        known={runtimeFieldDefinitions ?? []}
-                        onSelect={(namespace, definition) => {
-                          onSelectRuntimeField(namespace, definition);
-                          const selector = `${namespace}.${definition.id}` as SearchSelector<TDocument>;
-                          updateRule(rule.id, { field: selector, operator: "equals", value: "" });
-                        }}
-                      />
+                  {sourceGroup !== null && !awaitingDefinition ? (
+                    <div className="grid gap-2 sm:col-start-3 sm:col-span-3 sm:grid-cols-[minmax(7.5rem,auto)_minmax(10rem,1fr)]">
+                      {operatorControl}
+                      {valueControl}
                     </div>
                   ) : null}
                 </SortableFilterRow>
@@ -439,11 +471,12 @@ export function TableListFilters<TDocument>({
         <Button
           size="sm"
           variant="ghost"
-          disabled={rules.length === 0}
+          disabled={rules.length === 0 && savedGroups.length === 0}
           // Clearing applies straight away: leaving the applied filters in place while the panel
           // shows none reads as a no-op.
           onClick={() => {
             setRules([]);
+            setSavedGroups([]);
             onApply(null);
           }}
         >
@@ -462,6 +495,7 @@ export function TableListFilters<TDocument>({
                 value: parsedValue(rule, field),
               };
             });
+            comparisons.push(...savedGroups);
             onApply(
               comparisons.length === 0
                 ? null

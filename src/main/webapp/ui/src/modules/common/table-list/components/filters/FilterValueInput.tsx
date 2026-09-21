@@ -26,6 +26,7 @@ function listValue(value: FilterValue): readonly string[] {
 function targetFieldSource<TDocument>(
   name: string,
   fields: readonly ResolvedFieldConfig<TDocument>[],
+  sources: Readonly<Record<string, RelationshipSource>>,
 ): RelationshipSource | null {
   const dot = name.indexOf(".");
   if (dot <= 0) return null;
@@ -33,7 +34,7 @@ function targetFieldSource<TDocument>(
   if (owner?.type !== "relationship") return null;
   const field = fields.find((candidate) => candidate.name === name);
   if (field?.origin?.kind === "runtimeField") return null;
-  return relationshipSources[owner.relationTo] ?? null;
+  return sources[owner.relationTo] ?? null;
 }
 
 function TargetScalarValue({
@@ -63,6 +64,7 @@ function TargetScalarValue({
 export function FilterValueInput<TDocument>({
   field,
   fields,
+  sources,
   operator,
   value,
   number,
@@ -70,6 +72,7 @@ export function FilterValueInput<TDocument>({
 }: {
   field: ResolvedFieldConfig<TDocument>;
   fields: readonly ResolvedFieldConfig<TDocument>[];
+  sources?: Readonly<Record<string, RelationshipSource>>;
   operator: FilterOperator;
   value: FilterValue;
   number: number;
@@ -78,7 +81,8 @@ export function FilterValueInput<TDocument>({
   const { t } = useTranslation("common");
   const ariaLabel = t("tableList.filters.value", { number });
   const multiple = operator === "in" || operator === "notIn";
-  const targetSource = targetFieldSource(field.name, fields);
+  const availableSources = { ...relationshipSources, ...sources };
+  const targetSource = targetFieldSource(field.name, fields, availableSources);
   const selectLabels = {
     placeholder: t("tableList.filters.placeholders.value"),
     noMatch: t("tableList.filters.valueSearch.noMatch"),
@@ -86,11 +90,11 @@ export function FilterValueInput<TDocument>({
     trigger: t("tableList.filters.valueSearch.trigger"),
   };
 
-  if (operator !== "exists" && field.type === "relationship" && relationshipSources[field.relationTo]) {
+  if (operator !== "exists" && field.type === "relationship" && availableSources[field.relationTo]) {
     return (
       <Suspense fallback={<Skeleton className="h-8 rounded-sm" />}>
         <RelationshipPicker
-          source={relationshipSources[field.relationTo]}
+          source={availableSources[field.relationTo]}
           ariaLabel={ariaLabel}
           className="rounded-sm"
           compact
@@ -118,11 +122,7 @@ export function FilterValueInput<TDocument>({
         onValueChange={onChange}
         allowCustomValues={!select}
         ariaLabel={ariaLabel}
-        placeholder={
-          select
-            ? t("tableList.filters.multiSelect.selectPlaceholder")
-            : t("tableList.filters.multiSelect.customPlaceholder")
-        }
+        placeholder={select ? "" : t("tableList.filters.multiSelect.customPlaceholder")}
         emptyMessage={select ? t("tableList.filters.multiSelect.empty") : t("tableList.filters.multiSelect.enterValue")}
         removeLabel={(item) => t("tableList.filters.multiSelect.remove", { value: item })}
         className="min-h-8 rounded-sm py-1 text-xs"
@@ -130,7 +130,7 @@ export function FilterValueInput<TDocument>({
     );
   }
 
-  if (operator === "equals" && field.type === "select") {
+  if (operator !== "exists" && field.type === "select") {
     return (
       <FilterSelect
         ariaLabel={ariaLabel}
@@ -186,7 +186,17 @@ export function FilterValueInput<TDocument>({
     <Input
       aria-label={ariaLabel}
       className="h-8 rounded-sm text-xs"
-      type={field.type === "number" ? "number" : field.type === "dateTime" ? "datetime-local" : "text"}
+      type={
+        field.type === "number"
+          ? "number"
+          : field.origin?.runtimeValueType === "date"
+            ? "date"
+            : field.origin?.runtimeValueType === "time"
+              ? "time"
+              : field.type === "dateTime"
+                ? "datetime-local"
+                : "text"
+      }
       placeholder={t(
         operator === "matches" ? "tableList.filters.placeholders.pattern" : "tableList.filters.placeholders.value",
       )}

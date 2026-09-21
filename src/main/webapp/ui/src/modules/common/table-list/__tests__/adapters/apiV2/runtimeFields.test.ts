@@ -1,6 +1,7 @@
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
+import { enrichApiV2FilterConfig } from "../../../adapters/apiV2/apiV2FilterFields";
 import { createApiV2CollectionAdapter, staleRuntimeFields } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import { apiV2CollectionRequestParams } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
 import type { RuntimeFieldDefinition } from "../../../adapters/apiV2/runtimeFieldCatalog";
@@ -144,6 +145,7 @@ describe("runtime custom fields", () => {
     expect(fields.map((field) => field.labelKey)).toEqual(["customFields.SF104", "customFields.SF204"]);
     expect(fields.map((field) => field.origin?.sourceLabel)).toEqual(["Cell line template", "Bacterial template"]);
     expect(fields.map((field) => field.origin?.stableId)).toEqual(["SF104", "SF204"]);
+    expect(fields.map((field) => field.origin?.runtimeValueType)).toEqual(["text", "text"]);
   });
 
   it("maps a numeric definition to a number field", () => {
@@ -154,6 +156,36 @@ describe("runtime custom fields", () => {
     expect(field?.type).toBe("number");
     expect(field?.capabilities.filterOperators).toContain("greaterThanOrEqual");
     expect(field?.capabilities.filterOperators).not.toContain("contains");
+  });
+
+  it("retains Inventory runtime types for their specialised value controls", () => {
+    const date = definition({
+      id: "SF109",
+      selector: "customFields.SF109",
+      type: "date",
+      operators: ["==", "=ge=", "=le=", "=exists="],
+    });
+    const time = definition({
+      id: "SF110",
+      selector: "customFields.SF110",
+      type: "time",
+      operators: ["==", "=ge=", "=le=", "=exists="],
+    });
+    const choice = definition({
+      id: "SF111",
+      selector: "customFields.SF111",
+      type: "choice",
+      jsonType: "array",
+      options: ["Brightfield", "Fluorescence"],
+      operators: ["=contains=", "=in=", "=exists="],
+    });
+
+    const fields = adapter([date, time, choice]).config.fields.filter(
+      (candidate) => candidate.origin?.kind === "runtimeField",
+    );
+
+    expect(fields.map((field) => field.origin?.runtimeValueType)).toEqual(["date", "time", "choice"]);
+    expect(fields.map((field) => field.type)).toEqual(["text", "text", "select"]);
   });
 
   it("projects only the visible custom columns", () => {
@@ -348,4 +380,18 @@ describe("runtime custom fields", () => {
     expect(staticOnly.isRuntimeSelector("customFields.SF104")).toBe(false);
     expect(apiV2CollectionRequestParams(staticOnly, state(["name"])).get("fields[instruments]")).toBe("id,name");
   });
+});
+
+it("reuses runtime filter fields without advertising catalogue value columns", () => {
+  const enriched = enrichApiV2FilterConfig({
+    config,
+    metadata,
+    runtimeFields: [{ namespace: "customFields", definitions: [definition()] }],
+  });
+  expect(enriched.defaultColumns).toEqual(config.defaultColumns);
+  expect(enriched.fields.find((field) => String(field.name) === "customFields.SF104")).toMatchObject({
+    list: false,
+    capabilities: { filterOperators: expect.arrayContaining(["equals", "exists"]) },
+  });
+  expect(enriched.runtimeSources?.[0]?.columnSelectable).toBe(false);
 });
