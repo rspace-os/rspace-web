@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -120,7 +120,7 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
 
     ModelAndView resp =
         notebookEditorController.openNotebook(1L, null, null, null, model, mockPrincipal);
-    assertEquals(1L, resp.getModel().get("selectedNotebookId"));
+    assertThat(resp.getModel()).containsEntry("selectedNotebookId", 1L);
   }
 
   @Test

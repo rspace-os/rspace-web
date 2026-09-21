@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,29 +31,29 @@ public class UserTagManagerTest extends SpringTransactionalTest {
 
     User testUser = createAndSaveUserIfNotExists(getRandomName(5));
     List<UserTagData> userTags = userTagManager.getUserTags(List.of(testUser.getId()));
-    assertEquals(1, userTags.size());
+    assertThat(userTags).hasSize(1);
     assertEquals(testUser.getId(), userTags.get(0).getUserId());
-    assertEquals(0, userTags.get(0).getUserTags().size());
+    assertThat(userTags.get(0).getUserTags()).isEmpty();
 
     userTagManager.saveUserTags(
         List.of(new UserTagData(testUser.getId(), List.of("testTag", "pi"))));
     userTags = userTagManager.getUserTags(List.of(testUser.getId()));
-    assertEquals(1, userTags.size());
+    assertThat(userTags).hasSize(1);
     assertEquals(testUser.getId(), userTags.get(0).getUserId());
-    assertEquals(2, userTags.get(0).getUserTags().size());
+    assertThat(userTags.get(0).getUserTags()).hasSize(2);
     assertEquals("testTag", userTags.get(0).getUserTags().get(0));
     assertEquals("pi", userTags.get(0).getUserTags().get(1));
 
     List<String> finalAllTags = userTagManager.getAllUserTags(null);
     assertTrue(initialAllTags.size() < finalAllTags.size());
-    assertTrue(finalAllTags.contains("testTag"));
-    assertTrue(finalAllTags.contains("pi"));
+    assertThat(finalAllTags).contains("testTag");
+    assertThat(finalAllTags).contains("pi");
 
     userTagManager.saveUserTags(
         List.of(new UserTagData(testUser.getId(), Collections.emptyList())));
     userTags = userTagManager.getUserTags(List.of(testUser.getId()));
-    assertEquals(1, userTags.size());
+    assertThat(userTags).hasSize(1);
     assertEquals(testUser.getId(), userTags.get(0).getUserId());
-    assertEquals(0, userTags.get(0).getUserTags().size());
+    assertThat(userTags.get(0).getUserTags()).isEmpty();
   }
 }

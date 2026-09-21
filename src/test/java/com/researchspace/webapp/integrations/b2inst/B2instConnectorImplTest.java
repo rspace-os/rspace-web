@@ -1,5 +1,6 @@
 package com.researchspace.webapp.integrations.b2inst;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -25,6 +26,7 @@ import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.MessageSourceUtils;
@@ -195,7 +197,8 @@ class B2instConnectorImplTest {
         .expect(requestTo("https://b2inst-test.gwdg.de/api/records"))
         .andRespond(withServerError());
 
-    assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+    var draft = draftWithName("X");
+    assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
   }
 
   @Test
@@ -367,14 +370,16 @@ class B2instConnectorImplTest {
             withStatus(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"status\":400,\"message\":\"rejected Authorization: Bearer TOK123\"}"));
+    var draft = draftWithName("X");
 
     B2instConnectionException thrown =
-        assertThrows(
-            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+        assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
-    assertFalse(thrown.getReason().contains("TOK123"), "the token must not reach the reason");
-    assertTrue(thrown.getReason().contains("***"), "it should be redacted, not dropped");
-    assertFalse(thrown.getMessage().contains("TOK123"), "nor the logged message");
+    assertThat(thrown.getReason())
+        .as("the token must not reach the reason")
+        .doesNotContain("TOK123");
+    assertThat(thrown.getReason()).as("it should be redacted, not dropped").contains("***");
+    assertThat(thrown.getMessage()).as("nor the logged message").doesNotContain("TOK123");
   }
 
   @Test
@@ -385,12 +390,12 @@ class B2instConnectorImplTest {
     server
         .expect(requestTo("https://b2inst-test.gwdg.de/api/records"))
         .andRespond(withException(new IOException("proxy echoed Bearer TOK123")));
+    var draft = draftWithName("X");
 
     B2instConnectionException thrown =
-        assertThrows(
-            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+        assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
-    assertFalse(thrown.getReason().contains("TOK123"));
+    assertThat(thrown.getReason()).doesNotContain("TOK123");
   }
 
   @Test
@@ -401,13 +406,13 @@ class B2instConnectorImplTest {
     B2instConnectionException thrown =
         assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
 
-    assertTrue(
-        thrown.getMessage().contains("pidinst.b2inst.community.id"),
-        "the developer message should name the property, for the logs");
+    assertThat(thrown.getMessage())
+        .as("the developer message should name the property, for the logs")
+        .contains("pidinst.b2inst.community.id");
     assertNotNull(thrown.getReason(), "a provider failure must always carry a reason");
-    assertFalse(
-        thrown.getReason().contains("pidinst.b2inst.community.id"),
-        "the reason is shown to a user and must not disclose an internal property name");
+    assertThat(thrown.getReason())
+        .as("the reason is shown to a user and must not disclose an internal property name")
+        .doesNotContain("pidinst.b2inst.community.id");
   }
 
   @Test
@@ -525,9 +530,9 @@ class B2instConnectorImplTest {
             .filter(message -> message.contains("B2INST error response"))
             .findFirst()
             .orElseThrow();
-    assertTrue(warning.contains("No usable failure reason"));
-    assertTrue(warning.contains("..."));
-    assertTrue(warning.length() < 700);
+    assertThat(warning).contains("No usable failure reason");
+    assertThat(warning).contains("...");
+    assertThat(warning.length()).isLessThan(700);
   }
 
   @Test
@@ -569,10 +574,9 @@ class B2instConnectorImplTest {
     B2instConnectionException ex =
         assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
 
-    assertTrue(
-        ex.getMessage()
-            .startsWith("Error submitting B2INST record k2j9p-7yh21 for community review: "));
-    assertTrue(ex.getMessage().contains("connect timed out"));
+    assertThat(ex.getMessage())
+        .startsWith("Error submitting B2INST record k2j9p-7yh21 for community review: ");
+    assertThat(ex.getMessage()).contains("connect timed out");
     server.verify();
   }
 
@@ -590,10 +594,10 @@ class B2instConnectorImplTest {
                     "{\"status\":400,\"message\":\"A validation error occurred.\",\"errors\":"
                         + "[{\"field\":\"community\",\"messages\":[\"Missing data for required"
                         + " field.\"]}]}"));
+    var draft = draftWithName("X");
 
     B2instConnectionException ex =
-        assertThrows(
-            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+        assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
     assertEquals(
         "Error creating B2INST draft record: community: Missing data for required field.",
@@ -640,8 +644,8 @@ class B2instConnectorImplTest {
             .filter(message -> message.contains("B2INST error response"))
             .findFirst()
             .orElseThrow();
-    assertFalse(warning.contains("TOK123"));
-    assertTrue(warning.contains("***"));
+    assertThat(warning).doesNotContain("TOK123");
+    assertThat(warning).contains("***");
   }
 
   /**
@@ -691,7 +695,7 @@ class B2instConnectorImplTest {
 
     Optional<B2instRequestResponse> review = connector.getReviewOf("k2j9p-7yh21");
 
-    assertTrue(review.isPresent());
+    assertThat(review).isPresent();
     assertEquals("declined", review.get().getStatus());
     server.verify();
   }
@@ -706,7 +710,7 @@ class B2instConnectorImplTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-    assertTrue(connector.getReviewOf("k2j9p-7yh21").isEmpty());
+    assertThat(connector.getReviewOf("k2j9p-7yh21")).isEmpty();
     server.verify();
   }
 
@@ -727,10 +731,10 @@ class B2instConnectorImplTest {
 
     Optional<B2instDraftRecord> record = connector.getPublishedRecord("k2j9p-7yh21");
 
-    assertTrue(record.isPresent());
+    assertThat(record).isPresent();
     assertEquals(
         "https://b2inst-test.gwdg.de/records/k2j9p-7yh21", record.get().getLinks().getSelfHtml());
-    assertTrue(record.get().getPids().containsKey("epic"));
+    assertThat(record.get().getPids()).containsKey("epic");
     server.verify();
   }
 
@@ -748,8 +752,8 @@ class B2instConnectorImplTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-    assertTrue(connector.getPublishedRecord("k2j9p-7yh21").isEmpty());
-    assertTrue(connector.getDraftRecord("k2j9p-7yh21").isEmpty());
+    assertThat(connector.getPublishedRecord("k2j9p-7yh21")).isEmpty();
+    assertThat(connector.getDraftRecord("k2j9p-7yh21")).isEmpty();
     server.verify();
   }
 
@@ -984,6 +988,100 @@ class B2instConnectorImplTest {
             () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
 
     assertEquals("The persistent identifier does not exist.", thrown.getReason());
+    server.verify();
+  }
+
+  @Test
+  void searchRecordsQueriesPublishedRecordsWithTheTokenAndParsesTheHits() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records?q=microscope&size=50"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header("Authorization", "Bearer TOK123"))
+        .andRespond(
+            withSuccess(
+                "{\"hits\":{\"hits\":[{\"id\":\"tpqdy-6zd98\",\"is_published\":true,\"metadata\":{\"Name\":\"Olympus"
+                    + " IX71 TIRF\",\"Identifier\":{\"identifierType\":\"Handle\","
+                    + "\"identifierValue\":\"21.11157/44b18238-bba1-4b42-abcc-975017181420\"}},"
+                    + "\"links\":{\"self_html\":\"https://b2inst-test.gwdg.de/records/tpqdy-6zd98\"}}],"
+                    + "\"total\":3}}",
+                MediaType.APPLICATION_JSON));
+
+    B2instSearchResult result = connector.searchRecords("microscope", 50);
+
+    assertEquals(3, result.getHits().getTotal());
+    assertEquals("tpqdy-6zd98", result.getHits().getHits().get(0).getId());
+    assertEquals(
+        "21.11157/44b18238-bba1-4b42-abcc-975017181420",
+        result.getHits().getHits().get(0).getMetadata().getIdentifier().getIdentifierValue());
+    server.verify();
+  }
+
+  /**
+   * The whole query must reach B2INST exactly as the user typed it, and must not be able to add a
+   * parameter of its own. Only the alphanumeric case was covered, which is the one case that cannot
+   * show a double-encoding bug: handing RestTemplate a pre-encoded String makes it treat that
+   * String as a URI template and encode it a second time, so a space would arrive as %2520.
+   */
+  @Test
+  void searchRecordsSendsAQueryWithDelimitersExactlyOnceEncoded() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst-test.gwdg.de/api/records"
+                    + "?q=Zeiss%20microscope%20%26size%3D999%20100%25%20%23top&size=50"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess("{\"hits\":{\"hits\":[],\"total\":0}}", MediaType.APPLICATION_JSON));
+
+    connector.searchRecords("Zeiss microscope &size=999 100% #top", 50);
+
+    server.verify();
+  }
+
+  @Test
+  void getRecordByHandleReadsThePublishedRecordUnderTheHandleSuffix() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst-test.gwdg.de/api/records/44b18238-bba1-4b42-abcc-975017181420"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"tpqdy-6zd98\",\"is_published\":true}", MediaType.APPLICATION_JSON));
+
+    Optional<B2instDraftRecord> record =
+        connector.getRecordByHandle(
+            "https://hdl.handle.net/21.11157/44b18238-bba1-4b42-abcc-975017181420");
+
+    assertTrue(record.isPresent());
+    assertEquals("tpqdy-6zd98", record.get().getId());
+    // a suffix that is not a record id shape is answered locally, never sent to the provider
+    assertTrue(connector.getRecordByHandle("21.11157/not a record id!").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void getRecordByHandleFindsOnlyAPublishedRecord() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    // /api/records/{rid} serves published records only, and only those may be imported
+    // (RSDEV-1326): a draft, submitted or declined record answers 404 there and is not looked
+    // for anywhere else
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/anaf6-fk223"))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertTrue(connector.getRecordByHandle("21.T11975/anaf6-fk223").isEmpty());
     server.verify();
   }
 }

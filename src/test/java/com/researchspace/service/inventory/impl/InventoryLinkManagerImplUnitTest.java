@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -130,7 +131,7 @@ class InventoryLinkManagerImplUnitTest {
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SA, 42L))
         .thenReturn(java.util.Collections.emptyList());
 
-    assertEquals(0, linkManager.findReferencingItems("SA42", actor).size());
+    assertThat(linkManager.findReferencingItems("SA42", actor)).isEmpty();
   }
 
   @Test

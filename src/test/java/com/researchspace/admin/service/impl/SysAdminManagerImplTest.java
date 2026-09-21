@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.admin.service.SysAdminManager;
 import com.researchspace.admin.service.UserUsageInfo;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.FileMetadataDao;
@@ -15,6 +14,7 @@ import com.researchspace.dao.UserDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.sort.UserSort;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,9 +23,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * The usage listing dispatches on the {@code fileUsage()} / {@code recordCount()} virtual sort
- * tokens, so these tests pin that the tokens survive {@code setOrderBy} and select their query
- * branch instead of falling through to the null return.
+ * The usage listing dispatches on the {@code fileUsage} / {@code recordCount} sort keys, so these
+ * tests pin that each key selects its aggregate query branch.
  */
 public class SysAdminManagerImplTest {
 
@@ -47,8 +46,8 @@ public class SysAdminManagerImplTest {
   @Test
   public void fileUsageOrderBySelectsFileUsageBranch() {
     PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
-    pgCrit.setOrderBy(SysAdminManager.ORDER_BY_FILE_USAGE);
-    assertEquals(SysAdminManager.ORDER_BY_FILE_USAGE, pgCrit.getOrderBy());
+    pgCrit.setOrderBy(UserSort.FILE_USAGE.key());
+    assertEquals(UserSort.FILE_USAGE.key(), pgCrit.getOrderBy());
 
     when(fileDao.getCountOfUsersWithFilesInFileSystem()).thenReturn(0L);
     when(fileDao.getTotalFileUsageForAllUsers(pgCrit)).thenReturn(Map.of());
@@ -63,8 +62,8 @@ public class SysAdminManagerImplTest {
   @Test
   public void recordCountOrderBySelectsRecordCountBranch() {
     PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
-    pgCrit.setOrderBy(SysAdminManager.ORDER_BY_RECORD_COUNT);
-    assertEquals(SysAdminManager.ORDER_BY_RECORD_COUNT, pgCrit.getOrderBy());
+    pgCrit.setOrderBy(UserSort.RECORD_COUNT.key());
+    assertEquals(UserSort.RECORD_COUNT.key(), pgCrit.getOrderBy());
 
     when(recordDao.getTotalRecordsForUsers(pgCrit)).thenReturn(Map.of());
     when(recordDao.getCountOfUsersWithRecords()).thenReturn(0L);

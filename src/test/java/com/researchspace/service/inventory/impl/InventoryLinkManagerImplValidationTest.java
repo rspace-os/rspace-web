@@ -57,40 +57,37 @@ class InventoryLinkManagerImplValidationTest {
     // the validator can be bypassed (e.g. an extra-field update omitting
     // "type"), so the manager itself must reject bad payloads with a clean
     // 422 error instead of letting a raw parse exception become a 500
+    var request = apiLink("References", "not-a-gid");
     ApiRuntimeException ex =
-        assertThrows(
-            ApiRuntimeException.class,
-            () -> manager.createLink(apiLink("References", "not-a-gid"), user));
+        assertThrows(ApiRuntimeException.class, () -> manager.createLink(request, user));
     assertEquals("errors.inventory.field.linkTargetNotFound", ex.getErrorCode());
     verify(linkDao, never()).save(any());
   }
 
   @Test
   void createLinkRejectsUnsupportedTargetKind() {
+    var request = apiLink("References", "FL12");
     ApiRuntimeException ex =
-        assertThrows(
-            ApiRuntimeException.class,
-            () -> manager.createLink(apiLink("References", "FL12"), user));
+        assertThrows(ApiRuntimeException.class, () -> manager.createLink(request, user));
     assertEquals("errors.inventory.field.linkTargetKindUnsupported", ex.getErrorCode());
     verify(linkDao, never()).save(any());
   }
 
   @Test
   void createLinkRejectsRelationTypeOutsideDataCiteVocabulary() {
+    var request = apiLink("NotARelation", "SD123");
     ApiRuntimeException ex =
-        assertThrows(
-            ApiRuntimeException.class,
-            () -> manager.createLink(apiLink("NotARelation", "SD123"), user));
+        assertThrows(ApiRuntimeException.class, () -> manager.createLink(request, user));
     assertEquals("errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
     verify(linkDao, never()).save(any());
   }
 
   @Test
   void updateLinkRejectsMalformedTargetWithCleanError() {
+    InventoryLink existing = new InventoryLink();
+    var request = apiLink("References", "ZZ99");
     ApiRuntimeException ex =
-        assertThrows(
-            ApiRuntimeException.class,
-            () -> manager.updateLink(new InventoryLink(), apiLink("References", "ZZ99"), user));
+        assertThrows(ApiRuntimeException.class, () -> manager.updateLink(existing, request, user));
     // ZZ is not a known prefix, so the id fails to parse at all
     assertEquals("errors.inventory.field.linkTargetNotFound", ex.getErrorCode());
     verify(linkDao, never()).save(any());
@@ -128,11 +125,10 @@ class InventoryLinkManagerImplValidationTest {
   @Test
   void createLinkRejectsUnreadableTargetWithI18nCodeAndDoesNotPersist() {
     targetReadable(false);
+    var request = apiLink("References", "SD404");
 
     ApiRuntimeException ex =
-        assertThrows(
-            ApiRuntimeException.class,
-            () -> manager.createLink(apiLink("References", "SD404"), user));
+        assertThrows(ApiRuntimeException.class, () -> manager.createLink(request, user));
 
     assertEquals("errors.inventory.field.linkTargetNotFound", ex.getErrorCode());
     verify(linkDao, never()).save(any(InventoryLink.class));
@@ -154,10 +150,9 @@ class InventoryLinkManagerImplValidationTest {
   void updateLinkRejectsUnreadableTargetAndDoesNotPersist() {
     targetReadable(false);
     InventoryLink existing = new InventoryLink();
+    var request = apiLink("References", "SD404");
 
-    assertThrows(
-        ApiRuntimeException.class,
-        () -> manager.updateLink(existing, apiLink("References", "SD404"), user));
+    assertThrows(ApiRuntimeException.class, () -> manager.updateLink(existing, request, user));
 
     verify(linkDao, never()).save(any(InventoryLink.class));
   }

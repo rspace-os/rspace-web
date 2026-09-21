@@ -4,6 +4,7 @@ import static com.researchspace.api.v1.controller.DocumentApiPaginationCriteria.
 import static com.researchspace.api.v1.controller.DocumentApiPaginationCriteria.LAST_MODIFIED_ASC_API_PARAM;
 import static com.researchspace.api.v1.model.ApiLinkItem.NEXT_REL;
 import static com.researchspace.api.v1.model.ApiLinkItem.PREV_REL;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -31,6 +32,7 @@ import com.researchspace.api.v1.model.ApiSearchQuery.OperatorEnum;
 import com.researchspace.api.v1.model.ApiSearchTerm;
 import com.researchspace.api.v1.model.ApiSearchTerm.QueryTypeEnum;
 import com.researchspace.api.v1.model.MoveRequest;
+import com.researchspace.dao.FormDao;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.Group;
@@ -41,6 +43,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.RecordFavoritesManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.session.UserSessionTracker;
@@ -49,9 +52,9 @@ import com.researchspace.webapp.controller.MvcTestUtils;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -64,7 +67,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
   private @Autowired DocumentsApiController documentsApi;
+  private @Autowired DocumentTagManager documentTagManager;
   private @Autowired RecordFavoritesManager favoritesMgr;
+  private @Autowired FormDao formDao;
   private @Autowired RecordSigningManager signingMgr;
   protected @Autowired MvcTestUtils mvcUtils;
 
@@ -87,11 +92,10 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
   ApiDocumentSearchResult getDocs(
       DocumentApiPaginationCriteria pgcrit, ApiDocSearchConfig srchCfg, User user)
       throws BindException {
-    return documentsApi.getDocuments(pgcrit, srchCfg, mockBindingResult, testUser);
+    return documentsApi.getDocuments(pgcrit, srchCfg, mockBindingResult, user);
   }
 
   @Test
-  @Disabled
   public void testGetAllDocuments() throws Exception {
 
     // create 3 docs for our user
@@ -118,6 +122,11 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     shareRecordWithUser(piUser, otherDoc, testUser);
     shareRecordWithUser(piUser, otherTestDoc, testUser);
 
+    long firstModificationTime = firstDoc.getModificationDateMillis();
+    secondDoc.setModificationDate(firstModificationTime + 1);
+    thirdDoc.setModificationDate(firstModificationTime + 2);
+    otherTestDoc.setModificationDate(firstModificationTime + 3);
+
     flushToSearchIndices();
 
     // search without the search terms, should return all documents and entries, but skip notebook
@@ -128,7 +137,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertNotNull(allDocResults);
     assertEquals(8, allDocResults.getTotalHits().longValue());
     assertEquals(0, allDocResults.getPageNumber().intValue());
-    assertEquals(8, allDocResults.getDocuments().size());
+    assertThat(allDocResults.getDocuments()).hasSize(8);
 
     // search with favorites filter enabled
     defaultSearchConfig.setFilter("favorites");
@@ -154,7 +163,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertEquals(0, firstDocResults.getPageNumber().intValue());
 
     List<ApiDocumentInfo> docInfoList = firstDocResults.getDocuments();
-    assertEquals(1, docInfoList.size());
+    assertThat(docInfoList).hasSize(1);
     assertEquals(firstDoc.getId(), docInfoList.get(0).getId());
 
     // search for 'test' text - should find 3 user's docs and one shared
@@ -187,7 +196,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertFalse(hasPrevLink(twoLastModifiedResults));
 
     List<ApiDocumentInfo> twoLastModifiedInfoList = twoLastModifiedResults.getDocuments();
-    assertEquals(2, twoLastModifiedInfoList.size());
+    assertThat(twoLastModifiedInfoList).hasSize(2);
     apiModelTestUtils.assertApiDocumentInfoMatchSDoc(twoLastModifiedInfoList.get(0), firstDoc);
     apiModelTestUtils.assertApiDocumentInfoMatchSDoc(twoLastModifiedInfoList.get(1), secondDoc);
 
@@ -200,7 +209,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertTrue(hasPrevLink(nextResults));
 
     List<ApiDocumentInfo> nextTwoLastModifiedInfoList = nextResults.getDocuments();
-    assertEquals(2, nextTwoLastModifiedInfoList.size());
+    assertThat(nextTwoLastModifiedInfoList).hasSize(2);
     apiModelTestUtils.assertApiDocumentInfoMatchSDoc(nextTwoLastModifiedInfoList.get(0), thirdDoc);
     apiModelTestUtils.assertApiDocumentInfoMatchSDoc(
         nextTwoLastModifiedInfoList.get(1), otherTestDoc);
@@ -219,9 +228,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     ApiDocumentSearchResult lastCreatedResult = getDocs(pg4, search4, testUser);
     assertEquals(2, lastCreatedResult.getTotalHits().longValue());
     assertEquals(0, lastCreatedResult.getPageNumber().intValue());
-    assertEquals(1, lastCreatedResult.getDocuments().size());
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(
-        lastCreatedResult.getDocuments().get(0), thirdDoc);
+    assertThat(lastCreatedResult.getDocuments()).hasSize(1);
 
     DocumentApiPaginationCriteria pg5 =
         DocumentApiPaginationCriteria.builder()
@@ -233,9 +240,13 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     ApiDocumentSearchResult lastCreatedSecondPageResult = getDocs(pg5, search4, testUser);
     assertEquals(2, lastCreatedSecondPageResult.getTotalHits().longValue());
     assertEquals(1, lastCreatedSecondPageResult.getPageNumber().intValue());
-    assertEquals(1, lastCreatedSecondPageResult.getDocuments().size());
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(
-        lastCreatedSecondPageResult.getDocuments().get(0), firstDoc);
+    assertThat(lastCreatedSecondPageResult.getDocuments()).hasSize(1);
+    ApiDocumentInfo firstCreatedResult = lastCreatedResult.getDocuments().get(0);
+    ApiDocumentInfo secondCreatedResult = lastCreatedSecondPageResult.getDocuments().get(0);
+    assertThat(firstCreatedResult.getCreatedMillis())
+        .isGreaterThanOrEqualTo(secondCreatedResult.getCreatedMillis());
+    assertThat(Set.of(firstCreatedResult.getId(), secondCreatedResult.getId()))
+        .containsExactlyInAnyOrder(firstDoc.getId(), thirdDoc.getId());
   }
 
   private boolean hasNextLink(ApiDocumentSearchResult results) {
@@ -273,17 +284,17 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
     // reload the doc (to check assertions later)
     basicDoc = (StructuredDocument) recordMgr.get(basicDoc.getId());
-    assertEquals(1, basicDoc.getFields().get(0).getListsOfMaterials().size());
+    assertThat(basicDoc.getFields().get(0).getListsOfMaterials()).hasSize(1);
     assertEquals(
         "basic list of materials",
         basicDoc.getFields().get(0).getListsOfMaterials().get(0).getName());
-    assertEquals(0, basicDoc.getFields().get(0).getListsOfMaterials().get(0).getMaterials().size());
+    assertThat(basicDoc.getFields().get(0).getListsOfMaterials().get(0).getMaterials()).isEmpty();
 
     ApiDocument apiDoc = documentsApi.getDocumentById(basicDoc.getId(), testUser);
     assertNotNull(apiDoc);
     apiModelTestUtils.assertApiDocumentMatchSDoc(apiDoc, basicDoc);
     assertEquals("apiTest", apiDoc.getFields().get(0).getContent());
-    assertEquals(1, apiDoc.getFields().get(0).getListsOfMaterials().size());
+    assertThat(apiDoc.getFields().get(0).getListsOfMaterials()).hasSize(1);
     assertEquals(
         "basic list of materials",
         apiDoc.getFields().get(0).getListsOfMaterials().get(0).getName());
@@ -295,14 +306,14 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
     // reload the doc (to check assertions later)
     basicDoc = (StructuredDocument) recordMgr.get(basicDoc.getId());
-    assertEquals(2, basicDoc.getFields().get(0).getListsOfMaterials().size());
-    assertEquals(1, basicDoc.getFields().get(0).getListsOfMaterials().get(1).getMaterials().size());
+    assertThat(basicDoc.getFields().get(0).getListsOfMaterials()).hasSize(2);
+    assertThat(basicDoc.getFields().get(0).getListsOfMaterials().get(1).getMaterials()).hasSize(1);
 
     apiDoc = documentsApi.getDocumentById(basicDoc.getId(), testUser);
     assertNotNull(apiDoc);
     apiModelTestUtils.assertApiDocumentMatchSDoc(apiDoc, basicDoc);
     assertEquals("apiTest", apiDoc.getFields().get(0).getContent());
-    assertEquals(2, apiDoc.getFields().get(0).getListsOfMaterials().size());
+    assertThat(apiDoc.getFields().get(0).getListsOfMaterials()).hasSize(2);
   }
 
   protected String getAsJsonString(Object object) throws JsonProcessingException {
@@ -321,10 +332,8 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     ApiDocSearchConfig cfg = new ApiDocSearchConfig();
     results.addNavigationLinks(UriComponentsBuilder.fromUriString("https://myrspace"), pg, cfg);
 
-    assertTrue(
-        results.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.LAST_REL)));
-    assertTrue(
-        results.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.NEXT_REL)));
+    assertThat(results.getLinks()).anyMatch(link -> link.getRel().equals(ApiLinkItem.LAST_REL));
+    assertThat(results.getLinks()).anyMatch(link -> link.getRel().equals(ApiLinkItem.NEXT_REL));
     ApiLinkItem last =
         results.getLinks().stream()
             .filter(link -> link.getRel().equals(ApiLinkItem.LAST_REL))
@@ -339,7 +348,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     pg = DocumentApiPaginationCriteria.builder().pageNumber(2).pageSize(10).build();
     cfg = new ApiDocSearchConfig();
     results.addNavigationLinks(UriComponentsBuilder.fromUriString("https://myrspace"), pg, cfg);
-    assertEquals(5, results.getLinks().size());
+    assertThat(results.getLinks()).hasSize(5);
 
     last =
         results.getLinks().stream()
@@ -352,8 +361,9 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
   @Test
   public void testGetDocumentByIdHandlesImageIDs() throws Exception {
     EcatImage image = addImageToGallery(testUser);
-    assertThrows(
-        NotFoundException.class, () -> documentsApi.getDocumentById(image.getId(), testUser));
+    Long imageId = image.getId();
+
+    assertThrows(NotFoundException.class, () -> documentsApi.getDocumentById(imageId, testUser));
   }
 
   @Test
@@ -364,14 +374,13 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     ApiDocument secondRevApidDoc = new ApiDocument();
     secondRevApidDoc.setName("newName");
 
-    assertExceptionThrown(
+    var documentId = createdDoc.getId();
+    var bindingResult = new BeanPropertyBindingResult(createdDoc, "doc");
+
+    assertThrows(
+        BindException.class,
         () ->
-            documentsApi.createNewRevision(
-                createdDoc.getId(),
-                secondRevApidDoc,
-                new BeanPropertyBindingResult(createdDoc, "doc"),
-                testUser),
-        BindException.class);
+            documentsApi.createNewRevision(documentId, secondRevApidDoc, bindingResult, testUser));
   }
 
   @Test
@@ -384,9 +393,9 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertNotNull(createdDoc.getOwner());
     assertEquals(testUser.getUsername(), createdDoc.getOwner().getUsername());
     assertEquals(StructuredDocument.DEFAULT_NAME, createdDoc.getName());
-    assertEquals(1, createdDoc.getFields().size());
+    assertThat(createdDoc.getFields()).hasSize(1);
     assertNotNull(createdDoc.getFields().get(0).getId());
-    assertEquals("", createdDoc.getFields().get(0).getContent());
+    assertThat(createdDoc.getFields().get(0).getContent()).isEmpty();
 
     // create new revision: api document with new name and different field content
     ApiDocument secondRevApidDoc = new ApiDocument();
@@ -400,7 +409,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
         documentsApi.createNewRevision(
             createdDoc.getId(), secondRevApidDoc, mockBindingResult, testUser);
     assertEquals("newName", updatedDoc.getName());
-    assertEquals(1, updatedDoc.getFields().size());
+    assertThat(updatedDoc.getFields()).hasSize(1);
     assertEquals("updatedContent", updatedDoc.getFields().get(0).getContent());
 
     // third revision: just a different field content
@@ -415,7 +424,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
         documentsApi.createNewRevision(
             createdDoc.getId(), thirdRevApiDoc, mockBindingResult, testUser);
     assertEquals("newName", updatedDoc.getName());
-    assertEquals(1, updatedDoc.getFields().size());
+    assertThat(updatedDoc.getFields()).hasSize(1);
     assertEquals("updatedContent2", updatedDoc.getFields().get(0).getContent());
   }
 
@@ -436,9 +445,9 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     ApiDocument createdDoc = documentsApi.createNewDocument(apiDoc, mockBindingResult, testUser);
     assertNotNull(createdDoc.getId());
     String retrievedContent = createdDoc.getFields().get(0).getContent();
-    assertTrue(
-        retrievedContent.startsWith(expectedSavedContentStart),
-        "unexpected content: " + retrievedContent);
+    assertThat(retrievedContent)
+        .as("unexpected content: " + retrievedContent)
+        .startsWith(expectedSavedContentStart);
   }
 
   @Test
@@ -499,9 +508,9 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     ApiDocument emptyExp =
         documentsApi.createNewDocument(emptyExpApiDoc, mockBindingResult, testUser);
     assertNotNull(emptyExp.getId());
-    assertEquals(7, emptyExp.getFields().size());
+    assertThat(emptyExp.getFields()).hasSize(7);
     for (int i = 0; i < 7; i++) {
-      assertEquals("", emptyExp.getFields().get(i).getContent());
+      assertThat(emptyExp.getFields().get(i).getContent()).isEmpty();
     }
 
     // providing form id and fields - should create form-based document with content
@@ -520,10 +529,10 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     ApiDocument expDoc =
         documentsApi.createNewDocument(experimentApiDoc, mockBindingResult, testUser);
     assertNotNull(expDoc.getId());
-    assertEquals(7, expDoc.getFields().size());
+    assertThat(expDoc.getFields()).hasSize(7);
     assertEquals("test", expDoc.getFields().get(0).getContent());
     for (int i = 1; i < 6; i++) {
-      assertEquals("", expDoc.getFields().get(i).getContent());
+      assertThat(expDoc.getFields().get(i).getContent()).isEmpty();
     }
 
     // add all types of files to user's gallery. av not curently not supported.
@@ -570,7 +579,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
         documentsApi.createNewRevision(
             expDoc.getId(), updatedExperimentApiDoc, mockBindingResult, testUser);
     assertEquals(expDoc.getId(), updatedExp.getId());
-    assertEquals(7, updatedExp.getFields().size());
+    assertThat(updatedExp.getFields()).hasSize(7);
 
     String imageHtmlFragment = updatedExp.getFields().get(1).getContent();
     String docAttachmentHtmlFragment = updatedExp.getFields().get(2).getContent();
@@ -578,15 +587,15 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     String combinedHtmlFragment = updatedExp.getFields().get(4).getContent();
 
     assertEquals("test", updatedExp.getFields().get(0).getContent());
-    assertTrue(imageHtmlFragment.contains(expectedImageFragment), "should contain image");
+    assertThat(imageHtmlFragment).as("should contain image").contains(expectedImageFragment);
     // assertTrue("should contain audio", audioHtmlFragment.contains(expectedAudioFragment));
-    assertTrue(docAttachmentHtmlFragment.contains(expectedDocFragment), "should contain doc  ");
+    assertThat(docAttachmentHtmlFragment).as("should contain doc  ").contains(expectedDocFragment);
     assertTrue(
         combinedHtmlFragment.contains(expectedImageFragment)
             // && combinedHtmlFragment.contains(expectedAudioFragment)
             && combinedHtmlFragment.contains(expectedDocFragment),
         "should contain image, audio and doc, was: " + combinedHtmlFragment);
-    assertEquals("", updatedExp.getFields().get(5).getContent());
+    assertThat(updatedExp.getFields().get(5).getContent()).isEmpty();
     assertEquals("updated", updatedExp.getFields().get(6).getContent());
   }
 
@@ -608,7 +617,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     ApiDocument emptyAllFields =
         documentsApi.createNewDocument(emptyAllFieldsDoc, mockBindingResult, testUser);
     assertNotNull(emptyAllFields.getId());
-    assertEquals(7, emptyAllFields.getFields().size());
+    assertThat(emptyAllFields.getFields()).hasSize(7);
     assertEquals("2020-01-08", emptyAllFields.getFields().get(0).getContent());
     assertEquals("a,c", emptyAllFields.getFields().get(1).getContent());
     assertEquals("5.0", emptyAllFields.getFields().get(2).getContent());
@@ -663,7 +672,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     ApiDocument allFieldsRetrieved =
         documentsApi.createNewDocument(secondApiDoc, mockBindingResult, testUser);
     assertNotNull(allFieldsRetrieved.getId());
-    assertEquals(7, allFieldsRetrieved.getFields().size());
+    assertThat(allFieldsRetrieved.getFields()).hasSize(7);
     assertEquals("2017-07-12", allFieldsRetrieved.getFields().get(0).getContent());
     assertEquals("a,b", allFieldsRetrieved.getFields().get(1).getContent());
     assertEquals("3.14", allFieldsRetrieved.getFields().get(2).getContent());
@@ -686,13 +695,12 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     testDocFields.get(2).setId(22L);
 
     ApiDocument apiDocument = new ApiDocument();
-    assertEquals(0, apiDocument.getFields().size());
+    assertThat(apiDocument.getFields()).isEmpty();
 
     documentsApi.convertApiFieldsToMatchDocFields(apiDocument, testDocFields);
-    assertEquals(
-        0,
-        apiDocument.getFields().size(),
-        "if fields are empty, conversion should leave them empty");
+    assertThat(apiDocument.getFields())
+        .as("if fields are empty, conversion should leave them empty")
+        .isEmpty();
 
     // only one api field provided
     List<ApiDocumentField> oneApiField = new ArrayList<>();
@@ -704,8 +712,9 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
     // conversion should put the field in right place and add empty surrounding fields
     documentsApi.convertApiFieldsToMatchDocFields(apiDocument, testDocFields);
-    assertEquals(
-        3, apiDocument.getFields().size(), "if fields are omitted, conversion adds empty fields");
+    assertThat(apiDocument.getFields())
+        .as("if fields are omitted, conversion adds empty fields")
+        .hasSize(3);
     assertNull(apiDocument.getFields().get(0).getId(), "empty apiField expected at index 0");
     assertEquals(field, apiDocument.getFields().get(1), "provided apiField expected at index 1");
     assertEquals(
@@ -722,14 +731,19 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
         createNotebookWithNEntries(
             folderDao.getRootRecordForUser(testUser).getId(), "any", 1, testUser);
     User other = createInitAndLoginAnyUser();
-    assertExceptionThrown(
-        () ->
-            documentsApi.deleteDocumentById(basicDoc.getId(), other, new MockHttpServletResponse()),
-        NotFoundException.class);
+    var documentId = basicDoc.getId();
+    var deleteResponse = new MockHttpServletResponse();
+
+    assertThrows(
+        NotFoundException.class,
+        () -> documentsApi.deleteDocumentById(documentId, other, deleteResponse));
     logoutAndLoginAs(testUser);
-    assertExceptionThrown(
-        () -> documentsApi.deleteDocumentById(nb.getId(), testUser, new MockHttpServletResponse()),
-        NotFoundException.class);
+    var notebookId = nb.getId();
+    var notebookDeleteResponse = new MockHttpServletResponse();
+
+    assertThrows(
+        NotFoundException.class,
+        () -> documentsApi.deleteDocumentById(notebookId, testUser, notebookDeleteResponse));
   }
 
   @Test
@@ -748,7 +762,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     documentsApi.moveDocuments(req, mockBindingResult, testUser);
 
     StructuredDocument moved = recordMgr.getRecordWithFields(doc.getId(), testUser).asStrucDoc();
-    assertTrue(moved.getOwnerParent().isPresent());
+    assertThat(moved.getOwnerParent()).isPresent();
     assertEquals(target.getId(), moved.getOwnerParent().get().getId());
   }
 
@@ -763,7 +777,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     req.setSourceFolderId(source.getId());
     req.setTargetFolderId(source.getId());
 
-    assertExceptionThrown(
-        () -> documentsApi.moveDocuments(req, mockBindingResult, testUser), RuntimeException.class);
+    assertThrows(
+        RuntimeException.class, () -> documentsApi.moveDocuments(req, mockBindingResult, testUser));
   }
 }

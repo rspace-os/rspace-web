@@ -4,8 +4,8 @@ import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileSt
 import static com.researchspace.testutils.TestFactory.createAnySD;
 import static com.researchspace.testutils.TestFactory.createAnySDWithText;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
@@ -154,12 +154,12 @@ public class HTMLStringGeneratorTest {
     cfg.setComments(false);
     ExportProcessorInput documentData = htmlGenerator.extractHtmlStr(anyDoc, cfg);
     verify(commentMgr, never()).getCommentItems(1L);
-    assertEquals(0, documentData.getComments().size());
+    assertThat(documentData.getComments()).isEmpty();
     // now set config to  include comments
     cfg.setComments(true);
     documentData = htmlGenerator.extractHtmlStr(anyDoc, cfg);
     verify(commentMgr, times(1)).getCommentItems(1L);
-    assertEquals(1, documentData.getComments().size());
+    assertThat(documentData.getComments()).hasSize(1);
     assertTrue(documentData.hasComments());
     assertNull(documentData.getRevisionInfo());
   }
@@ -182,8 +182,8 @@ public class HTMLStringGeneratorTest {
     htmlGenerator.setUrlPrefix("http://demo.researchspace.com");
     ExportToFileConfig cfg = makeConfig();
     ExportProcessorInput documentData = htmlGenerator.extractHtmlStr(anydoc, cfg);
-    assertTrue(
-        documentData.getDocumentAsHtml().contains("http://demo.researchspace.com/Streamfile/2"));
+    assertThat(documentData.getDocumentAsHtml())
+        .contains("http://demo.researchspace.com/Streamfile/2");
 
     BaseRecord any = createAnySD();
     any.setId(3L);
@@ -191,19 +191,19 @@ public class HTMLStringGeneratorTest {
     anydoc = TestFactory.createAnySDWithText(linkedRecordhtml);
     anydoc.setId(1L);
     documentData = htmlGenerator.extractHtmlStr(anydoc, cfg);
-    assertTrue(
-        documentData.getDocumentAsHtml().contains("http://demo.researchspace.com/globalId/SD3"),
-        documentData.getDocumentAsHtml());
+    assertThat(documentData.getDocumentAsHtml())
+        .as(documentData.getDocumentAsHtml())
+        .contains("http://demo.researchspace.com/globalId/SD3");
 
     String externalLink = rtu.generateAnyURLStringForExternalDocLink();
     anydoc = TestFactory.createAnySDWithText(externalLink);
     anydoc.setId(1L);
     documentData = htmlGenerator.extractHtmlStr(anydoc, cfg);
     String documentAsHtml = documentData.getDocumentAsHtml();
-    assertTrue(documentAsHtml.contains("http://demo.researchspace.com"));
+    assertThat(documentAsHtml).contains("http://demo.researchspace.com");
     // check metadata elements are added
     org.jsoup.nodes.Document htmlDoc = Jsoup.parse(documentAsHtml);
-    assertEquals(EXPECTED_FIXED_META_COUNT, htmlDoc.getElementsByTag("meta").size());
+    assertThat(htmlDoc.getElementsByTag("meta")).hasSize(EXPECTED_FIXED_META_COUNT);
 
     assertEquals(
         2,
@@ -223,14 +223,12 @@ public class HTMLStringGeneratorTest {
     String documentAsHtml = input.getDocumentAsHtml();
     // check metadata elements are added
     org.jsoup.nodes.Document htmlDoc = Jsoup.parse(documentAsHtml);
-    assertEquals(EXPECTED_FIXED_META_COUNT + 1, htmlDoc.getElementsByTag("meta").size());
-    assertTrue(
-        htmlDoc.getElementsByTag("meta").stream()
-            .anyMatch(el -> el.attr("content").contains(OrcidId)));
+    assertThat(htmlDoc.getElementsByTag("meta")).hasSize(EXPECTED_FIXED_META_COUNT + 1);
+    assertThat(htmlDoc.getElementsByTag("meta"))
+        .anyMatch(el -> el.attr("content").contains(OrcidId));
     // assert we can put utf chars into MSWord export
-    assertTrue(
-        htmlDoc.getElementsByTag("meta").stream()
-            .anyMatch(el -> el.attr("charset").contains("UTF-8")));
+    assertThat(htmlDoc.getElementsByTag("meta"))
+        .anyMatch(el -> el.attr("charset").contains("UTF-8"));
   }
 
   @Test
@@ -251,10 +249,10 @@ public class HTMLStringGeneratorTest {
 
     ExportProcessorInput input = htmlGenerator.extractHtmlStr(anyDoc, cfg);
     String documentAsHtml = input.getDocumentAsHtml();
-    assertTrue(documentAsHtml.contains("test lom"), documentAsHtml);
-    assertTrue(documentAsHtml.contains("SAMPLE"), documentAsHtml);
-    assertTrue(documentAsHtml.contains("SUBSAMPLE"), documentAsHtml);
-    assertFalse(documentAsHtml.contains("CONTAINER"), documentAsHtml);
+    assertThat(documentAsHtml).as(documentAsHtml).contains("test lom");
+    assertThat(documentAsHtml).as(documentAsHtml).contains("SAMPLE");
+    assertThat(documentAsHtml).as(documentAsHtml).contains("SUBSAMPLE");
+    assertThat(documentAsHtml).as(documentAsHtml).doesNotContain("CONTAINER");
   }
 
   @Test
@@ -275,10 +273,10 @@ public class HTMLStringGeneratorTest {
     ExportProcessorInput input = htmlGenerator.extractHtmlStr(anyDoc, cfg);
     String documentAsHtml = input.getDocumentAsHtml();
 
-    assertTrue(documentAsHtml.contains("instrument lom"), documentAsHtml);
-    assertTrue(documentAsHtml.contains("INSTRUMENT"), documentAsHtml);
-    assertTrue(documentAsHtml.contains("Confocal Microscope"), documentAsHtml);
-    assertTrue(documentAsHtml.contains("http://test.com/globalId/IN42"), documentAsHtml);
+    assertThat(documentAsHtml).as(documentAsHtml).contains("instrument lom");
+    assertThat(documentAsHtml).as(documentAsHtml).contains("INSTRUMENT");
+    assertThat(documentAsHtml).as(documentAsHtml).contains("Confocal Microscope");
+    assertThat(documentAsHtml).as(documentAsHtml).contains("http://test.com/globalId/IN42");
   }
 
   @Test
@@ -290,15 +288,15 @@ public class HTMLStringGeneratorTest {
     ExportToFileConfig cfg = makeConfig();
     ExportProcessorInput documentData = htmlGenerator.extractHtmlStr(anydoc, cfg);
     // default sclae factor = 67.3% from page width to A4
-    assertTrue(documentData.getDocumentAsHtml().contains("width=\"673\""));
-    assertTrue(documentData.getDocumentAsHtml().contains("height=\"673\""));
+    assertThat(documentData.getDocumentAsHtml()).contains("width=\"673\"");
+    assertThat(documentData.getDocumentAsHtml()).contains("height=\"673\"");
 
     // this is 69.2% scaling
     cfg.setPageSize("LETTER");
     documentData = htmlGenerator.extractHtmlStr(anydoc, cfg);
 
-    assertTrue(documentData.getDocumentAsHtml().contains("width=\"692\""));
-    assertTrue(documentData.getDocumentAsHtml().contains("height=\"692\""));
+    assertThat(documentData.getDocumentAsHtml()).contains("width=\"692\"");
+    assertThat(documentData.getDocumentAsHtml()).contains("height=\"692\"");
   }
 
   @Test
@@ -309,15 +307,13 @@ public class HTMLStringGeneratorTest {
     anydoc.setId(1L);
     ExportToFileConfig cfg = makeConfig();
     ExportProcessorInput documentData = htmlGenerator.extractHtmlStr(anydoc, cfg);
-    assertTrue(
-        documentData
-            .getDocumentAsHtml()
-            .contains(
-                "iframe:\n"
-                    + "  <p><i>&lt;embedded code from <a"
-                    + " href=\"https://dummy.source/a?b=c&amp;d=e\">"
-                    + "https://dummy.source/a?b=c&amp;d=e</a>&gt;</i></p>"),
-        "unexpected content: " + documentData.getDocumentAsHtml());
+    assertThat(documentData.getDocumentAsHtml())
+        .as("unexpected content: " + documentData.getDocumentAsHtml())
+        .contains(
+            "iframe:\n"
+                + "  <p><i>&lt;embedded code from <a"
+                + " href=\"https://dummy.source/a?b=c&amp;d=e\">"
+                + "https://dummy.source/a?b=c&amp;d=e</a>&gt;</i></p>");
   }
 
   /** Tests that XSS doesn't work in the document's name & field names on export / preview */
@@ -335,31 +331,32 @@ public class HTMLStringGeneratorTest {
     ExportToFileConfig cfg = makeConfig();
     ExportProcessorInput documentData = htmlGenerator.extractHtmlStr(doc, cfg);
     String data = documentData.getDocumentAsHtml();
-    assertFalse(data.contains("<img"));
+    assertThat(data).doesNotContain("<img");
     // Additional checks to be sure the data wasn't just thrown out completely
-    assertTrue(data.contains("&lt;img"));
-    assertTrue(data.contains("alert(1)"));
-    assertTrue(data.contains("alert(2)"));
+    assertThat(data).contains("&lt;img");
+    assertThat(data).contains("alert(1)");
+    assertThat(data).contains("alert(2)");
     // html chars in name escaped
-    assertFalse(data.contains("special html chars &∅∈∌"));
-    assertTrue(
-        data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;∌"), "unexpected:" + data);
+    assertThat(data).doesNotContain("special html chars &∅∈∌");
+    assertThat(data)
+        .as("unexpected:" + data)
+        .contains("special html chars &amp;amp;&amp;empty;&amp;isin;∌");
   }
 
   @Test
   // rspac-2486
   public void testEmptyColRowSpanStripping() {
 
-    assertTrue(HTML_WITH_EMPTY_COLSPAN.contains("colspan=\"\""));
-    assertTrue(HTML_WITH_EMPTY_COLSPAN.contains("rowspan=\"\""));
+    assertThat(HTML_WITH_EMPTY_COLSPAN).contains("colspan=\"\"");
+    assertThat(HTML_WITH_EMPTY_COLSPAN).contains("rowspan=\"\"");
     Document jsoupDoc = Jsoup.parse(HTML_WITH_EMPTY_COLSPAN);
     htmlGenerator.preProcess(jsoupDoc);
     String htmlStr = jsoupDoc.html();
 
-    assertFalse(htmlStr.contains("colspan=\"\""));
-    assertFalse(htmlStr.contains("rowspan=\"\""));
-    assertTrue(htmlStr.contains("rowspan=\"3\""));
-    assertTrue(htmlStr.contains("colspan=\"2\""));
+    assertThat(htmlStr).doesNotContain("colspan=\"\"");
+    assertThat(htmlStr).doesNotContain("rowspan=\"\"");
+    assertThat(htmlStr).contains("rowspan=\"3\"");
+    assertThat(htmlStr).contains("colspan=\"2\"");
   }
 
   @Test
@@ -380,15 +377,16 @@ public class HTMLStringGeneratorTest {
         htmlGenerator.extractHtmlStr(structuredDocument, config);
     String html = exportProcessorInput.getDocumentAsHtml();
 
-    assertTrue(
-        html.contains("<p>a, b</p>"),
-        "html doesn't contain selected choices 'a, b'. html is: " + html);
-    assertFalse(
-        html.contains("fieldSelectedChoices="),
-        "html incorrectly contains 'fieldSelectedChoices=' which should be stripped. html is: "
-            + html);
-    assertFalse(
-        html.contains("fieldChoices="),
-        "html incorrectly contains 'fieldChoices=' which should be stripped. html is: " + html);
+    assertThat(html)
+        .as("html doesn't contain selected choices 'a, b'. html is: " + html)
+        .contains("<p>a, b</p>");
+    assertThat(html)
+        .as(
+            "html incorrectly contains 'fieldSelectedChoices=' which should be stripped. html is: "
+                + html)
+        .doesNotContain("fieldSelectedChoices=");
+    assertThat(html)
+        .as("html incorrectly contains 'fieldChoices=' which should be stripped. html is: " + html)
+        .doesNotContain("fieldChoices=");
   }
 }

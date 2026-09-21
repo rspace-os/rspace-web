@@ -2,7 +2,7 @@ package com.researchspace.webapp.integrations.fieldmark;
 
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,8 +28,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * Runs only on nightly builds (-Dnightly) against the real Fieldmark service; requires the
- * FIELDMARK_TOKEN environment variable to hold a valid bearer token.
+ * Runs on nightly builds against the real Fieldmark service; requires the FIELDMARK_TOKEN
+ * environment variable to hold a valid bearer token.
  */
 @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
@@ -76,7 +76,7 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
     FieldmarkNotebook[] notebooks =
         new ObjectMapper()
             .readValue(result.getResponse().getContentAsString(), FieldmarkNotebook[].class);
-    assertFalse(notebooks.length == 0, "notebook list is empty");
+    assertThat(notebooks).as("notebook list is empty").isNotEmpty();
     for (FieldmarkNotebook notebook : notebooks) {
       String name = notebook.getName();
       assertNotNull(name, "name is null");

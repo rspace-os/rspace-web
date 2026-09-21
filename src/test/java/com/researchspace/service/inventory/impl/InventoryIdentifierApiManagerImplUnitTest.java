@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -201,9 +201,9 @@ class InventoryIdentifierApiManagerImplUnitTest {
         "Could not publish the instrument PID in B2INST. instrument_type: Missing data for required"
             + " field.",
         thrown.getMessage());
-    assertFalse(
-        thrown.getMessage().contains("Error submitting B2INST record"),
-        "the connector's developer prefix must not appear inside the localized sentence");
+    assertThat(thrown.getMessage())
+        .as("the connector's developer prefix must not appear inside the localized sentence")
+        .doesNotContain("Error submitting B2INST record");
     assertSame(original, thrown.getCause());
   }
 
@@ -397,7 +397,9 @@ class InventoryIdentifierApiManagerImplUnitTest {
 
     ApiInstrument update = instrumentUpdateFor(mgr, instrument, newPidinstRegistration());
 
-    assertTrue(landingPageUpdate(update).isEmpty(), "a typed landing page must not be overwritten");
+    assertThat(landingPageUpdate(update))
+        .as("a typed landing page must not be overwritten")
+        .isEmpty();
   }
 
   /**
@@ -427,7 +429,7 @@ class InventoryIdentifierApiManagerImplUnitTest {
 
     ApiInstrument update = instrumentUpdateFor(mgr, instrumentWithLandingPage(null), publishUpdate);
 
-    assertTrue(landingPageUpdate(update).isEmpty());
+    assertThat(landingPageUpdate(update)).isEmpty();
   }
 
   /** No server URL means no public address to write; the field is left blank rather than junk. */
@@ -438,7 +440,7 @@ class InventoryIdentifierApiManagerImplUnitTest {
     ApiInstrument update =
         instrumentUpdateFor(mgr, instrumentWithLandingPage(null), newPidinstRegistration());
 
-    assertTrue(landingPageUpdate(update).isEmpty());
+    assertThat(landingPageUpdate(update)).isEmpty();
   }
 
   private Method refreshMethod() throws Exception {
@@ -456,6 +458,12 @@ class InventoryIdentifierApiManagerImplUnitTest {
     return doi;
   }
 
+  /**
+   * {@code declined} is not a hypothetical status: it is what B2INST leaves behind when a curator
+   * presses DECLINE, verified against b2inst-test on 2026-09-11 (RSDEV-1326). The request stays
+   * readable, so the status is stored as it stands and the identifier moves to the panel's
+   * closed-review handling. Contrast {@link #refreshFallsBackToDraftWhenOnlyTheDraftSurvives}.
+   */
   @Test
   void refreshPersistsOpenReviewStatusVerbatim() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
@@ -500,6 +508,13 @@ class InventoryIdentifierApiManagerImplUnitTest {
         "https://rspace.example.com/public/inventory/" + doi.getPublicLink(), result.getUrl());
   }
 
+  /**
+   * This is what a CANCELLED review looks like, and the reason cancel and decline are not
+   * symmetric: cancelling removes the review from the draft, so the review URL answers 404 while
+   * the draft itself survives, and the identifier drops back to {@code draft} - publishable and
+   * deletable again rather than stuck. Verified against b2inst-test on 2026-09-11 (RSDEV-1326). The
+   * identifier therefore never reaches {@code cancelled} by this route.
+   */
   @Test
   void refreshFallsBackToDraftWhenOnlyTheDraftSurvives() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
@@ -523,10 +538,11 @@ class InventoryIdentifierApiManagerImplUnitTest {
     when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
     when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
     when(b2instConnector.getDraftRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
+    Method refresh = refreshMethod();
+    DigitalObjectIdentifier doi = b2instDoi();
 
     InvocationTargetException thrown =
-        assertThrows(
-            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
+        assertThrows(InvocationTargetException.class, () -> refresh.invoke(mgr, doi));
 
     assertInstanceOf(ApiRuntimeException.class, thrown.getCause());
   }
@@ -542,10 +558,11 @@ class InventoryIdentifierApiManagerImplUnitTest {
         .thenReturn("Could not refresh. reason");
     when(b2instConnector.getReviewOf("k2j9p-7yh21"))
         .thenThrow(new B2instConnectionException("dev message", "reason", null));
+    Method refresh = refreshMethod();
+    DigitalObjectIdentifier doi = b2instDoi();
 
     InvocationTargetException thrown =
-        assertThrows(
-            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
+        assertThrows(InvocationTargetException.class, () -> refresh.invoke(mgr, doi));
 
     assertInstanceOf(B2instConnectionException.class, thrown.getCause());
     assertEquals("Could not refresh. reason", thrown.getCause().getMessage());
@@ -564,9 +581,10 @@ class InventoryIdentifierApiManagerImplUnitTest {
     GlobalIdentifier oid = new GlobalIdentifier("IT1");
     Instrument withoutIdentifier = new Instrument();
     when(retriever.getInvRecordByGlobalId(oid)).thenReturn(withoutIdentifier);
+    User user = new User("u");
 
     ApiRuntimeException thrown =
-        assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, new User("u")));
+        assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, user));
 
     assertEquals("errors.inventory.identifier.refreshNoIdentifier", thrown.getErrorCode());
   }
@@ -613,13 +631,37 @@ class InventoryIdentifierApiManagerImplUnitTest {
     review.setStatus("accepted");
     when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.of(review));
     when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
+    Method refresh = refreshMethod();
+    DigitalObjectIdentifier doi = b2instDoi();
 
     InvocationTargetException thrown =
-        assertThrows(
-            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
+        assertThrows(InvocationTargetException.class, () -> refresh.invoke(mgr, doi));
 
     ApiRuntimeException cause = assertInstanceOf(ApiRuntimeException.class, thrown.getCause());
     assertEquals(
         "errors.inventory.identifier.b2instAcceptedRecordUnavailable", cause.getErrorCode());
+  }
+
+  @Test
+  void publishRetractAndRefreshRefuseALinkedIdentifierBeforeAnyProviderCall() {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    InventoryRecordRetriever retriever = mock(InventoryRecordRetriever.class);
+    ReflectionTestUtils.setField(mgr, "invRecRetriever", retriever);
+    Instrument instrument = new Instrument();
+    DigitalObjectIdentifier linked =
+        new DigitalObjectIdentifier(
+            "21.11157/44b18238-bba1-4b42-abcc-975017181420", "Microscope", "suffix1234567890");
+    linked.setType(IdentifierType.PIDINST_B2INST);
+    linked.setState("accepted");
+    linked.markLinked();
+    instrument.addIdentifier(linked);
+    GlobalIdentifier oid = new GlobalIdentifier("IN1");
+    when(retriever.getInvRecordByGlobalId(oid)).thenReturn(instrument);
+    User user = new User("someone");
+
+    // connectors are null on this bare manager: reaching one would be an NPE, not this exception
+    assertThrows(ApiRuntimeException.class, () -> mgr.publishIdentifier(oid, user));
+    assertThrows(ApiRuntimeException.class, () -> mgr.retractIdentifier(oid, user));
+    assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, user));
   }
 }

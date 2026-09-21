@@ -4,10 +4,10 @@ import static com.researchspace.model.field.FieldType.NUMBER;
 import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileStore;
 import static com.researchspace.testutils.TestFactory.createAnySD;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalForm;
@@ -76,7 +76,7 @@ public class ArchiveModelFactoryTest {
     form.addFieldForm(FieldTestUtils.createStringForm());
     form.setId(1L);
     ArchivalForm arForm = factory.createArchivalForm(form, "form");
-    assertEquals(4, arForm.getFieldFormList().size());
+    assertThat(arForm.getFieldFormList()).hasSize(4);
   }
 
   @Test
@@ -85,7 +85,7 @@ public class ArchiveModelFactoryTest {
     NumberFieldForm nff = new NumberFieldForm("number");
     form.addFieldForm(nff);
     ArchivalForm arForm = factory.createArchivalForm(form, "form");
-    assertEquals(2, arForm.getFieldFormList().size());
+    assertThat(arForm.getFieldFormList()).hasSize(2);
   }
 
   @Test
@@ -94,13 +94,13 @@ public class ArchiveModelFactoryTest {
     NumberFieldForm nff = new NumberFieldForm("number");
     form.addFieldForm(nff);
     ArchivalForm arForm = factory.createArchivalForm(form, "form");
-    assertEquals(2, arForm.getFieldFormList().size());
+    assertThat(arForm.getFieldFormList()).hasSize(2);
     nff.setDeleted(true);
 
     arForm = factory.createArchivalForm(form, "form");
-    assertEquals(1, arForm.getFieldFormList().size());
-    assertTrue(
-        arForm.getFieldFormList().stream().noneMatch(ff -> NUMBER.getType().equals(ff.getType())));
+    assertThat(arForm.getFieldFormList()).hasSize(1);
+    assertThat(arForm.getFieldFormList().stream())
+        .noneMatch(ff -> NUMBER.getType().equals(ff.getType()));
   }
 
   @Test

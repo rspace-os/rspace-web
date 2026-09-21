@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,7 +36,6 @@ import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase {
@@ -43,7 +43,6 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
   private static final int EXPECTED_EXAMPLE_IMG_COUNT = 7;
 
   private ProdContentInitializerManager initializer;
-  private @Autowired RecordManager recordMgr;
 
   private User user;
 
@@ -102,15 +101,11 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
             });
     doInTransaction(
         () -> {
-          assertEquals(
-              4,
-              folderDao
-                  .getRootRecordForUser(user)
-                  .getChildrens()
-                  .size()); // shared + templates + examples + media
+          assertThat(folderDao.getRootRecordForUser(user).getChildrens())
+              .hasSize(4); // shared + templates + examples + media
           // 3 + 4 in chem images
-          assertEquals(
-              EXPECTED_EXAMPLE_IMG_COUNT, getRecordCountInFolderForUser(mediaImgExamplesId));
+          assertThat(getRecordCountInFolderForUser(mediaImgExamplesId))
+              .isEqualTo(EXPECTED_EXAMPLE_IMG_COUNT);
         });
   }
 

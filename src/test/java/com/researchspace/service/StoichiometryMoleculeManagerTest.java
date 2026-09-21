@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class StoichiometryMoleculeManagerTest extends SpringTransactionalTest {
 
   @Autowired private StoichiometryManager stoichiometryManager;
-  @Autowired private RSChemElementManager rsChemElementManager;
   @Autowired private StoichiometryMoleculeManager stoichiometryMoleculeManager;
 
   private User user;

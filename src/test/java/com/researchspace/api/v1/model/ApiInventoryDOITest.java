@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -13,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate.
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class ApiInventoryDOITest {
 
@@ -55,10 +57,10 @@ class ApiInventoryDOITest {
 
     String json = new ObjectMapper().writeValueAsString(doi);
 
-    assertTrue(
-        json.contains("\"providerUrl\":\"https://b2inst-test.gwdg.de/uploads/k2j9p-7yh21\""));
-    assertTrue(json.contains("\"publicUrl\":\"https://doi.org/10.1234/abc\""));
-    assertTrue(json.contains("\"url\":\"https://rspace.example.com/globalId/IN5\""));
+    assertThat(json)
+        .contains("\"providerUrl\":\"https://b2inst-test.gwdg.de/uploads/k2j9p-7yh21\"");
+    assertThat(json).contains("\"publicUrl\":\"https://doi.org/10.1234/abc\"");
+    assertThat(json).contains("\"url\":\"https://rspace.example.com/globalId/IN5\"");
   }
 
   /**
@@ -156,12 +158,13 @@ class ApiInventoryDOITest {
     assertNotNull(first);
     // 16 random bytes, base64url-encoded without padding. Length alone is only a proxy, so the two
     // properties that actually matter are asserted directly.
-    assertEquals(22, first.length());
-    assertTrue(
-        first.matches("[A-Za-z0-9_-]+"),
-        "must be safe as a URL path segment: it becomes /public/inventory/<suffix>, is persisted as"
-            + " publicLink and is registered with a provider; got: "
-            + first);
+    assertThat(first).hasSize(22);
+    assertThat(first)
+        .as(
+            "must be safe as a URL path segment: it becomes /public/inventory/<suffix>, is"
+                + " persisted as publicLink and is registered with a provider; got: "
+                + first)
+        .matches("[A-Za-z0-9_-]+");
 
     ApiInventoryDOI second = new ApiInventoryDOI();
     second.generatePublicLinkSuffix();
@@ -177,7 +180,7 @@ class ApiInventoryDOITest {
   void publicLinkSuffixIsNeitherSerializedNorDeserializable() throws Exception {
     ApiInventoryDOI doi = new ApiInventoryDOI();
     doi.generatePublicLinkSuffix();
-    assertFalse(new ObjectMapper().writeValueAsString(doi).contains("publicLinkSuffix"));
+    assertThat(new ObjectMapper().writeValueAsString(doi)).doesNotContain("publicLinkSuffix");
 
     ApiInventoryDOI incoming =
         new ObjectMapper()
@@ -255,5 +258,64 @@ class ApiInventoryDOITest {
 
     assertNull(
         incoming.getExternalMetadataUpdate(), "a client must not be able to state an outcome");
+  }
+
+  @Test
+  void linkedFlagIsWrittenOnlyIntoATransientIdentifierAndReadBack() {
+    ApiInventoryDOI dto = new ApiInventoryDOI();
+    dto.setLinked(true);
+    dto.setDoi("21.11157/44b18238-bba1-4b42-abcc-975017181420");
+    dto.setDoiType(IdentifierType.PIDINST_B2INST.name());
+
+    DigitalObjectIdentifier created = new DigitalObjectIdentifier(null, null, "suffix1234567890");
+    assertTrue(dto.applyChangesToDatabaseDOI(created));
+    assertTrue(created.isLinked(), "a new row takes the origin from the DTO");
+    assertTrue(new ApiInventoryDOI(created).isLinked(), "and reports it back");
+
+    DigitalObjectIdentifier persisted = new DigitalObjectIdentifier(null, null, "suffix0987654321");
+    ReflectionTestUtils.setField(persisted, "id", 42L);
+    dto.applyChangesToDatabaseDOI(persisted);
+    assertFalse(persisted.isLinked(), "an existing row's origin is immutable");
+  }
+
+  /**
+   * The invariant behind the missing landing page, held where it cannot be routed around. Skipping
+   * the LOCAL_URL in ApiIdentifiersHelper covers the import path, but this method writes the
+   * property again from the DTO's own url, so anything that arrives carrying one would put an
+   * RSpace address on an identifier RSpace does not serve a page for (ADR 0009). Nothing sets that
+   * url on a linked identifier today - three separate facts in three classes see to it - which is
+   * exactly why it is worth pinning here rather than relying on them all staying true.
+   */
+  @Test
+  void aLinkedIdentifierNeverTakesAnRSpaceLandingPageEvenIfTheDtoCarriesOne() {
+    ApiInventoryDOI dto = new ApiInventoryDOI();
+    dto.setLinked(true);
+    dto.setDoi("21.11157/44b18238-bba1-4b42-abcc-975017181420");
+    dto.setDoiType(IdentifierType.PIDINST_B2INST.name());
+    dto.setUrl("https://rspace.example.org/public/inventory/suffix1234567890");
+
+    DigitalObjectIdentifier created = new DigitalObjectIdentifier(null, null, "suffix1234567890");
+    dto.applyChangesToDatabaseDOI(created);
+
+    assertTrue(created.isLinked());
+    assertNull(
+        created.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL),
+        "a linked identifier must not carry an RSpace landing page");
+  }
+
+  /** The same write still happens for an identifier RSpace minted itself. */
+  @Test
+  void anUnlinkedIdentifierStillTakesTheUrlTheDtoCarries() {
+    ApiInventoryDOI dto = new ApiInventoryDOI();
+    dto.setDoi("10.1234/minted-here");
+    dto.setDoiType(IdentifierType.IGSN_DATACITE.name());
+    dto.setUrl("https://rspace.example.org/public/inventory/suffix1234567890");
+
+    DigitalObjectIdentifier created = new DigitalObjectIdentifier(null, null, "suffix1234567890");
+    dto.applyChangesToDatabaseDOI(created);
+
+    assertEquals(
+        "https://rspace.example.org/public/inventory/suffix1234567890",
+        created.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
   }
 }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
 import org.apache.shiro.authz.AuthorizationException;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class CloudGroupManagerTest extends SpringTransactionalTest {
 
   private @Autowired IGroupPermissionUtils grpPermUtils;
+  private @Autowired IMutablePropertyHolder propertyHolder;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -37,12 +39,12 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
     TestGroup tg = createTestGroup(1);
     User subject = tg.u1();
     logoutAndLoginAs(subject);
+    String piUsername = tg.getPi().getUsername();
+    var group = tg.getGroup();
     // non community fail
     assertThrows(
         AuthorizationException.class,
-        () ->
-            grpPermUtils.assertLeaveGroupPermissions(
-                tg.getPi().getUsername(), subject, tg.getGroup()));
+        () -> grpPermUtils.assertLeaveGroupPermissions(piUsername, subject, group));
     // now succeeds
     propertyHolder.setCloud("true");
     assertEquals(
@@ -52,8 +54,6 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
     // sole  pi not able to remove himself
     assertThrows(
         AuthorizationException.class,
-        () ->
-            grpPermUtils.assertLeaveGroupPermissions(
-                tg.getPi().getUsername(), subject, tg.getGroup()));
+        () -> grpPermUtils.assertLeaveGroupPermissions(piUsername, subject, group));
   }
 }

@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
+import { deleteDynamicUser } from "@/__tests__/e2e/deleteDynamicUser";
 import { test } from "@/__tests__/e2e/fixtures/flows";
 import { tags } from "@/__tests__/e2e/tags";
 import { alphaNumericUnique, DYNAMIC_USER_PASSWORD, uniqueName } from "@/__tests__/e2e/testData";
@@ -102,7 +103,7 @@ test.describe("System account creation", { tag: tags.SYSTEM }, () => {
     const user = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eCreateDeleteUser");
 
     await users.open();
-    await users.deleteUser(user.username);
+    await deleteDynamicUser(users, clientSysadmin, user.username);
 
     await users.open();
     expect(await users.availableSeats()).toBe(availableBefore);

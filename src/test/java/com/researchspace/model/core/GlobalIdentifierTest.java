@@ -1,5 +1,6 @@
 package com.researchspace.model.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -20,21 +21,13 @@ public class GlobalIdentifierTest {
 
   @Test
   public void testNullOrEmptyThrowsIAE() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier("");
-          new GlobalIdentifier(null);
-        });
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(""));
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null));
   }
 
   @Test
   public void testInvalidSyntaxThrowsIAE() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier("INVALID_ID");
-        });
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier("INVALID_ID"));
   }
 
   @Test
@@ -46,28 +39,17 @@ public class GlobalIdentifierTest {
   @Test
   public void testValidSyntaxThrowsIAE() {
     assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier(GlobalIdPrefix.CH, null);
-        });
+        IllegalArgumentException.class, () -> new GlobalIdentifier(GlobalIdPrefix.CH, null));
   }
 
   @Test
   public void testValidSyntaxThrowsIAE2() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier(null, 2L);
-        });
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null, 2L));
   }
 
   @Test
   public void testValidSyntaxThrowsIAE3() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier(null, null);
-        });
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null, null));
   }
 
   @Test
@@ -103,9 +85,9 @@ public class GlobalIdentifierTest {
     GlobalIdentifier gid2v1 = new GlobalIdentifier("SD124v1");
     GlobalIdentifier gid2v2 = new GlobalIdentifier("SD124v2");
 
-    assertTrue(gid1.compareTo(gid2) < 0);
-    assertTrue(gid2.compareTo(gid2v1) > 0);
-    assertTrue(gid2.compareTo(gid2v2) > 0);
-    assertTrue(gid2v2.compareTo(gid1) > 0);
+    assertThat(gid1.compareTo(gid2)).isLessThan(0);
+    assertThat(gid2.compareTo(gid2v1)).isGreaterThan(0);
+    assertThat(gid2.compareTo(gid2v2)).isGreaterThan(0);
+    assertThat(gid2v2.compareTo(gid1)).isGreaterThan(0);
   }
 }

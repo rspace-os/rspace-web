@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { getErrorMessage } from "@/util/error";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import { mkAlert } from "../../../../stores/contexts/Alert";
-import type { Identifier } from "../../../../stores/definitions/Identifier";
+import type { Identifier, PublishingState } from "../../../../stores/definitions/Identifier";
 import useStores from "../../../../stores/use-stores";
 
 type RefreshButtonArgs = {
@@ -13,24 +13,24 @@ type RefreshButtonArgs = {
   disabled?: boolean;
 };
 
-/**
- * Pulls the identifier's current review status from the provider (RSDEV-1260). Rendered while the
- * B2INST community review is open ("submitted"), when the outcome is decided outside RSpace and
- * this is the one useful action.
- *
- * Also rendered for an accepted PID that has no Handle yet. Acceptance reads the minted ePIC PID
- * out of the published record's `pids` block, which can come back without one, and this is the
- * only action that can pick it up afterwards; hiding it there would leave the identifier
- * permanently accepted with no resolvable PID (Copilot review, PR 1066).
- */
+/** B2INST states whose record can still change at the provider, so a re-read may return something new. */
+const REFRESHABLE_B2INST_STATES: ReadonlyArray<PublishingState> = ["draft", "created", "submitted", "accepted"];
+
+/** Pulls the identifier's current review status from the provider (RSDEV-1260). */
 function RefreshButton({ identifier, disabled }: RefreshButtonArgs): React.ReactNode {
   const [refreshing, setRefreshing] = React.useState(false);
   const { t } = useTranslation("inventory");
   const { uiStore } = useStores();
 
-  const reviewStillOpen = identifier.state === "submitted";
-  const acceptedWithoutHandle = identifier.state === "accepted" && !identifier.publicUrl;
-  if (!reviewStillOpen && !acceptedWithoutHandle) return null;
+  /*
+   * B2INST only: refreshIdentifier makes no provider call for a DataCite identifier, whose state
+   * changes solely through RSpace's own publish and retract. "draft" is a state both providers
+   * use, so keying on the state alone would put a do-nothing button on every IGSN draft.
+   */
+  const refreshable = identifier.doiType === "PIDINST_B2INST" && REFRESHABLE_B2INST_STATES.includes(identifier.state);
+
+  // the server refuses publish, retract and refresh for a linked identifier with 422 (ADR 0009)
+  if (identifier.linked || !refreshable) return null;
 
   return (
     <CustomTooltip title={t("fields.identifiers.list.tooltips.refresh")}>
