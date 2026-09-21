@@ -67,6 +67,10 @@ type Props = {
   adapter: ResourceAccessAdapter;
   onLeave?: () => void;
   readOnly?: boolean;
+  inheritedResource?: {
+    href: string;
+    label: string;
+  };
 };
 
 function sameDraft(left: readonly ResourceAccessAssignment[], right: readonly ResourceAccessAssignment[]) {
@@ -77,7 +81,15 @@ function sameDraft(left: readonly ResourceAccessAssignment[], right: readonly Re
   );
 }
 
-export function ResourceAccessEditor({ resource, resourceId, token, adapter, onLeave, readOnly = false }: Props) {
+export function ResourceAccessEditor({
+  resource,
+  resourceId,
+  token,
+  adapter,
+  onLeave,
+  readOnly = false,
+  inheritedResource,
+}: Props) {
   const { t, i18n } = useTranslation("common");
   const queryClient = useQueryClient();
   const queryKey = ["api-v2", resource, resourceId, "access"] as const;
@@ -102,7 +114,9 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
     }
   }, [access.data, base, draft, recoveringConflict]);
 
-  const dirty = !readOnly && base ? !sameDraft(draft, base.assignments) : false;
+  const inherited = access.data?.inherited === true;
+  const effectiveReadOnly = readOnly || inherited;
+  const dirty = !effectiveReadOnly && base ? !sameDraft(draft, base.assignments) : false;
   const ownerCount = draft.filter(({ role }) => role === adapter.ownerRole).length;
   const ownerLabel = adapter.roles.find(({ key }) => key === adapter.ownerRole)?.label ?? adapter.ownerRole;
 
@@ -175,7 +189,7 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
 
   const assignedKeys = useMemo(() => new Set(draft.map(({ grantee }) => grantee.key)), [draft]);
   const namedAssignmentCount = draft.filter(({ grantee }) => grantee.kind !== "AUDIENCE").length;
-  const canManage = !readOnly && access.data?.caller.capabilities.canManageAssignments === true;
+  const canManage = !effectiveReadOnly && access.data?.caller.capabilities.canManageAssignments === true;
 
   const add = (grantee: ResourceGranteeDirectoryEntry, roleKey = adapter.defaultRole) => {
     if (grantee.kind !== "AUDIENCE" && namedAssignmentCount >= 100) {
@@ -220,7 +234,7 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
         ),
       )
     : rows;
-  const invariantBroken = ownerCount === 0;
+  const invariantBroken = !inherited && ownerCount === 0;
 
   const stagedLabelFor = (row: AccessRow): string | null => {
     const roleLabel = (key: string) => adapter.roles.find((role) => role.key === key)?.label ?? key;
@@ -273,7 +287,7 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
   };
 
   const roleMenuFor = (row: AccessRow) => {
-    if (readOnly) {
+    if (effectiveReadOnly) {
       return <span>{adapter.roles.find(({ key }) => key === row.assignment.role)?.label ?? row.assignment.role}</span>;
     }
     return (
@@ -289,7 +303,7 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
   };
 
   const actionsFor = (row: AccessRow) =>
-    readOnly ? null : (
+    effectiveReadOnly ? null : (
       <RowActions
         row={row}
         leaveLabel={adapter.leaveLabel}
@@ -304,6 +318,18 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
     <TooltipProvider>
       <fieldset disabled={save.isPending} className="min-w-0 space-y-4 overflow-x-clip">
         <DirtyNavigationGuard dirty={dirty} />
+        {inherited ? (
+          <Alert>
+            <AlertTitle>{t("resourceAccess.inherited")}</AlertTitle>
+            {inheritedResource ? (
+              <AlertDescription>
+                <a href={inheritedResource.href} className="underline underline-offset-2">
+                  {inheritedResource.label}
+                </a>
+              </AlertDescription>
+            ) : null}
+          </Alert>
+        ) : null}
         {canManage ? (
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-56 flex-1">
@@ -322,54 +348,58 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
           </div>
         ) : null}
 
-        <label className="block max-w-sm space-y-1 text-sm">
-          <span>{t("resourceAccess.searchAssigned")}</span>
-          <input
-            type="search"
-            className="h-9 w-full rounded-sm border bg-background px-3"
-            value={assignmentSearch}
-            onChange={(event) => setAssignmentSearch(event.currentTarget.value)}
-          />
-        </label>
+        {!inherited || saved.assignments.length > 0 ? (
+          <>
+            <label className="block max-w-sm space-y-1 text-sm">
+              <span>{t("resourceAccess.searchAssigned")}</span>
+              <input
+                type="search"
+                className="h-9 w-full rounded-sm border bg-background px-3"
+                value={assignmentSearch}
+                onChange={(event) => setAssignmentSearch(event.currentTarget.value)}
+              />
+            </label>
 
-        {/* Wide screens: one table ordered by grantee. */}
-        <div className="max-sm:hidden">
-          <Table aria-label={t("resourceAccess.assignments")}>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("resourceAccess.userOrGroup")}</TableHead>
-                <TableHead>{t("resourceAccess.directRole")}</TableHead>
-                <TableHead>
-                  <span className="sr-only">{t("resourceAccess.actions")}</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+            {/* Wide screens: one table ordered by grantee. */}
+            <div className="max-sm:hidden">
+              <Table aria-label={t("resourceAccess.assignments")}>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("resourceAccess.userOrGroup")}</TableHead>
+                    <TableHead>{t("resourceAccess.directRole")}</TableHead>
+                    <TableHead>
+                      <span className="sr-only">{t("resourceAccess.actions")}</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visibleRows.map((row) => (
+                    <TableRow key={row.key} className={cn(row.status === "removed" && "opacity-60")}>
+                      <TableCell className="align-middle">
+                        <GranteeIdentity row={row} stagedLabel={stagedLabelFor(row)} />
+                      </TableCell>
+                      <TableCell className="align-middle">{roleMenuFor(row)}</TableCell>
+                      <TableCell className="align-middle text-right">{actionsFor(row)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Narrow screens: the same rows as cards, identity then controls, no horizontal scrolling. */}
+            <ul aria-label={t("resourceAccess.assignments")} className="space-y-2 sm:hidden">
               {visibleRows.map((row) => (
-                <TableRow key={row.key} className={cn(row.status === "removed" && "opacity-60")}>
-                  <TableCell className="align-middle">
-                    <GranteeIdentity row={row} stagedLabel={stagedLabelFor(row)} />
-                  </TableCell>
-                  <TableCell className="align-middle">{roleMenuFor(row)}</TableCell>
-                  <TableCell className="align-middle text-right">{actionsFor(row)}</TableCell>
-                </TableRow>
+                <li key={row.key} className={cn("rounded-sm border p-3", row.status === "removed" && "opacity-60")}>
+                  <GranteeIdentity row={row} stagedLabel={stagedLabelFor(row)} />
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {roleMenuFor(row)}
+                    {actionsFor(row)}
+                  </div>
+                </li>
               ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Narrow screens: the same rows as cards, identity then controls, no horizontal scrolling. */}
-        <ul aria-label={t("resourceAccess.assignments")} className="space-y-2 sm:hidden">
-          {visibleRows.map((row) => (
-            <li key={row.key} className={cn("rounded-sm border p-3", row.status === "removed" && "opacity-60")}>
-              <GranteeIdentity row={row} stagedLabel={stagedLabelFor(row)} />
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                {roleMenuFor(row)}
-                {actionsFor(row)}
-              </div>
-            </li>
-          ))}
-        </ul>
+            </ul>
+          </>
+        ) : null}
 
         {invariantBroken ? (
           <Alert variant="destructive" className="rounded-sm">

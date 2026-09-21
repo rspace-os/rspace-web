@@ -46,6 +46,92 @@ afterEach(() => {
 });
 
 describe("Calendar page", () => {
+  test("preserves item and event scopes across Calendar layouts", async () => {
+    const params = new URLSearchParams({
+      date: "2026-08-17",
+      "calendar-resources.where": "target==IN123",
+      "calendar-events.where": 'purpose=="Cell imaging"',
+    });
+    history.replace(`/booking/calendar?${params}`);
+    render(<CalendarPageStory history={history} />);
+    await expect.element(calendar.resourceSchedule).toBeVisible();
+    for (const layout of [calendar.timeGridLayout, calendar.agenda, calendar.resources]) {
+      await layout.click();
+      await expect.element(layout).toHaveAttribute("aria-pressed", "true");
+    }
+    await expect
+      .poll(() =>
+        bookingPageRequests.calendarBookingRequests.some(
+          (url) =>
+            url.searchParams.get("where")?.includes("purpose==") &&
+            url.searchParams.get("where")?.includes("target==IN123"),
+        ),
+      )
+      .toBe(true);
+    expect(bookingPageRequests.collectionQueries.some((query) => query.includes("eventWhere=purpose=="))).toBe(true);
+    expect(new URLSearchParams(history.location.search).get("calendar-resources.where")).toBe("target==IN123");
+    await expect.element(page.getByRole("button", { name: "Bookable items, 1 applied" })).toBeVisible();
+    await expect.element(calendar.filters).toHaveAccessibleName("Booking events, 1 applied");
+  });
+
+  test("hides cached events and blocks requests for an unavailable saved item field", async () => {
+    render(<CalendarPageStory history={history} />);
+    await calendar.agenda.click();
+    await expect.element(calendar.event("Confocal microscope")).toBeVisible();
+    const count = bookingPageRequests.calendarBookingRequests.length;
+    worker.use(
+      http.get("/api/v2/instruments/fields/customFields", () => HttpResponse.json({ fields: [], hasMore: false })),
+    );
+    history.push("/booking/calendar?date=2026-08-17&calendar-resources.where=target.customFields.SF999%3D%3Dx");
+    await expect.element(page.getByRole("alert")).toHaveTextContent("target.customFields.SF999==x");
+    await expect.element(calendar.event("Confocal microscope")).not.toBeInTheDocument();
+    expect(bookingPageRequests.calendarBookingRequests).toHaveLength(count);
+    await page.getByRole("button", { name: "Reset saved view" }).click();
+    await expect.element(calendar.event("Confocal microscope")).toBeVisible();
+  });
+
+  test("keeps controls available to narrow a Calendar capacity failure", async () => {
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", ({ request }) => {
+        const q = new URL(request.url).searchParams.get("q");
+        return HttpResponse.json(
+          collectionResponse(q ? [ownBooking] : [], { totalDocs: q ? 1 : 1001, totalPages: q ? 1 : 11 }),
+        );
+      }),
+    );
+    render(<CalendarPageStory history={history} />);
+    await calendar.agenda.click();
+    await expect.element(page.getByRole("alert")).toHaveTextContent("Booking events are unavailable.");
+    await calendar.search.fill("Cell imaging");
+    await expect.element(calendar.event("Confocal microscope")).toBeVisible();
+    await expect.element(page.getByRole("alert")).not.toBeInTheDocument();
+  });
+
+  test("uses hidden bookings when proposing a free resource slot", async () => {
+    history.replace("/booking/calendar?date=2026-08-17&calendar-events.where=purpose%3D%3D%22Cell%20imaging%22");
+    const hidden = {
+      ...ownBooking,
+      id: 999,
+      purpose: "Hidden booking",
+      start: "2026-08-17T06:00:00Z",
+      end: "2026-08-17T07:00:00Z",
+    };
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", ({ request }) =>
+        HttpResponse.json(
+          collectionResponse(
+            new URL(request.url).searchParams.get("where")?.includes("purpose==") ? [ownBooking] : [hidden, ownBooking],
+          ),
+        ),
+      ),
+    );
+    render(<CalendarPageStory history={history} />);
+    const add = page.getByRole("button", { name: "Add booking for Confocal microscope", exact: true });
+    await expect.element(add).toBeEnabled();
+    await add.click();
+    await expect.element(calendar.bookingDialog.getByLabelText("Start time")).toHaveValue("09:00");
+  });
+
   test("fills each resource row with its timeline and places locations below IDs", async () => {
     render(<CalendarPageStory history={history} />);
     await expect
@@ -149,16 +235,15 @@ describe("Calendar page", () => {
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
     await page.getByRole("textbox", { name: "Value for filter 1" }).fill("no matching purpose");
     await page.getByRole("button", { name: "Apply filters" }).click();
-    await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
-    const requestsBeforeWeek = bookingPageRequests.calendarBookingRequests.length;
+    await expect.element(calendar.filters).toHaveAccessibleName("Booking events, 1 applied");
     await calendar.week.click();
-    await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBeGreaterThan(requestsBeforeWeek);
+    await expect.element(calendar.week).toHaveAttribute("aria-pressed", "true");
     const requestsBeforeReset = bookingPageRequests.calendarBookingRequests.length;
     await calendar.reset.click();
     await expect.element(calendar.search).toHaveValue("");
     await expect.element(calendar.mine).toHaveAttribute("aria-pressed", "false");
     await expect.element(calendar.day).toHaveAttribute("aria-pressed", "true");
-    await expect.element(calendar.filters).toHaveAccessibleName("Filters, none applied");
+    await expect.element(calendar.filters).toHaveAccessibleName("Booking events");
     await expect.element(calendar.reset).not.toBeInTheDocument();
     expect(new URLSearchParams(history.location.search).has("calendar-resources.q")).toBe(false);
     await expect
@@ -223,7 +308,7 @@ describe("Calendar page", () => {
       const resources = Promise.withResolvers<void>();
       const events = Promise.withResolvers<void>();
       worker.use(
-        http.get("/api/v2/booking-catalogue", async () => {
+        http.get("/api/v2/booking-catalogue/calendar", async () => {
           await resources.promise;
           return HttpResponse.json({
             items: bookableItemFixtures.slice(0, 4).map((item) => ({
@@ -240,7 +325,7 @@ describe("Calendar page", () => {
             facets: { types: ["INSTRUMENT"] },
           });
         }),
-        http.get("/api/v2/bookings", async () => {
+        http.get("/api/v2/booking-calendar/events", async () => {
           await events.promise;
           return HttpResponse.json(collectionResponse([]));
         }),
@@ -285,7 +370,7 @@ describe("Calendar page", () => {
       const originalViewport = { width: window.innerWidth, height: window.innerHeight };
       const response = Promise.withResolvers<void>();
       worker.use(
-        http.get("/api/v2/bookings", async () => {
+        http.get("/api/v2/booking-calendar/events", async () => {
           await response.promise;
           return HttpResponse.json(collectionResponse([ownBooking]));
         }),
@@ -318,7 +403,7 @@ describe("Calendar page", () => {
     const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     const response = Promise.withResolvers<void>();
     worker.use(
-      http.get("/api/v2/bookings", async () => {
+      http.get("/api/v2/booking-calendar/events", async () => {
         await response.promise;
         return HttpResponse.json(collectionResponse([ownBooking]));
       }),
@@ -597,7 +682,7 @@ describe("Calendar page", () => {
     await expect.element(calendar.viewItemDetails).not.toBeInTheDocument();
     await expect.element(calendar.editBooking).not.toBeInTheDocument();
 
-    await calendar.searchFor("Grace");
+    await calendar.searchFor("Cryo-grid");
     await expect.element(calendar.event("Confocal microscope")).not.toBeInTheDocument();
     await expect.element(calendar.event("Electron microscope")).toBeVisible();
     await page.getByRole("button", { name: "Clear search" }).click();
@@ -605,7 +690,7 @@ describe("Calendar page", () => {
     await calendar.resources.click();
     await expect.element(calendar.resourceSchedule).toBeVisible();
     await calendar.day.click();
-    await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(3);
+    await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(4);
     expect(
       bookingPageRequests.calendarBookingRequests.some((request) =>
         request.searchParams.get("where")?.includes("target=in=(IN123,IN124,IN125,IN126,IN127)"),
@@ -620,7 +705,7 @@ describe("Calendar page", () => {
     await calendar.agenda.click();
     await expect.element(calendar.bookingAgenda).toBeVisible();
     await calendar.month.click();
-    await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(5);
+    await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(7);
     await expectNoAxeViolations();
   });
 
@@ -723,7 +808,7 @@ describe("Calendar page", () => {
 
   test("disables resource-row creation when no free window exists", async () => {
     worker.use(
-      http.get("/api/v2/bookings", ({ request }) => {
+      http.get("/api/v2/booking-calendar/events", ({ request }) => {
         if (new URL(request.url).searchParams.get("fields[bookings]") !== calendarBookingFields) return undefined;
         return HttpResponse.json(
           collectionResponse([

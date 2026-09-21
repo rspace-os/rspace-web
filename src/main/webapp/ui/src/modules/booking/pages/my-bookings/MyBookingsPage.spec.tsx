@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import type { Locator } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
-import { currentUser } from "../calendar/__tests__/calendarTestHarness";
+import { currentUser } from "../calendar/calendarFixtures";
 import { MyBookingsPageStory, myBookingsStoryUrl } from "./MyBookingsPage.story";
-import { bookingHandlers, upcomingBooking } from "./mocks/bookingMocks";
+import { bookingHandlers, roleLostBooking, upcomingBooking } from "./mocks/bookingMocks";
 import { MyBookingsPageObject } from "./pageObjects/MyBookingsPage";
 
 const pageObj = new MyBookingsPageObject();
@@ -42,6 +42,18 @@ afterEach(() => {
 });
 
 describe("the My Bookings page", () => {
+  test("keeps an inaccessible booking visible without item links or edit actions", async () => {
+    worker.use(...bookingHandlers(undefined, undefined, [roleLostBooking]));
+    render(<MyBookingsPageStory history={history} />);
+
+    await expect.element(pageObj.unknownItem).toBeVisible();
+    await expect.element(pageObj.roleLossNotice).toBeVisible();
+    await expect.element(pageObj.confocalItemCalendar).not.toBeInTheDocument();
+    await expect.element(pageObj.confocalEdit).not.toBeInTheDocument();
+    await expect.element(pageObj.confocalCancel).not.toBeInTheDocument();
+    await expect.element(pageObj.confocalDetails).toBeVisible();
+  });
+
   test("shows a tooltip for every icon-only page control", async () => {
     render(<MyBookingsPageStory history={history} />);
 
@@ -57,6 +69,33 @@ describe("the My Bookings page", () => {
       await control.hover();
       await expect.element(pageObj.tooltip(label)).toBeVisible();
     }
+  });
+
+  test("uses the same appearance for every booking action", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    const controls = [
+      pageObj.confocalDetails,
+      pageObj.confocalItemCalendar,
+      pageObj.confocalEdit,
+      pageObj.confocalCalendarFile,
+      pageObj.confocalCancel,
+    ];
+    await expect.element(controls[0]).toBeVisible();
+    const styles = controls.map((control) => {
+      const element = control.element();
+      expect(element).toHaveClass("border-border", "bg-background");
+      const style = getComputedStyle(element);
+      return {
+        border: style.border,
+        borderRadius: style.borderRadius,
+        color: style.color,
+        height: style.height,
+        width: style.width,
+      };
+    });
+
+    expect(styles).toEqual(controls.map(() => styles[0]));
   });
 
   test("shows the upcoming count inside its period button", async () => {

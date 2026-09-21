@@ -13,7 +13,7 @@ import { InlineBookingEditor } from "./InlineBookingEditor";
 const ACTION_COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3"];
 
 export function isEditableBooking(event: BookingListDocument): event is BookingListDocument & EditableBooking {
-  return event.privacy === "full" && event.canEdit && event.state === "CONFIRMED";
+  return event.privacy === "full" && event.canEdit && event.state === "CONFIRMED" && event.target !== null;
 }
 
 export function BookingActions({
@@ -26,6 +26,7 @@ export function BookingActions({
   timelineDate?: string;
 }) {
   const { t } = useTranslation("booking");
+  const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const [editing, setEditing] = React.useState(false);
   const editable = isEditableBooking(event);
@@ -41,7 +42,7 @@ export function BookingActions({
     );
   }
   // The same pair of conditions the download endpoint itself enforces, so the action never 404s.
-  const canDownload = event.canViewConfiguration && event.state === "CONFIRMED";
+  const canDownload = event.canViewConfiguration && event.target !== null && event.state === "CONFIRMED";
   const canViewDetails = event.privacy === "full";
   const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0) + (canDownload ? 1 : 0);
   if (actionCount === 0) return null;
@@ -74,7 +75,7 @@ export function BookingActions({
       {canDownload ? (
         <BookingCalendarFileButton
           bookingId={event.id}
-          itemName={event.target.value.name}
+          itemName={event.target?.value.name ?? commonT("values.unknownItem")}
           period={formatAgendaPeriod(event.start, event.end, timezone)}
           token={token}
           size="xs"

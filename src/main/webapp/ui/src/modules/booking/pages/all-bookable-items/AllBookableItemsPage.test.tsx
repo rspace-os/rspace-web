@@ -20,7 +20,13 @@ import { server } from "@/__tests__/mswServer";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
-import { bookableItemFixtures, bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
+import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
+import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
+import {
+  bookableItemFixtures,
+  bookableItemsHandlers,
+  bookableItemsOpenApi,
+} from "../bookable-items/mocks/bookableItemsMocks";
 import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
 import AllBookableItemsPage from "./AllBookableItemsPage";
 import { createAllBookableItemsRoute } from "./routes";
@@ -31,9 +37,34 @@ function collectionPage(docs: readonly unknown[]) {
   return { docs, totalDocs: docs.length, totalPages: docs.length === 0 ? 0 : 1, page: 1 };
 }
 
+function candidatePage(docs: readonly Omit<BookingConfiguration, "roleSources">[]) {
+  return {
+    items: docs.map((doc) => ({
+      ...doc,
+      configurationId: doc.id,
+      targetType: "INSTRUMENT",
+      targetId: doc.target?.value.id,
+      globalId: doc.target?.globalId,
+      name: doc.target?.value.name,
+      location: null,
+    })),
+    page: 1,
+    pageSize: 100,
+    total: docs.length,
+    facets: { types: ["INSTRUMENT"] },
+  };
+}
+
+function candidateHandler(resolver: Parameters<typeof http.get>[1]) {
+  return http.get("/api/v2/booking-catalogue", (info) =>
+    new URL(info.request.url).searchParams.get("limit") === "100" ? resolver(info) : undefined,
+  );
+}
+
 async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
+  queryClient.setQueryData(currentUserQueryKeys.me(), { id: 1 });
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
   const router = createRouter({
@@ -63,6 +94,20 @@ async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
 }
 
 describe("AllBookableItemsPage", () => {
+  it("shares today's booking request between availability counts and bars", async () => {
+    const bookings = vi.fn(() => HttpResponse.json({ ...collectionPage([]), hasNextPage: false }));
+    server.use(
+      candidateHandler(() => HttpResponse.json(candidatePage(bookableItemFixtures))),
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/bookings", bookings),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    await renderPage();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent(/\d/));
+    await screen.findAllByRole("link", { name: "Book" });
+    expect(bookings).toHaveBeenCalledTimes(1);
+  });
+
   it("retains every advanced rule through apply, quick-filter changes, and date navigation", async () => {
     const user = userEvent.setup();
     const original = "id=ge=7;id=le=7;target==IN123;target==IN123";
@@ -84,6 +129,57 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(router.state.location.search.where).toBe(original));
   });
 
+  it("hydrates runtime property filters before parsing and querying the catalogue", async () => {
+    const user = userEvent.setup();
+    const original = "target.customFields.SF152==BSL-2";
+    const requests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json({
+          items: [],
+          page: 1,
+          pageSize: 20,
+          total: 0,
+          facets: { types: ["INSTRUMENT"] },
+        });
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    await renderPage(`/booking/all-items?where=${encodeURIComponent(original)}`);
+
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("where")).toBe(original));
+    await user.click(await screen.findByRole("button", { name: /^Filters/ }));
+    expect(
+      await screen.findByRole("combobox", { name: "Search Bookable item custom fields for filter 1" }),
+    ).toHaveValue("Bookable item → Hazard class");
+  });
+
+  it("blocks the catalogue and preserves an unavailable runtime filter for explicit removal", async () => {
+    const original = "target.customFields.SF999==missing";
+    const requests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0, facets: { types: ["INSTRUMENT"] } });
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    const { router } = await renderPage(`/booking/all-items?where=${encodeURIComponent(original)}&q=scope`);
+
+    const issue = await screen.findByRole("alert");
+    expect(issue).toHaveTextContent("invalid or unavailable field");
+    expect(issue).toHaveTextContent(original);
+    expect(requests).toHaveLength(0);
+    await userEvent.click(screen.getByRole("button", { name: "Reset saved view" }));
+    await waitFor(() => expect(router.state.location.search.where).toBeUndefined());
+    expect(router.state.location.search.q).toBe("scope");
+  });
+
   it.each([
     "availability=available-now&pageSize=50",
     "types=NOTATYPE&pageSize=50",
@@ -92,7 +188,7 @@ describe("AllBookableItemsPage", () => {
     const user = userEvent.setup();
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))),
+      candidateHandler(() => HttpResponse.json(candidatePage([]))),
       ...bookableItemsHandlers(() => undefined),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
     );
@@ -113,7 +209,8 @@ describe("AllBookableItemsPage", () => {
     const requests: URL[] = [];
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))),
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
+      candidateHandler(() => HttpResponse.json(candidatePage([]))),
       http.get("/api/v2/booking-catalogue", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
@@ -125,6 +222,7 @@ describe("AllBookableItemsPage", () => {
           facets: { types: ["INSTRUMENT"] },
         });
       }),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
     );
     const { router } = await renderPage("/booking/all-items?types=INSTRUMENT");
     const size = await screen.findByRole("combobox", { name: "Rows per page" });
@@ -146,7 +244,7 @@ describe("AllBookableItemsPage", () => {
       openingEnd: "24:00",
     }));
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage(candidates))),
+      candidateHandler(() => HttpResponse.json(candidatePage(candidates))),
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       ...bookableItemsHandlers(() => undefined),
       http.get("/api/v2/bookings", () =>
@@ -197,9 +295,9 @@ describe("AllBookableItemsPage", () => {
         release = resolve;
       });
       server.use(
-        http.get("/api/v2/booking-configurations", async () => {
+        candidateHandler(async () => {
           await pending;
-          return HttpResponse.json(collectionPage(bookableItemFixtures));
+          return HttpResponse.json(candidatePage(bookableItemFixtures));
         }),
         http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
         ...bookableItemsHandlers(() => undefined),
@@ -226,17 +324,14 @@ describe("AllBookableItemsPage", () => {
   it("retries a failed index and hides catalogue rows that do not match", async () => {
     let candidateRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", ({ request }) => {
+      candidateHandler(({ request }) => {
         const url = new URL(request.url);
-        if (
-          decodeURIComponent(url.searchParams.get("where") ?? "") ===
-          "enabled==true;state==ACTIVE;target.deleted==false"
-        ) {
+        if (!url.searchParams.get("where")) {
           candidateRequests += 1;
           if (candidateRequests <= 4) return new HttpResponse(null, { status: 500 });
-          return HttpResponse.json(collectionPage(bookableItemFixtures));
+          return HttpResponse.json(candidatePage(bookableItemFixtures));
         }
-        return HttpResponse.json(collectionPage([]));
+        return HttpResponse.json(candidatePage([]));
       }),
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       ...bookableItemsHandlers(() => undefined),

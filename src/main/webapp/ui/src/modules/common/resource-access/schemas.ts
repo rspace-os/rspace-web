@@ -42,6 +42,8 @@ export const ResourceAccessDocumentSchema = v.object({
   scheme: v.string(),
   version: v.number(),
   assignments: v.array(ResourceAccessAssignmentSchema),
+  /** Inherited resources expose a derived projection and cannot be edited here. */
+  inherited: v.optional(v.boolean(), false),
   caller: v.object({
     effectiveRole: v.optional(v.nullable(v.string())),
     roleSources: v.optional(v.array(RoleSourceSchema), []),

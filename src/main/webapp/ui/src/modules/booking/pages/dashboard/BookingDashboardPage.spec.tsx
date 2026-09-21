@@ -204,7 +204,7 @@ describe("Booking dashboard", () => {
     await page.viewport(320, 800);
     registerHandlers({
       docs: dashboardBookings.map((booking) =>
-        booking.id >= 200 && booking.id < 205
+        booking.id >= 200 && booking.id < 205 && booking.target
           ? {
               ...booking,
               target: {

@@ -54,7 +54,8 @@ describe("Booking display preferences", () => {
     await preferences.custom.click();
     await preferences.customTimezone.fill("America/New_York");
     await preferences.save.click();
-    await expect.element(preferences.saved).toBeVisible();
+    await expect.element(preferences.saved).toHaveClass("bg-emerald-600");
+    await expect.element(preferences.saved).toBeDisabled();
     expect(stored).toMatchObject({
       availabilityWindowStart: "09:00",
       availabilityWindowEnd: "17:00",

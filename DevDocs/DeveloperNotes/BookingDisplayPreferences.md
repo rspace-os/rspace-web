@@ -31,6 +31,11 @@ React state update. Hour labels and day bounds are cached by date and timezone.
 Availability quick-filter counts load even when no filter is selected. They use today's preferred
 display interval: before it starts, an item with a free segment is “Free later today”; at or after
 its end, it matches neither filter. Loading these counts does not block the unfiltered catalogue.
+Candidate discovery uses the catalogue's Search, type and item-property predicates before applying
+the 1,000-item availability limit. Local availability comparisons become logical true when deriving
+that candidate predicate, preserving AND/OR grouping. Counts therefore describe the current item
+scope. Today's availability bars reuse the same booking intervals; other dates load their own
+intervals. Both event and availability caches are scoped to the caller.
 
 The preferences editor derives its initial input from the query cache. Once a user edits a field,
 it keeps that local draft across background refetches. Successful Save or Reset clears the draft
@@ -93,10 +98,23 @@ to target-ID predicates before the request. `/api/v2/booking-catalogue?where=...
 with the shared collection parser and intersects them with visibility and active-item constraints
 before database pagination. Do not fetch all catalogue pages to filter them in the browser.
 
-Calendar date and display controls share the outer TableList toolbar with event
-filters. Its Reset clears the date URL parameter, restoring today in the display
-timezone, and restores Day, Resources, and My calendar off. Layout and period
-remain local React state. The separate resource search retains its own state.
+Calendar has one Search input and separate Bookable items and Booking events filter groups.
+The groups combine with AND; each group retains its own nested AND/OR expression.
+Item identity uses `target` (for example `IN703`), never configuration or booking IDs.
+Search matches item name, exact inventory ID, readable inventory description, or visible
+booking purpose. Event filters require one visible event in the selected interval to match
+the entire event expression. Without event filters, item text can retain an empty resource row.
+The same scope applies to Resources, Grid and Agenda; availability and conflict checks keep
+their independent complete scope. Resource-row slot proposals use a separate event query
+without Search or event predicates when those filters are active; otherwise the query cache
+is shared with displayed events. An availability failure disables row creation and offers retry
+while filtered display results remain available.
+
+Calendar Reset clears the date URL parameter, restoring today in the display timezone,
+clears both filter groups and Search, and restores Day, Resources, and My calendar off.
+Layout and period remain local React state. Item filters and Search use
+`calendar-resources.where` and `calendar-resources.q`;
+event filters use `calendar-events.where`.
 The page coordinates date navigation and display-state reset, pausing event
 fetching until they settle to avoid requests for an intermediate date/period.
 
@@ -124,3 +142,11 @@ GET responses as the item's scheduling timezone, but create, patch, and bulk req
 it receive the collection framework's normal `400 Bad Request` response. Public creates assign the
 JVM-backed institution timezone. This is an immediate breaking change; internal Java manager
 commands retain their timezone fields for fixtures and other trusted scheduling workflows.
+
+## Item filters on the dashboard
+
+The dashboard's Bookable items controls scope both Upcoming bookings and the monthly
+summary. `dashboard.where` stores the expression in the URL. Predicates reach the server
+before the five-row upcoming limit and the 1,000-event monthly limit. Both widgets wait
+while saved custom-field definitions load. Missing or invalid definitions retain the saved
+expression and require an explicit reset; a failed definition request offers retry.

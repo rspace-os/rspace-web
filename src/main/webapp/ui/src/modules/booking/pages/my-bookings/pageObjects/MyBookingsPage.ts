@@ -52,8 +52,14 @@ export class MyBookingsPageObject {
     return page.getByRole("tooltip", { name, exact: true });
   }
 
+  get unknownItem(): Locator {
+    return page.getByRole("article", { name: "Unknown item", exact: true }).getByText("Unknown item", { exact: true });
+  }
+
   get roleLossNotice(): Locator {
-    return page.getByText("Read-only: you no longer have access to this item.");
+    return page
+      .getByRole("article", { name: "Unknown item", exact: true })
+      .getByText("Read-only: you no longer have access to this item.");
   }
 
   get reset(): Locator {

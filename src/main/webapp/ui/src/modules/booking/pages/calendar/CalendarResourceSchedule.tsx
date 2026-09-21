@@ -64,6 +64,7 @@ export function CalendarResourceSchedule({
   date,
   view,
   events,
+  blockingEvents = events,
   resources,
   timezone,
   today,
@@ -71,13 +72,13 @@ export function CalendarResourceSchedule({
   availabilityEndMinute,
   resourceConfigurations,
   creationDisabled,
-  includeEventResources = false,
   onResourceRangeSelect,
   isLoading = false,
 }: {
   date: string;
   view: CalendarView;
   events: readonly BookingListDocument[];
+  blockingEvents?: readonly BookingListDocument[];
   resources?: readonly BookingCalendarResource[];
   timezone: string;
   today: string;
@@ -85,7 +86,6 @@ export function CalendarResourceSchedule({
   availabilityEndMinute: number;
   resourceConfigurations?: readonly BookableItemOption[];
   creationDisabled: boolean;
-  includeEventResources?: boolean;
   isLoading?: boolean;
   onResourceRangeSelect?: (
     resource: BookableItemOption,
@@ -103,6 +103,7 @@ export function CalendarResourceSchedule({
   const eventsByResourceAndDate = React.useMemo(() => {
     const index = new Map<string, BookingListDocument[]>();
     for (const event of events) {
+      if (!event.target) continue;
       for (const day of dates) {
         if (!occursOn(event, day, timezone)) continue;
         const key = `${event.target.globalId}|${day}`;
@@ -119,13 +120,13 @@ export function CalendarResourceSchedule({
     () =>
       [
         ...new Map(
-          (includeEventResources
-            ? [...(resources ?? []), ...events.map((event) => event.target)]
-            : (resources ?? events.map((event) => event.target))
-          ).map((resource) => [resource.globalId, resource]),
+          (resources ?? events.flatMap((event) => (event.target ? [event.target] : []))).map((resource) => [
+            resource.globalId,
+            resource,
+          ]),
         ).values(),
       ].toSorted((left, right) => left.value.name.localeCompare(right.value.name)),
-    [events, includeEventResources, resources],
+    [events, resources],
   );
   const configurationByTarget = React.useMemo(
     () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
@@ -178,7 +179,7 @@ export function CalendarResourceSchedule({
               const canCreateBooking = configuration?.capabilities?.canCreateBooking === true;
               const proposedRange = configuration
                 ? nextFreeRange(
-                    resourceEvents,
+                    blockingEvents.filter((event) => event.target?.globalId === resource.globalId),
                     date,
                     timezone,
                     availabilityStartMinute,

@@ -582,7 +582,8 @@
       "itemSummary": "{0} - {1}",
       "maintenance": "Maintenance",
       "myBookings": "My RSpace bookings",
-      "purpose": "Purpose: {0}"
+      "purpose": "Purpose: {0}",
+      "unknownItem": "Unknown item"
     },
     "fields": {
       "bookedBy": "Booked by",
@@ -605,6 +606,12 @@
       "failed": "The calendar file for {item}, {period} could not be downloaded. Nothing was saved; try again.",
       "label": ".ics file",
       "preparing": "Preparing the calendar file for {item}, {period}."
+    },
+    "filterGroups": {
+      "applied": "{group}, {count} applied",
+      "events": "Booking events",
+      "items": "Bookable items",
+      "legend": "Calendar filters"
     },
     "grid": "Calendar grid",
     "item": "Bookable item",
@@ -634,6 +641,7 @@
     },
     "resourceSchedule": "Resource booking schedule",
     "retry": "Retry",
+    "rowAvailabilityUnavailable": "Availability could not be checked. Retry before adding a booking from a resource row.",
     "title": "Calendar",
     "today": "Today",
     "toolbar": "Calendar controls",
@@ -838,12 +846,13 @@
   "preferences": {
     "actions": {
       "reset": "Reset to global defaults",
-      "save": "Save"
+      "save": "Save",
+      "saved": "Saved"
     },
     "availabilityWindow": {
       "description": "The times shown on each day's availability bars and timelines.",
       "end": "End time",
-      "endOfDay": "End of day (24:00)",
+      "endOfDay": "00:00 means midnight at the end of the day.",
       "legend": "Default availability window",
       "start": "Start time"
     },
@@ -954,7 +963,6 @@
     "addBooking": "Add Booking",
     "administration": "Administration",
     "allItems": "All items",
-    "approvalQueue": "Approval Queue",
     "bookableItems": "Bookable Items",
     "calendar": "Calendar",
     "dashboard": "Dashboard",

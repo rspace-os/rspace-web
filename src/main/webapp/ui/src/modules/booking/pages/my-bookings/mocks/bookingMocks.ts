@@ -1,4 +1,5 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
+import { bookableItemsOpenApi } from "../../bookable-items/mocks/bookableItemsMocks";
 
 export const bookingsOpenApi = {
   paths: {
@@ -22,6 +23,16 @@ export const bookingsOpenApi = {
               maximumNesting: 10,
               maximumArguments: 1000,
               selectors: {
+                target: {
+                  schema: { type: "string" },
+                  operators: ["==", "!=", "=in=", "=out=", "=exists="],
+                  wildcards: false,
+                },
+                purpose: {
+                  schema: { type: "string" },
+                  operators: ["==", "!=", "=contains=", "=like=", "=exists="],
+                  wildcards: true,
+                },
                 id: { schema: { type: "integer" }, operators: ["==", "!=", "=in="], wildcards: false },
                 requesterId: {
                   schema: { type: "integer" },
@@ -56,6 +67,9 @@ export const bookingsOpenApi = {
                 },
               },
             },
+            "x-rspace-runtime-fields": bookableItemsOpenApi.paths["/api/v2/booking-configurations"].get.parameters.find(
+              (parameter) => parameter.name === "where",
+            )?.["x-rspace-runtime-fields"],
             "x-rspace-relationship-fields": {
               "target.name": {
                 schema: { type: "string" },
@@ -145,6 +159,8 @@ export const pastBooking = {
 export const roleLostBooking = {
   ...upcomingBooking,
   id: 43,
+  target: null,
+  timezone: null,
   canViewConfiguration: false,
   canEdit: false,
   canCancel: false,

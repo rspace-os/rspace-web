@@ -5,6 +5,7 @@ export class BookingPermissionsPage extends BasePage {
   readonly path = "/booking/bookable-items";
 
   readonly accessTab: Locator;
+  readonly accessPanel: Locator;
   /** The wide-screen presentation. A narrow viewport shows the same rows as cards instead. */
   readonly assignments: Locator;
   readonly addUserOrGroup: Locator;
@@ -14,6 +15,7 @@ export class BookingPermissionsPage extends BasePage {
   constructor(page: Page) {
     super(page);
     this.accessTab = page.getByRole("tab", { name: "Access" });
+    this.accessPanel = page.getByRole("tabpanel", { name: "Access" });
     this.assignments = page.getByRole("table", { name: "Access assignments" });
     this.addUserOrGroup = page.getByRole("combobox", { name: "Add user or group" });
     this.saveChanges = page.getByRole("button", { name: "Save changes" });
@@ -35,7 +37,7 @@ export class BookingPermissionsPage extends BasePage {
 
   async openAccess(): Promise<void> {
     await this.accessTab.click();
-    await this.assignments.waitFor();
+    await this.accessPanel.waitFor();
   }
 
   async addUser(username: string, displayName: string, role: string): Promise<void> {

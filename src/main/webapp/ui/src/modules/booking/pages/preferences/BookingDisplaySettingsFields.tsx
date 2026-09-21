@@ -5,7 +5,6 @@ import {
   type BookingTimezoneMode,
   bookingTimeZoneOptions,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 
@@ -25,6 +24,7 @@ export function BookingDisplaySettingsFields({
   const { t } = useTranslation("booking");
   const id = useId();
   const timezoneListId = `${id}-timezones`;
+  const endTimeDescriptionId = `${id}-end-description`;
   const timezoneOptions = useMemo(
     () => bookingTimeZoneOptions(browserTimezone, institutionTimezone, value.customTimezone),
     [browserTimezone, institutionTimezone, value.customTimezone],
@@ -52,19 +52,18 @@ export function BookingDisplaySettingsFields({
             <Input
               id={`${id}-end`}
               type="time"
-              required={value.availabilityWindowEnd !== "24:00"}
-              disabled={disabled || value.availabilityWindowEnd === "24:00"}
-              value={value.availabilityWindowEnd === "24:00" ? "" : value.availabilityWindowEnd}
-              onChange={(event) => patch({ availabilityWindowEnd: event.currentTarget.value })}
+              required
+              aria-describedby={endTimeDescriptionId}
+              value={value.availabilityWindowEnd === "24:00" ? "00:00" : value.availabilityWindowEnd}
+              onChange={(event) =>
+                patch({
+                  availabilityWindowEnd: event.currentTarget.value === "00:00" ? "24:00" : event.currentTarget.value,
+                })
+              }
             />
-            <Label className="flex items-center gap-2 font-normal">
-              <Checkbox
-                checked={value.availabilityWindowEnd === "24:00"}
-                disabled={disabled}
-                onCheckedChange={(checked) => patch({ availabilityWindowEnd: checked ? "24:00" : "18:00" })}
-              />
+            <p id={endTimeDescriptionId} className="text-sm text-muted-foreground">
               {t("preferences.availabilityWindow.endOfDay")}
-            </Label>
+            </p>
           </div>
         </div>
       </fieldset>

@@ -187,10 +187,8 @@ describe("booking layout", () => {
     );
     expect(screen.getAllByRole("main")).toHaveLength(1);
 
-    // i18next runs in cimode under vitest, so t() renders "<namespace>:<key>"
-    for (const key of ["administration", "approvalQueue"]) {
-      expect(await screen.findByRole("button", { name: `booking:sidebar.${key}` })).toBeInTheDocument();
-    }
+    expect(await screen.findByRole("button", { name: "booking:sidebar.administration" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "booking:sidebar.approvalQueue" })).not.toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "booking:sidebar.dashboard" })).toHaveAttribute("href", "/booking");
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.myBookings" })).toHaveAttribute(

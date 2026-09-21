@@ -154,8 +154,6 @@ describe("BookingSettingsPage", () => {
       availabilityWindowEnd: "18:00",
       timezoneMode: "BROWSER",
       customTimezone: null,
-      defaultSharedWith: "ALL_USERS",
-      selectedGranteeKeys: [],
       configurationVersion: 0,
     });
   });
