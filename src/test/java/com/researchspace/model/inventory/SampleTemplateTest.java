@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,7 +48,7 @@ public class SampleTemplateTest {
     assertEquals("IT" + template.getId(), template.getOid().toString());
     assertEquals("IT" + template.getId() + "v1", template.getOidWithVersion().toString());
     // default subsample exists after factory creation
-    assertEquals(1, template.getSubSamples().size());
+    assertThat(template.getSubSamples()).hasSize(1);
     assertEquals(1, template.getActiveSubSamplesCount());
     // default subsample alias
     assertEquals(SubSampleName.ALIQUOT.getDisplayName(), template.getSubSampleAlias());
@@ -86,13 +87,13 @@ public class SampleTemplateTest {
   @Test
   @DisplayName("Use OID to distinguish sample templates from samples")
   public void globalId() {
-    assertTrue(template.getGlobalIdentifier().startsWith("IT"));
+    assertThat(template.getGlobalIdentifier()).startsWith("IT");
     assertEquals(GlobalIdPrefix.IT, template.getOid().getPrefix());
 
     Sample sampleFromTemplate = template.copyFromTemplate(anyUser);
     sampleFromTemplate.setId(7L);
 
-    assertTrue(sampleFromTemplate.getGlobalIdentifier().startsWith("SA"));
+    assertThat(sampleFromTemplate.getGlobalIdentifier()).startsWith("SA");
     assertEquals(GlobalIdPrefix.SA, sampleFromTemplate.getOid().getPrefix());
   }
 
@@ -108,7 +109,7 @@ public class SampleTemplateTest {
     assertEquals(1L, copiedSample.getVersion());
     assertEquals(1, copiedSample.getSubSamples().get(0).getVersion());
     copiedSample.setId(7L);
-    assertTrue(copiedSample.getGlobalIdentifier().startsWith("SA"));
+    assertThat(copiedSample.getGlobalIdentifier()).startsWith("SA");
   }
 
   @Test
@@ -119,7 +120,7 @@ public class SampleTemplateTest {
     template.addSampleField(field);
 
     Sample copiedSample = template.copyFromTemplate(anyUser);
-    assertEquals(1, copiedSample.getActiveFields().size());
+    assertThat(copiedSample.getActiveFields()).hasSize(1);
     InventoryEntityField copiedField = copiedSample.getActiveFields().get(0);
     assertEquals("material", copiedField.getName());
     // template field link should point back to the original template field
@@ -134,7 +135,7 @@ public class SampleTemplateTest {
     assertTrue(copied.isTemplate());
     assertNull(copied.getGlobalIdentifier());
     assertEquals(template.getName() + "_COPY", copied.getName());
-    assertEquals(1, copied.getActiveFields().size());
+    assertThat(copied.getActiveFields()).hasSize(1);
     assertEquals("manufacturer", copied.getActiveFields().get(0).getName());
     assertEquals("Acme", copied.getActiveFields().get(0).getFieldData());
     // template copy is NOT linked to the original via sTemplate
@@ -156,24 +157,24 @@ public class SampleTemplateTest {
 
     // Template does NOT have the sample-specific fields "sample template", "storage temperature",
     // "total quantity", "subsamples" but DOES have template-specific ones
-    assertFalse(template.getReservedFieldNames().contains("sample template"));
-    assertFalse(template.getReservedFieldNames().contains("storage temperature"));
-    assertFalse(template.getReservedFieldNames().contains("total quantity"));
-    assertFalse(template.getReservedFieldNames().contains("subsamples"));
-    assertTrue(template.getReservedFieldNames().contains("subsample alias"));
-    assertTrue(template.getReservedFieldNames().contains("quantity units"));
-    assertTrue(template.getReservedFieldNames().contains("fields"));
-    assertTrue(template.getReservedFieldNames().contains("samples"));
+    assertThat(template.getReservedFieldNames()).doesNotContain("sample template");
+    assertThat(template.getReservedFieldNames()).doesNotContain("storage temperature");
+    assertThat(template.getReservedFieldNames()).doesNotContain("total quantity");
+    assertThat(template.getReservedFieldNames()).doesNotContain("subsamples");
+    assertThat(template.getReservedFieldNames()).contains("subsample alias");
+    assertThat(template.getReservedFieldNames()).contains("quantity units");
+    assertThat(template.getReservedFieldNames()).contains("fields");
+    assertThat(template.getReservedFieldNames()).contains("samples");
 
     // Plain Sample has the sample-specific fields but not the template-specific ones
-    assertTrue(plainSample.getReservedFieldNames().contains("sample template"));
-    assertTrue(plainSample.getReservedFieldNames().contains("storage temperature"));
-    assertTrue(plainSample.getReservedFieldNames().contains("total quantity"));
-    assertTrue(plainSample.getReservedFieldNames().contains("subsamples"));
-    assertFalse(plainSample.getReservedFieldNames().contains("subsample alias"));
-    assertFalse(plainSample.getReservedFieldNames().contains("quantity units"));
-    assertFalse(plainSample.getReservedFieldNames().contains("fields"));
-    assertFalse(plainSample.getReservedFieldNames().contains("samples"));
+    assertThat(plainSample.getReservedFieldNames()).contains("sample template");
+    assertThat(plainSample.getReservedFieldNames()).contains("storage temperature");
+    assertThat(plainSample.getReservedFieldNames()).contains("total quantity");
+    assertThat(plainSample.getReservedFieldNames()).contains("subsamples");
+    assertThat(plainSample.getReservedFieldNames()).doesNotContain("subsample alias");
+    assertThat(plainSample.getReservedFieldNames()).doesNotContain("quantity units");
+    assertThat(plainSample.getReservedFieldNames()).doesNotContain("fields");
+    assertThat(plainSample.getReservedFieldNames()).doesNotContain("samples");
   }
 
   @Test
@@ -196,10 +197,10 @@ public class SampleTemplateTest {
     template.getFiles().add(invFile);
     template.refreshActiveAttachedFiles();
 
-    assertEquals(1, template.getAttachedFiles().size());
+    assertThat(template.getAttachedFiles()).hasSize(1);
 
     SampleTemplate copied = template.copy(anyUser);
-    assertEquals(1, copied.getAttachedFiles().size(), "attachment should be carried to the copy");
+    assertThat(copied.getAttachedFiles()).as("attachment should be carried to the copy").hasSize(1);
   }
 
   @Test
@@ -209,13 +210,12 @@ public class SampleTemplateTest {
     Sample sample = TestFactory.createBasicSampleInContainer(anyUser);
     InventoryFile invFile = buildAttachment(anyUser);
     sample.addAttachedFile(invFile);
-    assertEquals(1, sample.getAttachedFiles().size());
+    assertThat(sample.getAttachedFiles()).hasSize(1);
 
     SampleTemplate derivedTemplate = sample.copyToTemplate(anyUser);
-    assertEquals(
-        1,
-        derivedTemplate.getAttachedFiles().size(),
-        "attachment from sample should be carried to the derived template");
+    assertThat(derivedTemplate.getAttachedFiles())
+        .as("attachment from sample should be carried to the derived template")
+        .hasSize(1);
   }
 
   // -- helpers --

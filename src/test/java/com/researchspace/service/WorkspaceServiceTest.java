@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -104,7 +105,7 @@ public class WorkspaceServiceTest {
             GRANDPARENT_ID,
             user);
 
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertTrue(results.get(0).isSucceeded());
     verify(recordManager).move(RECORD_ID, TARGET_FOLDER_ID, SOURCE_FOLDER_ID, user);
     verify(auditService).notify(any());
@@ -123,7 +124,7 @@ public class WorkspaceServiceTest {
     var results =
         service.moveRecords(List.of(RECORD_ID), "/", SOURCE_FOLDER_ID, GRANDPARENT_ID, user);
 
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertTrue(results.get(0).isSucceeded());
     verify(recordManager).move(RECORD_ID, root.getId(), SOURCE_FOLDER_ID, user);
     verify(auditService).notify(any());
@@ -140,7 +141,7 @@ public class WorkspaceServiceTest {
         service.moveRecords(
             List.of(RECORD_ID), TARGET_FOLDER_ID + "/", SOURCE_FOLDER_ID, GRANDPARENT_ID, user);
 
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertTrue(results.get(0).isSucceeded());
     verify(recordManager).move(RECORD_ID, TARGET_FOLDER_ID, SOURCE_FOLDER_ID, user);
     verify(auditService).notify(any());
@@ -185,7 +186,7 @@ public class WorkspaceServiceTest {
             GRANDPARENT_ID,
             user);
 
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertFalse(results.get(0).isSucceeded());
     verify(auditService, never()).notify(any());
   }

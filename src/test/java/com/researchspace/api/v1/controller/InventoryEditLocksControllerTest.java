@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -108,8 +109,8 @@ public class InventoryEditLocksControllerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> locksController.unlockItemAfterEdit(testSampleGlobalId, otherUser));
-    assertTrue(
-        iae.getMessage().startsWith("Cannot unlock, as current lock belongs to another user"));
+    assertThat(iae.getMessage())
+        .startsWith("Cannot unlock, as current lock belongs to another user");
     assertEquals(testUser.getUsername(), tracker.getLockOwnerForItem(testSampleGlobalId));
 
     // original lock creator can still unlock, even though no longer has permission to the item

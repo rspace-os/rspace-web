@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
@@ -51,7 +51,7 @@ class InventoryLinkManagerImplReferencingTest {
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SD, 123L))
         .thenReturn(Collections.emptyList());
 
-    assertTrue(manager.findReferencingItems("SD123", actor).isEmpty());
+    assertThat(manager.findReferencingItems("SD123", actor)).isEmpty();
 
     verify(linkDao).findReferencingLinkFields(GlobalIdPrefix.SD, 123L);
   }
@@ -71,7 +71,7 @@ class InventoryLinkManagerImplReferencingTest {
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SA, 42L))
         .thenReturn(Collections.emptyList());
 
-    assertEquals(0, manager.findReferencingItems("SA42", actor).size());
+    assertThat(manager.findReferencingItems("SA42", actor)).isEmpty();
 
     verify(linkDao).findReferencingLinkFields(GlobalIdPrefix.SA, 42L);
   }
@@ -122,7 +122,7 @@ class InventoryLinkManagerImplReferencingTest {
 
     List<ApiInventoryReferencingItem> rows = manager.findReferencingItems("SD123", actor);
 
-    assertEquals(1, rows.size());
+    assertThat(rows).hasSize(1);
     ApiInventoryReferencingItem row = rows.get(0);
     assertEquals("SA10", row.getSourceGlobalId());
     assertEquals("visible sample", row.getSourceName());
@@ -137,7 +137,7 @@ class InventoryLinkManagerImplReferencingTest {
     ExtraLinkField row = extraFieldRow(deleted, linkWith("References", null, null));
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SD, 123L)).thenReturn(List.of(row));
 
-    assertTrue(manager.findReferencingItems("SD123", actor).isEmpty());
+    assertThat(manager.findReferencingItems("SD123", actor)).isEmpty();
   }
 
   @Test
@@ -150,7 +150,7 @@ class InventoryLinkManagerImplReferencingTest {
 
     List<ApiInventoryReferencingItem> rows = manager.findReferencingItems("SD123", actor);
 
-    assertEquals(1, rows.size());
+    assertThat(rows).hasSize(1);
     org.junit.jupiter.api.Assertions.assertNull(rows.get(0).getModifiedAtMillis());
   }
 
@@ -173,7 +173,7 @@ class InventoryLinkManagerImplReferencingTest {
 
     List<ApiInventoryReferencingItem> rows = manager.findReferencingItems("SD123", actor);
 
-    assertEquals(1, rows.size());
+    assertThat(rows).hasSize(1);
     assertEquals("SA20", rows.get(0).getSourceGlobalId());
     assertEquals("IsPartOf", rows.get(0).getRelationType());
   }

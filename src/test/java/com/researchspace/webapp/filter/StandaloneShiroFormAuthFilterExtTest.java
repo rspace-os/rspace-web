@@ -1,5 +1,6 @@
 package com.researchspace.webapp.filter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -175,7 +176,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
         filter.onLoginSuccess(getTokenAndSetUsernameInRequest(u), subject, req, resp);
 
     assertFalse(loginResult);
-    assertTrue(getRedirectUrl().contains(BaseShiroFormAuthFilterExt.REDIRECT_FOR_BLOCKED));
+    assertThat(getRedirectUrl()).contains(BaseShiroFormAuthFilterExt.REDIRECT_FOR_BLOCKED);
     assertFalse(subject.isAuthenticated());
   }
 
@@ -223,7 +224,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     Subject subject = SecurityUtils.getSubject();
 
     assertFalse(filter.onLoginSuccess(getTokenAndSetUsernameInRequest(u), subject, req, resp));
-    assertTrue(getRedirectUrl().contains(AccountEnabledAuthorizer.REDIRECT_FOR_DISABLED));
+    assertThat(getRedirectUrl()).contains(AccountEnabledAuthorizer.REDIRECT_FOR_DISABLED);
     assertFalse(subject.isAuthenticated());
 
     // mimic login - even though account is blocked, they still need to
@@ -236,7 +237,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     initialiseContentWithEmptyContent(u);
     subject = SecurityUtils.getSubject();
     assertFalse(filter.onLoginSuccess(getTokenAndSetUsernameInRequest(u), subject, req, resp));
-    assertTrue(getRedirectUrl().contains(AccountEnabledAuthorizer.REDIRECT_FOR_DISABLED));
+    assertThat(getRedirectUrl()).contains(AccountEnabledAuthorizer.REDIRECT_FOR_DISABLED);
     // should be logged out when redirected
     assertFalse(subject.isAuthenticated());
   }

@@ -1,5 +1,6 @@
 package com.researchspace.session;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,11 +68,11 @@ public class SessionTimeZoneUtilsTest {
   }
 
   private void assertShowsSeconds(String formatDate) {
-    assertEquals(3, formatDate.split(":").length);
+    assertThat(formatDate.split(":")).hasSize(3);
   }
 
   private void assertNoSeconds(String formatDate) {
-    assertEquals(2, formatDate.split(":").length);
+    assertThat(formatDate.split(":")).hasSize(2);
   }
 
   private boolean showsTimezone(String formatDate) {

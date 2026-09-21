@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -91,9 +91,9 @@ public class SharingHandlerTest extends SpringTransactionalTest {
     flushDatabaseState();
 
     newDoc = recordMgr.get(newDoc.getId());
-    assertEquals(2, newDoc.getParentFolders().size());
-    assertTrue(newDoc.getParentFolders().stream().anyMatch(f -> f.equals(sharedNotebook)));
-    assertTrue(newDoc.getParentFolders().stream().anyMatch(f -> f.getName().equals("notebook")));
+    assertThat(newDoc.getParentFolders()).hasSize(2);
+    assertThat(newDoc.getParentFolders()).anyMatch(f -> f.equals(sharedNotebook));
+    assertThat(newDoc.getParentFolders()).anyMatch(f -> f.getName().equals("notebook"));
     assertTrue(newDoc.isShared());
   }
 }

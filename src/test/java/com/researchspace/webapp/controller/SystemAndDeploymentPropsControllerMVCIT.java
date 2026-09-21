@@ -2,10 +2,10 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.researchspace.model.preference.HierarchicalPermission;
@@ -39,7 +39,7 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
     MvcResult res = mockMvc.perform(get("/deploymentproperties/ajax/properties")).andReturn();
     Map<?, ?> data = getFromJsonResponseBody(res, Map.class);
     final int MIN_PROPERTY_COUNT = 7; // from rspac861
-    assertTrue(data.keySet().size() >= MIN_PROPERTY_COUNT);
+    assertThat(data.keySet().size()).isGreaterThanOrEqualTo(MIN_PROPERTY_COUNT);
     // assert properties are merged from DB...
     assertNotNull(data.get(SystemPropertyName.DROPBOX_AVAILABLE.getPropertyName()));
     // .. and property files

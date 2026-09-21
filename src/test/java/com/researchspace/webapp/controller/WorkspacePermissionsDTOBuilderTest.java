@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -223,15 +224,15 @@ public class WorkspacePermissionsDTOBuilderTest {
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
             templatesub, user, model, results.getResults(), null, true);
-    assertEquals(template.getId() + "", model.asMap().get("movetargetRoot").toString());
+    assertThat(model.asMap().get("movetargetRoot")).hasToString(template.getId() + "");
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
             template, user, model, results.getResults(), null, true);
-    assertEquals(template.getId() + "", model.asMap().get("movetargetRoot").toString());
+    assertThat(model.asMap().get("movetargetRoot")).hasToString(template.getId() + "");
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
             parentFolder, user, model, results.getResults(), null, true);
-    assertEquals("/", model.asMap().get("movetargetRoot").toString());
+    assertThat(model.asMap().get("movetargetRoot")).hasToString("/");
   }
 
   // RSPAC-940

@@ -1,5 +1,6 @@
 package com.researchspace.model.permissions;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -66,7 +67,7 @@ public class ConstraintBasedPermissionTest {
     toSort.add(userPermission2);
     toSort.add(userPermission);
     Collections.sort(toSort);
-    assertEquals(userPermission, toSort.get(0));
+    assertThat(toSort).element(0).isEqualTo(userPermission);
 
     // now set domains the same, alter type
     userPermission2.setDomain(PermissionDomain.RECORD);
@@ -74,7 +75,7 @@ public class ConstraintBasedPermissionTest {
     userPermission.addPermissionType(PermissionType.WRITE);
 
     Collections.sort(toSort);
-    assertEquals(userPermission2, toSort.get(0));
+    assertThat(toSort).element(0).isEqualTo(userPermission2);
   }
 
   @Test
@@ -230,10 +231,10 @@ public class ConstraintBasedPermissionTest {
 
     new ConstraintPermissionResolver().flattenRecordReadWritePermissions(permissions);
 
-    assertEquals(2 * ((idsPerAction + 123) / 124) + 1, permissions.size());
-    assertTrue(permissions.contains(unrelated));
+    assertThat(permissions).hasSize(2 * ((idsPerAction + 123) / 124) + 1);
+    assertThat(permissions).contains(unrelated);
     for (Permission permission : permissions) {
-      assertTrue(permission.toString().length() <= 2500);
+      assertThat(permission.toString()).hasSizeLessThanOrEqualTo(2500);
     }
     for (int i = 0; i <= idsPerAction * 2; i++) {
       for (PermissionType action :

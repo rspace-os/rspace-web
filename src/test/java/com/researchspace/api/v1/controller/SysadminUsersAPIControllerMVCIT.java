@@ -5,6 +5,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.MockAndStubUtils.modifyUserCreationDate;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -276,7 +277,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(res, ApiError.class);
-    assertTrue(error.getMessage().contains("already exists"));
+    assertThat(error.getMessage()).contains("already exists");
 
     // check that newly created user can use API
     mockMvc
@@ -328,7 +329,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
     ApiGroupInfo createdApiGroup = getFromJsonResponseBody(res, ApiGroupInfo.class);
     assertNotNull(createdApiGroup);
     assertEquals("g1", createdApiGroup.getName());
-    assertEquals(1, createdApiGroup.getMembers().size());
+    assertThat(createdApiGroup.getMembers()).hasSize(1);
     Group grp = grpMgr.getGroup(createdApiGroup.getId());
     assertEquals(
         RoleInGroup.GROUP_OWNER,
@@ -383,18 +384,11 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
 
     ApiGroupInfo createdApiGroup = getFromJsonResponseBody(result, ApiGroupInfo.class);
     Group group = grpMgr.getGroup(createdApiGroup.getId());
-    assertTrue(group.getPermissions().toString().contains("GROUP:SHARE:"));
-    assertTrue(
-        group
-            .getPermissions()
-            .toString()
-            .contains("FORM:READ,SHARE,WRITE:property_group=true&group=" + group.getUniqueName()));
-    assertTrue(
-        group
-            .getPermissions()
-            .toString()
-            .contains(
-                "RECORD:READ,SHARE,WRITE:property_owner=${self}&group=" + group.getUniqueName()));
+    assertThat(group.getPermissions().toString()).contains("GROUP:SHARE:");
+    assertThat(group.getPermissions().toString())
+        .contains("FORM:READ,SHARE,WRITE:property_group=true&group=" + group.getUniqueName());
+    assertThat(group.getPermissions().toString())
+        .contains("RECORD:READ,SHARE,WRITE:property_owner=${self}&group=" + group.getUniqueName());
   }
 
   private void createAndAssertLabGroup(GroupApiPost post) throws Exception {
@@ -421,7 +415,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
     ApiGroupInfo createdApiGroup = getFromJsonResponseBody(res, ApiGroupInfo.class);
     assertNotNull(createdApiGroup);
     assertEquals("g1", createdApiGroup.getName());
-    assertEquals(2, createdApiGroup.getMembers().size());
+    assertThat(createdApiGroup.getMembers()).hasSize(2);
     Group grp = grpMgr.getGroup(createdApiGroup.getId());
     assertEquals(
         RoleInGroup.PI, grp.getRoleForUser(userMgr.getUserByUsername(piApiUser.getUsername())));

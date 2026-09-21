@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -78,14 +79,14 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
         inventoryAuditMgr.getApiSubSampleRevision(subSample.getId(), subSampleSecondRevisionId);
     assertEquals("mySubSample", apiSubSampleRev2.getName());
     assertEquals(subSampleSecondRevisionId, apiSubSampleRev2.getRevisionId());
-    assertEquals(1, apiSubSampleRev2.getExtraFields().size());
-    assertEquals(2, apiSubSampleRev2.getNotes().size());
+    assertThat(apiSubSampleRev2.getExtraFields()).hasSize(1);
+    assertThat(apiSubSampleRev2.getNotes()).hasSize(2);
 
     // get all sample revisions
     ApiInventoryRecordRevisionList sampleRevisions =
         inventoryAuditMgr.getInventoryRecordRevisions(dbSample);
     List<ApiInventoryRecordRevision> sampleHistory = sampleRevisions.getRevisions();
-    assertEquals(2, sampleHistory.size());
+    assertThat(sampleHistory).hasSize(2);
     ApiInventoryRecordInfo saRev1 = sampleHistory.get(0).getRecord();
     assertEquals("myComplexSample", saRev1.getName());
     ApiInventoryRecordInfo saRev2 = sampleHistory.get(1).getRecord();
@@ -97,8 +98,8 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
         inventoryAuditMgr.getApiSampleRevision(sample.getId(), sampleFirstRevisionId);
     assertEquals("myComplexSample", apiSampleRev1.getName());
     assertEquals(sampleFirstRevisionId, apiSampleRev1.getRevisionId());
-    assertEquals(1, apiSampleRev1.getExtraFields().size());
-    assertEquals(10, apiSampleRev1.getFields().size());
+    assertThat(apiSampleRev1.getExtraFields()).hasSize(1);
+    assertThat(apiSampleRev1.getFields()).hasSize(10);
   }
 
   @Test

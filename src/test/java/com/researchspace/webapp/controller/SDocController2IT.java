@@ -6,6 +6,7 @@ import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMEN
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_SHARED_PREF;
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -127,7 +128,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
           q.setParameter("name", Folder.TEMPLATE_MEDIA_FOLDER_NAME);
           q.setParameter("creator", user.getUsername());
           Folder f = q.uniqueResult();
-          assertTrue(f.getChildrens().size() > 0);
+          assertThat(f.getChildrens().size()).isGreaterThan(0);
         });
   }
 
@@ -197,7 +198,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     assertNotNull(url.getData());
     Long fieldId = sd.getFields().iterator().next().getId();
     Long commentid = controller.insertComment(fieldId + "", "any").getData();
-    assertEquals(1, controller.getComments(commentid, null, principal).size());
+    assertThat(controller.getComments(commentid, null, principal)).hasSize(1);
   }
 
   @Test
@@ -219,7 +220,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
         controller.saveCopyStructuredDocument(
             sd.getId(), sd.getName(), new MockPrincipal(u.getUsername()));
     assertNotNull(url.getData());
-    assertFalse(url.getData().contains(sd.getId().toString()));
+    assertThat(url.getData()).doesNotContain(sd.getId().toString());
     verify(auditTrailService).notify(any(DuplicateAuditEvent.class));
   }
 
@@ -291,7 +292,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     Field field = sd.getFields().get(0);
     assertNull(field.getTempField());
-    assertEquals("", field.getData(), "field should be initially empty");
+    assertThat(field.getData()).as("field should be initially empty").isEmpty();
 
     // request edit
     EditStatus requestEdit = controller.requestEdit(sd.getId(), mockPrincipal);
@@ -305,8 +306,9 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     assertNotNull(sdAfterAutosave.getTempRecord());
 
     Field fieldAfterAutosave = sdAfterAutosave.getFields().get(0);
-    assertEquals(
-        "", fieldAfterAutosave.getData(), "non-temp field should still be empty after autosave");
+    assertThat(fieldAfterAutosave.getData())
+        .as("non-temp field should still be empty after autosave")
+        .isEmpty();
 
     Field tempField = fieldAfterAutosave.getTempField();
     assertNotNull(tempField, "temp field should be present");
@@ -320,7 +322,9 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     assertNull(sdAfterCancel.getTempRecord(), "temp record should be gone after canceling");
 
     Field fieldAfterCancel = sdAfterAutosave.getFields().get(0);
-    assertEquals("", fieldAfterCancel.getData(), "non-temp field should be empty after cancel");
+    assertThat(fieldAfterCancel.getData())
+        .as("non-temp field should be empty after cancel")
+        .isEmpty();
     assertNotNull(fieldAfterCancel.getTempField(), "temp field should be gone after canceling");
     assertNull(
         recordEditorTracker.getEditingUserForRecord(sd.getId()),
@@ -352,13 +356,9 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     // user cannot delete document edited by pi
     AjaxReturnObject<String> deleteError =
         controller.deleteStructuredDocument(doc.getId(), mockPrincipal);
-    assertEquals(1, deleteError.getError().getErrorMessages().size());
-    assertTrue(
-        deleteError
-            .getError()
-            .getErrorMessages()
-            .get(0)
-            .contains("cannot be deleted as it is currently edited by " + pi.getUsername()));
+    assertThat(deleteError.getError().getErrorMessages()).hasSize(1);
+    assertThat(deleteError.getError().getErrorMessages().get(0))
+        .contains("cannot be deleted as it is currently edited by " + pi.getUsername());
 
     // pi stops editing
     recordEditorTracker.unlockRecord(doc, pi, SessionAttributeUtils::getSessionId);
@@ -367,9 +367,9 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     AjaxReturnObject<String> deleteOk =
         controller.deleteStructuredDocument(doc.getId(), mockPrincipal);
     assertNotNull(deleteOk.getData());
-    assertTrue(
-        deleteOk.getData().contains(parentId.toString()),
-        "expected " + parentId + " , but got: " + deleteOk.getData());
+    assertThat(deleteOk.getData())
+        .as("expected " + parentId + " , but got: " + deleteOk.getData())
+        .contains(parentId.toString());
   }
 
   @Test
@@ -715,7 +715,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     List<Field> list =
         controller.getUpdatedFields(sd.getId(), previousDate, u::getUsername).getData();
-    assertFalse(list.isEmpty());
+    assertThat(list).isNotEmpty();
   }
 
   @Test
@@ -725,10 +725,10 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     EcatImage img = addImageToField(field, piUser);
     addAudioFileToField(field, piUser);
     String initFieldData = field.getFieldData();
-    assertFalse(initFieldData.contains("revision="));
+    assertThat(initFieldData).doesNotContain("revision=");
 
     SigningResult signResult = signingManager.signRecord(sdoc.getId(), piUser, null, "statement");
-    assertTrue(signResult.getSignature().isPresent());
+    assertThat(signResult.getSignature()).isPresent();
 
     // reload record from DB and ensure it's signed
     StructuredDocument signedDoc = (StructuredDocument) recordMgr.get(sdoc.getId());
@@ -749,12 +749,12 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
         fieldMgr.getFieldsByRecordId(sdoc.getId(), piUser).get(0).getFieldData();
     assertEquals(signedFieldData, signedFieldDataAfterGalleryUpdate);
     List<AuditedRecord> docRevsAfterSignAndUpload = auditMgr.getHistory(sdoc, null);
-    assertEquals(docRevsAfterSign.size(), docRevsAfterSignAndUpload.size());
+    assertThat(docRevsAfterSignAndUpload).hasSameSizeAs(docRevsAfterSign);
 
     // copying the signed document should clear the revision from new copy
     RecordCopyResult copyResult =
         recordMgr.copy(sdoc.getId(), "copy", piUser, piUser.getRootFolder().getId());
     StructuredDocument copiedSDoc = copyResult.getUniqueCopy().asStrucDoc();
-    assertFalse(copiedSDoc.getFields().get(0).getData().contains("revision="));
+    assertThat(copiedSDoc.getFields().get(0).getData()).doesNotContain("revision=");
   }
 }

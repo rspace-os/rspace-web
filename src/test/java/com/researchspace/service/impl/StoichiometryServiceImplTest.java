@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -103,7 +104,7 @@ public class StoichiometryServiceImplTest {
     StoichiometryException ex =
         assertThrows(
             StoichiometryException.class, () -> service.createFromReaction(123L, 2L, user));
-    assertTrue(ex.getMessage().contains("Stoichiometry already exists for reaction chemId=2"));
+    assertThat(ex.getMessage()).contains("Stoichiometry already exists for reaction chemId=2");
   }
 
   @Test
@@ -144,7 +145,7 @@ public class StoichiometryServiceImplTest {
     StoichiometryException ex =
         assertThrows(
             StoichiometryException.class, () -> service.createFromReaction(123L, 2L, user));
-    assertTrue(ex.getMessage().contains("Problem while creating new Stoichiometry: IO fail"));
+    assertThat(ex.getMessage()).contains("Problem while creating new Stoichiometry: IO fail");
   }
 
   @Test
@@ -217,7 +218,7 @@ public class StoichiometryServiceImplTest {
 
     NotFoundException ex =
         assertThrows(NotFoundException.class, () -> service.update(3L, update, user));
-    assertTrue(ex.getMessage().contains("Record containing stoichiometry with id 3 not found"));
+    assertThat(ex.getMessage()).contains("Record containing stoichiometry with id 3 not found");
   }
 
   @Test
@@ -271,7 +272,7 @@ public class StoichiometryServiceImplTest {
 
     StoichiometryException ex =
         assertThrows(StoichiometryException.class, () -> service.delete(5L, user, false));
-    assertTrue(ex.getMessage().contains("Error deleting stoichiometry with id 5"));
+    assertThat(ex.getMessage()).contains("Error deleting stoichiometry with id 5");
   }
 
   @Test
@@ -460,7 +461,7 @@ public class StoichiometryServiceImplTest {
     DocumentAlreadyEditedException ex =
         assertThrows(
             DocumentAlreadyEditedException.class, () -> service.syncFieldHtml(10L, 7L, user));
-    assertTrue(ex.getMessage().contains("someoneElse"));
+    assertThat(ex.getMessage()).contains("someoneElse");
     verify(fieldManager, never()).getFieldsByRecordId(anyLong(), any());
     verify(fieldManager, never()).save(any(), any());
   }

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -63,7 +64,7 @@ public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_Invento
     ApiInstrumentTemplatePost suggestedTemplate = parseResult.getTemplateInfo();
     assertNotNull(suggestedTemplate);
     assertEquals("microscopes", suggestedTemplate.getName());
-    assertEquals(2, suggestedTemplate.getFields().size());
+    assertThat(suggestedTemplate.getFields()).hasSize(2);
   }
 
   @Test

@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -154,7 +154,7 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
             MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(fres2.getData());
 
-    assertFalse(name.equalsIgnoreCase("newname"));
+    assertThat(name).isNotEqualToIgnoringCase("newname");
   }
 
   @Test

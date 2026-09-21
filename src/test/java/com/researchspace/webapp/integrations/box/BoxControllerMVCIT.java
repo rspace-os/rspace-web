@@ -1,5 +1,6 @@
 package com.researchspace.webapp.integrations.box;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -160,11 +161,9 @@ public class BoxControllerMVCIT extends MVCTestBase {
             .andExpect(view().name("connect/authorizationError"))
             .andReturn();
 
-    assertTrue(getAuthError(otherErrorResult).getErrorMsg().contains(exceptionCode + ""));
-    assertTrue(
-        getAuthError(otherErrorResult)
-            .getErrorDetails()
-            .contains(messages.getMessage("apps.box.errors.authorization")));
+    assertThat(getAuthError(otherErrorResult).getErrorMsg()).contains(exceptionCode + "");
+    assertThat(getAuthError(otherErrorResult).getErrorDetails())
+        .contains(messages.getMessage("apps.box.errors.authorization"));
   }
 
   private OauthAuthorizationError getAuthError(MvcResult otherErrorResult) {
@@ -186,7 +185,7 @@ public class BoxControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     ErrorList errorList = getErrorListFromAjaxReturnObject(unauthorizedResult);
-    assertEquals(1, errorList.getErrorMessages().size());
+    assertThat(errorList.getErrorMessages()).hasSize(1);
     assertEquals(BoxController.USER_NOT_AUTHORIZED, errorList.getErrorMessages().get(0));
 
     setUserAsAuthorizedForBoxAPI();
@@ -237,7 +236,7 @@ public class BoxControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     errorList = getErrorListFromAjaxReturnObject(unknownResourceResult);
-    assertEquals(1, errorList.getErrorMessages().size());
+    assertThat(errorList.getErrorMessages()).hasSize(1);
     assertEquals(BoxController.API_OTHER_ERROR, errorList.getErrorMessages().get(0));
     assertNull(mockSession.getAttribute(BoxController.SESSION_BOX_API_CONNECTION));
   }

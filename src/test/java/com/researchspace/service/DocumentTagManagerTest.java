@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
 import static com.researchspace.service.DocumentTagManager.FINAL_DATA;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -157,8 +158,8 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     assertEquals("tag2", recordDao.get(any.getId()).asStrucDoc().getDocTag());
     assertEquals("tag2", recordDao.get(any.getId()).asStrucDoc().getTagMetaData());
     assertTrue(tagMgr.apiSaveTagForDocument(any.getId(), "", user).isSucceeded());
-    assertEquals("", recordDao.get(any.getId()).asStrucDoc().getDocTag());
-    assertEquals("", recordDao.get(any.getId()).asStrucDoc().getTagMetaData());
+    assertThat(recordDao.get(any.getId()).asStrucDoc().getDocTag()).isEmpty();
+    assertThat(recordDao.get(any.getId()).asStrucDoc().getTagMetaData()).isEmpty();
     Long documentId = any.getId();
     assertThrows(
         IllegalArgumentException.class,
@@ -192,8 +193,8 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     assertTrue(tagMgr.apiSaveTagForDocument(any.getId(), "tag1", user).isSucceeded());
     assertTrue(tagMgr.apiSaveTagForDocument(any.getId(), "", user).isSucceeded());
     // tag deletion allowed
-    assertEquals("", recordDao.get(any.getId()).asStrucDoc().getDocTag());
-    assertEquals("", recordDao.get(any.getId()).asStrucDoc().getTagMetaData());
+    assertThat(recordDao.get(any.getId()).asStrucDoc().getDocTag()).isEmpty();
+    assertThat(recordDao.get(any.getId()).asStrucDoc().getTagMetaData()).isEmpty();
   }
 
   @Test
@@ -231,11 +232,11 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     assertNTags(1, any, "INVENTORY_TAG");
     // no hits
     assertNTags(0, any, "nomatch");
-    assertEquals(
-        1, tagMgr.getTagsPlusMetaForViewableInventoryDocuments(any, "INVENTORY_TAG").size());
-    assertEquals(1, tagMgr.getTagsPlusMetaForViewableInventoryDocuments(any, "tag").size());
-    assertEquals(0, tagMgr.getTagsPlusMetaForViewableELNDocuments(any, "INVENTORY_TAG").size());
-    assertEquals(4, tagMgr.getTagsPlusMetaForViewableELNDocuments(any, "tag").size());
+    assertThat(tagMgr.getTagsPlusMetaForViewableInventoryDocuments(any, "INVENTORY_TAG"))
+        .hasSize(1);
+    assertThat(tagMgr.getTagsPlusMetaForViewableInventoryDocuments(any, "tag")).hasSize(1);
+    assertThat(tagMgr.getTagsPlusMetaForViewableELNDocuments(any, "INVENTORY_TAG")).isEmpty();
+    assertThat(tagMgr.getTagsPlusMetaForViewableELNDocuments(any, "tag")).hasSize(4);
   }
 
   @Test
@@ -244,14 +245,14 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     User any = setupUserWithOntologyDocAndDocWithTagsOntologyNotEnforcedAndOntologyNotShared();
     TreeSet<String> ontologies =
         (TreeSet<String>) tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 0);
-    assertEquals(7, ontologies.size());
+    assertThat(ontologies).hasSize(7);
     assertTrue(ontologies.last().equals("thirdTag"));
     assertTrue(ontologies.first().equals(DocumentTagManager.SMALL_DATASET_IN_SINGLE_BLOCK));
-    assertTrue(ontologies.contains("key=value"));
-    assertTrue(ontologies.contains("key=value2"));
-    assertTrue(ontologies.contains("key2=value2"));
-    assertTrue(ontologies.contains("tag1"));
-    assertTrue(ontologies.contains("another"));
+    assertThat(ontologies).contains("key=value");
+    assertThat(ontologies).contains("key=value2");
+    assertThat(ontologies).contains("key2=value2");
+    assertThat(ontologies).contains("tag1");
+    assertThat(ontologies).contains("another");
   }
 
   @Test
@@ -266,11 +267,11 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     recordDao.save(anyDoc);
     TreeSet<String> ontologies =
         (TreeSet<String>) tagMgr.getTagsPlusOntologiesForViewableDocuments(u1, "", 0);
-    assertEquals(4, ontologies.size());
+    assertThat(ontologies).hasSize(4);
     assertTrue(ontologies.last().equals("thirdTag"));
     assertTrue(ontologies.first().equals(DocumentTagManager.SMALL_DATASET_IN_SINGLE_BLOCK));
-    assertTrue(ontologies.contains("tag/1"));
-    assertTrue(ontologies.contains("another__rspactags_comma__abigone"));
+    assertThat(ontologies).contains("tag/1");
+    assertThat(ontologies).contains("another__rspactags_comma__abigone");
   }
 
   @Test
@@ -285,14 +286,14 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     User u1 = grp1.getUserByPrefix("u1");
     logoutAndLoginAs(u1);
     TreeSet<String> ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(u1, "", 0);
-    assertEquals(1, ontologies.size());
+    assertThat(ontologies).hasSize(1);
     assertEquals("=========SMALL_DATASET_IN_SINGLE_BLOCK=========", ontologies.iterator().next());
     grp1.getGroup().setAllowBioOntologies(true);
     grpdao.save(grp1.getGroup());
     ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(u1, "", 0);
-    assertEquals(3, ontologies.size());
-    assertTrue(ontologies.contains(bioOntology1));
-    assertTrue(ontologies.contains(bioOntology2));
+    assertThat(ontologies).hasSize(3);
+    assertThat(ontologies).contains(bioOntology1);
+    assertThat(ontologies).contains(bioOntology2);
   }
 
   @Test
@@ -301,7 +302,7 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     User any = setupUserWithOntologyDocAndDocWithTagsEnforceOntologiesAndOntologyNotShared();
     TreeSet<String> ontologies =
         (TreeSet<String>) tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 0);
-    assertEquals(1, ontologies.size());
+    assertThat(ontologies).hasSize(1);
     assertTrue(ontologies.first().equals(DocumentTagManager.SMALL_DATASET_IN_SINGLE_BLOCK));
   }
 
@@ -311,11 +312,11 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     User any = setupUserWithOntologyDocAndDocWithTagsEnforceOntologiesAndOntologyIsShared();
     TreeSet<String> ontologies =
         (TreeSet<String>) tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 0);
-    assertEquals(4, ontologies.size());
+    assertThat(ontologies).hasSize(4);
     assertTrue(ontologies.first().equals(DocumentTagManager.SMALL_DATASET_IN_SINGLE_BLOCK));
-    assertTrue(ontologies.contains("key=value"));
-    assertTrue(ontologies.contains("key=value2"));
-    assertTrue(ontologies.contains("key2=value2"));
+    assertThat(ontologies).contains("key=value");
+    assertThat(ontologies).contains("key=value2");
+    assertThat(ontologies).contains("key2=value2");
   }
 
   @Test
@@ -325,11 +326,11 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
         setupUserWithOntologyDocAndDocWithTagsEnforceOntologiesAndOntologyIsSharedByAnotherUser();
     TreeSet<String> ontologies =
         (TreeSet<String>) tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 0);
-    assertEquals(4, ontologies.size());
+    assertThat(ontologies).hasSize(4);
     assertTrue(ontologies.first().equals(DocumentTagManager.SMALL_DATASET_IN_SINGLE_BLOCK));
-    assertTrue(ontologies.contains("key=value"));
-    assertTrue(ontologies.contains("key=value2"));
-    assertTrue(ontologies.contains("key2=value2"));
+    assertThat(ontologies).contains("key=value");
+    assertThat(ontologies).contains("key=value2");
+    assertThat(ontologies).contains("key2=value2");
   }
 
   private User setupUserWithOntologyDocAndDocWithTagsOntologyNotEnforcedAndOntologyNotShared() {
@@ -402,15 +403,15 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
             any, folderDao.getRootRecordForUser(any), "<p>" + sb.toString() + "</p>");
     recordDao.save(ontologyDoc);
     TreeSet<String> ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 0);
-    assertEquals(1000, ontologies.size());
-    assertTrue(ontologies.contains("1000_anOntology"));
+    assertThat(ontologies).hasSize(1000);
+    assertThat(ontologies).contains("1000_anOntology");
     ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 2);
-    assertEquals(1000, ontologies.size());
-    assertTrue(ontologies.contains("888_anOntology"));
+    assertThat(ontologies).hasSize(1000);
+    assertThat(ontologies).contains("888_anOntology");
     ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 3);
-    assertEquals(66, ontologies.size());
+    assertThat(ontologies).hasSize(66);
     assertEquals(ontologies.last(), FINAL_DATA);
-    assertTrue(ontologies.contains("999_anOntology"));
+    assertThat(ontologies).contains("999_anOntology");
   }
 
   // Test scenario - all of the following happened:
@@ -428,11 +429,11 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
         createOntologyDocumentInFolder(any, folderDao.getRootRecordForUser(any), sb.toString());
     recordDao.save(ontologyDoc);
     TreeSet<String> ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 0);
-    assertEquals(5, ontologies.size());
-    assertEquals(
-        "[=========SMALL_DATASET_IN_SINGLE_BLOCK=========, key1=d=term4, key1=term1, key1=term2,"
-            + " key1=term5]",
-        ontologies.toString());
+    assertThat(ontologies).hasSize(5);
+    assertThat(ontologies)
+        .hasToString(
+            "[=========SMALL_DATASET_IN_SINGLE_BLOCK=========, key1=d=term4, key1=term1,"
+                + " key1=term2, key1=term5]");
   }
 
   // Test scenario - all of the following happened:
@@ -450,10 +451,11 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
         createOntologyDocumentInFolder(any, folderDao.getRootRecordForUser(any), sb.toString());
     recordDao.save(ontologyDoc);
     TreeSet<String> ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 0);
-    assertEquals(5, ontologies.size());
-    assertEquals(
-        "[<p>key, =========SMALL_DATASET_IN_SINGLE_BLOCK=========, key2=term1, term2, term3</p>]",
-        ontologies.toString());
+    assertThat(ontologies).hasSize(5);
+    assertThat(ontologies)
+        .hasToString(
+            "[<p>key, =========SMALL_DATASET_IN_SINGLE_BLOCK=========, key2=term1, term2,"
+                + " term3</p>]");
   }
 
   // Test scenario -
@@ -470,10 +472,9 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
         createOntologyDocumentInFolder(any, folderDao.getRootRecordForUser(any), sb.toString());
     recordDao.save(ontologyDoc);
     TreeSet<String> ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 0);
-    assertEquals(4, ontologies.size());
-    assertEquals(
-        "[=========SMALL_DATASET_IN_SINGLE_BLOCK=========, key=term1, term2, term3]",
-        ontologies.toString());
+    assertThat(ontologies).hasSize(4);
+    assertThat(ontologies)
+        .hasToString("[=========SMALL_DATASET_IN_SINGLE_BLOCK=========, key=term1, term2, term3]");
   }
 
   // Test scenario -
@@ -494,15 +495,15 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
         createOntologyDocumentInFolder(any, folderDao.getRootRecordForUser(any), sb.toString());
     recordDao.save(ontologyDoc);
     TreeSet<String> ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "", 0);
-    assertEquals(4, ontologies.size());
-    assertEquals(
-        "[=========SMALL_DATASET_IN_SINGLE_BLOCK=========, BT-20"
-            + " cell__RSP_EXTONT_URL_DELIM__http://purl.obolibrary.org/obo/BTO_0001466__RSP_EXTONT_NAME_DELIM__BTO2__RSP_EXTONT_VERSION_DELIM__2,"
-            + " culture condition:camphor-grown cell__RSP_EXTONT_URL_DELIM"
-            + "__http://purl.obolibrary.org/obo/BTO_0006230__RSP_EXTONT_NAME_DELIM__BTO2__RSP_EXTONT_VERSION_DELIM__2,"
-            + " insect protocorm__RSP_EXTONT_URL_DELIM"
-            + "__http://purl.obolibrary.org/obo/BTO_0006101__RSP_EXTONT_NAME_DELIM__BTO2__RSP_EXTONT_VERSION_DELIM__2]",
-        ontologies.toString());
+    assertThat(ontologies).hasSize(4);
+    assertThat(ontologies)
+        .hasToString(
+            "[=========SMALL_DATASET_IN_SINGLE_BLOCK=========, BT-20"
+                + " cell__RSP_EXTONT_URL_DELIM__http://purl.obolibrary.org/obo/BTO_0001466__RSP_EXTONT_NAME_DELIM__BTO2__RSP_EXTONT_VERSION_DELIM__2,"
+                + " culture condition:camphor-grown cell__RSP_EXTONT_URL_DELIM"
+                + "__http://purl.obolibrary.org/obo/BTO_0006230__RSP_EXTONT_NAME_DELIM__BTO2__RSP_EXTONT_VERSION_DELIM__2,"
+                + " insect protocorm__RSP_EXTONT_URL_DELIM"
+                + "__http://purl.obolibrary.org/obo/BTO_0006101__RSP_EXTONT_NAME_DELIM__BTO2__RSP_EXTONT_VERSION_DELIM__2]");
   }
 
   @Test
@@ -517,9 +518,9 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
             "<p>key=value,value2,value3</p><p>key2=value,value2,value3</p>");
     recordDao.save(ontologyDoc);
     Set<String> ontologies = tagMgr.getTagsPlusOntologiesForViewableDocuments(any, "value3", 0);
-    assertEquals(3, ontologies.size());
-    assertTrue(ontologies.contains("key=value3"));
-    assertTrue(ontologies.contains("key2=value3"));
+    assertThat(ontologies).hasSize(3);
+    assertThat(ontologies).contains("key=value3");
+    assertThat(ontologies).contains("key2=value3");
   }
 
   @Test

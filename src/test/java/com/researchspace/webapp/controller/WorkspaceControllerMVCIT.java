@@ -5,6 +5,7 @@ import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.SearchTestUtils.createSimpleNameSearchCfg;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -91,7 +92,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.search.mapper.orm.Search;
@@ -241,10 +241,10 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
           Folder userRoot = folderDao.getRootRecordForUser(piUser);
           Folder otherRoot = folderDao.getRootRecordForUser(setup.user);
 
-          assertFalse(
-              folderDao.getLabGroupFolderForUser(setup.user).getChildrens().contains(userRoot));
-          assertFalse(
-              folderDao.getLabGroupFolderForUser(piUser).getChildrens().contains(otherRoot));
+          assertThat(folderDao.getLabGroupFolderForUser(setup.user).getChildrens())
+              .doesNotContain(userRoot);
+          assertThat(folderDao.getLabGroupFolderForUser(piUser).getChildrens())
+              .doesNotContain(otherRoot);
         });
   }
 
@@ -496,7 +496,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     }
     String str1 = dc.toString();
     int idx = str1.indexOf("commentIcon");
-    assertTrue(idx <= 0);
+    assertThat(idx).isLessThanOrEqualTo(0);
   }
 
   @Test
@@ -514,7 +514,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
         workspaceController.shareRecord(
             shareConfigCommand, new MockPrincipal(piUser.getUsername()));
     assertNotNull(result.getData());
-    assertEquals(1, result.getData().getSharedIds().size());
+    assertThat(result.getData().getSharedIds()).hasSize(1);
     assertFalse(result.getErrorMsg().hasErrorMessages());
   }
 
@@ -536,14 +536,10 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
         workspaceController.shareRecord(
             shareConfigCommand, new MockPrincipal(piUser.getUsername()));
     assertNotNull(result.getData());
-    assertEquals(1, result.getData().getSharedIds().size());
-    assertEquals(1, result.getData().getPublicLinks().size());
-    assertTrue(
-        result
-            .getData()
-            .getPublicLinks()
-            .get(0)
-            .startsWith("Untitled document_&_&_/public/publishedView/document/"));
+    assertThat(result.getData().getSharedIds()).hasSize(1);
+    assertThat(result.getData().getPublicLinks()).hasSize(1);
+    assertThat(result.getData().getPublicLinks().get(0))
+        .startsWith("Untitled document_&_&_/public/publishedView/document/");
     assertFalse(result.getErrorMsg().hasErrorMessages());
     boolean sharedWithAnonymous = userHasRecordSharedWithAnonymous(piUser, "summary", true);
     if (!sharedWithAnonymous) {
@@ -587,7 +583,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     ISearchResults<BaseRecord> rcds = getSearchResultsFromModel();
     assertEquals(1, rcds.getHits().intValue());
     assertEquals(1, rcds.getTotalHits().intValue());
-    assertEquals(1, rcds.getResults().size());
+    assertThat(rcds.getResults()).hasSize(1);
 
     /**
      * Now we search empty folder, we get the same results because we are using a global search
@@ -603,7 +599,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     ISearchResults<BaseRecord> rcds3 = getSearchResultsFromModel();
     assertEquals(1, rcds3.getHits().intValue());
     assertEquals(1, rcds3.getTotalHits().intValue());
-    assertEquals(1, rcds3.getResults().size());
+    assertThat(rcds3.getResults()).hasSize(1);
 
     clearModel();
     option = new String[] {SearchConstants.FULL_TEXT_SEARCH_OPTION};
@@ -668,7 +664,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     ISearchResults<BaseRecord> rcds3 = getSearchResultsFromModel();
     assertEquals(1, rcds3.getTotalHits().intValue());
     assertEquals(1, rcds3.getHits().intValue());
-    assertEquals(1, rcds3.getResults().size());
+    assertThat(rcds3.getResults()).hasSize(1);
   }
 
   @Test
@@ -694,7 +690,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     ISearchResults<BaseRecord> rcds = getSearchResultsFromModel();
     assertEquals(1, rcds.getHits().intValue());
     assertEquals(1, rcds.getTotalHits().intValue());
-    assertEquals(1, rcds.getResults().size());
+    assertThat(rcds.getResults()).hasSize(1);
 
     clearModel();
     /** This search should have no hits */
@@ -726,7 +722,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     ISearchResults<BaseRecord> rcds = getSearchResultsFromModel();
     assertEquals(EXPECTED_RESULTS, rcds.getHits().intValue());
     assertEquals(EXPECTED_RESULTS, rcds.getTotalHits().intValue());
-    assertEquals(EXPECTED_RESULTS, rcds.getResults().size());
+    assertThat(rcds.getResults()).hasSize(EXPECTED_RESULTS);
 
     clearModel();
 
@@ -737,7 +733,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     rcds = getSearchResultsFromModel();
     assertEquals(EXPECTED_RESULTS, rcds.getHits().intValue());
     assertEquals(EXPECTED_RESULTS, rcds.getTotalHits().intValue());
-    assertEquals(EXPECTED_RESULTS, rcds.getResults().size());
+    assertThat(rcds.getResults()).hasSize(EXPECTED_RESULTS);
   }
 
   /**
@@ -1120,7 +1116,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     newChildren.removeAll(orgChildren);
     commitTransaction();
 
-    assertEquals(1, newChildren.size(), "no new child in root folder");
+    assertThat(newChildren).as("no new child in root folder").hasSize(1);
     BaseRecord newRecord = (BaseRecord) (newChildren.toArray())[0];
     assertTrue(newRecord.isFolder(), "new record should be a folder");
     assertFalse(newRecord.isNotebook(), "new record shouldn't be a notebook");
@@ -1165,7 +1161,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     // Check subfolders
     for (String expectedSubfolderName : EXPECTED_SUBFOLDER_NAMES) {
-      assertEquals(1, currentFolderChildren.size(), "no new child in folder");
+      assertThat(currentFolderChildren).as("no new child in folder").hasSize(1);
       BaseRecord newRecord = (BaseRecord) (currentFolderChildren.toArray())[0];
       assertTrue(newRecord.isFolder(), "new record should be a folder");
       assertFalse(newRecord.isNotebook(), "new record shouldn't be a notebook");
@@ -1211,7 +1207,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     newChildren.removeAll(orgChildren);
     commitTransaction();
 
-    assertEquals(1, newChildren.size(), "no new child in root folder");
+    assertThat(newChildren).as("no new child in root folder").hasSize(1);
     BaseRecord newRecord = (BaseRecord) (newChildren.toArray())[0];
     assertTrue(newRecord.isFolder(), "new record should be a folder");
     assertTrue(newRecord.isNotebook(), "new record should be a notebook");
@@ -1284,8 +1280,8 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     newRootChildren.removeAll(orgChildren);
     commitTransaction();
 
-    assertEquals(1, newRootChildren.size(), "no new child in root folder");
-    assertEquals(1, newSharedChildren.size(), "no new child in shared folder");
+    assertThat(newRootChildren).as("no new child in root folder").hasSize(1);
+    assertThat(newSharedChildren).as("no new child in shared folder").hasSize(1);
     BaseRecord newRecord = (BaseRecord) (newRootChildren.toArray())[0];
     assertTrue(newRecord.isFolder(), "new record should be a folder");
     assertTrue(newRecord.isNotebook(), "new record should be a notebook");
@@ -1345,9 +1341,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     logoutAndLoginAs(piUser);
     Set<Folder> docParentFolders = sharedDocument.getParentFolders();
-    assertEquals(2, docParentFolders.size());
-    assertTrue(docParentFolders.contains(sharedFolder));
-    assertTrue(docParentFolders.contains(regularUserRoot));
+    assertThat(docParentFolders).hasSize(2);
+    assertThat(docParentFolders).contains(sharedFolder);
+    assertThat(docParentFolders).contains(regularUserRoot);
 
     // pi moves the Doc from Group_shared_folder into SharedNotebook
     moveRecordIntoNotebook(piUser, sharedFolderId, sharedNotebook, sharedDocument);
@@ -1355,9 +1351,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     Record newSharedDocument = recordMgr.get(sharedDocument.getId());
     docParentFolders = newSharedDocument.getParentFolders();
-    assertEquals(2, docParentFolders.size());
-    assertTrue(docParentFolders.contains(sharedNotebook));
-    assertTrue(docParentFolders.contains(regularUserRoot));
+    assertThat(docParentFolders).hasSize(2);
+    assertThat(docParentFolders).contains(sharedNotebook);
+    assertThat(docParentFolders).contains(regularUserRoot);
   }
 
   private MvcResult moveRecordIntoNotebook(
@@ -1425,7 +1421,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     newChildren.removeAll(orgChildren);
     commitTransaction();
 
-    assertEquals(2, newChildren.size(), "two new notebooks were expected ");
+    assertThat(newChildren).as("two new notebooks were expected ").hasSize(2);
     BaseRecord createdNotebook1 =
         newChildren.stream().filter(b -> b.getId().equals(defaultNotebookId)).findFirst().get();
     assertTrue(createdNotebook1.isNotebook());
@@ -1481,7 +1477,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     Optional<Folder> indivSFolder =
         folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
             nb.getId(), group.getCommunalGroupFolderId(), u2);
-    assertTrue(indivSFolder.isPresent());
+    assertThat(indivSFolder).isPresent();
 
     // now we'll browse to notebook from this folder as if navigating from the shared root
     MvcResult result3 =
@@ -1540,7 +1536,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     ISearchResults<BaseRecord> searchResults = getSearchResultsFromMvcResult(result);
-    assertTrue(searchResults.getResults().size() > 1);
+    assertThat(searchResults.getResults().size()).isGreaterThan(1);
 
     // shared filter activated
     MvcResult filterSharedRecordsResult =
@@ -1552,7 +1548,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
             .andExpect(modelHasValidAttributes())
             .andReturn();
     searchResults = getSearchResultsFromMvcResult(filterSharedRecordsResult);
-    assertEquals(1, searchResults.getResults().size());
+    assertThat(searchResults.getResults()).hasSize(1);
 
     Long[] recordsIds = new Long[] {doc.getId()};
     workspaceController.addToFavorites(recordsIds, new MockPrincipal(u2.getUsername()));
@@ -1568,7 +1564,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
             .andExpect(modelHasValidAttributes())
             .andReturn();
     searchResults = getSearchResultsFromMvcResult(filterSharedFavoritesRecordsResult);
-    assertEquals(1, searchResults.getResults().size());
+    assertThat(searchResults.getResults()).hasSize(1);
   }
 
   /**
@@ -1600,7 +1596,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     ModelMap map = results.getModelAndView().getModelMap();
     ISearchResults<BaseRecord> searchResults = getSearchResults(map);
-    assertEquals(1, searchResults.getResults().size());
+    assertThat(searchResults.getResults()).hasSize(1);
 
     workspaceController.removeFromFavorites(recordsIds, new MockPrincipal(user.getUsername()));
 
@@ -1616,7 +1612,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     map = results.getModelAndView().getModelMap();
     searchResults = getSearchResults(map);
-    assertEquals(0, searchResults.getResults().size());
+    assertThat(searchResults.getResults()).isEmpty();
   }
 
   /** RSPAC-1105. */
@@ -1641,7 +1637,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     ModelMap map = results.getModelAndView().getModelMap();
     Breadcrumb bcrumb = (Breadcrumb) map.get("bcrumb");
-    assertEquals(2, bcrumb.getElements().size());
+    assertThat(bcrumb.getElements()).hasSize(2);
     assertEquals(subFolder1.getName(), bcrumb.getElements().get(1).getDisplayname());
 
     // open subfolder but with favorites filter activated. breadcrumbs should be empty (only Home
@@ -1657,7 +1653,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     map = results.getModelAndView().getModelMap();
     bcrumb = (Breadcrumb) map.get("bcrumb");
-    assertEquals(1, bcrumb.getElements().size()); // just 'Home' breadcrumb
+    assertThat(bcrumb.getElements()).hasSize(1); // just 'Home' breadcrumb
 
     // now try opening subfolder2, but with parent set to subfolder1 (that simulates click in
     // filtered result scenario)
@@ -1673,7 +1669,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     // should returned breadcrumbs to subFolder2
     map = results.getModelAndView().getModelMap();
     bcrumb = (Breadcrumb) map.get("bcrumb");
-    assertEquals(2, bcrumb.getElements().size());
+    assertThat(bcrumb.getElements()).hasSize(2);
     assertEquals(subFolder2.getName(), bcrumb.getElements().get(1).getDisplayname());
   }
 
@@ -1704,7 +1700,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     ModelMap map = result.getModelAndView().getModelMap();
     ISearchResults<BaseRecord> searchResults = getSearchResults(map);
     // Including folders
-    assertTrue(searchResults.getResults().size() > 1);
+    assertThat(searchResults.getResults().size()).isGreaterThan(1);
 
     // View all viewable items activated
     MvcResult viewableItemsResult = workspaceViewAll(u1, rootFolterU1);
@@ -1713,7 +1709,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     searchResults = getSearchResults(map);
     // Just documents, entries and notebooks, in our case the basic document
     // previously created
-    assertEquals(1, searchResults.getResults().size());
+    assertThat(searchResults.getResults()).hasSize(1);
   }
 
   /**
@@ -1746,7 +1742,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     ISearchResults<BaseRecord> searchResults = getSearchResultsFromMvcResult(result);
-    assertTrue(searchResults.getResults().size() > 1);
+    assertThat(searchResults.getResults().size()).isGreaterThan(1);
 
     logoutAndLoginAs(pi);
     Folder rootFolderPI = folderMgr.getRootRecordForUser(pi, pi);
@@ -1775,8 +1771,8 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     ISearchResults<BaseRecord> searchResults3 = getSearchResultsFromMvcResult(deleteResult);
     // PI user can see two basic documents (u1) still
     assertEquals(2, searchResults3.getTotalHits().intValue());
-    assertTrue(
-        CollectionUtils.isEqualCollection(searchResults.getResults(), searchResults3.getResults()));
+    assertThat(searchResults.getResults())
+        .containsExactlyInAnyOrderElementsOf(searchResults3.getResults());
   }
 
   private MvcResult workspaceViewAll(User pi, Folder rootFolderPI) throws Exception {
@@ -1834,7 +1830,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     ISearchResults<BaseRecord> searchResults = getSearchResults(map);
     // Admin user can see four basic documents (two documents created by u1
     // and two documents created by u2).
-    assertEquals(4, searchResults.getResults().size());
+    assertThat(searchResults.getResults()).hasSize(4);
   }
 
   @Test
@@ -1876,7 +1872,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     List<Map> piOwnList = getFromJsonAjaxReturnObject(piOwnResults, List.class);
     assertNotNull(piOwnList);
-    assertEquals(1, piOwnList.size());
+    assertThat(piOwnList).hasSize(1);
 
     MvcResult piSharedResults =
         this.mockMvc
@@ -1884,7 +1880,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
             .andReturn();
     List<Map> piSharedList = getFromJsonAjaxReturnObject(piSharedResults, List.class);
     assertNotNull(piSharedList);
-    assertEquals(0, piSharedList.size());
+    assertThat(piSharedList).isEmpty();
 
     // check requests as user, should see a single shared template
     logoutAndLoginAs(user);
@@ -1895,7 +1891,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     List<Map> userOwnList = getFromJsonAjaxReturnObject(userOwnResults, List.class);
     assertNotNull(userOwnList);
-    assertEquals(0, userOwnList.size());
+    assertThat(userOwnList).isEmpty();
 
     MvcResult userSharedResults =
         this.mockMvc
@@ -1903,8 +1899,8 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
             .andReturn();
     List<Map> userSharedList = getFromJsonAjaxReturnObject(userSharedResults, List.class);
     assertNotNull(userSharedList);
-    assertEquals(1, userSharedList.size());
-    assertEquals(template1.getId().intValue(), userSharedList.get(0).get("id"));
+    assertThat(userSharedList).hasSize(1);
+    assertThat(userSharedList.get(0)).containsEntry("id", template1.getId().intValue());
   }
 
   /**
@@ -1932,7 +1928,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     mockPrincipal = pi::getUsername;
     // rspac -749
     long numRecords = getNumberOfRecordsInRootFolder(new WorkspaceSettings());
-    assertTrue(numRecords > 1);
+    assertThat(numRecords).isGreaterThan(1);
     // we have 2 favourites, and we're passing in that favourites filter is set, so we should just
     // get 2 results
     MvcResult moveResult =
@@ -2100,7 +2096,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     List<AuditedEntity<EcatImage>> imageRevs =
         auditMgr.getRevisionsForEntity(EcatImage.class, image.getId());
-    assertEquals(2, imageRevs.size());
+    assertThat(imageRevs).hasSize(2);
     Long firstRevId = imageRevs.get(0).getRevision().longValue();
     Long secondRevId = imageRevs.get(1).getRevision().longValue();
 
@@ -2188,13 +2184,13 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals(doc.getId(), detailedInfo2.getId());
     assertTrue(detailedInfo2.isShared());
     Map<String, String> retrievedSharedGroups = detailedInfo2.getSharedGroupsAndAccess();
-    assertEquals(1, retrievedSharedGroups.size());
-    assertEquals("READ", retrievedSharedGroups.get(group.getDisplayName()));
+    assertThat(retrievedSharedGroups).hasSize(1);
+    assertThat(retrievedSharedGroups).containsEntry(group.getDisplayName(), "READ");
     Map<String, String> retrievedSharedUsers = detailedInfo2.getSharedUsersAndAccess();
-    assertEquals(1, retrievedSharedUsers.size());
-    assertEquals("READ", retrievedSharedUsers.get(other.getDisplayName()));
+    assertThat(retrievedSharedUsers).hasSize(1);
+    assertThat(retrievedSharedUsers).containsEntry(other.getDisplayName(), "READ");
     Map<String, String> retrievedSharedNotebooks = detailedInfo2.getSharedNotebooksAndOwners();
-    assertEquals(0, retrievedSharedNotebooks.size());
+    assertThat(retrievedSharedNotebooks).isEmpty();
     assertTrue(detailedInfo2.getSigned());
     assertFalse(detailedInfo2.getWitnessed());
     assertEquals(SignatureStatus.AWAITING_WITNESS, detailedInfo2.getSignatureStatus());
@@ -2251,7 +2247,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   private void assertNResults(MvcResult result, final int expectedResultCount) {
     ModelMap map = result.getModelAndView().getModelMap();
     ISearchResults<BaseRecord> searchResults = getSearchResults(map);
-    assertEquals(expectedResultCount, searchResults.getResults().size());
+    assertThat(searchResults.getResults()).hasSize(expectedResultCount);
   }
 
   private ISearchResults<BaseRecord> getSearchResultsFromMvcResult(MvcResult result) {
@@ -2287,7 +2283,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     workspaceController.listRootFolder(
         "", model, mockPrincipal, request, session, response, settings);
     ISearchResults results2 = (ISearchResults) modelTss.get("searchResults");
-    assertEquals(25, results2.getResults().size());
+    assertThat(results2.getResults()).hasSize(25);
 
     pref = userMgr.getPreferenceForUser(piUser, Preference.WORKSPACE_RESULTS_PER_PAGE);
     assertEquals(25, pref.getValueAsNumber().intValue());
@@ -2319,7 +2315,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
         mapper.readValue((String) initialModel.get("workspaceConfigJson"), WorkspaceSettings.class);
     String settingsKey = (String) initialModel.get("settingsKey");
 
-    assertEquals(pref.getValue(), initialSettings.getCurrentViewMode().toString());
+    assertThat(initialSettings.getCurrentViewMode()).hasToString(pref.getValue());
 
     // Test that changing the value works when saving preferences
     mockMvc
@@ -2347,7 +2343,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
                     .getModel()
                     .get("workspaceConfigJson")),
             WorkspaceSettings.class);
-    assertEquals(WorkspaceViewMode.TREE_VIEW.toString(), settings.getCurrentViewMode().toString());
+    assertThat(settings.getCurrentViewMode()).hasToString(WorkspaceViewMode.TREE_VIEW.toString());
   }
 
   @Test
@@ -2395,7 +2391,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertNull(mvcResult.getResolvedException());
     List<RecordTagData> foundTagDTOs =
         mvcUtils.getFromJsonResponseBodyByTypeRef(mvcResult, new TypeReference<>() {});
-    assertEquals(3, foundTagDTOs.size());
+    assertThat(foundTagDTOs).hasSize(3);
     assertEquals(testDoc.getId(), foundTagDTOs.get(0).getRecordId());
     assertEquals("testTag", foundTagDTOs.get(0).getTagMetaData());
     assertEquals(notebook.getId(), foundTagDTOs.get(1).getRecordId());
@@ -2442,8 +2438,8 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertNull(moveResult.getResolvedException());
 
     Record movedToSharedRoot = recordMgr.get(doc.getId());
-    assertTrue(movedToSharedRoot.getParentFolders().contains(sharedFolderRoot));
-    assertFalse(movedToSharedRoot.getParentFolders().contains(sharedSubFolder));
+    assertThat(movedToSharedRoot.getParentFolders()).contains(sharedFolderRoot);
+    assertThat(movedToSharedRoot.getParentFolders()).doesNotContain(sharedSubFolder);
   }
 
   @Test
@@ -2500,11 +2496,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertNull(moveIntoNotebookResult.getResolvedException());
     ModelMap modelMap = moveIntoNotebookResult.getModelAndView().getModelMap();
     Object errorMsg = modelMap.get("errorMsg");
-    assertTrue(
-        errorMsg
-            .toString()
-            .contains(
-                "A shared document owned by a specific user cannot be shared into a notebook owned"
-                    + " by the same user"));
+    assertThat(errorMsg.toString())
+        .contains(
+            "A shared document owned by a specific user cannot be shared into a notebook owned"
+                + " by the same user");
   }
 }
