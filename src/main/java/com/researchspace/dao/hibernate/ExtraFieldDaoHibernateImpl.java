@@ -24,7 +24,7 @@ import org.springframework.stereotype.Repository;
 /**
  * Reads ad-hoc extra fields against the caller's own read rule for the owning record.
  *
- * <p>The read rule arrives as a {@link FilterExpression} and is recompiled here at this query's own
+ * <p>The read rule arrives as a {@link QueryConstraint} and is recompiled here at this query's own
  * parent alias, which is the same rule the owning collection applies. That is what makes an extra
  * field a narrowing of an already-authorized row set rather than a second, weaker access path.
  *
@@ -69,8 +69,21 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
             .with("TYPE(" + FIELD_ALIAS + ")")
             .end()
             .distinct()
-            .whereExpression(common(scope, access))
+            .whereExpression(FIELD_ALIAS + ".deleted = false")
             .whereExpression(typeRestriction(types));
+    String parentIdProperty =
+        scope.parentDescription().requireField(scope.parentDescription().idField()).property();
+    var parent =
+        query
+            .whereExists()
+            .from(scope.parentEntity(), PARENT_ALIAS)
+            .select("1")
+            .where(PARENT_ALIAS + "." + parentIdProperty)
+            .eqExpression(FIELD_ALIAS + "." + scope.parentProperty() + ".id");
+    if (access != null) {
+      parent.whereExpression(access.expression());
+    }
+    parent.end();
     if (hydrating) {
       query.whereExpression(NAME + " in :names");
     } else if (search != null) {
@@ -142,30 +155,6 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
       }
     }
     return values;
-  }
-
-  private String common(ExtraFieldScope scope, RsqlCollectionQuery.Predicate access) {
-    String parentId = FIELD_ALIAS + "." + scope.parentProperty() + ".id";
-    String parentIdProperty =
-        scope.parentDescription().requireField(scope.parentDescription().idField()).property();
-    StringBuilder hql =
-        new StringBuilder(FIELD_ALIAS)
-            .append(".deleted = false and ")
-            .append(parentId)
-            .append(" is not null and exists (select 1 from ")
-            .append(scope.parentEntity().getSimpleName())
-            .append(" ")
-            .append(PARENT_ALIAS)
-            .append(" where ")
-            .append(PARENT_ALIAS)
-            .append(".")
-            .append(parentIdProperty)
-            .append(" = ")
-            .append(parentId);
-    if (access != null) {
-      hql.append(" and ").append(access.expression());
-    }
-    return hql.append(")").toString();
   }
 
   private RsqlCollectionQuery.Predicate access(ExtraFieldScope scope, QueryConstraint constraint) {

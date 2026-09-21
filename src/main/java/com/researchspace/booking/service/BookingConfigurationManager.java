@@ -57,6 +57,12 @@ public interface BookingConfigurationManager {
   /** Returns one page selected by a parsed collection request. */
   ResourcePage<BookingConfiguration> getConfigurations(ResourceRequest request, User actor);
 
+  /** Reads a Calendar page with its correlated event restriction applied to rows and total. */
+  ResourcePage<BookingConfiguration> getConfigurations(
+      ResourceRequest request,
+      User actor,
+      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction);
+
   /** Counts configurations selected by a parsed collection request. */
   long countConfigurations(ResourceRequest request, User actor);
 

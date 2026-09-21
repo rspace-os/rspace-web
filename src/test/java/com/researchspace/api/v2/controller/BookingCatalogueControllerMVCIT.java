@@ -6,12 +6,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.User;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.AbstractAppInitializor;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +31,7 @@ class BookingCatalogueControllerMVCIT {
   @Autowired private WebApplicationContext context;
   @Autowired private FeatureFlagManager featureFlags;
   @Autowired private UserManager userManager;
+  @Autowired private InstrumentEntityApiManager instrumentManager;
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
@@ -215,6 +222,154 @@ class BookingCatalogueControllerMVCIT {
         .andExpect(status().isNotFound());
 
     setBookingEnabled(true);
+  }
+
+  @Test
+  void calendarEndpointsHideBeforeParsingDisabledFeatureQueries() throws Exception {
+    setBookingEnabled(false);
+
+    mockMvc
+        .perform(
+            get("/api/v2/booking-catalogue/calendar")
+                .queryParam("calendarStart", "2026-09-20T00:00:00Z")
+                .queryParam("calendarEnd", "2026-09-21T00:00:00Z")
+                .queryParam("where", "password==secret")
+                .queryParam("eventWhere", "password==secret")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(
+            get("/api/v2/booking-calendar/events")
+                .queryParam("start", "2026-09-20T00:00:00Z")
+                .queryParam("end", "2026-09-21T00:00:00Z")
+                .queryParam("where", "password==secret")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void calendarEndpointsRejectInvalidIntervalsWhenEnabled() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v2/booking-catalogue/calendar")
+                .queryParam("calendarStart", "2026-09-21T00:00:00Z")
+                .queryParam("calendarEnd", "2026-09-20T00:00:00Z")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isBadRequest());
+    mockMvc
+        .perform(
+            get("/api/v2/booking-calendar/events")
+                .queryParam("start", "2026-09-20T00:00:00Z")
+                .queryParam("end", "2026-09-20T00:00:00Z")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void calendarEventsHonorTheRequestedSparseFieldset() throws Exception {
+    long instrument = fixture.instrument(fixture.user(), "Calendar projection " + fixture.marker());
+    fixture.bookingConfiguration(instrument, "UTC", fixture.userKey());
+    Instant start = Instant.parse("2099-01-01T10:00:00Z");
+    fixture.booking(instrument, start, start.plusSeconds(3600));
+
+    mockMvc
+        .perform(
+            get("/api/v2/booking-calendar/events")
+                .queryParam("start", "2099-01-01T00:00:00Z")
+                .queryParam("end", "2099-01-02T00:00:00Z")
+                .queryParam("fields[bookings]", "id,start")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.docs[0].id").exists())
+        .andExpect(jsonPath("$.docs[0].start").exists())
+        .andExpect(jsonPath("$.docs[0].end").doesNotExist())
+        .andExpect(jsonPath("$.docs[0].purpose").doesNotExist())
+        .andExpect(jsonPath("$.docs[0].target").doesNotExist());
+  }
+
+  @Test
+  void calendarEventsSupportOnlyTheCalendarLocalDerivedFacets() throws Exception {
+    long instrument = fixture.instrument(fixture.user(), "Calendar filters " + fixture.marker());
+    String timezone = ZoneId.systemDefault().getId();
+    fixture.bookingConfiguration(instrument, timezone, fixture.userKey());
+    Instant start = Instant.parse("2099-01-01T10:00:00Z");
+    fixture.booking(instrument, start, start.plusSeconds(3600));
+
+    mockMvc
+        .perform(
+            get("/api/v2/booking-calendar/events")
+                .queryParam("start", "2099-01-01T00:00:00Z")
+                .queryParam("end", "2099-01-02T00:00:00Z")
+                .queryParam(
+                    "where",
+                    "privacy==full;timezone==\""
+                        + timezone
+                        + "\";bookedBy=contains=\""
+                        + fixture.user().getFullName()
+                        + "\";purpose=exists=false;requesterId=="
+                        + fixture.user().getId())
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(1));
+
+    mockMvc
+        .perform(
+            get("/api/v2/booking-catalogue/calendar")
+                .queryParam("calendarStart", "2099-01-01T00:00:00Z")
+                .queryParam("calendarEnd", "2099-01-02T00:00:00Z")
+                .queryParam(
+                    "eventWhere",
+                    "privacy==full;timezone==\""
+                        + timezone
+                        + "\";bookedBy=contains="
+                        + fixture.user().getUsername()
+                        + ";purpose=exists=false;requesterId=="
+                        + fixture.user().getId())
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1));
+
+    mockMvc
+        .perform(
+            get("/api/v2/bookings")
+                .queryParam("where", "purpose=exists=false")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void calendarTimezoneFiltersIgnoreRetainedBookingsAfterItemAccessIsLost() throws Exception {
+    User formerOwner = fixture.user();
+    User newOwner = fixture.otherUser();
+    long instrument =
+        fixture.instrument(formerOwner, "Calendar hidden timezone " + fixture.marker());
+    String timezone = ZoneId.systemDefault().getId();
+    fixture.bookingConfiguration(instrument, timezone, fixture.userKey());
+    Instant start = Instant.parse("2099-01-01T10:00:00Z");
+    fixture.booking(instrument, start, start.plusSeconds(3600));
+
+    ApiInstrument transferred = instrumentManager.getApiInstrumentById(instrument, formerOwner);
+    transferred.setOwner(new ApiUser(newOwner));
+    instrumentManager.changeApiInstrumentOwner(transferred, formerOwner);
+
+    for (String where :
+        List.of(
+            "timezone==\"" + timezone + "\"",
+            "timezone!=\"" + timezone + "\"",
+            "timezone=in=(\"" + timezone + "\")",
+            "timezone=out=(\"__unmatched_timezone__\")",
+            "timezone=exists=true",
+            "timezone=exists=false")) {
+      mockMvc
+          .perform(
+              get("/api/v2/booking-calendar/events")
+                  .queryParam("start", "2099-01-01T00:00:00Z")
+                  .queryParam("end", "2099-01-02T00:00:00Z")
+                  .queryParam("where", where)
+                  .header("apiKey", fixture.userKey()))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(0));
+    }
   }
 
   private User sysadmin() {

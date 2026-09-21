@@ -352,10 +352,7 @@ public class ApiV2CrudController {
   }
 
   private List<RuntimeCollectionFields<?>> runtimeFieldsOf(String resourceName) {
-    return resources
-        .find(resourceName)
-        .map(ApiV2ResourceRegistration::providers)
-        .orElseGet(List::of);
+    return resources.runtimeFieldsOf(resourceName);
   }
 
   private ApiV2ResourceRegistration<?, ?> requireResource(String name) {

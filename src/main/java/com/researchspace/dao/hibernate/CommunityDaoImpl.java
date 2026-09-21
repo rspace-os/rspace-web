@@ -28,6 +28,23 @@ import org.springframework.stereotype.Repository;
 @Repository("communityDao")
 public class CommunityDaoImpl extends GenericDaoHibernate<Community, Long> implements CommunityDao {
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.context.ApplicationEventPublisher events = event -> {};
+
+  @Override
+  public Community save(Community value) {
+    Community saved = super.save(value);
+    events.publishEvent(new com.researchspace.model.CommunityPermissionsChangedEvent(saved));
+    return saved;
+  }
+
+  @Override
+  public void remove(Long id) {
+    Community removed = get(id);
+    super.remove(id);
+    events.publishEvent(new com.researchspace.model.CommunityPermissionsChangedEvent(removed));
+  }
+
   public CommunityDaoImpl() {
     super(Community.class);
   }

@@ -25,12 +25,17 @@ public final class BookingEventReadAccess implements AccessFunction {
 
   private final ResourceRoleReadAccess configurationAccess;
 
+  /** Kept as a source-compatible constructor for callers that already inject the role registry. */
   public BookingEventReadAccess(ResourceRoleSchemeRegistry schemes) {
     configurationAccess =
         new ResourceRoleReadAccess(
             schemes,
             BookingResourceRoleScheme.SCHEME_KEY,
             "bookingConfiguration.resourceAccess.id");
+  }
+
+  public BookingEventReadAccess() {
+    this(new ResourceRoleSchemeRegistry(List.of(new BookingResourceRoleScheme())));
   }
 
   @Override

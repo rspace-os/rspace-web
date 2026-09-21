@@ -30,6 +30,23 @@ import org.springframework.stereotype.Repository;
 @Repository("groupDao")
 public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> implements GroupDao {
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.context.ApplicationEventPublisher events = event -> {};
+
+  @Override
+  public Group save(Group value) {
+    Group saved = super.save(value);
+    events.publishEvent(new com.researchspace.model.GroupPermissionsChangedEvent(saved));
+    return saved;
+  }
+
+  @Override
+  public void remove(Long id) {
+    Group removed = get(id);
+    super.remove(id);
+    events.publishEvent(new com.researchspace.model.GroupPermissionsChangedEvent(removed));
+  }
+
   public GroupDaoHibernateImpl() {
     super(Group.class);
   }

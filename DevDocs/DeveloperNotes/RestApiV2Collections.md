@@ -1166,6 +1166,22 @@ and returns a map containing only entities that the effective subject can read. 
 resource adds schemas to OpenAPI but does not add paths. Its access policy must not return a row
 constraint. The batch lookup must enforce row visibility.
 
+A target-only spec can supply a `runtimeFieldSourceResource` naming a routable resource with
+the same entity and ID mapping. This delegates runtime-field discovery and resolution without
+exposing collection routes or copying the source's scalar fields. OpenAPI publishes the source's
+existing field catalogue URLs. The catalogue validates the mapping at startup.
+
+Delegated runtime predicates additionally enforce the source resource's read policy in a correlated
+`EXISTS`, including negative and missing-value comparisons. Discovery of a definition on one
+readable item does not authorize evaluating it on every item with that definition. Safe reference
+and name predicates retain the target-only resource's own policy. Hopped projection still requires
+the provider's independently authorized `valuesForIds` support.
+
+Booking's `booking-instruments` target delegates to `instruments`: `target.customFields` supports
+filters and projection, while `target.extraFields` supports filters only. The booking catalogue
+parses these filters with the same runtime context and preserves their resolved bindings and
+trusted constraints; it owns its paging, sort and DTO projection.
+
 At `depth=0`, a readable target's `value` is its ID. This reference object is also the update shape.
 If the client supplies `globalId`, it must agree with `relationTo` and `value`. A relationship can
 also accept a global-ID string as update shorthand. Target visibility is still checked at depth 0.
@@ -1343,3 +1359,23 @@ asserting what happens without `LocaleFilter`.
 - [ ] Each relationship target is registered.
 - [ ] OpenAPI shows examples and resource-specific errors.
 - [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass.
+
+## Booking Calendar query scope
+
+`GET /api/v2/booking-catalogue/calendar` accepts `calendarStart`, `calendarEnd`,
+`where` for item predicates, `eventWhere` for event predicates, `q`, `page`, and `limit`.
+It resolves runtime fields through the same registered resource contexts as ordinary
+collections. A correlated event EXISTS applies visibility, confirmed/nondeleted state,
+half-open interval overlap and the complete event expression before resource counts and
+pagination. Several matching events count the resource once.
+
+`GET /api/v2/booking-calendar/events` accepts `start`, `end`, combined item/event `where`,
+`q`, `page`, and `limit`. It applies the same mandatory event scope before pagination,
+orders by start then ID, and renders the safe booking target projection. Both endpoints
+require start before end and limit pages to 100 rows. Search matches name, exact inventory
+ID, inventory-readable description, or visible booking purpose/requester name and username.
+Description text is used only under the instrument read policy and is not added to the booking
+target payload.
+
+`RsqlCollectionQuery.Subquery` carries nested subqueries so the executor can bind registered
+membership/access constraints through Blaze's subquery builders at every depth.

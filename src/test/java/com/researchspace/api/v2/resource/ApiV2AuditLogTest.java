@@ -28,7 +28,11 @@ import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.ApiV2ResourceField.AccessPreset;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.Sort;
+import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
+import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.time.Instant;
@@ -252,6 +256,45 @@ class ApiV2AuditLogTest {
         () -> auditLog.search(resource, "7", new ApiV2AuditQuery(), actor));
 
     verify(strictSearch, never()).search(any());
+  }
+
+  @Test
+  void auditUsesInheritedResolutionWithoutLoadingThePersistedAcl() {
+    ProtectedResourceAccess<AuditedThing, Long> protectedResource =
+        mock(ProtectedResourceAccess.class);
+    ResourceOperations<AuditedThing, Long> protectedOperations = operationsMock();
+    AuditedThing thing = new AuditedThing(7L, "Visible", "Hidden");
+    when(protectedOperations.findByIdForAudit(7L, actor)).thenReturn(Optional.of(thing));
+    when(protectedResource.isInherited(thing)).thenReturn(true);
+    when(protectedResource.viewAuditCapability()).thenReturn("VIEW_AUDIT");
+    when(protectedResource.resolveInherited(thing, actor))
+        .thenReturn(
+            new ResolvedResourceAccess(
+                Optional.of("BOOKER"), Set.of("READ_RESOURCE", "VIEW_AUDIT"), List.of()));
+    when(strictSearch.search(any())).thenReturn(List.of());
+    ApiV2ResourceSpec<AuditedThing, Long> spec =
+        new ApiV2ResourceSpec<>(
+            ThingResource.DESCRIPTION,
+            protectedOperations,
+            Long::valueOf,
+            "create-error",
+            "update-error",
+            Set.of(ResourceOperation.READ),
+            Map.of(),
+            Map.of(),
+            com.researchspace.model.collection.CollectionMutationLimits.DEFAULT,
+            List.of(),
+            Optional.of(new ResourceAccessSpec<>(protectedResource)));
+    ApiV2ResourceRegistration<?, ?> protectedRegistration =
+        new ApiV2ResourceCatalog(List.of(spec)).find("things").orElseThrow();
+    ResourceAccessManager accessManager = mock(ResourceAccessManager.class);
+    ApiV2AuditLog protectedAuditLog =
+        new ApiV2AuditLog(strictSearch, Clock.fixed(NOW, ZoneOffset.UTC), 100, accessManager);
+
+    protectedAuditLog.search(protectedRegistration, "7", rangeQuery(), actor);
+
+    verify(protectedResource, never()).access(thing);
+    verify(accessManager, never()).resolve(any(ResourceAccess.class), any());
   }
 
   @Test

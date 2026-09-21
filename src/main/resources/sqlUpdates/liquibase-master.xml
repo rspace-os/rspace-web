@@ -83,6 +83,8 @@
     <include relativeToChangelogFile="true" file="changeLog-custom-field-index.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-extra-field-index.xml"/>
 
+    <include relativeToChangelogFile="true" file="changeLog-booking-inherited-access.xml"/>
+
   <!-- These two run last: recurring-changeLog.xml (runAlways diagnostics / batch re-init) then
        customUpdates-changeLog.xml. customUpdates-changeLog.xml must ALWAYS be the final include
        (its Java customChange classes depend on the fully-migrated schema). -->

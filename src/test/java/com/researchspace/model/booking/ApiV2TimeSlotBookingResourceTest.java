@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.resource.ApiV2DocumentParser;
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class ApiV2TimeSlotBookingResourceTest {
@@ -55,6 +57,15 @@ class ApiV2TimeSlotBookingResourceTest {
     assertFalse(requesterId.sortable());
     assertEquals(CollectionFieldTypes.longNumber().operators(), requesterId.operators());
     new RsqlFilterParser(ApiV2TimeSlotBookingResource.DESCRIPTION).parse("requesterId==42");
+
+    var calendar =
+        ApiV2TimeSlotBookingResource.calendarFilterDescription(
+            com.researchspace.model.collection.AccessFunction.authenticated());
+    new RsqlFilterParser(calendar).parse("timezone==UTC");
+    new RsqlFilterParser(calendar)
+        .parse(
+            "purpose=contains=scope;bookedBy=contains=ada;privacy==full;"
+                + "kind==BOOKING;start=ge=2026-10-25T00:30:00Z;end=le=2026-10-25T02:30:00Z");
   }
 
   @Test
@@ -139,6 +150,30 @@ class ApiV2TimeSlotBookingResourceTest {
     assertEquals("BOOKING", full.get("kind"));
     assertEquals(true, full.get("canEdit"));
     assertEquals(true, full.get("canViewConfiguration"));
+  }
+
+  @Test
+  void redactsTheTargetAndConfigurationTimezoneWhenTheRequesterLostItemAccess() {
+    User requester = new User("ada");
+    TimeSlotBooking booking = booking(requester);
+    var target = ApiV2TimeSlotBookingResource.DESCRIPTION.requireRelationship("target");
+
+    booking.prepareView(BookingPrivacy.FULL, false, false);
+
+    assertNull(booking.getVisibleTarget());
+    assertNull(booking.getVisibleTimeZone());
+    assertEquals(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L),
+        booking.getBookingConfiguration().getTarget());
+    assertTrue(
+        ApiV2TimeSlotBookingResource.DESCRIPTION.relationshipTargetId(booking, target).isEmpty());
+
+    booking.prepareView(BookingPrivacy.FULL, false, true);
+
+    assertEquals(
+        Optional.of(12L),
+        ApiV2TimeSlotBookingResource.DESCRIPTION.relationshipTargetId(booking, target));
+    assertEquals("Europe/Berlin", booking.getVisibleTimeZone());
   }
 
   private static TimeSlotBooking booking(User requester) {

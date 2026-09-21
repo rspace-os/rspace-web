@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.collection.AccessFunction;
@@ -30,6 +31,7 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -53,7 +55,7 @@ class RuntimeFieldQueryTest {
       String id, RuntimeFieldValueType type, Operator operator, List<Object> values) {
     ResolvedRuntimeField resolved = field(id, type);
     RuntimeFieldSelection selection =
-        new RuntimeFieldSelection(Map.of(resolved.selector(), resolved), java.util.Set.of());
+        new RuntimeFieldSelection(Map.of(resolved.selector(), resolved), Set.of());
     return TRANSLATOR.translate(
         new FilterExpression.Comparison(resolved.selector(), operator, values, false),
         RelationshipReadAccess.none(),
@@ -64,7 +66,7 @@ class RuntimeFieldQueryTest {
     AccessFunction readAccess =
         AccessFunction.documented(
             "Test relationship target access.",
-            java.util.Set.of(),
+            Set.of(),
             ignored ->
                 AccessResult.allowedWhere(
                     new FilterExpression.Comparison(
@@ -215,7 +217,7 @@ class RuntimeFieldQueryTest {
                 new FilterExpression.Comparison(selector, Operator.EQUAL, List.of("BSL-2"), false),
                 targetAccess(),
                 new RuntimeFieldSelection(
-                    Map.of(selector, resolved), java.util.Set.of(), Map.of(selector, "target")));
+                    Map.of(selector, resolved), Set.of(), Map.of(selector, "target")));
 
     assertEquals(2, predicate.subqueries().size());
     predicate
@@ -255,6 +257,55 @@ class RuntimeFieldQueryTest {
         () -> translate("SF7", RuntimeFieldValueType.CHOICE, Operator.LIKE, List.of("x")));
   }
 
+  @ParameterizedTest
+  @EnumSource(
+      value = Operator.class,
+      names = {"EQUAL", "NOT_EQUAL", "EXISTS"})
+  void delegatedRuntimePredicatesRequireSourceReadAccessIncludingMissingValues(Operator operator) {
+    ResolvedRuntimeField original = field("SF104", RuntimeFieldValueType.TEXT);
+    ResolvedRuntimeField delegated =
+        new ResolvedRuntimeField(original.definition(), original.binding(), "instruments");
+    String selector = "target." + delegated.selector();
+    RuntimeFieldSelection selection =
+        new RuntimeFieldSelection(
+            Map.of(selector, delegated), Set.of(), Map.of(selector, "target"));
+    FilterExpression comparison =
+        new FilterExpression.Comparison(
+            selector, operator, List.of(operator == Operator.EXISTS ? false : "BSL-2"), false);
+    var actor = new User("reader");
+    var source =
+        ApiV2InstrumentResource.description(
+            AccessFunction.documented(
+                "Only one item",
+                Set.of(),
+                ignored ->
+                    AccessResult.allowedWhere(
+                        new FilterExpression.Comparison(
+                            "id", Operator.EQUAL, List.of(42L), false))));
+    var registry =
+        new ResourceRegistry(
+            List.of(
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2BookingInstrumentResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION,
+                source));
+    var translator = new RsqlCollectionQuery(ApiV2BookingConfigurationResource.DESCRIPTION, "cfg");
+    Predicate predicate =
+        translator.translate(
+            comparison, RelationshipReadAccess.forActor(registry, actor), selection);
+    assertTrue(predicate.parameters().containsValue(42L));
+    assertEquals(3, predicate.subqueries().size());
+    assertTrue(
+        predicate.subqueries().values().stream()
+            .anyMatch(
+                query ->
+                    query.entityType() == Instrument.class
+                        && query.whereExpression().contains(".id = cfg.target.id")
+                        && query.whereExpression().contains(".id = :")));
+    Predicate unavailableSource = translator.translate(comparison, targetAccess(), selection);
+    assertTrue(unavailableSource.expression().contains("1 = 0"));
+  }
+
   @Test
   void keepsARuntimePredicateAndAStaticOneInTheSameQuery() {
     ResolvedRuntimeField resolved = field("SF104", RuntimeFieldValueType.TEXT);
@@ -267,7 +318,7 @@ class RuntimeFieldQueryTest {
                     new FilterExpression.Comparison(
                         resolved.selector(), Operator.EQUAL, List.of("BSL-2"), false))),
             RelationshipReadAccess.none(),
-            new RuntimeFieldSelection(Map.of(resolved.selector(), resolved), java.util.Set.of()));
+            new RuntimeFieldSelection(Map.of(resolved.selector(), resolved), Set.of()));
 
     assertTrue(predicate.expression().contains("LOWER(item.editInfo.name) LIKE"));
     assertTrue(predicate.expression().contains("EXISTS "));

@@ -54,7 +54,7 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
    * Inventory and attached to an active, enabled Booking configuration readable by the caller.
    */
   ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
-      String query, int page, int limit, User caller, Set<String> readableRoleKeys);
+      String query, int page, int limit, User caller);
 
   /** Returns readable active instrument scalars for relationship expansion. */
   Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user);

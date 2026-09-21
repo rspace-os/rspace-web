@@ -32,10 +32,17 @@ public class BookingConfigurationOwnershipManagerImpl
       Long instrumentId, User outgoingOwner, User incomingOwner, User subject, User actor) {
     BookableTargetReference target =
         new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId);
+    if (configurationDao.findByTarget(target).filter(protectedAccess::isInherited).isPresent()) {
+      return;
+    }
     configurationDao
         .lockByTarget(target)
         .ifPresent(
             configuration -> {
+              // Inventory ownership is already authoritative for inherited configurations.
+              if (protectedAccess.isInherited(configuration)) {
+                return;
+              }
               if (configuration.getState() != BookingConfigurationState.ACTIVE) {
                 throw new BookingConfigurationLifecycleException();
               }

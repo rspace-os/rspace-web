@@ -74,6 +74,12 @@ final class RsqlRuntimeFieldCompiler {
       throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
     }
     String readable = relationships.compileReadableRelationship(relationship, state);
+    if (field.readResource() != null) {
+      readable +=
+          " AND "
+              + relationships.compileReadableRuntimeSource(
+                  relationship, field.readResource(), state);
+    }
     String parentIdPath = alias + "." + relationship.binding().idProperty();
     return "("
         + readable

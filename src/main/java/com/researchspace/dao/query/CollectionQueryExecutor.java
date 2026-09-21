@@ -4,6 +4,7 @@ import com.blazebit.persistence.CriteriaBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.blazebit.persistence.MultipleSubqueryInitiator;
 import com.blazebit.persistence.PagedList;
+import com.blazebit.persistence.SubqueryBuilder;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FilterExpression;
@@ -213,19 +214,28 @@ public final class CollectionQueryExecutor<T> {
       // and referenced from the expression by name.
       MultipleSubqueryInitiator<?> initiator =
           query.whereExpressionSubqueries(predicate.expression());
-      predicate
-          .subqueries()
-          .forEach(
-              (name, subquery) ->
-                  initiator
-                      .with(name)
-                      .from(subquery.entityType(), subquery.alias())
-                      .select("1")
-                      .whereExpression(subquery.whereExpression())
-                      .end());
+      predicate.subqueries().forEach((name, subquery) -> applySubquery(initiator, name, subquery));
       initiator.end();
     }
     predicate.apply(query);
+  }
+
+  private static void applySubquery(
+      MultipleSubqueryInitiator<?> parent, String name, RsqlCollectionQuery.Subquery subquery) {
+    SubqueryBuilder<?> builder =
+        parent.with(name).from(subquery.entityType(), subquery.alias()).select("1");
+    if (subquery.subqueries().isEmpty()) {
+      builder.whereExpression(subquery.whereExpression());
+    } else {
+      MultipleSubqueryInitiator<?> initiator =
+          builder.whereExpressionSubqueries(subquery.whereExpression());
+      subquery
+          .subqueries()
+          .forEach(
+              (nestedName, nestedSubquery) -> applySubquery(initiator, nestedName, nestedSubquery));
+      initiator.end();
+    }
+    builder.end();
   }
 
   /** Uses the page count because Blaze's root-count query fails when there are no restrictions. */

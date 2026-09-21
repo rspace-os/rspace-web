@@ -173,6 +173,31 @@ final class RsqlRelationshipCompiler {
     return readableTargets.isEmpty() ? "(1 = 0)" : "(" + String.join(" OR ", readableTargets) + ")";
   }
 
+  /** A safe target reference does not grant access to its delegated runtime field source. */
+  String compileReadableRuntimeSource(
+      Relationship<?> relationship, String resourceName, RsqlCompilationState state) {
+    CollectionDescription<?> source = state.targets.description(resourceName);
+    AccessResult access = state.targets.result(resourceName);
+    if (source == null || access.isDenied()) {
+      return "(1 = 0)";
+    }
+    String sourceAlias = state.nextTargetAlias();
+    List<String> conjuncts =
+        correlation(relationship, relationship.targets().get(0), source, sourceAlias, state);
+    access
+        .constraintOrEmpty()
+        .ifPresent(
+            constraint ->
+                conjuncts.add(
+                    state.merge(
+                        new RsqlCollectionQuery(source, sourceAlias, sourceAlias + "a")
+                            .translateTrusted(constraint))));
+    return "EXISTS "
+        + state.addSubquery(
+            new RsqlCollectionQuery.Subquery(
+                source.entityType(), sourceAlias, String.join(" AND ", conjuncts)));
+  }
+
   private String compileReference(
       FilterExpression.Comparison comparison,
       String kindPath,

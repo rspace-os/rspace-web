@@ -446,17 +446,19 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
         new AccessContext(actor, Operation.READ, description.resourceName(), id);
     decide(context, Operation.READ);
     T entity = operations.findByIdForAudit(id, actor).orElseThrow(NotFoundException::new);
-    operations.requireAuditAccess(entity, actor);
     ResolvedTarget target = new ResolvedTarget(entity, narrowFields(context, FieldSelection.all()));
     spec.resourceAccess()
         .ifPresent(
             access -> {
               var resolved =
-                  accessManager.resolve(access.protectedResource().access(entity), actor);
+                  access.protectedResource().isInherited(entity)
+                      ? access.protectedResource().resolveInherited(entity, actor)
+                      : accessManager.resolve(access.protectedResource().access(entity), actor);
               if (!resolved.hasCapability(access.protectedResource().viewAuditCapability())) {
                 throw new AuthorizationException("errors.api.v2.forbidden");
               }
             });
+    operations.requireAuditAccess(entity, actor);
     return target;
   }
 

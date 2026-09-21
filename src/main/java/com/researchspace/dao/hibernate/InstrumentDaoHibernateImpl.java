@@ -24,7 +24,6 @@ import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
-import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.search.customfield.RuntimeFieldTextSearch;
 import jakarta.persistence.LockModeType;
 import java.util.List;
@@ -83,7 +82,14 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             Instrument.class)
         .setParameter("id", id)
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-        .uniqueResultOptional();
+        .uniqueResultOptional()
+        .map(
+            instrument -> {
+              // The entity may already be in the session from a readable precheck. Refresh it so
+              // permission rechecks under the lock observe the current sharing state.
+              getSession().refresh(instrument, LockModeType.PESSIMISTIC_WRITE);
+              return instrument;
+            });
   }
 
   @Override
@@ -203,32 +209,17 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   @Override
   public ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
-      String query, int page, int limit, User caller, Set<String> readableRoleKeys) {
-    if (!caller.hasSysadminRole() && readableRoleKeys.isEmpty()) {
+      String query, int page, int limit, User caller) {
+    if (caller == null || !caller.isEnabled() || caller.isAccountLocked()) {
       return new ResourcePage<>(List.of(), 0);
     }
     List<String> groupMembers =
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(caller);
     List<String> groupNames = caller.getGroups().stream().map(Group::getUniqueName).toList();
     List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(caller);
-    Set<Long> bookingGroupIds =
-        caller.getGroups().stream().map(Group::getId).collect(Collectors.toSet());
-    if (bookingGroupIds.isEmpty()) bookingGroupIds = Set.of(-1L);
-
-    String bookingAccess;
-    if (caller.hasSysadminRole()) {
-      bookingAccess = "1=1";
-    } else {
-      bookingAccess =
-          new StringBuilder(
-                  "exists (select assignment.id from ResourceRoleAssignment assignment where")
-              .append(
-                  " assignment.resourceAccess=configuration.resourceAccess and assignment.roleKey")
-              .append(" in (:readableRoleKeys) and (assignment.user.id=:bookingUserId or")
-              .append(" assignment.group.id in (:bookingGroupIds) or")
-              .append(" assignment.audienceKey=:bookingAudience))")
-              .toString();
-    }
+    String bookingAccess =
+        getInventoryReadPermissionSqlPredicate(
+            caller, groupMembers, groupNames, visibleOwners, "instrument.");
     String containerAccess =
         readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
     String nameFilter =
@@ -267,23 +258,9 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .setFirstResult((page - 1) * limit)
             .setMaxResults(limit);
     setBookingCatalogueLocationParameters(
-        countQuery,
-        caller,
-        readableRoleKeys,
-        bookingGroupIds,
-        groupMembers,
-        groupNames,
-        visibleOwners,
-        query);
+        countQuery, caller, groupMembers, groupNames, visibleOwners, query);
     setBookingCatalogueLocationParameters(
-        pageQuery,
-        caller,
-        readableRoleKeys,
-        bookingGroupIds,
-        groupMembers,
-        groupNames,
-        visibleOwners,
-        query);
+        pageQuery, caller, groupMembers, groupNames, visibleOwners, query);
     long total = countQuery.getSingleResult();
     List<InstrumentParentLocationSummary> locations =
         pageQuery
@@ -308,21 +285,12 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   private <T> void setBookingCatalogueLocationParameters(
       Query<T> query,
       User caller,
-      Set<String> readableRoleKeys,
-      Set<Long> bookingGroupIds,
       List<String> groupMembers,
       List<String> groupNames,
       List<String> visibleOwners,
       String locationQuery) {
     query.setParameter("targetType", BookableTargetType.INSTRUMENT);
     query.setParameter("configurationState", BookingConfigurationState.ACTIVE);
-    if (!caller.hasSysadminRole()) {
-      query
-          .setParameterList("readableRoleKeys", readableRoleKeys)
-          .setParameter("bookingUserId", caller.getId())
-          .setParameterList("bookingGroupIds", bookingGroupIds)
-          .setParameter("bookingAudience", ResourceAudience.ALL_USERS);
-    }
     addQueryParams(null, caller, query, visibleOwners, groupMembers, groupNames);
     if (locationQuery != null && !locationQuery.isBlank()) {
       query.setParameter(

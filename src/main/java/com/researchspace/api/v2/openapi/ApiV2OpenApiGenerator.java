@@ -1031,23 +1031,16 @@ public final class ApiV2OpenApiGenerator {
         continue;
       }
       String targetName = relationship.targets().get(0).resourceName();
-      ApiV2ResourceRegistration<?, ?> target = catalog.find(targetName).orElse(null);
-      if (target == null) {
-        continue;
-      }
-      for (String targetNamespace : target.runtimeNamespaces()) {
+      for (RuntimeCollectionFields<?> provider : catalog.runtimeFieldsOf(targetName)) {
+        String targetNamespace = provider.namespace();
         String namespace = relationship.name() + "." + targetNamespace;
-        boolean projectable =
-            target
-                .runtimeFields(targetNamespace)
-                .map(RuntimeCollectionFields::projectsThroughRelationship)
-                .orElse(false);
+        boolean projectable = provider.projectsThroughRelationship();
         namespaces.add(
             ordered(
                 "namespace",
                 namespace,
                 "catalog",
-                catalogUrl(targetName, targetNamespace),
+                catalogUrl(catalog.runtimeFieldSourceOf(targetName), targetNamespace),
                 "responseField",
                 projectable ? namespace : "",
                 "via",

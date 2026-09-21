@@ -18,6 +18,16 @@ public class BookingCalendarSubscriptionDaoHibernate
   }
 
   @Override
+  public void lockPermissionFence() {
+    // Permission changes are rare. A single fence keeps the creation/revocation protocol bounded;
+    // replace with affected-user fences if measured contention warrants the broader mutation audit.
+    getSession()
+        .createNativeQuery(
+            "select id from BookingConfigurationDefaults where id = 1 for update", Long.class)
+        .getSingleResult();
+  }
+
+  @Override
   public Optional<BookableItemCalendarSubscription> findByUserIdAndConfigurationId(
       Long userId, Long configurationId) {
     return getSession()
@@ -43,28 +53,39 @@ public class BookingCalendarSubscriptionDaoHibernate
   }
 
   @Override
-  public List<BookableItemCalendarSubscription> findByUserId(Long userId) {
-    return getSession()
-        .createQuery(
-            "from BookableItemCalendarSubscription subscription"
-                + " join fetch subscription.bookingConfiguration configuration"
-                + " join fetch configuration.resourceAccess"
-                + " where subscription.user.id = :userId",
-            BookableItemCalendarSubscription.class)
-        .setParameter("userId", userId)
-        .list();
+  public List<BookingCalendarSubscriptionCandidate> findCandidatesByUserId(Long userId) {
+    return candidates("where subscription.user.id = :userId", "userId", userId);
   }
 
   @Override
-  public List<BookableItemCalendarSubscription> findByConfigurationId(Long configurationId) {
-    return getSession()
-        .createQuery(
-            "from BookableItemCalendarSubscription subscription"
-                + " join fetch subscription.user"
-                + " where subscription.bookingConfiguration.id = :configurationId",
-            BookableItemCalendarSubscription.class)
-        .setParameter("configurationId", configurationId)
-        .list();
+  public List<BookingCalendarSubscriptionCandidate> findCandidatesByConfigurationId(
+      Long configurationId) {
+    return candidates(
+        "where subscription.bookingConfiguration.id = :configurationId",
+        "configurationId",
+        configurationId);
+  }
+
+  @Override
+  public List<BookingCalendarSubscriptionCandidate> findCandidatesForMembershipRevalidation() {
+    return candidates("", null, null);
+  }
+
+  private List<BookingCalendarSubscriptionCandidate> candidates(
+      String restriction, String parameterName, Object parameterValue) {
+    var query =
+        getSession()
+            .createQuery(
+                "select new"
+                    + " com.researchspace.booking.dao.BookingCalendarSubscriptionCandidate(subscription.id,"
+                    + " subscription.user.id, subscription.bookingConfiguration.id) from"
+                    + " BookableItemCalendarSubscription subscription "
+                    + restriction,
+                BookingCalendarSubscriptionCandidate.class);
+    if (parameterName != null) {
+      query.setParameter(parameterName, parameterValue);
+    }
+    return query.list();
   }
 
   @Override
@@ -83,6 +104,14 @@ public class BookingCalendarSubscriptionDaoHibernate
                 + " and bookingConfiguration.id = :configurationId")
         .setParameter("userId", userId)
         .setParameter("configurationId", configurationId)
+        .executeUpdate();
+  }
+
+  @Override
+  public int deleteById(Long subscriptionId) {
+    return getSession()
+        .createMutationQuery("delete from BookableItemCalendarSubscription where id = :id")
+        .setParameter("id", subscriptionId)
         .executeUpdate();
   }
 

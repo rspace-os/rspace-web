@@ -40,11 +40,14 @@ public final class InstrumentReadAccess implements AccessFunction {
 
   @Override
   public AccessResult check(AccessContext context) {
-    if (!context.isAuthenticated()) {
+    if (!context.isAuthenticated()
+        || !context.user().isEnabled()
+        || context.user().isAccountLocked()) {
       return AccessResult.denied(AccessPolicy.AUTHENTICATION_REQUIRED);
     }
     FilterExpression constraint =
-        context.computeOnce(MEMO_KEY, FilterExpression.class, () -> constraint(context.user()));
+        context.computeOnce(
+            MEMO_KEY, FilterExpression.class, () -> constraint(context.user(), false));
     return AccessResult.allowedWhere(constraint);
   }
 
@@ -53,13 +56,15 @@ public final class InstrumentReadAccess implements AccessFunction {
     return Optional.of(DOCUMENTATION);
   }
 
-  private FilterExpression constraint(User user) {
+  /** Current item read or edit restriction, using the same Inventory sharing facts. */
+  public FilterExpression constraint(User user, boolean requireEdit) {
     if (user.hasSysadminRole()) {
       return NOT_DELETED;
     }
     List<String> groupMembers = permissions.getUsernameOfUserAndAllMembersOfTheirGroups(user);
     List<String> groupNames = user.getGroups().stream().map(Group::getUniqueName).toList();
-    List<String> visibleOwners = permissions.getOwnersVisibleWithUserRole(user);
+    List<String> visibleOwners =
+        requireEdit ? List.of() : permissions.getOwnersVisibleWithUserRole(user);
 
     List<FilterExpression> disjuncts = new ArrayList<>();
     disjuncts.add(equals(OWNER_USERNAME, user.getUsername()));
@@ -78,8 +83,15 @@ public final class InstrumentReadAccess implements AccessFunction {
           new FilterExpression.And(
               List.of(
                   equals(SHARING_MODE, InventorySharingMode.WHITELIST),
-                  new FilterExpression.Comparison(
-                      SHARING_ACL, Operator.CONTAINS, List.of(groupName), false))));
+                  new FilterExpression.Or(
+                      List.of(
+                          new FilterExpression.Comparison(
+                              SHARING_ACL, Operator.EQUAL, List.of(groupName + "=*"), true),
+                          new FilterExpression.Comparison(
+                              SHARING_ACL,
+                              Operator.CONTAINS,
+                              List.of("&" + groupName + "="),
+                              false))))));
     }
     FilterExpression inventory =
         disjuncts.size() == 1 ? disjuncts.get(0) : new FilterExpression.Or(disjuncts);

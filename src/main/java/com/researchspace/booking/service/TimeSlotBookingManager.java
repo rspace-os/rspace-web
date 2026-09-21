@@ -149,6 +149,12 @@ public interface TimeSlotBookingManager {
   /** Returns one page selected by a parsed collection request. */
   ResourcePage<TimeSlotBooking> getBookings(ResourceRequest request, User actor);
 
+  /** Reads visible Calendar events with a server-owned text predicate before pagination. */
+  ResourcePage<TimeSlotBooking> getBookings(
+      ResourceRequest request,
+      User actor,
+      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction);
+
   /** Counts bookings selected by a parsed collection request. */
   long countBookings(ResourceRequest request, User actor);
 

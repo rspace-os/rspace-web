@@ -105,7 +105,17 @@ public final class RsqlCollectionQuery {
    * <p>Blaze's expression parser accepts no subquery, so a subquery must be built through {@code
    * whereExpressionSubqueries} and referenced from the expression by name.
    */
-  public record Subquery(Class<?> entityType, String alias, String whereExpression) {}
+  public record Subquery(
+      Class<?> entityType, String alias, String whereExpression, Map<String, Subquery> subqueries) {
+
+    public Subquery {
+      subqueries = Map.copyOf(subqueries);
+    }
+
+    public Subquery(Class<?> entityType, String alias, String whereExpression) {
+      this(entityType, alias, whereExpression, Map.of());
+    }
+  }
 
   public record Predicate(
       String expression, Map<String, Object> parameters, Map<String, Subquery> subqueries) {

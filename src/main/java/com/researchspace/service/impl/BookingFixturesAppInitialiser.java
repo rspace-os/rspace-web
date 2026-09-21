@@ -40,6 +40,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /** Adds idempotent bookable-item and booking fixtures to development deployments. */
 public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
@@ -68,6 +73,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   @Autowired private BookingConfigurationManager configurationManager;
   @Autowired private TimeSlotBookingManager bookingManager;
 
+  private TransactionTemplate fixtureTransaction;
+
   @Autowired
   @Qualifier("bookingConfigurationDao")
   private BookingConfigurationDao configurationDao;
@@ -76,8 +83,38 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   @Qualifier("timeSlotBookingDao")
   private TimeSlotBookingDao bookingDao;
 
+  @Autowired
+  public void setTransactionManager(PlatformTransactionManager transactionManager) {
+    fixtureTransaction = new TransactionTemplate(transactionManager);
+    fixtureTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+  }
+
   @Override
   public void onAppStartup(ApplicationContext applicationContext) {
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(
+          new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+              createFixturesInCommittedStages();
+            }
+          });
+      return;
+    }
+    createFixturesInCommittedStages();
+  }
+
+  // GlobalInitManager is transactional. Run only after it commits so its locks cannot deadlock the
+  // two independent fixture stages.
+  private void createFixturesInCommittedStages() {
+    FixtureIds fixtureIds = fixtureTransaction.execute(ignored -> createInventoryFixtures());
+    if (fixtureIds == null) {
+      return;
+    }
+    fixtureTransaction.executeWithoutResult(ignored -> createBookingFixtures(fixtureIds));
+  }
+
+  private FixtureIds createInventoryFixtures() {
     User owner = userDao.getUserByUsername(FIXTURE_USER);
     User restrictedInstrumentOwner = userDao.getUserByUsername(RESTRICTED_INSTRUMENT_OWNER);
     User restrictedContainerOwner = userDao.getUserByUsername(RESTRICTED_CONTAINER_OWNER);
@@ -87,7 +124,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
         || restrictedContainerOwner == null
         || sysadmin == null) {
       log.info("Skipping booking fixtures because the Docker development users are unavailable");
-      return;
+      return null;
     }
 
     List<Instrument> instruments = new ArrayList<>();
@@ -185,6 +222,22 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     moveToParent(restrictedLocation, restrictedParent);
     instruments.add(restrictedLocation);
 
+    return new FixtureIds(
+        owner.getId(),
+        sysadmin.getId(),
+        instruments.stream().map(Instrument::getId).toList(),
+        bookingCardInstruments.stream().map(Instrument::getId).toList(),
+        busyCalendarInstruments.stream().map(Instrument::getId).toList());
+  }
+
+  private void createBookingFixtures(FixtureIds fixtureIds) {
+    User owner = userDao.get(fixtureIds.ownerId());
+    User sysadmin = userDao.get(fixtureIds.sysadminId());
+    List<Instrument> instruments = reloadInstruments(fixtureIds.instrumentIds());
+    List<Instrument> bookingCardInstruments =
+        reloadInstruments(fixtureIds.bookingCardInstrumentIds());
+    List<Instrument> busyCalendarInstruments =
+        reloadInstruments(fixtureIds.busyCalendarInstrumentIds());
     List<BookingConfiguration> configurations;
     List<BookingConfiguration> busyCalendarConfigurations;
     try {
@@ -342,6 +395,17 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       logout();
     }
   }
+
+  private List<Instrument> reloadInstruments(List<Long> instrumentIds) {
+    return instrumentIds.stream().map(instrumentDao::get).toList();
+  }
+
+  private record FixtureIds(
+      Long ownerId,
+      Long sysadminId,
+      List<Long> instrumentIds,
+      List<Long> bookingCardInstrumentIds,
+      List<Long> busyCalendarInstrumentIds) {}
 
   private List<Instrument> ensureBusyCalendarInstruments(User owner) {
     String fixtureDescription = message(FIXTURE_DESCRIPTION_KEY);

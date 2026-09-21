@@ -79,7 +79,9 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
           query.setParameter("userGroupMembers", groupMembers);
         }
         for (int i = 0; i < groupNames.size(); i++) {
-          query.setParameter("userGroupUniqueName" + i, "%" + groupNames.get(i) + "%");
+          query.setParameter(
+              "userGroupUniqueName" + i,
+              "%&" + com.researchspace.dao.query.LikeEscaper.escape(groupNames.get(i)) + "=%");
         }
       }
     }
@@ -180,11 +182,11 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
           .append(relatedItemPrefix)
           .append(
               "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.WHITELIST")
-          .append(" and ")
+          .append(" and concat('&', ")
           .append(relatedItemPrefix)
-          .append("sharingACL.acl LIKE :userGroupUniqueName")
+          .append("sharingACL.acl) LIKE :userGroupUniqueName")
           .append(i)
-          .append(") ");
+          .append(" escape '\\' ) ");
     }
     return predicate.append(")").toString();
   }
@@ -282,7 +284,11 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
         baseQuery.setParameterList("userGroupMembers", userGroupMembers);
       }
       for (int i = 0; i < userGroupsUniqueNames.size(); i++) {
-        baseQuery.setParameter("userGroupUniqueName" + i, "%" + userGroupsUniqueNames.get(i) + "%");
+        baseQuery.setParameter(
+            "userGroupUniqueName" + i,
+            "%&"
+                + com.researchspace.dao.query.LikeEscaper.escape(userGroupsUniqueNames.get(i))
+                + "=%");
       }
     }
     return baseQuery;

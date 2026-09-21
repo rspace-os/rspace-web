@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+    <changeSet id="booking-inherited-access-nullable-acl" author="rspace" context="run">
+        <comment>Allow Booking configurations to inherit Inventory permissions without an independent ACL. Retain legacy grants and audit references for the coordinated migration.</comment>
+        <dropNotNullConstraint tableName="BookingConfiguration" columnName="resourceAccess_id" columnDataType="BIGINT"/>
+    </changeSet>
+</databaseChangeLog>

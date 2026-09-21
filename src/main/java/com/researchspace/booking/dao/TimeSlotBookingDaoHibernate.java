@@ -52,11 +52,19 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   @Override
   public ResourcePage<TimeSlotBooking> getReadableResources(
       ResourceRequest request, RelationshipReadAccess targetAccess) {
+    return getCalendarResources(request, targetAccess, null);
+  }
+
+  @Override
+  public ResourcePage<TimeSlotBooking> getCalendarResources(
+      ResourceRequest request,
+      RelationshipReadAccess targetAccess,
+      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction) {
     return collectionQuery.page(
         criteriaBuilderFactory,
         getSession(),
         request.restrict(ACTIVE),
-        null,
+        restriction,
         targetAccess,
         List.of("bookingConfiguration"));
   }

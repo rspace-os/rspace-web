@@ -6,14 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.User;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
 import java.time.Instant;
@@ -37,6 +39,7 @@ import org.springframework.web.context.WebApplicationContext;
 class BookingCalendarDownloadControllerMVCIT {
 
   @Autowired private WebApplicationContext context;
+  @Autowired private InstrumentEntityApiManager instrumentManager;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   private ApiV2Fixture fixture;
@@ -121,29 +124,34 @@ class BookingCalendarDownloadControllerMVCIT {
   }
 
   @Test
-  void exportFollowsTheConfigurationsOwnAccessRules() throws Exception {
+  void exportRequiresCurrentItemAccessEvenForTheRequester() throws Exception {
     User owner = fixture.user();
     long instrumentId = fixture.instrument(owner, "Cryostat " + fixture.marker());
-    long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
+    fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
     Instant start = alignedStart();
     long bookingId = fixture.booking(instrumentId, start, start.plus(1, ChronoUnit.HOURS));
 
-    // All users are Bookers by default, so a third party may export exactly what the booking read
-    // API already shows them. The file adds no visibility of its own.
     mockMvc
-        .perform(get("/api/v2/bookings/" + bookingId).header("apiKey", fixture.otherUserKey()))
+        .perform(get("/api/v2/bookings/" + bookingId).header("apiKey", fixture.userKey()))
         .andExpect(status().isOk());
-    mockMvc
-        .perform(get(path(bookingId)).header("apiKey", fixture.otherUserKey()))
-        .andExpect(status().isOk());
-
-    withoutAllUsersAccess(configurationId);
-
-    mockMvc
-        .perform(get(path(bookingId)).header("apiKey", fixture.otherUserKey()))
-        .andExpect(status().isNotFound());
     mockMvc
         .perform(get(path(bookingId)).header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk());
+
+    User newOwner = fixture.otherUser();
+    ApiInstrument transferred = instrumentManager.getApiInstrumentById(instrumentId, owner);
+    transferred.setOwner(new ApiUser(newOwner));
+    instrumentManager.changeApiInstrumentOwner(transferred, owner);
+
+    // The requester keeps the redacted booking record but cannot export the hidden item.
+    mockMvc
+        .perform(get("/api/v2/bookings/" + bookingId).header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(get(path(bookingId)).header("apiKey", fixture.userKey()))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(get(path(bookingId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isOk());
   }
 
@@ -161,33 +169,6 @@ class BookingCalendarDownloadControllerMVCIT {
         .perform(get(path(bookingId)).header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound())
         .andExpect(content().string(not(containsString("BEGIN:VCALENDAR"))));
-  }
-
-  /** Leaves the owner in place and takes the all-users audience down to no access. */
-  private void withoutAllUsersAccess(long configurationId) throws Exception {
-    String accessPath = "/api/v2/booking-configurations/" + configurationId + "/access";
-    String etag =
-        mockMvc
-            .perform(get(accessPath).header("apiKey", fixture.userKey()))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getHeader(HttpHeaders.ETAG);
-    mockMvc
-        .perform(
-            put(accessPath)
-                .header("apiKey", fixture.userKey())
-                .header(HttpHeaders.IF_MATCH, etag)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"assignments":[
-                      {"granteeKey":"user:%d","role":"OWNER"},
-                      {"granteeKey":"audience:all-users","role":"NO_ACCESS"}
-                    ]}
-                    """
-                        .formatted(fixture.user().getId())))
-        .andExpect(status().isOk());
   }
 
   private void cancel(long bookingId) throws Exception {

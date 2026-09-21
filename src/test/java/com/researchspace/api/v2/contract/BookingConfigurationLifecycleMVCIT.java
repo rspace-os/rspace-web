@@ -111,7 +111,7 @@ class BookingConfigurationLifecycleMVCIT {
             delete(configurationPath)
                 .header("apiKey", fixture.otherUserKey())
                 .header(HttpHeaders.IF_MATCH, active.getResponse().getHeader(HttpHeaders.ETAG)))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isNotFound());
 
     MvcResult archived =
         mockMvc
