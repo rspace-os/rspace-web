@@ -45,12 +45,15 @@ export class StoichiometryDialogComponent {
   }
 
   async saveChanges(): Promise<void> {
-    await Promise.all([
+    const [response] = await Promise.all([
       this.page.waitForResponse(
         (res) => res.request().method() === "PUT" && new URL(res.url()).pathname.endsWith("/stoichiometry"),
       ),
       this.saveChangesButton.click(),
     ]);
+    if (!response.ok()) {
+      throw new Error(`PUT .../stoichiometry failed: ${response.status()} ${response.statusText()}`);
+    }
   }
 
   async openUpdateInventoryStockDialog(): Promise<StockUpdateDialogComponent> {

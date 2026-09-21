@@ -51,7 +51,10 @@ export class NewItemFormShell {
     );
     await this.saveButton.click();
     await this.saveButton.waitFor({ state: "detached" });
-    await refetchResponse;
+    const response = await refetchResponse;
+    if (!response.ok()) {
+      throw new Error(`Post-save re-fetch failed: ${response.status()} ${response.statusText()}`);
+    }
   }
 
   customFields(): CustomFieldsEditor {

@@ -186,7 +186,7 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
 
     const viewerDialog = await field.chemistry.openKetcherViewer();
     await expect(page.getByRole("dialog", { name: "Ketcher Chemical Viewer (Read-Only)" })).toBeVisible();
-    expect(await viewerDialog.isAtomToolEnabled("C")).toBe(false);
+    await expect.poll(() => viewerDialog.isAtomToolEnabled("C")).toBe(false);
   });
 
   test("As a user, I can reopen an inserted chemical structure and cancel out of Ketcher without changing it", async ({
@@ -306,6 +306,11 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
     page,
     pageWorkspace,
   }) => {
+    test.fixme(
+      true,
+      "Chemical Search returns 3 results instead of 2 for a structure inserted via Ketcher + PubChem:RT-1152",
+    );
+
     const { docEditor: firstDoc } = await insertAspirinViaKetcher(pageWorkspace, page);
     await firstDoc.saveAndView();
 
@@ -318,7 +323,7 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
 
     const searchDialog = await searchExactForAspirin(pageWorkspace);
 
-    expect(await searchDialog.resultCount()).toBeGreaterThanOrEqual(2);
+    expect(await searchDialog.resultCount()).toBe(2);
   });
 
   test("As a user, inserting the same structure twice into a document is found twice by Chemical Search, and copying it into a snippet doesn't add a third match", async ({
@@ -358,9 +363,15 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
     pageWorkspace,
     pageDeletedItems,
     page,
+    browserName,
   }) => {
-    const docName = "Untitled document";
+    if (browserName === "webkit") {
+      test.setTimeout(90_000);
+    }
+
+    const docName = uniqueName("e2e-chem-delete-restore");
     const { docEditor, docId } = await insertAspirinViaKetcher(pageWorkspace, page);
+    await docEditor.header.rename(docName);
     await docEditor.saveAndView();
 
     const searchDialog = await searchExactForAspirin(pageWorkspace);

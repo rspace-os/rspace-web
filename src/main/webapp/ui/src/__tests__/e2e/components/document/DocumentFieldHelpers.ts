@@ -7,9 +7,15 @@ import type { Page } from "@playwright/test";
 export async function activateFieldForEditing(page: Page, fieldId: string): Promise<void> {
   const iframe = page.locator(`iframe#rtf_${fieldId}_ifr`);
   const editButton = page.locator(`#edit_${fieldId}`);
+  let expanded = false;
   await Promise.race([
-    iframe.waitFor({ state: "visible" }),
-    editButton.waitFor({ state: "visible" }).then(() => editButton.click()),
+    iframe.waitFor({ state: "visible" }).then(() => {
+      expanded = true;
+    }),
+    editButton.waitFor({ state: "visible" }).then(async () => {
+      if (expanded) return;
+      await editButton.click();
+    }),
   ]);
   await iframe.waitFor({ state: "visible" });
 }

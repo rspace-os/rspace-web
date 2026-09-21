@@ -21,7 +21,12 @@ export class PickInventoryItemDialogComponent {
 
   async search(query: string): Promise<void> {
     await this.searchInput.fill(query);
-    await this.root.getByRole("button", { name: "Search", exact: true }).click();
+    await Promise.all([
+      this.page.waitForResponse(
+        (res) => res.request().method() === "GET" && new URL(res.url()).pathname.endsWith("/api/inventory/v1/search"),
+      ),
+      this.root.getByRole("button", { name: "Search", exact: true }).click(),
+    ]);
   }
 
   row(name: string): Locator {
