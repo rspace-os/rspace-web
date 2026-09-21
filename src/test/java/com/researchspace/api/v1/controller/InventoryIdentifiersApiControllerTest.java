@@ -175,6 +175,11 @@ class InventoryIdentifiersApiControllerTest {
         .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
   }
 
+  /**
+   * Only {@code declined} is reached by an ordinary curator action; cancelling sends the identifier
+   * back to {@code draft} instead. The other two stay listed because the provider's status is
+   * stored verbatim, so a route that does produce them must not leave an identifier undeletable.
+   */
   @Test
   void deleteAllowsB2instClosedReviewStates() {
     for (String state : java.util.List.of("declined", "cancelled", "expired")) {

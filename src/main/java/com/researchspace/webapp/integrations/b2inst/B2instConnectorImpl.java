@@ -5,12 +5,14 @@ import com.researchspace.b2inst.model.request.B2instReviewReceiver;
 import com.researchspace.b2inst.model.request.B2instReviewRequest;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import jakarta.annotation.PostConstruct;
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,8 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -66,6 +70,7 @@ public class B2instConnectorImpl implements B2instConnector {
 
   @PostConstruct
   @Override
+  @CacheEvict(value = "pidinstLookupResults", allEntries = true)
   public void reloadClient() {
     Map<String, SystemPropertyValue> props = sysPropertyMgr.getAllSysadminPropertiesAsMap();
     enabled = Boolean.parseBoolean(getProperty(props, SystemPropertyName.PIDINST_B2INST_ENABLED));
@@ -357,6 +362,37 @@ public class B2instConnectorImpl implements B2instConnector {
   @Override
   public Optional<B2instDraftRecord> getDraftRecord(String rid) {
     return getRecord(recordUrl(rid, "draft"), rid);
+  }
+
+  @Override
+  @Cacheable(value = "pidinstLookupResults", key = "'b2inst:' + #query + ':' + #size")
+  public B2instSearchResult searchRecords(String query, int size) {
+    // /api/records is the PUBLISHED index, which is the whole of what may be imported: the
+    // account's own drafts live under /api/user/records and are deliberately not searched
+    /*
+     * A URI, not a String. RestTemplate treats a String as a URI template and encodes it again, so
+     * the percent sequences produced by encode() were themselves encoded and a space reached
+     * B2INST as %2520 - every multi-word search looked for a literal "a%20b". Handing it an
+     * already-built URI skips that second pass. The encoding still holds the safety property:
+     * Spring's QUERY_PARAM type escapes '=' and '&', so a query cannot add or override a
+     * parameter, and the host comes only from the pidinst.b2inst.* sysadmin properties.
+     */
+    URI url =
+        UriComponentsBuilder.fromUriString(apiBase())
+            .pathSegment("records")
+            .queryParam("q", query)
+            .queryParam("size", size)
+            .build()
+            .encode()
+            .toUri();
+    try {
+      B2instSearchResult result = restTemplate.getForObject(url, B2instSearchResult.class);
+      return result == null ? new B2instSearchResult() : result;
+    } catch (RestClientException e) {
+      String reason = describeFailure(e);
+      throw new B2instConnectionException(
+          "Error searching B2INST records: " + developerDetail(e), reason, e);
+    }
   }
 
   private Optional<B2instDraftRecord> getRecord(String url, String rid) {

@@ -1,5 +1,6 @@
 import { basename } from "node:path";
 import { expect, type FrameLocator, type Locator, type Page } from "@playwright/test";
+import { ChemistryFieldContent } from "@/__tests__/e2e/components/document/ChemistryFieldContent";
 import { ImageQuickToolbar } from "@/__tests__/e2e/components/document/ImageQuickToolbar";
 import { StoichiometryReactionDialogComponent } from "@/__tests__/e2e/components/document/StoichiometryReactionDialogComponent";
 
@@ -9,6 +10,7 @@ export class TinyMceEditor {
   readonly container: Locator;
   private readonly menubar: Locator;
   readonly editorId: string;
+  readonly chemistry: ChemistryFieldContent;
 
   constructor(
     private readonly page: Page,
@@ -20,6 +22,7 @@ export class TinyMceEditor {
     // TinyMCE exposes stable classes but no semantic editor-container or menubar roles.
     this.container = page.locator("div.tox-tinymce").filter({ has: page.locator(`iframe#${this.editorId}_ifr`) });
     this.menubar = this.container.locator(".tox-menubar");
+    this.chemistry = new ChemistryFieldContent(page, this.frame, this.container);
   }
 
   async waitForReady(): Promise<this> {
@@ -158,10 +161,6 @@ export class TinyMceEditor {
     }
 
     await this.body.getByRole("img", { name: `image ${fileName}` }).waitFor({ state: "visible" });
-  }
-
-  get chemElement(): Locator {
-    return this.frame.locator('img[src*="sourceType=CHEM"]');
   }
 
   get imageElement(): Locator {

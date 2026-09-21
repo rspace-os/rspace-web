@@ -23,7 +23,7 @@ env:
   RSPACE_BASE_URL: http://localhost:8080
   MAILPIT_HTTP_URL: http://localhost:8025
   # Keep this in sync with matrix.shard below.
-  E2E_SHARD_TOTAL: "3"
+  E2E_SHARD_TOTAL: "2"
 
 jobs:
   build:
@@ -64,13 +64,14 @@ jobs:
   e2e:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         java-version: [17]
         project: [chromium, firefox, webkit, mobile]
-        shard: [1, 2, 3]
+        shard: [1, 2]
         # API specs are a single file; run them once, unsharded.
         include:
           - java-version: 17

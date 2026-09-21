@@ -228,11 +228,11 @@ jobs:
     env:
       # ponytail: shard count is a plain number, not a matrix-generating step;
       # bump both this and the matrix.shard list below together to rescale.
-      VITEST_SHARD_COUNT: 2
+      VITEST_SHARD_COUNT: 1
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       inputs.frontend_tests ||
@@ -402,6 +402,10 @@ jobs:
         env:
           VITEST_BROWSERS: ${{ matrix.browser }}
         run: pnpm run test-browser
+
+      - name: Run Storybook tests
+        if: ${{ !cancelled() && matrix.browser == 'chromium' }}
+        run: pnpm run storybook:test
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.24.0

@@ -11,6 +11,18 @@ overrides:
   # monorepo). Redirect it to the published miew 0.12.0 on npm.
   miew-react>miew: 0.12.0
 
+packageExtensions:
+  # ketcher 3.18.0 imports Node's `events` without declaring it, so the editor
+  # dies with "EventEmitter is not a constructor". `overrides` can't add an
+  # undeclared dep. Expected fixed in ketcher 4.x. Drop when
+  # epam/ketcher#11911 lands.
+  ketcher-core:
+    dependencies:
+      events: 3.3.0
+  ketcher-standalone:
+    dependencies:
+      events: 3.3.0
+
 allowBuilds:
   lefthook: true
   '@swc/core': true
@@ -25,6 +37,8 @@ allowBuilds:
   msw: true
   protobufjs: true
   vue-demi: true
+  # Storybook's test configuration is maintained in .storybook, not by its installer.
+  '@storybook/addon-vitest': false
 
 # Block packages published less than 7 days ago (10080 minutes) as a defence
 # against supply-chain attacks that are typically caught within that window.

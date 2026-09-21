@@ -9,6 +9,7 @@ import com.researchspace.api.v1.controller.InventoryApiSearchConfig;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
+import com.researchspace.api.v1.model.ApiPidinstImportPost;
 import com.researchspace.model.User;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -72,6 +73,18 @@ public interface InstrumentsApi {
   @PostMapping("/{id}/actions/duplicate")
   @ResponseStatus(HttpStatus.CREATED)
   ApiInstrument duplicate(Long id, User user);
+
+  /**
+   * Instrument import (RSDEV-1326): fetch the PID's record from the enabled PIDINST provider,
+   * create an Instrument from the default PIDINST template filled from it, and attach a linked
+   * identifier. 404 when the provider has no published instrument record for the PID, 409 when an
+   * instrument in this deployment already links it, 422 when the record lacks a mandatory value.
+   */
+  @PostMapping("/importPidinst")
+  @ResponseStatus(HttpStatus.CREATED)
+  ApiInstrument importPidinst(
+      @RequestBody @Valid ApiPidinstImportPost post, BindingResult errors, User user)
+      throws BindException;
 
   @PostMapping("/{id}/actions/updateToLatestTemplateVersion")
   ApiInstrument updateToLatestTemplateVersion(Long id, User user);

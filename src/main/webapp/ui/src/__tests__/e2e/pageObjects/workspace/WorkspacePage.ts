@@ -13,6 +13,7 @@ import { WorkspaceTable } from "@/__tests__/e2e/components/workspace/WorkspaceTa
 import { WorkspaceTemplatePickerDialog } from "@/__tests__/e2e/components/workspace/WorkspaceTemplatePickerDialog";
 import { WorkspaceToolbar } from "@/__tests__/e2e/components/workspace/WorkspaceToolbar";
 import { WorkspaceTree } from "@/__tests__/e2e/components/workspace/WorkspaceTree";
+import { ChemistrySearchDialogComponent } from "@/modules/chemistry/__tests__/pageObjects/ChemistrySearchDialogComponent";
 import { BasePage } from "../BasePage";
 import { DocumentEditorPage } from "../document/DocumentEditorPage";
 import { DocumentPage } from "../document/DocumentPage";
@@ -216,6 +217,13 @@ export class WorkspacePage extends BasePage {
     const editor = new DocumentEditorPage(this.page);
     await editor.isLoaded();
     return editor;
+  }
+
+  async openChemicalSearch(): Promise<ChemistrySearchDialogComponent> {
+    await this.searchBar.setFilter("Chemical");
+    const dialog = new ChemistrySearchDialogComponent(this.page);
+    await dialog.waitForOpen();
+    return dialog;
   }
 
   async publishRecord(
