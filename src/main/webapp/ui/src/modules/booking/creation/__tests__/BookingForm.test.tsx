@@ -545,6 +545,29 @@ describe("BookingForm", () => {
     expect(submit).toHaveBeenCalledOnce();
   });
 
+  it("shows save errors and guidance when the outcome is uncertain", async () => {
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={editableBooking}
+        configuration={target}
+        token="token"
+        pending={false}
+        error="booking:bookings.errors.outcomeUncertain"
+        outcomeUncertain
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("booking:bookings.errors.outcomeUncertain");
+    expect(alert).toHaveTextContent("booking:bookings.errors.outcomeUncertainGuidance");
+    expect(screen.getByRole("link", { name: "booking:bookings.errors.checkExistingBookings" })).toHaveAttribute(
+      "href",
+      "/booking/my-bookings?period=upcoming",
+    );
+  });
+
   it("allows maintenance to span local dates", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();

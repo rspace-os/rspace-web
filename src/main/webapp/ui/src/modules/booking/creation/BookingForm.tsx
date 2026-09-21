@@ -6,6 +6,7 @@ import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { BookableItemPicker } from "@/modules/booking/creation/BookableItemPicker";
+import { BookingFormAlerts } from "@/modules/booking/creation/BookingFormAlerts";
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
@@ -349,28 +350,11 @@ export function BookingForm(props: BookingFormProps) {
         ) : (
           windowFields
         )}
-        {bookingInPast && (
-          <p role="status" className="text-sm text-amber-800 dark:text-amber-200">
-            {t("bookings.warnings.past")}
-          </p>
-        )}
-        {props.error && (
-          <div className="space-y-2">
-            <FieldError>{props.error}</FieldError>
-            {props.outcomeUncertain && (
-              <p className="text-sm text-muted-foreground">
-                {t("bookings.errors.outcomeUncertainGuidance")}{" "}
-                <Link
-                  className="font-medium text-primary underline underline-offset-4"
-                  to="/booking/my-bookings"
-                  search={{ period: "upcoming" }}
-                >
-                  {t("bookings.errors.checkExistingBookings")}
-                </Link>
-              </p>
-            )}
-          </div>
-        )}
+        <BookingFormAlerts
+          warning={bookingInPast ? t("bookings.warnings.past") : undefined}
+          error={props.error}
+          outcomeUncertain={props.outcomeUncertain}
+        />
         <RenderFields fields={textFields} form={form} disabled={busy} density={props.density} layout="stacked" />
         <p className={cn("text-right text-xs text-muted-foreground", compact ? "-mt-2" : "-mt-6")} aria-live="polite">
           {t(eventKind === "MAINTENANCE" ? "bookings.form.notesCount" : "bookings.form.purposeCount", {
