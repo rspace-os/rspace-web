@@ -116,4 +116,55 @@ public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase 
         summary.isReadable(),
         "a live record the actor can read stays readable when its audit rows are gone");
   }
+
+  /**
+   * RSDEV-1354: the purged-audit fallback must not resurrect a dead target. {@code
+   * targetExistsAndIsReadable} is deliberately true for a readable soft-deleted record, so the
+   * fallback asks the live check instead; otherwise a deleted sample whose audit rows were purged
+   * would lose its "No access" pill and keep an Open action.
+   */
+  @Test
+  public void reportsSoftDeletedTargetWhoseAuditRowsWerePurgedAsUnreadable() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    sampleApiMgr.markSampleAsDeleted(sample.getId(), false, user);
+    new JdbcTemplate(dataSource).update("DELETE FROM Sample_AUD WHERE id = ?", sample.getId());
+
+    // see resolvesLatestSnapshotFromNewestRevision: resolveSummary needs an active transaction
+    ApiInventoryLinkTargetSummary summary =
+        doInTransaction(
+            () -> {
+              return snapshotResolver.resolveSummary(
+                  GlobalIdPrefix.SA, sample.getId(), null, null, user);
+            });
+
+    assertFalse(
+        summary.isReadable(),
+        "a soft-deleted record must stay redacted when its audit rows are gone");
+  }
+
+  /**
+   * RSDEV-1354: samples and sample templates are one table split by DTYPE, so they share a numeric
+   * id space, and the retriever resolves both SA and IT through the same lookup. Envers finds no
+   * SampleTemplate revision for a sample's id, so a forged "IT&lt;sampleId&gt;" falls into the
+   * purged-audit fallback; without a type-exact check the readable sample would vouch for a
+   * template that does not exist, disclosing that id is readable (ADR-0002).
+   */
+  @Test
+  public void reportsTemplateRequestCollidingWithReadableSampleIdAsUnreadable() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+
+    // see resolvesLatestSnapshotFromNewestRevision: resolveSummary needs an active transaction
+    ApiInventoryLinkTargetSummary summary =
+        doInTransaction(
+            () -> {
+              return snapshotResolver.resolveSummary(
+                  GlobalIdPrefix.IT, sample.getId(), null, null, user);
+            });
+
+    assertEquals("IT" + sample.getId(), summary.getGlobalId());
+    assertFalse(
+        summary.isReadable(), "a readable sample must not vouch for a template sharing its id");
+  }
 }

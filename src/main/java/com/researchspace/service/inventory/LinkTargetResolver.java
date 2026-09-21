@@ -23,13 +23,17 @@ public interface LinkTargetResolver {
 
   /**
    * Like {@link #targetExistsAndIsReadable}, but additionally false when the target record is
-   * soft-deleted. Registration flows use this: a deleted target is still readable by its owner, but
-   * a permanent registry entry must not name a dead record.
+   * soft-deleted, and type-exact: a record whose own GlobalID prefix differs from the requested one
+   * does not count, even when it shares the numeric id. Registration flows use this: a deleted
+   * target is still readable by its owner, but a permanent registry entry must not name a dead
+   * record. The link target summary uses it too, so a dead or wrong-kind record cannot be reported
+   * as an openable target.
    *
    * @param target the parsed link target GlobalID (any version suffix is ignored)
    * @param user the user whose READ permission decides, typically the owning record's owner rather
    *     than the acting user, so the outcome cannot vary with who triggers the flow
-   * @return true if the target resolves to a live (non-deleted) record the user can READ
+   * @return true if the target resolves to a live (non-deleted) record of exactly the requested
+   *     kind that the user can READ
    */
   boolean targetIsLiveAndReadable(GlobalIdentifier target, User user);
 }

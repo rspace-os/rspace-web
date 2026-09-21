@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
@@ -214,6 +215,46 @@ class LinkTargetResolverImplTest {
     // side-channel
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("FL3"), user));
     verify(baseRecordManager, never()).getByGlobalIdsAndReadPermission(any(), eq(user));
+  }
+
+  @Test
+  void liveInventoryTargetMatchingRequestedPrefixResolvesTrue() {
+    InventoryRecord template = mock(InventoryRecord.class);
+    when(template.getOid()).thenReturn(new GlobalIdentifier("IT90"));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(template);
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(eq(template), eq(user)))
+        .thenReturn(true);
+
+    assertTrue(resolver.targetIsLiveAndReadable(new GlobalIdentifier("IT90"), user));
+  }
+
+  @Test
+  void inventoryTargetMustMatchRequestedPrefixNotJustDbId() {
+    // samples and sample templates share one numeric id space and the retriever resolves both
+    // SA and IT through the same lookup, so "IT90" can load sample SA90. Only a record whose own
+    // oid prefix matches the requested one is the link target; otherwise a readable sibling
+    // would vouch for a template that does not exist
+    InventoryRecord sample = mock(InventoryRecord.class);
+    when(sample.getOid()).thenReturn(new GlobalIdentifier("SA90"));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(sample);
+
+    assertFalse(resolver.targetIsLiveAndReadable(new GlobalIdentifier("IT90"), user));
+  }
+
+  @Test
+  void softDeletedInventoryTargetIsNotLive() {
+    InventoryRecord sample = mock(InventoryRecord.class);
+    when(sample.getOid()).thenReturn(new GlobalIdentifier("SA90"));
+    when(sample.isDeleted()).thenReturn(true);
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(sample);
+
+    assertFalse(resolver.targetIsLiveAndReadable(new GlobalIdentifier("SA90"), user));
   }
 
   @Test

@@ -75,9 +75,11 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
             : auditManager.getNewestRevisionForEntity(cls, dbId);
     if (snapshot == null || snapshot.getEntity() == null) {
       // No audit history does not mean no record: rows can be purged while the record lives on.
-      // Asking whether this actor can read it is permission-gated, so it reveals nothing they
-      // could not already see, and it keeps Open on a target whose page works.
-      if (linkTargetResolver.targetExistsAndIsReadable(new GlobalIdentifier(prefix, dbId), user)) {
+      // Only a live target of exactly this kind earns readable=true, so a soft-deleted record and
+      // a readable sibling sharing the db id (SA/IT) both stay redacted. The check is
+      // permission-gated, so it reveals nothing this actor could not already see, and it keeps
+      // Open on a target whose page works.
+      if (linkTargetResolver.targetIsLiveAndReadable(new GlobalIdentifier(prefix, dbId), user)) {
         summary.setReadable(true);
         return summary;
       }

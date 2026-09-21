@@ -80,7 +80,13 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
       try {
         InventoryRecord record =
             inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
-        return !record.isDeleted()
+        // samples and sample templates share one numeric id space and the retriever resolves both
+        // SA and IT through the same lookup, so "IT90" can load sample SA90 (the ELN branch below
+        // guards the same way); only a record whose own oid prefix matches the requested one is
+        // the target
+        return record.getOid() != null
+            && record.getOid().getPrefix() == base.getPrefix()
+            && !record.isDeleted()
             && inventoryPermissionUtils.canUserReadInventoryRecord(record, user);
       } catch (NotFoundException e) {
         return false;
