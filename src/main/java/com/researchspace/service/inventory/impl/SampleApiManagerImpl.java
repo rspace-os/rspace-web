@@ -422,28 +422,32 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         mergeTargets.putIfAbsent(name.trim().toLowerCase(Locale.ROOT), inherited);
       }
     }
-    apiSample
-        .getExtraFields()
-        .removeIf(
-            field -> {
-              if (field == null
-                  || StringUtils.isBlank(field.getOperationFieldKey())
-                  || ExtraFieldTypeEnum.LINK.equals(field.getType())
-                  || StringUtils.isBlank(field.getName())) {
-                return false;
-              }
-              InventoryEntityField target =
-                  mergeTargets.get(field.getName().trim().toLowerCase(Locale.ROOT));
-              // A name match doesn't guarantee the inherited field's type matches (e.g. a NUMBER
-              // template field vs. a generated text value). setFieldData throws on a mismatch, so
-              // validate first and leave an incompatible field in extraFields to fall back to the
-              // ordinary duplicate-name rejection instead of failing the request unpredictably.
-              if (target == null || target.validate(field.getContent()).hasErrorMessages()) {
-                return false;
-              }
-              target.setFieldData(field.getContent());
-              return true;
-            });
+    // getExtraFields() is caller-owned and may be immutable (List.of on the creation paths), so
+    // filter a copy and set it back rather than removing in place.
+    List<ApiExtraField> retained = new ArrayList<>(apiSample.getExtraFields());
+    retained.removeIf(
+        field -> {
+          if (field == null
+              || StringUtils.isBlank(field.getOperationFieldKey())
+              || ExtraFieldTypeEnum.LINK.equals(field.getType())
+              || StringUtils.isBlank(field.getName())) {
+            return false;
+          }
+          InventoryEntityField target =
+              mergeTargets.get(field.getName().trim().toLowerCase(Locale.ROOT));
+          // A name match doesn't guarantee the inherited field's type matches (e.g. a NUMBER
+          // template field vs. a generated text value). setFieldData throws on a mismatch, so
+          // validate first and leave an incompatible field in extraFields to fall back to the
+          // ordinary duplicate-name rejection instead of failing the request unpredictably.
+          if (target == null || target.validate(field.getContent()).hasErrorMessages()) {
+            return false;
+          }
+          target.setFieldData(field.getContent());
+          return true;
+        });
+    if (retained.size() != apiSample.getExtraFields().size()) {
+      apiSample.setExtraFields(retained);
+    }
     renameGeneratedLinksCollidingWithInheritedFields(apiSample, inheritedFields);
   }
 
