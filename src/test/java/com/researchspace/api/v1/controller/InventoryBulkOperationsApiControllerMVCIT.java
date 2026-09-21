@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -63,7 +64,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     ApiInventoryBulkOperationResult bulkOpResult =
         getFromJsonResponseBody(result, ApiInventoryBulkOperationResult.class);
     assertNotNull(bulkOpResult);
-    assertEquals(2, bulkOpResult.getResults().size());
+    assertThat(bulkOpResult.getResults()).hasSize(2);
     assertEquals(0, bulkOpResult.getErrorCount());
     assertEquals(
         ApiInventoryRecordType.SAMPLE, bulkOpResult.getResults().get(0).getRecord().getType());
@@ -90,7 +91,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     ApiInventoryBulkOperationResult bulkOpResult =
         getFromJsonResponseBody(result, ApiInventoryBulkOperationResult.class);
     assertNotNull(bulkOpResult);
-    assertEquals(2, bulkOpResult.getResults().size());
+    assertThat(bulkOpResult.getResults()).hasSize(2);
     assertEquals(0, bulkOpResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.COMPLETED, bulkOpResult.getStatus());
     ApiSampleWithFullSubSamples createdSample =
@@ -137,7 +138,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     ApiContainer retrievedContainer =
         containerApiMgr.getApiContainerById(createdContainer.getId(), anyUser);
     assertEquals(0, retrievedContainer.getContentSummary().getTotalCount());
-    assertEquals(0, retrievedContainer.getLocations().size());
+    assertThat(retrievedContainer.getLocations()).isEmpty();
 
     // subsample deleted/removed from a container on sample deletion sample
     ApiSubSample retrievedSubSample =
@@ -168,26 +169,17 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     String noOperationJSON = "{ }";
     MvcResult result = postBulkOperation(anyUser, apiKey, noOperationJSON);
     assertNotNull(result.getResolvedException());
-    assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains("Bulk operation must specify operationType"));
-    assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains("Bulk operation must specify at least 1, at most 100 records"));
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Bulk operation must specify operationType");
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Bulk operation must specify at least 1, at most 100 records");
 
     /* invalid request - records null */
     String noRecordsJSON = "{ \"operationType\": \"CREATE\", \"records\": null }";
     result = postBulkOperation(anyUser, apiKey, noRecordsJSON);
     assertNotNull(result.getResolvedException());
-    assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains("Bulk operation must specify list of records"));
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Bulk operation must specify list of records");
 
     /* create request but invalid sample data that fails @Valid annotation */
     String wrongTempJSON =
@@ -297,7 +289,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(InventoryBulkOperationStatus.COMPLETED, bulkOpResult.getStatus());
     assertNotNull(bulkOpResult.getResults().get(1).getError());
     String templateError = bulkOpResult.getResults().get(1).getError().getErrors().get(0);
-    assertTrue(templateError.contains("templateId"), templateError);
+    assertThat(templateError).as(templateError).contains("templateId");
   }
 
   @Test
@@ -318,7 +310,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     ApiInventoryBulkOperationResult bulkOpResult =
         getFromJsonResponseBody(result, ApiInventoryBulkOperationResult.class);
     assertNotNull(bulkOpResult);
-    assertEquals(2, bulkOpResult.getResults().size());
+    assertThat(bulkOpResult.getResults()).hasSize(2);
     assertEquals(0, bulkOpResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.COMPLETED, bulkOpResult.getStatus());
     ApiSampleWithFullSubSamples createdSample =
@@ -356,7 +348,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     ApiContainer retrievedContainer =
         containerApiMgr.getApiContainerById(gridContainer.getId(), anyUser);
     assertEquals(2, retrievedContainer.getContentSummary().getTotalCount());
-    assertEquals(2, retrievedContainer.getLocations().size());
+    assertThat(retrievedContainer.getLocations()).hasSize(2);
     ApiSubSample retrievedSubSample1 =
         subSampleApiMgr.getApiSubSampleById(subSample1.getId(), anyUser);
     assertEquals(retrievedContainer.getId(), retrievedSubSample1.getParentContainer().getId());
@@ -403,7 +395,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     // check move&swap results
     retrievedContainer = containerApiMgr.getApiContainerById(gridContainer.getId(), anyUser);
     assertEquals(3, retrievedContainer.getContentSummary().getTotalCount());
-    assertEquals(3, retrievedContainer.getLocations().size());
+    assertThat(retrievedContainer.getLocations()).hasSize(3);
     retrievedSubSample1 = subSampleApiMgr.getApiSubSampleById(subSample1.getId(), anyUser);
     assertEquals(2, retrievedSubSample1.getParentLocation().getCoordX());
     assertEquals(4, retrievedSubSample1.getParentLocation().getCoordY());
@@ -438,14 +430,8 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(0, bulkOpResult.getSuccessCount());
     assertEquals(1, bulkOpResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, bulkOpResult.getStatus());
-    assertTrue(
-        bulkOpResult
-            .getResults()
-            .get(0)
-            .getError()
-            .getErrors()
-            .get(0)
-            .contains("is already taken by the record"));
+    assertThat(bulkOpResult.getResults().get(0).getError().getErrors().get(0))
+        .contains("is already taken by the record");
 
     // confirm subsamples not moved
     retrievedSubSample1 = subSampleApiMgr.getApiSubSampleById(subSample1.getId(), anyUser);
@@ -481,7 +467,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     // check move&swap results
     retrievedContainer = containerApiMgr.getApiContainerById(gridContainer.getId(), anyUser);
     assertEquals(3, retrievedContainer.getContentSummary().getTotalCount());
-    assertEquals(3, retrievedContainer.getLocations().size());
+    assertThat(retrievedContainer.getLocations()).hasSize(3);
     retrievedSubSample1 = subSampleApiMgr.getApiSubSampleById(subSample1.getId(), anyUser);
     assertEquals(3, retrievedSubSample1.getParentLocation().getCoordX());
     assertEquals(4, retrievedSubSample1.getParentLocation().getCoordY());
@@ -524,7 +510,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(1, bulkOpResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, bulkOpResult.getStatus());
     String errorMsg = bulkOpResult.getResults().get(0).getError().getErrors().get(0);
-    assertTrue(errorMsg.contains("could not be retrieved"), errorMsg);
+    assertThat(errorMsg).as(errorMsg).contains("could not be retrieved");
 
     // confirm container not moved
     ApiContainer retrievedContainer =
@@ -546,7 +532,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(1, bulkOpResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, bulkOpResult.getStatus());
     errorMsg = bulkOpResult.getResults().get(0).getError().getErrors().get(0);
-    assertTrue(errorMsg.contains("errors.inventory.move.targetContainer.unavailable"), errorMsg);
+    assertThat(errorMsg).as(errorMsg).contains("errors.inventory.move.targetContainer.unavailable");
 
     // confirm container not moved
     retrievedContainer = containerApiMgr.getApiContainerById(testUserContainer.getId(), testUser);
@@ -612,13 +598,13 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(
         ApiInventoryRecordInfo.ApiInventorySharingMode.OWNER_GROUPS,
         createdSample.getSharingMode());
-    assertEquals(1, createdSample.getSharedWith().size());
+    assertThat(createdSample.getSharedWith()).hasSize(1);
     assertFalse(createdSample.getSharedWith().get(0).isShared());
     ApiContainer createdContainer = createBasicContainerForUser(anyUser);
     assertEquals(
         ApiInventoryRecordInfo.ApiInventorySharingMode.OWNER_GROUPS,
         createdContainer.getSharingMode());
-    assertEquals(1, createdContainer.getSharedWith().size());
+    assertThat(createdContainer.getSharedWith()).hasSize(1);
     assertFalse(createdContainer.getSharedWith().get(0).isShared());
 
     // batch UPDATE of permissions
@@ -643,13 +629,13 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     ApiInventoryRecordInfo updatedSample = bulkOpResult.getResults().get(0).getRecord();
     assertEquals(
         ApiInventoryRecordInfo.ApiInventorySharingMode.OWNER_ONLY, updatedSample.getSharingMode());
-    assertEquals(1, updatedSample.getSharedWith().size());
+    assertThat(updatedSample.getSharedWith()).hasSize(1);
     assertFalse(updatedSample.getSharedWith().get(0).isShared());
     ApiInventoryRecordInfo updatedContainer = bulkOpResult.getResults().get(1).getRecord();
     assertEquals(
         ApiInventoryRecordInfo.ApiInventorySharingMode.WHITELIST,
         updatedContainer.getSharingMode());
-    assertEquals(1, updatedContainer.getSharedWith().size());
+    assertThat(updatedContainer.getSharedWith()).hasSize(1);
     assertTrue(updatedContainer.getSharedWith().get(0).isShared());
   }
 

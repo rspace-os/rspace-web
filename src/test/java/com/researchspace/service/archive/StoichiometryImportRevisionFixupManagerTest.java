@@ -1,7 +1,7 @@
 package com.researchspace.service.archive;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -157,7 +157,7 @@ public class StoichiometryImportRevisionFixupManagerTest {
     String savedData = field.getFieldData();
     StoichiometryReader reader = new StoichiometryReader();
     var stoichiometries = reader.extractStoichiometriesFromFieldContents(savedData);
-    assertEquals(1, stoichiometries.size());
+    assertThat(stoichiometries).hasSize(1);
     assertEquals(42L, stoichiometries.get(0).getId());
     assertEquals(789L, stoichiometries.get(0).getRevision());
   }
@@ -188,8 +188,8 @@ public class StoichiometryImportRevisionFixupManagerTest {
     String savedData = field.getFieldData();
     StoichiometryReader reader = new StoichiometryReader();
     var stoichiometries = reader.extractStoichiometriesFromFieldContents(savedData);
-    assertEquals(2, stoichiometries.size());
-    assertTrue(stoichiometries.stream().allMatch(s -> s.getRevision() != null));
+    assertThat(stoichiometries).hasSize(2);
+    assertThat(stoichiometries).allMatch(s -> s.getRevision() != null);
   }
 
   @Test

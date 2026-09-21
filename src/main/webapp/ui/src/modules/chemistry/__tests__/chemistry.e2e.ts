@@ -1,10 +1,9 @@
 import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
+import { fixturePath } from "@/__tests__/e2e/testData";
 
 const INTEGRATION_MODE = env.integrationMode;
 
@@ -14,8 +13,7 @@ const ASPIRIN = {
   formula: "C9H8O4",
 };
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
-const CHEMDRAW_CDX = resolve(currentDir, "fixtures/Fluorescein1.cdx");
+const CHEMDRAW_CDX = fixturePath(import.meta.url, "fixtures/Fluorescein1.cdx");
 
 test.describe(`Chemistry service [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
   test.beforeEach(async ({ flowSysadminConfig }) => {

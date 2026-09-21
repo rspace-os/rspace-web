@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.throttling;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -51,7 +52,7 @@ public class ApiFileUploadThrottlerTest {
     // after 10 calls over 20s, we've used up 5.0Mb of allowance, but due to recovery has added
     // 0.03Mb allowance back
     // over the 20s
-    assertEquals(5.03, stats.getRemainingCapacityInPeriod(), 0.1);
+    assertThat(stats.getRemainingCapacityInPeriod()).isCloseTo(5.03, within(0.1));
   }
 
   private APIFileUploadStats getStatsForHourBucket() {
@@ -89,7 +90,7 @@ public class ApiFileUploadThrottlerTest {
     assertTrue(fileThrottler.proceed(anyId, 11.0)); // single file ok
     APIFileUploadStats stats = getStatsForHourBucket();
     // ok for stats to go -ve if we're uploading 1 file
-    assertTrue(stats.getRemainingCapacityInPeriod() < 0);
+    assertThat(stats.getRemainingCapacityInPeriod()).isLessThan(0);
 
     // next request, we've still not recovered from previous upload
     assertThrows(FileUploadLimitExceededException.class, () -> fileThrottler.proceed(anyId, 9.0));
@@ -161,7 +162,7 @@ public class ApiFileUploadThrottlerTest {
     // they have all made 10 calls to use 0.5 units each.
     for (Future<APIFileUploadStats> future : futures) {
       APIFileUploadStats stat = future.get(5, TimeUnit.SECONDS);
-      assertEquals(6.5, stat.getRemainingCapacityInPeriod(), 0.1);
+      assertThat(stat.getRemainingCapacityInPeriod()).isCloseTo(6.5, within(0.1));
     }
   }
 

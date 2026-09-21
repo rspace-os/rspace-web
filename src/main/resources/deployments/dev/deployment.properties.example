@@ -17,6 +17,8 @@ rs.customer.name.short=RSpace Local
 rs.usergroup.initfile=deployments/dev/initUsers.csv
 email.enabled=false
 license.server.active=false
+# Unauthenticated Storybook preview route; enable only on local/development instances, never production.
+dev.storybook.preview.enabled=true
 
 api.beta.enabled=true
 #api.beta.allowUnauthorizedLinks=true
@@ -212,3 +214,4 @@ irods.realConnection.server.password=
 
 deployment.description=Localhost deployment for testing purposes
 deployment.helpEmail=support@researchspace.com
+deployment.test.fb.instance=false

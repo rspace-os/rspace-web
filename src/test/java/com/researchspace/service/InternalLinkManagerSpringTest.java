@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.model.InternalLink;
@@ -29,17 +29,17 @@ public class InternalLinkManagerSpringTest extends SpringTransactionalTest {
     StructuredDocument targetDoc = createBasicDocumentInRootFolderWithText(user, "content2");
 
     List<InternalLink> noLinks = internalLinkMgr.getLinksPointingToRecord(targetDoc.getId());
-    assertTrue(noLinks.isEmpty());
+    assertThat(noLinks).isEmpty();
 
     internalLinkDao.saveInternalLink(sourceDoc.getId(), targetDoc.getId());
 
     List<InternalLink> savedLink = internalLinkMgr.getLinksPointingToRecord(targetDoc.getId());
-    assertEquals(1, savedLink.size());
+    assertThat(savedLink).hasSize(1);
     assertEquals(sourceDoc.getId(), savedLink.get(0).getSource().getId());
     assertEquals(targetDoc.getId(), savedLink.get(0).getTarget().getId());
 
     recordDeletionMgr.deleteRecord(sourceDoc.getParent().getId(), sourceDoc.getId(), user);
     List<InternalLink> deletedLink = internalLinkMgr.getLinksPointingToRecord(targetDoc.getId());
-    assertTrue(deletedLink.isEmpty());
+    assertThat(deletedLink).isEmpty();
   }
 }

@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -58,23 +58,22 @@ public class InventoryExportApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andReturn();
     assertNull(result.getResolvedException());
     ApiJob job = getFromJsonResponseBody(result, ApiJob.class);
-    assertEquals(2, job.getLinks().size());
+    assertThat(job.getLinks()).hasSize(2);
     Map exportJobResultProps = (Map) job.getResult();
-    assertEquals(4, exportJobResultProps.size());
-    assertTrue(((Integer) exportJobResultProps.get("size")) > 500);
+    assertThat(exportJobResultProps).hasSize(4);
+    assertThat((Integer) exportJobResultProps.get("size")).isGreaterThan(500);
 
     result = downloadExportedFileLinkInExportJobResult(job);
 
     String contentHeader = result.getResponse().getHeader("Content-Disposition");
-    assertTrue(contentHeader.startsWith("attachment; filename=\"RSpace-"), contentHeader);
-    assertEquals(EXPECTED_CONTENT_DISPOSITION_LENGTH, contentHeader.length(), contentHeader);
+    assertThat(contentHeader).as(contentHeader).startsWith("attachment; filename=\"RSpace-");
+    assertThat(contentHeader).as(contentHeader).hasSize(EXPECTED_CONTENT_DISPOSITION_LENGTH);
 
     // confirm subsamples fragment content
     String singleSubSampleCsvOutput = result.getResponse().getContentAsString();
-    assertTrue(
-        singleSubSampleCsvOutput.startsWith(
-            "# RSpace Inventory Export\n# Exported content: SUBSAMPLES"),
-        singleSubSampleCsvOutput);
+    assertThat(singleSubSampleCsvOutput)
+        .as(singleSubSampleCsvOutput)
+        .startsWith("# RSpace Inventory Export\n# Exported content: SUBSAMPLES");
     assertNotNull(singleSubSampleCsvOutput);
     String expectedNoteContent =
         "\"Note created by \"\""
@@ -83,8 +82,9 @@ public class InventoryExportApiControllerMVCIT extends API_MVC_InventoryTestBase
             + Instant.ofEpochMilli(complexSubSample.getNotes().get(0).getCreationDateMillis())
                 .toString()
             + ": \"\"test note\"\"\"";
-    assertTrue(
-        singleSubSampleCsvOutput.contains(
+    assertThat(singleSubSampleCsvOutput)
+        .as(singleSubSampleCsvOutput)
+        .contains(
             "Global ID,Name,Tags,Owner,Description,Parent Sample (Global ID),Parent Container"
                 + " (Global ID),Quantity,Notes,\"Data (TEXT, "
                 + complexSubSample.getGlobalId()
@@ -98,8 +98,7 @@ public class InventoryExportApiControllerMVCIT extends API_MVC_InventoryTestBase
                 + complexSubSample.getParentContainer().getGlobalId()
                 + ",1 ml,"
                 + expectedNoteContent
-                + ",any content\n"),
-        singleSubSampleCsvOutput);
+                + ",any content\n");
 
     // export in compact mode
     settingsJson =
@@ -179,42 +178,45 @@ public class InventoryExportApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     // confirm filename
     String contentHeader = result.getResponse().getHeader("Content-Disposition");
-    assertTrue(contentHeader.startsWith("attachment; filename=\"RSpace-"), contentHeader);
-    assertEquals(EXPECTED_CONTENT_DISPOSITION_LENGTH, contentHeader.length(), contentHeader);
+    assertThat(contentHeader).as(contentHeader).startsWith("attachment; filename=\"RSpace-");
+    assertThat(contentHeader).as(contentHeader).hasSize(EXPECTED_CONTENT_DISPOSITION_LENGTH);
 
     // confirm full content
     String fullExportContent = result.getResponse().getContentAsString();
     assertNotNull(fullExportContent);
-    assertTrue(
-        fullExportContent.startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS"),
-        fullExportContent);
-    assertTrue(fullExportContent.contains("# Export mode: FULL"), fullExportContent);
+    assertThat(fullExportContent)
+        .as(fullExportContent)
+        .startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS");
+    assertThat(fullExportContent).as(fullExportContent).contains("# Export mode: FULL");
     // confirm container lines
-    assertTrue(
-        fullExportContent.contains(
+    assertThat(fullExportContent)
+        .as(fullExportContent)
+        .contains(
             "Global ID,Name,Tags,Owner,Description,Parent Container (Global ID),Container Type,Can"
                 + " Store Containers (Y/N),Can Store Subsamples (Y/N),Number of Stored"
-                + " Containers,Number of Stored Subsamples\n"),
-        fullExportContent);
+                + " Containers,Number of Stored Subsamples\n");
+    assertThat(fullExportContent).as(fullExportContent).contains(",my container,");
     assertTrue(fullExportContent.contains(",my container,"), fullExportContent);
     // confirm samples lines
-    assertTrue(
-        fullExportContent.contains(
+    assertThat(fullExportContent)
+        .as(fullExportContent)
+        .contains(
             "Global ID,Name,Tags,Owner,Description,Parent Template (Global ID),Parent Template"
                 + " (name),Total Quantity,Expiry Date,Sample Source,Storage Temperature"
-                + " (min),Storage Temperature (max),\"MyNumber (NUMBER, IT"),
-        fullExportContent);
+                + " (min),Storage Temperature (max),\"MyNumber (NUMBER, IT");
+    assertThat(fullExportContent).as(fullExportContent).contains(",mySample,");
     assertTrue(fullExportContent.contains(",mySample,"), fullExportContent);
     assertTrue(fullExportContent.contains(",myComplexSample,"), fullExportContent);
     // confirm subsamples lines
-    assertTrue(
-        fullExportContent.contains("\n# RSpace Inventory Export\n# Exported content: SUBSAMPLES"),
-        fullExportContent);
-    assertTrue(
-        fullExportContent.contains(
+    assertThat(fullExportContent)
+        .as(fullExportContent)
+        .contains("\n# RSpace Inventory Export\n# Exported content: SUBSAMPLES");
+    assertThat(fullExportContent)
+        .as(fullExportContent)
+        .contains(
             "Global ID,Name,Tags,Owner,Description,Parent Sample (Global ID),"
-                + "Parent Container (Global ID),Quantity,Notes,\"Data (TEXT, SS"),
-        fullExportContent);
+                + "Parent Container (Global ID),Quantity,Notes,\"Data (TEXT, SS");
+    assertThat(fullExportContent).as(fullExportContent).contains(",mySubSample,");
     assertTrue(fullExportContent.contains(",mySubSample,"), fullExportContent);
     assertTrue(
         fullExportContent.contains(extraFieldContentFromComplexSubSample), fullExportContent);
@@ -238,39 +240,41 @@ public class InventoryExportApiControllerMVCIT extends API_MVC_InventoryTestBase
     // confirm compact content
     String compactExportContent = result.getResponse().getContentAsString();
     assertNotNull(compactExportContent);
-    assertTrue(
-        compactExportContent.startsWith(
-            "# RSpace Inventory Export\n# Exported content: CONTAINERS"),
-        fullExportContent);
-    assertTrue(compactExportContent.contains("# Export mode: COMPACT"), fullExportContent);
+    assertThat(compactExportContent)
+        .as(fullExportContent)
+        .startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS");
+    assertThat(compactExportContent).as(fullExportContent).contains("# Export mode: COMPACT");
     // confirm container lines
-    assertTrue(
-        compactExportContent.contains(
+    assertThat(compactExportContent)
+        .as(compactExportContent)
+        .contains(
             "Global ID,Name,Tags,Owner,Description,Parent Container (Global ID),Container Type,Can"
                 + " Store Containers (Y/N),Can Store Subsamples (Y/N),Number of Stored"
-                + " Containers,Number of Stored Subsamples\n"),
-        compactExportContent);
+                + " Containers,Number of Stored Subsamples\n");
+    assertThat(compactExportContent).as(compactExportContent).contains(",my container,");
     assertTrue(compactExportContent.contains(",my container,"), compactExportContent);
     // confirm samples lines
-    assertTrue(
-        compactExportContent.contains(
+    assertThat(compactExportContent)
+        .as(compactExportContent)
+        .contains(
             "Global ID,Name,Tags,Owner,Description,Parent Template (Global ID),"
                 + "Parent Template (name),Total Quantity,Expiry Date,Sample Source,"
-                + "Storage Temperature (min),Storage Temperature (max)\n"),
-        compactExportContent);
+                + "Storage Temperature (min),Storage Temperature (max)\n");
+    assertThat(compactExportContent).as(compactExportContent).contains(",mySample,");
     assertTrue(compactExportContent.contains(",mySample,"), compactExportContent);
     assertTrue(compactExportContent.contains(",myComplexSample,"), compactExportContent);
     // confirm subsamples lines
-    assertTrue(
-        compactExportContent.contains(
+    assertThat(compactExportContent)
+        .as(compactExportContent)
+        .contains(
             "Global ID,Name,Tags,Owner,Description,Parent Sample (Global ID),"
-                + "Parent Container (Global ID),Quantity,Notes\n"),
-        compactExportContent);
+                + "Parent Container (Global ID),Quantity,Notes\n");
+    assertThat(compactExportContent).as(compactExportContent).contains(",mySubSample,");
     assertTrue(compactExportContent.contains(",mySubSample,"), compactExportContent);
     assertFalse(
         compactExportContent.contains(extraFieldContentFromComplexSubSample), compactExportContent);
 
-    assertTrue(compactExportContent.length() < fullExportContent.length());
+    assertThat(compactExportContent.length()).isLessThan(fullExportContent.length());
   }
 
   @Test
@@ -355,15 +359,15 @@ public class InventoryExportApiControllerMVCIT extends API_MVC_InventoryTestBase
     String exportContent = result.getResponse().getContentAsString();
     assertNotNull(exportContent);
     // the exporter emits its own comment header for instrument templates
-    assertTrue(
-        exportContent.contains("# Exported content: INSTRUMENT_TEMPLATES"),
-        "expected INSTRUMENT_TEMPLATES marker, got:\n" + exportContent);
+    assertThat(exportContent)
+        .as("expected INSTRUMENT_TEMPLATES marker, got:\n" + exportContent)
+        .contains("# Exported content: INSTRUMENT_TEMPLATES");
     // and the template's data row appears with its global id
-    assertTrue(
-        exportContent.contains(template.getGlobalId()),
-        "expected the template global id " + template.getGlobalId() + " in:\n" + exportContent);
-    assertTrue(
-        exportContent.contains("export-target-template"),
-        "expected the template name in:\n" + exportContent);
+    assertThat(exportContent)
+        .as("expected the template global id " + template.getGlobalId() + " in:\n" + exportContent)
+        .contains(template.getGlobalId());
+    assertThat(exportContent)
+        .as("expected the template name in:\n" + exportContent)
+        .contains("export-target-template");
   }
 }

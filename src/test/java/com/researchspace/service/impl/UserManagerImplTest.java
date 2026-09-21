@@ -5,6 +5,7 @@ import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.model.Role.SYSTEM_ROLE;
 import static com.researchspace.testutils.TestFactory.createACommunity;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,13 +15,16 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.RoleDao;
+import com.researchspace.dao.UserAccountEventDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
@@ -45,12 +49,26 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private @Mock UserDao userDao;
   private @Mock RoleDao roleDao;
   private @Mock CommunityDao communityDao;
+  private @Mock UserAccountEventDao accountEventDao;
+  private @Mock IPermissionUtils permissionUtils;
   private @Mock AnalyticsManager analyticsManager;
+  private @Mock IPropertyHolder properties;
+  private @Mock IVerificationPasswordValidator verificationPasswordValidator;
 
   @BeforeEach
   public void setUp() throws Exception {
     ReflectionTestUtils.setField(
         userManager, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    // UserManagerImpl declares a UserDao constructor, so @InjectMocks satisfies it by
+    // constructor injection and does not also field-inject. Wire its @Autowired fields by hand.
+    ReflectionTestUtils.setField(userManager, "communityDao", communityDao);
+    ReflectionTestUtils.setField(userManager, "roleDao", roleDao);
+    ReflectionTestUtils.setField(userManager, "accountEventDao", accountEventDao);
+    ReflectionTestUtils.setField(userManager, "permissnUtils", permissionUtils);
+    ReflectionTestUtils.setField(userManager, "analyticsManager", analyticsManager);
+    ReflectionTestUtils.setField(userManager, "properties", properties);
+    ReflectionTestUtils.setField(
+        userManager, "verificationPasswordValidator", verificationPasswordValidator);
   }
 
   @Test
@@ -63,7 +81,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     User user = userManager.getUser("1");
     assertTrue(user != null);
     assert user != null;
-    assertTrue(user.getRoles().size() == 1);
+    assertThat(user.getRoles()).hasSize(1);
   }
 
   @Test
@@ -81,7 +99,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     User returned = userManager.saveNewUser(user);
     Mockito.verify(userDao, Mockito.times(1)).saveUser(user);
     Mockito.verify(analyticsManager, Mockito.times(1)).userCreated(user);
-    assertTrue(returned.getRoles().size() == 1);
+    assertThat(returned.getRoles()).hasSize(1);
   }
 
   @Test
@@ -105,7 +123,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     user = userManager.saveNewUser(user);
 
     assertTrue(user.getUsername().equals(uname));
-    assertTrue(user.getRoles().size() == 1);
+    assertThat(user.getRoles()).hasSize(1);
   }
 
   @Test
@@ -118,8 +136,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     when(userDao.saveUser(user)).thenThrow(ex);
 
     // run test
-    CoreTestUtils.assertExceptionThrown(
-        () -> userManager.saveNewUser(user), UserExistsException.class);
+    assertThrows(UserExistsException.class, () -> userManager.saveNewUser(user));
 
     verify(analyticsManager, never()).userCreated(Mockito.any(User.class));
   }
@@ -143,13 +160,13 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void isUserInAdminsCommunityThrowsIAEIfNotAdmin() {
+    User nonAdmin = createAnyUser("any");
+    User any = createAnyUser("any");
+    String username = any.getUsername();
+
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          User nonAdmin = createAnyUser("any");
-          User any = createAnyUser("any");
-          userManager.isUserInAdminsCommunity(nonAdmin, any.getUsername());
-        });
+        () -> userManager.isUserInAdminsCommunity(nonAdmin, username));
   }
 
   @Test

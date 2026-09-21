@@ -48,9 +48,9 @@
         <h2 id="messagesTitle"> <spring:message code="messages.title"/> </h2>
         <div style="padding-bottom: 10px" id="notification_linkMenu">
             <spring:message code="messages.orderBy.label"/>
-            <a href="#" class="morOrderBy" id="orderBy_communication.creationTime"><spring:message code="messages.orderBy.time"/></a>
-            <a href="#" class="morOrderBy" id="orderBy_originator.username"><spring:message code="messages.orderBy.sender"/></a>
-            <a href="#" class="morOrderBy" id="orderBy_communication.requestedCompletionDate"><spring:message code="messages.orderBy.completionDate"/></a>
+            <a href="#" class="morOrderBy" id="orderBy_creationTime"><spring:message code="messages.orderBy.time"/></a>
+            <a href="#" class="morOrderBy" id="orderBy_sender"><spring:message code="messages.orderBy.sender"/></a>
+            <a href="#" class="morOrderBy" id="orderBy_requestedCompletionDate"><spring:message code="messages.orderBy.completionDate"/></a>
         </div>
         <div id="allMessages" style="width:100%;padding-top:10px;">
             <c:forEach items="${messages}" var="message">

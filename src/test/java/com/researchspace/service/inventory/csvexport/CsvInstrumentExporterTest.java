@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.csvexport;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
@@ -45,18 +45,18 @@ public class CsvInstrumentExporterTest extends SpringTransactionalTest {
         instrumentExporter.writeInstrumentCsvHeaderIntoOutput(
             List.of(testInstrument), exportMode, null, outputStream);
     // 5 base + 3 instrument-specific + 2 extra fields
-    assertEquals(10, csvColumnNames.size());
+    assertThat(csvColumnNames).hasSize(10);
     String expectedHeader =
         "Global ID,Name,Tags,Owner,Description,"
             + "Parent Template (Global ID),Parent Template (name),Parent Container (Global ID),"
             + "\"serialNumber (TEXT, IN7)\",\"calibration (NUMBER, IN7)\"\n";
-    assertEquals(expectedHeader, outputStream.toString());
+    assertThat(outputStream).hasToString(expectedHeader);
 
     outputStream = new ByteArrayOutputStream();
     instrumentExporter.writeInstrumentCsvDetailsIntoOutput(
         testInstrument, csvColumnNames, exportMode, null, outputStream);
     String expectedRow = "IN7,microscope-A,optics,,,,,,SN-12345,0.85\n";
-    assertEquals(expectedRow, outputStream.toString());
+    assertThat(outputStream).hasToString(expectedRow);
 
     String csvFragment =
         instrumentExporter
@@ -69,7 +69,7 @@ public class CsvInstrumentExporterTest extends SpringTransactionalTest {
   public void emptyInstrumentListProducesEmptyOutput() throws IOException {
     String csvFragment =
         instrumentExporter.getCsvFragmentForInstruments(List.of(), CsvExportMode.FULL).toString();
-    assertEquals("", csvFragment);
+    assertThat(csvFragment).isEmpty();
   }
 
   @Test
@@ -79,10 +79,12 @@ public class CsvInstrumentExporterTest extends SpringTransactionalTest {
         instrumentExporter
             .getCsvCommentFragmentForInstruments(ExportScope.USER, CsvExportMode.COMPACT, user)
             .toString();
-    assertTrue(csvComment.startsWith("# " + instrumentExporter.getCsvCommentHeader()), csvComment);
-    assertTrue(csvComment.contains("# Exported content: INSTRUMENTS"), csvComment);
-    assertTrue(csvComment.contains("# Export scope: USER"), csvComment);
-    assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);
-    assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);
+    assertThat(csvComment)
+        .as(csvComment)
+        .startsWith("# " + instrumentExporter.getCsvCommentHeader());
+    assertThat(csvComment).as(csvComment).contains("# Exported content: INSTRUMENTS");
+    assertThat(csvComment).as(csvComment).contains("# Export scope: USER");
+    assertThat(csvComment).as(csvComment).contains("# Export mode: COMPACT");
+    assertThat(csvComment).as(csvComment).contains("# Export mode: COMPACT");
   }
 }

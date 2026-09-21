@@ -1,5 +1,6 @@
 package com.researchspace.model.record;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -7,8 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.model.User;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,8 +47,8 @@ public class CycleSafeIteratorTest {
     Thread.sleep(1);
     CycleSafeIterator it = new CycleSafeIterator(f3);
     // check isolated node returns false
-    assertFalse(it.hasNext());
-    assertThrowsNoSuchElementException(it);
+    assertThat(it).isExhausted();
+    assertThrows(NoSuchElementException.class, it::next);
     // f1->f2->f3,f1->f4
     f1.doAddToParentsOnly(f2, u);
     f1.doAddToParentsOnly(f4, u);
@@ -87,24 +92,23 @@ public class CycleSafeIteratorTest {
   }
 
   @Test
-  public void testPerformance() throws IllegalAddChildOperation, InterruptedException {
+  public void deepChainVisitsEveryAncestorOnce() throws IllegalAddChildOperation {
     final int NUM_FOLDERS = 60;
     Folder[] flders = new Folder[NUM_FOLDERS];
     flders[0] = TestFactory.createAFolder("0", u);
-    Thread.sleep(1);
+    flders[0].setId(1L);
     for (int i = 1; i < NUM_FOLDERS; i++) {
       flders[i] = TestFactory.createAFolder(i + "", u);
-      Thread.sleep(1);
+      flders[i].setId((long) i + 1);
       flders[i - 1].addChild(flders[i], u, true);
     }
-    long start = System.currentTimeMillis();
     CycleSafeIterator cycleIt = new CycleSafeIterator(flders[NUM_FOLDERS - 1]);
+    Set<Long> visited = new HashSet<>();
     while (cycleIt.hasNext()) {
-      cycleIt.next();
+      assertTrue(visited.add(cycleIt.next().getId()), "Ancestor visited twice");
     }
+    assertEquals(LongStream.range(1, NUM_FOLDERS).boxed().collect(Collectors.toSet()), visited);
     assertFalse(cycleIt.isCycleDetected());
-    long end = System.currentTimeMillis();
-    System.err.println(" iteration time was :" + (end - start));
   }
 
   private void assertNElementsIterated(int target, CycleSafeIterator it) {
@@ -116,23 +120,11 @@ public class CycleSafeIteratorTest {
     assertEquals(target, count);
   }
 
-  private void assertThrowsNoSuchElementException(CycleSafeIterator it) {
-    try {
-      it.next();
-    } catch (NoSuchElementException e) {
-      return;
-    }
-    fail("expected no such elemetn exception");
-  }
-
   @Test
   public void testRemoeOperationUnsupported() {
-    assertThrows(
-        UnsupportedOperationException.class,
-        () -> {
-          Folder f1 = TestFactory.createAFolder("f1", u);
-          Iterator<Folder> cycleIt = new CycleSafeIterator(f1);
-          cycleIt.remove();
-        });
+    Folder f1 = TestFactory.createAFolder("f1", u);
+    Iterator<Folder> cycleIt = new CycleSafeIterator(f1);
+
+    assertThrows(UnsupportedOperationException.class, () -> cycleIt.remove());
   }
 }

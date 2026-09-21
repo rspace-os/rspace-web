@@ -50,6 +50,7 @@ export class AppHeader {
   async logOut(): Promise<void> {
     await this.openAccountMenu();
     await this.page.getByRole("menuitem", { name: "Log Out" }).click();
+    await this.page.waitForURL((url) => url.pathname === "/login");
   }
 
   async openAppsFromAccountMenu(): Promise<void> {

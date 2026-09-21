@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,9 +38,9 @@ class InventoryUrlsTest {
   /** Empty rather than site-relative or the literal "null/public/inventory/...". */
   @Test
   void publicLandingPageUrlIsEmptyWhenEitherPartIsMissing() {
-    assertTrue(InventoryUrls.publicLandingPageUrl(" ", SUFFIX).isEmpty(), "no server URL");
-    assertTrue(InventoryUrls.publicLandingPageUrl(null, SUFFIX).isEmpty(), "null server URL");
-    assertTrue(InventoryUrls.publicLandingPageUrl(SERVER, " ").isEmpty(), "no suffix");
+    assertThat(InventoryUrls.publicLandingPageUrl(" ", SUFFIX)).as("no server URL").isEmpty();
+    assertThat(InventoryUrls.publicLandingPageUrl(null, SUFFIX)).as("null server URL").isEmpty();
+    assertThat(InventoryUrls.publicLandingPageUrl(SERVER, " ")).as("no suffix").isEmpty();
   }
 
   @Test
@@ -59,10 +60,10 @@ class InventoryUrlsTest {
   /** Empty rather than "null/globalId/IN114", for the same reason as the public page. */
   @Test
   void globalIdPageUrlIsEmptyWhenEitherPartIsMissing() {
-    assertTrue(InventoryUrls.globalIdPageUrl(null, "IN114").isEmpty(), "null server URL");
-    assertTrue(InventoryUrls.globalIdPageUrl("  ", "IN114").isEmpty(), "no server URL");
-    assertTrue(InventoryUrls.globalIdPageUrl(SERVER, "  ").isEmpty(), "blank global id");
-    assertTrue(InventoryUrls.globalIdPageUrl(SERVER, null).isEmpty(), "null global id");
+    assertThat(InventoryUrls.globalIdPageUrl(null, "IN114")).as("null server URL").isEmpty();
+    assertThat(InventoryUrls.globalIdPageUrl("  ", "IN114")).as("no server URL").isEmpty();
+    assertThat(InventoryUrls.globalIdPageUrl(SERVER, "  ")).as("blank global id").isEmpty();
+    assertThat(InventoryUrls.globalIdPageUrl(SERVER, null)).as("null global id").isEmpty();
   }
 
   @Test

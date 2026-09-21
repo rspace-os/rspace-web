@@ -152,12 +152,6 @@ public class MvcTestUtils {
         "exception was " + result.getResolvedException());
   }
 
-  public void assertException(MvcResult result, Class<? extends Exception> clazz) {
-    assertTrue(
-        result.getResolvedException().getClass().isAssignableFrom(clazz),
-        "exception was " + result.getResolvedException());
-  }
-
   public <T> T getFromJsonAjaxReturnObject(MvcResult result, Class<T> clazz) throws Exception {
     assertNoServerSideException(result);
     String json = result.getResponse().getContentAsString(StandardCharsets.UTF_8);

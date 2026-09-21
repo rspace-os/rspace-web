@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,8 +38,8 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn()
             .getModelAndView();
-    assertTrue(m.getModelMap().containsKey("dir"));
-    assertTrue(m.getModelMap().containsKey("records"));
+    assertThat(m.getModelMap()).containsKey("dir");
+    assertThat(m.getModelMap()).containsKey("records");
     List<TreeViewItem> records = getListFromModel(m, "records", TreeViewItem.class);
     assertGalleryFolderIncluded(records, true);
     assertDocumentIncluded(records, getRootFolderForUser(piUser), toTreeViewItem(sd), true, true);
@@ -156,9 +157,9 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn()
             .getModelAndView();
-    assertTrue(m.getModelMap().containsKey("results"));
+    assertThat(m.getModelMap()).containsKey("results");
     List<BaseRecord> res = getListFromModel(m, "results", BaseRecord.class);
-    assertEquals(1, res.size());
+    assertThat(res).hasSize(1);
     assertEquals(userRoot.getId(), res.get(0).getId());
     assertTrue(((Folder) res.get(0)).isRootFolder());
 
@@ -172,9 +173,9 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn()
             .getModelAndView();
-    assertTrue(m2.getModelMap().containsKey("results"));
+    assertThat(m2.getModelMap()).containsKey("results");
     List<BaseRecord> res2 = getListFromModel(m2, "results", BaseRecord.class);
-    assertEquals(2, res2.size());
+    assertThat(res2).hasSize(2);
 
     // check listing by folder id, with showNotebooks option
     ModelAndView m3 =
@@ -187,9 +188,9 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn()
             .getModelAndView();
-    assertTrue(m3.getModelMap().containsKey("results"));
+    assertThat(m3.getModelMap()).containsKey("results");
     List<BaseRecord> res3 = getListFromModel(m3, "results", BaseRecord.class);
-    assertEquals(4, res3.size());
+    assertThat(res3).hasSize(4);
   }
 
   @Test
@@ -223,13 +224,13 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn()
             .getModelAndView();
-    assertTrue(viewPi.getModelMap().containsKey("results"));
+    assertThat(viewPi.getModelMap()).containsKey("results");
     List<BaseRecord> resPi = getListFromModel(viewPi, "results", BaseRecord.class);
-    assertEquals(0, resPi.size());
+    assertThat(resPi).isEmpty();
 
     logoutAndLoginAs(user);
     Folder folder = folderMgr.getInitialisedFolder(groupSharedFolderId, user, null);
-    assertEquals(2, folder.getChildrens().size());
+    assertThat(folder.getChildrens()).hasSize(2);
 
     // only notebook shared for write should be returned when other user lists directories
     ModelAndView viewUser =
@@ -242,9 +243,9 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn()
             .getModelAndView();
-    assertTrue(viewUser.getModelMap().containsKey("results"));
+    assertThat(viewUser.getModelMap()).containsKey("results");
     List<BaseRecord> resUser = getListFromModel(viewUser, "results", BaseRecord.class);
-    assertEquals(1, resUser.size());
+    assertThat(resUser).hasSize(1);
     assertEquals(sharedForEdit.getId(), resUser.get(0).getId());
   }
 

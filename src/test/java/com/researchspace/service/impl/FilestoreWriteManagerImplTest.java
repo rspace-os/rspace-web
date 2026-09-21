@@ -90,10 +90,11 @@ class FilestoreWriteManagerImplTest {
     // (The per-condition predicate logic is covered by FilestoreAuditMetadataTest.)
     when(client.resolveDeletableTarget("dir/file.txt"))
         .thenReturn(new DeletableTarget("dir/file.txt", meta("alice", "2026-06-18T10:30:00Z")));
+    BindingResult errors = errors();
 
     assertThrows(
         FilestoreOperationForbiddenException.class,
-        () -> manager.deleteFromFilestore(FS_ID, "dir/file.txt", errors(), user));
+        () -> manager.deleteFromFilestore(FS_ID, "dir/file.txt", errors, user));
     verify(client, never()).deleteByKey(any());
   }
 
@@ -102,18 +103,20 @@ class FilestoreWriteManagerImplTest {
     // No created-by/at (written outside RSpace): denied as no-metadata, not as non-creator.
     when(client.resolveDeletableTarget("dir/file.txt"))
         .thenReturn(new DeletableTarget("dir/file.txt", FilestoreAuditMetadata.from(null)));
+    BindingResult errors = errors();
 
     assertThrows(
         FilestoreOperationForbiddenException.class,
-        () -> manager.deleteFromFilestore(FS_ID, "dir/file.txt", errors(), user));
+        () -> manager.deleteFromFilestore(FS_ID, "dir/file.txt", errors, user));
     verify(client, never()).deleteByKey(any());
   }
 
   @Test
   void deleteFromFilestore_rootPath_rejectedWithoutTouchingClient() throws Exception {
+    BindingResult errors = errors();
     BindException exception =
         assertThrows(
-            BindException.class, () -> manager.deleteFromFilestore(FS_ID, "/", errors(), user));
+            BindException.class, () -> manager.deleteFromFilestore(FS_ID, "/", errors, user));
     assertCodedGlobalError(exception, "path", "netFileStores.write.rootModificationForbidden");
     verify(client, never()).resolveDeletableTarget(any());
     verify(client, never()).deleteByKey(any());
@@ -121,10 +124,11 @@ class FilestoreWriteManagerImplTest {
 
   @Test
   void moveWithinFilestore_rootSource_rejectedWithoutTouchingClient() throws Exception {
+    BindingResult errors = errors();
     BindException exception =
         assertThrows(
             BindException.class,
-            () -> manager.moveWithinFilestore(FS_ID, "/", "dest", errors(), user));
+            () -> manager.moveWithinFilestore(FS_ID, "/", "dest", errors, user));
     assertCodedGlobalError(
         exception, "sourcePath", "netFileStores.write.rootModificationForbidden");
     verify(client, never()).moveWithin(any(), any());
@@ -163,16 +167,18 @@ class FilestoreWriteManagerImplTest {
   @Test
   void createFolderInFilestore_invalidName_rejectedWithoutCreating() throws Exception {
     // path separator or leading/trailing whitespace is rejected before any S3 call
+    BindingResult slashErrors = errors();
     BindException slashException =
         assertThrows(
             BindException.class,
-            () -> manager.createFolderInFilestore(FS_ID, "parent", "a/b", errors(), user));
+            () -> manager.createFolderInFilestore(FS_ID, "parent", "a/b", slashErrors, user));
     assertCodedGlobalError(slashException, "folderName", "netFileStores.write.folderName.invalid");
 
+    BindingResult spacesErrors = errors();
     BindException spacesException =
         assertThrows(
             BindException.class,
-            () -> manager.createFolderInFilestore(FS_ID, "parent", " spaced ", errors(), user));
+            () -> manager.createFolderInFilestore(FS_ID, "parent", " spaced ", spacesErrors, user));
     assertCodedGlobalError(spacesException, "folderName", "netFileStores.write.folderName.invalid");
     verify(client, never()).createFolder(any(), any());
   }

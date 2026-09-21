@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
@@ -86,7 +87,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     assertEquals(2, e.getErrorCount());
     assertFieldNameIs(e, "fields");
     assertEquals("errors.inventory.field.mandatoryFieldEmpty", e.getFieldError().getCode());
-    assertEquals(2, e.getFieldErrors().size());
+    assertThat(e.getFieldErrors()).hasSize(2);
     assertEquals("errors.inventory.field.mandatoryFieldEmpty", e.getFieldErrors().get(0).getCode());
     assertEquals(
         "myText (mandatory - no default value)", e.getFieldErrors().get(0).getArguments()[0]);
@@ -102,7 +103,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     validator.validate(fullPost, e);
     assertEquals(4, e.getErrorCount());
     assertFieldNameIs(e, "fields");
-    assertEquals(4, e.getFieldErrors().size());
+    assertThat(e.getFieldErrors()).hasSize(4);
     assertEquals(
         "myText (mandatory - with default value)", e.getFieldErrors().get(0).getArguments()[0]);
     assertEquals(

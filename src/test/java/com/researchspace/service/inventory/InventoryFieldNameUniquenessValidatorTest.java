@@ -134,12 +134,13 @@ class InventoryFieldNameUniquenessValidatorTest {
 
   @Test
   void assertNoDuplicateFieldNamesInRequest_exactDuplicate_throws() {
+    List<ApiExtraField> extraFields = List.of(extraField("dup"), extraField("dup"));
     ApiRuntimeException ex =
         assertThrows(
             ApiRuntimeException.class,
             () ->
                 InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-                    null, List.of(extraField("dup"), extraField("dup"))));
+                    null, extraFields));
     assertEquals(
         InventoryFieldNameUniquenessValidator.DUPLICATE_NAME_ERROR_CODE, ex.getErrorCode());
     assertEquals("dup", ex.getArgs()[0]);
@@ -147,24 +148,26 @@ class InventoryFieldNameUniquenessValidatorTest {
 
   @Test
   void assertNoDuplicateFieldNamesInRequest_caseOnlyDuplicate_throws() {
+    List<ApiExtraField> extraFields = List.of(extraField("Foo"), extraField("foo"));
     ApiRuntimeException ex =
         assertThrows(
             ApiRuntimeException.class,
             () ->
                 InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-                    null, List.of(extraField("Foo"), extraField("foo"))));
+                    null, extraFields));
     // Original casing of the second occurrence preserved
     assertEquals("foo", ex.getArgs()[0]);
   }
 
   @Test
   void assertNoDuplicateFieldNamesInRequest_whitespaceDuplicate_throws() {
+    List<ApiExtraField> extraFields = List.of(extraField("Foo"), extraField(" Foo "));
     ApiRuntimeException ex =
         assertThrows(
             ApiRuntimeException.class,
             () ->
                 InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-                    null, List.of(extraField("Foo"), extraField(" Foo "))));
+                    null, extraFields));
     assertEquals("Foo", ex.getArgs()[0]);
   }
 
@@ -185,12 +188,14 @@ class InventoryFieldNameUniquenessValidatorTest {
 
   @Test
   void assertNoDuplicateFieldNamesInRequest_crossCollisionFieldVsExtraField_throws() {
+    var sampleFields = List.of(sampleField("X"));
+    List<ApiExtraField> extraFields = List.of(extraField("x"));
     ApiRuntimeException ex =
         assertThrows(
             ApiRuntimeException.class,
             () ->
                 InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-                    List.of(sampleField("X")), List.of(extraField("x"))));
+                    sampleFields, extraFields));
     assertEquals("x", ex.getArgs()[0]);
   }
 

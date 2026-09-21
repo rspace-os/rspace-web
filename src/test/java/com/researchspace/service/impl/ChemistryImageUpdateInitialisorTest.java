@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -64,8 +64,8 @@ public class ChemistryImageUpdateInitialisorTest extends SpringTransactionalTest
     RSChemElement createdChemElement = chemElems.get(0);
 
     // check image is set as the default test image from addChemistryFileToGallery
-    assertArrayEquals(
-        createdChemElement.getDataImage(), getBase64Image().getBytes(StandardCharsets.UTF_8));
+    assertThat(getBase64Image().getBytes(StandardCharsets.UTF_8))
+        .containsExactly(createdChemElement.getDataImage());
 
     when(chemistryProvider.exportToImage(any(), any(), any())).thenReturn(new byte[] {1, 2, 3});
 
@@ -76,6 +76,6 @@ public class ChemistryImageUpdateInitialisorTest extends SpringTransactionalTest
     List<RSChemElement> chemElemsUpdate =
         rsChemElementDao.getChemElementsFromChemFileId(file.getId());
     RSChemElement updatedChemElement = chemElemsUpdate.get(0);
-    assertArrayEquals(new byte[] {1, 2, 3}, updatedChemElement.getDataImage());
+    assertThat(updatedChemElement.getDataImage()).containsExactly(new byte[] {1, 2, 3});
   }
 }

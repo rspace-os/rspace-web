@@ -17,7 +17,17 @@ export function newSampleFormComponent(page: Page) {
     ...delegateToForm(form),
 
     async selectTemplate(name: string): Promise<void> {
-      await new SearchableResultsTable(form.root).select(name);
+      await Promise.all([
+        page.waitForResponse((res) => {
+          const { pathname } = new URL(res.url());
+          return (
+            res.request().method() === "GET" &&
+            pathname.startsWith("/api/inventory/v1/sampleTemplates/") &&
+            pathname.includes("/versions/")
+          );
+        }),
+        new SearchableResultsTable(form.root).select(name),
+      ]);
     },
 
     async setWithSubsamples(quantity?: number): Promise<void> {

@@ -1,6 +1,7 @@
 import { mergeTests } from "@playwright/test";
-import { test as repositoryIntegrationTest } from "@/__tests__/e2e/fixtures/flows/repositoryIntegrations";
-import { test as userSessionTest } from "@/__tests__/e2e/fixtures/flows/userSessions";
+import { test as publicSharingTest } from "@/__tests__/e2e/fixtures/flows/environment/publicSharing";
+import { test as repositoryIntegrationTest } from "@/__tests__/e2e/fixtures/flows/environment/repositoryIntegrations";
+import { test as userSessionTest } from "@/__tests__/e2e/fixtures/flows/sessions/userSessions";
 
-export type { SelfServicePiActor, UserSession } from "@/__tests__/e2e/fixtures/flows/userSessions";
-export const test = mergeTests(repositoryIntegrationTest, userSessionTest);
+export type { SelfServicePiActor, UserSession } from "@/__tests__/e2e/fixtures/flows/sessions/userSessions";
+export const test = mergeTests(repositoryIntegrationTest, userSessionTest, publicSharingTest);

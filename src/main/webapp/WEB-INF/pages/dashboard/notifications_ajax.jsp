@@ -24,10 +24,10 @@ Reusable tag for incorporating a notifications section into a page.
 					href="#"><spring:message code="notifications.deleteAll"/></a>
 				</span> <span style="position: relative; left: 10px;"><spring:message code="notifications.orderBy"/> </span> <a
 					href="#" class="notifcnOrderBy" style="position: relative; left: 10px;"
-					id="orderBy_communication.creationTime"><spring:message code="notifications.timeSent"/></a><br> <span
+					id="orderBy_creationTime"><spring:message code="notifications.timeSent"/></a><br> <span
 					style="position: relative; left: 10px;"><spring:message code="notifications.orderBy"/> </span> <a
 					href="#" class="notifcnOrderBy" style="position: relative; left: 10px;"
-					id="orderBy_originator.username"><spring:message code="notifications.sender"/></a>
+					id="orderBy_sender"><spring:message code="notifications.sender"/></a>
 				<%--	<a href="/admin/preferences" style="position:relative;left:10px;"
 						>Configure... </a> --%>
 			</div>
