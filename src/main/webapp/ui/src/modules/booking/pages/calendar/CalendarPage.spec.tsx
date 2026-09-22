@@ -777,6 +777,30 @@ describe("Calendar page", () => {
     await expect.element(dialog.getByText("Electron microscope", { exact: true })).not.toBeInTheDocument();
   });
 
+  test("does not reject a drag across a repeated hour", async () => {
+    history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-10-25"] });
+    render(
+      <CalendarPageStory
+        history={history}
+        preferences={{
+          ...customNewYorkBookingPreferences,
+          timezoneMode: "CUSTOM",
+          customTimezone: "Europe/Berlin",
+        }}
+      />,
+    );
+    await calendar.resources.click();
+    await calendar.day.click();
+    await expect.poll(() => calendar.resourceCanvases.length).toBe(5);
+    const canvas = calendar.resourceCanvases[0];
+    await userEvent.dragAndDrop(canvas, canvas, {
+      sourcePosition: { x: 120, y: 60 },
+      targetPosition: { x: 180, y: 60 },
+    });
+    await expect.element(calendar.bookingDialog).toBeVisible();
+    expect(calendar.bookingDialog.getByText("booking:bookings.errors.endAfterStart")).not.toBeInTheDocument();
+  });
+
   test("ends pristine creation when leaving Calendar so resource dragging works after returning", async () => {
     render(<CalendarPageStory history={history} />);
     await calendar.newBooking.click();
