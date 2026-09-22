@@ -26,6 +26,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -524,6 +525,17 @@ public final class ApiV2AuditStrictSearch {
   }
 
   private static FileChannel open(FileManifest file) throws IOException {
+    try {
+      Set<PosixFilePermission> permissions =
+          Files.getPosixFilePermissions(file.path(), LinkOption.NOFOLLOW_LINKS);
+      if (!permissions.contains(PosixFilePermission.OWNER_READ)
+          && !permissions.contains(PosixFilePermission.GROUP_READ)
+          && !permissions.contains(PosixFilePermission.OTHERS_READ)) {
+        throw new IOException("Audit file has no POSIX read permissions");
+      }
+    } catch (UnsupportedOperationException ignored) {
+      // The provider does not expose POSIX permissions; FileChannel.open remains authoritative.
+    }
     return FileChannel.open(file.path(), READ_OPTIONS);
   }
 
