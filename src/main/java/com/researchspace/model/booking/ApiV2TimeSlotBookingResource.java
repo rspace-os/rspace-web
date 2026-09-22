@@ -251,7 +251,7 @@ public final class ApiV2TimeSlotBookingResource {
                     TimeSlotBooking::getVisiblePurpose,
                     TimeSlotBooking::setPurpose)
                 .allowNull()
-                .withQueryCapabilities(false, false),
+                .withQueryCapabilities(true, false),
             Field.readOnly(
                     "bookedBy",
                     "visibleBookedBy",

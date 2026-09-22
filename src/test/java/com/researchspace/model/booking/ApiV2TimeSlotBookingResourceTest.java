@@ -12,7 +12,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.CollectionFieldTypes;
-import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.RsqlFilterParser;
 import com.researchspace.model.collection.WriteOperation;
@@ -38,7 +37,7 @@ class ApiV2TimeSlotBookingResourceTest {
         List.copyOf(
             ApiV2TimeSlotBookingResource.DESCRIPTION.writableFields(WriteOperation.UPDATE)));
     for (String privateField :
-        List.of("purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canViewConfiguration")) {
+        List.of("bookedBy", "createdBy", "privacy", "canEdit", "canViewConfiguration")) {
       assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField(privateField).sortable());
       assertFalse(
           ApiV2TimeSlotBookingResource.DESCRIPTION
@@ -47,11 +46,8 @@ class ApiV2TimeSlotBookingResourceTest {
               .iterator()
               .hasNext());
     }
-    assertThrows(
-        CollectionQueryException.class,
-        () ->
-            new RsqlFilterParser(ApiV2TimeSlotBookingResource.DESCRIPTION)
-                .parse("purpose==secret"));
+    assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField("purpose").sortable());
+    new RsqlFilterParser(ApiV2TimeSlotBookingResource.DESCRIPTION).parse("purpose=contains=secret");
 
     var requesterId = ApiV2TimeSlotBookingResource.DESCRIPTION.requireField("requesterId");
     assertFalse(requesterId.sortable());

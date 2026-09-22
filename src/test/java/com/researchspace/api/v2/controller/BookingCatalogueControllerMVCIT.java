@@ -334,7 +334,8 @@ class BookingCatalogueControllerMVCIT {
             get("/api/v2/bookings")
                 .queryParam("where", "purpose=exists=false")
                 .header("apiKey", fixture.userKey()))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(1));
   }
 
   @Test

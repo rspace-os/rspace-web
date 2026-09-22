@@ -124,7 +124,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
         CollectionQueryException.class,
         () ->
             ApiV2ResourceRequestParser.filtered(
-                "target==IN" + config.getTarget().id() + ";purpose==needle",
+                "target==IN" + config.getTarget().id() + ";privacy==busy",
                 events.description(),
                 catalog.registry()));
   }

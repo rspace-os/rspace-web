@@ -3,6 +3,7 @@ package com.researchspace.booking.api.v2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -128,7 +129,7 @@ class TimeSlotBookingResourceOperationsTest {
   }
 
   @Test
-  void derivedPrivateFieldsAreNullableAndNeverQueryable() {
+  void derivedPrivateFieldsAreNullableAndUnsortable() {
     User requester = mock(User.class);
     TimeSlotBooking booking = booking(requester);
 
@@ -139,12 +140,11 @@ class TimeSlotBookingResourceOperationsTest {
     assertEquals("busy", busy.get("privacy"));
     assertEquals(false, busy.get("canEdit"));
     assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField("purpose").sortable());
-    assertFalse(
+    assertTrue(
         ApiV2TimeSlotBookingResource.DESCRIPTION
             .requireField("purpose")
             .operators()
-            .iterator()
-            .hasNext());
+            .contains(com.researchspace.model.collection.Operator.CONTAINS));
     assertThrows(
         CollectionQueryException.class,
         () ->
