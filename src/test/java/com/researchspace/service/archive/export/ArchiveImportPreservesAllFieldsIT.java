@@ -2,9 +2,9 @@ package com.researchspace.service.archive.export;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveManifest;
@@ -13,9 +13,17 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.core.util.ZipUtils;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.ChoiceFieldDTO;
+import com.researchspace.model.dtos.DateFieldDTO;
+import com.researchspace.model.dtos.FormFieldSource;
+import com.researchspace.model.dtos.NumberFieldDTO;
+import com.researchspace.model.dtos.RadioFieldDTO;
+import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.dtos.TextFieldDTO;
+import com.researchspace.model.dtos.TimeFieldDTO;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
@@ -91,14 +99,12 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     logoutAndLoginAs(user);
 
     String run = getRandomName(6);
-    String mandatoryFieldName = "Mandatory_" + run;
-    String optionalFieldName = "Optional_" + run;
+    List<FieldDefinition> fieldDefinitions = allFieldDefinitions(run);
 
     RSForm form = formMgr.create(user);
-    formMgr.createFieldForm(
-        new TextFieldDTO<TextFieldForm>(mandatoryFieldName, true, ""), form.getId(), user);
-    formMgr.createFieldForm(
-        new TextFieldDTO<TextFieldForm>(optionalFieldName, false, ""), form.getId(), user);
+    for (FieldDefinition fieldDefinition : fieldDefinitions) {
+      formMgr.createFieldForm(fieldDefinition.source(), form.getId(), user);
+    }
     formMgr.publish(form.getId(), true, null, user);
 
     StructuredDocument doc =
@@ -116,15 +122,14 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
 
     File expandedArchive = newFolder(tempImportFolder, "expanded-export");
     ZipUtils.extractZip(zipFile, expandedArchive);
-    File documentXml = findXmlContaining(expandedArchive, "<fieldName>" + mandatoryFieldName);
-    File formXml = findXmlContaining(expandedArchive, "<name>" + mandatoryFieldName);
+    File formXml = findXmlContaining(expandedArchive, "<name>" + fieldDefinitions.get(0).name());
 
-    assertEquals(
-        "true", getRequiredAttribute(documentXml, "field", "fieldName", mandatoryFieldName));
-    assertEquals(
-        "false", getRequiredAttribute(documentXml, "field", "fieldName", optionalFieldName));
-    assertEquals("true", getRequiredAttribute(formXml, "fieldForm", "name", mandatoryFieldName));
-    assertEquals("false", getRequiredAttribute(formXml, "fieldForm", "name", optionalFieldName));
+    for (FieldDefinition fieldDefinition : fieldDefinitions) {
+      assertEquals(
+          Boolean.toString(fieldDefinition.mandatory()),
+          getRequiredAttribute(formXml, "fieldForm", "name", fieldDefinition.name()),
+          fieldDefinition.type() + " form field required flag");
+    }
 
     ArchivalImportConfig importConfig =
         createDefaultArchiveImportConfig(user, newFolder(tempImportFolder, "imported-archive"));
@@ -138,8 +143,12 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
         importedForm.getFieldForms().stream()
             .collect(Collectors.toMap(FieldForm::getName, FieldForm::isMandatory));
 
-    assertEquals(Boolean.TRUE, importedFieldRequirements.get(mandatoryFieldName));
-    assertEquals(Boolean.FALSE, importedFieldRequirements.get(optionalFieldName));
+    for (FieldDefinition fieldDefinition : fieldDefinitions) {
+      assertEquals(
+          fieldDefinition.mandatory(),
+          importedFieldRequirements.get(fieldDefinition.name()),
+          fieldDefinition.type() + " imported form field required flag");
+    }
   }
 
   @Test
@@ -276,6 +285,104 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     }
     throw new IllegalStateException("imported document '" + name + "' not found in report");
   }
+
+  private static List<FieldDefinition> allFieldDefinitions(String run) {
+    return List.of(
+        new FieldDefinition(
+            "Mandatory_Number_" + run,
+            true,
+            FieldType.NUMBER,
+            new NumberFieldDTO<>(
+                "1", "10", "2", "5", FieldType.NUMBER, "Mandatory_Number_" + run, true)),
+        new FieldDefinition(
+            "Optional_Number_" + run,
+            false,
+            FieldType.NUMBER,
+            new NumberFieldDTO<>(
+                "1", "10", "2", "5", FieldType.NUMBER, "Optional_Number_" + run, false)),
+        new FieldDefinition(
+            "Mandatory_String_" + run,
+            true,
+            FieldType.STRING,
+            new StringFieldDTO<>("Mandatory_String_" + run, true, "no", "string value")),
+        new FieldDefinition(
+            "Optional_String_" + run,
+            false,
+            FieldType.STRING,
+            new StringFieldDTO<>("Optional_String_" + run, false, "no", "string value")),
+        new FieldDefinition(
+            "Mandatory_Text_" + run,
+            true,
+            FieldType.TEXT,
+            new TextFieldDTO<TextFieldForm>("Mandatory_Text_" + run, true, "text value")),
+        new FieldDefinition(
+            "Optional_Text_" + run,
+            false,
+            FieldType.TEXT,
+            new TextFieldDTO<TextFieldForm>("Optional_Text_" + run, false, "text value")),
+        new FieldDefinition(
+            "Mandatory_Radio_" + run,
+            true,
+            FieldType.RADIO,
+            new RadioFieldDTO<>(
+                "0=alpha&1=beta", "alpha", "Mandatory_Radio_" + run, false, false, true)),
+        new FieldDefinition(
+            "Optional_Radio_" + run,
+            false,
+            FieldType.RADIO,
+            new RadioFieldDTO<>(
+                "0=alpha&1=beta", "alpha", "Optional_Radio_" + run, false, false, false)),
+        new FieldDefinition(
+            "Mandatory_Choice_" + run,
+            true,
+            FieldType.CHOICE,
+            new ChoiceFieldDTO<>(
+                "0=alpha&1=beta", "yes", "0=alpha", "Mandatory_Choice_" + run, true)),
+        new FieldDefinition(
+            "Optional_Choice_" + run,
+            false,
+            FieldType.CHOICE,
+            new ChoiceFieldDTO<>(
+                "0=alpha&1=beta", "yes", "0=alpha", "Optional_Choice_" + run, false)),
+        new FieldDefinition(
+            "Mandatory_Date_" + run,
+            true,
+            FieldType.DATE,
+            new DateFieldDTO<>(
+                "2026-09-22",
+                "2026-09-01",
+                "2026-09-30",
+                "yyyy-MM-dd",
+                "Mandatory_Date_" + run,
+                true)),
+        new FieldDefinition(
+            "Optional_Date_" + run,
+            false,
+            FieldType.DATE,
+            new DateFieldDTO<>(
+                "2026-09-22",
+                "2026-09-01",
+                "2026-09-30",
+                "yyyy-MM-dd",
+                "Optional_Date_" + run,
+                false)),
+        new FieldDefinition(
+            "Mandatory_Time_" + run,
+            true,
+            FieldType.TIME,
+            new TimeFieldDTO<>("10:30", "09:00", "17:00", "HH:mm", "Mandatory_Time_" + run, true)),
+        new FieldDefinition(
+            "Optional_Time_" + run,
+            false,
+            FieldType.TIME,
+            new TimeFieldDTO<>("10:30", "09:00", "17:00", "HH:mm", "Optional_Time_" + run, false)));
+  }
+
+  private record FieldDefinition(
+      String name,
+      boolean mandatory,
+      FieldType type,
+      FormFieldSource<? extends FieldForm> source) {}
 
   private static File newFolder(File root, String... subDirs) throws IOException {
     String subFolder = String.join("/", subDirs);
