@@ -20,6 +20,7 @@ import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -31,6 +32,12 @@ class InventoryReadRestrictionTest {
   private final InventoryPermissionUtils permissions = mock(InventoryPermissionUtils.class);
   private final InstrumentReadAccess access = new InstrumentReadAccess(permissions);
   private final User user = mock(User.class);
+
+  @BeforeEach
+  void authenticateUser() {
+    when(user.isEnabled()).thenReturn(true);
+    when(user.isAccountLocked()).thenReturn(false);
+  }
 
   private static Group group(String uniqueName) {
     Group group = mock(Group.class);
@@ -75,6 +82,17 @@ class InventoryReadRestrictionTest {
     caller("owner", List.of("pi"), List.of("owner", "colleague"));
     when(user.getGroups()).thenReturn(groups);
 
+    FilterExpression sharingAcl =
+        new FilterExpression.Or(
+            List.of(
+                new FilterExpression.Comparison(
+                    "sharingAcl", Operator.EQUAL, List.of("lab=*"), true),
+                comparison("sharingAcl", Operator.CONTAINS, "&lab=")));
+    FilterExpression groupShare =
+        new FilterExpression.And(
+            List.of(
+                comparison("sharingMode", Operator.EQUAL, InventorySharingMode.WHITELIST),
+                sharingAcl));
     assertEquals(
         new FilterExpression.And(
             List.of(
@@ -95,11 +113,7 @@ class InventoryReadRestrictionTest {
                                     Operator.IN,
                                     List.of("owner", "colleague"),
                                     false))),
-                        new FilterExpression.And(
-                            List.of(
-                                comparison(
-                                    "sharingMode", Operator.EQUAL, InventorySharingMode.WHITELIST),
-                                comparison("sharingAcl", Operator.CONTAINS, "lab"))))))),
+                        groupShare)))),
         filter());
   }
 
@@ -138,17 +152,22 @@ class InventoryReadRestrictionTest {
     assertTrue(
         compiled.parameters().containsValue(InventorySharingMode.WHITELIST),
         "the enum binds as a parameter, because the Blaze parser refuses the HQL literal form");
-    assertTrue(compiled.parameters().containsValue("%lab%"));
+    assertTrue(compiled.parameters().containsValue("lab=%"));
+    assertTrue(compiled.parameters().containsValue("%&lab=%"));
     assertTrue(compiled.parameters().containsValue(List.of("pi")));
   }
 
   private static boolean testsAnAcl(FilterExpression child) {
-    return child instanceof FilterExpression.And and
-        && and.children().stream()
-            .anyMatch(
-                grandchild ->
-                    grandchild instanceof FilterExpression.Comparison comparison
-                        && comparison.field().equals("sharingAcl"));
+    if (child instanceof FilterExpression.Comparison comparison) {
+      return comparison.field().equals("sharingAcl");
+    }
+    if (child instanceof FilterExpression.And and) {
+      return and.children().stream().anyMatch(InventoryReadRestrictionTest::testsAnAcl);
+    }
+    if (child instanceof FilterExpression.Or or) {
+      return or.children().stream().anyMatch(InventoryReadRestrictionTest::testsAnAcl);
+    }
+    return false;
   }
 
   private FilterExpression filter() {
