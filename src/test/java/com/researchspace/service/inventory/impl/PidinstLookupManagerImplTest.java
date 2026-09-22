@@ -153,16 +153,34 @@ class PidinstLookupManagerImplTest {
   void aMultiWordQueryDoesNotMatchARecordHoldingOnlyOneOfTheWords() {
     B2instDraftRecord wanted = publishedRecord();
     wanted.getMetadata().setName("Instr1 prova_COPY");
-    when(b2instConnector.searchRecords("*Instr1 AND prova_COPY*", 50))
+    when(b2instConnector.searchRecords("*Instr1\\ prova_COPY*", 50))
         .thenReturn(searchResultOf(wanted, 1));
 
     ApiPidinstSearchResult result = manager.search("Instr1 prova_COPY", user);
 
     assertEquals(1, result.getHits().size());
-    verify(b2instConnector).searchRecords("*Instr1 AND prova_COPY*", 50);
+    verify(b2instConnector).searchRecords("*Instr1\\ prova_COPY*", 50);
   }
 
   /** The sentence may sit in any field the hit exposes, not only the name. */
+  /**
+   * The providers get different queries for the same input, because they disagree about the escaped
+   * space. On B2INST {@code *a\ b*} stays one term and matches the whole string including the
+   * space; on DataCite the same query answers 0 for a record that plainly holds it, so there the
+   * words are ANDed instead. Measured 2026-09-22 (ADR 0009 decision 8).
+   */
+  @Test
+  void theTwoProvidersGetDifferentlyShapedMultiWordQueries() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search("Instr1 prova_COPY", user);
+
+    verify(dataCiteConnector)
+        .searchInstrumentDois("*Instr1 AND prova_COPY*", 50, InventorySettingType.PIDINST);
+  }
+
   /** RSDEV-1522: both registries match whole analysed tokens, so a bare substring found nothing. */
   @Test
   void freeTextSearchWrapsTheQueryInWildcardsSoASubstringOfATokenMatches() {
@@ -194,12 +212,12 @@ class PidinstLookupManagerImplTest {
    */
   @Test
   void aMultiWordQueryIsOnePairOfWildcardsWithTheWordsAnded() {
-    when(b2instConnector.searchRecords("*electro AND micro AND stub*", 50))
+    when(b2instConnector.searchRecords("*electro\\ micro\\ stub*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
 
     manager.search("electro micro stub", user);
 
-    verify(b2instConnector).searchRecords("*electro AND micro AND stub*", 50);
+    verify(b2instConnector).searchRecords("*electro\\ micro\\ stub*", 50);
   }
 
   /** Escaping runs first, so our wildcards stay live while the user's own text stays literal. */

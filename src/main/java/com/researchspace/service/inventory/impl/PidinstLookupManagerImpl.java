@@ -210,7 +210,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * {@code total} stays the provider's own.
    */
   private void searchB2inst(String query, ApiPidinstSearchResult result) {
-    B2instSearchResult page = b2instConnector.searchRecords(contains(query), MAX_HITS);
+    B2instSearchResult page = b2instConnector.searchRecords(containsForB2inst(query), MAX_HITS);
     page.getHits().getHits().stream()
         .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
         .map(PidinstRecordMapper::fromB2inst)
@@ -229,14 +229,14 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * own clause and {@link #DOI_FRAGMENT} already limits what may go in it. Both gates read the raw
    * query, so neither transformation can change which searches retry.
    *
-   * <p>{@link #contains(String)} has made the retry rare rather than redundant: a wildcarded free
-   * text usually matches the DOI fragment by itself. It is kept because it costs nothing on a
-   * non-empty first page and addresses the keyword field directly.
+   * <p>{@link #containsForDataCite(String)} has made the retry rare rather than redundant: a
+   * wildcarded free text usually matches the DOI fragment by itself. It is kept because it costs
+   * nothing on a non-empty first page and addresses the keyword field directly.
    */
   private DataCiteDoiSearchResult searchDataCite(String query) {
     DataCiteDoiSearchResult hits =
         dataCiteConnector.searchInstrumentDois(
-            contains(escapeForDataCite(query)), MAX_HITS, InventorySettingType.PIDINST);
+            containsForDataCite(escapeForDataCite(query)), MAX_HITS, InventorySettingType.PIDINST);
     if (!hits.getData().isEmpty() || !DOI_FRAGMENT.matcher(query).matches()) {
       return hits;
     }
@@ -245,22 +245,38 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * The query as a "contains" search (RSDEV-1522). Both registries match whole analysed tokens and
-   * the analyser does not split on an underscore, so {@code Nico-PIDINST_VAIDA_TILO} is indexed as
-   * {@code nico} and {@code pidinst_vaida_tilo} and a search for {@code Vaida} finds nothing.
+   * The B2INST query: the whole of what the user typed as one wildcard term, with its spaces
+   * escaped so Elasticsearch does not split it (RSDEV-1522).
    *
-   * <p>One pair of wildcards around the whole query, never a pair per word, because DataCite pays
-   * for each leading wildcard separately: per-word takes 32s against the client's 30s read timeout
-   * where this stays flat at ~14s however many words the query holds.
+   * <p>This is a real "contains", spaces included. Verified 2026-09-22 against b2inst-test.gwdg.de,
+   * where {@code *nstr1\ prova_CO*} finds {@code Instr1 prova_COPY} - both words cut at both ends
+   * and the match spanning the space - while {@code *Instr1\ prova_COPY*} finds only that record
+   * where the unescaped {@code *Instr1 prova_COPY*} also returned {@code Instr1 prova 123}. Without
+   * the escape Elasticsearch parses the query before the wildcards apply and splits it on
+   * whitespace itself, leaving {@code *Instr1} (ends-with) and {@code prova_COPY*} (starts-with),
+   * which B2INST then ORs.
    *
-   * <p>The {@code AND} is what makes a multi-word query mean all of it. Elasticsearch parses the
-   * query before the wildcards apply and splits it on whitespace itself, so {@code *a b*} is two
-   * terms, {@code *a} and {@code b*} - and B2INST joins terms with OR, which let a search for
-   * {@code Instr1 prova_COPY} return {@code Instr1 prova 123} on its {@code instr1} token alone.
-   * Joining with {@code AND} costs no extra leading wildcard. ADR 0009 decision 8 has the
-   * measurements.
+   * <p>One leading wildcard however many words the query holds, so it stays fast: 0.2-0.4s.
    */
-  private static String contains(String query) {
+  private static String containsForB2inst(String query) {
+    return "*" + query.replaceAll("\\s+", "\\\\ ") + "*";
+  }
+
+  /**
+   * The DataCite query: the same "contains", but with the words joined by {@code AND} because
+   * DataCite does not honour the escaped space (RSDEV-1522, ADR 0009 decision 8).
+   *
+   * <p>Measured 2026-09-22 against api.test.datacite.org on a record titled {@code nicos
+   * instr234_COPY_COPY}: {@code *instr234*} finds it, and so does {@code *nicos AND instr234*}, but
+   * {@code *nicos\ instr234*} answers 0. So the escape that makes B2INST exact makes DataCite
+   * blind, and the two providers are sent different queries.
+   *
+   * <p>The consequence, accepted: this is "ends-with the first word AND starts-with the last", not
+   * a substring of the whole string, so a partial first word does not match on DataCite. A wildcard
+   * per word would fix that but costs a leading wildcard each - three words measure 31s against the
+   * client's 30s read timeout - so it is not affordable there.
+   */
+  private static String containsForDataCite(String query) {
     return "*" + query.replaceAll("\\s+", " AND ") + "*";
   }
 
