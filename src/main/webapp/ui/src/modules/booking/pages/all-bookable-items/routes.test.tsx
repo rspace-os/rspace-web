@@ -21,6 +21,15 @@ describe("All Bookable Items route", () => {
     });
   });
 
+  it.each(["invalid", "42", "null", "%5B%5D"])(
+    "drops invalid date %s while keeping unrelated filters",
+    async (date) => {
+      const search = await matchedSearch(`/booking/all-items?date=${date}&target=IN42&availability=available-now`);
+      expect(search).toMatchObject({ target: "IN42", availability: "available-now" });
+      expect(search).toHaveProperty("date", undefined);
+    },
+  );
+
   it("drops absent and invalid availability modes", () => {
     expect(allBookableItemsSearch({ date: "2026-08-17" })).toEqual({ date: "2026-08-17" });
     expect(allBookableItemsSearch({ date: "2026-08-17", availability: "tomorrow" })).toEqual({

@@ -1,9 +1,10 @@
 import { useIsFetching } from "@tanstack/react-query";
-import { CatchBoundary, HeadContent, Outlet, useMatches, useRouterState } from "@tanstack/react-router";
+import { CatchBoundary, HeadContent, Navigate, Outlet, useMatches, useRouterState } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
+import { useFeatureFlags } from "@/featureFlags/queries";
 import { viewTransitionQueryFilters } from "@/modules/common/queries/viewTransition";
 import { UserSessionBootstrap } from "@/modules/common/stores/userSessionStore";
 import {
@@ -68,6 +69,29 @@ export function RouteTransitionIndicator() {
 }
 
 export default function AppShell() {
+  const { t } = useTranslation("common");
+  const appBarConfig = useMatches({ select: (matches) => getAppBarConfig(matches) });
+  return appBarConfig !== false && appBarConfig.currentPage === "booking" ? (
+    <React.Suspense fallback={<p role="status">{t("loading")}</p>}>
+      <BookingAppShell />
+    </React.Suspense>
+  ) : (
+    <LoadedAppShell />
+  );
+}
+
+function BookingAppShell() {
+  const { t } = useTranslation("common");
+  const flags = useFeatureFlags();
+  // Gate the entire shell: the Booking sidebar also fetches booking preferences.
+  if (flags.isPlaceholderData && !flags.isError) return <p role="status">{t("loading")}</p>;
+  if (!flags.data?.flags.bookingEnabled.value || flags.isError) {
+    return <Navigate from="/booking" href="/workspace" reloadDocument replace />;
+  }
+  return <LoadedAppShell />;
+}
+
+function LoadedAppShell() {
   const { t } = useTranslation("common");
   const appBarConfig = useMatches({
     select: (matches) => getAppBarConfig(matches),

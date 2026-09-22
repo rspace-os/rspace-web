@@ -7,7 +7,7 @@ export function createCalendarRoute<TParentRoute extends AnyRoute>(bookingRoute:
     getParentRoute: () => bookingRoute,
     path: "/calendar",
     validateSearch: (search: Record<string, unknown>): { date?: string; target?: string } => ({
-      ...(typeof search.date === "string" && isPlainDate(search.date) ? { date: search.date } : {}),
+      date: typeof search.date === "string" && isPlainDate(search.date) ? search.date : undefined,
       ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
     }),
     component: CalendarPage,

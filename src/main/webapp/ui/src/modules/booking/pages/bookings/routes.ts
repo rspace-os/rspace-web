@@ -5,8 +5,11 @@ import { BookingDetailsView, BookingEventPage } from "./BookingEventPage";
 import BookingInlineEditForm from "./BookingInlineEditForm";
 
 export function bookingFormSearch(search: Record<string, unknown>) {
+  const dateSearch: { date?: string } = {
+    date: typeof search.date === "string" && isPlainDate(search.date) ? search.date : undefined,
+  };
   return {
-    ...(typeof search.date === "string" && isPlainDate(search.date) ? { date: search.date } : {}),
+    ...dateSearch,
     ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
   };
 }

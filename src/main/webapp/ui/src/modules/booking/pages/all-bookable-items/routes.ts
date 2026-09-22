@@ -14,8 +14,11 @@ export function allBookableItemsSearch(search: Record<string, unknown>) {
   const types = stringList(search.types, /^[A-Z][A-Z0-9_]*$/);
   const page = typeof search.page === "number" ? search.page : Number(search.page);
   const pageSize = Number(search.pageSize);
+  const dateSearch: { date?: string } = {
+    date: validCalendarDate(search.date) ? search.date : undefined,
+  };
   return {
-    ...(validCalendarDate(search.date) ? { date: search.date } : {}),
+    ...dateSearch,
     ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
     ...(availability ? { availability } : {}),
     ...(typeof search.where === "string" && search.where.trim() ? { where: search.where } : {}),

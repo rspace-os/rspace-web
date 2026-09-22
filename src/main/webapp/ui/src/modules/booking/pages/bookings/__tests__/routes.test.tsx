@@ -25,7 +25,13 @@ describe("booking form routes", () => {
   });
 
   it("drops invalid dates and targets", async () => {
-    expect(bookingFormSearch({ date: "2026-02-30", target: "SA42" })).toEqual({});
+    expect(bookingFormSearch({ date: "2026-02-30", target: "SA42" })).toEqual({ date: undefined });
+  });
+
+  it("drops invalid dates while keeping a valid target", async () => {
+    const { search } = await matched("/booking/calendar/bookings/add?date=2026-02-30&target=IN42");
+    expect(search).toMatchObject({ target: "IN42" });
+    expect(search).toHaveProperty("date", undefined);
   });
 
   it.each([
