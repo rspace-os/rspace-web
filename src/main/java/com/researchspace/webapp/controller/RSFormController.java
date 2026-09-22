@@ -319,6 +319,24 @@ public class RSFormController extends BaseController {
     return new ModelAndView("workspace/editor/editform_fieldforms");
   }
 
+  @GetMapping("ajax/getFieldRow")
+  public ModelAndView viewFieldRow(@RequestParam("fieldId") long fieldId, Model model) {
+    User subject = userManager.getAuthenticatedUserInSession();
+    FieldForm field = formManager.getField(fieldId);
+    AbstractForm form = field.getForm();
+    if (!permissionUtils.isPermitted(form, PermissionType.WRITE, subject)) {
+      throw new AuthorizationException(
+          getText(
+              "errors.authorization.failure.editFormDescription",
+              new Object[] {subject.getUsername()}));
+    }
+    model.addAttribute("field", field);
+    model.addAttribute("template", form);
+    model.addAttribute(
+        "templateOperation", form.isNewState() ? FormOperation.CREATE : FormOperation.EDIT);
+    return new ModelAndView("workspace/editor/include/fieldFormRow");
+  }
+
   /**
    * Deletes a field from a form - TO BE USED WITH CAUTION as will lead to data integrity problems
    * with users' data

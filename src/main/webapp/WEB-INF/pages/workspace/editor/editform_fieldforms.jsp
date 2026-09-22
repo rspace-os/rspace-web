@@ -299,7 +299,7 @@
   <tr>
     <td>
       <label><spring:message code="form.fieldEditor.required"/></label>
-      <input  ${fieldTemplate.mandatory == true ?"checked":""} type="checkbox" id="mandatoryCheckbox" name="mandatoryCheckbox" value="${fieldTemplate.mandatory}"/></td>
+      <input  ${fieldTemplate.mandatory == true ?"checked":""} type="checkbox" id="mandatoryCheckbox" name="mandatoryCheckbox" value="${fieldTemplate.mandatory}"/>
     </td>
   </tr>
 
