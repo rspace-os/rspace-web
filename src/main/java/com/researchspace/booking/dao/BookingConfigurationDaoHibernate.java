@@ -221,7 +221,8 @@ public class BookingConfigurationDaoHibernate
             .eq(BookingConfigurationState.ACTIVE)
             .where("bookingConfiguration.enabled")
             .eq(true);
-    itemQuery.restriction(caller, false, false, "bookingConfiguration.target").apply(query);
+    CollectionQueryExecutor.apply(
+        query, itemQuery.restriction(caller, false, false, "bookingConfiguration.target"));
     return Set.copyOf(query.getResultList());
   }
 }

@@ -203,7 +203,8 @@ public final class CollectionQueryExecutor<T> {
     return query;
   }
 
-  private static void apply(CriteriaBuilder<?> query, Predicate predicate) {
+  /** Applies a compiled predicate, including its named subqueries and parameters. */
+  public static void apply(CriteriaBuilder<?> query, Predicate predicate) {
     if (predicate == null) {
       return;
     }
