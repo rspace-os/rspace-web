@@ -86,7 +86,7 @@ export class BookableItemsPage {
   }
 
   async chooseCustomFieldSource(): Promise<void> {
-    await this.chooseField("Custom field on Bookable item…");
+    await this.chooseField("Custom field…");
   }
 
   async filterByInstrumentName(value: string): Promise<void> {

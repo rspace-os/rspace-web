@@ -103,8 +103,8 @@ describe("AllBookableItemsPage", () => {
       ...bookableItemsHandlers(() => undefined),
     );
     await renderPage();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent(/\d/));
     await screen.findAllByRole("link", { name: "Book" });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent(/\d/));
     expect(bookings).toHaveBeenCalledTimes(1);
   });
 
@@ -154,7 +154,7 @@ describe("AllBookableItemsPage", () => {
     await user.click(await screen.findByRole("button", { name: /^Filters/ }));
     expect(
       await screen.findByRole("combobox", { name: "Search Bookable item custom fields for filter 1" }),
-    ).toHaveValue("Bookable item → Hazard class");
+    ).toHaveValue("Hazard class (Cell line template · SF152)");
   });
 
   it("blocks the catalogue and preserves an unavailable runtime filter for explicit removal", async () => {
