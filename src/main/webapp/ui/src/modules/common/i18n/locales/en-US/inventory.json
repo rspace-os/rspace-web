@@ -1868,6 +1868,14 @@
       "approveButton": "Approve",
       "approvedButton": "✓ Approved",
       "cancelRequestHint": "Cancel this request if you no longer require this material.",
+      "chooseMethodDialog": {
+        "body": "Choose how you wish to prepare the sample:",
+        "proceedButton": "Proceed",
+        "title": "Choose Sample to Prepare",
+        "transferOption": "Transfer the existing sample and all subsamples",
+        "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to user {requester}.",
+        "wizardOption": "Create a new sample derived from the existing sample"
+      },
       "fields": {
         "additionalNotes": "Notes from requester",
         "approvedMessage": "This request has been approved by {owner}. The requested materials are now being prepared for transfer to you.",
@@ -1906,6 +1914,12 @@
         "approvedSelected": "{subsample} can now be prepared for transfer to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
         "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer."
       },
+      "prepareDialog": {
+        "body": "Preparing {subsample} for transfer.",
+        "comingSoon": "Coming soon",
+        "nextButton": "Next",
+        "title": "Operations Wizard Step"
+      },
       "prepareSampleButton": "Prepare Sample",
       "rejectButton": "Reject",
       "rejectDialog": {
@@ -1923,7 +1937,8 @@
         "fulfilled": "Closed. The requester can raise a new request from the sample.",
         "rejected": "Closed. Your reason for rejecting is shown in the history."
       },
-      "title": "Request {id}: {sampleName}"
+      "title": "Request {id}: {sampleName}",
+      "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
     },
     "feedback": "{count} sample requests found.",
     "filters": {

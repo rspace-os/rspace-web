@@ -90,6 +90,10 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
   /**
    * The approver is never stored, so the owner side joins through the sample's current owner. A
    * null role means no filtering by role: the user is either the requester or the owner.
+   *
+   * <p>OWNER excludes the caller's own requests even if a since-fulfilled transfer has made them
+   * the sample's current owner: "received" means someone else asked the caller for material, not a
+   * request the caller sent to themselves that they since ended up owning the sample for.
    */
   private String roleClause(SampleRequestRole role) {
     if (role == null) {
@@ -99,7 +103,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
       case REQUESTER:
         return "req.requesterUsername = :username";
       case OWNER:
-        return "req.sample.owner = :user";
+        return "req.sample.owner = :user and req.requesterUsername <> :username";
       default:
         throw new UnsupportedOperationException("Unhandled sample request role: " + role);
     }
@@ -119,6 +123,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
       query.setParameter("username", user.getUsername());
     } else {
       query.setParameter("user", user);
+      query.setParameter("username", user.getUsername());
     }
     if (CollectionUtils.isNotEmpty(statuses)) {
       query.setParameterList("statuses", statuses);

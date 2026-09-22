@@ -34,7 +34,7 @@ export type ApiSampleRequestListItem = {
   status: string;
   created: string;
   note: string | null;
-  requester: { id: number; firstName: string; lastName: string };
+  requester: { id: number; username: string; firstName: string; lastName: string };
   sample: { id: number; globalId: string; name: string; owner: { id: number } };
 };
 

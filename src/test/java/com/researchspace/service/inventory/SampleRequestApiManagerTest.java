@@ -15,6 +15,7 @@ import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.dao.SampleRequestDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -156,6 +157,31 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void getRequestsForUser_multipleRequesters_returnsEachRequestsOwnRequesterInfo() {
+    User secondRequester =
+        createAndSaveUserIfNotExists(getRandomAlphabeticString("secondRequester"));
+    ApiSampleRequest fromFirst = raiseRequestAs(requester);
+    ApiSampleRequest fromSecond = raiseRequestAs(secondRequester);
+
+    ApiSampleRequestSearchResult ownersView = listFor(SampleRequestRole.OWNER, owner);
+
+    assertEquals(2L, ownersView.getTotalHits().longValue());
+    ApiSampleRequestInfo listedFirst =
+        ownersView.getRequests().stream()
+            .filter(r -> r.getId().equals(fromFirst.getId()))
+            .findFirst()
+            .orElseThrow();
+    ApiSampleRequestInfo listedSecond =
+        ownersView.getRequests().stream()
+            .filter(r -> r.getId().equals(fromSecond.getId()))
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals(requester.getUsername(), listedFirst.getRequester().getUsername());
+    assertEquals(secondRequester.getUsername(), listedSecond.getRequester().getUsername());
+  }
+
+  @Test
   public void getRequestsForUser_nullRole_returnsBothSentAndReceivedRequests() {
     ApiSampleRequest sent = raiseRequest("Need 2ml for the binding assay");
 
@@ -174,6 +200,38 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     assertEquals(2L, results.getTotalHits().longValue());
     assertTrue(results.getRequests().stream().anyMatch(r -> r.getId().equals(sent.getId())));
     assertTrue(results.getRequests().stream().anyMatch(r -> r.getId().equals(received.getId())));
+
+    // OWNER-only ("Received") must exclude the request requester themselves sent elsewhere
+    ApiSampleRequestSearchResult receivedOnly = listFor(SampleRequestRole.OWNER, requester);
+    assertEquals(1L, receivedOnly.getTotalHits().longValue());
+    assertEquals(received.getId(), receivedOnly.getRequests().get(0).getId());
+
+    // REQUESTER-only ("Sent") must exclude the request requester received as an owner
+    ApiSampleRequestSearchResult sentOnly = listFor(SampleRequestRole.REQUESTER, requester);
+    assertEquals(1L, sentOnly.getTotalHits().longValue());
+    assertEquals(sent.getId(), sentOnly.getRequests().get(0).getId());
+  }
+
+  @Test
+  public void getRequestsForUser_ownerRole_excludesCallersOwnRequestEvenIfTheyNowOwnTheSample() {
+    ApiSampleRequest ownRequest = raiseRequest("Need 2ml for the binding assay");
+
+    // simulate the sample being transferred to the requester (e.g. as part of fulfilling
+    // someone else's request against it): requester now owns the sample they themselves
+    // once requested material from
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // "Received" must not show requester's own request back to them, even though they are
+    // now, technically, the sample's owner
+    assertEquals(0L, listFor(SampleRequestRole.OWNER, requester).getTotalHits().longValue());
+
+    // it still counts as one of requester's requests overall
+    ApiSampleRequestSearchResult all = listFor(null, requester);
+    assertEquals(1L, all.getTotalHits().longValue());
+    assertEquals(ownRequest.getId(), all.getRequests().get(0).getId());
   }
 
   @Test

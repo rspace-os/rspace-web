@@ -9,7 +9,10 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
 import { darken, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -22,10 +25,15 @@ import GlobalId from "@/components/GlobalId";
 import NoValue from "@/components/NoValue";
 import UserDetails from "@/components/UserDetails";
 import useWhoAmI from "@/hooks/api/useWhoAmI";
+import TransRichText from "@/modules/common/i18n/TransRichText";
+import { mkAlert } from "@/stores/contexts/Alert";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
+import type PersonModel from "@/stores/models/PersonModel";
+import useStores from "@/stores/use-stores";
 import * as FetchingData from "@/util/fetchingData";
 import { isoToLocale } from "@/util/Util";
 import ApiService from "../../common/InvApiService";
+import PeopleField from "../components/Inputs/PeopleField";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
 import type { ApiSampleRequestListItem } from "./RequestsList";
@@ -84,9 +92,16 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const [fulfilDialogOpen, setFulfilDialogOpen] = useState(false);
   const [selectedSubsampleId, setSelectedSubsampleId] = useState<number | null>(null);
   const [selectedSubsampleName, setSelectedSubsampleName] = useState<string | null>(null);
+  const [chooseMethodDialogOpen, setChooseMethodDialogOpen] = useState(false);
+  const [preparationMethod, setPreparationMethod] = useState<"wizard" | "transfer" | null>(null);
+  const [prepareDialogOpen, setPrepareDialogOpen] = useState(false);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [transferRecipient, setTransferRecipient] = useState<PersonModel | null>(null);
   const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
   const [sampleOwnerName, setSampleOwnerName] = useState<string | null>(null);
+  const [subSampleCount, setSubSampleCount] = useState<number | null>(null);
   const currentUser = useWhoAmI();
+  const { peopleStore, uiStore } = useStores();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
     .map((user) => request != null && user.id === request.sample.owner.id)
     .orElse(false);
@@ -112,6 +127,27 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       cancelled = true;
     };
   }, [request, status]);
+
+  // Only needed to size the "transferring will move all subsamples too" warning in the
+  // Choose Sample to Prepare dialog, so a plain count suffices; `subSamples` comes back
+  // null for a restricted (non-owner) viewer, same as in RequestSampleLocations.
+  useEffect(() => {
+    if (!request) return;
+    let cancelled = false;
+    ApiService.get<{ subSamples: Array<{ id: number }> | null }>("samples", request.sample.id)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setSubSampleCount(data.subSamples?.length ?? null);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        console.error("Failed to fetch sample subsample count", error);
+        setSubSampleCount(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [request]);
 
   const comment = statusChanges
     .filter((change) => change.status === status)
@@ -168,17 +204,78 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       });
   };
 
-  const fulfilRequest = () => {
-    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
+  const markRequestFulfilled = () => {
+    return ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
       status: "FULFILLED",
     })
       .then(({ data }) => {
         setStatus(data.status);
-        setFulfilDialogOpen(false);
         notifySampleRequestStatusChanged();
       })
       .catch((error: unknown) => {
         console.error("Failed to fulfil sample request", error);
+      });
+  };
+
+  const fulfilRequest = () => {
+    void markRequestFulfilled().then(() => setFulfilDialogOpen(false));
+  };
+
+  // The requester was pre-fetched as a PersonModel via peopleStore.getUser when the
+  // Preparing Sample dialog's "Next" button was pressed; if that lookup hasn't resolved
+  // yet, the field just starts empty and the owner can pick a recipient manually.
+  const openTransferDialog = () => {
+    setPrepareDialogOpen(false);
+    setTransferDialogOpen(true);
+    if (!transferRecipient) {
+      void peopleStore.getUser(request.requester.username).then((person) => {
+        if (person) setTransferRecipient(person);
+      });
+    }
+  };
+
+  const proceedWithPreparationMethod = () => {
+    if (!preparationMethod) return;
+    setChooseMethodDialogOpen(false);
+    setPreparationMethod(null);
+    if (preparationMethod === "wizard") {
+      setPrepareDialogOpen(true);
+    } else {
+      openTransferDialog();
+    }
+  };
+
+  // A SubSample has no owner of its own (it always derives from its parent Sample), so
+  // "preparing" a subsample for transfer means transferring ownership of the whole Sample.
+  //
+  // The request is marked fulfilled BEFORE the transfer, not after: the backend authorises
+  // the fulfil transition against the sample's current owner, and that's still the caller
+  // here. Doing the transfer first would change the sample's owner away from the caller,
+  // so the follow-up fulfil call would then fail as the caller no longer being party to
+  // the request (reported back as 404, to avoid disclosing the request's existence).
+  const submitTransfer = () => {
+    if (!transferRecipient) return;
+    void markRequestFulfilled()
+      .then(() =>
+        ApiService.update<{ id: number }>("samples", `${request.sample.id}/actions/changeOwner`, {
+          owner: { username: transferRecipient.username },
+        }),
+      )
+      .then(() => {
+        setTransferDialogOpen(false);
+        uiStore.addAlert(
+          mkAlert({
+            variant: "success",
+            message: t("requestsManagement.detail.transferSuccessMessage", {
+              id: request.id,
+              sampleName: request.sample.name,
+              requester: `${request.requester.firstName} ${request.requester.lastName}`,
+            }),
+          }),
+        );
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to transfer sample ownership", error);
       });
   };
 
@@ -384,7 +481,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
                         }
                       : undefined
                   }
-                  onClick={() => {}}
+                  onClick={() => setChooseMethodDialogOpen(true)}
                 >
                   {t("requestsManagement.detail.prepareSampleButton")}
                 </Button>
@@ -578,6 +675,105 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             onClick={fulfilRequest}
           >
             {t("requestsManagement.detail.fulfilDialog.fulfilButton")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={chooseMethodDialogOpen}
+        onClose={() => {
+          setChooseMethodDialogOpen(false);
+          setPreparationMethod(null);
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>{t("requestsManagement.detail.chooseMethodDialog.title")}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            {t("requestsManagement.detail.chooseMethodDialog.body")}
+          </Typography>
+          <RadioGroup
+            value={preparationMethod ?? ""}
+            onChange={(_, value) => setPreparationMethod(value as "wizard" | "transfer")}
+          >
+            <FormControlLabel
+              value="wizard"
+              control={<Radio />}
+              label={t("requestsManagement.detail.chooseMethodDialog.wizardOption")}
+            />
+            <FormControlLabel
+              value="transfer"
+              control={<Radio />}
+              label={t("requestsManagement.detail.chooseMethodDialog.transferOption")}
+            />
+          </RadioGroup>
+          {preparationMethod === "transfer" && subSampleCount !== null && subSampleCount > 1 && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              {t("requestsManagement.detail.chooseMethodDialog.transferWarning", {
+                count: subSampleCount,
+                requester: `${request.requester.firstName} ${request.requester.lastName}`,
+              })}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setChooseMethodDialogOpen(false);
+              setPreparationMethod(null);
+            }}
+          >
+            {t("common:actions.cancel")}
+          </Button>
+          <Button variant="contained" disabled={preparationMethod === null} onClick={proceedWithPreparationMethod}>
+            {t("requestsManagement.detail.chooseMethodDialog.proceedButton")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={prepareDialogOpen} onClose={() => setPrepareDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{t("requestsManagement.detail.prepareDialog.title")}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            {t("requestsManagement.detail.prepareDialog.body", { subsample: selectedSubsampleName ?? "" })}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t("requestsManagement.detail.prepareDialog.comingSoon")}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPrepareDialogOpen(false)}>{t("common:actions.cancel")}</Button>
+          <Button variant="contained" onClick={openTransferDialog}>
+            {t("requestsManagement.detail.prepareDialog.nextButton")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={transferDialogOpen} onClose={() => setTransferDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{t("contextMenu.transfer.dialog.title")}</DialogTitle>
+        <DialogContent>
+          <Typography component="p" variant="body1" sx={{ mb: 2 }}>
+            <TransRichText i18nKey="inventory:contextMenu.transfer.dialog.body" />
+          </Typography>
+          <Typography component="p" variant="body1" sx={{ mb: 2 }}>
+            {t("contextMenu.transfer.dialog.recipientSearchHint")}
+          </Typography>
+          <FormControl component="fieldset" fullWidth>
+            <PeopleField
+              onSelection={(person) => setTransferRecipient(person as PersonModel | null)}
+              label={t("contextMenu.transfer.dialog.recipientLabel")}
+              recipient={transferRecipient}
+              restrictToUser={transferRecipient ?? undefined}
+              // The requester is looked up asynchronously (see openTransferDialog), so
+              // restrictToUser above is only set on a later render. disableAutoOpen is
+              // true from this dialog's very first render, avoiding a race against the
+              // field's autoFocus where openOnFocus would still read as unrestricted.
+              disableAutoOpen
+            />
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTransferDialogOpen(false)}>{t("common:actions.cancel")}</Button>
+          <Button variant="contained" disabled={transferRecipient === null} onClick={submitTransfer}>
+            {t("common:actions.transfer")}
           </Button>
         </DialogActions>
       </Dialog>
