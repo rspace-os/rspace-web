@@ -142,6 +142,27 @@ class PidinstLookupManagerImplTest {
     return template;
   }
 
+  /**
+   * RSDEV-1522 follow-up. The query reaches the registry unsplit, but Elasticsearch parses it
+   * before the wildcards apply and splits it on whitespace itself: {@code *Instr1 prova_COPY*} is
+   * two terms, {@code *Instr1} and {@code prova_COPY*}. B2INST joins terms with OR, so a record
+   * named {@code Instr1 prova 123} came back on its {@code instr1} token alone. The {@code AND}
+   * restores "all of it".
+   */
+  @Test
+  void aMultiWordQueryDoesNotMatchARecordHoldingOnlyOneOfTheWords() {
+    B2instDraftRecord wanted = publishedRecord();
+    wanted.getMetadata().setName("Instr1 prova_COPY");
+    when(b2instConnector.searchRecords("*Instr1 AND prova_COPY*", 50))
+        .thenReturn(searchResultOf(wanted, 1));
+
+    ApiPidinstSearchResult result = manager.search("Instr1 prova_COPY", user);
+
+    assertEquals(1, result.getHits().size());
+    verify(b2instConnector).searchRecords("*Instr1 AND prova_COPY*", 50);
+  }
+
+  /** The sentence may sit in any field the hit exposes, not only the name. */
   /** RSDEV-1522: both registries match whole analysed tokens, so a bare substring found nothing. */
   @Test
   void freeTextSearchWrapsTheQueryInWildcardsSoASubstringOfATokenMatches() {
@@ -167,18 +188,18 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
-   * Per-word would match more but exceeds DataCite's 30s read timeout at three words, which is why
-   * the whole-sentence wrap was chosen (ADR 0009 decision 8). This test is what stops someone
-   * "improving" it back.
+   * One pair of wildcards for the whole query, with the words ANDed. A pair per word would match
+   * more but exceeds DataCite's 30s read timeout at three words, and dropping the AND lets B2INST's
+   * OR return records holding only one word (ADR 0009 decision 8). This pins both.
    */
   @Test
-  void aMultiWordQueryIsWrappedOnceAsAWholeSentenceNotPerWord() {
-    when(b2instConnector.searchRecords("*electro micro stub*", 50))
+  void aMultiWordQueryIsOnePairOfWildcardsWithTheWordsAnded() {
+    when(b2instConnector.searchRecords("*electro AND micro AND stub*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
 
     manager.search("electro micro stub", user);
 
-    verify(b2instConnector).searchRecords("*electro micro stub*", 50);
+    verify(b2instConnector).searchRecords("*electro AND micro AND stub*", 50);
   }
 
   /** Escaping runs first, so our wildcards stay live while the user's own text stays literal. */
@@ -191,7 +212,7 @@ class PidinstLookupManagerImplTest {
     manager.search("Zeiss &&", user);
 
     verify(dataCiteConnector)
-        .searchInstrumentDois("*Zeiss \\&\\&*", 50, InventorySettingType.PIDINST);
+        .searchInstrumentDois("*Zeiss AND \\&\\&*", 50, InventorySettingType.PIDINST);
   }
 
   @Test
@@ -588,7 +609,8 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteDoesNotRetryAQueryThatIsNotADoiFragment() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("*Carl Zeiss*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois(
+            "*Carl AND Zeiss*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
 
     ApiPidinstSearchResult result = manager.search("Carl Zeiss", user);
@@ -600,15 +622,15 @@ class PidinstLookupManagerImplTest {
 
   static Stream<Arguments> queriesCarryingQueryStringSyntax() {
     return Stream.of(
-        arguments("Zeiss\"broken", "Zeiss\\\"broken"),
-        arguments("Zeiss[broken", "Zeiss\\[broken"),
-        arguments("(Zeiss", "\\(Zeiss"),
-        arguments("Zeiss!", "Zeiss\\!"),
-        arguments("Zeiss^2", "Zeiss\\^2"),
-        arguments("Zeiss &&", "Zeiss \\&\\&"),
-        arguments("Zeiss OR", "Zeiss \\OR"),
-        arguments("NOT Zeiss", "\\NOT Zeiss"),
-        arguments("Zeiss AND Bruker", "Zeiss \\AND Bruker"));
+        arguments("Zeiss\"broken", "*Zeiss\\\"broken*"),
+        arguments("Zeiss[broken", "*Zeiss\\[broken*"),
+        arguments("(Zeiss", "*\\(Zeiss*"),
+        arguments("Zeiss!", "*Zeiss\\!*"),
+        arguments("Zeiss^2", "*Zeiss\\^2*"),
+        arguments("Zeiss &&", "*Zeiss AND \\&\\&*"),
+        arguments("Zeiss OR", "*Zeiss AND \\OR*"),
+        arguments("NOT Zeiss", "*\\NOT AND Zeiss*"),
+        arguments("Zeiss AND Bruker", "*Zeiss AND \\AND AND Bruker*"));
   }
 
   /**
@@ -627,8 +649,7 @@ class PidinstLookupManagerImplTest {
 
     manager.search(typed, user);
 
-    verify(dataCiteConnector)
-        .searchInstrumentDois("*" + sent + "*", 50, InventorySettingType.PIDINST);
+    verify(dataCiteConnector).searchInstrumentDois(sent, 50, InventorySettingType.PIDINST);
   }
 
   /**

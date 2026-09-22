@@ -249,12 +249,19 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * the analyser does not split on an underscore, so {@code Nico-PIDINST_VAIDA_TILO} is indexed as
    * {@code nico} and {@code pidinst_vaida_tilo} and a search for {@code Vaida} finds nothing.
    *
-   * <p>Once around the whole string, never once per word, although per-word would match more:
-   * DataCite pays for each leading wildcard separately, and three of them exceed the DataCite
-   * client's 30s read timeout. ADR 0009 decision 8 holds the measurements.
+   * <p>One pair of wildcards around the whole query, never a pair per word, because DataCite pays
+   * for each leading wildcard separately: per-word takes 32s against the client's 30s read timeout
+   * where this stays flat at ~14s however many words the query holds.
+   *
+   * <p>The {@code AND} is what makes a multi-word query mean all of it. Elasticsearch parses the
+   * query before the wildcards apply and splits it on whitespace itself, so {@code *a b*} is two
+   * terms, {@code *a} and {@code b*} - and B2INST joins terms with OR, which let a search for
+   * {@code Instr1 prova_COPY} return {@code Instr1 prova 123} on its {@code instr1} token alone.
+   * Joining with {@code AND} costs no extra leading wildcard. ADR 0009 decision 8 has the
+   * measurements.
    */
   private static String contains(String query) {
-    return "*" + query + "*";
+    return "*" + query.replaceAll("\\s+", " AND ") + "*";
   }
 
   /**
