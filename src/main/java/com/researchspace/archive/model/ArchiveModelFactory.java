@@ -116,7 +116,7 @@ public class ArchiveModelFactory {
         ChoiceFieldForm cfm = (ChoiceFieldForm) fm;
         rc.setOptions(cfm.getChoiceOptions());
         rc.setSelection(cfm.getDefaultChoiceOption());
-        rc.setMultipleChoice(cfm.isMultipleChoice()); // why din't cfm set.
+        rc.setMultipleChoice(cfm.isMultipleChoice() ? "yes" : "no"); // why din't cfm set.
         break;
       case DATE: // Date
         // <summary>Type: [DATE], Min date: [Unspecified], Max date:
