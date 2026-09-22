@@ -142,9 +142,61 @@ class PidinstLookupManagerImplTest {
     return template;
   }
 
+  /** RSDEV-1522: both registries match whole analysed tokens, so a bare substring found nothing. */
+  @Test
+  void freeTextSearchWrapsTheQueryInWildcardsSoASubstringOfATokenMatches() {
+    when(b2instConnector.searchRecords("*microscope*", 50))
+        .thenReturn(searchResultOf(publishedRecord(), 3));
+
+    ApiPidinstSearchResult result = manager.search("  microscope ", user);
+
+    assertEquals(1, result.getHits().size());
+    verify(b2instConnector).searchRecords("*microscope*", 50);
+  }
+
+  @Test
+  void dataCiteFreeTextSearchWrapsTheQueryInWildcards() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search("microscope", user);
+
+    verify(dataCiteConnector)
+        .searchInstrumentDois("*microscope*", 50, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * Per-word would match more but exceeds DataCite's 30s read timeout at three words, which is why
+   * the whole-sentence wrap was chosen (ADR 0009 decision 8). This test is what stops someone
+   * "improving" it back.
+   */
+  @Test
+  void aMultiWordQueryIsWrappedOnceAsAWholeSentenceNotPerWord() {
+    when(b2instConnector.searchRecords("*electro micro stub*", 50))
+        .thenReturn(searchResultOf(publishedRecord(), 1));
+
+    manager.search("electro micro stub", user);
+
+    verify(b2instConnector).searchRecords("*electro micro stub*", 50);
+  }
+
+  /** Escaping runs first, so our wildcards stay live while the user's own text stays literal. */
+  @Test
+  void dataCiteWildcardsGoOutsideTheEscapeNotInsideIt() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search("Zeiss &&", user);
+
+    verify(dataCiteConnector)
+        .searchInstrumentDois("*Zeiss \\&\\&*", 50, InventorySettingType.PIDINST);
+  }
+
   @Test
   void freeTextSearchGoesToTheEnabledProviderAndFlagsAlreadyLinkedPids() {
-    when(b2instConnector.searchRecords("microscope", 50))
+    when(b2instConnector.searchRecords("*microscope*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 3));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
@@ -179,7 +231,7 @@ class PidinstLookupManagerImplTest {
     ApiPidinstSearchResult foreign = manager.search("10.15151/esrf-instr-gco8", user);
     assertTrue(foreign.getHits().isEmpty());
     assertEquals(0, foreign.getTotal());
-    verify(b2instConnector, never()).searchRecords(eq("10.15151/esrf-instr-gco8"), eq(50));
+    verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
   }
 
   @Test
@@ -293,7 +345,7 @@ class PidinstLookupManagerImplTest {
   /** The same gap on the search path: the hit must come back already flagged as linked. */
   @Test
   void searchFlagsAHitWhosePidThisDeploymentMintedItself() {
-    when(b2instConnector.searchRecords("microscope", 50))
+    when(b2instConnector.searchRecords("*microscope*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier("abcde-12345", "Test microscope", "suffix1234567890");
@@ -390,7 +442,7 @@ class PidinstLookupManagerImplTest {
         .setIdentifier(new B2instIdentifier("Handle", "21.T11975/anaf6-fk223"));
     B2instSearchResult page = searchResultOf(publishedRecord(), 3);
     page.getHits().getHits().add(unpublished);
-    when(b2instConnector.searchRecords("microscope", 50)).thenReturn(page);
+    when(b2instConnector.searchRecords("*microscope*", 50)).thenReturn(page);
 
     ApiPidinstSearchResult result = manager.search("microscope", user);
 
@@ -493,7 +545,8 @@ class PidinstLookupManagerImplTest {
     onADataCiteDeployment();
     String shortest = "qvtb";
     assertEquals(MIN_QUERY_LENGTH, shortest.length(), "the point of this test is the boundary");
-    when(dataCiteConnector.searchInstrumentDois(shortest, 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois(
+            "*" + shortest + "*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
 
     ApiPidinstSearchResult result = manager.search(shortest, user);
@@ -505,9 +558,9 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteRetriesADoiWildcardWhenFreeTextFindsNothing() {
     onADataCiteDeployment();
-    // the free-text call carries the hyphen escaped; the retry's clause is composed from the raw
-    // query, so only the first of these two is
-    when(dataCiteConnector.searchInstrumentDois("qvtb\\-aw74", 50, InventorySettingType.PIDINST))
+    // the free-text call carries the hyphen escaped and the query wildcarded; the retry composes
+    // its own clause from the raw query, so neither applies to the second of these two
+    when(dataCiteConnector.searchInstrumentDois("*qvtb\\-aw74*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
     when(dataCiteConnector.searchInstrumentDois(
             "doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
@@ -523,7 +576,7 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteDoesNotRetryWhenFreeTextAlreadyFoundSomething() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("*Zeiss*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(3, dataCiteInstrument(DOI, "findable", "Instrument")));
 
     manager.search("Zeiss", user);
@@ -535,7 +588,7 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteDoesNotRetryAQueryThatIsNotADoiFragment() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("Carl Zeiss", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("*Carl Zeiss*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
 
     ApiPidinstSearchResult result = manager.search("Carl Zeiss", user);
@@ -574,7 +627,8 @@ class PidinstLookupManagerImplTest {
 
     manager.search(typed, user);
 
-    verify(dataCiteConnector).searchInstrumentDois(sent, 50, InventorySettingType.PIDINST);
+    verify(dataCiteConnector)
+        .searchInstrumentDois("*" + sent + "*", 50, InventorySettingType.PIDINST);
   }
 
   /**
@@ -595,7 +649,8 @@ class PidinstLookupManagerImplTest {
 
     manager.search(query, user);
 
-    verify(dataCiteConnector).searchInstrumentDois(query, 50, InventorySettingType.PIDINST);
+    verify(dataCiteConnector)
+        .searchInstrumentDois("*" + query + "*", 50, InventorySettingType.PIDINST);
   }
 
   /**
@@ -611,7 +666,8 @@ class PidinstLookupManagerImplTest {
 
     manager.search("82316/qvtb", user);
 
-    verify(dataCiteConnector).searchInstrumentDois("82316/qvtb", 50, InventorySettingType.PIDINST);
+    verify(dataCiteConnector)
+        .searchInstrumentDois("*82316/qvtb*", 50, InventorySettingType.PIDINST);
   }
 
   /**
@@ -660,7 +716,7 @@ class PidinstLookupManagerImplTest {
   void dataCiteRetriesAPastedPrefixAndSuffixPair() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(
-            "82316/qvtb\\-aw74", 50, InventorySettingType.PIDINST))
+            "*82316/qvtb\\-aw74*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
     when(dataCiteConnector.searchInstrumentDois(
             "doi:*82316/qvtb-aw74*", 50, InventorySettingType.PIDINST))
@@ -674,7 +730,7 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteFreeTextSearchReturnsFindableInstrumentsAndFlagsLinkedOnes() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("*Zeiss*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(7, dataCiteInstrument(DOI, "findable", "Instrument")));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier(DOI, "ID21 Beamline", "suffix1234567890");
@@ -701,7 +757,7 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteSearchDropsAHitThatIsNotAFindableInstrument() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("*Zeiss*", 50, InventorySettingType.PIDINST))
         .thenReturn(
             dataCitePage(
                 3,
@@ -767,7 +823,7 @@ class PidinstLookupManagerImplTest {
     second.getMetadata().setIdentifier(new B2instIdentifier("Handle", "21.T11975/fghij-67890"));
     B2instSearchResult page = searchResultOf(publishedRecord(), 2);
     page.getHits().getHits().add(second);
-    when(b2instConnector.searchRecords("microscope", 50)).thenReturn(page);
+    when(b2instConnector.searchRecords("*microscope*", 50)).thenReturn(page);
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier("21.T11975/fghij-67890", "Another microscope", "suffix123456");
     Instrument owner = new Instrument();

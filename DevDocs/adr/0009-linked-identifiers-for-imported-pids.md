@@ -126,8 +126,50 @@ and API field names were ported instead.
    lets a pasted prefix/suffix pair match. Verified 2026-09-17 against api.datacite.org:
    `doi:*qvtb/aw74*` answers 200, `doi:*5281/zenodo*` (12.89M) narrows `doi:*5281*` (12.91M) so the
    wildcard really does span the slash, and `doi:*"broken*` answers 400. Widening the class further
-   needs the same kind of evidence, and both halves are pinned by tests. The B2INST side is left
-   alone: InvenioRDM tokenises its Handle field, and no equivalent miss has been reported.
+   needs the same kind of evidence, and both halves are pinned by tests. The B2INST side needs no
+   retry: InvenioRDM tokenises its Handle field, so a bare suffix fragment already matches
+   (verified 2026-09-22, `twwkx` finds `21.T11975/twwkx-1zd85`). Its *escaping* is a different
+   matter and is a known gap, tracked as RSDEV-1524.
+
+8. **A free-text query is wrapped in `*...*` once, as a whole sentence, for both providers**
+   (RSDEV-1522). Both registries match whole *analysed tokens*, and the standard analyser splits on
+   a hyphen but not on an underscore (the standard tokenizer follows Unicode UAX #29, where `_` is
+   a word character and `-` is not, documented at
+   https://www.elastic.co/docs/reference/text-analysis/analysis-standard-tokenizer), so
+   `Nico-PIDINST_VAIDA_TILO` indexes as `nico` and `pidinst_vaida_tilo`. A search for `Vaida` or
+   `Tilo` therefore found nothing although the record was plainly there, and a search for `Nico`
+   returned a subset rather than everything matching.
+   Verified 2026-09-22: `Vaida` answers 0 on both registries, while `*Vaida*` answers 3 on
+   b2inst-test.gwdg.de and 1 on api.test.datacite.org, and `mmunit` answers 0 where `*mmunit*`
+   answers 12. Wildcards are case-insensitive on both, so `*vaida*` and `*Vaida*` agree.
+
+   The wrap goes around the whole trimmed query, **not** around each word. Per-word is strictly
+   broader, because only the outer words carry a wildcard under a whole-sentence wrap:
+   `*PIDINST* *VAIDA*` answers 1 on api.test.datacite.org where `*PIDINST VAIDA*` answers 0, so
+   multi-word substring searches stay partly unserved on DataCite. That was accepted deliberately,
+   because DataCite pays for each leading wildcard separately and the client's read timeout is 30s.
+   Measured 2026-09-22 against api.datacite.org: `zeiss` 0.15s, `*zeiss*` 11s, `*electron*
+   *microscope*` 25s, `*scanning* *electron* *microscope*` **32s**, which would abort the call and
+   show the dialog an error rather than results. The whole-sentence wrap stays flat at ~13s however
+   many words it holds, so no cap on query length is needed. Nico chose the bounded search over the
+   broader one that can time out, on 2026-09-22.
+
+   Always, not as a fallback. Retrying only when the plain search finds nothing would leave the
+   reported defect half-fixed, because a partial match suppresses the broader search: `Nico` on
+   b2inst-test.gwdg.de answers 9 where `*nico*` answers 14. The wrap is also applied
+   unconditionally, with no attempt to detect wildcards the user typed: `**nico**` answers exactly
+   what `*nico*` answers on both registries.
+
+   On DataCite the wildcards go **outside** the escape of decision 7, so the `*` this adds is live
+   while the user's own text stays literal. The `doi:*<query>*` retry is untouched and still reads
+   the raw query; it has become nearly unreachable rather than redundant, because a wildcarded free
+   text now matches a DOI fragment on its own (`*qvtb*` answers 1, the same as `doi:*qvtb*`), and it
+   is kept because it costs nothing on a non-empty first page and addresses the keyword field
+   directly. The 4-character minimum of decision 6 is unchanged: `Nico` and `Tilo` are exactly 4.
+
+   Separately, the same sweep found that B2INST receives the query with no escaping at all, so
+   some inputs answer 400 rather than an empty page. That is RSDEV-1524, not this decision; the
+   wrap neither causes nor worsens it (no query answering 200 answers 400 once wrapped).
 
 ## Considered options
 

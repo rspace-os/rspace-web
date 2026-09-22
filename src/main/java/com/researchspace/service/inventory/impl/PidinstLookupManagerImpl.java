@@ -210,7 +210,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * {@code total} stays the provider's own.
    */
   private void searchB2inst(String query, ApiPidinstSearchResult result) {
-    B2instSearchResult page = b2instConnector.searchRecords(query, MAX_HITS);
+    B2instSearchResult page = b2instConnector.searchRecords(contains(query), MAX_HITS);
     page.getHits().getHits().stream()
         .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
         .map(PidinstRecordMapper::fromB2inst)
@@ -225,20 +225,36 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an empty
    * first page is retried that way (ADR 0009 decision 7).
    *
-   * <p>The free-text call carries the query escaped and the retry does not: the retry's clause is
-   * composed here from what the user typed, and {@link #DOI_FRAGMENT} already limits that to
-   * characters which cannot close it. Both gates read the raw query, so escaping cannot change
-   * which searches retry.
+   * <p>The free-text call is escaped and wildcarded; the retry is neither, because it composes its
+   * own clause and {@link #DOI_FRAGMENT} already limits what may go in it. Both gates read the raw
+   * query, so neither transformation can change which searches retry.
+   *
+   * <p>{@link #contains(String)} has made the retry rare rather than redundant: a wildcarded free
+   * text usually matches the DOI fragment by itself. It is kept because it costs nothing on a
+   * non-empty first page and addresses the keyword field directly.
    */
   private DataCiteDoiSearchResult searchDataCite(String query) {
     DataCiteDoiSearchResult hits =
         dataCiteConnector.searchInstrumentDois(
-            escapeForDataCite(query), MAX_HITS, InventorySettingType.PIDINST);
+            contains(escapeForDataCite(query)), MAX_HITS, InventorySettingType.PIDINST);
     if (!hits.getData().isEmpty() || !DOI_FRAGMENT.matcher(query).matches()) {
       return hits;
     }
     return dataCiteConnector.searchInstrumentDois(
         "doi:*" + query + "*", MAX_HITS, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * The query as a "contains" search (RSDEV-1522). Both registries match whole analysed tokens and
+   * the analyser does not split on an underscore, so {@code Nico-PIDINST_VAIDA_TILO} is indexed as
+   * {@code nico} and {@code pidinst_vaida_tilo} and a search for {@code Vaida} finds nothing.
+   *
+   * <p>Once around the whole string, never once per word, although per-word would match more:
+   * DataCite pays for each leading wildcard separately, and three of them exceed the DataCite
+   * client's 30s read timeout. ADR 0009 decision 8 holds the measurements.
+   */
+  private static String contains(String query) {
+    return "*" + query + "*";
   }
 
   /**
