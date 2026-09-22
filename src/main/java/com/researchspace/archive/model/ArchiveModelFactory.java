@@ -225,7 +225,6 @@ public class ArchiveModelFactory {
   public ArchivalField createArchivalField(Field fd) {
     ArchivalField rc = new ArchivalField();
     rc.setFieldId(fd.getId());
-    rc.setMandatory(fd.isMandatory());
     rc.setFieldName(fd.getName());
     rc.setFieldType(fd.getType().name());
     rc.setLastModifiedDate(
