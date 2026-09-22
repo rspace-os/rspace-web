@@ -483,7 +483,7 @@ export function LoadedBookableItemPage({
 
               <Tabs.Panel value="access" className="outline-none">
                 <Card>
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-0">
                     <InventoryAccessReadOnly instrumentId={target.value.id} />
                   </CardContent>
                 </Card>

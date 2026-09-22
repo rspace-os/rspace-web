@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/modules/common/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/modules/common/ui/table";
+import { Link } from "@/modules/common/ui/typography";
 
 type SharingMode = "OWNER_GROUPS" | "WHITELIST" | "OWNER_ONLY";
 
@@ -137,7 +139,15 @@ export function InventoryAccessReadOnly({ instrumentId }: { instrumentId: number
   return (
     <fieldset className="w-full space-y-3" aria-label={t("fields.accessPermissions.label")}>
       <legend className="sr-only">{t("fields.accessPermissions.label")}</legend>
-      <RadioGroup value={sharingMode} aria-label={t("fields.accessPermissions.label")}>
+      <p className="text-sm text-muted-foreground">
+        <TransRichText
+          i18nKey="booking:access.editInventoryPermissions"
+          components={{
+            inventoryLink: <Link href={`/inventory/instrument/${instrumentId}`} />,
+          }}
+        />
+      </p>
+      <RadioGroup value={sharingMode} disabled aria-label={t("fields.accessPermissions.label")}>
         <label htmlFor={ownerGroupsId} className="flex items-start gap-3 rounded-md p-2">
           <RadioGroupItem
             id={ownerGroupsId}
