@@ -131,8 +131,8 @@ and API field names were ported instead.
    (verified 2026-09-22, `twwkx` finds `21.T11975/twwkx-1zd85`). Its *escaping* is a different
    matter and is a known gap, tracked as RSDEV-1524.
 
-8. **Every word of a free-text query is wrapped in `*...*` and the words are joined with `AND`,
-   for both providers**
+8. **A free-text query is wrapped in `*...*` once for the whole query, with its words joined by
+   `AND`, for both providers**
    (RSDEV-1522). Both registries match whole *analysed tokens*, and the standard analyser splits on
    a hyphen but not on an underscore (the standard tokenizer follows Unicode UAX #29, where `_` is
    a word character and `-` is not, documented at
@@ -144,43 +144,38 @@ and API field names were ported instead.
    b2inst-test.gwdg.de and 1 on api.test.datacite.org, and `mmunit` answers 0 where `*mmunit*`
    answers 12. Wildcards are case-insensitive on both, so `*vaida*` and `*Vaida*` agree.
 
-   A pair of wildcards **per word**, not one pair around the whole query. One pair does not mean
-   what it looks like: Elasticsearch parses the query *before* the wildcards apply and splits it on
-   whitespace itself, so `*a b*` is `*a` (ends-with) and `b*` (starts-with) - it never spans the
-   space, and it matches records holding neither word in full. That shipped first, in 06e6b59d4,
-   and Nico reported it the same day: `*Instr1 prova_COPY*` returned a record named
-   `Instr1 prova 123`. Escaping the space instead does not rescue it, and was measured:
+   One pair of wildcards for the whole query, **not** a pair per word. DataCite pays for each
+   leading wildcard separately and the client's read timeout is 30s: measured 2026-09-22 against
+   api.datacite.org, `zeiss` 0.15s, `*zeiss*` 11s, `*electron* *microscope*` 25s, and
+   `*scanning* *electron* *microscope*` **32s**, which would abort the call and show the dialog an
+   error rather than results. One pair stays flat at ~14s however many words the query holds, so no
+   cap on query length is needed.
+
+   The `AND` between the words is not decoration, and leaving it out was the original bug in this
+   decision. Elasticsearch parses the query *before* the wildcards apply and splits it on
+   whitespace itself, so `*a b*` is never one term spanning the space: it is `*a` (ends-with) and
+   `b*` (starts-with). B2INST joins terms with OR, so `*Instr1 prova_COPY*` returned a record named
+   `Instr1 prova 123` on its `instr1` token alone - reported by Nico on 2026-09-22 and fixed the
+   same day. `*Instr1 AND prova_COPY*` answers 1 where `*Instr1 prova_COPY*` answers 2. The `AND`
+   adds no leading wildcard, so it is free: `*scanning AND electron AND microscope*` measures 14s,
+   the same as the two-word form. Escaping the space instead does **not** work, and was tried:
    `*electron\ microscope*` answers 0, because an analysed field has no index term containing a
-   space. Only a wildcard per word gives "each word appears as a substring", which is what the
-   search means. It is still not a phrase match: the words may appear anywhere, in any order, and
-   need not be adjacent.
+   space.
 
-   The `AND` is required as well. B2INST's default operator is OR (`nico zzzzzzz` answers 9, the
-   same as `nico`), so without it a multi-word query returns records matching any single word.
-   DataCite's default is already AND (`electron zzzzzzzzq` answers 0), so the `AND` only makes the
-   two providers agree.
-
-   **The cost is DataCite's, and it is the accepted trade of this decision.** DataCite pays for
-   each leading wildcard separately, and the DataCite client's read timeout is 30s and hardcoded in
-   the jar. Measured 2026-09-22 against api.datacite.org: `zeiss` 0.15s, `*electron*` 24s,
-   `*electron* AND *microscope*` 23s, `*scanning* AND *electron* AND *microscope*` **31s**, and
-   four words **66s**. So on a DataCite deployment a query of three or more words can exceed the
-   timeout and the dialog will show an error instead of results. Nico chose correct results over
-   bounded latency on 2026-09-22, having seen the wrong ones the cheaper shape produced. B2INST is
-   unaffected: the same queries answer in 0.2-0.4s. Raising the client timeout would need a release
-   of the sibling datacite-java-client, and is the obvious follow-up if this bites.
-
-   An alternative that would keep both - filtering the returned page inside RSpace - was built and
-   rejected: it made `total` disagree with the registry and silently dropped hits matched on fields
-   the response does not carry.
+   What this still does not give is a true phrase match. `*a AND b*` means "ends-with a, and
+   starts-with b", so a partial *first* word no longer matches (`Instr prova_COPY` finds nothing
+   where `Instr1 prova_COPY` does). Neither registry can express "contains this whole sentence",
+   and the alternative - filtering the returned page in RSpace - was rejected because it would make
+   `total` disagree with the registry and would silently drop hits matched on fields the DTO does
+   not carry.
 
    Always, not as a fallback. Retrying only when the plain search finds nothing would leave the
    reported defect half-fixed, because a partial match suppresses the broader search: `Nico` on
    b2inst-test.gwdg.de answers 9 where `*nico*` answers 14. The wrap is also applied
    unconditionally, with no attempt to detect wildcards the user typed: `**nico**` answers exactly
    what `*nico*` answers on both registries. A user's own `AND`, `OR` or `NOT` is escaped for
-   DataCite before the words are split and wrapped, so it stays a search term rather than becoming
-   an operator, and the composed form is accepted: `*Zeiss* AND *\AND* AND *Bruker*` answers 200.
+   DataCite before the join, so it stays a search term rather than becoming an operator, and the
+   composed form is accepted: `*Zeiss AND \AND AND Bruker*` answers 200.
 
    On DataCite the wildcards go **outside** the escape of decision 7, so the `*` this adds is live
    while the user's own text stays literal. The `doi:*<query>*` retry is untouched and still reads

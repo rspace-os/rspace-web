@@ -30,7 +30,6 @@ import com.researchspace.service.inventory.PidinstLookupManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +39,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -247,29 +245,23 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * The query as a "contains" search: every word wrapped in its own {@code *...*} and the words
-   * joined with {@code AND} (RSDEV-1522). Both registries match whole analysed tokens and the
-   * analyser does not split on an underscore, so {@code Nico-PIDINST_VAIDA_TILO} is indexed as
-   * {@code nico} and {@code pidinst_vaida_tilo} and an unwildcarded search for {@code Vaida} finds
-   * nothing.
+   * The query as a "contains" search (RSDEV-1522). Both registries match whole analysed tokens and
+   * the analyser does not split on an underscore, so {@code Nico-PIDINST_VAIDA_TILO} is indexed as
+   * {@code nico} and {@code pidinst_vaida_tilo} and a search for {@code Vaida} finds nothing.
    *
-   * <p>A pair of wildcards per word, not one pair around the whole query. One pair does not mean
-   * what it looks like: Elasticsearch parses the query before the wildcards apply and splits it on
-   * whitespace itself, so {@code *a b*} is {@code *a} (ends-with) and {@code b*} (starts-with),
-   * which matches records holding neither word in full. Escaping the space does not rescue it
-   * either, because an analysed field has no index term containing one.
+   * <p>One pair of wildcards around the whole query, never a pair per word, because DataCite pays
+   * for each leading wildcard separately: per-word takes 32s against the client's 30s read timeout
+   * where this stays flat at ~14s however many words the query holds.
    *
-   * <p>The {@code AND} is what makes a multi-word query mean all of it. Without it B2INST, whose
-   * default operator is OR, returns records matching any single word.
-   *
-   * <p>The cost is DataCite's: it pays for each leading wildcard separately, so a long query is
-   * slow there and can reach the DataCite client's 30s read timeout. ADR 0009 decision 8 has the
-   * measurements. B2INST answers in well under a second either way.
+   * <p>The {@code AND} is what makes a multi-word query mean all of it. Elasticsearch parses the
+   * query before the wildcards apply and splits it on whitespace itself, so {@code *a b*} is two
+   * terms, {@code *a} and {@code b*} - and B2INST joins terms with OR, which let a search for
+   * {@code Instr1 prova_COPY} return {@code Instr1 prova 123} on its {@code instr1} token alone.
+   * Joining with {@code AND} costs no extra leading wildcard. ADR 0009 decision 8 has the
+   * measurements.
    */
   private static String contains(String query) {
-    return Arrays.stream(query.split("\\s+"))
-        .map(word -> "*" + word + "*")
-        .collect(Collectors.joining(" AND "));
+    return "*" + query.replaceAll("\\s+", " AND ") + "*";
   }
 
   /**
