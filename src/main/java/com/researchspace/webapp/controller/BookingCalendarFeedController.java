@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ public final class BookingCalendarFeedController {
   static final String PATH = "/public/booking/calendars/feed.ics";
   static final int RETRY_AFTER_SECONDS = 30;
 
+  private static final Logger log = LoggerFactory.getLogger(BookingCalendarFeedController.class);
   private static final Pattern TOKEN = Pattern.compile("^[A-Za-z0-9_-]{43}$");
   private static final MediaType CALENDAR = MediaType.parseMediaType("text/calendar;charset=UTF-8");
   private static final byte[] EMPTY = new byte[0];
@@ -40,7 +43,13 @@ public final class BookingCalendarFeedController {
     if (token == null) {
       return empty(HttpStatus.NOT_FOUND, false);
     }
-    BookingCalendarManager.FeedResult result = manager.feed(token, locale, new Date());
+    BookingCalendarManager.FeedResult result;
+    try {
+      result = manager.feed(token, locale, new Date());
+    } catch (RuntimeException ex) {
+      log.warn("Booking calendar feed request failed", ex);
+      return empty(HttpStatus.SERVICE_UNAVAILABLE, false);
+    }
     if (result instanceof BookingCalendarManager.Available available) {
       HttpHeaders headers = privateHeaders();
       headers.setContentType(CALENDAR);

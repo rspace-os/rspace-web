@@ -100,4 +100,17 @@ class BookingCalendarFeedControllerTest {
         .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "private, no-store"))
         .andExpect(content().string(""));
   }
+
+  @Test
+  void unexpectedFeedFailuresDoNotExposeTheException() throws Exception {
+    when(manager.feed(eq(TOKEN), any(Locale.class), any(Date.class)))
+        .thenThrow(new IllegalStateException("internal calendar details"));
+
+    mockMvc
+        .perform(get(PATH).param("token", TOKEN))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "private, no-store"))
+        .andExpect(content().string(org.hamcrest.Matchers.not("internal calendar details")))
+        .andExpect(content().string(""));
+  }
 }
