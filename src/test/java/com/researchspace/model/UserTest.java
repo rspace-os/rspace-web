@@ -142,6 +142,32 @@ public class UserTest {
   }
 
   @Test
+  public void testBookingNotificationPreferencesDefaultToEnabledAndCanBeDisabled() {
+    assertTrue(u1.wantsNotificationFor(NotificationType.NOTIFICATION_BOOKING_CREATED));
+    assertTrue(u1.wantsNotificationFor(NotificationType.NOTIFICATION_BOOKING_CANCELLED));
+
+    u1.setPreference(
+        new UserPreference(
+            Preference.NOTIFICATION_BOOKING_CREATED_PREF, u1, Boolean.FALSE.toString()));
+    u1.setPreference(
+        new UserPreference(
+            Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, u1, Boolean.FALSE.toString()));
+
+    assertFalse(u1.wantsNotificationFor(NotificationType.NOTIFICATION_BOOKING_CREATED));
+    assertFalse(u1.wantsNotificationFor(NotificationType.NOTIFICATION_BOOKING_CANCELLED));
+  }
+
+  @Test
+  public void testBookingNotificationPreferencesAreAppendedAfterExistingPreferences() {
+    assertEquals(
+        Preference.BOOKING_DISPLAY_PREFERENCES.ordinal() + 1,
+        Preference.NOTIFICATION_BOOKING_CREATED_PREF.ordinal());
+    assertEquals(
+        Preference.NOTIFICATION_BOOKING_CREATED_PREF.ordinal() + 1,
+        Preference.NOTIFICATION_BOOKING_CANCELLED_PREF.ordinal());
+  }
+
+  @Test
   public void testGetCollabGroups() {
     gp1.addMember(u1);
     assertEquals(0, u1.getCollaborationGroups().size());

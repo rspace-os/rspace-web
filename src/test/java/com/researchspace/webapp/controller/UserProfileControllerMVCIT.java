@@ -447,6 +447,12 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     //	StructuredDocument sdoc=setUpLoginAndCreateADocument();
     // mimic cboxes to false except 1
 
+    Set<UserPreference> prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
+
+    // New booking notification preferences are enabled by default.
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CREATED_PREF, true);
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true);
+
     MvcResult result =
         mockMvc
             .perform(
@@ -462,12 +468,39 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
         containsString(
             getMsgFromResourceBundler("userProfile.messageSettingsChanged.confirmation")));
 
-    Set<UserPreference> prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
+    prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
 
     // this was passed in; should be true.
     assertBooleanPrefState(prefs, Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, true);
     // this was not passed in from ui, therefore is not checked, should be false
     assertBooleanPrefState(prefs, Preference.NOTIFICATION_DOCUMENT_SHARED_PREF, false);
+
+    // Each booking preference can be changed independently.
+    mockMvc
+        .perform(
+            post("/userform/ajax/messageSettings")
+                .principal(mockPrincipal)
+                .param(
+                    "messageCheckboxes",
+                    Preference.NOTIFICATION_DOCUMENT_EDITED_PREF.toString(),
+                    Preference.NOTIFICATION_BOOKING_CREATED_PREF.toString()))
+        .andExpect(status().isOk());
+    prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CREATED_PREF, true);
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, false);
+
+    mockMvc
+        .perform(
+            post("/userform/ajax/messageSettings")
+                .principal(mockPrincipal)
+                .param(
+                    "messageCheckboxes",
+                    Preference.NOTIFICATION_DOCUMENT_EDITED_PREF.toString(),
+                    Preference.NOTIFICATION_BOOKING_CANCELLED_PREF.toString()))
+        .andExpect(status().isOk());
+    prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CREATED_PREF, false);
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true);
 
     // unset all prefs RSPAC-1967
     MvcResult result2 =

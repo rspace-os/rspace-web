@@ -18,5 +18,11 @@ public enum NotificationType {
   NOTIFICATION_DOCUMENT_DELETED,
 
   /** Archive export completed OK */
-  ARCHIVE_EXPORT_COMPLETED
+  ARCHIVE_EXPORT_COMPLETED,
+
+  /** A booking was created on an instrument owned by the notification recipient. */
+  NOTIFICATION_BOOKING_CREATED,
+
+  /** A booking on an instrument owned by the notification recipient was cancelled. */
+  NOTIFICATION_BOOKING_CANCELLED
 }

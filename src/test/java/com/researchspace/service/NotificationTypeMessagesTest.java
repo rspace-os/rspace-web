@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.researchspace.model.comms.NotificationType;
@@ -18,5 +19,15 @@ class NotificationTypeMessagesTest {
       String message = messages.getMessageForLocale(key, enUS);
       assertFalse(message.startsWith("notificationType."), "key leaked as literal text: " + key);
     }
+  }
+
+  @Test
+  void bookingNotificationTypesUseExpectedMessageKeys() {
+    assertEquals(
+        "notificationType.bookingCreated",
+        NotificationTypeMessages.keyFor(NotificationType.NOTIFICATION_BOOKING_CREATED));
+    assertEquals(
+        "notificationType.bookingCancelled",
+        NotificationTypeMessages.keyFor(NotificationType.NOTIFICATION_BOOKING_CANCELLED));
   }
 }

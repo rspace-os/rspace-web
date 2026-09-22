@@ -37,6 +37,7 @@ import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
@@ -66,6 +67,8 @@ class TimeSlotBookingManagerTest {
   private final BookingMaintenancePolicy maintenancePolicy = new BookingMaintenancePolicyImpl();
   private final User actor = mock(User.class);
   private final BookingItemPermissions accessManager = mock(BookingItemPermissions.class);
+  private final BookingNotificationService bookingNotificationService =
+      mock(BookingNotificationService.class);
   private final TimeSlotBookingManager manager =
       new TimeSlotBookingManagerImpl(
           bookingDao,
@@ -73,6 +76,7 @@ class TimeSlotBookingManagerTest {
           schedulingPolicy,
           maintenancePolicy,
           instrumentDao,
+          bookingNotificationService,
           registry,
           events,
           accessManager,
@@ -149,6 +153,8 @@ class TimeSlotBookingManagerTest {
             null,
             Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
     verify(events).publishEvent(any(TimeSlotBookingAuditEvent.class));
+    verify(bookingNotificationService)
+        .notify(created, actor, NotificationType.NOTIFICATION_BOOKING_CREATED);
   }
 
   @Test
@@ -260,6 +266,7 @@ class TimeSlotBookingManagerTest {
             instant("2026-10-27T02:00:00Z"),
             null,
             Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
   }
 
   @Test
@@ -601,6 +608,8 @@ class TimeSlotBookingManagerTest {
     assertSame(cancelled, retried);
     verify(bookingDao, times(1)).saveAndFlush(any(TimeSlotBooking.class));
     verify(events, times(1)).publishEvent(any(TimeSlotBookingAuditEvent.class));
+    verify(bookingNotificationService, times(1))
+        .notify(cancelled, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
     assertThrows(
         BookingStateTransitionException.class,
         () ->
@@ -669,6 +678,7 @@ class TimeSlotBookingManagerTest {
                 actor)
             .orElseThrow();
     assertEquals(BookingState.CANCELLED, cancelled.getState());
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
   }
 
   @Test

@@ -36,6 +36,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
@@ -48,6 +49,7 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
@@ -85,6 +87,8 @@ class BookingConfigurationManagerTest {
   private final BookingCalendarSubscriptionDao calendarSubscriptions =
       mock(BookingCalendarSubscriptionDao.class);
   private final TimeSlotBookingDao timeSlotBookings = mock(TimeSlotBookingDao.class);
+  private final BookingNotificationService bookingNotificationService =
+      mock(BookingNotificationService.class);
 
   private final User actor = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
@@ -102,7 +106,8 @@ class BookingConfigurationManagerTest {
           ApiV2BookingConfigurationResource.DESCRIPTION,
           itemPermissions,
           calendarSubscriptions,
-          timeSlotBookings);
+          timeSlotBookings,
+          bookingNotificationService);
 
   @BeforeEach
   void setUp() {
@@ -510,10 +515,13 @@ class BookingConfigurationManagerTest {
     first.setState(BookingState.CONFIRMED);
     TimeSlotBooking second = new TimeSlotBooking();
     second.setState(BookingState.CONFIRMED);
+    second.setKind(BookingEventKind.MAINTENANCE);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
     when(dao.saveAndFlush(configuration)).thenReturn(configuration);
     when(timeSlotBookings.findFutureConfirmedByConfiguration(eq(42L), any(Date.class)))
         .thenReturn(List.of(first, second));
+    when(timeSlotBookings.saveAndFlush(any(TimeSlotBooking.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     BookingConfiguration removed =
         manager.archiveConfiguration(42L, 0L, actor, actor).orElseThrow();
@@ -528,6 +536,12 @@ class BookingConfigurationManagerTest {
     assertSame(actor, first.getUpdatedBy());
     assertSame(actor, second.getUpdatedBy());
     verify(dao).saveAndFlush(configuration);
+    verify(timeSlotBookings, times(2)).saveAndFlush(any(TimeSlotBooking.class));
+    verify(bookingNotificationService, times(1))
+        .notify(
+            any(TimeSlotBooking.class),
+            eq(actor),
+            eq(NotificationType.NOTIFICATION_BOOKING_CANCELLED));
     verify(dao, never()).remove(any());
     verify(calendarSubscriptions).deleteByConfigurationId(42L);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));

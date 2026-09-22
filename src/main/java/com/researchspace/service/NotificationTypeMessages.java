@@ -20,6 +20,8 @@ public final class NotificationTypeMessages {
       case PROCESS_COMPLETED -> "notificationType.processCompleted";
       case PROCESS_FAILED -> "notificationType.processFailed";
       case ARCHIVE_EXPORT_COMPLETED -> "notificationType.archiveExportCompleted";
+      case NOTIFICATION_BOOKING_CREATED -> "notificationType.bookingCreated";
+      case NOTIFICATION_BOOKING_CANCELLED -> "notificationType.bookingCancelled";
       default ->
           throw new IllegalArgumentException("No message key mapped for NotificationType " + type);
     };
