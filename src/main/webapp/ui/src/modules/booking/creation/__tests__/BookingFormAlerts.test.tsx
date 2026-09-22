@@ -15,7 +15,7 @@ const conflict = {
 
 describe("BookingFormAlerts", () => {
   it("lists conflicting bookings in a blocking alert", () => {
-    render(<BookingFormAlerts error="Conflict" conflicts={[conflict]} />);
+    render(<BookingFormAlerts error="Conflict" conflicts={[conflict]} displayTimezone="UTC" />);
 
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent("Conflict");
@@ -25,10 +25,18 @@ describe("BookingFormAlerts", () => {
   });
 
   it("keeps allowed conflicts visible as warnings", () => {
-    render(<BookingFormAlerts conflicts={[conflict]} conflictSeverity="warning" />);
+    render(<BookingFormAlerts conflicts={[conflict]} displayTimezone="UTC" conflictSeverity="warning" />);
 
     const alert = screen.getByRole("status");
     expect(alert).toHaveTextContent("Cell imaging");
     expect(alert).toHaveClass("bg-amber-100");
+  });
+
+  it("formats conflicts in the booking form's display timezone", () => {
+    render(<BookingFormAlerts conflicts={[conflict]} displayTimezone="Europe/Berlin" />);
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("12:00");
+    expect(alert).not.toHaveTextContent("10:00");
   });
 });

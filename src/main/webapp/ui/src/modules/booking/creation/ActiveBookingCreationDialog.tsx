@@ -164,10 +164,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
       availability.data.get(availabilityTarget.globalId)?.some(() => true),
   );
   const conflicts = availabilityViolation
-    ? bookingConflicts(
-        availability.data?.get(availabilityTarget?.globalId ?? "") ?? [],
-        availabilityTarget?.timezone ?? preferences.timeZone,
-      )
+    ? bookingConflicts(availability.data?.get(availabilityTarget?.globalId ?? "") ?? [], preferences.timeZone)
     : [];
   const conflictBlocksSubmission = availabilityViolation && !availabilityTarget?.allowDoubleBooking;
 

@@ -112,11 +112,7 @@ export function InlineBookingEditor({
       availability.data.get(event.target.globalId)?.some((interval) => interval.source.id !== `booking:${event.id}`),
   );
   const conflicts = availabilityViolation
-    ? bookingConflicts(
-        availability.data?.get(event.target.globalId) ?? [],
-        configuration.data?.timezone ?? timezone,
-        event.id,
-      )
+    ? bookingConflicts(availability.data?.get(event.target.globalId) ?? [], timezone, event.id)
     : [];
   const conflictBlocksSubmission = availabilityViolation && configuration.data?.allowDoubleBooking === false;
 

@@ -10,6 +10,7 @@ type BookingFormAlertsProps = {
   warning?: ReactNode;
   error?: ReactNode;
   conflicts?: readonly BookingConflict[];
+  displayTimezone: string;
   conflictSeverity?: "warning" | "error";
   outcomeUncertain?: boolean;
 };
@@ -18,6 +19,7 @@ export function BookingFormAlerts({
   warning,
   error,
   conflicts,
+  displayTimezone,
   conflictSeverity = "error",
   outcomeUncertain,
 }: BookingFormAlertsProps) {
@@ -43,7 +45,7 @@ export function BookingFormAlerts({
           return (
             <li key={booking.id}>
               <span className="font-medium">{label}</span>
-              {` · ${formatAgendaPeriod(booking.start, booking.end, booking.timezone, i18n.language)}`}
+              {` · ${formatAgendaPeriod(booking.start, booking.end, displayTimezone, i18n.language)}`}
             </li>
           );
         })}
