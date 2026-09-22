@@ -2,7 +2,7 @@ import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router"
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { page, type Locator } from "vitest/browser";
+import { type Locator, page } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
 import { currentUser } from "../calendar/calendarFixtures";

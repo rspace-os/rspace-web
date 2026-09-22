@@ -139,7 +139,12 @@ export function InventoryAccessReadOnly({ instrumentId }: { instrumentId: number
       <legend className="sr-only">{t("fields.accessPermissions.label")}</legend>
       <RadioGroup value={sharingMode} aria-label={t("fields.accessPermissions.label")}>
         <label htmlFor={ownerGroupsId} className="flex items-start gap-3 rounded-md p-2">
-          <RadioGroupItem id={ownerGroupsId} value="OWNER_GROUPS" disabled aria-label={t("fields.accessPermissions.ownerGroups.title")} />
+          <RadioGroupItem
+            id={ownerGroupsId}
+            value="OWNER_GROUPS"
+            disabled
+            aria-label={t("fields.accessPermissions.ownerGroups.title")}
+          />
           <div className="min-w-0 flex-1 space-y-2">
             <div>
               <h3 className="font-medium">{t("fields.accessPermissions.ownerGroups.title")}</h3>
@@ -151,17 +156,29 @@ export function InventoryAccessReadOnly({ instrumentId }: { instrumentId: number
           </div>
         </label>
         <label htmlFor={whitelistId} className="flex items-start gap-3 rounded-md p-2">
-          <RadioGroupItem id={whitelistId} value="WHITELIST" disabled aria-label={t("fields.accessPermissions.explicitAccess.title")} />
+          <RadioGroupItem
+            id={whitelistId}
+            value="WHITELIST"
+            disabled
+            aria-label={t("fields.accessPermissions.explicitAccess.title")}
+          />
           <div className="min-w-0 flex-1 space-y-2">
             <div>
               <h3 className="font-medium">{t("fields.accessPermissions.explicitAccess.title")}</h3>
-              <p className="text-sm text-muted-foreground">{t("fields.accessPermissions.explicitAccess.description")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("fields.accessPermissions.explicitAccess.description")}
+              </p>
             </div>
             {sharingMode === "WHITELIST" ? <ExplicitAccessTable sharedWith={sharedWith} /> : null}
           </div>
         </label>
         <label htmlFor={ownerOnlyId} className="flex items-start gap-3 rounded-md p-2">
-          <RadioGroupItem id={ownerOnlyId} value="OWNER_ONLY" disabled aria-label={t("fields.accessPermissions.ownerOnly.title")} />
+          <RadioGroupItem
+            id={ownerOnlyId}
+            value="OWNER_ONLY"
+            disabled
+            aria-label={t("fields.accessPermissions.ownerOnly.title")}
+          />
           <div className="min-w-0 flex-1">
             <h3 className="font-medium">{t("fields.accessPermissions.ownerOnly.title")}</h3>
             <p className="text-sm text-muted-foreground">{t("fields.accessPermissions.ownerOnly.description")}</p>
