@@ -150,7 +150,10 @@ export function BookingEventContent() {
             ) : null}
           </InventoryItem>
         ) : (
-          <UnknownItem size="sm" className="min-w-full flex-1 p-0 sm:min-w-0" />
+          <div className="min-w-full flex-1 sm:min-w-0">
+            <UnknownItem size="sm" className="p-0" />
+            <p className="mt-1 text-sm text-muted-foreground">{t("bookings.details.unknownItemDescription")}</p>
+          </div>
         )}
         <div
           data-slot="booking-event-header-actions"

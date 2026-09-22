@@ -77,7 +77,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   const activeRow = activeRowAction ? rows.find((row) => getRowId(row) === activeRowAction.rowId) : undefined;
   return (
     <TooltipProvider delay={250}>
-      <section className="text-foreground [&_[data-inventory-item]]:p-0 [&_[data-slot=badge]]:rounded-sm [&_[data-slot=button]]:rounded-sm [&_[data-slot=input]]:rounded-sm [&_svg]:size-3.5!">
+      <section className="text-foreground [&_[data-inventory-item]]:p-0 [&_[data-unknown-item]]:p-0 [&_[data-slot=badge]]:rounded-sm [&_[data-slot=button]]:rounded-sm [&_[data-slot=input]]:rounded-sm [&_svg]:size-3.5!">
         {hideHeader ? null : (
           <div className={cn(variant === "card" && "mb-5")}>
             <TableListHeader

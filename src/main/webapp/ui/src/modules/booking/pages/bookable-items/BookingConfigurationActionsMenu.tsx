@@ -46,27 +46,27 @@ export function BookingConfigurationActionsMenu({
             className={compact ? "rounded-sm" : "min-h-11 min-w-11 rounded-sm"}
             aria-label={t("bookableItems.actions.menu", { item: itemName })}
           >
-            <EllipsisVerticalIcon aria-hidden="true" />
+            <EllipsisVerticalIcon aria-hidden="true" className="size-3.5" />
           </Button>
         }
       />
       <MenuContent className="w-64">
         {editable && configuration.state === "ACTIVE" ? (
           <MenuItem onClick={() => onAction("archive")}>
-            <ArchiveIcon aria-hidden="true" />
+            <ArchiveIcon aria-hidden="true" className="size-3.5" />
             {t("bookableItems.actions.archive")}
           </MenuItem>
         ) : null}
         {editable && configuration.state === "ARCHIVED" ? (
           <MenuItem onClick={() => onAction("restore")}>
-            <RotateCcwIcon aria-hidden="true" />
+            <RotateCcwIcon aria-hidden="true" className="size-3.5" />
             {t("bookableItems.actions.restore")}
           </MenuItem>
         ) : null}
         {canPermanentlyDelete ? <MenuSeparator /> : null}
         {canPermanentlyDelete ? (
           <MenuItem className="text-destructive" onClick={() => onAction("permanent-delete")}>
-            <Trash2Icon aria-hidden="true" />
+            <Trash2Icon aria-hidden="true" className="size-3.5" />
             {t("bookableItems.actions.deletePermanently")}
           </MenuItem>
         ) : null}
