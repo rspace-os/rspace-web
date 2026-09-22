@@ -120,6 +120,13 @@ start in the future even when the stack starts late in the day. The startup
 seed is idempotent, so restarts add only fixtures that are missing or no longer
 cover the fixture dates.
 
+A brand-new database also receives a Liquibase booking seed with nine
+instruments and 50 events for `sysadmin1`, `user1a`, `user2b`, and `user3c`.
+The events cover three days ago, today, and seven days from today. Eight of the
+instruments have booking configurations, including one that permits double
+booking; the ninth remains unconfigured. Liquibase skips this seed when booking
+configuration data already exists.
+
 Subsequent `up`s reuse the existing database and are much faster.
 
 To run the Playwright suite against local third-party integration mocks, enable

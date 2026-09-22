@@ -81,6 +81,25 @@ initializer or extract its stable-key logic into a dedicated development
 initializer. Add a focused integration test that starts from a clean database,
 runs the seed twice, and checks that the second run does not duplicate rows.
 
+## Development booking seed
+
+`changeLog-rsdev-booking-dev-seed.xml` runs only with the `dev-test` Liquibase
+context. It marks itself ran when any booking configuration already exists, so
+it populates only a brand-new development database. The changeset loads
+`booking-dev-seed.sql`, which creates nine instruments, eight booking
+configurations, and 50 booking events. One instrument has no booking
+configuration and one configuration permits double booking.
+
+The event dates are calculated from `CURRENT_DATE` when Liquibase runs. The
+seed creates events three days before that date, on that date, and seven days
+after it for `sysadmin1`, `user1a`, `user2b`, and `user3c`. The seeded
+instruments belong to `user1a`, and all users receive the booking role through
+the `ALL_USERS` audience. IDs in the `910100001` to `910100009` range keep the
+rows separate from generated inventory data.
+
+Sources: [`changeLog-rsdev-booking-dev-seed.xml`](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed.xml),
+[`booking-dev-seed.sql`](../../src/main/resources/sqlUpdates/booking-dev-seed.sql).
+
 ## Verification path
 
 For a Liquibase change, use a fresh database and an upgrade database. The
