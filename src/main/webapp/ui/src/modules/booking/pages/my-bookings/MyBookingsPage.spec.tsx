@@ -2,7 +2,7 @@ import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router"
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import type { Locator } from "vitest/browser";
+import { page, type Locator } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
 import { currentUser } from "../calendar/calendarFixtures";
@@ -52,6 +52,31 @@ describe("the My Bookings page", () => {
     await expect.element(pageObj.confocalEdit).not.toBeInTheDocument();
     await expect.element(pageObj.confocalCancel).not.toBeInTheDocument();
     await expect.element(pageObj.confocalDetails).toBeVisible();
+  });
+
+  test("searches booking purpose and instrument IDs without dropping requester scope", async () => {
+    history.replace("/booking/my-bookings?period=upcoming");
+    const listRequests: URL[] = [];
+    worker.use(...bookingHandlers((url) => listRequests.push(url)));
+    render(<MyBookingsPageStory history={history} />);
+
+    const search = page.getByRole("textbox", { name: "Search Bookings" });
+    await expect.element(search).toBeVisible();
+
+    await search.fill("Scope training");
+    await expect
+      .poll(() => listRequests.map((url) => url.searchParams.get("where") ?? ""))
+      .toEqual(expect.arrayContaining([expect.stringContaining("purpose")]));
+    const purposeWhere = listRequests.find((url) => url.searchParams.get("where")?.includes("purpose=contains="));
+    expect(purposeWhere?.searchParams.get("where")).toContain("Scope training");
+    expect(purposeWhere?.searchParams.get("where")).toContain("requesterId==84");
+
+    await search.fill("IN123");
+    await expect
+      .poll(() => listRequests.map((url) => url.searchParams.get("where") ?? ""))
+      .toEqual(expect.arrayContaining([expect.stringContaining("target==IN123")]));
+    const globalIdWhere = listRequests.find((url) => url.searchParams.get("where")?.includes("target==IN123"));
+    expect(globalIdWhere?.searchParams.get("where")).toContain("requesterId==84");
   });
 
   test("shows a tooltip for every icon-only page control", async () => {

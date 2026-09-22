@@ -77,6 +77,12 @@ export const bookingsOpenApi = {
                 wildcards: true,
                 title: "Instrument name",
               },
+              "target.globalId": {
+                schema: { type: "string" },
+                operators: [],
+                wildcards: false,
+                title: "Global ID",
+              },
             },
           },
           { name: "limit", schema: { type: "integer", default: 20, maximum: 100 } },

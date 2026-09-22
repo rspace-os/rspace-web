@@ -31,7 +31,7 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
       { field: "start", direction: "asc" },
       { field: "id", direction: "asc" },
     ],
-    listSearchableFields: ["target.name"],
+    listSearchableFields: ["target.name", "target.globalId", "purpose"],
     fields: [
       { name: "id", type: "number", labelKey: "booking:myBookings.fields.id", list: false },
       {
