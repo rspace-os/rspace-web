@@ -11,7 +11,6 @@ import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
 import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
 import {
   AlertDialog,
@@ -44,8 +43,8 @@ import {
   type BookingConfiguration,
   type BookingConfigurationUpdateInput,
 } from "./bookingConfiguration";
-import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
 import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
+import { InventoryAccessReadOnly } from "./InventoryAccessReadOnly";
 
 export { BookableItemSkeleton } from "./BookableItemSkeleton";
 
@@ -300,13 +299,10 @@ export function LoadedBookableItemPage({
   }, [active, edit]);
 
   useEffect(() => {
-    if (
-      (tab === "audit" && !configuration.capabilities.canViewAudit) ||
-      (tab === "access" && !configuration.capabilities.canViewAccess)
-    ) {
+    if (tab === "audit" && !configuration.capabilities.canViewAudit) {
       setTab("bookings");
     }
-  }, [configuration.capabilities.canViewAccess, configuration.capabilities.canViewAudit, tab]);
+  }, [configuration.capabilities.canViewAudit, tab]);
 
   if (target === null) return null;
 
@@ -388,11 +384,9 @@ export function LoadedBookableItemPage({
                 {t("bookableItemDetails.tabs.audit")}
               </PageTab>
             ) : null}
-            {configuration.capabilities.canViewAccess ? (
-              <PageTab value="access" disabled={updateMutation.isPending}>
-                {t("bookableItemDetails.tabs.access")}
-              </PageTab>
-            ) : null}
+            <PageTab value="access" disabled={updateMutation.isPending}>
+              {t("bookableItemDetails.tabs.access")}
+            </PageTab>
           </Tabs.List>
 
           <div className={itemColumnsClassName}>
@@ -487,27 +481,13 @@ export function LoadedBookableItemPage({
                 </Tabs.Panel>
               ) : null}
 
-              {configuration.capabilities.canViewAccess ? (
-                <Tabs.Panel value="access" className="outline-none">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <ResourceAccessEditor
-                        key={configuration.id}
-                        resource="booking-configurations"
-                        resourceId={configuration.id}
-                        token={token}
-                        adapter={bookingResourceAccessAdapter(t)}
-                        inheritedResource={{
-                          href: `/globalId/${globalId}`,
-                          label: t("bookableItemDetails.viewInventory", { name: target.value.name }),
-                        }}
-                        readOnly={!active}
-                        onLeave={() => void navigate({ to: "/booking", ignoreBlocker: true })}
-                      />
-                    </CardContent>
-                  </Card>
-                </Tabs.Panel>
-              ) : null}
+              <Tabs.Panel value="access" className="outline-none">
+                <Card>
+                  <CardContent className="pt-6">
+                    <InventoryAccessReadOnly instrumentId={target.value.id} />
+                  </CardContent>
+                </Card>
+              </Tabs.Panel>
             </div>
             <BookableItemFactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
           </div>
