@@ -3994,8 +3994,12 @@ export default interface Resources {
         "message": "Importing \"{name}\" from the PID registry.",
         "title": "Importing instrument"
       },
+      "linkedTo": {
+        "noAccess": "An instrument you cannot access"
+      },
       "preview": {
         "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "alternateIdentifier": "Alternate identifier",
         "commissioned": "Commissioned",
         "decommissioned": "Decommissioned",
@@ -4033,6 +4037,7 @@ export default interface Resources {
       "title": "Import Instrument from PIDINST",
       "validation": {
         "alreadyLinked": "This PID is already linked to instrument {globalId}.",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "noSelection": "Select a record to import."
       }
     },
@@ -6881,6 +6886,7 @@ export default interface Resources {
           "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
+          "pidinstAlreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
           "pidinstImportPidRequired": "A PID is required to import an instrument.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
           "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",

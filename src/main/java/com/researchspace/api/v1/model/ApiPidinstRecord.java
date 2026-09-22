@@ -82,8 +82,18 @@ public class ApiPidinstRecord {
   private String updated;
 
   /**
-   * The globalId of the instrument in this deployment that already links this PID, or null. Set by
-   * the lookup manager, never by the mapper, so the UI can disable Import before the 409.
+   * Whether an instrument in this deployment already links this PID. Always present, so a client
+   * can refuse Import before the 409 whether or not the caller may see that instrument
+   * (RSDEV-1505). Set by the lookup manager, never by the mapper.
+   */
+  @JsonProperty("linked")
+  private boolean linked;
+
+  /**
+   * The globalId of the instrument that already links this PID, present only when the caller may
+   * read it, by read or limited read. Null both when nothing links the PID and when the linking
+   * instrument is one the caller may not read, so the search never names an instrument it would not
+   * show them (RSDEV-1505). Set by the lookup manager, never by the mapper.
    */
   @JsonProperty("linkedInstrumentGlobalId")
   private String linkedInstrumentGlobalId;

@@ -1739,8 +1739,12 @@
       "title": "Importing instrument"
     },
     "importSuccess": "Successfully imported the instrument.",
+    "linkedTo": {
+      "noAccess": "An instrument you cannot access"
+    },
     "preview": {
       "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
+      "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
       "alternateIdentifier": "Alternate identifier",
       "commissioned": "Commissioned",
       "decommissioned": "Decommissioned",
@@ -1778,6 +1782,7 @@
     "title": "Import Instrument from PIDINST",
     "validation": {
       "alreadyLinked": "This PID is already linked to instrument {globalId}.",
+      "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
       "noSelection": "Select a record to import."
     }
   },

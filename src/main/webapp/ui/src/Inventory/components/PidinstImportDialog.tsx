@@ -62,6 +62,9 @@ export type PidinstRecord = {
   alternateIdentifier?: string;
   created?: string;
   updated?: string;
+  /** Whether an Instrument in this RSpace already links this PID; Import is refused either way. */
+  linked: boolean;
+  /** Present only when the current user may read that Instrument (RSDEV-1505). */
   linkedInstrumentGlobalId?: string;
 };
 
@@ -155,12 +158,16 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
       <Typography id={headingId} variant="h6" component="h3" sx={{ mb: 1 }}>
         {t("pidinstImport.preview.title")}
       </Typography>
-      {record.linkedInstrumentGlobalId && (
+      {record.linked && (
         <Alert severity="info" sx={{ mb: 1, alignItems: "center" }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <span>{t("pidinstImport.preview.alreadyLinked")}</span>
-            <GlobalId record={new LinkableRecordFromGlobalId(record.linkedInstrumentGlobalId)} />
-          </Stack>
+          {record.linkedInstrumentGlobalId ? (
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <span>{t("pidinstImport.preview.alreadyLinked")}</span>
+              <GlobalId record={new LinkableRecordFromGlobalId(record.linkedInstrumentGlobalId)} />
+            </Stack>
+          ) : (
+            t("pidinstImport.preview.alreadyLinkedNoAccess")
+          )}
         </Alert>
       )}
       <Box component="dl" sx={{ m: 0, columnCount: { xs: 1, md: 2 }, columnGap: 4 }}>
@@ -403,7 +410,9 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
             globalId: selected.linkedInstrumentGlobalId,
           }),
         )
-      : IsValid();
+      : selected.linked
+        ? IsInvalid(t("pidinstImport.validation.alreadyLinkedNoAccess"))
+        : IsValid();
 
   return (
     <ThemeProvider theme={createAccentedTheme(INSTRUMENT_ACCENT_COLOR)}>
@@ -541,6 +550,8 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                       renderCell: ({ row }) =>
                         row.linkedInstrumentGlobalId ? (
                           <GlobalId record={new LinkableRecordFromGlobalId(row.linkedInstrumentGlobalId)} />
+                        ) : row.linked ? (
+                          t("pidinstImport.linkedTo.noAccess")
                         ) : null,
                     },
                   ),

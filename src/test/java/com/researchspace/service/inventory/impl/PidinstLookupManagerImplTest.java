@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static com.researchspace.service.inventory.PidinstLookupManager.MIN_QUERY_LENGTH;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,6 +21,7 @@ import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
+import com.researchspace.api.v1.model.ApiPidinstRecord;
 import com.researchspace.api.v1.model.ApiPidinstSearchResult;
 import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.b2inst.model.metadata.B2instIdentifier;
@@ -40,11 +42,13 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
+import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
@@ -75,6 +79,7 @@ class PidinstLookupManagerImplTest {
   @Mock private InstrumentTemplateDao instrumentTemplateDao;
   @Mock private InstrumentEntityApiManager instrumentApiMgr;
   @Mock private InventoryIdentifierApiManager identifierMgr;
+  @Mock private InventoryPermissionUtils invPermissions;
   @Mock private MessageSourceUtils messages;
   @InjectMocks private PidinstLookupManagerImpl manager;
 
@@ -89,8 +94,16 @@ class PidinstLookupManagerImplTest {
     lenient()
         .when(messages.getMessage(anyString(), any(Object[].class)))
         .thenAnswer(
-            invocation ->
-                invocation.getArgument(0) + " " + invocation.getArgument(1, Object[].class)[0]);
+            invocation -> {
+              Object[] args = invocation.getArgument(1, Object[].class);
+              return invocation.getArgument(0) + (args.length == 0 ? "" : " " + args[0]);
+            });
+    // eq(user) is deliberate: a permission check made with any other user must not match here
+    lenient()
+        .when(
+            invPermissions.canUserReadOrLimitedReadInventoryRecord(
+                any(InventoryRecord.class), eq(user)))
+        .thenReturn(true);
   }
 
   private static B2instDraftRecord publishedRecord() {
@@ -150,6 +163,7 @@ class PidinstLookupManagerImplTest {
     assertEquals(1, result.getHits().size());
     assertEquals(HANDLE, result.getHits().get(0).getPid());
     assertEquals("IN99", result.getHits().get(0).getLinkedInstrumentGlobalId());
+    assertTrue(result.getHits().get(0).isLinked());
     verify(dataCiteConnector, never()).searchInstrumentDois(anyString(), eq(50), any());
   }
 
@@ -160,6 +174,7 @@ class PidinstLookupManagerImplTest {
     ApiPidinstSearchResult direct = manager.search("https://hdl.handle.net/" + HANDLE, user);
     assertEquals(1, direct.getHits().size());
     assertNull(direct.getHits().get(0).getLinkedInstrumentGlobalId());
+    assertFalse(direct.getHits().get(0).isLinked());
     verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
 
     ApiPidinstSearchResult foreign = manager.search("10.15151/esrf-instr-gco8", user);
@@ -253,6 +268,30 @@ class PidinstLookupManagerImplTest {
     verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
   }
 
+  /** RSDEV-1505: the exception's own field is withheld too, not just the message. */
+  @Test
+  void importRefusesAPidLinkedByAnInstrumentTheCallerCannotOpenWithoutNamingIt() {
+    when(b2instConnector.getRecordByHandle(HANDLE)).thenReturn(Optional.of(publishedRecord()));
+    DigitalObjectIdentifier existing =
+        new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
+    Instrument hidden = new Instrument();
+    hidden.setId(99L);
+    hidden.addIdentifier(existing);
+    when(doiDao.findActiveByIdentifierAndType(HANDLE, IdentifierType.PIDINST_B2INST))
+        .thenReturn(Optional.of(existing));
+    when(invPermissions.canUserReadOrLimitedReadInventoryRecord(hidden, user)).thenReturn(false);
+
+    PidinstAlreadyLinkedException ex =
+        assertThrows(
+            PidinstAlreadyLinkedException.class,
+            () -> manager.importInstrument(HANDLE, null, user));
+
+    assertNull(ex.getLinkedInstrumentGlobalId());
+    assertTrue(ex.getMessage().contains("pidinstAlreadyLinkedNoAccess"), ex.getMessage());
+    assertFalse(ex.getMessage().contains("IN99"), ex.getMessage());
+    verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
+  }
+
   /** The same gap on the search path: the hit must come back already flagged as linked. */
   @Test
   void searchFlagsAHitWhosePidThisDeploymentMintedItself() {
@@ -269,6 +308,26 @@ class PidinstLookupManagerImplTest {
     ApiPidinstSearchResult result = manager.search("microscope", user);
 
     assertEquals("IN77", result.getHits().get(0).getLinkedInstrumentGlobalId());
+  }
+
+  /** RSDEV-1505: the registry record is public, so the PID is; the RSpace instrument is not. */
+  @Test
+  void searchMarksAHitLinkedWithoutNamingAnInstrumentTheCallerCannotOpen() {
+    when(b2instConnector.searchRecords("microscope", 50))
+        .thenReturn(searchResultOf(publishedRecord(), 1));
+    DigitalObjectIdentifier existing =
+        new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
+    Instrument hidden = new Instrument();
+    hidden.setId(99L);
+    hidden.addIdentifier(existing);
+    when(doiDao.findActiveByIdentifiersAndType(any(), eq(IdentifierType.PIDINST_B2INST)))
+        .thenReturn(List.of(existing));
+    when(invPermissions.canUserReadOrLimitedReadInventoryRecord(hidden, user)).thenReturn(false);
+
+    ApiPidinstRecord hit = manager.search("microscope", user).getHits().get(0);
+
+    assertTrue(hit.isLinked(), "the PID is taken, and the caller must be told so");
+    assertNull(hit.getLinkedInstrumentGlobalId(), "but not by which instrument");
   }
 
   @Test

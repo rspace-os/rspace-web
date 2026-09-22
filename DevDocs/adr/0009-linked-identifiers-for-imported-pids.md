@@ -56,6 +56,18 @@ and API field names were ported instead.
    in the deployment is refused with 409 naming the instrument. That check matches the
    provider's record id as well as the PID, because a B2INST identifier this deployment
    registered stores the record id: its Handle is minted on publish and never written back.
+   *Amended 2026-09-21 (RSDEV-1505):* the 409 names the instrument only when the caller may
+   read it, by the read-or-limited-read rule that decides everywhere else whether a caller gets
+   a record or only its no-access view; otherwise it says only that an instrument they cannot
+   access already holds the PID. The search response marks every such hit `linked` and carries
+   `linkedInstrumentGlobalId` under the same rule, so neither the search nor the refusal
+   volunteers the Global ID of an Instrument the caller may not read (the principle of ADR
+   0002). The registry record itself is public, so nothing about it is withheld, and the refusal
+   keeps a stated reason either way. The disclosure this decision originally accepted was
+   pre-existing from RSDEV-1326 and became visible once the RSDEV-1325 dialog rendered the
+   Global ID as a chip. This is a rule about what RSpace offers, not a secrecy guarantee:
+   `GET /instruments/{id}` deliberately answers 200 with a name-only public view rather than
+   404, so a guessed id still yields the instrument's name (verified 2026-09-22).
 5. **Only public records may be looked up or imported**: B2INST `accepted` (a published
    record) and DataCite `findable`. A PID that exists at the provider but is not public -
    a B2INST draft, a record submitted for community review or declined, a DataCite `draft`
@@ -137,7 +149,9 @@ and API field names were ported instead.
 - **Allow duplicate links, flagged**: rejected in favour of one RSpace record per PID;
   the search response still flags an already-linked PID. The UI (RSDEV-1325) keeps such a hit
   selectable and refuses Import with the reason, rather than disabling the button, so the user
-  can still read the record and follow the chip to the instrument that holds the link.
+  can still read the record and follow the chip to the instrument that holds the link. Since
+  RSDEV-1505 the chip is shown only to a user who may read that instrument; anyone else sees
+  the flag without a name (decision 4, amendment).
 
 ## Consequences
 

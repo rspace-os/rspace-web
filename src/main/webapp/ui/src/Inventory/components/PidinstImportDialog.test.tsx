@@ -36,6 +36,7 @@ const HITS = [
     commissioned: "2021-03-01",
     landingPage: "https://example.org/lsm980",
     alternateIdentifier: "INV-0042",
+    linked: false,
   },
   {
     pid: "21.T11975/bbbbb-22222",
@@ -47,6 +48,7 @@ const HITS = [
     manufacturers: ["Bruker"],
     instrumentTypes: [],
     measuredVariables: [],
+    linked: true,
     linkedInstrumentGlobalId: "IN52",
   },
 ];
@@ -236,6 +238,31 @@ describe("PidinstImportDialog", () => {
     await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
     expect(await screen.findByText("inventory:pidinstImport.validation.alreadyLinked")).toBeVisible();
+    expect(mockAxios.history.post).toHaveLength(0);
+  });
+
+  test("marks a hit linked to an instrument the user cannot see, names nothing, and refuses to import it", async () => {
+    const user = userEvent.setup();
+    // the server omits the Global ID when the caller may not read the linking instrument
+    const { linkedInstrumentGlobalId: _hiddenFromThisUser, ...hiddenLink } = HITS[1];
+    stubEndpoints({ searchReply: [200, { ...SEARCH_RESULT, hits: [HITS[0], hiddenLink] }] });
+    await renderOpenDialog();
+    await search(user, "spectrometer");
+
+    const linkedRow = screen
+      .getByRole("gridcell", { name: "Linked Spectrometer" })
+      .closest('[role="row"]') as HTMLElement;
+    expect(within(linkedRow).getByText("inventory:pidinstImport.linkedTo.noAccess")).toBeVisible();
+    expect(within(linkedRow).queryByRole("link", { name: "IN52" })).not.toBeInTheDocument();
+
+    await user.click(radioFor("Linked Spectrometer"));
+    const preview = screen.getByRole("region", { name: "inventory:pidinstImport.preview.title" });
+    expect(within(preview).getByText("inventory:pidinstImport.preview.alreadyLinkedNoAccess")).toBeVisible();
+    expect(screen.queryByText("IN52")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    expect(await screen.findByText("inventory:pidinstImport.validation.alreadyLinkedNoAccess")).toBeVisible();
     expect(mockAxios.history.post).toHaveLength(0);
   });
 

@@ -27,8 +27,9 @@ public interface PidinstLookupManager {
    * A DOI or Handle, bare or as a doi.org / hdl.handle.net address, is a direct lookup on the
    * enabled provider; a PID of the other registry yields no hit; anything else is one full-text
    * query. Only PUBLIC records are offered - B2INST {@code accepted}, DataCite {@code findable} -
-   * because only those may be linked to an instrument. Hits are sorted by name and carry {@code
-   * linkedInstrumentGlobalId} when an instrument in this deployment already links the PID.
+   * because only those may be linked to an instrument. Hits are sorted by name; one whose PID an
+   * instrument in this deployment already links is marked {@code linked}, and carries {@code
+   * linkedInstrumentGlobalId} only when {@code user} may read that instrument (RSDEV-1505).
    *
    * @throws ApiRuntimeException when the query is shorter than {@link #MIN_QUERY_LENGTH} after
    *     trimming, so a direct caller is held to the same rule as the import dialog
@@ -46,7 +47,7 @@ public interface PidinstLookupManager {
    *     linked, so a PID that exists but is not published is reported exactly like one that does
    *     not exist
    * @throws PidinstAlreadyLinkedException when an instrument in this deployment already links the
-   *     PID
+   *     PID; the message names that instrument only to a caller who may read it (RSDEV-1505)
    * @throws com.researchspace.api.v1.auth.ApiRuntimeException when the record lacks a mandatory
    *     value
    */

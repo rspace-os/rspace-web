@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -196,18 +197,21 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
         .andReturn();
   }
 
+  private MvcResult search(User user, String apiKey, String query) throws Exception {
+    return mockMvc
+        .perform(
+            createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/pidinst/search", user)
+                .param("query", query))
+        .andExpect(status().isOk())
+        .andReturn();
+  }
+
   @Test
   public void searchReturnsTheRecordAndFlagsItOnceImported() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
-    MvcResult searchResult =
-        mockMvc
-            .perform(
-                createBuilderForInventoryGet(
-                    API_VERSION.ONE, apiKey, "/pidinst/search?query=microscope", anyUser))
-            .andExpect(status().isOk())
-            .andReturn();
+    MvcResult searchResult = search(anyUser, apiKey, "microscope");
     ApiPidinstSearchResult search =
         mvcUtils.getFromJsonResponseBody(searchResult, ApiPidinstSearchResult.class);
     assertEquals("PIDINST_B2INST", search.getProvider());
@@ -215,21 +219,17 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(handle, search.getHits().get(0).getPid());
     assertEquals("Test microscope", search.getHits().get(0).getName());
     assertNull(search.getHits().get(0).getLinkedInstrumentGlobalId());
+    assertFalse(search.getHits().get(0).isLinked());
 
     ApiInstrument created =
         mvcUtils.getFromJsonResponseBody(
             importPid(anyUser, apiKey, handle, 201), ApiInstrument.class);
 
-    MvcResult afterImport =
-        mockMvc
-            .perform(
-                createBuilderForInventoryGet(
-                    API_VERSION.ONE, apiKey, "/pidinst/search?query=" + handle, anyUser))
-            .andExpect(status().isOk())
-            .andReturn();
+    MvcResult afterImport = search(anyUser, apiKey, handle);
     assertEquals(
         created.getGlobalId(),
         json(afterImport).get("hits").get(0).get("linkedInstrumentGlobalId").asText());
+    assertTrue(json(afterImport).get("hits").get(0).get("linked").asBoolean());
   }
 
   /**
@@ -297,6 +297,34 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     MvcResult conflict = importPid(anyUser, apiKey, handle, 409);
 
     assertTrue(json(conflict).get("message").asText().contains(first.getGlobalId()));
+  }
+
+  /**
+   * RSDEV-1505, wire-level because the real permission rule and the JSON omission are what a client
+   * sees. Two {@code createInitAndLoginAnyUser()} users share no group, so neither read nor limited
+   * read applies between them.
+   */
+  @Test
+  public void aLinkedPidIsMarkedButNotNamedToAUserWhoCannotOpenTheInstrument() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    String ownerApiKey = createNewApiKeyForUser(owner);
+    ApiInstrument created =
+        mvcUtils.getFromJsonResponseBody(
+            importPid(owner, ownerApiKey, handle, 201), ApiInstrument.class);
+    User outsider = createInitAndLoginAnyUser();
+    String outsiderApiKey = createNewApiKeyForUser(outsider);
+
+    JsonNode outsiderHit = json(search(outsider, outsiderApiKey, handle)).get("hits").get(0);
+    assertTrue(outsiderHit.get("linked").asBoolean());
+    assertFalse(outsiderHit.has("linkedInstrumentGlobalId"), outsiderHit.toString());
+
+    JsonNode ownerHit = json(search(owner, ownerApiKey, handle)).get("hits").get(0);
+    assertTrue(ownerHit.get("linked").asBoolean());
+    assertEquals(created.getGlobalId(), ownerHit.get("linkedInstrumentGlobalId").asText());
+
+    String refusal = json(importPid(outsider, outsiderApiKey, handle, 409)).get("message").asText();
+    assertFalse(refusal.contains(created.getGlobalId()), refusal);
+    assertTrue(refusal.contains("cannot access"), refusal);
   }
 
   @Test
