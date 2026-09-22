@@ -134,8 +134,10 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
    * Open enabled, so the endpoint fails open. Both an unreadable notebook (the permission assertion
    * throws) and a readable soft-deleted one (the not-deleted assertion throws) hit this. {@link
    * IPermissionUtils#isPermitted} evaluates the same READ grant against the snapshot with no
-   * manager call, so nothing can poison the transaction. It reads sharing as the snapshot captured
-   * it, which is the deliberate trade for an endpoint that must not 500.
+   * manager call, so nothing can poison the transaction, after applying any pending permission
+   * refresh so an unshare takes effect on this request rather than at cache expiry. It reads
+   * sharing as the snapshot captured it, which is the deliberate trade for an endpoint that must
+   * not 500.
    *
    * <p>Inventory targets keep the live check: their lookup throws only its own NotFoundException,
    * from non-transactional components, so it is safe to consult and reflects current sharing.
@@ -149,6 +151,10 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       return true;
     }
     if (!isInventoryPrefix(prefix)) {
+      // an unshare only queues the revocation; Shiro keeps the viewer's RECORD:READ grant until a
+      // permission-checked request applies it. The live lookup this replaced refreshed first, so
+      // skipping it would let a former sharee keep the target's name and type until cache expiry.
+      permissionUtils.refreshCacheIfNotified();
       return entity instanceof BaseRecord baseRecord
           && permissionUtils.isPermitted(baseRecord, PermissionType.READ, user);
     }

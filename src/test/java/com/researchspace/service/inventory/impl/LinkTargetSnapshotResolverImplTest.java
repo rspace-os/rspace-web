@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -30,6 +31,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -343,6 +345,27 @@ class LinkTargetSnapshotResolverImplTest {
     assertEquals("NOTEBOOK", s.getType());
     assertTrue(s.isReadable());
     verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+  }
+
+  @Test
+  void resolveSummaryAppliesAPendingPermissionRefreshBeforeCheckingTheSnapshot() {
+    // an unshare only queues the revocation: Shiro keeps the viewer's RECORD:READ grant until a
+    // permission-checked request applies it. The live lookup this branch replaced did that first,
+    // so without it a former sharee would keep getting the name and type until the cache expired.
+    Folder notebook = mock(Folder.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(notebook.getOwner()).thenReturn(owner);
+    when(auditManager.getNewestRevisionForEntity(Folder.class, 7L))
+        .thenReturn(new AuditedEntity<>(notebook, 12));
+    when(user.getUsername()).thenReturn("bob");
+    when(permissionUtils.isPermitted(notebook, PermissionType.READ, user)).thenReturn(false);
+
+    resolver.resolveSummary(GlobalIdPrefix.NB, 7L, null, null, user);
+
+    InOrder inOrder = inOrder(permissionUtils);
+    inOrder.verify(permissionUtils).refreshCacheIfNotified();
+    inOrder.verify(permissionUtils).isPermitted(notebook, PermissionType.READ, user);
   }
 
   @Test
