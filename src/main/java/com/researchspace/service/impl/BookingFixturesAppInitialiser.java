@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.booking.service.BookingConfigurationManager;
+import com.researchspace.booking.service.BookingStartInPastException;
 import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
@@ -613,8 +614,16 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     LocalDate endDate = endTime.isAfter(startTime) ? date : date.plusDays(1);
     Date end = Date.from(endDate.atTime(endTime).atZone(zone).toInstant());
     if (!bookingDao.overlaps(configuration.getId(), start, end, null)) {
-      bookingManager.createBooking(
-          new TimeSlotBookingManager.Create(target(instrument), start, end, purpose), owner, owner);
+      try {
+        bookingManager.createBooking(
+            new TimeSlotBookingManager.Create(target(instrument), start, end, purpose),
+            owner,
+            owner);
+      } catch (BookingStartInPastException e) {
+        // The alert fixture intentionally represents a past window. Booking services reject new
+        // past events, so keep startup resilient and let the dev-only SQL seed provide past rows.
+        log.info("Skipping past booking fixture {}", purpose);
+      }
     }
   }
 
