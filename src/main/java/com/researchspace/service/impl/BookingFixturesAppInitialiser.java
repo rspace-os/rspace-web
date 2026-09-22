@@ -46,7 +46,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** Adds idempotent bookable-item and booking fixtures to development deployments. */
+/** Adds idempotent bookable-item and booking fixtures when the required fixture users exist. */
 public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
 
   private static final String FIXTURE_USER = "user1a";
