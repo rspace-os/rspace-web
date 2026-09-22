@@ -55,6 +55,15 @@ export class InventoryPage extends BasePage {
     await this.isLoaded();
   }
 
+  /**
+   * Waits for navigation to a freshly created/imported instrument's own page - its id isn't known
+   * ahead of time and returns that id.
+   */
+  async waitForNewInstrumentPage(): Promise<number> {
+    await this.page.waitForURL((url) => url.pathname.startsWith(`${this.path}/instrument/`));
+    return Number(new URL(this.page.url()).pathname.split("/").pop());
+  }
+
   async openNewContainerForm() {
     await this.open();
     return (await this.openCreateMenu()).newContainer();

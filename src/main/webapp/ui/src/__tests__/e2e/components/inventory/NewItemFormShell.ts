@@ -2,6 +2,8 @@ import type { Locator, Page } from "@playwright/test";
 import { CollapsibleSections } from "./CollapsibleSections";
 import { CustomFieldsEditor } from "./CustomFieldsEditor";
 
+const SAVED_ENTITY_PATHS = ["containers", "samples", "instruments", "instrumentTemplates", "sampleTemplates"];
+
 export class NewItemFormShell {
   readonly root: Locator;
   private readonly nameInput: Locator;
@@ -48,10 +50,14 @@ export class NewItemFormShell {
   async save(): Promise<void> {
     const refetchResponse = this.page.waitForResponse((r) => {
       if (r.request().method() !== "GET") return false;
-      const segments = new URL(r.url()).pathname.split("/");
-      const [entity, id] = segments.slice(-2);
+      const [, api, inventory, v1, entity, id] = new URL(r.url()).pathname.split("/");
       return (
-        segments.slice(0, -2).join("/") === "/api/inventory/v1" && !!entity && !!id && Number.isInteger(Number(id))
+        api === "api" &&
+        inventory === "inventory" &&
+        v1 === "v1" &&
+        SAVED_ENTITY_PATHS.includes(entity) &&
+        id !== "" &&
+        Number.isInteger(Number(id))
       );
     });
     await this.saveButton.click();

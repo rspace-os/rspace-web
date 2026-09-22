@@ -28,6 +28,7 @@ export class IdentifierPanel {
   private readonly publishButton: Locator;
   private readonly retractButton: Locator;
   private readonly deleteButton: Locator;
+  private readonly refreshButton: Locator;
 
   constructor(
     private readonly page: Page,
@@ -38,6 +39,7 @@ export class IdentifierPanel {
     this.publishButton = this.root.getByRole("button", { name: "Publish", exact: true });
     this.retractButton = this.root.getByRole("button", { name: "Retract", exact: true });
     this.deleteButton = this.root.getByRole("button", { name: "Delete", exact: true });
+    this.refreshButton = this.root.getByRole("button", { name: "Refresh", exact: true });
   }
 
   async waitForVisible(): Promise<void> {
@@ -52,6 +54,14 @@ export class IdentifierPanel {
       await this.ensureExpanded();
       await this.root.getByText(state, { exact: true }).waitFor({ state: "visible" });
     }
+  }
+
+  async waitForType(type: string): Promise<void> {
+    await this.root.getByText(type, { exact: true }).waitFor({ state: "visible" });
+  }
+
+  identifierLink(url: string): Locator {
+    return this.root.getByRole("link", { name: url });
   }
 
   private async ensureExpanded(): Promise<void> {
@@ -122,6 +132,19 @@ export class IdentifierPanel {
     await this.ensureExpanded();
     await this.deleteButton.click();
     await this.confirm("You are about to delete this Identifier");
+  }
+
+  async clickRefresh(): Promise<void> {
+    await this.ensureExpanded();
+    await this.refreshButton.click();
+  }
+
+  isPublishButtonVisible(): Promise<boolean> {
+    return this.publishButton.isVisible();
+  }
+
+  isRefreshButtonVisible(): Promise<boolean> {
+    return this.refreshButton.isVisible();
   }
 
   private async confirm(title: string): Promise<void> {

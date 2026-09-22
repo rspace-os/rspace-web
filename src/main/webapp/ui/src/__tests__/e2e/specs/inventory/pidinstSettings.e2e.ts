@@ -4,7 +4,7 @@ import { test } from "@/__tests__/e2e/fixtures/flows";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 
-test.describe(`Inventory PIDINST Settings UI`, { tag: [tags.INVENTORY] }, () => {
+test.describe(`Inventory PIDINST Settings UI`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
   test(`As a sysadmin, I can enable PIDINST via DataCite or B2INST, but not both at once`, async ({
     flowSysadminInventory,
   }) => {

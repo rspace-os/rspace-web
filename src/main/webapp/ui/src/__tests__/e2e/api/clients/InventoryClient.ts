@@ -149,6 +149,25 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
+  async deleteInstrument(instrumentId: number): Promise<ApiInventoryInstrument> {
+    return this.requestJson("delete", `/api/inventory/v1/instruments/${instrumentId}`, {
+      action: "deleteInventoryInstrument",
+    });
+  }
+
+  async restoreInstrument(instrumentId: number): Promise<ApiInventoryInstrument> {
+    return this.requestJson("put", `/api/inventory/v1/instruments/${instrumentId}/restore`, {
+      action: "restoreInventoryInstrument",
+    });
+  }
+
+  async importPidinst(pid: string): Promise<ApiInventoryInstrument> {
+    return this.requestJson("post", "/api/inventory/v1/instruments/importPidinst", {
+      data: { pid },
+      action: "importPidinstInstrument",
+    });
+  }
+
   async getListOfMaterialsForInventoryItem(globalId: string): Promise<Array<{ id: number; name: string }>> {
     return this.requestJson("get", `/api/inventory/v1/listOfMaterials/forInventoryItem/${globalId}`, {
       action: "getListOfMaterialsForInventoryItem",
