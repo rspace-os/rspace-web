@@ -27,7 +27,7 @@ async function fetchPage(
 ) {
   const targetFilter = targetGlobalIds && targetGlobalIds.length > 0 ? `;target=in=(${targetGlobalIds.join(",")})` : "";
   const parameters = new URLSearchParams({
-    where: `start<${end};end>${start};state==CONFIRMED${targetFilter}${scope.where ? `;(${scope.where})` : ""}`,
+    where: `start=lt=${end};end=gt=${start}${targetFilter}${scope.where ? `;(${scope.where})` : ""}`,
     start,
     end,
     sort: "start,id",

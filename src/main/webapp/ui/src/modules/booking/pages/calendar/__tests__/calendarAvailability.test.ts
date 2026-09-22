@@ -222,8 +222,9 @@ describe("calendar availability", () => {
     );
 
     const where = requestUrl?.searchParams.get("where") ?? "";
-    expect(where).toContain("start<2026-08-18T15:00:00Z");
-    expect(where).toContain("end>2026-08-17T07:00:00Z");
+    expect(where).toContain("start=lt=2026-08-18T15:00:00Z");
+    expect(where).toContain("end=gt=2026-08-17T07:00:00Z");
+    expect(where).not.toMatch(/start<|end>/);
     expect(result.get("IN1")).toEqual([
       sourced("booking:1", "booking", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
     ]);

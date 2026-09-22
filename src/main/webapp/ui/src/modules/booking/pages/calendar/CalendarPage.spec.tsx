@@ -261,9 +261,7 @@ describe("Calendar page", () => {
           .slice(requestsBeforeReset)
           .map((url) => url.searchParams.get("where")),
       )
-      .toEqual([
-        "start<2026-08-19T04:00:00Z;end>2026-08-18T04:00:00Z;state==CONFIRMED;target=in=(IN123,IN124,IN125,IN126,IN127)",
-      ]);
+      .toEqual(["start=lt=2026-08-19T04:00:00Z;end=gt=2026-08-18T04:00:00Z;target=in=(IN123,IN124,IN125,IN126,IN127)"]);
   });
 
   test.each([390, 1279, 1280, 1440])("keeps integrated Calendar controls reachable at %s px", async (width) => {
@@ -685,7 +683,7 @@ describe("Calendar page", () => {
     expect(bookingPageRequests.calendarBookingRequests[0].searchParams.get("fields[bookings]")).toBe(
       calendarBookingFields,
     );
-    expect(bookingPageRequests.calendarBookingRequests[0].searchParams.get("where")).toContain("state==CONFIRMED");
+    expect(bookingPageRequests.calendarBookingRequests[0].searchParams.get("where")).not.toContain("state==CONFIRMED");
 
     await calendar.showEventDetails("Busy").click();
     await expect.element(calendar.viewItemDetails).not.toBeInTheDocument();

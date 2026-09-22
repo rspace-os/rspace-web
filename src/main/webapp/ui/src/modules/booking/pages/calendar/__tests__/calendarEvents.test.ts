@@ -31,7 +31,7 @@ describe("calendar events", () => {
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get("q")).toBe("purpose-only");
     expect(requests[0].searchParams.get("start")).toBe("2026-08-17T00:00:00Z");
-    expect(requests[0].searchParams.get("where")).toContain("state==CONFIRMED;");
+    expect(requests[0].searchParams.get("where")).not.toContain("state==CONFIRMED");
   });
 
   it("loads every page for the selected calendar range with private-safe fields", async () => {
@@ -60,9 +60,7 @@ describe("calendar events", () => {
     ).resolves.toEqual([ownBooking, otherBooking]);
 
     expect(requests).toHaveLength(2);
-    expect(requests[0].searchParams.get("where")).toBe(
-      "start<2026-08-23T22:00:00Z;end>2026-08-16T22:00:00Z;state==CONFIRMED",
-    );
+    expect(requests[0].searchParams.get("where")).toBe("start=lt=2026-08-23T22:00:00Z;end=gt=2026-08-16T22:00:00Z");
     const selectedFields = requests[0].searchParams.get("fields[bookings]");
     expect(selectedFields).toBe(CALENDAR_BOOKING_FIELDS);
     expect(selectedFields?.split(",")).toContain("canViewConfiguration");

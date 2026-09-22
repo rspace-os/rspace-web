@@ -62,7 +62,7 @@ const PageSchema = v.object({
 });
 
 function bookingWhere(globalIds: readonly string[], start: string, end: string): string {
-  return `target=in=(${globalIds.join(",")});start<${end};end>${start};state==CONFIRMED`;
+  return `target=in=(${globalIds.join(",")});start=lt=${end};end=gt=${start};state==CONFIRMED`;
 }
 
 async function fetchPage(
