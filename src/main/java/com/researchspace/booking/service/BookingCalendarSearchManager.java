@@ -10,5 +10,10 @@ import java.time.Instant;
 public interface BookingCalendarSearchManager {
   /** Returns visible events after applying filters, overlap, state and text before pagination. */
   ResourcePage<TimeSlotBooking> events(
-      ResourceRequest request, Instant start, Instant end, String text, User caller);
+      ResourceRequest request,
+      Instant start,
+      Instant end,
+      String text,
+      boolean ownedByCaller,
+      User caller);
 }

@@ -94,6 +94,46 @@ async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
 }
 
 describe("AllBookableItemsPage", () => {
+  it("offers item creation outside administration", async () => {
+    server.use(
+      candidateHandler(() => HttpResponse.json(candidatePage(bookableItemFixtures))),
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+
+    await renderPage();
+
+    expect(await screen.findByRole("link", { name: "Add" })).toHaveAttribute("href", "/booking/bookable-items/add");
+  });
+
+  it("combines My Items with catalogue and availability requests", async () => {
+    const requests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        return HttpResponse.json({
+          ...candidatePage(bookableItemFixtures),
+          pageSize: Number(url.searchParams.get("limit")),
+        });
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    const user = userEvent.setup();
+    await renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "My Items" }));
+
+    await waitFor(() => {
+      const mineRequests = requests.filter((request) => request.searchParams.get("mine") === "true");
+      expect(mineRequests.some((request) => request.searchParams.get("limit") === "20")).toBe(true);
+      expect(mineRequests.some((request) => request.searchParams.get("limit") === "100")).toBe(true);
+    });
+  });
+
   it("shares today's booking request between availability counts and bars", async () => {
     const bookings = vi.fn(() => HttpResponse.json({ ...collectionPage([]), hasNextPage: false }));
     server.use(

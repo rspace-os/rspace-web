@@ -94,6 +94,7 @@ type CatalogueSearch = {
   where?: string;
   target?: string;
   capability?: "CREATE_BOOKING" | "CREATE_BLOCKOUT";
+  mine?: boolean;
   types?: readonly string[];
   locations?: readonly string[];
   page?: number;
@@ -117,6 +118,7 @@ export async function fetchBookingCatalogue(
   if (search.where) parameters.set("where", search.where);
   if (search.target) parameters.set("target", search.target);
   if (search.capability) parameters.set("capability", search.capability);
+  if (search.mine) parameters.set("mine", "true");
   appendAll(parameters, "type", search.types);
   appendAll(parameters, "location", search.locations);
   if (search.calendarStart) parameters.set("calendarStart", search.calendarStart);

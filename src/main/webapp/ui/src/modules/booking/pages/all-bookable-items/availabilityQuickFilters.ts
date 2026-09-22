@@ -111,7 +111,7 @@ type AvailabilityCandidate = Pick<
   | "maxBookingDurationMinutes"
   | "allowDoubleBooking"
 >;
-type CandidateSearch = { q?: string; types?: readonly string[] };
+type CandidateSearch = { q?: string; types?: readonly string[]; mine?: boolean };
 
 export class AvailabilityCandidateLimitError extends Error {
   constructor() {
@@ -202,6 +202,7 @@ export function useAvailabilityQuickFilterIndex(
       candidateWhere,
       search.q,
       search.types,
+      search.mine,
     ],
     queryFn: ({ signal }) => fetchAvailabilityCandidates(token, signal, candidateWhere, search),
     enabled: queryEnabled,

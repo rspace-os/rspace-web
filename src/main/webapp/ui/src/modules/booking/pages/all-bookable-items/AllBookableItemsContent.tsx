@@ -1,6 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { CalendarClockIcon, CalendarPlusIcon, Clock3Icon, EyeIcon, PlusIcon, SettingsIcon } from "lucide-react";
+import {
+  CalendarClockIcon,
+  CalendarPlusIcon,
+  Clock3Icon,
+  EyeIcon,
+  PackageCheckIcon,
+  PlusIcon,
+  SettingsIcon,
+} from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
@@ -177,6 +185,7 @@ export function AllBookableItemsContent({
     date,
     availability: routeAvailability,
     target,
+    mine = false,
     where,
     q,
     types,
@@ -243,15 +252,16 @@ export function AllBookableItemsContent({
     candidateWhere,
     !runtimeFilterBlocked,
     currentUser.id,
-    { q, types },
+    { q, types, mine },
   );
   const quickFilterPending = usesAvailability && quickIndex.isPending;
   const quickFilterError = usesAvailability && quickIndex.isError;
   const serverFilter = resolveAvailabilityFilters(filters.expression, quickIndex.data);
   const serverWhere = serverFilter ? serializeRsqlExpression(serverFilter) : undefined;
   const catalogue = useQuery({
-    queryKey: ["api-v2", "booking-catalogue", "all-items", token, q, types, serverWhere, page, pageSize],
-    queryFn: ({ signal }) => fetchBookingCatalogue({ q, types, where: serverWhere, page, pageSize }, token, signal),
+    queryKey: ["api-v2", "booking-catalogue", "all-items", token, q, types, mine, serverWhere, page, pageSize],
+    queryFn: ({ signal }) =>
+      fetchBookingCatalogue({ q, types, mine, where: serverWhere, page, pageSize }, token, signal),
     enabled: !runtimeFilterBlocked && (!usesAvailability || quickIndex.data !== undefined),
     staleTime: 30_000,
   });
@@ -293,6 +303,7 @@ export function AllBookableItemsContent({
         date: undefined,
         availability: undefined,
         target: undefined,
+        mine: undefined,
         where: undefined,
         q: undefined,
         types: undefined,
@@ -482,34 +493,50 @@ export function AllBookableItemsContent({
         onDateChange={setDate}
       />
     ),
-    hasChanges: selectedDate !== userToday || Boolean(types?.length),
-    buttons: (["available-now", "free-later-today"] as const).map((mode) => ({
-      id: mode,
-      label: (
-        <>
-          {mode === "available-now"
-            ? t("allBookableItems.quickFilters.availableNow")
-            : t("allBookableItems.quickFilters.freeLaterToday")}
-          <span aria-hidden="true" className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background">
-            {quickIndex.isError ? (
-              "—"
-            ) : quickIndex.data ? (
-              [...quickIndex.data.values()].filter(({ category }) => category === mode).length
-            ) : (
-              <Skeleton className="h-3 w-3" />
-            )}
-          </span>
-        </>
-      ),
-      icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
-      pressed: quickMode === mode,
-      disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
-      onClick: () =>
-        setFilters({
-          ...filters,
-          expression: withAvailability(filters.expression, quickMode === mode ? undefined : mode),
-        }),
-    })),
+    hasChanges: selectedDate !== userToday || Boolean(types?.length) || mine,
+    buttons: [
+      {
+        id: "mine",
+        label: t("allBookableItems.quickFilters.myItems"),
+        icon: <PackageCheckIcon aria-hidden="true" />,
+        pressed: mine,
+        onClick: () =>
+          void navigate({
+            search: (current) => ({ ...current, mine: mine ? undefined : true, page: undefined }),
+            replace: true,
+          }),
+      },
+      ...(["available-now", "free-later-today"] as const).map((mode) => ({
+        id: mode,
+        label: (
+          <>
+            {mode === "available-now"
+              ? t("allBookableItems.quickFilters.availableNow")
+              : t("allBookableItems.quickFilters.freeLaterToday")}
+            <span
+              aria-hidden="true"
+              className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background"
+            >
+              {quickIndex.isError ? (
+                "—"
+              ) : quickIndex.data ? (
+                [...quickIndex.data.values()].filter(({ category }) => category === mode).length
+              ) : (
+                <Skeleton className="h-3 w-3" />
+              )}
+            </span>
+          </>
+        ),
+        icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
+        pressed: quickMode === mode,
+        disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
+        onClick: () =>
+          setFilters({
+            ...filters,
+            expression: withAvailability(filters.expression, quickMode === mode ? undefined : mode),
+          }),
+      })),
+    ],
     onReset: resetView,
   };
 

@@ -31,6 +31,35 @@ afterAll(() => {
 });
 
 describe("CalendarPage", () => {
+  it("filters calendar resources and events to My Items", async () => {
+    const catalogueRequests: URL[] = [];
+    const eventRequests: URL[] = [];
+    server.use(
+      http.get("/api/v2/openapi.json", () =>
+        HttpResponse.json({ paths: { ...bookableItemsOpenApi.paths, ...bookingsOpenApi.paths } }),
+      ),
+      ...bookableItemsHandlers((request) => {
+        const url = new URL(request.url);
+        if (url.pathname === "/api/v2/booking-catalogue/calendar") catalogueRequests.push(url);
+      }),
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", ({ request }) => {
+        eventRequests.push(new URL(request.url));
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+    const user = userEvent.setup();
+    await renderCalendar();
+
+    await user.click(await screen.findByRole("button", { name: "My Items" }));
+
+    await waitFor(() => {
+      expect(catalogueRequests.at(-1)?.searchParams.get("mine")).toBe("true");
+      expect(eventRequests.some((request) => request.searchParams.get("mine") === "true")).toBe(true);
+    });
+  });
+
   it("shows every bookable item by default when the period has no bookings", async () => {
     server.use(
       oauthTokenHandler(true),

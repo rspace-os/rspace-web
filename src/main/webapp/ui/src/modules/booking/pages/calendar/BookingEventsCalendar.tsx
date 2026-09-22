@@ -1,5 +1,5 @@
-import { CalendarCheck2Icon } from "lucide-react";
-import * as React from "react";
+import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
+import type * as React from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -102,6 +102,8 @@ export function BookingEventsCalendar({
   onEventFilterChange,
   mineOnly = false,
   onMineChange,
+  myItemsOnly = false,
+  onMyItemsChange,
   creationDisabled = false,
   onResourceRangeSelect,
 }: {
@@ -152,6 +154,8 @@ export function BookingEventsCalendar({
   onEventFilterChange?: (expression: FilterExpression<BookingListDocument> | null) => void;
   mineOnly?: boolean;
   onMineChange?: (mineOnly: boolean) => void;
+  myItemsOnly?: boolean;
+  onMyItemsChange?: (myItemsOnly: boolean) => void;
   creationDisabled?: boolean;
   onResourceRangeSelect?: (
     resource: BookableItemOption,
@@ -182,9 +186,11 @@ export function BookingEventsCalendar({
   };
   const eventScopeIsFiltered =
     mineOnly ||
+    myItemsOnly ||
     (eventFiltering !== false &&
       (eventFiltering.value.search.trim() !== "" || eventFiltering.value.expression !== null));
   const changeMine = (next: boolean) => onMineChange?.(next);
+  const changeMyItems = (next: boolean) => onMyItemsChange?.(next);
   const filterControls = (
     <CalendarFilterControls
       date={date}
@@ -243,7 +249,9 @@ export function BookingEventsCalendar({
             view !== "day" ||
             layout !== "resources" ||
             itemFilterExpression !== null ||
-            eventFilterExpression !== null,
+            eventFilterExpression !== null ||
+            mineOnly ||
+            myItemsOnly,
           buttons: [
             {
               id: "mine",
@@ -252,9 +260,17 @@ export function BookingEventsCalendar({
               pressed: mineOnly,
               onClick: () => changeMine(!mineOnly),
             },
+            {
+              id: "my-items",
+              label: t("calendar.quickFilters.myItems"),
+              icon: <PackageCheckIcon aria-hidden="true" />,
+              pressed: myItemsOnly,
+              onClick: () => changeMyItems(!myItemsOnly),
+            },
           ],
           onReset: () => {
             changeMine(false);
+            changeMyItems(false);
             onControlsReset();
           },
         }}

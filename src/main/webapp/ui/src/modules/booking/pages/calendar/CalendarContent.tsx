@@ -229,6 +229,7 @@ export function CalendarContent() {
   const [layout, setLayout] = React.useState<CalendarLayout>("resources");
   const [resettingControls, setResettingControls] = React.useState(false);
   const [mineOnly, setMineOnly] = React.useState(false);
+  const [myItemsOnly, setMyItemsOnly] = React.useState(false);
   const preferences = useBookingDisplayPreferences();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
@@ -396,6 +397,7 @@ export function CalendarContent() {
     calendarStart,
     calendarEnd,
     mineOnly,
+    myItemsOnly,
   ].join("|");
   const previousFilterScope = React.useRef(filterScopeSignature);
   const resourceScopeReady = previousFilterScope.current === filterScopeSignature;
@@ -415,6 +417,7 @@ export function CalendarContent() {
         itemWhereParameter,
         eventWhereParameter,
         calendarSearch,
+        myItemsOnly,
         target,
         filtersBlocked,
       ],
@@ -429,6 +432,7 @@ export function CalendarContent() {
             calendarStart,
             calendarEnd,
             eventWhere: eventWhereParameter,
+            mine: myItemsOnly,
             page: state.page.pageIndex + 1,
             pageSize: state.page.pageSize,
           },
@@ -475,7 +479,7 @@ export function CalendarContent() {
       (layout !== "resources" ||
         (resourceTable.tableProps.status !== "loading" && resourceTable.tableProps.status !== "refreshing")),
     currentUser.id,
-    { where: calendarEventWhereParameter, q: calendarSearch },
+    { where: calendarEventWhereParameter, q: calendarSearch, mine: myItemsOnly },
   );
   // Display filters must not change the events used to propose a free booking window.
   // Without an event filter/Search this uses the display query's cache, avoiding a second request.
@@ -548,6 +552,11 @@ export function CalendarContent() {
         setMineOnly(next);
         resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
       }}
+      myItemsOnly={myItemsOnly}
+      onMyItemsChange={(next) => {
+        setMyItemsOnly(next);
+        resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
+      }}
       isLoading={
         itemRuntimeFields.pending ||
         eventRuntimeFields.pending ||
@@ -571,6 +580,7 @@ export function CalendarContent() {
           await navigate({ search: (current) => ({ ...current, date: undefined, target: undefined }), replace: true });
           await Promise.all([setCalendarSearch(null), setItemWhere(null), setEventWhere(null)]);
           setMineOnly(false);
+          setMyItemsOnly(false);
           resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
           React.startTransition(() => {
             setView("day");

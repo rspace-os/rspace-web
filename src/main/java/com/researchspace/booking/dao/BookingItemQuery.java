@@ -26,6 +26,16 @@ public class BookingItemQuery {
 
   /** Builds a correlated item restriction for a trusted configuration target path. */
   public Predicate restriction(User user, boolean edit, boolean owner, String targetPath) {
+    return buildRestriction(
+        user, edit, owner && (user == null || !user.hasSysadminRole()), targetPath);
+  }
+
+  /** Builds a restriction for targets owned by the caller, including for sysadmins. */
+  public Predicate ownedBy(User user, String targetPath) {
+    return buildRestriction(user, false, true, targetPath);
+  }
+
+  private Predicate buildRestriction(User user, boolean edit, boolean owner, String targetPath) {
     if (user == null || !user.isEnabled() || user.isAccountLocked()) {
       return new Predicate("1 = 0", Map.of());
     }

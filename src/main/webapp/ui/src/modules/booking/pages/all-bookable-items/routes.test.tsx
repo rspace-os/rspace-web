@@ -42,4 +42,9 @@ describe("All Bookable Items route", () => {
       date: "2026-08-17",
     });
   });
+
+  it("keeps only an enabled My Items quick filter", () => {
+    expect(allBookableItemsSearch({ mine: true })).toEqual({ date: undefined, mine: true });
+    expect(allBookableItemsSearch({ mine: false })).toEqual({ date: undefined });
+  });
 });

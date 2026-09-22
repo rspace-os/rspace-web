@@ -753,6 +753,7 @@ export default interface Resources {
   "booking": {
     "access": {
       "allUsers": "All users",
+      "editInventoryPermissions": "To edit the permissions, <inventoryLink>go to the inventory item's settings</inventoryLink>.",
       "leave": "Leave configuration",
       "roles": {
         "booker": {
@@ -806,6 +807,7 @@ export default interface Resources {
         "legend": "Quick filters",
         "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
         "loading": "Finding bookable items…",
+        "myItems": "My Items",
         "retry": "Retry",
         "scope": "Availability uses the selected display date and timezone."
       },
@@ -1397,7 +1399,8 @@ export default interface Resources {
       "previousPeriod": "Previous {period}",
       "quickFilters": {
         "legend": "Booking event quick filters",
-        "mine": "My calendar"
+        "mine": "My calendar",
+        "myItems": "My Items"
       },
       "resourceSchedule": "Resource booking schedule",
       "retry": "Retry",
