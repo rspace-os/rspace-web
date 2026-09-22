@@ -102,7 +102,6 @@ export function BookingSettingsContent() {
             disabled={mutation.isPending}
           />
         </section>
-        {!displaySettingsValid ? <FieldError>{t("preferences.errors.invalid")}</FieldError> : null}
         {mutation.isError ? (
           <FieldError>
             {t(

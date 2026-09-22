@@ -40,12 +40,16 @@ intervals. Both event and availability caches are scoped to the caller.
 The preferences editor derives its initial input from the query cache. Once a user edits a field,
 it keeps that local draft across background refetches. Successful Save or Reset clears the draft
 and displays the saved query document.
+Invalid preference fields are marked with `aria-invalid` and linked to their validation
+message. A reversed availability window marks its end field; midnight remains a valid end.
 
 Booking forms resolve wall-clock input and scheduling policy synchronously with
 `validateBookingWindow`. The fields display validation results; they do not report a resolved
 window to the parent in an effect. Form state notifications use the latest callback without
 turning callback identity changes into draft changes, so mutation errors remain visible until
 the input changes.
+Forms explicitly label the display timezone and render conflict times in that same timezone,
+including when the item's scheduling timezone differs.
 
 Global display defaults are stored on the audited `BookingConfigurationDefaults` singleton. The
 initial values are `08:00`–`18:00`, Browser mode, and no custom timezone. A user override is one
@@ -124,6 +128,11 @@ reads retain the selected grid and known resource rows; detail fallbacks reserve
 the content and facts columns. Keep these placeholders aligned when changing a
 page layout. Availability-filter counts reserve space before their values arrive
 so they do not wrap the narrow-screen toolbar on completion.
+
+Before mounting the Booking shell or sidebar, AppShell waits for feature flags. Disabled or
+unavailable Booking flags redirect to `/workspace` without issuing Booking queries.
+Calendar, catalogue, and add-booking routes ignore malformed date parameters (including
+non-string values) and use their normal display-timezone defaults.
 
 The resource-week skeleton shares its date headers and column sizing with the
 loaded grid. It reserves four anonymous rows before the catalogue arrives, then

@@ -211,7 +211,6 @@ export function SchedulingSettingsFields({
   const maximumDuration = useField(form, { path: ["maxBookingDurationMinutes"] });
   const allowDoubleBooking = useField(form, { path: ["allowDoubleBooking"] });
   const values = getInput(form) as Partial<SchedulingSettings>;
-  const fullDay = values.openingStart === "00:00" && values.openingEnd === "24:00";
   const mixedBuffers = values.bufferBeforeMinutes !== values.bufferAfterMinutes;
   const openingInvalid =
     Boolean(values.openingStart && values.openingEnd) &&
@@ -242,18 +241,6 @@ export function SchedulingSettingsFields({
           <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
             <FieldLabel htmlFor={`${id}-opening-start`}>{t("bookableItemDetails.fields.openingHours")}</FieldLabel>
             <div className="space-y-3">
-              <Field orientation="horizontal">
-                <Checkbox
-                  id={`${id}-full-day`}
-                  checked={fullDay}
-                  disabled={disabled}
-                  onCheckedChange={(checked) => {
-                    openingStart.onChange(checked ? "00:00" : "08:00");
-                    openingEnd.onChange(checked ? "24:00" : "18:00");
-                  }}
-                />
-                <FieldLabel htmlFor={`${id}-full-day`}>{t("settings.fields.fullDay")}</FieldLabel>
-              </Field>
               <div className="grid gap-3 @sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor={`${id}-opening-start`}>{t("settings.fields.openingStart")}</FieldLabel>
@@ -262,7 +249,7 @@ export function SchedulingSettingsFields({
                     type="time"
                     step={60}
                     required
-                    disabled={disabled || fullDay}
+                    disabled={disabled}
                     value={typeof openingStart.input === "string" ? openingStart.input : ""}
                     ref={openingStart.props.ref}
                     onFocus={openingStart.props.onFocus}
@@ -279,15 +266,24 @@ export function SchedulingSettingsFields({
                     type="time"
                     step={60}
                     required
-                    disabled={disabled || fullDay}
-                    value={fullDay ? "" : typeof openingEnd.input === "string" ? openingEnd.input : ""}
+                    disabled={disabled}
+                    value={
+                      openingEnd.input === "24:00"
+                        ? "00:00"
+                        : typeof openingEnd.input === "string"
+                          ? openingEnd.input
+                          : ""
+                    }
                     ref={openingEnd.props.ref}
                     onFocus={openingEnd.props.onFocus}
                     onBlur={openingEnd.props.onBlur}
                     aria-invalid={openingEndInvalid || undefined}
                     aria-describedby={openingEndInvalid ? openingErrorId : undefined}
-                    onChange={(event) => openingEnd.onChange(event.currentTarget.value)}
+                    onChange={(event) =>
+                      openingEnd.onChange(event.currentTarget.value === "00:00" ? "24:00" : event.currentTarget.value)
+                    }
                   />
+                  <FieldDescription>{t("settings.fields.openingEndDescription")}</FieldDescription>
                 </Field>
               </div>
               {openingStartInvalid || openingEndInvalid ? (
@@ -446,18 +442,6 @@ export function SchedulingSettingsFields({
           ))}
         </select>
       </Field>
-      <Field orientation="horizontal">
-        <Checkbox
-          id={`${id}-full-day`}
-          checked={fullDay}
-          disabled={disabled}
-          onCheckedChange={(checked) => {
-            openingStart.onChange(checked ? "00:00" : "08:00");
-            openingEnd.onChange(checked ? "24:00" : "18:00");
-          }}
-        />
-        <FieldLabel htmlFor={`${id}-full-day`}>{t("settings.fields.fullDay")}</FieldLabel>
-      </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor={`${id}-opening-start`}>{t("settings.fields.openingStart")}</FieldLabel>
@@ -466,7 +450,7 @@ export function SchedulingSettingsFields({
             type="time"
             step={60}
             required
-            disabled={disabled || fullDay}
+            disabled={disabled}
             value={typeof openingStart.input === "string" ? openingStart.input : ""}
             ref={openingStart.props.ref}
             onFocus={openingStart.props.onFocus}
@@ -481,13 +465,18 @@ export function SchedulingSettingsFields({
             type="time"
             step={60}
             required
-            disabled={disabled || fullDay}
-            value={fullDay ? "" : typeof openingEnd.input === "string" ? openingEnd.input : ""}
+            disabled={disabled}
+            value={
+              openingEnd.input === "24:00" ? "00:00" : typeof openingEnd.input === "string" ? openingEnd.input : ""
+            }
             ref={openingEnd.props.ref}
             onFocus={openingEnd.props.onFocus}
             onBlur={openingEnd.props.onBlur}
-            onChange={(event) => openingEnd.onChange(event.currentTarget.value)}
+            onChange={(event) =>
+              openingEnd.onChange(event.currentTarget.value === "00:00" ? "24:00" : event.currentTarget.value)
+            }
           />
+          <FieldDescription>{t("settings.fields.openingEndDescription")}</FieldDescription>
         </Field>
       </div>
       {openingInvalid ? <FieldError>{t("settings.errors.openingHours")}</FieldError> : null}

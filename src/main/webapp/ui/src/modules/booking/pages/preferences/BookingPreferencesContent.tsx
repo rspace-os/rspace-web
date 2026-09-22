@@ -83,11 +83,6 @@ export function BookingPreferencesContent() {
           institutionTimezone={document.institutionTimezone}
           disabled={pending}
         />
-        {!valid ? (
-          <p role="alert" className="text-sm text-destructive">
-            {t("preferences.errors.invalid")}
-          </p>
-        ) : null}
         {replace.isError || reset.isError ? (
           <p role="alert" className="text-sm text-destructive">
             {t("preferences.errors.save")}

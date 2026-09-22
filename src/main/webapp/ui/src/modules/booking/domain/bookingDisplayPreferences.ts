@@ -34,11 +34,17 @@ export const BookingDisplayPreferencesInputSchema = v.pipe(
     timezoneMode: BookingTimezoneModeSchema,
     customTimezone: v.nullable(v.string()),
   }),
-  v.check((input) => minuteOfDay(input.availabilityWindowStart) < minuteOfDay(input.availabilityWindowEnd)),
-  v.check((input) =>
-    input.timezoneMode === "CUSTOM"
-      ? input.customTimezone !== null && isValidTimeZone(input.customTimezone)
-      : input.customTimezone === null,
+  v.forward(
+    v.check((input) => minuteOfDay(input.availabilityWindowStart) < minuteOfDay(input.availabilityWindowEnd)),
+    ["availabilityWindowEnd"],
+  ),
+  v.forward(
+    v.check((input) =>
+      input.timezoneMode === "CUSTOM"
+        ? input.customTimezone !== null && isValidTimeZone(input.customTimezone)
+        : input.customTimezone === null,
+    ),
+    ["customTimezone"],
   ),
 );
 
