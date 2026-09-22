@@ -48,90 +48,28 @@ class ResourceAccessControllerMVCIT {
   }
 
   @Test
-  void replacementUsesStrongEtagsAndRejectsForgedReadFields() throws Exception {
+  void ownerReadsInheritedAccessDocument() throws Exception {
     User owner = fixture.user();
-    User other = fixture.makeOwnerRoleVisibleTo(fixture.otherUser(), owner);
     long instrumentId = fixture.instrument(owner, fixture.marker());
     long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
     String path = accessPath(configurationId);
 
-    MvcResult initial =
-        mockMvc
-            .perform(get(path).header("apiKey", fixture.userKey()))
-            .andExpect(status().isOk())
-            .andExpect(header().string(HttpHeaders.ETAG, containsString("\"")))
-            .andExpect(jsonPath("$.scheme").value("booking-configurations"))
-            .andExpect(jsonPath("$.caller.capabilities.canManageAssignments").value(true))
-            .andExpect(jsonPath("$.caller.granteeKey").value("user:" + owner.getId()))
-            .andReturn();
-    String initialEtag = initial.getResponse().getHeader(HttpHeaders.ETAG);
-
     mockMvc
-        .perform(
-            put(path)
-                .header("apiKey", fixture.userKey())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(assignments(owner, other, true)))
-        .andExpect(status().isPreconditionRequired())
-        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.ifMatchRequired"));
-
-    mockMvc
-        .perform(
-            put(path)
-                .header("apiKey", fixture.userKey())
-                .header(HttpHeaders.IF_MATCH, initialEtag)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(assignments(owner, other, true)))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
-
-    MvcResult replaced =
-        mockMvc
-            .perform(
-                put(path)
-                    .header("apiKey", fixture.userKey())
-                    .header(HttpHeaders.IF_MATCH, initialEtag)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(assignments(owner, other, false)))
-            .andExpect(status().isOk())
-            .andExpect(
-                jsonPath("$.assignments[?(@.grantee.key == 'user:" + other.getId() + "')]")
-                    .exists())
-            .andReturn();
-    String currentEtag = replaced.getResponse().getHeader(HttpHeaders.ETAG);
-
-    mockMvc
-        .perform(
-            put(path)
-                .header("apiKey", fixture.userKey())
-                .header(HttpHeaders.IF_MATCH, initialEtag)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(assignments(owner, other, false)))
-        .andExpect(status().isPreconditionFailed())
-        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.stale"));
-
-    mockMvc
-        .perform(
-            put(path)
-                .header("apiKey", fixture.userKey())
-                .header(HttpHeaders.IF_MATCH, currentEtag)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"assignments":[
-                      {"granteeKey":"user:%d","role":"BOOKER"},
-                      {"granteeKey":"audience:all-users","role":"NO_ACCESS"}
-                    ]}
-                    """
-                        .formatted(owner.getId())))
-        .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.ownerRequired"));
+        .perform(get(path).header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(header().string(HttpHeaders.ETAG, containsString("\"")))
+        .andExpect(jsonPath("$.scheme").value("booking-configurations"))
+        .andExpect(jsonPath("$.inherited").value(true))
+        .andExpect(jsonPath("$.assignments.length()").value(0))
+        .andExpect(jsonPath("$.caller.capabilities.canManageAssignments").value(false))
+        .andExpect(jsonPath("$.caller.capabilities.canManageOwners").value(false))
+        .andExpect(jsonPath("$.caller.capabilities.canLeave").value(false))
+        .andExpect(jsonPath("$.caller.granteeKey").value("user:" + owner.getId()));
   }
 
   @Test
-  void lowerRoleCanLeaveWithoutReadingTheAccessDocument() throws Exception {
+  void inheritedAccessRejectsReplacementWithMatchingEtag() throws Exception {
     User owner = fixture.user();
-    User booker = fixture.makeOwnerRoleVisibleTo(fixture.otherUser(), owner);
     long instrumentId = fixture.instrument(owner, fixture.marker());
     long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
     String path = accessPath(configurationId);
@@ -139,6 +77,8 @@ class ResourceAccessControllerMVCIT {
         mockMvc
             .perform(get(path).header("apiKey", fixture.userKey()))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.inherited").value(true))
+            .andExpect(jsonPath("$.assignments.length()").value(0))
             .andReturn();
 
     mockMvc
@@ -147,92 +87,66 @@ class ResourceAccessControllerMVCIT {
                 .header("apiKey", fixture.userKey())
                 .header(HttpHeaders.IF_MATCH, initial.getResponse().getHeader(HttpHeaders.ETAG))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(assignments(owner, booker, false)))
-        .andExpect(status().isOk());
-
-    mockMvc
-        .perform(get(path).header("apiKey", fixture.otherUserKey()))
-        .andExpect(status().isForbidden());
-    mockMvc
-        .perform(delete(path + "/me").header("apiKey", fixture.otherUserKey()))
-        .andExpect(status().isNoContent());
+                .content("{\"assignments\":[]}"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.inheritedReadOnly"));
   }
 
   @Test
-  void managerCannotAssignAnOutOfDirectoryOrUnknownUser() throws Exception {
+  void readableUserCanReadInheritedAccessButCannotLeaveOrReplace() throws Exception {
     User owner = fixture.user();
-    User manager = fixture.makeOwnerRoleVisibleTo(fixture.otherUser(), owner);
-    User outsider = fixture.thirdUser();
+    User readable = fixture.makeOwnerRoleVisibleTo(fixture.otherUser(), owner);
     long instrumentId = fixture.instrument(owner, fixture.marker());
     long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
     String path = accessPath(configurationId);
-    String ownerEtag =
-        mockMvc
-            .perform(get(path).header("apiKey", fixture.userKey()))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getHeader(HttpHeaders.ETAG);
-
-    mockMvc
-        .perform(
-            put(path)
-                .header("apiKey", fixture.userKey())
-                .header(HttpHeaders.IF_MATCH, ownerEtag)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    assignments(
-                        new String[][] {
-                          {"user:" + owner.getId(), "OWNER"},
-                          {"user:" + manager.getId(), "MANAGER"}
-                        })))
-        .andExpect(status().isOk());
-    MvcResult managerDocument =
+    MvcResult readableDocument =
         mockMvc
             .perform(get(path).header("apiKey", fixture.otherUserKey()))
             .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.ETAG, containsString("\"")))
+            .andExpect(jsonPath("$.inherited").value(true))
+            .andExpect(jsonPath("$.assignments.length()").value(0))
+            .andExpect(jsonPath("$.caller.granteeKey").value("user:" + readable.getId()))
+            .andExpect(jsonPath("$.caller.capabilities.canManageAssignments").value(false))
+            .andExpect(jsonPath("$.caller.capabilities.canManageOwners").value(false))
+            .andExpect(jsonPath("$.caller.capabilities.canLeave").value(false))
             .andReturn();
-    String managerEtag = managerDocument.getResponse().getHeader(HttpHeaders.ETAG);
-    String forged =
-        assignments(
-            new String[][] {
-              {"user:" + owner.getId(), "OWNER"},
-              {"user:" + manager.getId(), "MANAGER"},
-              {"user:" + outsider.getId(), "BOOKER"}
-            });
 
     mockMvc
         .perform(
             put(path)
                 .header("apiKey", fixture.otherUserKey())
-                .header(HttpHeaders.IF_MATCH, managerEtag)
+                .header(
+                    HttpHeaders.IF_MATCH,
+                    readableDocument.getResponse().getHeader(HttpHeaders.ETAG))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(forged))
+                .content("{\"assignments\":[]}"))
         .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.forbidden"));
+        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.inheritedReadOnly"));
+
     mockMvc
-        .perform(
-            put(path)
-                .header("apiKey", fixture.otherUserKey())
-                .header(HttpHeaders.IF_MATCH, managerEtag)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(forged.replace("user:" + outsider.getId(), "user:999999999")))
+        .perform(delete(path + "/me").header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.forbidden"));
-    mockMvc
-        .perform(get(path).header("apiKey", fixture.otherUserKey()))
-        .andExpect(status().isOk())
-        .andExpect(header().string(HttpHeaders.ETAG, managerEtag))
-        .andExpect(jsonPath("$.assignments.length()").value(3));
-    mockMvc
-        .perform(
-            get("/api/v2/booking-configurations/" + configurationId)
-                .header("apiKey", fixture.thirdUserKey()))
-        .andExpect(status().isNotFound());
+        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.inheritedReadOnly"));
   }
 
   @Test
-  void archivedPrivateMutationIsConcealedBeforeLifecycleValidation() throws Exception {
+  void inheritedAccessDoesNotExposeGranteeDirectory() throws Exception {
+    User owner = fixture.user();
+    long instrumentId = fixture.instrument(owner, fixture.marker());
+    long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
+
+    mockMvc
+        .perform(
+            get(accessPath(configurationId) + "/grantees")
+                .queryParam("query", "us")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.forbidden"));
+  }
+
+  @Test
+  void inheritedAccessMutationRemainsReadOnlyAfterArchiving() throws Exception {
     User owner = fixture.user();
     long instrumentId = fixture.instrument(owner, fixture.marker());
     long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
@@ -240,20 +154,6 @@ class ResourceAccessControllerMVCIT {
     MvcResult initial =
         mockMvc
             .perform(get(path).header("apiKey", fixture.userKey()))
-            .andExpect(status().isOk())
-            .andReturn();
-    MvcResult restricted =
-        mockMvc
-            .perform(
-                put(path)
-                    .header("apiKey", fixture.userKey())
-                    .header(HttpHeaders.IF_MATCH, initial.getResponse().getHeader(HttpHeaders.ETAG))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        assignments(
-                            new String[][] {
-                              {"user:" + owner.getId(), "OWNER"},
-                            })))
             .andExpect(status().isOk())
             .andReturn();
     new TransactionTemplate(transactionManager)
@@ -267,15 +167,17 @@ class ResourceAccessControllerMVCIT {
     mockMvc
         .perform(
             put(path)
-                .header("apiKey", fixture.otherUserKey())
-                .header(HttpHeaders.IF_MATCH, restricted.getResponse().getHeader(HttpHeaders.ETAG))
+                .header("apiKey", fixture.userKey())
+                .header(HttpHeaders.IF_MATCH, initial.getResponse().getHeader(HttpHeaders.ETAG))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    assignments(
-                        new String[][] {
-                          {"user:" + owner.getId(), "OWNER"},
-                        })))
-        .andExpect(status().isNotFound());
+                .content("{\"assignments\":[]}"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.inheritedReadOnly"));
+
+    mockMvc
+        .perform(delete(path + "/me").header("apiKey", fixture.userKey()))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.inheritedReadOnly"));
   }
 
   @Test
@@ -315,28 +217,6 @@ class ResourceAccessControllerMVCIT {
                 .content("{\"assignments\":[" + grants + "]}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.assignmentLimit"));
-  }
-
-  private static String assignments(User owner, User booker, boolean forged) {
-    return """
-    {"assignments":[
-      {"granteeKey":"user:%d","role":"OWNER"},
-      {"granteeKey":"user:%d","role":"BOOKER"%s},
-      {"granteeKey":"audience:all-users","role":"NO_ACCESS"}
-    ]}
-    """
-        .formatted(owner.getId(), booker.getId(), forged ? ",\"name\":\"forged\"" : "");
-  }
-
-  private static String assignments(String[][] assignments) {
-    return "{\"assignments\":["
-        + java.util.Arrays.stream(assignments)
-            .map(
-                assignment ->
-                    "{\"granteeKey\":\"" + assignment[0] + "\",\"role\":\"" + assignment[1] + "\"}")
-            .collect(Collectors.joining(","))
-        + ",{\"granteeKey\":\"audience:all-users\",\"role\":\"NO_ACCESS\"}"
-        + "]}";
   }
 
   private static String accessPath(long configurationId) {

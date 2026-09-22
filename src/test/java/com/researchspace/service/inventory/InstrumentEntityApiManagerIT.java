@@ -25,9 +25,8 @@ import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
-import com.researchspace.service.resourceaccess.ResourceAccessDocument;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.util.Optional;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +35,6 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
 
   @Autowired private BookingConfigurationManager bookingConfigurationManager;
   @Autowired private BookingConfigurationProtectedResourceAccess bookingProtectedAccess;
-  @Autowired private ResourceAccessManager resourceAccessManager;
   @Autowired private InstrumentDao instrumentDao;
 
   @Test
@@ -248,18 +246,11 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
         instrumentApiMgr.changeApiInstrumentOwner(created, owner, owner, true);
 
     assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
-    ResourceAccessDocument access =
-        resourceAccessManager.get(bookingProtectedAccess, configuration.getId(), newOwner);
-    assertTrue(hasDirectRole(access, newOwner, BookingResourceRoleScheme.OWNER));
-    assertFalse(hasDirectRole(access, owner, BookingResourceRoleScheme.OWNER));
-  }
-
-  private boolean hasDirectRole(ResourceAccessDocument access, User user, String role) {
-    return access.assignments().stream()
-        .anyMatch(
-            assignment ->
-                assignment.role().equals(role)
-                    && assignment.grantee().detail().equals(user.getUsername()));
+    assertEquals(
+        Optional.of(BookingResourceRoleScheme.OWNER),
+        bookingProtectedAccess.resolveInherited(configuration, newOwner).effectiveRole());
+    assertTrue(
+        bookingProtectedAccess.resolveInherited(configuration, owner).effectiveRole().isEmpty());
   }
 
   @Test
