@@ -47,6 +47,18 @@ class LinkTargetResolverImplTest {
     user = new User("any");
   }
 
+  /** Stubs the retriever to return a readable record whose own oid matches the requested id. */
+  private InventoryRecord givenReadableInventoryRecord(String globalId) {
+    InventoryRecord record = mock(InventoryRecord.class);
+    when(record.getOid()).thenReturn(new GlobalIdentifier(globalId));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(record);
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(eq(record), eq(user)))
+        .thenReturn(true);
+    return record;
+  }
+
   @Test
   void resolutionAppliesPendingPermissionCacheRefreshBeforeChecking() {
     // an unshare notifies the affected user to refresh their cached Shiro
@@ -65,8 +77,7 @@ class LinkTargetResolverImplTest {
 
   @Test
   void inventoryResolutionAlsoAppliesPendingPermissionCacheRefreshFirst() {
-    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
-        .thenReturn(true);
+    givenReadableInventoryRecord("SA42");
 
     resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user);
 
@@ -74,41 +85,41 @@ class LinkTargetResolverImplTest {
     inOrder.verify(permissionUtils).refreshCacheIfNotified();
     inOrder
         .verify(inventoryPermissionUtils)
-        .canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user));
+        .getInvRecByGlobalIdOrThrowNotFoundException(any(GlobalIdentifier.class));
   }
 
   @Test
   void inventoryTargetReadableResolvesTrue() {
-    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
-        .thenReturn(true);
+    givenReadableInventoryRecord("SA42");
 
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user));
   }
 
   @Test
   void instrumentTargetResolvesThroughInventoryReadabilityCheck() {
-    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
-        .thenReturn(true);
+    givenReadableInventoryRecord("IN42");
 
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("IN42"), user));
 
     ArgumentCaptor<GlobalIdentifier> gid = ArgumentCaptor.forClass(GlobalIdentifier.class);
-    verify(inventoryPermissionUtils).canUserReadInventoryRecord(gid.capture(), eq(user));
+    verify(inventoryPermissionUtils).getInvRecByGlobalIdOrThrowNotFoundException(gid.capture());
     assertEquals(GlobalIdPrefix.IN, gid.getValue().getPrefix());
   }
 
   @Test
   void instrumentTemplateTargetResolvesThroughInventoryReadabilityCheck() {
-    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
-        .thenReturn(true);
+    givenReadableInventoryRecord("NT42");
 
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NT42"), user));
   }
 
   @Test
   void inventoryTargetNotReadableResolvesFalse() {
-    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
-        .thenReturn(false);
+    InventoryRecord record = mock(InventoryRecord.class);
+    when(record.getOid()).thenReturn(new GlobalIdentifier("SA42"));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(record);
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user));
   }
@@ -119,8 +130,11 @@ class LinkTargetResolverImplTest {
     // view of items, but that must never be enough to link to them: the
     // resolver consults the full READ check only, so an unreadable target is
     // rejected exactly like a missing one and existence is not disclosed
-    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
-        .thenReturn(false);
+    InventoryRecord record = mock(InventoryRecord.class);
+    when(record.getOid()).thenReturn(new GlobalIdentifier("SA42"));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(record);
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user));
     verify(inventoryPermissionUtils, never())
@@ -129,7 +143,8 @@ class LinkTargetResolverImplTest {
 
   @Test
   void inventoryTargetNotFoundResolvesFalse() {
-    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
         .thenThrow(new NotFoundException("no such record"));
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA9999"), user));
@@ -260,6 +275,36 @@ class LinkTargetResolverImplTest {
 
     assertFalse(resolver.targetIsLiveAndReadable(new GlobalIdentifier("SA90"), user));
     assertTrue(resolver.readableInventoryTarget(new GlobalIdentifier("SA90"), user).isPresent());
+  }
+
+  @Test
+  void existsAndReadableMustMatchRequestedPrefixNotJustDbId() {
+    // this method gates link CREATION and findReferencingItems, so resolving by number alone let
+    // a readable sample SA90 authorise a link to an IT90 that does not exist
+    InventoryRecord sample = mock(InventoryRecord.class);
+    when(sample.getOid()).thenReturn(new GlobalIdentifier("SA90"));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(sample);
+
+    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("IT90"), user));
+  }
+
+  @Test
+  void existsAndReadableStaysTrueForAReadableSoftDeletedRecord() {
+    // deliberately deleted-tolerant: only targetIsLiveAndReadable adds the not-deleted filter,
+    // so a trashed target the actor can read is still a legitimate link target here
+    InventoryRecord sample = mock(InventoryRecord.class);
+    when(sample.getOid()).thenReturn(new GlobalIdentifier("SA90"));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(sample);
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(eq(sample), eq(user)))
+        .thenReturn(true);
+
+    // the deleted flag is never consulted on this path, which is the contract being pinned
+    assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA90"), user));
+    verify(sample, never()).isDeleted();
   }
 
   @Test

@@ -20,6 +20,8 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
@@ -41,6 +43,7 @@ class LinkTargetSnapshotResolverImplTest {
 
   @Mock private AuditManager auditManager;
   @Mock private LinkTargetResolver linkTargetResolver;
+  @Mock private IPermissionUtils permissionUtils;
   @Mock private User user;
   @InjectMocks private LinkTargetSnapshotResolverImpl resolver;
 
@@ -293,6 +296,56 @@ class LinkTargetSnapshotResolverImplTest {
   }
 
   @Test
+  void resolveSummaryNeverRunsTheThrowingElnLookupForANonOwnerWithASnapshot() {
+    // the ELN live lookup goes BaseRecordManager -> FolderManager, whose folderDao.get,
+    // assertUserHasReadPermission and assertNotDeleted all throw inside transactional proxies.
+    // Catching that is not enough: the caller's transaction is already rollback-only, so
+    // getTargetSummary fails at commit instead of returning this redacted summary, and the card
+    // then leaves Open enabled on a target it could not resolve. Permission is decided from the
+    // snapshot we already hold instead.
+    Folder notebook = mock(Folder.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(notebook.getOwner()).thenReturn(owner);
+    when(auditManager.getNewestRevisionForEntity(Folder.class, 7L))
+        .thenReturn(new AuditedEntity<>(notebook, 12));
+    when(user.getUsername()).thenReturn("bob");
+    when(permissionUtils.isPermitted(notebook, PermissionType.READ, user)).thenReturn(false);
+
+    ApiInventoryLinkTargetSummary s =
+        resolver.resolveSummary(GlobalIdPrefix.NB, 7L, null, null, user);
+
+    assertEquals("NB7", s.getGlobalId());
+    assertNull(s.getName());
+    assertNull(s.getType());
+    assertFalse(s.isReadable());
+    assertFalse(s.isDeleted());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+    verify(linkTargetResolver, never()).targetIsLiveAndReadable(any(), any());
+  }
+
+  @Test
+  void resolveSummaryShowsASnapshotBackedElnTargetTheViewerMayRead() {
+    Folder notebook = mock(Folder.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(notebook.getOwner()).thenReturn(owner);
+    when(notebook.getName()).thenReturn("Shared notebook");
+    when(auditManager.getNewestRevisionForEntity(Folder.class, 7L))
+        .thenReturn(new AuditedEntity<>(notebook, 12));
+    when(user.getUsername()).thenReturn("bob");
+    when(permissionUtils.isPermitted(notebook, PermissionType.READ, user)).thenReturn(true);
+
+    ApiInventoryLinkTargetSummary s =
+        resolver.resolveSummary(GlobalIdPrefix.NB, 7L, null, null, user);
+
+    assertEquals("Shared notebook", s.getName());
+    assertEquals("NOTEBOOK", s.getType());
+    assertTrue(s.isReadable());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+  }
+
+  @Test
   void resolveSummaryDegradesToGlobalIdOnlyForUnsupportedPrefix() {
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.FL, 7L, null, null, user);
@@ -386,7 +439,6 @@ class LinkTargetSnapshotResolverImplTest {
     when(auditManager.getNewestRevisionForEntity(StructuredDocument.class, 10L))
         .thenReturn(null)
         .thenReturn(new AuditedEntity<>(rec, 120));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
     when(user.getUsername()).thenReturn("bob");
 
     ApiInventoryLinkTargetSummary nonexistent =
@@ -406,7 +458,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(doc.isDeleted()).thenReturn(false);
     when(auditManager.getNewestRevisionForEntity(StructuredDocument.class, 42L))
         .thenReturn(new AuditedEntity<>(doc, 5));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(permissionUtils.isPermitted(doc, PermissionType.READ, user)).thenReturn(true);
 
     ApiInventoryLinkTargetSummary s =
         resolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, user);

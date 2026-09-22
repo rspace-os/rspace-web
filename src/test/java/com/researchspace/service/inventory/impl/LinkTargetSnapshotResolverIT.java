@@ -3,12 +3,15 @@ package com.researchspace.service.inventory.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.record.Notebook;
+import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
@@ -31,6 +34,7 @@ public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase 
 
   private @Autowired LinkTargetSnapshotResolver snapshotResolver;
   private @Autowired InventoryLinkManager linkManager;
+  private @Autowired RecordDeletionManager recordDeletionMgr;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -187,5 +191,49 @@ public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase 
 
     assertEquals("NB99999999", summary.getGlobalId());
     assertFalse(summary.isReadable(), "a target that cannot be resolved stays redacted");
+  }
+
+  /**
+   * RSDEV-1354: an ELN target must never be resolved through the live lookup for a non-owner. That
+   * lookup runs BaseRecordManager -> FolderManager, whose read-permission and not-deleted
+   * assertions both throw inside transactional proxies, marking the caller's transaction
+   * rollback-only even when the exception is caught. {@code getTargetSummary} then failed at commit
+   * with {@code UnexpectedRollbackException} rather than returning the redacted summary, and the
+   * card, having received nothing, rendered no pill and left Open enabled. Verified against a
+   * running instance before the fix: a non-owner got HTTP 500 for this notebook whether or not it
+   * was deleted.
+   */
+  @Test
+  public void reportsAnotherUsersNotebookAsRedactedWithoutPoisoningTheTransaction()
+      throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    Notebook notebook =
+        createNotebookWithNEntries(
+            folderMgr.getRootFolderForUser(owner).getId(), "owner's notebook", 0, owner);
+    User viewer = createInitAndLoginAnyUser();
+
+    ApiInventoryLinkTargetSummary summary =
+        linkManager.getTargetSummary(notebook.getGlobalIdentifier(), viewer);
+
+    assertEquals(notebook.getGlobalIdentifier(), summary.getGlobalId());
+    assertFalse(summary.isReadable(), "a notebook the viewer cannot read stays redacted");
+    assertNull(summary.getName(), "and never discloses its name");
+  }
+
+  /** As above, for the soft-deleted notebook codex reported: the not-deleted assertion throws. */
+  @Test
+  public void reportsAnotherUsersDeletedNotebookAsRedactedWithoutPoisoningTheTransaction()
+      throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    Long rootId = folderMgr.getRootFolderForUser(owner).getId();
+    Notebook notebook = createNotebookWithNEntries(rootId, "owner's doomed notebook", 0, owner);
+    recordDeletionMgr.deleteFolder(rootId, notebook.getId(), owner);
+    User viewer = createInitAndLoginAnyUser();
+
+    ApiInventoryLinkTargetSummary summary =
+        linkManager.getTargetSummary(notebook.getGlobalIdentifier(), viewer);
+
+    assertFalse(summary.isReadable(), "a deleted notebook the viewer cannot read stays redacted");
+    assertNull(summary.getName());
   }
 }

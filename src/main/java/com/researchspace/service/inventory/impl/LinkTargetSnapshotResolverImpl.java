@@ -13,6 +13,8 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
@@ -33,6 +35,7 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
 
   @Autowired private AuditManager auditManager;
   @Autowired private LinkTargetResolver linkTargetResolver;
+  @Autowired private IPermissionUtils permissionUtils;
 
   @Override
   public Long resolveRevisionForVersion(GlobalIdPrefix prefix, Long dbId, Long version) {
@@ -120,15 +123,22 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
 
   /**
    * Read permission for the target snapshot. The snapshot owner is checked first because a user can
-   * always read their own record, deleted or not, and that check cannot throw. This matters for a
-   * soft-deleted folder/notebook: the live readability lookup loads the folder with
-   * includeDeleted=false and throws (the document branch returns deleted records, but the folder
-   * branch does not). Because that lookup runs through a transactional {@code *Manager}, the throw
-   * marks the summary's transaction rollback-only even though it is caught, 500ing the summary
-   * endpoint so the link card shows no "Target deleted" pill and keeps Open. Short-circuiting on
-   * the owner avoids the throwing call for the owner (who deleted the notebook in the reported
-   * case). Non-owners still go through the live check, which also covers shared, still-live
-   * targets.
+   * always read their own record, deleted or not, and that check cannot throw.
+   *
+   * <p>For a non-owner, ELN targets are decided from the snapshot itself rather than by reloading
+   * the record. The live lookup runs BaseRecordManager -> FolderManager, whose folderDao.get,
+   * assertUserHasReadPermission and assertNotDeleted all throw, and all sit behind transactional
+   * {@code *Manager} proxies: catching the exception is not enough, because the summary's
+   * transaction is already marked rollback-only and getTargetSummary then fails at commit with
+   * UnexpectedRollbackException. The card, having got no summary at all, renders no pill and leaves
+   * Open enabled, so the endpoint fails open. Both an unreadable notebook (the permission assertion
+   * throws) and a readable soft-deleted one (the not-deleted assertion throws) hit this. {@link
+   * IPermissionUtils#isPermitted} evaluates the same READ grant against the snapshot with no
+   * manager call, so nothing can poison the transaction. It reads sharing as the snapshot captured
+   * it, which is the deliberate trade for an endpoint that must not 500.
+   *
+   * <p>Inventory targets keep the live check: their lookup throws only its own NotFoundException,
+   * from non-transactional components, so it is safe to consult and reflects current sharing.
    */
   private boolean isReadable(GlobalIdPrefix prefix, Long dbId, Object entity, User user) {
     User owner = ownerOf(entity);
@@ -137,6 +147,10 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
         && owner.getUsername() != null
         && owner.getUsername().equals(user.getUsername())) {
       return true;
+    }
+    if (!isInventoryPrefix(prefix)) {
+      return entity instanceof BaseRecord baseRecord
+          && permissionUtils.isPermitted(baseRecord, PermissionType.READ, user);
     }
     GlobalIdentifier baseGid = new GlobalIdentifier(prefix, dbId);
     return linkTargetResolver.targetExistsAndIsReadable(baseGid, user);

@@ -59,7 +59,11 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
         target.hasVersionId() ? new GlobalIdentifier(target.getPrefix(), target.getDbId()) : target;
     GlobalIdPrefix prefix = base.getPrefix();
     if (INVENTORY_PREFIXES.contains(prefix)) {
-      return isInventoryReadable(base, user);
+      // deliberately deleted-tolerant: a trashed target the actor can read is still a legitimate
+      // link target, and only targetIsLiveAndReadable adds the not-deleted filter. The shared
+      // helper supplies the type-exact check this method needs just as much, since it gates link
+      // creation and findReferencingItems.
+      return readableInventoryRecord(base, user).isPresent();
     }
     if (ELN_BASE_RECORD_PREFIXES.contains(prefix)) {
       return isElnReadable(base, user);
@@ -115,14 +119,6 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
           : Optional.empty();
     } catch (NotFoundException e) {
       return Optional.empty();
-    }
-  }
-
-  private boolean isInventoryReadable(GlobalIdentifier target, User user) {
-    try {
-      return inventoryPermissionUtils.canUserReadInventoryRecord(target, user);
-    } catch (NotFoundException e) {
-      return false;
     }
   }
 
