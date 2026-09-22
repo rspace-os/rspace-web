@@ -1,5 +1,5 @@
 import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -13,7 +13,12 @@ import { Button } from "@/modules/common/ui/button";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
-import { CalendarFilterIssue, type CalendarFilterIssueState } from "./CalendarFilterPanels";
+import {
+  CalendarFilterButtons,
+  CalendarFilterIssue,
+  type CalendarFilterIssueState,
+  CalendarFilterPanel,
+} from "./CalendarFilterPanels";
 import { CalendarResourceSchedule, ResourceScheduleSkeleton } from "./CalendarResourceSchedule";
 import { CalendarTimeGrid } from "./CalendarTimeGrid";
 import type { BookingCalendarResource, CalendarLayout, CalendarView } from "./calendarLayoutUtils";
@@ -191,17 +196,42 @@ export function BookingEventsCalendar({
       (eventFiltering.value.search.trim() !== "" || eventFiltering.value.expression !== null));
   const changeMine = (next: boolean) => onMineChange?.(next);
   const changeMyItems = (next: boolean) => onMyItemsChange?.(next);
+  const [openFilterPanel, setOpenFilterPanel] = React.useState<"items" | null>(null);
   const filterControls = (
-    <CalendarFilterControls
-      date={date}
-      view={view}
-      layout={layout}
-      timezone={timezone}
-      today={todayValue}
-      onDateChange={onDateChange}
-      onViewChange={onViewChange}
-      onLayoutChange={onLayoutChange}
-    />
+    <>
+      <CalendarFilterControls
+        date={date}
+        view={view}
+        layout={layout}
+        timezone={timezone}
+        today={todayValue}
+        onDateChange={onDateChange}
+        onViewChange={onViewChange}
+        onLayoutChange={onLayoutChange}
+      />
+      {itemFilterConfig ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <CalendarFilterButtons
+            kind="items"
+            expression={itemFilterExpression}
+            active={openFilterPanel === "items"}
+            onClick={() => setOpenFilterPanel((current) => (current === "items" ? null : "items"))}
+          />
+          {openFilterPanel === "items" ? (
+            <CalendarFilterPanel
+              kind="items"
+              config={itemFilterConfig}
+              expression={itemFilterExpression}
+              onApply={onItemFilterChange ?? (() => undefined)}
+              onSelectRuntimeField={onSelectItemRuntimeField}
+              runtimeFieldDefinitions={itemRuntimeFieldDefinitions}
+              runtimeFieldAuthScope={itemRuntimeFieldAuthScope}
+              onClose={() => setOpenFilterPanel(null)}
+            />
+          ) : null}
+        </div>
+      ) : null}
+    </>
   );
   return (
     <main className="min-h-screen w-full min-w-0 space-y-5 overflow-hidden bg-background p-4 sm:p-8">

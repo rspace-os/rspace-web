@@ -166,7 +166,9 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const conflicts = availabilityViolation
     ? bookingConflicts(availability.data?.get(availabilityTarget?.globalId ?? "") ?? [], preferences.timeZone)
     : [];
-  const conflictBlocksSubmission = availabilityViolation && !availabilityTarget?.allowDoubleBooking;
+  const maintenanceConflict = conflicts.some(({ kind }) => kind === "MAINTENANCE");
+  const conflictBlocksSubmission =
+    availabilityViolation && (maintenanceConflict || !availabilityTarget?.allowDoubleBooking);
 
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
@@ -246,7 +248,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
                   : undefined
             }
             conflicts={conflicts}
-            conflictSeverity={availabilityTarget?.allowDoubleBooking ? "warning" : "error"}
+            conflictSeverity={availabilityTarget?.allowDoubleBooking && !maintenanceConflict ? "warning" : "error"}
             outcomeUncertain={isBookingCreationOutcomeUncertain(mutation.error)}
             submissionBlocked={
               checkingAvailability ||

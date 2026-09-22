@@ -1,4 +1,4 @@
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -220,6 +220,7 @@ export function CalendarContent() {
   const { t } = useTranslation("booking");
   const { date, target } = useSearch({ from: "/booking/calendar" });
   const navigate = useNavigate({ from: "/booking/calendar" });
+  const location = useLocation();
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
@@ -570,9 +571,11 @@ export function CalendarContent() {
           void events.refetch();
         }
       }}
-      onDateChange={(nextDate) =>
-        void navigate({ search: (current) => ({ ...current, date: nextDate }), replace: true })
-      }
+      onDateChange={(nextDate) => {
+        const search = new URLSearchParams(location.searchStr);
+        search.set("date", nextDate);
+        void navigate({ to: `${location.pathname}?${search.toString()}`, replace: true });
+      }}
       onControlsReset={async () => {
         // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
         setResettingControls(true);

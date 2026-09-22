@@ -40,7 +40,7 @@ public class BookingItemQuery {
       return new Predicate("1 = 0", Map.of());
     }
     FilterExpression constraint = inventory.constraint(user, edit);
-    if (owner && !user.hasSysadminRole()) {
+    if (owner) {
       constraint =
           new FilterExpression.And(
               List.of(
