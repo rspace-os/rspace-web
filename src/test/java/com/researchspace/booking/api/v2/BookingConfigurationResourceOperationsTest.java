@@ -164,6 +164,7 @@ class BookingConfigurationResourceOperationsTest {
     assertEquals(List.of(), operations.find(request, actor).resources());
     assertEquals(0, operations.count(request, actor));
     assertEquals(Optional.empty(), operations.findById(42L, actor));
+    assertEquals(Optional.empty(), operations.findByIdForAudit(42L, actor));
     ApiV2Caller caller = ApiV2Caller.direct(actor);
     assertThrows(AuthorizationException.class, () -> operations.create(document, caller));
     assertThrows(

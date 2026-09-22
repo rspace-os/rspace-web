@@ -23,9 +23,11 @@ import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.dao.AuditDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
@@ -69,9 +71,12 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 class BookingConfigurationManagerTest {
+
+  private final AuditDao auditDao = mock(AuditDao.class);
 
   private final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
   private final BookingConfigurationDefaultsDao defaultsDao =
@@ -101,6 +106,7 @@ class BookingConfigurationManagerTest {
 
   @BeforeEach
   void setUp() {
+    ReflectionTestUtils.setField(manager, "auditDao", auditDao);
     when(actor.hasSysadminRole()).thenReturn(true);
     when(actor.isEnabled()).thenReturn(true);
     when(actor.getId()).thenReturn(1L);
@@ -150,6 +156,29 @@ class BookingConfigurationManagerTest {
     validator.setValidationMessageSource(new JsonMessageSource());
     validator.afterPropertiesSet();
     return validator;
+  }
+
+  @Test
+  void onlySysadminCanResolveDeletedConfigurationForAudit() {
+    BookingConfiguration deleted = configuration(42L, 11L);
+    when(auditDao.getNewestRevisionForEntity(BookingConfiguration.class, 42L))
+        .thenReturn(new AuditedEntity<>(deleted, 1));
+
+    assertEquals(Optional.of(deleted), manager.getConfigurationForAudit(42L, actor));
+    assertTrue(manager.getConfiguration(42L, actor).isEmpty());
+
+    when(actor.hasSysadminRole()).thenReturn(false);
+    assertTrue(manager.getConfigurationForAudit(42L, actor).isEmpty());
+    verify(auditDao, times(1)).getNewestRevisionForEntity(BookingConfiguration.class, 42L);
+  }
+
+  @Test
+  void auditDoesNotRecoverAnUnreadableLiveConfiguration() {
+    BookingConfiguration unreadable = configuration(42L, 11L);
+    when(dao.getSafeNull(42L)).thenReturn(Optional.of(unreadable));
+
+    assertTrue(manager.getConfigurationForAudit(42L, actor).isEmpty());
+    verify(auditDao, never()).getNewestRevisionForEntity(any(), any());
   }
 
   @Test

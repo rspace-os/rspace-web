@@ -11,6 +11,15 @@ item access. The response redacts the item and configuration relationship;
 the UI displays "Unknown item". This does not permit editing, cancellation,
 item-property filtering, audit access or reading other users' bookings.
 
+Audit permission checks use a read transaction to resolve current Inventory
+access; the subsequent audit-file scan does not hold that transaction open.
+After permanent configuration deletion, a sysadmin can use the audit endpoint
+through the last retained Envers revision while the target Inventory item is
+still available. Former owners cannot use this route to recover deleted data,
+and ordinary configuration reads continue to return 404. Audit results retain
+the existing completed-day snapshot boundary, so today's changes appear after
+the next UTC day boundary.
+
 The generic REST API v2 access routes and editable component remain in place.
 Booking access documents report `inherited: true`, derived caller capabilities
 and no independent assignments. The access component explains the Inventory

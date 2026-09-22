@@ -24,9 +24,15 @@ import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator;
 import org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator;
+import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -57,6 +63,11 @@ public class ShiroAnnotationAdviceWeavingTest {
     public String createForm() {
       return "created";
     }
+  }
+
+  @Transactional
+  static class ConcreteTransactionalService {
+    public void create() {}
   }
 
   /** Authorization-only realm: subjects are built directly, no login step. */
@@ -104,7 +115,10 @@ public class ShiroAnnotationAdviceWeavingTest {
   }
 
   @Test
-  public void annotatedBeanIsProxiedByTheAdvisor() {
+  public void annotatedBeanIsProxiedByTheAdvisor() throws Exception {
+    assertTrue(
+        securityXmlUsesClassBasedProxying(),
+        "security.xml must keep the outer advisor proxy class-based for concrete service beans");
     assertTrue(
         AopUtils.isAopProxy(context.getBean(GuardedService.class)),
         "the @RequiresPermissions bean was not proxied: annotation advice is not being woven");
@@ -120,6 +134,41 @@ public class ShiroAnnotationAdviceWeavingTest {
   public void privilegedSubjectPassesTheGuard() {
     GuardedService service = context.getBean(GuardedService.class);
     runAs("privileged", () -> assertEquals("created", service.createForm()));
+  }
+
+  @Test
+  public void bothAutoProxyCreatorsKeepConcreteTransactionalBeansAssignable() {
+    AnnotationConfigApplicationContext proxyContext = new AnnotationConfigApplicationContext();
+    try {
+      proxyContext.registerBean(
+          "transactionAdvisor",
+          BeanFactoryTransactionAttributeSourceAdvisor.class,
+          () -> {
+            BeanFactoryTransactionAttributeSourceAdvisor advisor =
+                new BeanFactoryTransactionAttributeSourceAdvisor();
+            advisor.setTransactionAttributeSource(new AnnotationTransactionAttributeSource());
+            advisor.setAdvice(new TransactionInterceptor());
+            return advisor;
+          });
+      proxyContext.registerBean(
+          "annotationProxyCreator", AnnotationAwareAspectJAutoProxyCreator.class);
+      proxyContext.registerBean(
+          "securityProxyCreator",
+          DefaultAdvisorAutoProxyCreator.class,
+          () -> {
+            DefaultAdvisorAutoProxyCreator creator = new DefaultAdvisorAutoProxyCreator();
+            creator.setProxyTargetClass(true);
+            return creator;
+          });
+      proxyContext.registerBean(ConcreteTransactionalService.class);
+      proxyContext.refresh();
+
+      Object service = proxyContext.getBean(ConcreteTransactionalService.class);
+      assertTrue(AopUtils.isCglibProxy(service));
+      assertTrue(service instanceof ConcreteTransactionalService);
+    } finally {
+      proxyContext.close();
+    }
   }
 
   private void runAs(String principal, Runnable assertion) {
@@ -154,6 +203,28 @@ public class ShiroAnnotationAdviceWeavingTest {
       }
     }
     return classes;
+  }
+
+  private static boolean securityXmlUsesClassBasedProxying() throws Exception {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setNamespaceAware(true);
+    Document doc = factory.newDocumentBuilder().parse(SECURITY_XML.toFile());
+    NodeList beans = doc.getElementsByTagNameNS("*", "bean");
+    for (int i = 0; i < beans.getLength(); i++) {
+      Element bean = (Element) beans.item(i);
+      if (!AbstractAdvisorAutoProxyCreator.class.isAssignableFrom(
+          Class.forName(bean.getAttribute("class")))) {
+        continue;
+      }
+      NodeList properties = bean.getElementsByTagNameNS("*", "property");
+      for (int j = 0; j < properties.getLength(); j++) {
+        Element property = (Element) properties.item(j);
+        if ("proxyTargetClass".equals(property.getAttribute("name"))) {
+          return Boolean.parseBoolean(property.getAttribute("value"));
+        }
+      }
+    }
+    return false;
   }
 
   private static Class<?> exactlyOneAssignableTo(List<Class<?>> declared, Class<?> contract) {

@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Resolves Booking access from the current Inventory permission of its target item. */
 @Component
@@ -55,6 +56,7 @@ public class BookingItemPermissions {
   }
 
   /** Resolves one configuration against the target item's current permission state. */
+  @Transactional(readOnly = true)
   public ResolvedResourceAccess resolve(BookingConfiguration configuration, User subject) {
     if (!eligibleSubject(subject) || configuration == null || configuration.getTarget() == null) {
       return ResolvedResourceAccess.none();

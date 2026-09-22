@@ -4,8 +4,10 @@ import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
+import com.researchspace.dao.AuditDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -54,6 +56,8 @@ import org.springframework.stereotype.Service;
 /** Shared domain module for reading and changing booking configurations. */
 @Service("bookingConfigurationManager")
 public class BookingConfigurationManagerImpl implements BookingConfigurationManager {
+
+  @Autowired private AuditDao auditDao;
 
   private final BookingConfigurationDao bookingConfigurationDao;
   private final BookingConfigurationDefaultsDao defaultsDao;
@@ -132,6 +136,18 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
             .findFirst();
     configuration.ifPresent(value -> prepareAccessProjection(List.of(value), actor));
     return configuration;
+  }
+
+  @Override
+  public Optional<BookingConfiguration> getConfigurationForAudit(Long id, User actor) {
+    Optional<BookingConfiguration> current = getConfiguration(id, actor);
+    if (current.isPresent()
+        || !actor.hasSysadminRole()
+        || bookingConfigurationDao.getSafeNull(id).isPresent()) {
+      return current;
+    }
+    return Optional.ofNullable(auditDao.getNewestRevisionForEntity(BookingConfiguration.class, id))
+        .map(AuditedEntity::getEntity);
   }
 
   private ResourceRequest authorizeRead(ResourceRequest request, User actor) {

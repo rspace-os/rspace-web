@@ -69,6 +69,12 @@ public interface BookingConfigurationManager {
   /** Finds one configuration without throwing when it is absent. */
   Optional<BookingConfiguration> getConfiguration(Long id, User actor);
 
+  /**
+   * Finds a readable configuration for audit, including its last retained revision for a sysadmin
+   * after permanent deletion. Ordinary reads and former owners cannot recover deleted resources.
+   */
+  Optional<BookingConfiguration> getConfigurationForAudit(Long id, User actor);
+
   /** Creates as {@code subject}, retaining the originating {@code actor} for audit. */
   BookingConfiguration createConfiguration(Create create, User subject, User actor);
 

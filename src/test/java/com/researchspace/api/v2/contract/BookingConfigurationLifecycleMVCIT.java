@@ -63,6 +63,12 @@ class BookingConfigurationLifecycleMVCIT {
 
     long bookingId = createBooking(instrumentId);
     mockMvc
+        .perform(get(configurationPath + "/audit").header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(get(configurationPath + "/audit").header("apiKey", fixture.otherUserKey()))
+        .andExpect(status().isNotFound());
+    mockMvc
         .perform(
             post(configurationPath + "/calendar-subscription")
                 .header("apiKey", fixture.userKey())
@@ -228,6 +234,16 @@ class BookingConfigurationLifecycleMVCIT {
         .andExpect(status().isNoContent());
     mockMvc
         .perform(get(configurationPath).header("apiKey", fixture.sysadminKey()))
+        .andExpect(status().isNotFound());
+    // Permanent deletion removes the live graph, not the sysadmin's audit entry point.
+    mockMvc
+        .perform(get(configurationPath + "/audit").header("apiKey", fixture.sysadminKey()))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(get(configurationPath + "/audit").header("apiKey", fixture.userKey()))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(get(configurationPath + "/audit").header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
   }
 
