@@ -218,7 +218,7 @@ function filterIssue<TDocument>(
 
 export function CalendarContent() {
   const { t } = useTranslation("booking");
-  const { date } = useSearch({ from: "/booking/calendar" });
+  const { date, target } = useSearch({ from: "/booking/calendar" });
   const navigate = useNavigate({ from: "/booking/calendar" });
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
@@ -346,21 +346,51 @@ export function CalendarContent() {
     () => andFilters([eventExpression, requesterFilter]),
     [eventExpression, requesterFilter],
   );
+  const targetItemExpression = React.useMemo(
+    () =>
+      target
+        ? ({
+            kind: "comparison",
+            field: "target",
+            operator: "equals",
+            value: target,
+          } satisfies FilterExpression<BookingConfiguration>)
+        : null,
+    [target],
+  );
+  const targetEventExpression = React.useMemo(
+    () =>
+      target
+        ? ({
+            kind: "comparison",
+            field: "target",
+            operator: "equals",
+            value: target,
+          } satisfies FilterExpression<BookingListDocument>)
+        : null,
+    [target],
+  );
   const calendarEventExpression = React.useMemo(
     () =>
       andFilters<BookingListDocument>([
         scopedEventExpression,
+        targetEventExpression,
         itemExpression === null ? null : retypeFilter<BookingConfiguration, BookingListDocument>(itemExpression),
       ]),
-    [itemExpression, scopedEventExpression],
+    [itemExpression, scopedEventExpression, targetEventExpression],
   );
-  const itemWhereParameter = itemExpression ? serializeRsqlExpression(itemExpression) : undefined;
+  const resourceItemExpression = React.useMemo(
+    () => andFilters([itemExpression, targetItemExpression]),
+    [itemExpression, targetItemExpression],
+  );
+  const itemWhereParameter = resourceItemExpression ? serializeRsqlExpression(resourceItemExpression) : undefined;
   const eventWhereParameter = scopedEventExpression ? serializeRsqlExpression(scopedEventExpression) : undefined;
   const calendarEventWhereParameter = calendarEventExpression
     ? serializeRsqlExpression(calendarEventExpression)
     : undefined;
   const filterScopeSignature = [
     calendarSearch,
+    target ?? "",
     itemWhereParameter ?? "",
     eventWhereParameter ?? "",
     calendarStart,
@@ -385,6 +415,7 @@ export function CalendarContent() {
         itemWhereParameter,
         eventWhereParameter,
         calendarSearch,
+        target,
         filtersBlocked,
       ],
       keepPreviousData: true,
@@ -537,7 +568,7 @@ export function CalendarContent() {
         // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
         setResettingControls(true);
         try {
-          await navigate({ search: (current) => ({ ...current, date: undefined }), replace: true });
+          await navigate({ search: (current) => ({ ...current, date: undefined, target: undefined }), replace: true });
           await Promise.all([setCalendarSearch(null), setItemWhere(null), setEventWhere(null)]);
           setMineOnly(false);
           resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });

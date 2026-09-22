@@ -279,7 +279,7 @@ describe("CalendarPage", () => {
     const nextPage = screen.getByRole("button", { name: "Next page" });
     expect(nextPage).toBeEnabled();
     await user.click(nextPage);
-    expect(await screen.findByText("No-event microscope 21")).toBeVisible();
+    await waitFor(() => expect(screen.getByText("No-event microscope 21")).toBeVisible());
   });
 
   it("shows an empty state when a calendar search has no matches", async () => {
