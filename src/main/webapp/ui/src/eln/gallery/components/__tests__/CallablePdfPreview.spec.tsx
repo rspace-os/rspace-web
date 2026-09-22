@@ -335,6 +335,8 @@ describe("CallablePdfPreview", () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenPdf();
       await expect.element(preview.dialog).toBeVisible();
+      // Axe must measure the final colors, not the dialog's fade-in opacity.
+      await Promise.allSettled(document.getAnimations().map((animation) => animation.finished));
       await expectNoAxeViolations();
     });
   });
