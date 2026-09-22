@@ -58,7 +58,9 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     assertNull(result.getResolvedException());
-    assertEquals("[ ]", result.getResponse().getContentAsString());
+    List<NfsFileSystemInfo> initialFilesystems =
+        mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
+    assertEquals(List.of(), initialFilesystems);
 
     // add test filesystem
     NfsFileSystem iRodsFileSystem = GalleryFilestoreTestUtils.createIrodsFileSystem();
