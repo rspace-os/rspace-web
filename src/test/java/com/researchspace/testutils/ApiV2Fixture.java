@@ -290,13 +290,18 @@ public final class ApiV2Fixture {
 
   /** Creates one confirmed booking through the public endpoint. */
   public long booking(long instrumentId, Instant start, Instant end) {
+    return booking(instrumentId, start, end, userKey());
+  }
+
+  /** Creates one confirmed booking as the caller identified by {@code apiKey}. */
+  public long booking(long instrumentId, Instant start, Instant end, String apiKey) {
     enableBookings();
     String body =
         """
         {"target":{"relationTo":"booking-instruments","value":%d},"start":"%s","end":"%s"}\
         """
             .formatted(instrumentId, start, end);
-    long id = idOf(postJson("/api/v2/bookings", body, userKey()));
+    long id = idOf(postJson("/api/v2/bookings", body, apiKey));
     teardown.add(
         () ->
             new TransactionTemplate(transactionManager)

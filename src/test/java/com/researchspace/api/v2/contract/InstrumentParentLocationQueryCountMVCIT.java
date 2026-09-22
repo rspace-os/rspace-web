@@ -77,6 +77,8 @@ class InstrumentParentLocationQueryCountMVCIT {
     clearSession();
 
     String locationFields = "id,name,parentContainerName,parentContainerGlobalId";
+    // Prime permission data so the first measurement has the same cache state as the others.
+    request("/api/v2/instruments", one, "id,name");
     MeasuredResponse oneWithoutLocations = request("/api/v2/instruments", one, "id,name");
     MeasuredResponse manyWithoutLocations = request("/api/v2/instruments", twentyFive, "id,name");
     MeasuredResponse oneInstrument = request("/api/v2/instruments", one, locationFields);
@@ -105,6 +107,8 @@ class InstrumentParentLocationQueryCountMVCIT {
     FixtureRows rows = createRows(1, "Count" + fixture.marker());
     clearSession();
 
+    // Prime request-scoped permission data before comparing otherwise identical count requests.
+    instrumentCount(rows, null);
     long withoutLocations = instrumentCount(rows, null);
     long withLocations = instrumentCount(rows, "id,parentContainerName,parentContainerGlobalId");
 
@@ -178,7 +182,7 @@ class InstrumentParentLocationQueryCountMVCIT {
           };
       ids.add(instrumentId);
       fixture.bookingConfiguration(instrumentId, "Europe/Berlin");
-      fixture.booking(instrumentId, BOOKING_START, BOOKING_END);
+      fixture.booking(instrumentId, BOOKING_START, BOOKING_END, fixture.sysadminKey());
     }
     if (count > 3) {
       new TransactionTemplate(transactionManager)
