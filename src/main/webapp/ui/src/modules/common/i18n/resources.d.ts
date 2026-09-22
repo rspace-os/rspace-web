@@ -1051,6 +1051,7 @@ export default interface Resources {
         "restored": "Booking configuration restored.",
         "saved": "Booking configuration saved."
       },
+      "view": "View configuration",
       "viewInventory": "View {name} in Inventory",
       "yes": "Yes"
     },
@@ -1215,6 +1216,7 @@ export default interface Resources {
         "title": "Booking details",
         "unavailableDescription": "This booking does not exist or you do not have access to it.",
         "unavailableTitle": "Booking unavailable",
+        "unknownItemDescription": "This item no longer exists, or you no longer have permission to view this item.",
         "viewItem": "View bookable item {globalId}",
         "when": "When"
       },
@@ -1246,6 +1248,7 @@ export default interface Resources {
         "overlapMaintenance": "Maintenance event #{id}",
         "overlapReserved": "Reserved booking #{id}",
         "overlapSummary": "This period overlaps:",
+        "startInPast": "The booking starts in the past and cannot be created.",
         "targetUnavailable": "This bookable item is unavailable.",
         "windowRequired": "Enter a valid start and end."
       },
@@ -1285,6 +1288,7 @@ export default interface Resources {
         "submit": "Book",
         "submitMaintenance": "Create maintenance event",
         "time": "Time",
+        "timezone": "Times shown in {timezone}.",
         "type": "Booking type",
         "typeBlockout": "Maintenance blockout",
         "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
@@ -1301,7 +1305,7 @@ export default interface Resources {
       "loadingConfiguration": "Loading bookable item settings.",
       "maintenanceLabel": "Maintenance blockout",
       "warnings": {
-        "past": "This booking is in the past. You can still create it."
+        "past": "This booking starts in the past and cannot be created."
       }
     },
     "breadcrumbs": {
@@ -1695,7 +1699,7 @@ export default interface Resources {
         "buffer": "Enter a whole number from 0 to 10,080.",
         "granularity": "Choose 1, 5, 10, or 15 minutes.",
         "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
-        "openingHours": "Use an opening start before the end, or select Open all day.",
+        "openingHours": "Use an opening start before the end. Enter 00:00 to close at midnight.",
         "save": "RSpace could not save the booking settings. Try again.",
         "stale": "These settings changed after you opened this page. Reload the page and try again."
       },
@@ -1703,13 +1707,13 @@ export default interface Resources {
         "allowDoubleBooking": "Allow concurrent bookings",
         "buffer": "Buffer before and after bookings (minutes)",
         "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
-        "fullDay": "Open all day",
         "granularity": "Time increment",
         "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
         "legend": "Scheduling rules",
         "maximumDuration": "Maximum booking duration (minutes)",
         "maximumDurationDescription": "Use 0 to allow bookings up to the 366-day system limit.",
         "openingEnd": "Opening end",
+        "openingEndDescription": "Enter 00:00 to close at midnight (the end of the day).",
         "openingStart": "Opening start"
       },
       "saved": "Booking settings saved.",
@@ -6719,6 +6723,7 @@ export default interface Resources {
       },
       "description": "Docker development booking fixture",
       "instruments": {
+        "bookingAlerts": "Booking alerts test bench",
         "bookingCardArchived": "Booking card: Open (archived)",
         "bookingCardBook": "Booking card: Book",
         "bookingCardDisabled": "Booking card: Open (disabled)",
@@ -6735,6 +6740,8 @@ export default interface Resources {
       "purposes": {
         "auroraCalibration": "Aurora calibration session",
         "beaconCellImaging": "Beacon cell imaging study",
+        "bookingAlertsOverlap": "Booking alerts overlap fixture",
+        "bookingAlertsPast": "Booking alerts past fixture",
         "busyCalendar": "Busy calendar fixture",
         "calibrationRun": "Calibration run",
         "cellImaging": "Cell imaging",
@@ -6818,6 +6825,7 @@ export default interface Resources {
           },
           "authenticationRequired": "Authentication is required.",
           "booking": {
+            "concurrentModification": "The event changed while it was being edited.",
             "create": "The booking is invalid.",
             "duration": "Bookings may not exceed 366 days.",
             "granularity": "Start and end must align with this bookable item's slot granularity.",
@@ -6828,13 +6836,14 @@ export default interface Resources {
             "purpose": {
               "length": "Purpose must not exceed 1,000 characters."
             },
+            "startInPast": "The booking start must be in the future.",
             "state": {
               "transition": "The requested booking state transition is not permitted."
             },
             "target": {
               "unavailable": "The selected target is not available for booking."
             },
-            "window": "Start time must be in the future and end time must be after start time."
+            "window": "The end time must be after the start time."
           },
           "bookingCalendar": {
             "ifMatchRequired": "The current calendar subscription version is required.",

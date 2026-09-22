@@ -363,6 +363,14 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               }
               requireExpectedVersion(booking, expectedVersion);
               requireCanEdit(booking, access, subject);
+              if (patch.state() == BookingState.CANCELLED
+                  && booking.getState() == BookingState.CANCELLED
+                  && patch.start() == null
+                  && patch.end() == null
+                  && !patch.purposeSupplied()) {
+                prepare(List.of(booking), subject);
+                return booking;
+              }
               if (booking.getState() != BookingState.CONFIRMED) {
                 throw new BookingStateTransitionException();
               }
@@ -535,11 +543,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   }
 
   private void validateWindow(Date start, Date end) {
-    if (start == null
-        || end == null
-        || !end.after(start)
-        || !start.toInstant().isAfter(clock.instant())) {
+    if (start == null || end == null || !end.after(start)) {
       throw new BookingWindowException();
+    }
+    if (!start.toInstant().isAfter(clock.instant())) {
+      throw new BookingStartInPastException();
     }
     if (Duration.between(start.toInstant(), end.toInstant())
             .compareTo(Duration.ofMinutes(MAX_BOOKING_DURATION_MINUTES))

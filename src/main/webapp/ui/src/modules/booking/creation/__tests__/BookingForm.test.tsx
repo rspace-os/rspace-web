@@ -127,7 +127,7 @@ describe("BookingForm", () => {
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     expect(screen.getByText("booking:bookings.form.openingHours")).toBeVisible();
     expect(screen.queryByText("booking:bookings.form.openingHoursDifferentTimezone")).not.toBeInTheDocument();
-    expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
+    expect(screen.getByText("booking:bookings.form.timezone")).toBeVisible();
     expect(screen.getByRole("radio", { name: "booking:bookings.form.laterOccurrence" })).toBeChecked();
     expect(screen.getByText("booking:bookings.form.purposeCount")).toBeVisible();
 
@@ -192,7 +192,7 @@ describe("BookingForm", () => {
 
     const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
     expect(screen.getByText("booking:bookings.form.openingHoursDifferentTimezone")).toBeVisible();
-    expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
+    expect(screen.getByText("booking:bookings.form.timezone")).toBeVisible();
     expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-10-24");
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("21:30");
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));

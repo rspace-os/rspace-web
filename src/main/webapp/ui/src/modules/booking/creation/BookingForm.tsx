@@ -357,6 +357,7 @@ export function BookingForm(props: BookingFormProps) {
           warning={bookingInPast ? t("bookings.warnings.past") : undefined}
           error={props.error}
           conflicts={props.conflicts}
+          displayTimezone={displayTimezone}
           conflictSeverity={props.conflictSeverity}
           outcomeUncertain={props.outcomeUncertain}
         />

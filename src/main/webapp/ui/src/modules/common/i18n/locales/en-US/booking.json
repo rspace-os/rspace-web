@@ -299,6 +299,7 @@
       "restored": "Booking configuration restored.",
       "saved": "Booking configuration saved."
     },
+    "view": "View configuration",
     "viewInventory": "View {name} in Inventory",
     "yes": "Yes"
   },
@@ -463,6 +464,7 @@
       "title": "Booking details",
       "unavailableDescription": "This booking does not exist or you do not have access to it.",
       "unavailableTitle": "Booking unavailable",
+      "unknownItemDescription": "This item no longer exists, or you no longer have permission to view this item.",
       "viewItem": "View bookable item {globalId}",
       "when": "When"
     },
@@ -490,10 +492,11 @@
       "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
       "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
       "overlap": "This period overlaps another booking or a maintenance event.",
-      "overlapSummary": "This period overlaps:",
       "overlapBooking": "Booking #{id}",
       "overlapMaintenance": "Maintenance event #{id}",
       "overlapReserved": "Reserved booking #{id}",
+      "overlapSummary": "This period overlaps:",
+      "startInPast": "The booking starts in the past and cannot be created.",
       "targetUnavailable": "This bookable item is unavailable.",
       "windowRequired": "Enter a valid start and end."
     },
@@ -533,6 +536,7 @@
       "submit": "Book",
       "submitMaintenance": "Create maintenance event",
       "time": "Time",
+      "timezone": "Times shown in {timezone}.",
       "type": "Booking type",
       "typeBlockout": "Maintenance blockout",
       "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
@@ -549,7 +553,7 @@
     "loadingConfiguration": "Loading bookable item settings.",
     "maintenanceLabel": "Maintenance blockout",
     "warnings": {
-      "past": "This booking is in the past. You can still create it."
+      "past": "This booking starts in the past and cannot be created."
     }
   },
   "breadcrumbs": {
@@ -943,7 +947,7 @@
       "buffer": "Enter a whole number from 0 to 10,080.",
       "granularity": "Choose 1, 5, 10, or 15 minutes.",
       "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
-      "openingHours": "Use an opening start before the end, or select Open all day.",
+      "openingHours": "Use an opening start before the end. Enter 00:00 to close at midnight.",
       "save": "RSpace could not save the booking settings. Try again.",
       "stale": "These settings changed after you opened this page. Reload the page and try again."
     },
@@ -951,13 +955,13 @@
       "allowDoubleBooking": "Allow concurrent bookings",
       "buffer": "Buffer before and after bookings (minutes)",
       "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
-      "fullDay": "Open all day",
       "granularity": "Time increment",
       "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
       "legend": "Scheduling rules",
       "maximumDuration": "Maximum booking duration (minutes)",
       "maximumDurationDescription": "Use 0 to allow bookings up to the 366-day system limit.",
       "openingEnd": "Opening end",
+      "openingEndDescription": "Enter 00:00 to close at midnight (the end of the day).",
       "openingStart": "Opening start"
     },
     "saved": "Booking settings saved.",

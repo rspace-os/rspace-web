@@ -11,6 +11,7 @@ import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingDurationException;
 import com.researchspace.booking.service.BookingOverlapException;
+import com.researchspace.booking.service.BookingStartInPastException;
 import com.researchspace.booking.service.BookingStateTransitionException;
 import com.researchspace.booking.service.BookingTargetUnavailableException;
 import com.researchspace.booking.service.BookingWindowException;
@@ -77,6 +78,11 @@ public final class TimeSlotBookingResourceOperations
   ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookingApiV2Resource() {
     List<ApiV2ErrorMapping> commonErrors =
         List.of(
+            mapping(
+                BookingStartInPastException.class,
+                HttpStatus.BAD_REQUEST,
+                "errors.api.v2.booking.startInPast",
+                "The booking start must be in the future."),
             mapping(
                 BookingWindowException.class,
                 HttpStatus.BAD_REQUEST,

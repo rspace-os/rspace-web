@@ -164,7 +164,8 @@
           }
         },
         "booking": {
-          "window": "Start time must be in the future and end time must be after start time.",
+          "window": "The end time must be after the start time.",
+          "startInPast": "The booking start must be in the future.",
           "duration": "Bookings may not exceed 366 days.",
           "target": {
             "unavailable": "The selected target is not available for booking."
@@ -173,6 +174,7 @@
           "state": {
             "transition": "The requested booking state transition is not permitted."
           },
+          "concurrentModification": "The event changed while it was being edited.",
           "create": "The booking is invalid.",
           "patch": "The booking patch is invalid.",
           "granularity": "Start and end must align with this bookable item's slot granularity.",
