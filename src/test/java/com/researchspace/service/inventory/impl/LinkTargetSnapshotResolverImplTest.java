@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -25,6 +24,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.inventory.LinkTargetResolver;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -150,7 +150,7 @@ class LinkTargetSnapshotResolverImplTest {
     // an inventory target with no snapshot is redacted exactly like an unreadable one, so a
     // caller walking ids learns nothing about which records exist (ADR-0002)
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
-    when(linkTargetResolver.targetIsLiveAndReadable(any(), any())).thenReturn(false);
+    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.empty());
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -166,13 +166,17 @@ class LinkTargetSnapshotResolverImplTest {
   void resolveSummaryKeepsALiveReadableTargetOpenableWhenItsAuditRowsArePurged() {
     // audit history can be purged while the record lives on. Reporting it unreadable would put
     // a "No access" pill and remove Open from a target whose page works perfectly well.
+    Sample rec = mock(Sample.class);
+    when(rec.getName()).thenReturn("Buffer");
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
-    when(linkTargetResolver.targetIsLiveAndReadable(any(), any())).thenReturn(true);
+    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
 
     assertEquals("SA10", summary.getGlobalId());
+    assertEquals("Buffer", summary.getName());
+    assertEquals("SAMPLE", summary.getType());
     assertTrue(summary.isReadable());
     assertFalse(summary.isDeleted());
   }
@@ -198,22 +202,40 @@ class LinkTargetSnapshotResolverImplTest {
   }
 
   @Test
-  void resolveSummaryRedactsSoftDeletedInventoryTargetWhoseAuditRowsWerePurged() {
-    // the fallback must not resurrect a dead target: exists-and-readable is deliberately true
-    // for a readable soft-deleted record, so consulting it here would drop the "No access" pill
-    // and restore Open on a record that is gone
+  void resolveSummaryReportsSoftDeletedInventoryTargetWhoseAuditRowsWerePurgedAsDeletedNotHidden() {
+    // a trashed Inventory item still has a working viewer, so the card must say "Target deleted"
+    // and keep Open, exactly as it does when the audit snapshot is present. Reporting it as
+    // unreadable would hide a record the actor can open everywhere else in the app.
+    Sample rec = mock(Sample.class);
+    when(rec.getName()).thenReturn("Old buffer");
+    when(rec.isDeleted()).thenReturn(true);
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
-    lenient().when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
-    when(linkTargetResolver.targetIsLiveAndReadable(any(), any())).thenReturn(false);
+    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
 
     assertEquals("SA10", summary.getGlobalId());
-    assertNull(summary.getName());
-    assertNull(summary.getType());
-    assertFalse(summary.isReadable());
-    assertFalse(summary.isDeleted());
+    assertEquals("Old buffer", summary.getName());
+    assertEquals("SAMPLE", summary.getType());
+    assertTrue(summary.isReadable());
+    assertTrue(summary.isDeleted());
+  }
+
+  @Test
+  void resolveSummaryRedactsUnreadableAndNonexistentInventoryTargetsIdentically() {
+    // ADR-0002: with no snapshot, "no such record" and "not yours to read" must be one response
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.empty());
+
+    ApiInventoryLinkTargetSummary nonexistent =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+    ApiInventoryLinkTargetSummary unreadable =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertEquals(nonexistent, unreadable);
+    assertFalse(nonexistent.isReadable());
+    assertFalse(nonexistent.isDeleted());
   }
 
   @Test
@@ -235,6 +257,7 @@ class LinkTargetSnapshotResolverImplTest {
     assertNull(summary.getType());
     assertFalse(summary.isReadable());
     assertFalse(summary.isDeleted());
+    verify(linkTargetResolver, never()).readableInventoryTarget(any(), any());
     verify(linkTargetResolver, never()).targetIsLiveAndReadable(any(), any());
     verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
   }
@@ -248,7 +271,7 @@ class LinkTargetSnapshotResolverImplTest {
 
     assertEquals("SD42", summary.getGlobalId());
     assertFalse(summary.isReadable());
-    verify(linkTargetResolver, never()).targetIsLiveAndReadable(any(), any());
+    verify(linkTargetResolver, never()).readableInventoryTarget(any(), any());
   }
 
   @Test
@@ -257,13 +280,13 @@ class LinkTargetSnapshotResolverImplTest {
     // checked as IT90: collapsing it to the db id would let a readable sample SA90 vouch for
     // a template that does not exist
     when(auditManager.getNewestRevisionForEntity(SampleTemplate.class, 90L)).thenReturn(null);
-    when(linkTargetResolver.targetIsLiveAndReadable(any(), any())).thenReturn(false);
+    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.empty());
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.IT, 90L, null, null, user);
 
     ArgumentCaptor<GlobalIdentifier> gid = ArgumentCaptor.forClass(GlobalIdentifier.class);
-    verify(linkTargetResolver).targetIsLiveAndReadable(gid.capture(), any());
+    verify(linkTargetResolver).readableInventoryTarget(gid.capture(), any());
     assertEquals(GlobalIdPrefix.IT, gid.getValue().getPrefix());
     assertEquals(Long.valueOf(90), gid.getValue().getDbId());
     assertFalse(summary.isReadable());

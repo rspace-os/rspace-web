@@ -2,6 +2,8 @@ package com.researchspace.service.inventory;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.InventoryRecord;
+import java.util.Optional;
 
 /**
  * Resolves an Inventory Link target GlobalID (inventory item or ELN item) to decide whether it
@@ -36,4 +38,22 @@ public interface LinkTargetResolver {
    *     kind that the user can READ
    */
   boolean targetIsLiveAndReadable(GlobalIdentifier target, User user);
+
+  /**
+   * The Inventory record a link target names, when the acting user may READ it, whether or not it
+   * is soft-deleted. Callers that need the target's state rather than a yes/no use this: a deleted
+   * Inventory item still has a working viewer in the trash, so the link card reports it as readable
+   * and deleted rather than hiding it.
+   *
+   * <p>Type-exact: samples and sample templates share one numeric id space, so a record whose own
+   * Global ID prefix differs from the requested one is not the target. Empty for a non-Inventory
+   * prefix, since resolving ELN records runs through transactional {@code *Manager} proxies that
+   * throw for missing or deleted records and would mark the caller's transaction rollback-only.
+   *
+   * @param target the parsed link target GlobalID (any version suffix is ignored)
+   * @param user the acting user, whose READ permission decides
+   * @return the record, or empty if it does not exist, is not readable, is of another kind, or the
+   *     prefix is not an Inventory one
+   */
+  Optional<InventoryRecord> readableInventoryTarget(GlobalIdentifier target, User user);
 }

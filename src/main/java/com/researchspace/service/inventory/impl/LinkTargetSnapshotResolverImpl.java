@@ -19,6 +19,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -75,10 +76,10 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
             : auditManager.getNewestRevisionForEntity(cls, dbId);
     if (snapshot == null || snapshot.getEntity() == null) {
       // No audit history does not mean no record: rows can be purged while the record lives on.
-      // Only a live target of exactly this kind earns readable=true, so a soft-deleted record and
-      // a readable sibling sharing the db id (SA/IT) both stay redacted. The check is
-      // permission-gated, so it reveals nothing this actor could not already see, and it keeps
-      // Open on a target whose page works.
+      // Report the live record's own state, so a trashed Inventory item reads exactly as it does
+      // with a snapshot - deleted, but readable and openable in the trash - rather than being
+      // hidden behind "No access". The lookup is permission-gated and type-exact, so an
+      // unreadable record and a sibling sharing the db id (SA/IT) both fall through to redaction.
       //
       // Inventory only. The ELN lookup resolves through transactional *Manager proxies
       // (BaseRecordManager -> FolderManager) whose folderDao.get and read/not-deleted assertions
@@ -89,10 +90,16 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       // reachable here because import can store a link to a notebook that does not exist. The
       // inventory lookup throws only its own NotFoundException from a non-transactional
       // component, so it is safe to consult.
-      if (isInventoryPrefix(prefix)
-          && linkTargetResolver.targetIsLiveAndReadable(new GlobalIdentifier(prefix, dbId), user)) {
-        summary.setReadable(true);
-        return summary;
+      if (isInventoryPrefix(prefix)) {
+        Optional<InventoryRecord> liveTarget =
+            linkTargetResolver.readableInventoryTarget(new GlobalIdentifier(prefix, dbId), user);
+        if (liveTarget.isPresent()) {
+          summary.setReadable(true);
+          summary.setType(typeFor(prefix));
+          summary.setName(nameOf(liveTarget.get()));
+          summary.setDeleted(deletedOf(liveTarget.get()));
+          return summary;
+        }
       }
       // Otherwise redacted, for every prefix. Nonexistent must look exactly like unreadable
       // (ADR-0002), so the card says "No access" either way and a caller walking ids learns

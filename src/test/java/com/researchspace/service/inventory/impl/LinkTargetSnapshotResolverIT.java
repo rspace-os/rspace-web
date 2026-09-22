@@ -120,13 +120,13 @@ public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase 
   }
 
   /**
-   * RSDEV-1354: the purged-audit fallback must not resurrect a dead target. {@code
-   * targetExistsAndIsReadable} is deliberately true for a readable soft-deleted record, so the
-   * fallback asks the live check instead; otherwise a deleted sample whose audit rows were purged
-   * would lose its "No access" pill and keep an Open action.
+   * RSDEV-1354: a trashed Inventory item keeps a working viewer, so the link card must say "Target
+   * deleted" and keep Open, exactly as it does when the audit snapshot is present. Reporting it as
+   * unreadable would hide a record the actor can open everywhere else.
    */
   @Test
-  public void reportsSoftDeletedTargetWhoseAuditRowsWerePurgedAsUnreadable() throws Exception {
+  public void reportsSoftDeletedTargetWhoseAuditRowsWerePurgedAsDeletedButReadable()
+      throws Exception {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
     sampleApiMgr.markSampleAsDeleted(sample.getId(), false, user);
@@ -140,9 +140,9 @@ public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase 
                   GlobalIdPrefix.SA, sample.getId(), null, null, user);
             });
 
-    assertFalse(
-        summary.isReadable(),
-        "a soft-deleted record must stay redacted when its audit rows are gone");
+    assertTrue(summary.isReadable(), "a trashed record the actor can read stays readable");
+    assertTrue(summary.isDeleted(), "and is reported as deleted, so the card shows the pill");
+    assertEquals(sample.getName(), summary.getName());
   }
 
   /**

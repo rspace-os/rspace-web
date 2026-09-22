@@ -246,15 +246,39 @@ class LinkTargetResolverImplTest {
   }
 
   @Test
-  void softDeletedInventoryTargetIsNotLive() {
+  void softDeletedInventoryTargetIsReadableButNotLive() {
+    // the two differ deliberately: a registry entry must not name a dead record, but the link
+    // card still shows a trashed item, whose trash viewer works
     InventoryRecord sample = mock(InventoryRecord.class);
     when(sample.getOid()).thenReturn(new GlobalIdentifier("SA90"));
     when(sample.isDeleted()).thenReturn(true);
     when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
             any(GlobalIdentifier.class)))
         .thenReturn(sample);
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(eq(sample), eq(user)))
+        .thenReturn(true);
 
     assertFalse(resolver.targetIsLiveAndReadable(new GlobalIdentifier("SA90"), user));
+    assertTrue(resolver.readableInventoryTarget(new GlobalIdentifier("SA90"), user).isPresent());
+  }
+
+  @Test
+  void readableInventoryTargetIsEmptyForWrongPrefixSibling() {
+    InventoryRecord sample = mock(InventoryRecord.class);
+    when(sample.getOid()).thenReturn(new GlobalIdentifier("SA90"));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(sample);
+
+    assertFalse(resolver.readableInventoryTarget(new GlobalIdentifier("IT90"), user).isPresent());
+  }
+
+  @Test
+  void readableInventoryTargetIsEmptyForElnPrefix() {
+    // ELN resolution runs through transactional *Manager proxies that throw for a missing or
+    // deleted record and would mark the caller's transaction rollback-only
+    assertFalse(resolver.readableInventoryTarget(new GlobalIdentifier("NB7"), user).isPresent());
+    verify(baseRecordManager, never()).getByGlobalIdsAndReadPermission(any(), eq(user));
   }
 
   @Test

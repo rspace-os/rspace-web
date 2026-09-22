@@ -77,25 +77,45 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
         target.hasVersionId() ? new GlobalIdentifier(target.getPrefix(), target.getDbId()) : target;
     GlobalIdPrefix prefix = base.getPrefix();
     if (INVENTORY_PREFIXES.contains(prefix)) {
-      try {
-        InventoryRecord record =
-            inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
-        // samples and sample templates share one numeric id space and the retriever resolves both
-        // SA and IT through the same lookup, so "IT90" can load sample SA90 (the ELN branch below
-        // guards the same way); only a record whose own oid prefix matches the requested one is
-        // the target
-        return record.getOid() != null
-            && record.getOid().getPrefix() == base.getPrefix()
-            && !record.isDeleted()
-            && inventoryPermissionUtils.canUserReadInventoryRecord(record, user);
-      } catch (NotFoundException e) {
-        return false;
-      }
+      return readableInventoryRecord(base, user).filter(record -> !record.isDeleted()).isPresent();
     }
     if (ELN_BASE_RECORD_PREFIXES.contains(prefix)) {
       return liveReadableElnRecord(base, user).isPresent();
     }
     return false;
+  }
+
+  @Override
+  public Optional<InventoryRecord> readableInventoryTarget(GlobalIdentifier target, User user) {
+    if (target == null) {
+      return Optional.empty();
+    }
+    permissionUtils.refreshCacheIfNotified();
+    GlobalIdentifier base =
+        target.hasVersionId() ? new GlobalIdentifier(target.getPrefix(), target.getDbId()) : target;
+    if (!INVENTORY_PREFIXES.contains(base.getPrefix())) {
+      return Optional.empty();
+    }
+    return readableInventoryRecord(base, user);
+  }
+
+  private Optional<InventoryRecord> readableInventoryRecord(GlobalIdentifier base, User user) {
+    try {
+      InventoryRecord record =
+          inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
+      // samples and sample templates share one numeric id space and the retriever resolves both
+      // SA and IT through the same lookup, so "IT90" can load sample SA90 (readableElnRecord
+      // guards the same way); only a record whose own oid prefix matches the requested one is
+      // the target
+      if (record.getOid() == null || record.getOid().getPrefix() != base.getPrefix()) {
+        return Optional.empty();
+      }
+      return inventoryPermissionUtils.canUserReadInventoryRecord(record, user)
+          ? Optional.of(record)
+          : Optional.empty();
+    } catch (NotFoundException e) {
+      return Optional.empty();
+    }
   }
 
   private boolean isInventoryReadable(GlobalIdentifier target, User user) {
