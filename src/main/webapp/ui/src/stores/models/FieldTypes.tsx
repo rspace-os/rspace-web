@@ -32,6 +32,11 @@ export const compatibleFieldTypes = (fieldType: FieldType): Array<FieldType> => 
     types.add(FieldTypes.plain_text);
     types.add(FieldTypes.radio);
     types.add(FieldTypes.choice);
+    // detection only types a column as link when every present value parses, so a column that
+    // lost the type for any other reason (a value over the non-text length limit, say) has no
+    // other route back to it. Choosing link for values that do not parse is refused at import
+    // with errors.inventory.import.linkValueInvalid, before anything is saved.
+    types.add(FieldTypes.link);
   }
   return [...types];
 };
