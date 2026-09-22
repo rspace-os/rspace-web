@@ -153,13 +153,13 @@ class PidinstLookupManagerImplTest {
   void aMultiWordQueryDoesNotMatchARecordHoldingOnlyOneOfTheWords() {
     B2instDraftRecord wanted = publishedRecord();
     wanted.getMetadata().setName("Instr1 prova_COPY");
-    when(b2instConnector.searchRecords("*Instr1 AND prova_COPY*", 50))
+    when(b2instConnector.searchRecords("*Instr1* AND *prova_COPY*", 50))
         .thenReturn(searchResultOf(wanted, 1));
 
     ApiPidinstSearchResult result = manager.search("Instr1 prova_COPY", user);
 
     assertEquals(1, result.getHits().size());
-    verify(b2instConnector).searchRecords("*Instr1 AND prova_COPY*", 50);
+    verify(b2instConnector).searchRecords("*Instr1* AND *prova_COPY*", 50);
   }
 
   /** The sentence may sit in any field the hit exposes, not only the name. */
@@ -188,18 +188,18 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
-   * One pair of wildcards for the whole query, with the words ANDed. A pair per word would match
-   * more but exceeds DataCite's 30s read timeout at three words, and dropping the AND lets B2INST's
-   * OR return records holding only one word (ADR 0009 decision 8). This pins both.
+   * A pair of wildcards per word, joined by AND. One pair around the whole query does not mean what
+   * it looks like - Elasticsearch splits on whitespace before the wildcards apply - and without the
+   * AND, B2INST's OR returns records holding only one of the words.
    */
   @Test
-  void aMultiWordQueryIsOnePairOfWildcardsWithTheWordsAnded() {
-    when(b2instConnector.searchRecords("*electro AND micro AND stub*", 50))
+  void eachWordOfAMultiWordQueryIsWildcardedAndTheyAreAnded() {
+    when(b2instConnector.searchRecords("*electro* AND *micro* AND *stub*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
 
     manager.search("electro micro stub", user);
 
-    verify(b2instConnector).searchRecords("*electro AND micro AND stub*", 50);
+    verify(b2instConnector).searchRecords("*electro* AND *micro* AND *stub*", 50);
   }
 
   /** Escaping runs first, so our wildcards stay live while the user's own text stays literal. */
@@ -212,7 +212,7 @@ class PidinstLookupManagerImplTest {
     manager.search("Zeiss &&", user);
 
     verify(dataCiteConnector)
-        .searchInstrumentDois("*Zeiss AND \\&\\&*", 50, InventorySettingType.PIDINST);
+        .searchInstrumentDois("*Zeiss* AND *\\&\\&*", 50, InventorySettingType.PIDINST);
   }
 
   @Test
@@ -610,7 +610,7 @@ class PidinstLookupManagerImplTest {
   void dataCiteDoesNotRetryAQueryThatIsNotADoiFragment() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(
-            "*Carl AND Zeiss*", 50, InventorySettingType.PIDINST))
+            "*Carl* AND *Zeiss*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
 
     ApiPidinstSearchResult result = manager.search("Carl Zeiss", user);
@@ -627,10 +627,10 @@ class PidinstLookupManagerImplTest {
         arguments("(Zeiss", "*\\(Zeiss*"),
         arguments("Zeiss!", "*Zeiss\\!*"),
         arguments("Zeiss^2", "*Zeiss\\^2*"),
-        arguments("Zeiss &&", "*Zeiss AND \\&\\&*"),
-        arguments("Zeiss OR", "*Zeiss AND \\OR*"),
-        arguments("NOT Zeiss", "*\\NOT AND Zeiss*"),
-        arguments("Zeiss AND Bruker", "*Zeiss AND \\AND AND Bruker*"));
+        arguments("Zeiss &&", "*Zeiss* AND *\\&\\&*"),
+        arguments("Zeiss OR", "*Zeiss* AND *\\OR*"),
+        arguments("NOT Zeiss", "*\\NOT* AND *Zeiss*"),
+        arguments("Zeiss AND Bruker", "*Zeiss* AND *\\AND* AND *Bruker*"));
   }
 
   /**
