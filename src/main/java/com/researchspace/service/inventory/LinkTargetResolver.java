@@ -28,8 +28,9 @@ public interface LinkTargetResolver {
    * soft-deleted, and type-exact: a record whose own GlobalID prefix differs from the requested one
    * does not count, even when it shares the numeric id. Registration flows use this: a deleted
    * target is still readable by its owner, but a permanent registry entry must not name a dead
-   * record. The link target summary uses it too, so a dead or wrong-kind record cannot be reported
-   * as an openable target.
+   * record. The link target summary deliberately does NOT use this: a trashed Inventory item keeps
+   * a working viewer, so the summary reports it through {@link #readableInventoryTarget} as
+   * readable and deleted rather than hiding it.
    *
    * @param target the parsed link target GlobalID (any version suffix is ignored)
    * @param user the user whose READ permission decides, typically the owning record's owner rather
