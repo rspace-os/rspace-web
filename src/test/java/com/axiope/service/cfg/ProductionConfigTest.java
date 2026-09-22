@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class ProductionConfigTest {
 
   @Test
-  void includesBookingFixturesInProductionStartup() {
+  void registersPropertyGatedBookingFixturesInProductionStartup() {
     ProductionConfig config = new ProductionConfig();
 
     assertAll(

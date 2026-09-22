@@ -46,7 +46,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** Adds idempotent bookable-item and booking fixtures when the required fixture users exist. */
+/** Adds booking fixtures on first deployment when feature-branch instance seeding is enabled. */
 public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
 
   private static final String FIXTURE_USER = "user1a";
@@ -66,6 +66,9 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   @Value("${default.user.password}")
   private String devUserPassword;
 
+  @Value("${deployment.test.fb.instance:false}")
+  private boolean featureBranchInstance;
+
   @Autowired private UserDao userDao;
   @Autowired private ContainerDao containerDao;
   @Autowired private InstrumentDao instrumentDao;
@@ -76,6 +79,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   @Autowired private TimeSlotBookingManager bookingManager;
 
   private TransactionTemplate fixtureTransaction;
+  private boolean initialDeployment;
 
   @Autowired
   @Qualifier("bookingConfigurationDao")
@@ -92,7 +96,16 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   }
 
   @Override
+  public void onInitialAppDeployment() {
+    initialDeployment = true;
+  }
+
+  @Override
   public void onAppStartup(ApplicationContext applicationContext) {
+    if (!initialDeployment || !featureBranchInstance) {
+      return;
+    }
+    initialDeployment = false;
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {

@@ -31,10 +31,15 @@ data, not for fixtures that must be repaired on every development restart.
 Source: [`initial-seed-changeLog.xml`](../../src/main/resources/sqlUpdates/initial-seed-changeLog.xml#L5-L47).
 
 Booking development data currently comes from
-`BookingFixturesAppInitialiser`, which is registered only by the `run` Spring
-profile in `TestAppConfig`. `GlobalInitManager` runs it after the development
-group setup. It waits for the outer startup transaction to commit, then creates
-inventory and booking data in two new transactions.
+`BookingFixturesAppInitialiser`, registered in `TestAppConfig` and `ProductionConfig`.
+It runs only when `deployment.test.fb.instance=true` and `GlobalInitManager`
+identifies the first deployment. The property defaults to `false` and works with
+`run`, `prod`, and `prod-test`, including AWS feature-branch deployments using
+`prod`. Set it in the instance's external `deployment.properties` or as the JVM
+argument `-Ddeployment.test.fb.instance=true`. The fixture users must already
+exist with their initial fixture credentials. Existing databases are not reseeded
+on restart, even with the flag enabled. It waits for the outer startup transaction
+to commit, then creates inventory and booking data in two new transactions.
 
 Sources: [`TestAppConfig.java`](../../src/main/java/com/axiope/service/cfg/TestAppConfig.java#L55-L63),
 [`TestAppConfig.java`](../../src/main/java/com/axiope/service/cfg/TestAppConfig.java#L125-L156),
@@ -45,7 +50,7 @@ containers by stable names plus the fixture description, creates missing
 objects through inventory managers, creates or updates booking configurations
 through `BookingConfigurationManager`, and creates bookings through
 `TimeSlotBookingManager`. Booking dates are calculated relative to the current
-date so fixtures remain in the future. Docker documentation describes the same
+date at first deployment. Docker documentation describes the
 behavior and the 500-instrument / 1,003-event development dataset.
 
 Sources: [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L119-L220),
@@ -84,8 +89,9 @@ runs the seed twice, and checks that the second run does not duplicate rows.
 ## Development booking seed
 
 `changeLog-rsdev-booking-dev-seed.xml` runs only with the `dev-test` Liquibase
-context. It marks itself ran when any booking configuration already exists, so
-it populates only a brand-new development database. The changeset loads
+context, independently of `deployment.test.fb.instance`. It marks itself ran when
+any booking configuration already exists, so it populates only a brand-new
+development database. The changeset loads
 `booking-dev-seed.sql`, which creates nine instruments, eight booking
 configurations, and 50 booking events. One instrument has no booking
 configuration and one configuration permits double booking.
