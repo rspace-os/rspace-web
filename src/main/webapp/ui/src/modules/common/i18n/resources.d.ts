@@ -10542,7 +10542,7 @@ export default interface Resources {
           "loading": "Loading DBRepo rows...",
           "metadataError": "Could not load DBRepo resource metadata.",
           "noColumns": "No DBRepo columns were returned for this resource.",
-          "resourceContext": "{name} in {database}",
+          "resourceContext": "<strong>{name}</strong> in <strong>{database}</strong>",
           "rowsError": "Could not load DBRepo rows.",
           "selectCurrentPage": "Select DBRepo rows on this page",
           "selectedCount": "Selected: {count}",

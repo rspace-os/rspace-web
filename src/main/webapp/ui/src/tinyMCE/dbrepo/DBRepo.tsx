@@ -30,6 +30,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 
 const DBREPO_LOGO_PATH = "/images/icons/dbrepo.svg";
 
@@ -499,10 +500,13 @@ function DBRepoRowPicker({
       <DialogContent sx={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", pt: 1 }}>
         <Stack spacing={1} sx={{ flex: 1, minHeight: 0 }}>
           <Typography variant="body2" color="text.secondary">
-            {t("tinymce.dbrepo.rows.resourceContext", {
-              name: <b>{target.name}</b>,
-              database: <b>{target.databaseName}</b>,
-            })}
+            <TransRichText
+              i18nKey="workspace:tinymce.dbrepo.rows.resourceContext"
+              values={{
+                name: target.name,
+                database: target.databaseName,
+              }}
+            />
           </Typography>
           {error && <Alert severity="error">{error}</Alert>}
           {(loadingMetadata || loadingRows) && (
