@@ -37,7 +37,10 @@ const disableLinkedDocumentsAndLinkedFiles = () => {
     });
     const dbrepoLinks = $(".dbrepo_link");
     dbrepoLinks.each(function (index) {
-        $(dbrepoLinks[index]).removeAttr('href').css('opacity', 0.3);
+        $(dbrepoLinks[index])
+            .removeAttr('href target data-dbrepo-type data-dbrepo-database-id data-dbrepo-resource-id data-dbrepo-database-name data-dbrepo-query data-dbrepo-url')
+            .removeClass('dbrepo_link')
+            .css('opacity', 0.3);
     });
     //selector for any href coming after the externalLinkBadge inside an attachmentP class -
     // this category includes owncloud and nextcloud, box and others?
