@@ -1,10 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Activity } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import type { OperationResult } from "../operationsApi";
 import { useOperationWizardLauncher } from "../useOperationWizardLauncher";
+import { fakeServerLocks } from "./fakeServerLocks";
 
 const created: OperationResult = { id: 9, globalId: "SA9", name: "New" };
 vi.mock("../OperationWizard", () => ({
@@ -12,14 +14,25 @@ vi.mock("../OperationWizard", () => ({
     open,
     onClose,
     onPerformed,
+    origins,
+    pendingRenewals,
   }: {
     open: boolean;
     onClose: () => void;
     onPerformed?: (sample: OperationResult | null) => void;
+    origins: Array<SubSampleModel>;
+    pendingRenewals?: { current: Promise<unknown> };
   }) =>
     open ? (
       <div data-testid="wizard">
         <button type="button" aria-label="perform" onClick={() => onPerformed?.(created)} />
+        <button
+          type="button"
+          aria-label="next step"
+          onClick={() => {
+            if (pendingRenewals) pendingRenewals.current = Promise.all(origins.map((o) => o.acquireEditLock()));
+          }}
+        />
         <button type="button" aria-label="close wizard" onClick={onClose} />
       </div>
     ) : null,
@@ -97,6 +110,35 @@ describe("useOperationWizardLauncher", () => {
     await user.click(screen.getByRole("button", { name: "launch" }));
     await user.click(await screen.findByRole("button", { name: "close wizard" }));
     await waitFor(() => expect(onClose).toHaveBeenLastCalledWith(false));
+  });
+
+  it("still frees the lock at close, and opens again, after its effects were torn down and re-run mid-session", async () => {
+    // Hot reload, StrictMode and a hidden <Activity> all run the cleanup and then the setup again
+    // without unmounting. The cleanup gives the locks back, the next step's renewal takes them again,
+    // and close must still release them or the next launch is refused as WAS_ALREADY_LOCKED.
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    const serverLocks = fakeServerLocks(origin);
+    const onLaunched = vi.fn();
+    const ui = (mode: "visible" | "hidden") => (
+      <Activity mode={mode}>
+        <Workflow origin={origin} onLaunched={onLaunched} />
+      </Activity>
+    );
+    const { rerender } = render(ui("visible"));
+
+    await user.click(screen.getByRole("button", { name: "launch" }));
+    await waitFor(() => expect(onLaunched).toHaveBeenLastCalledWith(true));
+    rerender(ui("hidden"));
+    rerender(ui("visible"));
+    await user.click(await screen.findByRole("button", { name: "next step" }));
+    await user.click(screen.getByRole("button", { name: "close wizard" }));
+    await waitFor(() => expect(serverLocks.size).toBe(0));
+
+    await user.click(screen.getByRole("button", { name: "launch" }));
+    await waitFor(() => expect(onLaunched).toHaveBeenCalledTimes(2));
+    expect(onLaunched).toHaveBeenLastCalledWith(true);
+    expect(screen.getByTestId("wizard")).toBeInTheDocument();
   });
 
   it("resolves false without opening or reporting a close when the lock is refused", async () => {

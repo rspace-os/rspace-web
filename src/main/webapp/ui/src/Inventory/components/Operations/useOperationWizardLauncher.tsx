@@ -44,15 +44,17 @@ export function useOperationWizardLauncher(
   const renewals = React.useRef<Promise<unknown>>(Promise.resolve());
 
   const unmounted = React.useRef(false);
-  React.useEffect(
-    () => () => {
+  // The cleanup can run without an unmount (hot reload, StrictMode, a hidden Activity), so setup
+  // undoes it and `taken` is kept: the open wizard's next renewal re-takes the locks, and close
+  // must still give them back.
+  React.useEffect(() => {
+    unmounted.current = false;
+    return () => {
       unmounted.current = true;
       const held = taken.current;
-      taken.current = [];
       void renewals.current.then(() => releaseAll(held));
-    },
-    [],
-  );
+    };
+  }, []);
 
   const launch = async (): Promise<boolean> => {
     if (!available) {

@@ -5,7 +5,10 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
+import type SubSampleModel from "@/stores/models/SubSampleModel";
 import OperationWizard from "../OperationWizard";
+import { useOperationWizardLauncher } from "../useOperationWizardLauncher";
+import { fakeServerLocks } from "./fakeServerLocks";
 
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
@@ -25,6 +28,8 @@ vi.mock("@/hooks/api/useUiPreference", () => ({
   useRawUiPreferences: () => ({}),
   readUiPreference: (_uiPreferences: Record<string, unknown>, _pref: symbol, defaultValue: unknown) => defaultValue,
 }));
+
+vi.mock("../../ContextMenu/useProcessAvailable", () => ({ useProcessAvailable: () => true }));
 
 vi.mock("../../ContextMenu/ContextDialog", () => ({
   default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div>{children}</div> : null),
@@ -108,5 +113,40 @@ describe("OperationWizard lock renewal and close ordering", () => {
 
     finish[0]("LOCKED_OK");
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+});
+
+describe("OperationWizard opened through useOperationWizardLauncher", () => {
+  beforeEach(() => {
+    server.use(
+      http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
+    );
+  });
+
+  function Launcher({ origin }: { origin: SubSampleModel }) {
+    const { launch, wizard } = useOperationWizardLauncher([origin]);
+    return (
+      <>
+        <button type="button" aria-label="launch" onClick={() => void launch()} />
+        {wizard}
+      </>
+    );
+  }
+
+  it("leaves no lock behind after a renewal and a cancel, so the next launch opens", async () => {
+    const origin = makeMockSubSample({});
+    const serverLocks = fakeServerLocks(origin);
+    const user = userEvent.setup();
+    render(<Launcher origin={origin} />);
+
+    await user.click(screen.getByRole("button", { name: "launch" }));
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
+    await user.click(screen.getByRole("button", { name: /actions\.next/i }));
+    await user.click(screen.getByRole("button", { name: /actions\.cancel/i }));
+    await waitFor(() => expect(serverLocks.size).toBe(0));
+
+    await user.click(screen.getByRole("button", { name: "launch" }));
+    expect(await screen.findByRole("button", { name: /operations\.derive\.label/i })).toBeInTheDocument();
   });
 });
