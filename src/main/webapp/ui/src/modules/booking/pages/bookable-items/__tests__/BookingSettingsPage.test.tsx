@@ -92,7 +92,7 @@ describe("BookingSettingsPage", () => {
     await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
-    expect(await screen.findByRole("status")).toBeVisible();
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
     expect(submitted).toMatchObject({ openingStart: "00:00", openingEnd: "24:00" });
   });
 
@@ -166,7 +166,10 @@ describe("BookingSettingsPage", () => {
     await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
+    const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
+    expect(savedButton).toBeDisabled();
+    expect(savedButton).toHaveClass("bg-emerald-600");
+    expect(screen.queryByText("booking:settings.saved")).not.toBeInTheDocument();
     expect(body).toEqual({
       slotGranularityMinutes: 5,
       openingStart: "08:00",
@@ -181,6 +184,12 @@ describe("BookingSettingsPage", () => {
       customTimezone: null,
       configurationVersion: 0,
     });
+
+    await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
+    expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeEnabled();
+    expect(savedButton).not.toHaveClass("bg-emerald-600");
+    await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
+    expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeDisabled();
   });
 
   it("writes one entered buffer value to both stored directions", async () => {
@@ -202,9 +211,12 @@ describe("BookingSettingsPage", () => {
     await user.type(buffer, "12");
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
-    expect(await screen.findByRole("status")).toBeVisible();
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
     expect(body).toMatchObject({ bufferBeforeMinutes: 12, bufferAfterMinutes: 12 });
     expect(body).toMatchObject({ configurationVersion: 0 });
+
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
+    expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeEnabled();
   });
 
   it("keeps a stale form open and asks the admin to reload", async () => {

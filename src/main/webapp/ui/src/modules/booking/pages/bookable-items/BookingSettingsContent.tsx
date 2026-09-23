@@ -1,5 +1,6 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { CheckIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
@@ -76,6 +77,8 @@ export function BookingSettingsContent() {
         customTimezone: settings.customTimezone,
       });
 
+  const saved = mutation.isSuccess && !dirty;
+
   return (
     <main className="p-4 sm:p-8">
       <DirtyNavigationGuard dirty={dirty} />
@@ -84,7 +87,12 @@ export function BookingSettingsContent() {
       </Heading>
       <p className="mb-5 text-sm text-muted-foreground">{t("settings.description")}</p>
       <Separator className="mb-8 h-px bg-gray-300" />
-      <Form of={form} className="max-w-2xl space-y-8" onSubmit={(input) => mutation.mutateAsync(input)}>
+      <Form
+        of={form}
+        className="max-w-2xl space-y-8"
+        onChange={() => mutation.reset()}
+        onSubmit={(input) => mutation.mutateAsync(input)}
+      >
         <SchedulingSettingsFields form={form} disabled={mutation.isPending} />
         <Separator />
         <section className="space-y-4" aria-labelledby="booking-display-defaults-heading">
@@ -112,13 +120,18 @@ export function BookingSettingsContent() {
             )}
           </FieldError>
         ) : null}
-        {mutation.isSuccess && !dirty ? <p role="status">{t("settings.saved")}</p> : null}
         <Button
           type="submit"
           disabled={mutation.isPending || !dirty || !displaySettingsValid}
           aria-busy={mutation.isPending}
+          className={
+            saved
+              ? "bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-100 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+              : undefined
+          }
         >
-          {t("settings.actions.save")}
+          {saved ? <CheckIcon aria-hidden="true" /> : null}
+          {t(saved ? "preferences.actions.saved" : "settings.actions.save")}
         </Button>
       </Form>
     </main>
