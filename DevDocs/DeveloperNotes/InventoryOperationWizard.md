@@ -97,6 +97,14 @@ Files:
   - the wizard components (`OperationWizard`, `OperationPicker`,
     `OperationDetailsStep`, `DocumentationStep`, `OperationConfirmation`,
     `ProcessAction`).
+  - `useOperationWizardLauncher` — the only sanctioned way to open the wizard. It runs
+    the same checks the context menu runs (operations enabled, non-deleted subsamples
+    only), owns the origins' edit locks for the wizard's lifetime, and returns
+    `{ launch, wizard }`. `ProcessAction` is one caller; a workflow on another Inventory
+    page is another. Callers may pass `onPerformed(sample)`, which receives the created
+    sample (`null` for an operation that creates none), and `onClose(performed)`, called
+    after the locks are released, where `performed` is false when the user cancelled.
+    `launch()` resolves to false, without calling `onClose`, when the wizard did not open.
 
 ## Adding a new operation
 
