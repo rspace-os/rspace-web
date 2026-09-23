@@ -28,11 +28,10 @@ public class ApiInventoryLink {
   private Long versionPin;
 
   /**
-   * Set only by the CSV importer: store the link even when its target no longer exists on this
-   * server, so an exported dangling link re-imports as a dangling link (RSDEV-1354). A target that
-   * does exist is still checked for readability, so the flag cannot forge a link to a record the
-   * importing user may not read. Never settable from JSON, so API clients cannot reach even that
-   * narrowed leniency.
+   * Set only by {@link com.researchspace.service.inventory.csvimport.CsvLinkValueParser}: skips the
+   * target check entirely, so CSV import stores the link whatever state its target is in, missing
+   * and unreadable included (RSDEV-1354, ADR-0002). Not settable from JSON, so link create and
+   * update payloads cannot set it; the CSV import endpoint, through the UI or the API, can.
    */
   // ponytail: a boolean on the DTO instead of threading an "import" flag through three managers;
   // promote to a dedicated createLink variant if a second lenient caller appears
