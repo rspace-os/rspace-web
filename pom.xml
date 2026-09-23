@@ -1691,7 +1691,8 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
-      <version>1.3.0</version>
+      <!-- RSDEV-1522: branch SNAPSHOT for the longer search read timeout; swap for a release before merge -->
+      <version>RSDEV-1522-datacite-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
