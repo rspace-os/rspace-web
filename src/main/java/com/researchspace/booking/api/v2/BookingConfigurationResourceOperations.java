@@ -317,7 +317,7 @@ public final class BookingConfigurationResourceOperations
   private Create create(ParsedDocument document) {
     return new Create(
         (boolean) document.values().getOrDefault("enabled", true),
-        institutionClock.getZone().getId(),
+        (String) document.values().getOrDefault("timezone", institutionClock.getZone().getId()),
         target(document),
         schedulingPatch(document));
   }

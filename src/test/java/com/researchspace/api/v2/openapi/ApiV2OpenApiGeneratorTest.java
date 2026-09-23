@@ -448,7 +448,7 @@ class ApiV2OpenApiGeneratorTest {
 
     Map<String, Object> bookingProperties =
         objectMap(objectMap(schemas.get("BookingConfigurationsCreate")).get("properties"));
-    assertFalse(bookingProperties.containsKey("timezone"));
+    assertTrue(bookingProperties.containsKey("timezone"));
     assertFalse(bookingProperties.containsKey("timeZone"));
     Map<String, Object> target = objectMap(bookingProperties.get("target"));
     assertEquals("Booking target", target.get("title"));
@@ -491,6 +491,7 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> bookingUpdateProperties =
         objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
     assertFalse(bookingUpdateProperties.containsKey("target"));
+    assertFalse(bookingUpdateProperties.containsKey("timezone"));
 
     Map<String, Object> components = objectMap(document.get("components"));
     Map<String, Object> badRequest =

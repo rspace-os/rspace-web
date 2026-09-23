@@ -87,6 +87,10 @@ class ApiV2BookingConfigurationResourceTest {
             "allowDoubleBooking"),
         List.copyOf(
             ApiV2BookingConfigurationResource.DESCRIPTION.writableFields(WriteOperation.UPDATE)));
+    assertTrue(
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .writableFields(WriteOperation.CREATE)
+            .contains("timezone"));
     assertEquals(
         List.of("target", "createdBy", "updatedBy"),
         ApiV2BookingConfigurationResource.DESCRIPTION.relationships().stream()
@@ -327,17 +331,16 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
-  void rejectsPublicTimeZoneWritesAndKeepsInternalValidation() throws Exception {
-    assertThrows(
-        DocumentValidationException.class,
-        () ->
-            ApiV2DocumentParser.parse(
-                mapper.readTree(
-                    "{\"enabled\":true,\"timezone\":\"Europe/Berlin\",\"target\":{\"relationTo\":\"booking-instruments\",\"value\":12}}"),
-                ApiV2BookingConfigurationResource.DESCRIPTION,
-                WriteOperation.CREATE,
-                "errors.api.v2.bookingConfiguration.create",
-                new AccessContext(null, Operation.CREATE, "booking-configurations")));
+  void acceptsTimeZoneOnlyOnCreateAndKeepsInternalValidation() throws Exception {
+    ParsedDocument created =
+        ApiV2DocumentParser.parse(
+            mapper.readTree(
+                "{\"enabled\":true,\"timezone\":\"Europe/Berlin\",\"target\":{\"relationTo\":\"booking-instruments\",\"value\":12}}"),
+            ApiV2BookingConfigurationResource.DESCRIPTION,
+            WriteOperation.CREATE,
+            "errors.api.v2.bookingConfiguration.create",
+            new AccessContext(null, Operation.CREATE, "booking-configurations"));
+    assertEquals("Europe/Berlin", created.values().get("timezone"));
 
     assertThrows(
         DocumentValidationException.class,

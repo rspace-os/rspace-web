@@ -1125,6 +1125,7 @@ export default interface Resources {
         "target": "Bookable item",
         "targetName": "Bookable item name",
         "timezone": "Time zone",
+        "timezoneDescription": "Opening hours and booking rules use this time zone. It cannot be changed after the item is added.",
         "updatedAt": "Last updated"
       },
       "lifecycleErrors": {

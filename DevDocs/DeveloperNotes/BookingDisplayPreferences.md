@@ -146,11 +146,12 @@ relevant capability is known.
 
 ## REST API compatibility
 
-The `timezone` field on `/api/v2/booking-configurations` is now read-only. It remains available in
-GET responses as the item's scheduling timezone, but create, patch, and bulk requests that include
-it receive the collection framework's normal `400 Bad Request` response. Public creates assign the
-JVM-backed institution timezone. This is an immediate breaking change; internal Java manager
-commands retain their timezone fields for fixtures and other trusted scheduling workflows.
+The `timezone` field on `/api/v2/booking-configurations` is the item's scheduling timezone. Single
+and bulk creates may set it to an IANA zone ID; blank or unknown zones receive `400 Bad Request`
+from the entity validation. Creates that omit it are assigned the JVM-backed institution timezone.
+It is immutable afterwards: patch and bulk-update requests that include it receive the collection
+framework's normal `400 Bad Request` response. The Add bookable item form offers it as a searchable
+select that defaults to the institution timezone; the edit form omits it.
 
 ## Item filters on the dashboard
 

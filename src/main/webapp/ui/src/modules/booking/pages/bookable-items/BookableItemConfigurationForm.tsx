@@ -61,7 +61,7 @@ export function BookableItemConfigurationForm({
       />
       <Form id={formId} of={form} className="min-w-0 space-y-4" onSubmit={(input) => onSubmit(input, version)}>
         <RenderFields
-          fields={bookingConfigurationFields.filter((field) => field.name !== "target")}
+          fields={bookingConfigurationFields.filter((field) => field.name !== "target" && field.name !== "timezone")}
           form={form}
           disabled={pending}
           layout="inline"
