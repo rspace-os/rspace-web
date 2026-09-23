@@ -7078,7 +7078,9 @@ export default interface Resources {
           "rename": "Rename"
         },
         "dbrepo": {
-          "dialogTitle": "DBRepo link details"
+          "dialogTitle": "DBRepo link details",
+          "insertLink": "Insert link",
+          "insertRows": "Insert rows"
         },
         "document": {
           "creating": "Creating a document..."

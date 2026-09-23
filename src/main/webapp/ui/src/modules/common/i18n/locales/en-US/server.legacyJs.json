@@ -95,7 +95,9 @@
         "playerNotAvailable": "Player not available"
       },
       "dbrepo": {
-        "dialogTitle": "DBRepo link details"
+        "dialogTitle": "DBRepo link details",
+        "insertLink": "Insert link",
+        "insertRows": "Insert rows"
       },
       "nfs": {
         "actionFailed": "{0} action failed ({1}), if that does not work contact your System Admin",
