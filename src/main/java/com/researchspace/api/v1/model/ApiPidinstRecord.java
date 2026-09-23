@@ -86,8 +86,8 @@ public class ApiPidinstRecord {
    * can refuse Import before the 409 whether or not the caller may see that instrument
    * (RSDEV-1505). Set by the lookup manager, never by the mapper.
    */
-  @JsonProperty("linked")
-  private boolean linked;
+  @JsonProperty("alreadyLinked")
+  private boolean alreadyLinked;
 
   /**
    * The globalId of the instrument that already links this PID, present only when the caller may

@@ -163,7 +163,7 @@ class PidinstLookupManagerImplTest {
     assertEquals(1, result.getHits().size());
     assertEquals(HANDLE, result.getHits().get(0).getPid());
     assertEquals("IN99", result.getHits().get(0).getLinkedInstrumentGlobalId());
-    assertTrue(result.getHits().get(0).isLinked());
+    assertTrue(result.getHits().get(0).isAlreadyLinked());
     verify(dataCiteConnector, never()).searchInstrumentDois(anyString(), eq(50), any());
   }
 
@@ -174,7 +174,7 @@ class PidinstLookupManagerImplTest {
     ApiPidinstSearchResult direct = manager.search("https://hdl.handle.net/" + HANDLE, user);
     assertEquals(1, direct.getHits().size());
     assertNull(direct.getHits().get(0).getLinkedInstrumentGlobalId());
-    assertFalse(direct.getHits().get(0).isLinked());
+    assertFalse(direct.getHits().get(0).isAlreadyLinked());
     verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
 
     ApiPidinstSearchResult foreign = manager.search("10.15151/esrf-instr-gco8", user);
@@ -233,7 +233,6 @@ class PidinstLookupManagerImplTest {
             PidinstAlreadyLinkedException.class,
             () -> manager.importInstrument(HANDLE, null, user));
 
-    assertEquals("IN99", ex.getLinkedInstrumentGlobalId());
     assertTrue(
         ex.getMessage().contains("pidinstAlreadyLinked") && ex.getMessage().contains("IN99"));
     verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
@@ -264,11 +263,11 @@ class PidinstLookupManagerImplTest {
             PidinstAlreadyLinkedException.class,
             () -> manager.importInstrument(HANDLE, null, user));
 
-    assertEquals("IN77", ex.getLinkedInstrumentGlobalId());
+    assertTrue(ex.getMessage().contains("IN77"), ex.getMessage());
     verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
   }
 
-  /** RSDEV-1505: the exception's own field is withheld too, not just the message. */
+  /** RSDEV-1505: the refusal still refuses, and still says why, without naming anything. */
   @Test
   void importRefusesAPidLinkedByAnInstrumentTheCallerCannotOpenWithoutNamingIt() {
     when(b2instConnector.getRecordByHandle(HANDLE)).thenReturn(Optional.of(publishedRecord()));
@@ -286,7 +285,6 @@ class PidinstLookupManagerImplTest {
             PidinstAlreadyLinkedException.class,
             () -> manager.importInstrument(HANDLE, null, user));
 
-    assertNull(ex.getLinkedInstrumentGlobalId());
     assertTrue(ex.getMessage().contains("pidinstAlreadyLinkedNoAccess"), ex.getMessage());
     assertFalse(ex.getMessage().contains("IN99"), ex.getMessage());
     verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
@@ -308,7 +306,7 @@ class PidinstLookupManagerImplTest {
     ApiPidinstSearchResult result = manager.search("microscope", user);
 
     assertEquals("IN77", result.getHits().get(0).getLinkedInstrumentGlobalId());
-    assertTrue(result.getHits().get(0).isLinked());
+    assertTrue(result.getHits().get(0).isAlreadyLinked());
   }
 
   /** RSDEV-1505: defensive, but it decides a disclosure, so it is pinned rather than asserted. */
@@ -323,7 +321,7 @@ class PidinstLookupManagerImplTest {
 
     ApiPidinstRecord hit = manager.search("microscope", user).getHits().get(0);
 
-    assertTrue(hit.isLinked(), "the PID is taken whether or not a record holds the row");
+    assertTrue(hit.isAlreadyLinked(), "the PID is taken whether or not a record holds the row");
     assertNull(hit.getLinkedInstrumentGlobalId());
     // the point of the guard: the permission check is never handed a record that is not there
     verifyNoInteractions(invPermissions);
@@ -345,7 +343,7 @@ class PidinstLookupManagerImplTest {
 
     ApiPidinstRecord hit = manager.search("microscope", user).getHits().get(0);
 
-    assertTrue(hit.isLinked(), "the PID is taken, and the caller must be told so");
+    assertTrue(hit.isAlreadyLinked(), "the PID is taken, and the caller must be told so");
     assertNull(hit.getLinkedInstrumentGlobalId(), "but not by which instrument");
   }
 

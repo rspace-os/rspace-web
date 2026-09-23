@@ -3995,7 +3995,8 @@ export default interface Resources {
         "title": "Importing instrument"
       },
       "linkedTo": {
-        "noAccess": "An instrument you cannot access"
+        "noAccess": "No access",
+        "noAccessDetail": "An instrument you cannot access"
       },
       "preview": {
         "alreadyLinked": "This PID is already linked to an instrument in RSpace:",

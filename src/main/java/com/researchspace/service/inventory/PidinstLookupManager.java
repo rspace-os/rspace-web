@@ -28,7 +28,7 @@ public interface PidinstLookupManager {
    * enabled provider; a PID of the other registry yields no hit; anything else is one full-text
    * query. Only PUBLIC records are offered - B2INST {@code accepted}, DataCite {@code findable} -
    * because only those may be linked to an instrument. Hits are sorted by name; one whose PID an
-   * instrument in this deployment already links is marked {@code linked}, and carries {@code
+   * instrument in this deployment already links is marked {@code alreadyLinked}, and carries {@code
    * linkedInstrumentGlobalId} only when {@code user} may read that instrument (RSDEV-1505).
    *
    * @throws ApiRuntimeException when the query is shorter than {@link #MIN_QUERY_LENGTH} after

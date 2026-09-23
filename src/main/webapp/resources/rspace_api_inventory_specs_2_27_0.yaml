@@ -3027,7 +3027,8 @@ paths:
         not returned, and pasting such a PID yields no hit.
 
 
-        Each hit carries `linked` when an Instrument in this deployment already links that PID, so
+        Each hit carries `alreadyLinked` when an Instrument in this deployment already links that
+        PID, so
         a client can refuse importing it before the `409`, and `linkedInstrumentGlobalId` only when
         the caller may read that Instrument (read or limited read). An Instrument the caller may not
         read is never named.
@@ -4441,7 +4442,7 @@ components:
         updated:
           type: string
           description: Last-update timestamp as the provider reports it.
-        linked:
+        alreadyLinked:
           type: boolean
           description: >
             Whether an Instrument in this deployment already links this PID. Always present.

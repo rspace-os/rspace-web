@@ -36,7 +36,7 @@ const HITS = [
     commissioned: "2021-03-01",
     landingPage: "https://example.org/lsm980",
     alternateIdentifier: "INV-0042",
-    linked: false,
+    alreadyLinked: false,
   },
   {
     pid: "21.T11975/bbbbb-22222",
@@ -48,7 +48,7 @@ const HITS = [
     manufacturers: ["Bruker"],
     instrumentTypes: [],
     measuredVariables: [],
-    linked: true,
+    alreadyLinked: true,
     linkedInstrumentGlobalId: "IN52",
   },
 ];
@@ -275,7 +275,9 @@ describe("PidinstImportDialog", () => {
 
     await user.hover(screen.getByText("inventory:pidinstImport.linkedTo.noAccess"));
 
-    expect(await screen.findByRole("tooltip", { name: "inventory:pidinstImport.linkedTo.noAccess" })).toBeVisible();
+    expect(
+      await screen.findByRole("tooltip", { name: "inventory:pidinstImport.linkedTo.noAccessDetail" }),
+    ).toBeVisible();
   });
 
   test("imports the selected PID, toasts a link to the new instrument, and reports it", async () => {

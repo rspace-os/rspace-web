@@ -1740,7 +1740,8 @@
     },
     "importSuccess": "Successfully imported the instrument.",
     "linkedTo": {
-      "noAccess": "An instrument you cannot access"
+      "noAccess": "No access",
+      "noAccessDetail": "An instrument you cannot access"
     },
     "preview": {
       "alreadyLinked": "This PID is already linked to an instrument in RSpace:",

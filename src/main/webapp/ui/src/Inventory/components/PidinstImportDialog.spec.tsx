@@ -31,7 +31,7 @@ const HITS = [
     measuredVariables: ["Fluorescence intensity"],
     commissioned: "2021-03-01",
     landingPage: "https://example.org/lsm980",
-    linked: false,
+    alreadyLinked: false,
   },
   {
     pid: "21.T11975/bbbbb-22222",
@@ -43,7 +43,7 @@ const HITS = [
     manufacturers: ["Bruker"],
     instrumentTypes: [],
     measuredVariables: [],
-    linked: true,
+    alreadyLinked: true,
     linkedInstrumentGlobalId: "IN52",
   },
 ];

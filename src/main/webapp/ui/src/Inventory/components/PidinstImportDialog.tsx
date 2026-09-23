@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -64,7 +65,7 @@ export type PidinstRecord = {
   created?: string;
   updated?: string;
   /** Whether an Instrument in this RSpace already links this PID; Import is refused either way. */
-  linked: boolean;
+  alreadyLinked: boolean;
   /** Present only when the current user may read that Instrument (RSDEV-1505). */
   linkedInstrumentGlobalId?: string;
 };
@@ -159,7 +160,7 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
       <Typography id={headingId} variant="h6" component="h3" sx={{ mb: 1 }}>
         {t("pidinstImport.preview.title")}
       </Typography>
-      {record.linked && (
+      {record.alreadyLinked && (
         <Alert severity="info" sx={{ mb: 1, alignItems: "center" }}>
           {record.linkedInstrumentGlobalId ? (
             <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -405,7 +406,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
 
   const importValidation = !selected
     ? IsInvalid(t("pidinstImport.validation.noSelection"))
-    : !selected.linked
+    : !selected.alreadyLinked
       ? IsValid()
       : selected.linkedInstrumentGlobalId
         ? IsInvalid(
@@ -549,13 +550,14 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                       flex: 0.7,
                       sortable: false,
                       renderCell: ({ row }) =>
-                        !row.linked ? null : row.linkedInstrumentGlobalId ? (
+                        !row.alreadyLinked ? null : row.linkedInstrumentGlobalId ? (
                           <GlobalId record={new LinkableRecordFromGlobalId(row.linkedInstrumentGlobalId)} />
                         ) : (
-                          // the grid clips a cell and only adds its own hover title when there is
-                          // no renderCell, so the sentence needs one of its own
-                          <Tooltip title={t("pidinstImport.linkedTo.noAccess")}>
-                            <span>{t("pidinstImport.linkedTo.noAccess")}</span>
+                          // the same chip the link fields show for an unreadable target: the grid
+                          // clips a cell, and only adds its own hover title when there is no
+                          // renderCell, so a sentence here would be cut off with no way to read it
+                          <Tooltip title={t("pidinstImport.linkedTo.noAccessDetail")}>
+                            <Chip size="small" color="warning" label={t("pidinstImport.linkedTo.noAccess")} />
                           </Tooltip>
                         ),
                     },

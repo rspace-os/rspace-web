@@ -330,7 +330,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * which for a caller who cannot plainly read the holder reaches the list-of-materials query
    * inside limited read.
    *
-   * <p>Every such hit is marked {@code linked}, so Import can be refused with a reason, but it
+   * <p>Every such hit is marked {@code alreadyLinked}, so Import can be refused with a reason, but
    * names the instrument only when {@code user} may read it: the registry record is public, an
    * RSpace instrument the caller may not read is not the search's to name (RSDEV-1505).
    */
@@ -348,7 +348,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     for (ApiPidinstRecord hit : hits) {
       Optional<DigitalObjectIdentifier> link =
           storedValuesOf(hit).map(linkedByStoredValue::get).filter(Objects::nonNull).findFirst();
-      hit.setLinked(link.isPresent());
+      hit.setAlreadyLinked(link.isPresent());
       hit.setLinkedInstrumentGlobalId(
           link.flatMap(identifier -> visibleGlobalIdOf(identifier, user)).orElse(null));
     }
@@ -408,13 +408,12 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
                 new PidinstAlreadyLinkedException(
                     messages.getMessage(
                         "errors.inventory.identifier.pidinstAlreadyLinked",
-                        new Object[] {globalId}),
-                    globalId))
+                        new Object[] {globalId})))
         .orElseGet(
             () ->
                 new PidinstAlreadyLinkedException(
-                    messages.getMessage("errors.inventory.identifier.pidinstAlreadyLinkedNoAccess"),
-                    null));
+                    messages.getMessage(
+                        "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess")));
   }
 
   /** Same translation {@code InstrumentsApiController.createNewInstrument} applies to a POST. */

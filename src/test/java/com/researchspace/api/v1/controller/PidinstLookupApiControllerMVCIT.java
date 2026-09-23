@@ -219,9 +219,9 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(handle, search.getHits().get(0).getPid());
     assertEquals("Test microscope", search.getHits().get(0).getName());
     assertNull(search.getHits().get(0).getLinkedInstrumentGlobalId());
-    assertFalse(search.getHits().get(0).isLinked());
+    assertFalse(search.getHits().get(0).isAlreadyLinked());
     // deserializing cannot tell absent from false, and the contract is that it is always present
-    assertTrue(json(searchResult).get("hits").get(0).has("linked"));
+    assertTrue(json(searchResult).get("hits").get(0).has("alreadyLinked"));
 
     ApiInstrument created =
         mvcUtils.getFromJsonResponseBody(
@@ -231,7 +231,7 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(
         created.getGlobalId(),
         json(afterImport).get("hits").get(0).get("linkedInstrumentGlobalId").asText());
-    assertTrue(json(afterImport).get("hits").get(0).get("linked").asBoolean());
+    assertTrue(json(afterImport).get("hits").get(0).get("alreadyLinked").asBoolean());
   }
 
   /**
@@ -317,11 +317,11 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     String outsiderApiKey = createNewApiKeyForUser(outsider);
 
     JsonNode outsiderHit = json(search(outsider, outsiderApiKey, handle)).get("hits").get(0);
-    assertTrue(outsiderHit.get("linked").asBoolean());
+    assertTrue(outsiderHit.get("alreadyLinked").asBoolean());
     assertFalse(outsiderHit.has("linkedInstrumentGlobalId"), outsiderHit.toString());
 
     JsonNode ownerHit = json(search(owner, ownerApiKey, handle)).get("hits").get(0);
-    assertTrue(ownerHit.get("linked").asBoolean());
+    assertTrue(ownerHit.get("alreadyLinked").asBoolean());
     assertEquals(created.getGlobalId(), ownerHit.get("linkedInstrumentGlobalId").asText());
 
     String refusal = json(importPid(outsider, outsiderApiKey, handle, 409)).get("message").asText();
