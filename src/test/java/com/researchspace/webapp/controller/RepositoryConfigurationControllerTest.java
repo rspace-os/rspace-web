@@ -4,6 +4,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -76,7 +77,7 @@ class RepositoryConfigurationControllerTest {
 
     List<RepoUIConfigInfo> activeRepos =
         repositoryConfigurationController.getAllActiveRepositories();
-    assertEquals(1, activeRepos.size());
+    assertThat(activeRepos).hasSize(1);
     assertEquals("test", activeRepos.get(0).getOtherProperties().get(0).getName());
   }
 
@@ -94,27 +95,28 @@ class RepositoryConfigurationControllerTest {
 
     List<RepoUIConfigInfo> activeRepos =
         repositoryConfigurationController.getAllActiveRepositories();
-    assertEquals(1, activeRepos.size());
-    assertEquals(1, activeRepos.get(0).getOptions().size());
+    assertThat(activeRepos).hasSize(1);
+    assertThat(activeRepos.get(0).getOptions()).hasSize(1);
     Map<String, Object> dataverseUIConfigOptions = activeRepos.get(0).getOptions();
     Map<String, Object> configOptionsMap = (Map<String, Object>) dataverseUIConfigOptions.get("1");
-    assertEquals(1, configOptionsMap.size());
+    assertThat(configOptionsMap).hasSize(1);
     assertNull(configOptionsMap.get("metadataLanguages"));
 
     repositoryConfigurationController.setMetadataLanguagesMap(
         "[{\"title\": \"English\", \"locale\": \"en\"}, {\"title\": \"Hungarian\", \"locale\":"
             + " \"hu\"}]");
     activeRepos = repositoryConfigurationController.getAllActiveRepositories();
-    assertEquals(1, activeRepos.size());
-    assertEquals(1, activeRepos.get(0).getOptions().size());
+    assertThat(activeRepos).hasSize(1);
+    assertThat(activeRepos.get(0).getOptions()).hasSize(1);
     dataverseUIConfigOptions = activeRepos.get(0).getOptions();
     configOptionsMap = (Map<String, Object>) dataverseUIConfigOptions.get("1");
-    assertEquals(2, configOptionsMap.size());
-    assertEquals(
-        List.of(
-            Map.of("title", "English", "locale", "en"),
-            Map.of("title", "Hungarian", "locale", "hu")),
-        configOptionsMap.get("metadataLanguages"));
+    assertThat(configOptionsMap).hasSize(2);
+    assertThat(configOptionsMap)
+        .containsEntry(
+            "metadataLanguages",
+            List.of(
+                Map.of("title", "English", "locale", "en"),
+                Map.of("title", "Hungarian", "locale", "hu")));
   }
 
   // this test mocks out calls to underlying repositories and integrations
@@ -138,11 +140,11 @@ class RepositoryConfigurationControllerTest {
         .thenReturn(datverseIntegrationInfo);
     List<RepoUIConfigInfo> activeRepos =
         repositoryConfigurationController.getAllActiveRepositories();
-    assertEquals(0, activeRepos.size());
+    assertThat(activeRepos).isEmpty();
 
     addDataverseConfig(datverseIntegrationInfo);
     activeRepos = repositoryConfigurationController.getAllActiveRepositories();
-    assertEquals(1, activeRepos.size());
+    assertThat(activeRepos).hasSize(1);
   }
 
   private void setupApp() {
@@ -173,9 +175,9 @@ class RepositoryConfigurationControllerTest {
         new RepoUIConfigInfo("A repo", null, null, Collections.emptyList());
     when(repositoryDepositHandler.getFigshareRepoUIConfigInfo(any(User.class)))
         .thenReturn(uiCfgInfo);
-    assertEquals(1, repositoryConfigurationController.getAllActiveRepositories().size());
+    assertThat(repositoryConfigurationController.getAllActiveRepositories()).hasSize(1);
     figshareIntegrationInfo.setOauthConnected(false);
-    assertEquals(0, repositoryConfigurationController.getAllActiveRepositories().size());
+    assertThat(repositoryConfigurationController.getAllActiveRepositories()).isEmpty();
   }
 
   private void mockUICfgInfo() throws MalformedURLException {
@@ -213,8 +215,8 @@ class RepositoryConfigurationControllerTest {
     mockUICfgInfo();
     List<RepoUIConfigInfo> activeRepos =
         repositoryConfigurationController.getAllActiveRepositories();
-    assertEquals(1, activeRepos.size());
-    assertEquals(1, activeRepos.get(0).getLinkedDMPs().size());
+    assertThat(activeRepos).hasSize(1);
+    assertThat(activeRepos.get(0).getLinkedDMPs()).hasSize(1);
     assertEquals("title", activeRepos.get(0).getLinkedDMPs().get(0).getDmpTitle());
   }
 

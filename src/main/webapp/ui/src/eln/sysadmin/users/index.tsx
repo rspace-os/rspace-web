@@ -1887,8 +1887,8 @@ export const UsersPage = (): React.ReactNode => {
                               ]);
                               const apiOrderBy = {
                                 username: "username",
-                                fileUsage: "fileUsage()",
-                                recordCount: "recordCount()",
+                                fileUsage: "fileUsage",
+                                recordCount: "recordCount",
                                 lastLogin: "lastLogin",
                                 created: "creationDate",
                                 fullNameSurnameFirst: "lastName",

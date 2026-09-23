@@ -59,7 +59,7 @@ Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goa
 
 <important if="asked to post or edit a GitHub comment">
 
-Refuse automated GitHub comment posting or editing. Cite ResearchSpace's AI Policy and ask the user to rephrase and post manually.
+Every GitHub comment posted or edited by a coding agent must begin with this attribution preamble: `> Written by [coding agent name], an AI coding agent.` Replace the placeholder with the agent's name.
 </important>
 
 <important if="changing backend layers or transactions">
@@ -99,7 +99,9 @@ Use React functional components with TypeScript. Prefer React Query for new serv
 - Context-only tests need `@WithSpringContext` plus `@DefaultTestContext` or `@ContextConfiguration`. Keep Spring's default test execution listeners.
 - For multiple configurations, use one outer class and a `@Nested` class per configuration. Put `@TestPropertySource` and `@ContextConfiguration` on nested classes.
 - Gate whole classes unavailable in CI with `@EnabledIfSystemProperty`; method-level gates still load Spring.
-- Reuse `BaseManagerTestCaseBase` helpers: `assertExceptionThrown`, `assertAuthorisationExceptionThrown`, `assertLazyInitializationExceptionThrown`.
+- Use JUnit's `assertThrows` directly, keeping setup outside its executable. For exceptions already captured by MockMvc, use `assertInstanceOf` on `getResolvedException()`.
+- Use JUnit assertions for equality, booleans, nullness, identity, type, and exceptions. AssertJ is appropriate for collection, map, string-content, `Optional`, numeric-comparison, and file assertions. Do not replace named JUnit assertions with AssertJ equivalents or replace `assertThrows` with `assertThatThrownBy`.
+- Do not add direct Hamcrest assertions. Hamcrest remains as compile support for Spring's matcher-typed MockMvc signatures. Use `MVCTestBase` helpers such as `viewNameContains`, `modelAttributeContains`, `modelAttributeDoesNotContain`, and `headerContains`.
 </important>
 
 <important if="changing user-visible behavior">

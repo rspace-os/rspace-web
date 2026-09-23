@@ -65,9 +65,10 @@ public class SymmetricTextEncryptorTest {
         IllegalArgumentException.class, () -> SymmetricTextEncryptor.createFromAnyString(""));
     assertThrows(
         IllegalArgumentException.class, () -> SymmetricTextEncryptor.createFromAnyString(null));
+    String overlongKey = random(256);
     assertThrows(
         IllegalArgumentException.class,
-        () -> SymmetricTextEncryptor.createFromAnyString(random(256)));
+        () -> SymmetricTextEncryptor.createFromAnyString(overlongKey));
   }
 
   private String createNewEncryptionKey() {

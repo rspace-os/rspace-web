@@ -77,7 +77,7 @@ export class DocumentEditorPage extends DocumentPage {
   async getField(fieldName: string, index = 0): Promise<TinyMceEditor> {
     const fieldId = await resolveFieldId(this.page, fieldName, index, "getField");
     await activateFieldForEditing(this.page, fieldId);
-    return new TinyMceEditor(this.page, `rtf_${fieldId}`).waitForReady();
+    return new TinyMceEditor(this.page, fieldId).waitForReady();
   }
 
   async saveAndView(): Promise<DocumentPage> {

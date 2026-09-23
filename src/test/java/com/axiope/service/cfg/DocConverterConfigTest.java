@@ -1,9 +1,7 @@
 package com.axiope.service.cfg;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.document.importer.MSWordImporter;
@@ -135,8 +133,8 @@ public class DocConverterConfigTest {
     @Test
     public void testEmbeddedConfig() {
       List<DocumentConversionService> delegates = getConverterList();
-      assertEquals(2, delegates.size());
-      assertTrue(delegates.contains(cfg.nullService()));
+      assertThat(delegates).hasSize(2);
+      assertThat(delegates).contains(cfg.nullService());
     }
   }
 
@@ -152,10 +150,10 @@ public class DocConverterConfigTest {
     @Test
     public void testAppConfig() {
       List<DocumentConversionService> delegates = getConverterList();
-      assertEquals(2, delegates.size());
+      assertThat(delegates).hasSize(2);
       assertNotNull(cfg, "cfg is null");
-      assertTrue(delegates.contains(cfg.asyncConverterService()));
-      assertFalse(delegates.contains(cfg.nullService()));
+      assertThat(delegates).contains(cfg.asyncConverterService());
+      assertThat(delegates).doesNotContain(cfg.nullService());
     }
   }
 
@@ -168,10 +166,10 @@ public class DocConverterConfigTest {
     @Test
     public void testAppConfig() {
       List<DocumentConversionService> delegates = getConverterList();
-      assertEquals(2, delegates.size());
+      assertThat(delegates).hasSize(2);
       assertNotNull(cfg, "cfg is null");
-      assertFalse(delegates.contains(cfg.asyncConverterService()));
-      assertTrue(delegates.contains(cfg.nullService()));
+      assertThat(delegates).doesNotContain(cfg.asyncConverterService());
+      assertThat(delegates).contains(cfg.nullService());
     }
   }
 
@@ -187,12 +185,12 @@ public class DocConverterConfigTest {
     @Test
     public void testAppConfig() {
       List<DocumentConversionService> delegates = getConverterList();
-      assertEquals(2, delegates.size());
+      assertThat(delegates).hasSize(2);
       assertNotNull(cfg, "cfg is null");
 
-      assertFalse(delegates.contains(cfg.asyncConverterService()));
-      assertFalse(delegates.contains(cfg.nullService()));
-      assertTrue(delegates.contains(cfg.asposeWebAppService()));
+      assertThat(delegates).doesNotContain(cfg.asyncConverterService());
+      assertThat(delegates).doesNotContain(cfg.nullService());
+      assertThat(delegates).contains(cfg.asposeWebAppService());
     }
   }
 
@@ -210,10 +208,10 @@ public class DocConverterConfigTest {
     @Test
     public void testAppConfig() {
       List<DocumentConversionService> delegates = getConverterList();
-      assertEquals(2, delegates.size());
+      assertThat(delegates).hasSize(2);
       assertNotNull(cfg, "cfg is null");
       // is not added, embedded is used as a fallback
-      assertFalse(delegates.contains(cfg.asyncConverterService()));
+      assertThat(delegates).doesNotContain(cfg.asyncConverterService());
     }
   }
 }

@@ -85,7 +85,7 @@ test.describe(`Workspace filters`, () => {
   test.describe("Shared filter (needs a second user)", () => {
     test.describe.configure({ timeout: 120_000 });
 
-    test(`As a user, the Shared filter shows a document shared with my group`, async ({
+    test(`As a user, the Shared filter shows a document shared with my lab group`, async ({
       pageWorkspace,
       pageLogin,
       clientDocuments,
@@ -127,6 +127,54 @@ test.describe(`Workspace filters`, () => {
         await recipient.workspace.open();
         await recipient.workspace.toolbar.toggleFilter("shared");
         await expect(recipient.workspace.table.row(docName)).toBeVisible();
+      });
+    });
+
+    test(`As a user, Move is hidden for a project group document under the Shared filter`, async ({
+      pageWorkspace,
+      pageLogin,
+      clientDocuments,
+      clientSysadmin,
+      appUser,
+      flowCreateUser,
+    }) => {
+      const groupName = uniqueName("e2e-filter-shared-group");
+      const docName = uniqueName("e2e-filter-shared-doc");
+
+      const recipient = await flowCreateUser("ROLE_USER");
+
+      await test.step("Given a second user exists in a project group with me, and I own a document", async () => {
+        // a project group gives every member move permission, so hiding Move is the code under test
+        await clientSysadmin.createGroup({
+          displayName: groupName,
+          type: "PROJECT_GROUP",
+          users: [
+            { username: appUser.username, roleInGroup: "GROUP_OWNER" },
+            { username: recipient.username, roleInGroup: "DEFAULT" },
+          ],
+        });
+        await clientDocuments.create({ name: docName });
+        await pageWorkspace.open();
+        await pageWorkspace.header.logOut();
+        await pageLogin.login(appUser.username, appUser.password);
+        await pageWorkspace.open();
+        await pageWorkspace.waitUntilLoaded();
+      });
+
+      await test.step("When I share the document with the group", async () => {
+        await pageWorkspace.searchBar.search(docName);
+        await pageWorkspace.table.selectRecord(docName);
+        const shareDialog = await pageWorkspace.selectionBar.share();
+        await shareDialog.addRecipient(groupName);
+        await shareDialog.save();
+      });
+
+      await test.step("Then the recipient sees it under the Shared filter", async () => {
+        await recipient.workspace.open();
+        await recipient.workspace.toolbar.toggleFilter("shared");
+        await expect(recipient.workspace.table.row(docName)).toBeVisible();
+        await recipient.workspace.table.selectRecord(docName);
+        expect(await recipient.workspace.selectionBar.isActionVisible("Move")).toBe(false);
       });
     });
   });

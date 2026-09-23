@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,7 +43,7 @@ public class InventoryReferencingItemsApiControllerMVCIT extends API_MVC_Invento
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
     assertNotNull(body);
-    assertEquals(0, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).isEmpty();
   }
 
   @Test
@@ -73,7 +74,7 @@ public class InventoryReferencingItemsApiControllerMVCIT extends API_MVC_Invento
 
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-    assertEquals(1, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).hasSize(1);
     assertEquals("IsCalibratedBy", body.getReferencingItems().get(0).getRelationType());
     assertEquals(source.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
   }
@@ -113,7 +114,7 @@ public class InventoryReferencingItemsApiControllerMVCIT extends API_MVC_Invento
 
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-    assertEquals(1, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).hasSize(1);
     assertEquals("IsCalibratedBy", body.getReferencingItems().get(0).getRelationType());
     assertEquals(source.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
   }
@@ -149,10 +150,9 @@ public class InventoryReferencingItemsApiControllerMVCIT extends API_MVC_Invento
     if (result.getResponse().getStatus() == 200) {
       ApiInventoryReferencingItems body =
           getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-      assertEquals(
-          0,
-          body.getReferencingItems().size(),
-          "items the requester cannot read should not appear in the back-ref list");
+      assertThat(body.getReferencingItems())
+          .as("items the requester cannot read should not appear in the back-ref list")
+          .isEmpty();
     }
   }
 
@@ -183,7 +183,7 @@ public class InventoryReferencingItemsApiControllerMVCIT extends API_MVC_Invento
 
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-    assertEquals(1, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).hasSize(1);
     assertEquals(source.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
   }
 
@@ -217,7 +217,7 @@ public class InventoryReferencingItemsApiControllerMVCIT extends API_MVC_Invento
 
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-    assertEquals(1, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).hasSize(1);
   }
 
   private String buildLinkExtraFieldUpdate(String targetGlobalId, String relationType) {

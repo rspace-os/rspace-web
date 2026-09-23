@@ -124,11 +124,10 @@ public class RepositoryDepositHandlerTest {
         SystemPropertyTestFactory.createAnyAppWithConfigElements(anyUser, App.APP_FIGSHARE);
     App app = appCfg.getApp();
     mockGetSessionUser();
+    var config = appCfg.getAppConfigElementSets().iterator().next();
     assertThrows(
         AppNotAuthorisedException.class,
-        () ->
-            unconnectedHandlerTSS.getDataverseRepoUIConfigInfo(
-                appCfg.getAppConfigElementSets().iterator().next(), anyUser));
+        () -> unconnectedHandlerTSS.getDataverseRepoUIConfigInfo(config, anyUser));
   }
 
   @Test

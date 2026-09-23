@@ -1,5 +1,6 @@
 package com.researchspace.service.metadata;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -139,8 +140,8 @@ class S3SidecarFileServiceTest {
     ArgumentCaptor<Map<String, String>> metaCaptor = ArgumentCaptor.forClass(Map.class);
     verify(s3Utilities)
         .uploadToS3(eq("XRD-Experiments"), fileCaptor.capture(), metaCaptor.capture());
-    assertEquals("XRD-Experiments.sidecar.yaml", fileCaptor.getValue().getName());
-    assertEquals("jmuller", metaCaptor.getValue().get(WriteAttribution.META_CREATED_BY));
+    assertThat(fileCaptor.getValue()).hasName("XRD-Experiments.sidecar.yaml");
+    assertThat(metaCaptor.getValue()).containsEntry(WriteAttribution.META_CREATED_BY, "jmuller");
 
     ArgumentCaptor<GenericEvent> eventCaptor = ArgumentCaptor.forClass(GenericEvent.class);
     verify(auditService).notify(eventCaptor.capture());
@@ -171,7 +172,7 @@ class S3SidecarFileServiceTest {
     GeneratedSidecarFile result = service.preview(1L, "XRD-Experiments", user);
 
     JsonNode related = yaml.readTree(result.getContent()).path("relatedItems");
-    assertEquals(1, related.size());
+    assertThat(related).hasSize(1);
     assertEquals(
         "XRD-Experiments/xrd_run_041.dat", related.path(0).path("s3Location").path("key").asText());
   }

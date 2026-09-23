@@ -294,7 +294,7 @@ public class NextCloudController extends BaseOAuth2Controller {
         ("&openfile="
             + fileID
             + "&scrollto="
-            + URLEncoder.encode(path.replaceAll(parentPath, "").replace("/", "")));
+            + URLEncoder.encode(StringUtils.removeStart(path, parentPath).replace("/", "")));
     return new ModelAndView("redirect:" + redirectURL);
   }
 

@@ -1,5 +1,6 @@
 package com.researchspace.model.test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -97,7 +98,7 @@ class HibernateSearchTest extends HibernateTest {
               .fetchHits(20);
 
       assertNotNull(samples);
-      assertEquals(0, samples.size());
+      assertThat(samples).isEmpty();
 
       // find by name
       samples =
@@ -106,7 +107,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "tags", "description").matching("one"))
               .fetchHits(20);
       assertNotNull(samples);
-      assertEquals(1, samples.size());
+      assertThat(samples).hasSize(1);
       assertEquals("uniquename one", samples.get(0).getName());
 
       // by tag
@@ -116,7 +117,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "tags", "description").matching("tag4"))
               .fetchHits(20);
       assertNotNull(samples);
-      assertEquals(1, samples.size());
+      assertThat(samples).hasSize(1);
       assertEquals("uniquename two", samples.get(0).getName());
 
       // by description
@@ -126,7 +127,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "tags", "description").matching("description3"))
               .fetchHits(20);
       assertNotNull(samples);
-      assertEquals(1, samples.size());
+      assertThat(samples).hasSize(1);
       assertEquals("uniquename three", samples.get(0).getName());
 
       // by field content
@@ -136,7 +137,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("fields.fieldData").matching(testFieldData))
               .fetchHits(20);
       assertNotNull(samples);
-      assertEquals(1, samples.size());
+      assertThat(samples).hasSize(1);
       assertEquals("uniquename three", samples.get(0).getName());
 
       // by extra field content
@@ -146,7 +147,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("extraFields.fieldData").matching(testExtraFieldData))
               .fetchHits(20);
       assertNotNull(samples);
-      assertEquals(1, samples.size());
+      assertThat(samples).hasSize(1);
       assertEquals("uniquename two", samples.get(0).getName());
 
       // by attachment name
@@ -156,9 +157,9 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("files.fieldData").matching(testAttachmentName))
               .fetchHits(20);
       assertNotNull(samples);
-      assertEquals(1, samples.size());
+      assertThat(samples).hasSize(1);
       assertEquals("uniquename two", samples.get(0).getName());
-      assertEquals(1, samples.get(0).getAttachedFiles().size());
+      assertThat(samples.get(0).getAttachedFiles()).hasSize(1);
 
       // by barcode
       samples =
@@ -167,7 +168,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("barcodes.barcodeData").matching("Barcode123"))
               .fetchHits(20);
       assertNotNull(samples);
-      assertEquals(1, samples.size());
+      assertThat(samples).hasSize(1);
       assertEquals("uniquename three", samples.get(0).getName());
 
       // by shared with
@@ -177,7 +178,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("sharedWith").matching("group1"))
               .fetchHits(20);
       assertNotNull(samples);
-      assertEquals(1, samples.size());
+      assertThat(samples).hasSize(1);
       assertEquals("uniquename three", samples.get(0).getName());
 
       transaction.commit();
@@ -238,7 +239,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("name").matching("polysearch"))
               .fetchHits(20);
       assertNotNull(sampleEntities);
-      assertEquals(2, sampleEntities.size());
+      assertThat(sampleEntities).hasSize(2);
       // fetchHits() returns an immutable list, so copy before sorting in place
       sampleEntities = new ArrayList<>(sampleEntities);
       Collections.sort(sampleEntities, (se1, se2) -> se1.getName().compareTo(se2.getName()));
@@ -254,7 +255,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("name").matching("polysearch"))
               .fetchHits(20);
       assertNotNull(samples);
-      assertEquals(1, samples.size());
+      assertThat(samples).hasSize(1);
       assertEquals("polysearch sample", samples.get(0).getName());
 
       // and targeting SampleTemplate finds only the template
@@ -264,7 +265,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("name").matching("polysearch"))
               .fetchHits(20);
       assertNotNull(templates);
-      assertEquals(1, templates.size());
+      assertThat(templates).hasSize(1);
       assertEquals("polysearch template", templates.get(0).getName());
 
       transaction.commit();
@@ -324,7 +325,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "name").matching("asdf"))
               .fetchHits(20);
       assertNotNull(subSamples);
-      assertEquals(0, subSamples.size());
+      assertThat(subSamples).isEmpty();
 
       // find by name
       subSamples =
@@ -333,7 +334,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "tags", "description").matching("subSample"))
               .fetchHits(20);
       assertNotNull(subSamples);
-      assertEquals(3, subSamples.size());
+      assertThat(subSamples).hasSize(3);
       // fetchHits() returns relevance-ordered hits, so sort by name before positional asserts
       subSamples = new ArrayList<>(subSamples);
       Collections.sort(subSamples, (ss1, ss2) -> ss1.getName().compareTo(ss2.getName()));
@@ -346,7 +347,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "tags", "description").matching("tag1"))
               .fetchHits(20);
       assertNotNull(subSamples);
-      assertEquals(1, subSamples.size());
+      assertThat(subSamples).hasSize(1);
       assertEquals("test subSample #1", subSamples.get(0).getName());
 
       // by note content
@@ -356,7 +357,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("notes.fieldData").matching(noteContent))
               .fetchHits(20);
       assertNotNull(subSamples);
-      assertEquals(1, subSamples.size());
+      assertThat(subSamples).hasSize(1);
       assertEquals("test subSample #2", subSamples.get(0).getName());
 
       // by extra field content
@@ -366,7 +367,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("extraFields.fieldData").matching(testExtraFieldData))
               .fetchHits(20);
       assertNotNull(subSamples);
-      assertEquals(1, subSamples.size());
+      assertThat(subSamples).hasSize(1);
       assertEquals("test subSample #3", subSamples.get(0).getName());
 
       // by barcode
@@ -376,7 +377,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("barcodes.barcodeData").matching("B1234"))
               .fetchHits(20);
       assertNotNull(subSamples);
-      assertEquals(1, subSamples.size());
+      assertThat(subSamples).hasSize(1);
       assertEquals("test subSample #3", subSamples.get(0).getName());
 
       // by parent sample id
@@ -387,7 +388,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("parentSampleId").matching(sampleId))
               .fetchHits(20);
       assertNotNull(subSamples);
-      assertEquals(3, subSamples.size());
+      assertThat(subSamples).hasSize(3);
       subSamples = new ArrayList<>(subSamples);
       Collections.sort(subSamples, (ss1, ss2) -> ss1.getName().compareTo(ss2.getName()));
       assertEquals("test subSample #1", subSamples.get(0).getName());
@@ -445,7 +446,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "name").matching("asdf"))
               .fetchHits(20);
       assertNotNull(containers);
-      assertEquals(0, containers.size());
+      assertThat(containers).isEmpty();
 
       // find by name
       containers =
@@ -454,7 +455,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "tags", "description").matching("subcontainer"))
               .fetchHits(20);
       assertNotNull(containers);
-      assertEquals(2, containers.size());
+      assertThat(containers).hasSize(2);
       containers = new ArrayList<>(containers);
       Collections.sort(containers, (c1, c2) -> c1.getName().compareTo(c2.getName()));
       assertEquals("test subcontainer #1", containers.get(0).getName());
@@ -467,7 +468,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "tags", "description").matching("tag2"))
               .fetchHits(20);
       assertNotNull(containers);
-      assertEquals(1, containers.size());
+      assertThat(containers).hasSize(1);
       assertEquals("test subcontainer #2", containers.get(0).getName());
 
       // by extra field content
@@ -477,7 +478,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("extraFields.fieldData").matching("myData"))
               .fetchHits(20);
       assertNotNull(containers);
-      assertEquals(1, containers.size());
+      assertThat(containers).hasSize(1);
       assertEquals("test container", containers.get(0).getName());
 
       // by barcode
@@ -487,7 +488,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("barcodes.barcodeData").matching("B456"))
               .fetchHits(20);
       assertNotNull(containers);
-      assertEquals(1, containers.size());
+      assertThat(containers).hasSize(1);
       assertEquals("test subcontainer #2", containers.get(0).getName());
 
       // by parent id
@@ -498,7 +499,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("parentId").matching(topContainerId))
               .fetchHits(20);
       assertNotNull(containers);
-      assertEquals(2, containers.size());
+      assertThat(containers).hasSize(2);
       containers = new ArrayList<>(containers);
       Collections.sort(containers, (c1, c2) -> c1.getName().compareTo(c2.getName()));
       assertEquals("test subcontainer #1", containers.get(0).getName());
@@ -568,7 +569,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().fields("name", "name").matching("asdf"))
               .fetchHits(20);
       assertNotNull(foundInvRecords);
-      assertEquals(0, foundInvRecords.size());
+      assertThat(foundInvRecords).isEmpty();
 
       // search by tag, should match a sample and a first subsample
       foundInvRecords =
@@ -577,7 +578,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("tags").matching("tag11"))
               .fetchHits(20);
       assertNotNull(foundInvRecords);
-      assertEquals(3, foundInvRecords.size());
+      assertThat(foundInvRecords).hasSize(3);
       // fetchHits() returns an immutable list, so copy before sorting in place
       foundInvRecords = new ArrayList<>(foundInvRecords);
       Collections.sort(foundInvRecords, (ir1, ir2) -> ir1.getName().compareTo(ir2.getName()));
@@ -593,7 +594,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("barcodes.barcodeData").matching("b11"))
               .fetchHits(20);
       assertNotNull(foundInvRecords);
-      assertEquals(2, foundInvRecords.size());
+      assertThat(foundInvRecords).hasSize(2);
 
       // search by owner, should match everything
       foundInvRecords =
@@ -602,7 +603,7 @@ class HibernateSearchTest extends HibernateTest {
               .where(f -> f.match().field("owner.username").matching(testUser.getUsername()))
               .fetchHits(20);
       assertNotNull(foundInvRecords);
-      assertEquals(8, foundInvRecords.size());
+      assertThat(foundInvRecords).hasSize(8);
 
       transaction.commit();
 

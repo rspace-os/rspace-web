@@ -45,12 +45,14 @@ class ExternalUpdateMessageKeysTest {
         "errors.inventory.identifier.b2instUnreachable",
         "errors.inventory.identifier.b2instNoCommunity",
         "errors.inventory.identifier.b2instNoSubmitAction",
+        "errors.inventory.identifier.b2instSubmitActionOtherHost",
         // RSDEV-1326: the linked-PID lookup and import path
         "errors.inventory.identifier.linkedReadOnly",
         "errors.inventory.identifier.pidinstAlreadyLinked",
         "errors.inventory.identifier.pidinstMandatoryMissing",
         "errors.inventory.identifier.pidinstNotFound",
-        "errors.inventory.identifier.pidinstImportPidRequired"
+        "errors.inventory.identifier.pidinstImportPidRequired",
+        "errors.inventory.identifier.pidinstQueryTooShort"
       })
   void everyCodeResolvesToRealText(String code) {
     // an unknown code throws NoSuchMessageException here, which is the failure this exists to catch

@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,7 +40,7 @@ public class SuperCSVMessageConverterTest {
     String csvResponse = message.getBodyAsString();
     String[] lines = API_ModelTestUtils.parseCSVResponseToLines(csvResponse);
 
-    assertEquals(NUM_FIELDS + 1, lines.length); // header row as well
+    assertThat(lines).hasSize(NUM_FIELDS + 1); // header row as well
     final int FIELD_PROPERTY_COUNT = 6;
     API_ModelTestUtils.assertRowAndColumnCount(csvResponse, NUM_FIELDS + 1, FIELD_PROPERTY_COUNT);
     Date date = new Date(DateUtil.convertISO8601ToMillis(lines[1].split(",")[4]));
