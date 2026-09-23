@@ -10,6 +10,11 @@ export function importableHandle(rid: string): string {
   return `21.T11998/${rid}`;
 }
 
+/** The ePIC PID a published record carries in `pids.epic.identifier`, which Refresh stores as the public URL. */
+export function mintedHandleUrl(rid: string): string {
+  return `http://hdl.handle.net/${importableHandle(rid)}`;
+}
+
 function fixtureB2instRecord(rid: string, name: string) {
   return {
     id: rid,
@@ -18,10 +23,11 @@ function fixtureB2instRecord(rid: string, name: string) {
     status: "published",
     metadata: {
       Name: name,
-      Identifier: { identifierType: "Handle", identifierValue: `21.T11998/${rid}` },
+      Identifier: { identifierType: "Handle", identifierValue: importableHandle(rid) },
       Owner: [{ ownerName: "E2E Test Institution" }],
       Manufacturer: [{ manufacturerName: "E2E Instrument Co" }],
     },
+    pids: { epic: { identifier: mintedHandleUrl(rid) } },
     links: { self_html: `https://b2inst-test.gwdg.de/records/${rid}` },
   };
 }

@@ -38,6 +38,9 @@ function importableDoiRecord(doi: string, suffix: string) {
   };
 }
 
+/** How many metadata PUTs each DOI received - proof of a push the UI never reports, or of its absence. */
+const putCountByDoi = new Map<string, number>();
+
 /** A magic word in the outbound title that makes the PUT below fail - a real outage on demand. */
 export const FORCE_EXTERNAL_UPDATE_FAILURE_SENTINEL = "e2e-pidinst-forcefail";
 
@@ -86,9 +89,14 @@ export const dataciteHandlers = [
       return HttpResponse.json({ errors: [{ status: "500", title: "e2e forced failure" }] }, { status: 500 });
     }
     const id = `${params.prefix}/${params.suffix}`;
+    putCountByDoi.set(id, (putCountByDoi.get(id) ?? 0) + 1);
     const event = body.data?.attributes?.event;
     const state = event === "publish" ? "findable" : event === "hide" ? "registered" : "draft";
     return HttpResponse.json({ data: responseData({ ...body.data, id }, state) });
   }),
   http.delete("/dois/:prefix/:suffix", () => new HttpResponse(null, { status: 204 })),
+  // Opens the counter above; never called by RSpace itself.
+  http.get("/__e2e/datacite/put-count/:prefix/:suffix", ({ params }) =>
+    HttpResponse.json({ count: putCountByDoi.get(`${params.prefix}/${params.suffix}`) ?? 0 }),
+  ),
 ];

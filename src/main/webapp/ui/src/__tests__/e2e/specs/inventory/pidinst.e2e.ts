@@ -3,22 +3,13 @@ import type { InventoryClient } from "@/__tests__/e2e/api/clients/InventoryClien
 import type { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsComponent";
 import { env } from "@/__tests__/e2e/env";
 import { test } from "@/__tests__/e2e/fixtures/flows";
+import { mintedHandleUrl } from "@/__tests__/e2e/mocks/b2inst";
+import { setB2instReviewStatus } from "@/__tests__/e2e/mocks/b2instControl";
 import type { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 
 const INTEGRATION_MODE = env.integrationMode;
-
-async function setB2instReviewStatus(rid: string, status: "accepted" | "declined"): Promise<void> {
-  const response = await fetch(`${env.mockBaseUrl}/__e2e/b2inst/review-status/${rid}`, {
-    method: "PUT",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ status }),
-  });
-  if (!response.ok) {
-    throw new Error(`Could not set mock B2INST review status for ${rid}: ${response.status}`);
-  }
-}
 
 async function deleteDraftPidinstIdentifier(
   namePrefix: string,
@@ -141,7 +132,8 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       );
       void flowPidinstB2instConfig;
 
-      async function mintAndSubmit(namePrefix: string): Promise<{ instrumentId: number; rid: string }> {
+      /** Leaves the instrument open with its Identifiers section expanded, ready for Refresh. */
+      async function mintAndSubmit(namePrefix: string): Promise<{ rid: string }> {
         const instrument = await clientInventory.createInstrument({ name: uniqueName(namePrefix) });
         const info = await clientInventory.registerIdentifier({ parentGlobalId: instrument.globalId });
 
@@ -152,38 +144,34 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
         await identifiers.clickPublish();
         await identifiers.waitForState("Submitted");
 
-        return { instrumentId: instrument.id, rid: info.doi };
+        return { rid: info.doi };
       }
 
       await test.step("When Refresh runs after the community declines, then only Delete remains", async () => {
-        const { instrumentId, rid } = await mintAndSubmit("e2e-pidinst-refresh-declined");
+        const { rid } = await mintAndSubmit("e2e-pidinst-refresh-declined");
         await setB2instReviewStatus(rid, "declined");
 
         const identifiers = pageInventory.detailsPanel.identifiers();
-        await pageInventory.openInstrument(instrumentId);
-        await pageInventory.detailsPanel.expandSection("Identifiers");
         await identifiers.clickRefresh();
-        await identifiers.waitForState("Declined");
+        await expect(identifiers.stateLabel("Declined")).toBeVisible();
 
-        expect(await identifiers.isPublishButtonVisible()).toBe(false);
-        expect(await identifiers.isRefreshButtonVisible()).toBe(false);
-        await expect(identifiers.root.getByRole("button", { name: "Delete", exact: true })).toBeEnabled();
+        await expect(identifiers.publish).toBeHidden();
+        await expect(identifiers.refresh).toBeHidden();
+        await expect(identifiers.delete).toBeEnabled();
       });
 
       await test.step("When Refresh runs after the community accepts, then Retract is disabled", async () => {
-        const { instrumentId, rid } = await mintAndSubmit("e2e-pidinst-refresh-accepted");
+        const { rid } = await mintAndSubmit("e2e-pidinst-refresh-accepted");
         await setB2instReviewStatus(rid, "accepted");
 
         const identifiers = pageInventory.detailsPanel.identifiers();
-        await pageInventory.openInstrument(instrumentId);
-        await pageInventory.detailsPanel.expandSection("Identifiers");
         await identifiers.clickRefresh();
-        await identifiers.waitForState("Accepted");
+        await expect(identifiers.stateLabel("Accepted")).toBeVisible();
 
-        expect(await identifiers.isPublishButtonVisible()).toBe(false);
-
-        expect(await identifiers.isRefreshButtonVisible()).toBe(true);
-        await expect(identifiers.root.getByRole("button", { name: "Retract", exact: true })).toBeDisabled();
+        await expect(identifiers.identifierLink(mintedHandleUrl(rid))).toBeVisible();
+        await expect(identifiers.publish).toBeHidden();
+        await expect(identifiers.refresh).toBeVisible();
+        await expect(identifiers.retract).toBeDisabled();
       });
     });
   });

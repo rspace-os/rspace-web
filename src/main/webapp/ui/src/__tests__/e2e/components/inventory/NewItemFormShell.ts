@@ -56,7 +56,7 @@ export class NewItemFormShell {
         inventory === "inventory" &&
         v1 === "v1" &&
         SAVED_ENTITY_PATHS.includes(entity) &&
-        id !== "" &&
+        !!id &&
         Number.isInteger(Number(id))
       );
     });

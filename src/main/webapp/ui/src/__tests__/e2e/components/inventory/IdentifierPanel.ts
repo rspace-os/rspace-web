@@ -56,12 +56,22 @@ export class IdentifierPanel {
     }
   }
 
+  /** The state label, for callers that must see the in-place update rather than waitForState's reload fallback. */
+  stateLabel(state: string): Locator {
+    return this.root.getByText(state, { exact: true });
+  }
+
+  /** Any mention of `text` in the panel, linked or not. */
+  mentionsOf(text: string): Locator {
+    return this.root.getByText(text);
+  }
+
   async waitForType(type: string): Promise<void> {
     await this.root.getByText(type, { exact: true }).waitFor({ state: "visible" });
   }
 
   identifierLink(url: string): Locator {
-    return this.root.getByRole("link", { name: url });
+    return this.root.getByRole("link", { name: url, exact: true });
   }
 
   private async ensureExpanded(): Promise<void> {
@@ -139,12 +149,20 @@ export class IdentifierPanel {
     await this.refreshButton.click();
   }
 
-  isPublishButtonVisible(): Promise<boolean> {
-    return this.publishButton.isVisible();
+  get publish(): Locator {
+    return this.publishButton;
   }
 
-  isRefreshButtonVisible(): Promise<boolean> {
-    return this.refreshButton.isVisible();
+  get refresh(): Locator {
+    return this.refreshButton;
+  }
+
+  get retract(): Locator {
+    return this.retractButton;
+  }
+
+  get delete(): Locator {
+    return this.deleteButton;
   }
 
   private async confirm(title: string): Promise<void> {

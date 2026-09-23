@@ -1,20 +1,13 @@
 import { expect } from "@playwright/test";
 import { env } from "@/__tests__/e2e/env";
 import { test } from "@/__tests__/e2e/fixtures/flows";
+import { getB2instDraftUpdate } from "@/__tests__/e2e/mocks/b2instControl";
 import { FORCE_EXTERNAL_UPDATE_FAILURE_SENTINEL } from "@/__tests__/e2e/mocks/datacite";
+import { getDataciteUpdateCount } from "@/__tests__/e2e/mocks/dataciteControl";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 
 const INTEGRATION_MODE = env.integrationMode;
-
-async function getB2instDraftUpdate(rid: string): Promise<{ metadata?: { Name?: string } } | null> {
-  const response = await fetch(`${env.mockBaseUrl}/__e2e/b2inst/draft-update/${rid}`);
-  if (response.status === 404) return null;
-  if (!response.ok) {
-    throw new Error(`Could not read mock B2INST draft update for ${rid}: ${response.status}`);
-  }
-  return response.json() as Promise<{ metadata?: { Name?: string } }>;
-}
 
 test.describe(`Inventory PIDINST external metadata update on save`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
   test.describe(`B2INST provider`, () => {
@@ -30,12 +23,14 @@ test.describe(`Inventory PIDINST external metadata update on save`, { tag: [tags
       flowPidinstB2instConfig,
     }) => {
       void flowPidinstB2instConfig;
-      const instrumentName = uniqueName("e2e-pidinst-toast-b2inst");
-      const instrument = await clientInventory.createInstrument({ name: instrumentName });
+      const instrument = await clientInventory.createInstrument({ name: uniqueName("e2e-pidinst-toast-b2inst") });
       const info = await clientInventory.registerIdentifier({ parentGlobalId: instrument.globalId });
+      // A name the provider has never seen, so the push must carry the edit rather than registration-time metadata.
+      const renamed = uniqueName("e2e-pidinst-toast-b2inst-renamed");
 
       await pageInventory.openInstrument(instrument.id);
       await pageInventory.detailsPanel.enterEditMode();
+      await pageInventory.detailsPanel.rename(renamed);
       await pageInventory.detailsPanel.saveEdit();
 
       await expect(componentToasts.byVariant("success", "updated successfully.")).toBeVisible();
@@ -43,7 +38,7 @@ test.describe(`Inventory PIDINST external metadata update on save`, { tag: [tags
 
       if (INTEGRATION_MODE !== "real") {
         const draftUpdate = await getB2instDraftUpdate(info.doi);
-        expect(draftUpdate?.metadata?.Name).toBe(instrumentName);
+        expect(draftUpdate?.metadata?.Name).toBe(renamed);
       }
     });
   });
@@ -64,6 +59,7 @@ test.describe(`Inventory PIDINST external metadata update on save`, { tag: [tags
       const instrument = await clientInventory.createInstrument({ name: uniqueName("e2e-pidinst-toast-datacite") });
       const info = await clientInventory.registerIdentifier({ parentGlobalId: instrument.globalId });
       await clientInventory.publishIdentifier(info.id);
+      const updatesBeforeSave = INTEGRATION_MODE === "real" ? 0 : await getDataciteUpdateCount(info.doi);
 
       await pageInventory.openInstrument(instrument.id);
       await pageInventory.detailsPanel.enterEditMode();
@@ -72,6 +68,9 @@ test.describe(`Inventory PIDINST external metadata update on save`, { tag: [tags
       const toast = componentToasts.byVariant("notice", "Instrument PID left unchanged");
       await expect(toast).toBeVisible();
       await expect(toast).toContainText("Publishing or republishing the identifier sends its current metadata.");
+      if (INTEGRATION_MODE !== "real") {
+        expect(await getDataciteUpdateCount(info.doi)).toBe(updatesBeforeSave);
+      }
     });
 
     test(`As a user, saving an instrument fails to update a PIDINST identifier the provider rejects`, async ({

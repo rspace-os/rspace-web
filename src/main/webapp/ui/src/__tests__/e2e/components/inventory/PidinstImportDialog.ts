@@ -8,9 +8,7 @@ export class PidinstImportDialog {
   private readonly closeButton: Locator;
 
   constructor(private readonly page: Page) {
-    this.root = page
-      .getByRole("dialog")
-      .filter({ has: page.getByRole("heading", { name: "Import Instrument from PIDINST", exact: true }) });
+    this.root = page.getByRole("dialog", { name: "Import Instrument from PIDINST", exact: true });
     this.searchInput = this.root.getByRole("textbox", { name: "Search the registry" });
     this.searchButton = this.root.getByRole("button", { name: "Search", exact: true });
     this.importButton = this.root.getByRole("button", { name: "Import", exact: true });
@@ -48,24 +46,32 @@ export class PidinstImportDialog {
   }
 
   previewField(label: string): Locator {
-    return this.preview.locator(`dt:has-text("${label}") + dd`);
+    const term = this.page.getByRole("term").filter({ hasText: new RegExp(`^${label}$`) });
+    return this.preview.locator("div").filter({ has: term }).getByRole("definition");
+  }
+
+  /** The preview's already-linked notice, naming the instrument that holds the PID. */
+  alreadyLinkedBannerFor(globalId: string): Locator {
+    return this.alreadyLinkedBanner.filter({ hasText: globalId });
   }
 
   get alreadyLinkedBanner(): Locator {
-    return this.root.getByText("This PID is already linked to an instrument in RSpace:", { exact: false });
+    return this.preview
+      .getByRole("alert")
+      .filter({ hasText: "This PID is already linked to an instrument in RSpace:" });
   }
 
-  get alreadyLinkedValidationWarning(): Locator {
-    return this.page.getByRole("alert").filter({ hasText: "already linked to instrument" });
+  alreadyLinkedValidationWarning(globalId: string): Locator {
+    return this.page.getByRole("alert").filter({ hasText: `This PID is already linked to instrument ${globalId}.` });
   }
 
   async clickImport(): Promise<void> {
     await this.importButton.click();
   }
 
-  async dismissValidationWarning(): Promise<void> {
+  async dismissValidationWarning(globalId: string): Promise<void> {
     await this.page.keyboard.press("Escape");
-    await this.alreadyLinkedValidationWarning.waitFor({ state: "hidden" });
+    await this.alreadyLinkedValidationWarning(globalId).waitFor({ state: "hidden" });
   }
 
   async close(): Promise<void> {
