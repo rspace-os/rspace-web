@@ -1,6 +1,8 @@
 package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
+import com.researchspace.dao.FolderDao;
+import com.researchspace.dao.RecordDao;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
@@ -36,6 +38,8 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
   @Autowired private AuditManager auditManager;
   @Autowired private LinkTargetResolver linkTargetResolver;
   @Autowired private IPermissionUtils permissionUtils;
+  @Autowired private RecordDao recordDao;
+  @Autowired private FolderDao folderDao;
 
   @Override
   public Long resolveRevisionForVersion(GlobalIdPrefix prefix, Long dbId, Long version) {
@@ -125,19 +129,12 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
    * Read permission for the target snapshot. The snapshot owner is checked first because a user can
    * always read their own record, deleted or not, and that check cannot throw.
    *
-   * <p>For a non-owner, ELN targets are decided from the snapshot itself rather than by reloading
-   * the record. The live lookup runs BaseRecordManager -> FolderManager, whose folderDao.get,
-   * assertUserHasReadPermission and assertNotDeleted all throw, and all sit behind transactional
-   * {@code *Manager} proxies: catching the exception is not enough, because the summary's
-   * transaction is already marked rollback-only and getTargetSummary then fails at commit with
-   * UnexpectedRollbackException. The card, having got no summary at all, renders no pill and leaves
-   * Open enabled, so the endpoint fails open. Both an unreadable notebook (the permission assertion
-   * throws) and a readable soft-deleted one (the not-deleted assertion throws) hit this. {@link
-   * IPermissionUtils#isPermitted} evaluates the same READ grant against the snapshot with no
-   * manager call, so nothing can poison the transaction, after applying any pending permission
-   * refresh so an unshare takes effect on this request rather than at cache expiry. It reads
-   * sharing as the snapshot captured it, which is the deliberate trade for an endpoint that must
-   * not 500.
+   * <p>For a non-owner, ELN read permission comes from the live row, loaded straight from the DAO.
+   * Not from the snapshot: sharing and publishing a document write no audit revision, so a
+   * snapshot's ACL can still grant what the live row has revoked. Not through BaseRecordManager ->
+   * FolderManager either: those assertions throw inside transactional {@code *Manager} proxies,
+   * which marks the summary's transaction rollback-only even when caught, so getTargetSummary fails
+   * at commit. A DAO lookup returns empty instead of throwing and crosses no proxy.
    *
    * <p>Inventory targets keep the live check: their lookup throws only its own NotFoundException,
    * from non-transactional components, so it is safe to consult and reflects current sharing.
@@ -155,11 +152,19 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       // permission-checked request applies it. The live lookup this replaced refreshed first, so
       // skipping it would let a former sharee keep the target's name and type until cache expiry.
       permissionUtils.refreshCacheIfNotified();
-      return entity instanceof BaseRecord baseRecord
-          && permissionUtils.isPermitted(baseRecord, PermissionType.READ, user);
+      return liveElnRecord(prefix, dbId)
+          .map(live -> permissionUtils.isPermitted(live, PermissionType.READ, user))
+          .orElse(false);
     }
     GlobalIdentifier baseGid = new GlobalIdentifier(prefix, dbId);
     return linkTargetResolver.targetExistsAndIsReadable(baseGid, user);
+  }
+
+  private Optional<? extends BaseRecord> liveElnRecord(GlobalIdPrefix prefix, Long dbId) {
+    Optional<? extends BaseRecord> live =
+        prefix == GlobalIdPrefix.NB ? folderDao.getSafeNull(dbId) : recordDao.getSafeNull(dbId);
+    // type-exact, as in LinkTargetResolverImpl: a record sharing the id is not the target
+    return live.filter(r -> r.getOid() != null && r.getOid().getPrefix() == prefix);
   }
 
   private String buildGlobalId(GlobalIdPrefix prefix, Long dbId, Long versionPin) {

@@ -67,6 +67,31 @@ public class InventoryLinkTargetApiControllerMVCIT extends API_MVC_InventoryTest
   }
 
   @Test
+  public void unshareAfterAnEditIsReflectedInSummary() throws Exception {
+    // the rename writes an audit revision that captures the shared ACL; the unshare writes none,
+    // so a summary that trusted the newest snapshot's ACL would keep granting read
+    User owner = createAndSaveUser("pi" + getRandomName(8), Constants.PI_ROLE);
+    User viewer = createAndSaveUser(getRandomName(10));
+    initUsers(owner, viewer);
+    Group group = createGroupForPiAndUsers(owner, new User[] {owner, viewer});
+
+    logoutAndLoginAs(owner);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "edited target");
+    RecordGroupSharing share = shareRecordWithGroup(owner, group, doc);
+    recordMgr.renameRecord("edited while shared", doc.getId(), owner);
+    String docGlobalId = doc.getOid().getIdString();
+    String viewerKey = createNewApiKeyForUser(viewer);
+    assertTrue(fetchSummary(viewerKey, viewer, docGlobalId).isReadable());
+
+    logoutAndLoginAs(owner);
+    sharingHandler.unshare(share.getId(), owner);
+
+    ApiInventoryLinkTargetSummary unshared = fetchSummary(viewerKey, viewer, docGlobalId);
+    assertFalse(unshared.isReadable(), "the live ACL decides, not the snapshot taken while shared");
+    assertNull(unshared.getName());
+  }
+
+  @Test
   public void reShareRestoresReadableSummaryWithoutServerRestart() throws Exception {
     User owner = createAndSaveUser("pi" + getRandomName(8), Constants.PI_ROLE);
     User viewer = createAndSaveUser(getRandomName(10));
