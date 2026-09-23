@@ -457,8 +457,8 @@ function DBRepoRowPicker({
   const toggleCurrentPage = (checked: boolean) => {
     setSelectedRows((current) => {
       const next = new Map(current);
-      rows.forEach((row, index) => {
-        const key = rowKey(page, index, row);
+      rows.forEach((row) => {
+        const key = rowKey(row);
         if (checked) {
           next.set(key, row);
         } else {
@@ -478,7 +478,7 @@ function DBRepoRowPicker({
     onInserted();
   };
 
-  const selectedOnPage = rows.filter((row, index) => selectedRowKeys.has(rowKey(page, index, row))).length;
+  const selectedOnPage = rows.filter((row) => selectedRowKeys.has(rowKey(row))).length;
   const count = totalCount ?? -1;
 
   return (
@@ -621,10 +621,12 @@ function DBRepoRowsTable({
           </TableHead>
           <TableBody>
             {rows.map((row, index) => {
-              const key = rowKey(page, index, row);
+              const key = rowKey(row);
               const selected = selectedRowKeys.has(key);
+              const labelId = `dbrepo-row-selector-${page}-${index}`;
               return (
                 <TableRow
+                  id={labelId}
                   key={key}
                   sx={{
                     [`&.${tableRowClasses.selected}`]: {
@@ -642,7 +644,13 @@ function DBRepoRowsTable({
                   selected={selected}
                 >
                   <TableCell padding="checkbox">
-                    <Checkbox color="primary" checked={selected} />
+                    <Checkbox
+                      color="primary"
+                      checked={selected}
+                      slotProps={{
+                        input: { "aria-labelledby": labelId },
+                      }}
+                    />
                   </TableCell>
                   {columns.map((column) => (
                     <TableCell key={columnKey(column)}>{stringValue(valueForColumn(row, column))}</TableCell>
@@ -785,8 +793,8 @@ function resourceApiPath(target: RowTemplateTarget, suffix: "metadata" | "rows")
   )}/${suffix}`;
 }
 
-function rowKey(page: number, index: number, row: DBRepoRow): string {
-  return `${page}:${index}:${JSON.stringify(row)}`;
+function rowKey(row: DBRepoRow): string {
+  return JSON.stringify(row);
 }
 
 function columnKey(column: DBRepoColumn): string {
