@@ -15,7 +15,8 @@ public class CreateCloudGroupValidator implements Validator {
 
   /** Valid Email pattern for creating new group */
   // "@" is excluded from both sides so exactly one split point exists and matching stays linear
-  public static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\\\<>' \"@]+@[^\\\\<>' \"@]+$");
+  public static final Pattern EMAIL_PATTERN =
+      Pattern.compile("^[^\\\\<>' \"@\\r\\n]+@[^\\\\<>' \"@\\r\\n]+$");
 
   private static final int EMAIL_LENGTH = 255;
 
