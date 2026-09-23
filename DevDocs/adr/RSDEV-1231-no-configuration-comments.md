@@ -140,6 +140,12 @@ anchored on the class or method it sat on.
   instead, and an amount sent alongside is a 400." Removed as a duplicate of ADR 0011 D5, which
   states the take-all wire contract and the 400.
 
+## src/main/webapp/ui/src/Inventory/components/Operations/useOperationWizardLauncher.tsx
+
+- `launch` (WAS_ALREADY_LOCKED branch) — removed "WAS_ALREADY_LOCKED names the holder by username
+  alone, so the holder may be this user's own edit form in another tab, which will save its
+  quantity over whatever this operation commits." Already ADR 0011 D6.
+
 ## src/main/webapp/ui/src/Inventory/components/Operations/operations.ts
 
 - `OriginFieldSpec` — removed comment "Subsample custom fields support only text and number (no
