@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
+import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.AccessControl;
@@ -527,6 +528,31 @@ public class FormDaoTest extends BaseDaoTestCase {
     g.addMember(user, RoleInGroup.DEFAULT);
     groupdao.save(g);
     return g;
+  }
+
+  @Test
+  public void writePermissionByGlobalGroupOrOwnerProperty() {
+    forms[0].setAccessControl(
+        new AccessControl(PermissionType.WRITE, PermissionType.WRITE, PermissionType.WRITE));
+    for (int i = 1; i < forms.length; i++) {
+      forms[i].setAccessControl(
+          new AccessControl(PermissionType.READ, PermissionType.READ, PermissionType.READ));
+    }
+    for (RSForm form : forms) {
+      dao.save(form);
+    }
+    flushDatabaseState();
+
+    for (String property :
+        new String[] {"global=true", "group=true", "owner=" + user.getUsername()}) {
+      User editor = createAndSaveUserWithNoPermissions("editor" + CoreTestUtils.getRandomName(6));
+      editor.addPermission(parser.resolvePermission("FORM:WRITE:property_" + property));
+      List<RSForm> editable = getPublishedForms(editor, PermissionType.WRITE, true).getResults();
+      assertTrue(editable.contains(forms[0]), property);
+      for (int i = 1; i < forms.length; i++) {
+        assertFalse(editable.contains(forms[i]), property);
+      }
+    }
   }
 
   private void clearPermissions(User user2) {

@@ -160,7 +160,8 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
             String access1 = " form.worldPermissionType in (" + join(RW, true) + ")";
             andClauses.add(access1);
           } else if (requestedAction.equals(PermissionType.WRITE)) {
-            String access1 = " form.worldPermissionType = " + requestedAction;
+            String access1 =
+                " form.worldPermissionType = :" + bind(boundValues, requestedAction.name());
             andClauses.add(access1);
           }
         } else if (pc.getName().equals("group")) {
@@ -168,7 +169,8 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
             String access1 = " form.groupPermissionType in (" + join(RW, true) + ")";
             andClauses.add(access1);
           } else if (requestedAction.equals(PermissionType.WRITE)) {
-            String access1 = " form.groupPermissionType = " + requestedAction;
+            String access1 =
+                " form.groupPermissionType = :" + bind(boundValues, requestedAction.name());
             andClauses.add(access1);
           }
         } else if (pc.getName().equals("owner")) {
@@ -176,7 +178,8 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
             String access1 = " form.ownerPermissionType in (" + join(RW, true) + ")";
             andClauses.add(access1);
           } else if (requestedAction.equals(PermissionType.WRITE)) {
-            String access1 = " form.ownerPermissionType = " + requestedAction;
+            String access1 =
+                " form.ownerPermissionType = :" + bind(boundValues, requestedAction.name());
             andClauses.add(access1);
           }
 
