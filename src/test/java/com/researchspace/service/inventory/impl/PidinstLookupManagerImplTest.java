@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
@@ -91,13 +92,12 @@ class PidinstLookupManagerImplTest {
     lenient().when(b2instConnector.isConfiguredAndEnabled()).thenReturn(true);
     // nothing is linked unless a test says so; search annotates every page through this one query
     lenient().when(doiDao.findActiveByIdentifiersAndType(any(), any())).thenReturn(List.of());
+    lenient().when(messages.getMessage(anyString())).thenAnswer(inv -> inv.getArgument(0));
     lenient()
         .when(messages.getMessage(anyString(), any(Object[].class)))
         .thenAnswer(
-            invocation -> {
-              Object[] args = invocation.getArgument(1, Object[].class);
-              return invocation.getArgument(0) + (args.length == 0 ? "" : " " + args[0]);
-            });
+            invocation ->
+                invocation.getArgument(0) + " " + invocation.getArgument(1, Object[].class)[0]);
     // eq(user) is deliberate: a permission check made with any other user must not match here
     lenient()
         .when(
@@ -308,6 +308,25 @@ class PidinstLookupManagerImplTest {
     ApiPidinstSearchResult result = manager.search("microscope", user);
 
     assertEquals("IN77", result.getHits().get(0).getLinkedInstrumentGlobalId());
+    assertTrue(result.getHits().get(0).isLinked());
+  }
+
+  /** RSDEV-1505: defensive, but it decides a disclosure, so it is pinned rather than asserted. */
+  @Test
+  void aLinkedRowHoldingNoInstrumentIsHiddenRatherThanUnlinked() {
+    when(b2instConnector.searchRecords("microscope", 50))
+        .thenReturn(searchResultOf(publishedRecord(), 1));
+    DigitalObjectIdentifier orphan =
+        new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
+    when(doiDao.findActiveByIdentifiersAndType(any(), eq(IdentifierType.PIDINST_B2INST)))
+        .thenReturn(List.of(orphan));
+
+    ApiPidinstRecord hit = manager.search("microscope", user).getHits().get(0);
+
+    assertTrue(hit.isLinked(), "the PID is taken whether or not a record holds the row");
+    assertNull(hit.getLinkedInstrumentGlobalId());
+    // the point of the guard: the permission check is never handed a record that is not there
+    verifyNoInteractions(invPermissions);
   }
 
   /** RSDEV-1505: the registry record is public, so the PID is; the RSpace instrument is not. */

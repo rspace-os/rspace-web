@@ -67,7 +67,11 @@ and API field names were ported instead.
    pre-existing from RSDEV-1326 and became visible once the RSDEV-1325 dialog rendered the
    Global ID as a chip. This is a rule about what RSpace offers, not a secrecy guarantee:
    `GET /instruments/{id}` deliberately answers 200 with a name-only public view rather than
-   404, so a guessed id still yields the instrument's name (verified 2026-09-22).
+   404, so a guessed id still yields the instrument's name (verified 2026-09-22). Note the rule
+   is deliberately looser than the one behind the *No access* link-target pill, which uses plain
+   read: a viewer with only limited read, through a container they can read or a document whose
+   List of Materials lists the Instrument, is named it here because both of those contexts
+   already show its Global ID.
 5. **Only public records may be looked up or imported**: B2INST `accepted` (a published
    record) and DataCite `findable`. A PID that exists at the provider but is not public -
    a B2INST draft, a record submitted for community review or declined, a DataCite `draft`

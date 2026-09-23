@@ -323,9 +323,12 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * Stamps every hit whose PID an instrument in this deployment already links, in one query rather
-   * than one per hit: a full page is {@link PidinstLookupManager#MAX_HITS} rows, and none of it is
-   * cached with the provider page because link status is local and changes independently of it.
+   * Stamps every hit whose PID an instrument in this deployment already links. The link rows are
+   * one query for the whole page rather than one per hit, and none of them is cached with the
+   * provider page because link status is local and changes independently of it. Visibility is then
+   * one permission check per <em>linked</em> hit, bounded by {@link PidinstLookupManager#MAX_HITS},
+   * which for a caller who cannot plainly read the holder reaches the list-of-materials query
+   * inside limited read.
    *
    * <p>Every such hit is marked {@code linked}, so Import can be refused with a reason, but it
    * names the instrument only when {@code user} may read it: the registry record is public, an
@@ -358,8 +361,12 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    *
    * <p>This governs what the search volunteers, not what is secret: {@code GET /instruments/{id}}
    * deliberately answers 200 with a name-only public view rather than 404, so a guessed id still
-   * yields the name. A row with no record counts as hidden rather than unlinked, because the PID is
-   * taken either way.
+   * yields the name.
+   *
+   * <p>A row with no record is defensive: no production path leaves a PIDINST identifier without
+   * one. It counts as hidden rather than unlinked, so the PID still reads as taken and the
+   * permission check is never handed a null. The refusal then says an instrument the caller cannot
+   * access holds the PID, which in that unreachable state names an instrument that is not there.
    */
   private Optional<String> visibleGlobalIdOf(DigitalObjectIdentifier identifier, User user) {
     InventoryRecord holder = identifier.getInventoryRecord();
@@ -406,9 +413,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         .orElseGet(
             () ->
                 new PidinstAlreadyLinkedException(
-                    messages.getMessage(
-                        "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess",
-                        new Object[] {}),
+                    messages.getMessage("errors.inventory.identifier.pidinstAlreadyLinkedNoAccess"),
                     null));
   }
 

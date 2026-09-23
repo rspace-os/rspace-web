@@ -220,6 +220,8 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals("Test microscope", search.getHits().get(0).getName());
     assertNull(search.getHits().get(0).getLinkedInstrumentGlobalId());
     assertFalse(search.getHits().get(0).isLinked());
+    // deserializing cannot tell absent from false, and the contract is that it is always present
+    assertTrue(json(searchResult).get("hits").get(0).has("linked"));
 
     ApiInstrument created =
         mvcUtils.getFromJsonResponseBody(

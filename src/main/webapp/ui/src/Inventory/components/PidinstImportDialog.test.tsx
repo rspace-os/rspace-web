@@ -266,6 +266,18 @@ describe("PidinstImportDialog", () => {
     expect(mockAxios.history.post).toHaveLength(0);
   });
 
+  test("makes the no-access cell readable on hover, since the grid clips it", async () => {
+    const user = userEvent.setup();
+    const { linkedInstrumentGlobalId: _hidden, ...hiddenLink } = HITS[1];
+    stubEndpoints({ searchReply: [200, { ...SEARCH_RESULT, hits: [HITS[0], hiddenLink] }] });
+    await renderOpenDialog();
+    await search(user, "spectrometer");
+
+    await user.hover(screen.getByText("inventory:pidinstImport.linkedTo.noAccess"));
+
+    expect(await screen.findByRole("tooltip", { name: "inventory:pidinstImport.linkedTo.noAccess" })).toBeVisible();
+  });
+
   test("imports the selected PID, toasts a link to the new instrument, and reports it", async () => {
     const user = userEvent.setup();
     const onImported = vi.fn();

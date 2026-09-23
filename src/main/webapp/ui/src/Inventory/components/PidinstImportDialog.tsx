@@ -9,6 +9,7 @@ import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
@@ -404,15 +405,15 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
 
   const importValidation = !selected
     ? IsInvalid(t("pidinstImport.validation.noSelection"))
-    : selected.linkedInstrumentGlobalId
-      ? IsInvalid(
-          t("pidinstImport.validation.alreadyLinked", {
-            globalId: selected.linkedInstrumentGlobalId,
-          }),
-        )
-      : selected.linked
-        ? IsInvalid(t("pidinstImport.validation.alreadyLinkedNoAccess"))
-        : IsValid();
+    : !selected.linked
+      ? IsValid()
+      : selected.linkedInstrumentGlobalId
+        ? IsInvalid(
+            t("pidinstImport.validation.alreadyLinked", {
+              globalId: selected.linkedInstrumentGlobalId,
+            }),
+          )
+        : IsInvalid(t("pidinstImport.validation.alreadyLinkedNoAccess"));
 
   return (
     <ThemeProvider theme={createAccentedTheme(INSTRUMENT_ACCENT_COLOR)}>
@@ -548,11 +549,15 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                       flex: 0.7,
                       sortable: false,
                       renderCell: ({ row }) =>
-                        row.linkedInstrumentGlobalId ? (
+                        !row.linked ? null : row.linkedInstrumentGlobalId ? (
                           <GlobalId record={new LinkableRecordFromGlobalId(row.linkedInstrumentGlobalId)} />
-                        ) : row.linked ? (
-                          t("pidinstImport.linkedTo.noAccess")
-                        ) : null,
+                        ) : (
+                          // the grid clips a cell and only adds its own hover title when there is
+                          // no renderCell, so the sentence needs one of its own
+                          <Tooltip title={t("pidinstImport.linkedTo.noAccess")}>
+                            <span>{t("pidinstImport.linkedTo.noAccess")}</span>
+                          </Tooltip>
+                        ),
                     },
                   ),
                   DataGridColumn.newColumnWithValueGetter<"model", PidinstRecord, string>(

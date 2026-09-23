@@ -238,9 +238,10 @@ resolved during design. This file is a glossary only — no implementation detai
   RSpace already links its PID. Every user sees it, so refusing to import the hit always has
   a stated reason; but it names that Instrument, and leads to it, only for a user who may
   read it, by the same rule that decides whether an Instrument's own page shows its details
-  or only its no-access state. Anyone else reads that an
-  instrument they cannot access holds the PID, in the words of the *No access* link-target
-  state (DevDocs/CONTEXT.md), and an import they attempt is refused in the same terms. The
+  or only its no-access state. Anyone else reads that an instrument they cannot access holds
+  the PID, echoing the *No access* link-target state (DevDocs/CONTEXT.md) without sharing its
+  rule: that state is stricter, so a viewer with only limited read is named the Instrument
+  here and would not be there. An import they attempt is refused in the same terms. The
   link's existence is disclosed; the Instrument's identity is not (RSDEV-1505; ADR 0002's
   principle, recorded for this case as an amendment to ADR 0009).
   _Avoid_: linked-to chip (the chip is only one of the marker's two forms), duplicate warning
