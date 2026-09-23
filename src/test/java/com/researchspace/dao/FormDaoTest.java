@@ -541,7 +541,7 @@ public class FormDaoTest extends BaseDaoTestCase {
           new AccessControl(PermissionType.READ, PermissionType.READ, PermissionType.READ));
     }
     for (RSForm form : forms) {
-      dao.save(form);
+      formDao.save(form);
     }
     flushDatabaseState();
 
