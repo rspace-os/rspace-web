@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
@@ -12,6 +13,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -96,5 +98,21 @@ class ApiControllerAdviceTest {
 
     ApiError error = (ApiError) response.getBody();
     assertEquals("Invalid user credentials.", error.getMessage());
+  }
+
+  @Test
+  void unexpectedPersistenceErrorsDoNotExposeDatabaseDetails() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    String internalDetails = "Deadlock executing update Container set schema = 'private'";
+
+    ResponseEntity<Object> response =
+        advice.handleAll(new DataAccessResourceFailureException(internalDetails), null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    assertEquals("An error occurred on the server.", error.getMessage());
+    assertEquals(List.of("An error occurred on the server."), error.getErrors());
+    assertFalse(error.toString().contains(internalDetails));
   }
 }

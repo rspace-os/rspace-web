@@ -242,4 +242,16 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             errorList);
     return apiError;
   }
+
+  @Override
+  protected ResponseEntity<Object> handle500Error(
+      final Exception ex, ApiErrorCodes code, String msg) {
+    logException(ex);
+    log.error("error", ex);
+    String genericMessage = messages.getMessage("errors.page.genericServerError");
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.INTERNAL_SERVER_ERROR, code.getCode(), genericMessage, genericMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
 }

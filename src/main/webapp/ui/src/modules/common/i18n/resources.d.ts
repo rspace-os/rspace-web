@@ -807,7 +807,7 @@ export default interface Resources {
         "legend": "Quick filters",
         "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
         "loading": "Finding bookable items…",
-        "myItems": "My Items",
+        "myItems": "Owned Items",
         "retry": "Retry",
         "scope": "Availability uses the selected display date and timezone."
       },
@@ -1401,8 +1401,8 @@ export default interface Resources {
       "previousPeriod": "Previous {period}",
       "quickFilters": {
         "legend": "Booking event quick filters",
-        "mine": "My calendar",
-        "myItems": "My Items"
+        "mine": "My Bookings",
+        "myItems": "Owned Items"
       },
       "resourceSchedule": "Resource booking schedule",
       "retry": "Retry",
@@ -1610,7 +1610,6 @@ export default interface Resources {
     },
     "notificationSubscriptions": {
       "bulk": {
-        "description": "Select instruments to subscribe or unsubscribe yourself.",
         "error": "Notification subscriptions could not be updated. Try again.",
         "subscribe": "Subscribe",
         "subscribedCount": "Subscribed to {count, plural, one {# instrument} other {# instruments}}.",
@@ -1765,6 +1764,8 @@ export default interface Resources {
       "fields": {
         "allowDoubleBooking": "Allow concurrent bookings",
         "buffer": "Buffer before and after bookings (minutes)",
+        "bufferAfter": "Buffer after booking (minutes)",
+        "bufferBefore": "Buffer before booking (minutes)",
         "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
         "granularity": "Time increment",
         "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
@@ -2939,6 +2940,7 @@ export default interface Resources {
         "where": "Where"
       },
       "loading": "Loading records",
+      "offline": "You are offline. Results may be out of date. Pending requests will resume when you reconnect.",
       "page": "Page {page} of {pages}",
       "refreshing": "Refreshing records",
       "results": "{first}–{last} of {total} records",

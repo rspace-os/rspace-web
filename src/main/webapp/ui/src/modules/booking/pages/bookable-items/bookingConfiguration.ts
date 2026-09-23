@@ -404,14 +404,14 @@ export const bookingConfigurationConfig = {
     {
       name: "bufferBeforeMinutes",
       type: "number",
-      labelKey: "booking:settings.fields.buffer",
+      labelKey: "booking:settings.fields.bufferBefore",
       list: false,
       form: false,
     },
     {
       name: "bufferAfterMinutes",
       type: "number",
-      labelKey: "booking:settings.fields.buffer",
+      labelKey: "booking:settings.fields.bufferAfter",
       list: false,
       form: false,
     },

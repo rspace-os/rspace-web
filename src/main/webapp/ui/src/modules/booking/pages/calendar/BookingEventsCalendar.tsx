@@ -1,5 +1,5 @@
 import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
-import * as React from "react";
+import type * as React from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -13,12 +13,7 @@ import { Button } from "@/modules/common/ui/button";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
-import {
-  CalendarFilterButtons,
-  CalendarFilterIssue,
-  type CalendarFilterIssueState,
-  CalendarFilterPanel,
-} from "./CalendarFilterPanels";
+import { CalendarFilterIssue, type CalendarFilterIssueState } from "./CalendarFilterPanels";
 import { CalendarResourceSchedule, ResourceScheduleSkeleton } from "./CalendarResourceSchedule";
 import { CalendarTimeGrid } from "./CalendarTimeGrid";
 import type { BookingCalendarResource, CalendarLayout, CalendarView } from "./calendarLayoutUtils";
@@ -91,19 +86,14 @@ export function BookingEventsCalendar({
   resourceConfigurations,
   resourceTableProps,
   searchControl,
-  itemFilterConfig,
   eventFilterConfig,
   itemFilterExpression = null,
   eventFilterExpression = null,
   itemFilterIssue,
   eventFilterIssue,
-  itemRuntimeFieldDefinitions,
   eventRuntimeFieldDefinitions,
-  itemRuntimeFieldAuthScope,
   eventRuntimeFieldAuthScope,
-  onSelectItemRuntimeField,
   onSelectEventRuntimeField,
-  onItemFilterChange,
   onEventFilterChange,
   mineOnly = false,
   onMineChange,
@@ -137,25 +127,17 @@ export function BookingEventsCalendar({
   resourceConfigurations?: readonly BookableItemOption[];
   resourceTableProps?: TableListProps<BookingConfiguration>;
   searchControl?: { value: string; onChange: (search: string) => void };
-  itemFilterConfig?: ResolvedCollectionConfig<BookingConfiguration>;
   eventFilterConfig?: ResolvedCollectionConfig<BookingListDocument>;
   itemFilterExpression?: FilterExpression<BookingConfiguration> | null;
   eventFilterExpression?: FilterExpression<BookingListDocument> | null;
   itemFilterIssue?: CalendarFilterIssueState;
   eventFilterIssue?: CalendarFilterIssueState;
-  itemRuntimeFieldDefinitions?: readonly {
-    namespace: string;
-    definitions: readonly RuntimeFieldDefinition[];
-  }[];
   eventRuntimeFieldDefinitions?: readonly {
     namespace: string;
     definitions: readonly RuntimeFieldDefinition[];
   }[];
-  itemRuntimeFieldAuthScope?: string | number;
   eventRuntimeFieldAuthScope?: string | number;
-  onSelectItemRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
   onSelectEventRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
-  onItemFilterChange?: (expression: FilterExpression<BookingConfiguration> | null) => void;
   onEventFilterChange?: (expression: FilterExpression<BookingListDocument> | null) => void;
   mineOnly?: boolean;
   onMineChange?: (mineOnly: boolean) => void;
@@ -196,42 +178,17 @@ export function BookingEventsCalendar({
       (eventFiltering.value.search.trim() !== "" || eventFiltering.value.expression !== null));
   const changeMine = (next: boolean) => onMineChange?.(next);
   const changeMyItems = (next: boolean) => onMyItemsChange?.(next);
-  const [openFilterPanel, setOpenFilterPanel] = React.useState<"items" | null>(null);
   const filterControls = (
-    <>
-      <CalendarFilterControls
-        date={date}
-        view={view}
-        layout={layout}
-        timezone={timezone}
-        today={todayValue}
-        onDateChange={onDateChange}
-        onViewChange={onViewChange}
-        onLayoutChange={onLayoutChange}
-      />
-      {itemFilterConfig ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <CalendarFilterButtons
-            kind="items"
-            expression={itemFilterExpression}
-            active={openFilterPanel === "items"}
-            onClick={() => setOpenFilterPanel((current) => (current === "items" ? null : "items"))}
-          />
-          {openFilterPanel === "items" ? (
-            <CalendarFilterPanel
-              kind="items"
-              config={itemFilterConfig}
-              expression={itemFilterExpression}
-              onApply={onItemFilterChange ?? (() => undefined)}
-              onSelectRuntimeField={onSelectItemRuntimeField}
-              runtimeFieldDefinitions={itemRuntimeFieldDefinitions}
-              runtimeFieldAuthScope={itemRuntimeFieldAuthScope}
-              onClose={() => setOpenFilterPanel(null)}
-            />
-          ) : null}
-        </div>
-      ) : null}
-    </>
+    <CalendarFilterControls
+      date={date}
+      view={view}
+      layout={layout}
+      timezone={timezone}
+      today={todayValue}
+      onDateChange={onDateChange}
+      onViewChange={onViewChange}
+      onLayoutChange={onLayoutChange}
+    />
   );
   return (
     <main className="min-h-screen w-full min-w-0 space-y-5 overflow-hidden bg-background p-4 sm:p-8">

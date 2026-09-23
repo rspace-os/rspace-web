@@ -31,7 +31,7 @@ afterAll(() => {
 });
 
 describe("CalendarPage", () => {
-  it("filters calendar resources and events to My Items", async () => {
+  it("filters calendar resources and events to Owned Items", async () => {
     const catalogueRequests: URL[] = [];
     const eventRequests: URL[] = [];
     server.use(
@@ -52,7 +52,7 @@ describe("CalendarPage", () => {
     const user = userEvent.setup();
     await renderCalendar();
 
-    await user.click(await screen.findByRole("button", { name: "My Items" }));
+    await user.click(await screen.findByRole("button", { name: "Owned Items" }));
 
     await waitFor(() => {
       expect(catalogueRequests.at(-1)?.searchParams.get("mine")).toBe("true");
@@ -74,6 +74,17 @@ describe("CalendarPage", () => {
     expect(screen.getByRole("button", { name: "Day" })).toHaveAttribute("aria-pressed", "true");
     expect(await screen.findByText("Mass spectrometer")).toBeVisible();
     expect(screen.queryByText("No records found")).not.toBeInTheDocument();
+  });
+
+  it("hides item filter controls and keeps Calendar controls available", async () => {
+    await renderCalendar();
+    expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /^Bookable items(?:,|$)/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Filters(?:$|,)/ })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "Search Calendar" })).toBeVisible();
+    for (const name of ["Jump to date", "Time grid", "Day", "Resources", "My Bookings", "Owned Items"]) {
+      expect(screen.getByRole("button", { name: new RegExp(`^${name}$`) })).toBeVisible();
+    }
   });
 
   it("keeps viewer events visible while disabling resource creation", async () => {

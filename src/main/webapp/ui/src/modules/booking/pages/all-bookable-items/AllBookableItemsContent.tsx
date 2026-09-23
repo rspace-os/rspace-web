@@ -634,9 +634,6 @@ function AllBookableItemsContentForUser({
         rows={runtimeFilterBlocked || quickFilterPending || quickFilterError ? [] : rows}
         filterButtons={availabilityFilters}
         presentations={{ table: "wide", cards: "narrow" }}
-        headerContent={
-          <p className="text-sm text-muted-foreground">{t("notificationSubscriptions.bulk.description")}</p>
-        }
         uiColumns={[
           {
             id: "availability",

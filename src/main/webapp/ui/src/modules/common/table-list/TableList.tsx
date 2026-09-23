@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { onlineManager } from "@tanstack/react-query";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { TooltipProvider } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
@@ -20,6 +21,9 @@ export type {
   TableListSelection,
   TableListSelectionContext,
 } from "./tableListState";
+
+const subscribeOnline = (onChange: () => void) => onlineManager.subscribe(onChange);
+const getOnline = () => onlineManager.isOnline();
 
 function TableListContent<TDocument extends Record<string, unknown>>({
   config,
@@ -55,6 +59,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   restoredViewIssue,
 }: TableListProps<TDocument>) {
   const { t } = useTranslation("common");
+  const online = useSyncExternalStore(subscribeOnline, getOnline, getOnline);
   const [activePanel, setActivePanel] = useState<ControlPanel | null>(null);
   const [activeRowAction, setActiveRowAction] = useState<{ actionId: string; rowId: string } | null>(null);
   const collectionLabel = t(config.labels.pluralKey as never);
@@ -93,6 +98,11 @@ function TableListContent<TDocument extends Record<string, unknown>>({
           </div>
         )}
         <div className={cn(variant === "card" && "rounded-sm border bg-card px-3")}>
+          {clientSide === false && !online ? (
+            <p role="status" className="py-3 text-sm text-muted-foreground">
+              {t("tableList.offline")}
+            </p>
+          ) : null}
           {restoredViewIssue ? <RestoredViewIssue issue={restoredViewIssue} /> : null}
           {!restoredViewIssue ? (
             <>

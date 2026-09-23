@@ -1146,6 +1146,7 @@
       "where": "Where"
     },
     "loading": "Loading records",
+    "offline": "You are offline. Results may be out of date. Pending requests will resume when you reconnect.",
     "page": "Page {page} of {pages}",
     "refreshing": "Refreshing records",
     "results": "{first}–{last} of {total} records",

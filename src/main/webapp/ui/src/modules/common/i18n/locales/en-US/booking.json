@@ -55,7 +55,7 @@
       "legend": "Quick filters",
       "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
       "loading": "Finding bookable items…",
-      "myItems": "My Items",
+      "myItems": "Owned Items",
       "retry": "Retry",
       "scope": "Availability uses the selected display date and timezone."
     },
@@ -649,8 +649,8 @@
     "previousPeriod": "Previous {period}",
     "quickFilters": {
       "legend": "Booking event quick filters",
-      "mine": "My calendar",
-      "myItems": "My Items"
+      "mine": "My Bookings",
+      "myItems": "Owned Items"
     },
     "resourceSchedule": "Resource booking schedule",
     "retry": "Retry",
@@ -858,7 +858,6 @@
   },
   "notificationSubscriptions": {
     "bulk": {
-      "description": "Select instruments to subscribe or unsubscribe yourself.",
       "error": "Notification subscriptions could not be updated. Try again.",
       "subscribe": "Subscribe",
       "subscribedCount": "Subscribed to {count, plural, one {# instrument} other {# instruments}}.",
@@ -1013,6 +1012,8 @@
     "fields": {
       "allowDoubleBooking": "Allow concurrent bookings",
       "buffer": "Buffer before and after bookings (minutes)",
+      "bufferAfter": "Buffer after booking (minutes)",
+      "bufferBefore": "Buffer before booking (minutes)",
       "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
       "granularity": "Time increment",
       "granularityOption": "{count, plural, one {# minute} other {# minutes}}",

@@ -502,9 +502,6 @@ export function CalendarContent() {
   );
   const displayReady = !filtersBlocked && resourceScopeReady && !resettingControls;
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
-  const onItemFiltersChange = (expression: FilterExpression<BookingConfiguration> | null) => {
-    void setItemWhere(expression ? serializeRsqlExpression(expression) : null);
-  };
   const onEventFiltersChange = (expression: FilterExpression<BookingListDocument> | null) => {
     void setEventWhere(expression ? serializeRsqlExpression(expression) : null);
   };
@@ -529,19 +526,14 @@ export function CalendarContent() {
       resourceTableProps={
         filtersBlocked ? { ...resourceTable.tableProps, rows: [], status: "idle" } : resourceTable.tableProps
       }
-      itemFilterConfig={itemConfig}
       eventFilterConfig={eventConfig}
       itemFilterExpression={itemExpression}
       eventFilterExpression={eventExpression}
       itemFilterIssue={itemIssue}
       eventFilterIssue={eventIssue}
-      itemRuntimeFieldDefinitions={itemRuntimeFields.runtimeFields}
       eventRuntimeFieldDefinitions={eventRuntimeFields.runtimeFields}
-      itemRuntimeFieldAuthScope={itemRuntimeFields.scope}
       eventRuntimeFieldAuthScope={eventRuntimeFields.scope}
-      onSelectItemRuntimeField={itemRuntimeFields.selectRuntimeField}
       onSelectEventRuntimeField={eventRuntimeFields.selectRuntimeField}
-      onItemFilterChange={onItemFiltersChange}
       onEventFilterChange={onEventFiltersChange}
       searchControl={{
         value: calendarSearch,

@@ -43,7 +43,7 @@ describe("All Bookable Items route", () => {
     });
   });
 
-  it("keeps only an enabled My Items quick filter", () => {
+  it("keeps only an enabled Owned Items quick filter", () => {
     expect(allBookableItemsSearch({ mine: true })).toEqual({ date: undefined, mine: true });
     expect(allBookableItemsSearch({ mine: false })).toEqual({ date: undefined });
   });

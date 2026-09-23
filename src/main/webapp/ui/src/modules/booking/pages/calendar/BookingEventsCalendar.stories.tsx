@@ -145,7 +145,7 @@ export const Interactive: Story = {
     expect(canvas.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(canvas.getByRole("button", { name: "Day" }));
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(3);
-    await userEvent.click(canvas.getByRole("button", { name: "My calendar" }));
+    await userEvent.click(canvas.getByRole("button", { name: "My Bookings" }));
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(2);
   },
 };

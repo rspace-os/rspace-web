@@ -354,6 +354,10 @@ progress. The table keeps a selected row removable after the selection reaches i
 
 ## Access and update table state
 
+Remote tables (`clientSide={false}`) show an offline notice using React Query's online state.
+Cached rows remain visible; paused queries resume automatically when the connection returns.
+Do not add per-page browser connectivity listeners or force retries while offline.
+
 The table does not hide its state. The hook returns the complete state and focused update functions.
 
 ```ts

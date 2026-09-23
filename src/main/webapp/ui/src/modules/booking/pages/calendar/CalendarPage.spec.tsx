@@ -247,7 +247,7 @@ describe("Calendar page", () => {
       .toBeVisible();
   });
 
-  test("resets event filters, shared search and My calendar", async () => {
+  test("resets event filters, shared search and My Bookings", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-08-19T00:30:00Z"));
     history.replace("/booking/calendar?date=2026-08-17");
