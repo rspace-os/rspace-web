@@ -5,6 +5,7 @@ import static com.researchspace.webapp.integrations.b2inst.B2instConnectorImpl.t
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +24,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriUtils;
@@ -118,12 +120,13 @@ public class DBRepoClient {
     return new DBRepoDatabaseResourcesDTO(databaseId, tables, views, subsets, failedTypes);
   }
 
-  public byte[] downloadResourceCsv(
+  public void streamResourceCsv(
       String baseUrl,
       String databaseId,
       String resourceType,
       String resourceId,
-      DBRepoCredentials credentials) {
+      DBRepoCredentials credentials,
+      OutputStream outputStream) {
     if (!TABLE_TYPE.equals(resourceType)
         && !VIEW_TYPE.equals(resourceType)
         && !SUBSET_TYPE.equals(resourceType)) {
@@ -133,16 +136,21 @@ public class DBRepoClient {
     String url =
         normalizedBaseUrl
             + CURRENT_DATABASES_PATH
+            + "/"
             + encodePathSegment(databaseId)
             + "/"
             + resourceType
             + "/"
             + encodePathSegment(resourceId)
             + "/data";
-    ResponseEntity<byte[]> response =
-        restTemplate.exchange(
-            url, HttpMethod.GET, new HttpEntity<>(headers(credentials, TEXT_CSV)), byte[].class);
-    return response.getBody() == null ? new byte[0] : response.getBody();
+    restTemplate.execute(
+        url,
+        HttpMethod.GET,
+        request -> request.getHeaders().putAll(headers(credentials, TEXT_CSV)),
+        response -> {
+          StreamUtils.copy(response.getBody(), outputStream);
+          return null;
+        });
   }
 
   public DBRepoResourceMetadataDTO getResourceMetadata(
@@ -203,7 +211,7 @@ public class DBRepoClient {
       List<String> failedTypes) {
     try {
       return listResourcesAt(
-          normalizedBaseUrl + CURRENT_DATABASES_PATH + encodedDatabaseId + "/" + type,
+          normalizedBaseUrl + CURRENT_DATABASES_PATH + "/" + encodedDatabaseId + "/" + type,
           normalizedBaseUrl,
           encodedDatabaseId,
           type,
@@ -349,6 +357,7 @@ public class DBRepoClient {
       String normalizedBaseUrl, String databaseId, String resourceType, String resourceId) {
     return normalizedBaseUrl
         + CURRENT_DATABASES_PATH
+        + "/"
         + encodePathSegment(databaseId)
         + "/"
         + resourceType

@@ -15,6 +15,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.controller.BaseController;
 import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.controller.ResponseHeaders;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
@@ -43,7 +44,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 @Slf4j
 @Controller
 @RequestMapping("/apps/dbrepo")
-public class DBRepoController {
+public class DBRepoController extends BaseController {
 
   static final String CONNECTION_DISCRIMINANT = "dbrepo";
   private static final String CONNECTION_CHANNEL = "rspace.apps.dbrepo.connection";
@@ -191,19 +192,17 @@ public class DBRepoController {
       response.sendError(HttpStatus.UNAUTHORIZED.value());
       return;
     }
-    byte[] csv =
-        dbRepoClient.downloadResourceCsv(
-            details.get().baseUrl(),
-            databaseId,
-            resourceType,
-            resourceId,
-            details.get().credentials());
     ResponseHeaders.setContentTypeAndPreventSniffing(response, TEXT_CSV);
-    response.setContentLength(csv.length);
     response.setHeader(
         "Content-Disposition",
         String.format("attachment; filename=\"%s\"", csvFilename(resourceType, resourceId)));
-    response.getOutputStream().write(csv);
+    dbRepoClient.streamResourceCsv(
+        details.get().baseUrl(),
+        databaseId,
+        resourceType,
+        resourceId,
+        details.get().credentials(),
+        response.getOutputStream());
   }
 
   private void saveUrl(User user, String normalizedUrl) {
