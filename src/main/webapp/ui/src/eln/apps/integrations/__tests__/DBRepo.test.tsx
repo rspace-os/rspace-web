@@ -1,7 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import { describe, expect, test, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { server } from "@/__tests__/mswServer";
 import { Optional } from "@/util/optional";
+import AlertContext from "../../../../stores/contexts/Alert";
 import DBRepo from "../DBRepo";
 
 import "@/__tests__/__mocks__/matchMedia";
@@ -108,5 +112,38 @@ describe("DBRepo", () => {
       }),
     );
     expect(update.mock.calls[0][0].credentials.DBREPO_URL.isEmpty()).toBe(true);
+  });
+
+  test("a rejected disconnect leaves the card connected.", async () => {
+    const user = userEvent.setup();
+    const addAlert = vi.fn();
+    const restoreConsole = silenceConsole(["error"], ["Network Error"]);
+    server.use(http.delete("/apps/dbrepo/connect", () => HttpResponse.error()));
+
+    try {
+      render(
+        <AlertContext.Provider value={{ addAlert, removeAlert: () => {} }}>
+          <DBRepo
+            integrationState={{
+              mode: "DISABLED",
+              credentials: {
+                DBREPO_URL: Optional.present("https://dbrepo.example"),
+                DBREPO_CONNECTED: true,
+                optionsId: Optional.present("1"),
+              },
+            }}
+            update={() => {}}
+          />
+        </AlertContext.Provider>,
+      );
+
+      await user.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button", { name: "apps:actions.disconnect" }));
+
+      await waitFor(() => expect(addAlert).toHaveBeenCalledWith(expect.objectContaining({ variant: "error" })));
+      expect(screen.getByRole("button", { name: "apps:actions.disconnect" })).toBeVisible();
+    } finally {
+      restoreConsole();
+    }
   });
 });

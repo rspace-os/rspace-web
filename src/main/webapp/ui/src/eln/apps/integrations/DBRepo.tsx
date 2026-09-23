@@ -12,6 +12,7 @@ import DBRepoIcon from "../../../assets/branding/dbrepo/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
+import { useDisconnectEndpoint } from "../useDisconnect";
 import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type DBRepoArgs = {
@@ -29,6 +30,7 @@ export const DBREPO_CONNECTION_CHANNEL = "rspace.apps.dbrepo.connection";
 function DBRepo({ integrationState, update }: DBRepoArgs): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
   const { addAlert } = useContext(AlertContext);
+  const { disconnect } = useDisconnectEndpoint("/apps/dbrepo", t("integrations.dbrepo.name"));
   const [url, setUrl] = useState(integrationState.credentials.DBREPO_URL.orElse(""));
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -55,32 +57,6 @@ function DBRepo({ integrationState, update }: DBRepoArgs): React.ReactNode {
       }),
     );
   });
-
-  const handleDisconnect = async () => {
-    const response = await fetch("/apps/dbrepo/connect", {
-      method: "DELETE",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    });
-    if (!response.ok) {
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: t("integrations.dbrepo.alerts.disconnectError"),
-          message: `${response.status} ${response.statusText}`,
-        }),
-      );
-      return;
-    }
-    setConnected(false);
-    addAlert(
-      mkAlert({
-        variant: "success",
-        message: t("integrations.dbrepo.alerts.disconnectSuccess"),
-      }),
-    );
-  };
 
   return (
     <Grid
@@ -166,7 +142,14 @@ function DBRepo({ integrationState, update }: DBRepoArgs): React.ReactNode {
                 <Stack direction="row" spacing={1}>
                   <Button type="submit">{connected ? t("actions.reconnect") : t("actions.connect")}</Button>
                   {connected && (
-                    <Button type="button" onClick={() => void handleDisconnect()}>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        void (async () => {
+                          if (await disconnect()) setConnected(false);
+                        })();
+                      }}
+                    >
                       {t("actions.disconnect")}
                     </Button>
                   )}
