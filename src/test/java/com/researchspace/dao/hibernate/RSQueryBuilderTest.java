@@ -1,7 +1,9 @@
 package com.researchspace.dao.hibernate;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.axiope.search.SearchQueryParseException;
 import org.junit.jupiter.api.Test;
 
 class RSQueryBuilderTest {
@@ -29,5 +31,17 @@ class RSQueryBuilderTest {
     assertArrayEquals(
         new String[] {"2020-01-10T00:00:00Z", "2021-01-10T00:00:00Z"},
         RSQueryBuilder.splitDateRangeTerm("2020-01-10T00:00:00Z,2021-01-10T00:00:00Z"));
+  }
+
+  @Test
+  void dateRangeTermSplitRejectsTermWithoutSeparator() {
+    assertThrows(
+        SearchQueryParseException.class,
+        () -> RSQueryBuilder.splitDateRangeTerm("2020-01-10T00:00:00Z"));
+  }
+
+  @Test
+  void dateRangeTermSplitRejectsTermWithTwoSeparators() {
+    assertThrows(SearchQueryParseException.class, () -> RSQueryBuilder.splitDateRangeTerm("a;b;c"));
   }
 }

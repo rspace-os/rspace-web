@@ -485,6 +485,10 @@ class RSQueryBuilder {
    */
   static String[] splitDateRangeTerm(String term) {
     String[] halves = term.split("[,;]", -1);
+    if (halves.length != 2) {
+      throw new SearchQueryParseException(
+          new Exception("A date range term needs exactly one ',' or ';' separator"));
+    }
     for (int i = 0; i < halves.length; i++) {
       halves[i] = halves[i].trim();
     }
