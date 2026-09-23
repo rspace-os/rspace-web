@@ -68,6 +68,52 @@ function CardSelectFieldControl<TDocument extends Record<string, unknown>>(props
   );
 }
 
+function RadioSelectFieldControl<TDocument extends Record<string, unknown>>(props: SelectFieldControlProps<TDocument>) {
+  const { disabled, fieldApi, fieldConfig, form, id, label } = props;
+  if (Array.isArray(fieldApi.input)) throw new Error("Radio select does not support multiple values");
+  const options = fieldConfig.options.map(normalizeOption);
+  const data = getInput(form) as Partial<TDocument>;
+  const formConfig = fieldConfig.form || undefined;
+  const isOptionDisabled = formConfig?.isOptionDisabled;
+
+  return (
+    <RadioGroup
+      {...controlAttributes(props)}
+      aria-label={label}
+      className="grid-cols-1 gap-x-5 gap-y-1 sm:flex sm:flex-wrap sm:items-center"
+      disabled={disabled}
+      inputRef={fieldApi.props.ref}
+      onValueChange={(value) => fieldApi.onChange(value)}
+      readOnly={fieldConfig.readOnly}
+      value={typeof fieldApi.input === "string" ? fieldApi.input : undefined}
+    >
+      {options.map((option, index) => {
+        const optionId = `${id}-option-${index}`;
+        const optionLabelId = `${optionId}-label`;
+        const optionDisabled = isOptionDisabled ? isOptionDisabled(option.source, data) : false;
+
+        return (
+          <div className="flex items-center gap-2" key={option.value}>
+            <RadioGroupItem
+              aria-labelledby={optionLabelId}
+              disabled={optionDisabled}
+              id={optionId}
+              value={option.value}
+            />
+            <label
+              className={`select-none ${disabled || fieldConfig.readOnly || optionDisabled ? "cursor-default" : "cursor-pointer"}`}
+              htmlFor={optionId}
+              id={optionLabelId}
+            >
+              {option.content}
+            </label>
+          </div>
+        );
+      })}
+    </RadioGroup>
+  );
+}
+
 function ComboboxSelectFieldControl<TDocument extends Record<string, unknown>>(
   props: SelectFieldControlProps<TDocument>,
 ) {
@@ -125,6 +171,8 @@ export function SelectField<TDocument extends Record<string, unknown>>(props: Fi
       {(controlProps) =>
         props.fieldConfig.form && props.fieldConfig.form.widget === "card" ? (
           <CardSelectFieldControl {...controlProps} fieldConfig={props.fieldConfig} form={props.form} />
+        ) : props.fieldConfig.form && props.fieldConfig.form.widget === "radio" ? (
+          <RadioSelectFieldControl {...controlProps} fieldConfig={props.fieldConfig} form={props.form} />
         ) : (
           <ComboboxSelectFieldControl {...controlProps} fieldConfig={props.fieldConfig} form={props.form} />
         )

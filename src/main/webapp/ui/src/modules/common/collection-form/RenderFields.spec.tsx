@@ -2,7 +2,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { RenderFieldsPage } from "./pageObjects/RenderFieldsPage";
-import { CardSelectStory, RenderFieldsStory } from "./RenderFields.story";
+import { CardSelectStory, RadioSelectStory, RenderFieldsStory } from "./RenderFields.story";
 
 const form = new RenderFieldsPage();
 
@@ -170,5 +170,39 @@ describe("RenderFields card select", () => {
     await form.chooseCardStatus("Published");
     await expect.element(form.cardStatus("Published")).toBeChecked();
     await expect.element(form.values).toHaveTextContent('"status":"published"');
+  });
+});
+
+describe("RenderFields radio select", () => {
+  test("renders compact labelled choices and updates the form from the visible option label", async () => {
+    render(<RadioSelectStory />);
+
+    await expect.element(form.subscriptionGroup).toHaveAccessibleName("Status");
+    await expect.element(form.subscriptionGroup).toHaveAccessibleDescription("The human-readable name of the record.");
+    await expect.element(form.subscriptionOption("On")).toBeChecked();
+    await expect.element(form.subscriptionOption("Off")).toBeDisabled();
+
+    await form.toggleAllowOff();
+    await expect.element(form.subscriptionOption("Off")).not.toBeDisabled();
+    await form.chooseSubscription("Off");
+
+    await expect.element(form.subscriptionOption("Off")).toBeChecked();
+    await expect.element(form.values).toHaveTextContent('"subscription":"off"');
+    await expectNoAxeViolations();
+  });
+
+  test("does not change a read-only radio choice", async () => {
+    render(<RadioSelectStory readOnly />);
+
+    await form.toggleAllowOff();
+    await form.chooseSubscription("Off");
+    await expect.element(form.subscriptionOption("On")).toBeChecked();
+  });
+
+  test("disables all radio choices when the field is disabled", async () => {
+    render(<RadioSelectStory disabled />);
+
+    await expect.element(form.subscriptionOption("On")).toBeDisabled();
+    await expect.element(form.subscriptionOption("Off")).toBeDisabled();
   });
 });

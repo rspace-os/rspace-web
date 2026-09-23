@@ -9,6 +9,7 @@ export class RenderFieldsPage {
   readonly notesDescription: Locator = page.getByText("The human-readable name of the record.");
   readonly score: Locator = page.getByRole("spinbutton", { name: "Score" });
   readonly enabled: Locator = page.getByRole("checkbox", { name: "Enabled" });
+  readonly subscriptionGroup: Locator = page.getByRole("radiogroup", { name: "Status" }).nth(0);
   readonly modifiedAt: Locator = page.getByLabelText("Modified");
   readonly status: Locator = page.getByRole("combobox", { name: "Status" });
   readonly cardStatusGroup: Locator = page.getByRole("radiogroup", { name: "Status" });
@@ -44,6 +45,18 @@ export class RenderFieldsPage {
 
   cardStatus(label: string): Locator {
     return page.getByRole("radio", { name: label });
+  }
+
+  subscriptionOption(label: string): Locator {
+    return this.subscriptionGroup.getByRole("radio", { name: label });
+  }
+
+  async toggleAllowOff(): Promise<void> {
+    await userEvent.click(this.enabled);
+  }
+
+  async chooseSubscription(label: string): Promise<void> {
+    await userEvent.click(this.subscriptionGroup.getByText(label));
   }
 
   async chooseCardStatus(label: string): Promise<void> {

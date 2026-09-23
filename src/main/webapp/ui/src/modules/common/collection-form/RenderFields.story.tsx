@@ -489,6 +489,66 @@ export function CardSelectStory() {
   );
 }
 
+type RadioSelectDocument = {
+  allowOff: boolean;
+  subscription: string;
+};
+
+const radioSelectOptions = [
+  { label: "On", value: "on" },
+  { label: "Off", value: "off" },
+] as const;
+
+const radioSelectConfig = resolveCollectionConfig<RadioSelectDocument>({
+  slug: "radio-select-example",
+  idField: "subscription",
+  labels: {
+    singularKey: "collectionForm.examples.record",
+    pluralKey: "collectionForm.examples.records",
+  },
+  useAsTitle: "subscription",
+  defaultColumns: ["subscription"],
+  fields: [
+    { name: "allowOff", type: "boolean", labelKey: "collectionForm.examples.fields.enabled" },
+    {
+      name: "subscription",
+      type: "select",
+      labelKey: "collectionForm.examples.fields.status",
+      required: true,
+      form: {
+        widget: "radio",
+        descriptionKey: "collectionForm.examples.fields.titleDescription",
+        isOptionDisabled: (option, data) => {
+          const value = typeof option === "string" ? option : option.value;
+          return value === "off" && data.allowOff !== true;
+        },
+      },
+      options: radioSelectOptions,
+    },
+  ],
+});
+
+export function RadioSelectStory({ disabled = false, readOnly = false }: { disabled?: boolean; readOnly?: boolean }) {
+  const form = useForm({
+    schema: v.object({
+      allowOff: v.boolean(),
+      subscription: v.pipe(v.string(), v.nonEmpty("Choose a subscription.")),
+    }),
+    initialInput: { allowOff: false, subscription: "on" },
+    validate: "input",
+  });
+  const fields = radioSelectConfig.fields.map((field) =>
+    field.name === "subscription" ? { ...field, readOnly } : field,
+  );
+
+  return (
+    <Form of={form} className="mx-auto max-w-5xl space-y-8 p-8" onSubmit={() => undefined}>
+      <RenderFields fields={fields} form={form} disabled={disabled} />
+      <output aria-label="Form values">{JSON.stringify(getInput(form))}</output>
+    </Form>
+  );
+}
+
 type InventoryRelationshipDocument = {
   inventoryItemId: ToOneRelationshipValue<string> | null;
 };

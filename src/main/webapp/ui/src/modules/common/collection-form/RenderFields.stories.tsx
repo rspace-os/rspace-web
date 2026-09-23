@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { expect, userEvent, within } from "storybook/test";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import { CardSelectStory, InventoryRelationshipStory, RenderFieldsStory } from "./RenderFields.story";
+import { CardSelectStory, InventoryRelationshipStory, RadioSelectStory, RenderFieldsStory } from "./RenderFields.story";
 
 const meta = {
   title: "Components/Collection Form/Render Fields",
@@ -118,6 +118,10 @@ export const Disabled: Story = {
 
 export const CardSelect: Story = {
   render: () => <CardSelectStory />,
+};
+
+export const RadioSelect: Story = {
+  render: () => <RadioSelectStory />,
 };
 
 export const InventoryItemRelationship: Story = {
