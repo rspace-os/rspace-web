@@ -751,6 +751,21 @@ describe("OperationWizard step flow", () => {
     expect(alerts.some((a) => a.variant === "warning" && /refreshFailed/.test(a.title))).toBe(true);
   });
 
+  it("hands the created sample to onPerformed before closing, even when the refresh afterwards fails", async () => {
+    const user = userEvent.setup();
+    const calls: Array<string> = [];
+    const onPerformed = vi.fn(() => calls.push("performed"));
+    const onClose = vi.fn(() => calls.push("closed"));
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockRejectedValue(new Error("network down"));
+    render(<OperationWizard open onClose={onClose} onPerformed={onPerformed} origins={[origin]} />);
+    await reachConfirm(user, "handoff");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onPerformed).toHaveBeenCalledWith(created.sample);
+    expect(calls).toEqual(["performed", "closed"]);
+  });
+
   it("sends Destroy as a whole-origin claim with no inputs, leaving the disposed date to the server", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
