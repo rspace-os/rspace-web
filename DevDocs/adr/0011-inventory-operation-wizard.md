@@ -135,7 +135,8 @@ guessing would hand a live request's origins to a second one. The controller rel
 claim in a `finally` nested inside the one that gives the edit locks back, so every exit
 path drops it, and a process that dies takes the map with it.
 
-On the UI side `ProcessAction` refuses to open the wizard when any origin was already
+On the UI side the launcher (`useOperationWizardLauncher`, shared by `ProcessAction` and
+any other caller) refuses to open the wizard when any origin was already
 locked by this user elsewhere, because the holder may be this user's own edit form in
 another tab, which will save the quantity it holds over whatever the operation commits.
 The wizard also holds a busy ref across the whole open-to-close lifecycle and a submitting
@@ -200,5 +201,5 @@ amount whose category no longer fits is repaired before it reaches the form.
   and kept suggesting a suffix for a free name. The DAO query now excludes them. This also
   changes the advisory check behind `POST /samples`; there is no unique constraint on
   `Sample.name`, so nothing breaks.
-- **The wizard remounts on every open** (`key` toggled with `open` in `ProcessAction`), so
+- **The wizard remounts on every open** (`key` toggled with `open` in `useOperationWizardLauncher`), so
   no state from a cancelled run survives into the next one.

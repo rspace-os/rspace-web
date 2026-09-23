@@ -6,8 +6,9 @@ import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import { RecordLockedError } from "@/stores/models/InventoryBaseRecord";
 import materialTheme from "@/theme";
+import { isProcessableSelection } from "../../Operations/useOperationWizardLauncher";
 import { lockOwnerName } from "../lockAlerts";
-import ProcessAction, { isProcessableSelection } from "../ProcessAction";
+import ProcessAction from "../ProcessAction";
 
 let settleRenewal: () => void = () => {};
 vi.mock("../../Operations/OperationWizard", () => ({
@@ -38,6 +39,7 @@ vi.mock("../../Operations/OperationWizard", () => ({
       </div>
     ) : null,
 }));
+vi.mock("../useProcessAvailable", () => ({ useProcessAvailable: () => true }));
 const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({ unitStore: { getUnit: () => ({ label: "ml" }) }, uiStore: { addAlert } }),
