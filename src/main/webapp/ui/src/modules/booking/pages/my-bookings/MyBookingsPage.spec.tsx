@@ -96,6 +96,45 @@ describe("the My Bookings page", () => {
     }
   });
 
+  test("shows the instrument-local start time and timezone without private booking details", async () => {
+    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const instrumentTimeZone = browserTimeZone === "Pacific/Auckland" ? "Europe/Berlin" : "Pacific/Auckland";
+    worker.use(...bookingHandlers(undefined, undefined, [{ ...upcomingBooking, timezone: instrumentTimeZone }]));
+    render(<MyBookingsPageStory history={history} />);
+
+    await pageObj.confocalStartDate.hover();
+
+    const tooltip = page.getByRole("tooltip");
+    await expect.element(tooltip).toBeVisible();
+    const expectedInstrumentDateTime = new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "shortOffset",
+      timeZone: instrumentTimeZone,
+    }).format(new Date(upcomingBooking.start));
+    await expect.element(tooltip).toHaveTextContent(expectedInstrumentDateTime);
+    await expect.element(tooltip).toHaveTextContent(instrumentTimeZone);
+    const tooltipText = tooltip.element().textContent ?? "";
+    expect(tooltipText).not.toContain("Scope training");
+    expect(tooltipText).not.toContain("Test User");
+  });
+
+  test("does not show an instrument-time tooltip when its timezone is the browser timezone or unknown", async () => {
+    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    for (const timezone of [browserTimeZone, null]) {
+      cleanup();
+      worker.use(...bookingHandlers(undefined, undefined, [{ ...upcomingBooking, timezone }]));
+      render(<MyBookingsPageStory history={history} />);
+
+      await pageObj.confocalStartDate.hover();
+      await expect.element(page.getByRole("tooltip")).not.toBeInTheDocument();
+    }
+  });
+
   test("uses the same appearance for every booking action", async () => {
     render(<MyBookingsPageStory history={history} />);
 

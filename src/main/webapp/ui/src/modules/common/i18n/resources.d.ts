@@ -1297,6 +1297,7 @@ export default interface Resources {
         "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
         "typeBooking": "Booking"
       },
+      "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
       "itemInformation": {
         "buffer": "Buffer",
         "bufferAfter": "{count}m after",

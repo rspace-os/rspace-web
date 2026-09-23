@@ -50,6 +50,10 @@ turning callback identity changes into draft changes, so mutation errors remain 
 the input changes.
 Forms explicitly label the display timezone and render conflict times in that same timezone,
 including when the item's scheduling timezone differs.
+Booking date and time displays retain the user's selected display timezone. When a booking's
+instrument timezone differs from either that display timezone or the browser timezone, hovering
+or focusing its timing shows the instrument-local date and time, UTC offset, and IANA timezone.
+The booking read document supplies that timezone; a null or hidden timezone produces no tooltip.
 
 Global display defaults are stored on the audited `BookingConfigurationDefaults` singleton. The
 initial values are `08:00`–`18:00`, Browser mode, and no custom timezone. A user override is one

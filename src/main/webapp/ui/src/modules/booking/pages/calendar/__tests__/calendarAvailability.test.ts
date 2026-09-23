@@ -80,6 +80,8 @@ const sourced = (
             privacy: "full",
             purpose: `Purpose ${id.replace("booking:", "")}`,
             bookedBy: `User ${id.replace("booking:", "")}`,
+            createdBy: undefined,
+            instrumentTimeZone: "Europe/Berlin",
           },
         }
       : {}),
