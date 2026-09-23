@@ -10538,6 +10538,7 @@ export default interface Resources {
         },
         "rows": {
           "dialogTitle": "Insert DBRepo rows from {name}",
+          "importedFrom": "Imported from DBRepo <resourceLink>{resource}</resourceLink> on {timestamp}",
           "insert": "Insert rows",
           "loading": "Loading DBRepo rows...",
           "metadataError": "Could not load DBRepo resource metadata.",

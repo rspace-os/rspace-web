@@ -241,6 +241,7 @@ describe("DBRepo dialog body", () => {
       expect.stringContaining('data-tablesource="dbrepo"'),
     );
     expect(execCommand.mock.calls[0][2]).toContain("<th>Experiment ID</th>");
+    expect(execCommand.mock.calls[0][2]).toContain("workspace:tinymce.dbrepo.rows.importedFrom");
     expect(execCommand.mock.calls[0][2]).toContain("<td>Alpha</td>");
     expect(close).toHaveBeenCalled();
   });

@@ -28,8 +28,10 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 
 const DBREPO_LOGO_PATH = "/images/icons/dbrepo.svg";
@@ -840,17 +842,26 @@ export function createDBRepoTinyMceTable(
   const linkRow = document.createElement("tr");
   const linkCell = document.createElement("th");
   linkCell.style.fontSize = "0.7em";
-  linkCell.appendChild(document.createTextNode("Imported from DBRepo "));
-  linkCell.appendChild(document.createTextNode(`${target.dbrepoType} `));
-  const anchor = document.createElement("a");
-  anchor.href = target.url;
-  anchor.rel = "noreferrer";
-  anchor.textContent = `${target.name} (${target.databaseName})`;
-  linkCell.appendChild(anchor);
-  linkCell.appendChild(document.createTextNode(" on "));
-  linkCell.appendChild(document.createTextNode(new Date().toDateString()));
-  linkCell.appendChild(document.createTextNode(" "));
-  linkCell.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
+  const timestamp = new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
+    dateStyle: "medium",
+    timeStyle: "medium",
+  }).format(new Date());
+  const resourceType = i18n.t(`workspace:tinymce.dbrepo.resourceTypes.${target.dbrepoType}`);
+  const resource = `${resourceType} ${target.name} (${target.databaseName})`;
+  linkCell.innerHTML = renderToStaticMarkup(
+    <TransRichText
+      i18n={i18n}
+      i18nKey="workspace:tinymce.dbrepo.rows.importedFrom"
+      values={{ resource, timestamp }}
+      components={{
+        resourceLink: (
+          <a href={target.url} rel="noreferrer">
+            {resource}
+          </a>
+        ),
+      }}
+    />,
+  );
   linkCell.colSpan = metadata.columns.length;
   linkCell.style.fontWeight = "400";
   linkRow.appendChild(linkCell);
