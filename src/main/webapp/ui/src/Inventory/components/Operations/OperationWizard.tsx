@@ -153,7 +153,7 @@ function OperationWizard({
    * going through onClose (an unmount) can order its release behind them too.
    */
   pendingRenewals?: React.MutableRefObject<Promise<unknown>>;
-  /** Called once the operation has committed, with the created sample, or null when it creates none. */
+  /** `null` when the operation creates no sample (Destroy). */
   onPerformed?: (sample: OperationResult | null) => void;
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
