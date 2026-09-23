@@ -183,6 +183,9 @@
           "purpose": {
             "length": "Purpose must not exceed 1,000 characters."
           }
+        },
+        "bookingNotifications": {
+          "subscriptionConflict": "Your notification subscription changed. Refresh it and try again."
         }
       },
       "pagination": {

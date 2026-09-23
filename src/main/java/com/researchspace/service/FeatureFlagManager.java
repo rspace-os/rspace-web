@@ -40,6 +40,12 @@ public interface FeatureFlagManager {
   /** Returns whether a flag is enabled for a user, or its baseline when {@code user} is null. */
   boolean isFeatureFlagEnabled(String flagName, User user);
 
+  /**
+   * Resolves persisted baseline and user overrides in the caller's database transaction. Forced
+   * deployment values still take precedence. Use for snapshot-sensitive authorization.
+   */
+  boolean isFeatureFlagEnabledInSnapshot(String flagName, User user);
+
   /** Returns whether the user may access internal devtools. */
   boolean canUseDevtools(User user);
 

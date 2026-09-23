@@ -72,6 +72,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private final BookingCalendarSubscriptionDao calendarSubscriptions;
   private final TimeSlotBookingDao timeSlotBookings;
   private final BookingNotificationService bookingNotificationService;
+  private final BookingNotificationSubscriptionManager notificationSubscriptions;
 
   @Autowired
   public BookingConfigurationManagerImpl(
@@ -89,7 +90,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       @Qualifier("bookingCalendarSubscriptionDao")
           BookingCalendarSubscriptionDao calendarSubscriptions,
       @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings,
-      BookingNotificationService bookingNotificationService) {
+      BookingNotificationService bookingNotificationService,
+      BookingNotificationSubscriptionManager notificationSubscriptions) {
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.defaultsDao = defaultsDao;
     this.instrumentDao = instrumentDao;
@@ -101,6 +103,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     this.calendarSubscriptions = calendarSubscriptions;
     this.timeSlotBookings = timeSlotBookings;
     this.bookingNotificationService = bookingNotificationService;
+    this.notificationSubscriptions = notificationSubscriptions;
   }
 
   /** Returns one page selected by a parsed collection request. */
@@ -189,20 +192,47 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
             .getSafeNull(BookingConfigurationDefaults.SINGLETON_ID)
             .orElseThrow(
                 () -> new IllegalStateException("Booking configuration defaults row is missing"));
+    Set<BookableTargetReference> targets = new HashSet<>();
+    for (Create create : creates) {
+      if (!targets.add(validateTarget(create.target()))) {
+        throw new BookingConfigurationTargetConflictException();
+      }
+    }
+    java.util.Map<Long, Instrument> lockedTargets = new java.util.LinkedHashMap<>();
+    targets.stream()
+        .map(BookableTargetReference::id)
+        .sorted()
+        .forEach(
+            id ->
+                lockedTargets.put(
+                    id,
+                    instrumentDao.lockById(id).orElseThrow(InvalidBookableTargetException::new)));
+    for (BookableTargetReference target : targets) {
+      validateLockedTarget(target, lockedTargets.get(target.id()));
+    }
     Date now = new Date();
     List<BookingConfiguration> configurations =
         creates.stream()
-            .map(create -> configuration(create, defaults, subject, actor, now))
+            .map(
+                create ->
+                    configuration(
+                        create,
+                        defaults,
+                        subject,
+                        actor,
+                        now,
+                        lockedTargets.get(create.target().reference().id())))
             .toList();
     configurations.forEach(configuration -> initializeAudit(configuration, actor, now));
-    Set<BookableTargetReference> targets = new HashSet<>();
     for (BookingConfiguration configuration : configurations) {
-      if (!targets.add(configuration.getTarget())) {
-        throw new BookingConfigurationTargetConflictException();
-      }
       requireTargetAvailable(configuration.getTarget(), null);
     }
     List<BookingConfiguration> saved = configurations.stream().map(this::save).toList();
+    saved.forEach(
+        configuration ->
+            instrumentDao
+                .getSafeNull(configuration.getTarget().id())
+                .ifPresent(notificationSubscriptions::initializeForInstrument));
     saved.forEach(configuration -> notifyAudit(actor, subject, configuration, AuditAction.CREATE));
     prepareAccessProjection(saved, subject);
     return saved;
@@ -213,7 +243,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       BookingConfigurationDefaults defaults,
       User subject,
       User actor,
-      Date timestamp) {
+      Date timestamp,
+      Instrument instrument) {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setEnabled(create.enabled());
     configuration.setState(BookingConfigurationState.ACTIVE);
@@ -223,8 +254,6 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
         .merge(BookingSchedulingSettings.from(defaults))
         .applyTo(configuration);
     BookableTargetReference target = validateTarget(create.target());
-    Instrument instrument =
-        instrumentDao.lockById(target.id()).orElseThrow(InvalidBookableTargetException::new);
     validateLockedTarget(target, instrument);
     configuration.replaceTarget(target);
     requireCapability(configuration, subject, BookingResourceRoleScheme.EDIT_CONFIGURATION);
@@ -593,7 +622,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
         resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS),
         resolved.hasCapability(BookingResourceRoleScheme.CREATE_BLOCKOUT),
         resolved.hasCapability(BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION),
-        false);
+        false,
+        resolved.hasCapability(BookingItemPermissions.MANAGE_NOTIFICATION_SUBSCRIPTION));
   }
 
   private static ResourceRequest idRequest(Long id) {

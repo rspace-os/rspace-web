@@ -21,6 +21,7 @@ import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
@@ -72,6 +73,7 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
     User owner = createInitAndLoginAnyUser();
     BookingSetup setup = createBookingSetup(owner, "Owner notification create");
     User booker = createInitAndLoginAnyUser();
+    shareInstrumentWithBooker(setup, booker);
 
     createBooking(setup, booker);
 
@@ -87,6 +89,7 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
     User owner = createInitAndLoginAnyUser();
     BookingSetup setup = createBookingSetup(owner, "Owner notification cancel");
     User booker = createInitAndLoginAnyUser();
+    shareInstrumentWithBooker(setup, booker);
     TimeSlotBooking booking = createBooking(setup, booker);
 
     bookingManager
@@ -113,6 +116,7 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
         owner.getUsername());
     BookingSetup setup = createBookingSetup(owner, "Owner notification preference");
     User booker = createInitAndLoginAnyUser();
+    shareInstrumentWithBooker(setup, booker);
 
     createBooking(setup, booker);
 
@@ -134,10 +138,10 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
     User owner = createInitAndLoginAnyUser();
     BookingSetup setup = createBookingSetup(owner, "Owner notification archive");
     User booker = createInitAndLoginAnyUser();
+    shareInstrumentWithBooker(setup, booker);
     createBooking(setup, booker);
 
-    User sysadmin = getSysAdminUser();
-    logoutAndLoginAs(sysadmin);
+    User sysadmin = logoutAndLoginAsSysAdmin();
     BookingConfiguration archived =
         configurationManager
             .archiveConfiguration(
@@ -161,6 +165,7 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
     User owner = createInitAndLoginAnyUser();
     BookingSetup setup = createBookingSetup(owner, "Owner notification rollback");
     User booker = createInitAndLoginAnyUser();
+    shareInstrumentWithBooker(setup, booker);
     TimeSlotBookingManager.Create create = createCommand(setup);
 
     TransactionTemplate transaction = new TransactionTemplate(getTxMger());
@@ -200,7 +205,25 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
                 true, "UTC", new ResolvedBookableTarget(target, instrument)),
             owner,
             owner);
-    return new BookingSetup(configuration, new ResolvedBookableTarget(target, instrument));
+    return new BookingSetup(owner, configuration, new ResolvedBookableTarget(target, instrument));
+  }
+
+  private void shareInstrumentWithBooker(BookingSetup setup, User booker) {
+    if (setup.owner().getId().equals(booker.getId())) {
+      return;
+    }
+    try {
+      createGroupForUsersWithDefaultPi(setup.owner(), booker);
+    } catch (com.researchspace.model.record.IllegalAddChildOperation exception) {
+      throw new IllegalStateException("Could not grant booking access to test booker", exception);
+    }
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored ->
+                instrumentDao
+                    .get(setup.configuration().getTarget().id())
+                    .setSharingMode(InventoryRecord.InventorySharingMode.OWNER_GROUPS));
+    permissionUtils.refreshCache();
   }
 
   private List<Notification> notificationsFor(User user, NotificationType type) {
@@ -224,7 +247,8 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
         });
   }
 
-  private record BookingSetup(BookingConfiguration configuration, ResolvedBookableTarget target) {}
+  private record BookingSetup(
+      User owner, BookingConfiguration configuration, ResolvedBookableTarget target) {}
 
   private static final class ForcedRollback extends RuntimeException {}
 }

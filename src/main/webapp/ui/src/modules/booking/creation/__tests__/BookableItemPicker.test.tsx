@@ -39,6 +39,7 @@ function configuration(id: number, name: string) {
       canManageAllEvents: false,
       canCreateBlockout: false,
       canSubscribeCalendar: true,
+      canManageNotificationSubscription: false,
       canLeaveConfiguration: false,
     },
     location: null,

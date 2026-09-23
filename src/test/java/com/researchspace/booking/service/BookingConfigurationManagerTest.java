@@ -89,6 +89,8 @@ class BookingConfigurationManagerTest {
   private final TimeSlotBookingDao timeSlotBookings = mock(TimeSlotBookingDao.class);
   private final BookingNotificationService bookingNotificationService =
       mock(BookingNotificationService.class);
+  private final BookingNotificationSubscriptionManager notificationSubscriptions =
+      mock(BookingNotificationSubscriptionManager.class);
 
   private final User actor = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
@@ -107,7 +109,8 @@ class BookingConfigurationManagerTest {
           itemPermissions,
           calendarSubscriptions,
           timeSlotBookings,
-          bookingNotificationService);
+          bookingNotificationService,
+          notificationSubscriptions);
 
   @BeforeEach
   void setUp() {
@@ -120,6 +123,8 @@ class BookingConfigurationManagerTest {
     when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
         .thenReturn(Optional.of(defaults(5, "00:00", "24:00", 0, 0, 0, false)));
     when(instrumentDao.lockById(any()))
+        .thenAnswer(invocation -> Optional.of(instrument(invocation.getArgument(0), actor)));
+    when(instrumentDao.getSafeNull(any()))
         .thenAnswer(invocation -> Optional.of(instrument(invocation.getArgument(0), actor)));
     when(resourceRegistry.getObject())
         .thenReturn(
@@ -240,6 +245,7 @@ class BookingConfigurationManagerTest {
     assertEquals("24:00", created.getOpeningEnd());
     assertEquals(null, created.getResourceAccess());
     verify(dao).saveAndFlush(created);
+    verify(notificationSubscriptions).initializeForInstrument(any(Instrument.class));
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 

@@ -7,15 +7,15 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.NotificationConfig;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
 import java.util.Optional;
-import org.apache.commons.text.StringEscapeUtils;
-import org.springframework.context.MessageSource;
+import java.util.Set;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,24 +24,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class BookingNotificationService {
 
-  private static final String CREATED_MESSAGE_KEY = "bookingNotifications.created";
-  private static final String CANCELLED_MESSAGE_KEY = "bookingNotifications.cancelled";
-
   private final InstrumentDao instrumentDao;
   private final CommunicationManager communicationManager;
-  private final MessageSource messageSource;
+  private final BookingNotificationRecipientReader recipientReader;
+  private final BookingNotificationMessageFormatter messageFormatter;
 
   public BookingNotificationService(
       InstrumentDao instrumentDao,
       CommunicationManager communicationManager,
-      MessageSource messageSource) {
+      BookingNotificationRecipientReader recipientReader,
+      BookingNotificationMessageFormatter messageFormatter) {
     this.instrumentDao = instrumentDao;
     this.communicationManager = communicationManager;
-    this.messageSource = messageSource;
+    this.recipientReader = recipientReader;
+    this.messageFormatter = messageFormatter;
   }
 
   /**
-   * Notifies the instrument's current owner about a supported booking event.
+   * Notifies each eligible subscriber about a supported booking event.
    *
    * <p>This must run in the booking transaction so a notification cannot survive a failed booking
    * write.
@@ -52,31 +52,30 @@ public class BookingNotificationService {
       return;
     }
 
-    String messageKey = messageKey(notificationType);
     Optional<Instrument> instrument = currentInstrument(booking);
     if (instrument.isEmpty()) {
       return;
     }
-    User owner = instrument.orElseThrow().getOwner();
-    if (owner == null || actor.equals(owner) || !owner.wantsNotificationFor(notificationType)) {
-      return;
+    Instrument targetInstrument = instrument.orElseThrow();
+    BookingNotificationData data = notificationData(booking, targetInstrument);
+    for (BookingNotificationRecipient recipient :
+        recipientReader.selectRecipients(
+            targetInstrument.getId(), notificationType, actor.getId())) {
+      NotificationConfig config = new NotificationConfig();
+      config.setNotificationType(notificationType);
+      config.setBroadcast(true);
+      config.setPolicyOverride(CommunicationNotifyPolicy.ALWAYS_NOTIFY);
+      config.setRecordAuthorisationRequired(false);
+      config.setNotificationTargetsOverride(new java.util.HashSet<>(Set.of(recipient.user())));
+      config.setNotificationData(data);
+
+      communicationManager.notify(
+          actor,
+          null,
+          config,
+          messageFormatter.format(
+              notificationType, data, recipient.displayZone(), LocaleContextHolder.getLocale()));
     }
-
-    NotificationConfig config = new NotificationConfig();
-    config.setNotificationType(notificationType);
-    config.setBroadcast(true);
-    config.setPolicyOverride(CommunicationNotifyPolicy.ALWAYS_NOTIFY);
-    config.setRecordAuthorisationRequired(false);
-    config.setNotificationTargetsOverride(new HashSet<>(java.util.Set.of(owner)));
-
-    communicationManager.notify(
-        actor,
-        null,
-        config,
-        messageSource.getMessage(
-            messageKey,
-            messageArguments(booking, instrument.orElseThrow()),
-            org.springframework.context.i18n.LocaleContextHolder.getLocale()));
   }
 
   private Optional<Instrument> currentInstrument(TimeSlotBooking booking) {
@@ -90,23 +89,14 @@ public class BookingNotificationService {
     return instrumentDao.getSafeNull(target.id()).filter(instrument -> !instrument.isDeleted());
   }
 
-  private static String messageKey(NotificationType notificationType) {
-    return switch (notificationType) {
-      case NOTIFICATION_BOOKING_CREATED -> CREATED_MESSAGE_KEY;
-      case NOTIFICATION_BOOKING_CANCELLED -> CANCELLED_MESSAGE_KEY;
-      default ->
-          throw new IllegalArgumentException(
-              "Unsupported booking notification type: " + notificationType);
-    };
-  }
-
-  private static Object[] messageArguments(TimeSlotBooking booking, Instrument instrument) {
-    return new Object[] {
-      StringEscapeUtils.escapeHtml4(booking.getId().toString()),
-      StringEscapeUtils.escapeHtml4(instrument.getName()),
-      StringEscapeUtils.escapeHtml4(instrument.getGlobalIdentifier()),
-      DateTimeFormatter.ISO_INSTANT.format(booking.getStartTime().toInstant()),
-      DateTimeFormatter.ISO_INSTANT.format(booking.getEndTime().toInstant())
-    };
+  private static BookingNotificationData notificationData(
+      TimeSlotBooking booking, Instrument instrument) {
+    BookingNotificationData data = new BookingNotificationData();
+    data.setBookingId(booking.getId().toString());
+    data.setInstrumentName(instrument.getName());
+    data.setInstrumentGlobalIdentifier(instrument.getGlobalIdentifier());
+    data.setStartTime(DateTimeFormatter.ISO_INSTANT.format(booking.getStartTime().toInstant()));
+    data.setEndTime(DateTimeFormatter.ISO_INSTANT.format(booking.getEndTime().toInstant()));
+    return data;
   }
 }

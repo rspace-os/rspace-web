@@ -20,6 +20,7 @@ const BookingCapabilitiesSchema = v.object({
   canCreateBlockout: v.boolean(),
   canSubscribeCalendar: v.boolean(),
   canLeaveConfiguration: v.boolean(),
+  canManageNotificationSubscription: v.optional(v.boolean(), false),
 });
 
 export const BookingCatalogueItemSchema = v.object({

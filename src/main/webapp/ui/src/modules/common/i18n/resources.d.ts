@@ -6354,8 +6354,9 @@ export default interface Resources {
         }
       },
       "message": {
-        "bookingCancelled": "A booking on an instrument I own is cancelled",
-        "bookingCreated": "A booking is created on an instrument I own",
+        "bookingAutoSubscribe": "Automatically subscribe to booking notifications for new instruments I own",
+        "bookingCancelled": "A booking on an instrument I subscribe to is cancelled",
+        "bookingCreated": "A booking is created on an instrument I subscribe to",
         "delivery": {
           "label": "Preferred delivery method"
         },
@@ -6898,6 +6899,9 @@ export default interface Resources {
             "timeZone": {
               "invalid": "Choose Browser, Institution, or a valid custom IANA time zone."
             }
+          },
+          "bookingNotifications": {
+            "subscriptionConflict": "Your notification subscription changed. Refresh it and try again."
           },
           "bulk": {
             "filter": {

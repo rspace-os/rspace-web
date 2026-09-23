@@ -228,6 +228,23 @@ class FeatureFlagManagerImplTest {
   }
 
   @Test
+  void snapshotReadUsesPersistedBaselineInsteadOfRuntimeCache() {
+    initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, true), false);
+    when(featureFlagDao.getBaselineValues())
+        .thenReturn(Map.of(FeatureFlags.BOOKING_ENABLED, false));
+    assertTrue(featureFlagManager.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, (User) null));
+    assertFalse(
+        featureFlagManager.isFeatureFlagEnabledInSnapshot(FeatureFlags.BOOKING_ENABLED, null));
+  }
+
+  @Test
+  void snapshotReadPreservesForcedDeploymentValue() {
+    initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), true);
+    assertTrue(
+        featureFlagManager.isFeatureFlagEnabledInSnapshot(FeatureFlags.BOOKING_ENABLED, null));
+  }
+
+  @Test
   void isFeatureFlagEnabledDoesNotLoadUserOverridesForForcedFlag() {
     initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), true);
     User user = user("user", 14L);

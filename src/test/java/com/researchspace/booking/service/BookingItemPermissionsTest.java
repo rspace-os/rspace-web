@@ -64,8 +64,21 @@ class BookingItemPermissionsTest {
     assertEquals(Optional.of(BookingResourceRoleScheme.OWNER), resolved.effectiveRole());
     assertTrue(resolved.hasCapability(BookingResourceRoleScheme.EDIT_CONFIGURATION));
     assertTrue(resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS));
+    assertTrue(resolved.hasCapability(BookingItemPermissions.MANAGE_NOTIFICATION_SUBSCRIPTION));
     assertFalse(resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ASSIGNMENTS));
     assertFalse(resolved.hasCapability(BookingResourceRoleScheme.MANAGE_OWNERS));
+  }
+
+  @Test
+  void sysadminCannotManageAnotherOwnersPersonalSubscription() {
+    org.mockito.Mockito.reset(inventoryPermissions);
+    when(subject.hasSysadminRole()).thenReturn(true);
+    when(subject.getUsername()).thenReturn("admin");
+    when(itemOwner.getUsername()).thenReturn("owner");
+    when(instruments.getSafeNull(TARGET_ID)).thenReturn(Optional.of(instrument));
+    ResolvedResourceAccess resolved = permissions.resolve(configuration, subject);
+    assertTrue(resolved.hasCapability(BookingResourceRoleScheme.EDIT_CONFIGURATION));
+    assertTrue(resolved.hasCapability(BookingItemPermissions.MANAGE_NOTIFICATION_SUBSCRIPTION));
   }
 
   @Test
@@ -78,6 +91,7 @@ class BookingItemPermissionsTest {
     ResolvedResourceAccess resolved = permissions.resolve(configuration, subject);
 
     assertEquals(Optional.of(BookingResourceRoleScheme.BOOKER), resolved.effectiveRole());
+    assertTrue(resolved.hasCapability(BookingItemPermissions.MANAGE_NOTIFICATION_SUBSCRIPTION));
     assertTrue(resolved.hasCapability(BookingResourceRoleScheme.CREATE_BOOKING));
     assertFalse(resolved.hasCapability(BookingResourceRoleScheme.EDIT_CONFIGURATION));
     assertFalse(resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS));
@@ -92,6 +106,7 @@ class BookingItemPermissionsTest {
     ResolvedResourceAccess resolved = permissions.resolve(configuration, subject);
 
     assertEquals(Optional.of(BookingResourceRoleScheme.VIEWER), resolved.effectiveRole());
+    assertTrue(resolved.hasCapability(BookingItemPermissions.MANAGE_NOTIFICATION_SUBSCRIPTION));
     assertTrue(resolved.hasCapability(BookingResourceRoleScheme.READ_RESOURCE));
     assertFalse(resolved.hasCapability(BookingResourceRoleScheme.CREATE_BOOKING));
   }
@@ -120,7 +135,10 @@ class BookingItemPermissionsTest {
             23L,
             new ResolvedResourceAccess(
                 Optional.of(BookingResourceRoleScheme.VIEWER),
-                new BookingResourceRoleScheme().capabilities(BookingResourceRoleScheme.VIEWER),
+                java.util.Set.of(
+                    BookingResourceRoleScheme.READ_RESOURCE,
+                    "CREATE_CALENDAR_SUBSCRIPTION",
+                    BookingItemPermissions.MANAGE_NOTIFICATION_SUBSCRIPTION),
                 List.of(
                     com.researchspace.model.resourceaccess.ResourceRoleSource.implicit(
                         BookingResourceRoleScheme.VIEWER))),

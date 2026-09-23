@@ -184,6 +184,22 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     return snapshot.resolveResource(definition, userOverrides, false).isValue();
   }
 
+  @Override
+  public boolean isFeatureFlagEnabledInSnapshot(String flagName, User user) {
+    RuntimeFeatureFlags configured = requireRuntime();
+    FeatureFlagDefinition definition = configured.definitions().get(flagName);
+    if (definition == null) throw new FeatureFlagNotFoundException(flagName);
+    if (configured.isForced(flagName)) {
+      return configured.resolveResource(definition, Map.of(), false).isValue();
+    }
+    RuntimeFeatureFlags snapshot =
+        new RuntimeFeatureFlags(
+            configured.definitions(),
+            featureFlagDao.getBaselineValues(),
+            configured.forcedValues());
+    return snapshot.resolveResource(definition, getUserOverrides(user), false).isValue();
+  }
+
   private Optional<RuntimeFeatureFlags> setBaselineValue(
       RuntimeFeatureFlags snapshot, String flagName, boolean value) {
     FeatureFlagDefinition definition = snapshot.definitions().get(flagName);

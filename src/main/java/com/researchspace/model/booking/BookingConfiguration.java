@@ -194,7 +194,9 @@ public class BookingConfiguration implements Serializable {
         Map.entry("canManageAllEvents", capabilities.canManageAllEvents()),
         Map.entry("canCreateBlockout", capabilities.canCreateBlockout()),
         Map.entry("canSubscribeCalendar", capabilities.canSubscribeCalendar()),
-        Map.entry("canLeaveConfiguration", capabilities.canLeaveConfiguration()));
+        Map.entry("canLeaveConfiguration", capabilities.canLeaveConfiguration()),
+        Map.entry(
+            "canManageNotificationSubscription", capabilities.canManageNotificationSubscription()));
   }
 
   @Transient

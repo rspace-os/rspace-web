@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-booking-notification-subscriptions" author="researchspace" context="run">
+    <comment>Create personal instrument notification subscriptions and initialize current owners</comment>
+    <createTable tableName="BookableItemNotificationSubscription">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="instrument_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="enabled" type="BIT(1)" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="version" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="createdAt" type="DATETIME(6)" defaultValueComputed="CURRENT_TIMESTAMP(6)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updatedAt" type="DATETIME(6)" defaultValueComputed="CURRENT_TIMESTAMP(6)">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addUniqueConstraint
+        tableName="BookableItemNotificationSubscription"
+        columnNames="user_id, instrument_id"
+        constraintName="UK_BookableItemNotificationSubscription_user_instrument"/>
+    <createIndex
+        tableName="BookableItemNotificationSubscription"
+        indexName="IX_BookableItemNotificationSubscription_instrument">
+      <column name="instrument_id"/>
+    </createIndex>
+    <addForeignKeyConstraint
+        constraintName="FK_BookableItemNotificationSubscription_user"
+        baseTableName="BookableItemNotificationSubscription"
+        baseColumnNames="user_id"
+        referencedTableName="User"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+    <addForeignKeyConstraint
+        constraintName="FK_BookableItemNotificationSubscription_instrument"
+        baseTableName="BookableItemNotificationSubscription"
+        baseColumnNames="instrument_id"
+        referencedTableName="InstrumentEntity"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+    <sql>
+      ALTER TABLE BookableItemNotificationSubscription ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+    <sql>
+      INSERT INTO BookableItemNotificationSubscription
+        (user_id, instrument_id, enabled, version, createdAt, updatedAt)
+      SELECT DISTINCT instrument.owner_id, instrument.id, 1, 0,
+             CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6)
+        FROM BookingConfiguration configuration
+        JOIN InstrumentEntity instrument ON instrument.id = configuration.targetId
+       WHERE configuration.targetType = 'INSTRUMENT'
+         AND instrument.DTYPE = 'Instrument'
+         AND instrument.deleted = 0
+    </sql>
+  </changeSet>
+</databaseChangeLog>
