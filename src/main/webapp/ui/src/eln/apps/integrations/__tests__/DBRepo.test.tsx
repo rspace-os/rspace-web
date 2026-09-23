@@ -72,4 +72,41 @@ describe("DBRepo", () => {
       open.mockRestore();
     }
   });
+
+  test("does not send the DBRepo URL through the generic integration update.", async () => {
+    const user = userEvent.setup();
+    const update = vi.fn();
+    render(
+      <DBRepo
+        integrationState={{
+          mode: "DISABLED",
+          credentials: {
+            DBREPO_URL: Optional.present("https://dbrepo.example"),
+            DBREPO_CONNECTED: true,
+            optionsId: Optional.present("1"),
+          },
+        }}
+        update={update}
+      />,
+    );
+
+    await user.click(screen.getByRole("button"));
+    await user.clear(screen.getByRole("textbox", { name: "apps:integrations.dbrepo.fields.url" }));
+    await user.type(
+      screen.getByRole("textbox", { name: "apps:integrations.dbrepo.fields.url" }),
+      "https://changed.example",
+    );
+    await user.click(screen.getByRole("button", { name: "apps:integrationCard.enable" }));
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "ENABLED",
+        credentials: expect.objectContaining({
+          DBREPO_CONNECTED: true,
+          optionsId: Optional.present("1"),
+        }),
+      }),
+    );
+    expect(update.mock.calls[0][0].credentials.DBREPO_URL.isEmpty()).toBe(true);
+  });
 });

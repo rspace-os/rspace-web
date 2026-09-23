@@ -101,7 +101,7 @@ function DBRepo({ integrationState, update }: DBRepoArgs): React.ReactNode {
             mode: newMode,
             credentials: {
               ...integrationState.credentials,
-              DBREPO_URL: url ? Optional.present(url) : Optional.empty(),
+              DBREPO_URL: Optional.empty(),
               DBREPO_CONNECTED: connected,
             },
           })
