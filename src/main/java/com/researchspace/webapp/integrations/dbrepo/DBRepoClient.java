@@ -20,11 +20,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriUtils;
@@ -34,7 +32,6 @@ import org.springframework.web.util.UriUtils;
 public class DBRepoClient {
 
   static final String CURRENT_DATABASES_PATH = "/api/v1/database";
-  static final String LEGACY_DATABASES_PATH = "/api/database";
   static final String TABLE_TYPE = "table";
   static final String VIEW_TYPE = "view";
   private static final String SUBSET_TYPE = "subset";
@@ -94,16 +91,8 @@ public class DBRepoClient {
 
   public List<DBRepoDatabaseDTO> listDatabases(String baseUrl, DBRepoCredentials credentials) {
     String normalizedBaseUrl = normalizeBaseUrl(baseUrl);
-    try {
-      return listDatabasesAt(
-          normalizedBaseUrl + CURRENT_DATABASES_PATH, normalizedBaseUrl, credentials);
-    } catch (HttpStatusCodeException e) {
-      if (HttpStatus.NOT_FOUND.value() == e.getStatusCode().value()) {
-        return listDatabasesAt(
-            normalizedBaseUrl + LEGACY_DATABASES_PATH, normalizedBaseUrl, credentials);
-      }
-      throw e;
-    }
+    return listDatabasesAt(
+        normalizedBaseUrl + CURRENT_DATABASES_PATH, normalizedBaseUrl, credentials);
   }
 
   public DBRepoDatabaseResourcesDTO listDatabaseResources(
@@ -143,7 +132,7 @@ public class DBRepoClient {
     String normalizedBaseUrl = normalizeBaseUrl(baseUrl);
     String url =
         normalizedBaseUrl
-            + "/api/v1/database/"
+            + CURRENT_DATABASES_PATH
             + encodePathSegment(databaseId)
             + "/"
             + resourceType
@@ -214,7 +203,7 @@ public class DBRepoClient {
       List<String> failedTypes) {
     try {
       return listResourcesAt(
-          normalizedBaseUrl + "/api/v1/database/" + encodedDatabaseId + "/" + type,
+          normalizedBaseUrl + CURRENT_DATABASES_PATH + encodedDatabaseId + "/" + type,
           normalizedBaseUrl,
           encodedDatabaseId,
           type,
@@ -359,7 +348,7 @@ public class DBRepoClient {
   private String resourceUrl(
       String normalizedBaseUrl, String databaseId, String resourceType, String resourceId) {
     return normalizedBaseUrl
-        + "/api/v1/database/"
+        + CURRENT_DATABASES_PATH
         + encodePathSegment(databaseId)
         + "/"
         + resourceType

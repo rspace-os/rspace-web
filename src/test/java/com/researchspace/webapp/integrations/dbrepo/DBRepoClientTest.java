@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 public class DBRepoClientTest {
@@ -85,20 +86,15 @@ public class DBRepoClientTest {
   }
 
   @Test
-  public void fallsBackToLegacyApiWhenCurrentApiIsMissing() {
+  public void doesNotFallBackToLegacyApiWhenCurrentApiIsMissing() {
     server
         .expect(requestTo("https://dbrepo.example/api/v1/database"))
         .andRespond(withResourceNotFound());
-    server
-        .expect(requestTo("https://dbrepo.example/api/database"))
-        .andRespond(
-            withSuccess("[{\"id\":\"db-2\",\"name\":\"Legacy\"}]", MediaType.APPLICATION_JSON));
 
-    List<DBRepoDatabaseDTO> databases =
-        client.listDatabases("https://dbrepo.example", new DBRepoCredentials("user", "pass"));
-
-    assertEquals(1, databases.size());
-    assertEquals("db-2", databases.get(0).id());
+    assertThrows(
+        RestClientException.class,
+        () ->
+            client.listDatabases("https://dbrepo.example", new DBRepoCredentials("user", "pass")));
     server.verify();
   }
 
