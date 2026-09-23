@@ -15,6 +15,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
@@ -47,6 +49,18 @@ public class DBRepoClientTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> client.normalizeBaseUrl("https://dbrepo.example?a=b"));
+  }
+
+  @Test
+  public void defaultRestTemplateBoundsConnectAndReadTimeouts() {
+    DBRepoClient defaultClient = new DBRepoClient();
+    RestTemplate defaultRestTemplate =
+        (RestTemplate) ReflectionTestUtils.getField(defaultClient, "restTemplate");
+    SimpleClientHttpRequestFactory requestFactory =
+        (SimpleClientHttpRequestFactory) defaultRestTemplate.getRequestFactory();
+
+    assertEquals(10_000, ReflectionTestUtils.getField(requestFactory, "connectTimeout"));
+    assertEquals(30_000, ReflectionTestUtils.getField(requestFactory, "readTimeout"));
   }
 
   @Test

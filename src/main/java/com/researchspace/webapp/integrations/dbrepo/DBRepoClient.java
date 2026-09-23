@@ -1,5 +1,7 @@
 package com.researchspace.webapp.integrations.dbrepo;
 
+import static com.researchspace.webapp.integrations.b2inst.B2instConnectorImpl.timeoutBoundedRequestFactory;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,7 +44,7 @@ public class DBRepoClient {
   private final ObjectMapper objectMapper;
 
   public DBRepoClient() {
-    this(new RestTemplate(), new ObjectMapper());
+    this(new RestTemplate(timeoutBoundedRequestFactory()), new ObjectMapper());
   }
 
   DBRepoClient(RestTemplate restTemplate) {

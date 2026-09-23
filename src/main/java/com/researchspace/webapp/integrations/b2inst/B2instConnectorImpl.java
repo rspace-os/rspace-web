@@ -76,8 +76,11 @@ public class B2instConnectorImpl implements B2instConnector {
     log.info("Reloaded B2INST client for server {} (enabled={})", serverUrl, enabled);
   }
 
-  /** See {@link #CONNECT_TIMEOUT}: never build a B2INST client without these bounds. */
-  private static SimpleClientHttpRequestFactory timeoutBoundedRequestFactory() {
+  /**
+   * See {@link #CONNECT_TIMEOUT}: never build an external HTTP integration client without these
+   * bounds.
+   */
+  public static SimpleClientHttpRequestFactory timeoutBoundedRequestFactory() {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setConnectTimeout(CONNECT_TIMEOUT);
     factory.setReadTimeout(READ_TIMEOUT);
