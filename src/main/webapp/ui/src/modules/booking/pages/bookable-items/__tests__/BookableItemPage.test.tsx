@@ -18,8 +18,10 @@ import { server } from "@/__tests__/mswServer";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import bookingEn from "@/modules/common/i18n/locales/en-US/booking.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
+import { BookableItemNotificationSubscription } from "../BookableItemNotificationSubscription";
 import { bookerBookingAccess, ownerBookingAccess } from "../mocks/bookableItemsMocks";
 import { createBookableItemRoute } from "../routes";
 
@@ -89,11 +91,40 @@ function envelope(docs: unknown[], limit: number) {
 
 const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
 const mockedUseCurrentUserQuery = vi.mocked(useCurrentUserQuery);
+const { renderWithRealI18n } = await import("@/__tests__/helpers/realI18n");
+let currentNotificationSubscription = {
+  configurationId: 7,
+  enabled: false,
+  version: 0,
+  createdEnabled: true,
+  cancelledEnabled: true,
+  emailEnabled: false,
+};
+let notificationSubscriptionRequest: unknown;
 
 beforeEach(() => {
+  currentNotificationSubscription = {
+    configurationId: 7,
+    enabled: false,
+    version: 0,
+    createdEnabled: true,
+    cancelledEnabled: true,
+    emailEnabled: false,
+  };
+  notificationSubscriptionRequest = undefined;
+  server.use(
+    http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
+      HttpResponse.json(currentNotificationSubscription),
+    ),
+    http.put("/api/v2/booking-configurations/7/notification-subscription", async ({ request }) => {
+      notificationSubscriptionRequest = await request.json();
+      currentNotificationSubscription = { ...currentNotificationSubscription, enabled: true, version: 1 };
+      return HttpResponse.json(currentNotificationSubscription);
+    }),
+  );
   mockedUseOauthTokenQuery.mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
   mockedUseCurrentUserQuery.mockReturnValue({
-    data: { hasSysAdminRole: true, session: { operatedAs: false } },
+    data: { id: 1, hasSysAdminRole: true, session: { operatedAs: false } },
   } as ReturnType<typeof useCurrentUserQuery>);
 });
 
@@ -266,7 +297,7 @@ describe("BookableItemPage", () => {
     const facts = screen.getByRole("complementary", { name: "booking:bookableItemDetails.about" });
     const tabList = screen.getByRole("tablist");
     expect(heading.closest("section")?.parentElement).toBe(tabList.parentElement);
-    expect(facts.parentElement?.parentElement).toBe(tabList.parentElement);
+    expect(facts.parentElement?.parentElement?.parentElement).toBe(tabList.parentElement);
     expect(tabList.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(within(facts).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
     expect(within(facts).getByText("Grace Hopper (grace)")).toBeVisible();
@@ -298,6 +329,198 @@ describe("BookableItemPage", () => {
     expect(boundaries[0]).toBeTruthy();
     expect(boundaries[0]).toBe(boundaries[1]);
     await expectAccessible(container);
+  });
+
+  it("saves an owner notification choice and clears saved state after edits", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+    );
+    renderPage();
+
+    expect(
+      await screen.findByRole("radiogroup", { name: "booking:notificationSubscriptions.item.label" }),
+    ).toBeVisible();
+    expect(screen.getByText("booking:notificationSubscriptions.item.description")).toBeVisible();
+    expect(screen.getByRole("link", { name: "booking:notificationSubscriptions.item.profileLink" })).toHaveAttribute(
+      "href",
+      "/userform#prefContainer",
+    );
+    await user.click(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" }));
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+
+    await waitFor(() => expect(notificationSubscriptionRequest).toEqual({ enabled: true, version: 0 }));
+    expect(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
+    const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
+    expect(savedButton).toBeDisabled();
+    expect(screen.queryByText("booking:notificationSubscriptions.item.rspaceOnly")).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:notificationSubscriptions.item.emailDisabled")).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:notificationSubscriptions.item.newBookings")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.off" }));
+    expect(screen.queryByRole("button", { name: "booking:preferences.actions.saved" })).not.toBeInTheDocument();
+    const saveButton = screen.getByRole("button", { name: "booking:preferences.actions.save" });
+    expect(saveButton).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }));
+
+    expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "booking:preferences.actions.saved" })).not.toBeInTheDocument();
+    expect(notificationSubscriptionRequest).toEqual({ enabled: true, version: 0 });
+  });
+
+  it("cancels an unsaved owner notification choice without writing it", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+    );
+    renderPage();
+
+    await screen.findByRole("radiogroup", { name: "booking:notificationSubscriptions.item.label" });
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" })).toBeDisabled();
+
+    await user.click(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" }));
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }));
+
+    expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.off" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" })).toBeDisabled();
+    expect(notificationSubscriptionRequest).toBeUndefined();
+  });
+
+  it("lets a viewer subscribe and unsubscribe from their own instrument notifications", async () => {
+    const user = userEvent.setup();
+    let subscription = {
+      ...currentNotificationSubscription,
+      version: -1,
+    };
+    const requests: unknown[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(
+          envelope(
+            [
+              {
+                ...configuration,
+                ...bookerBookingAccess,
+                effectiveRole: "VIEWER",
+                capabilities: {
+                  ...bookerBookingAccess.capabilities,
+                  canCreateBooking: false,
+                  canManageOwnBookings: false,
+                  canSubscribeCalendar: false,
+                  canManageNotificationSubscription: true,
+                },
+              },
+            ],
+            2,
+          ),
+        ),
+      ),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations/7/notification-subscription", () => HttpResponse.json(subscription)),
+      http.put("/api/v2/booking-configurations/7/notification-subscription", async ({ request }) => {
+        const body = (await request.json()) as { enabled: boolean; version: number };
+        requests.push(body);
+        subscription = {
+          ...subscription,
+          enabled: body.enabled,
+          version: body.version < 0 ? 0 : body.version + 1,
+        };
+        return HttpResponse.json(subscription);
+      }),
+    );
+    renderPage();
+
+    const options = await screen.findByRole("radiogroup", { name: "booking:notificationSubscriptions.item.label" });
+    expect(within(options).getByRole("radio", { name: "booking:notificationSubscriptions.options.off" })).toBeChecked();
+
+    await user.click(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" }));
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+    await waitFor(() => expect(requests).toEqual([{ enabled: true, version: -1 }]));
+
+    await user.click(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.off" }));
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+    await waitFor(() =>
+      expect(requests).toEqual([
+        { enabled: true, version: -1 },
+        { enabled: false, version: 0 },
+      ]),
+    );
+  });
+
+  it("gives the item notification options an accessible English group name", async () => {
+    await renderWithRealI18n(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <BookableItemNotificationSubscription
+          configurationId={7}
+          globalId="IN123"
+          canManageNotificationSubscription={true}
+        />
+      </QueryClientProvider>,
+      { resources: { booking: bookingEn }, defaultNS: "booking" },
+    );
+
+    expect(await screen.findByRole("radiogroup", { name: "Receive booking notifications" })).toBeVisible();
+  });
+
+  it("reloads the latest item choice after a subscription conflict", async () => {
+    const user = userEvent.setup();
+    let reads = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations/7/notification-subscription", () => {
+        reads += 1;
+        return HttpResponse.json(
+          reads === 1
+            ? currentNotificationSubscription
+            : { ...currentNotificationSubscription, enabled: true, version: 1 },
+        );
+      }),
+      http.put("/api/v2/booking-configurations/7/notification-subscription", () =>
+        HttpResponse.json(
+          { status: 409, code: "errors.api.v2.bookingNotifications.subscriptionConflict" },
+          { status: 409 },
+        ),
+      ),
+    );
+    renderPage();
+
+    await user.click(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" }));
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:notificationSubscriptions.item.conflict");
+    await waitFor(() => expect(reads).toBeGreaterThan(1));
+    expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
+  });
+
+  it("does not render the notification editor without the subscription capability", async () => {
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(
+          envelope(
+            [
+              {
+                ...configuration,
+                capabilities: { ...configuration.capabilities, canManageNotificationSubscription: false },
+              },
+            ],
+            2,
+          ),
+        ),
+      ),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+    );
+    renderPage();
+
+    expect(await screen.findByRole("heading", { name: "Confocal microscope" })).toBeVisible();
+    expect(screen.queryByText("booking:notificationSubscriptions.item.title")).not.toBeInTheDocument();
   });
 
   it("shows the inventory item's access as read-only", async () => {
@@ -338,7 +561,12 @@ describe("BookableItemPage", () => {
         .getAllByRole("checkbox")
         .every((checkbox) => checkbox.getAttribute("aria-disabled") === "true"),
     ).toBe(true);
-    expect(screen.getAllByRole("radio").every((radio) => radio.getAttribute("aria-disabled") === "true")).toBe(true);
+    const inventoryPermissions = screen.getByRole("radiogroup", { name: "inventory:fields.accessPermissions.label" });
+    expect(
+      within(inventoryPermissions)
+        .getAllByRole("radio")
+        .every((radio) => radio.getAttribute("aria-disabled") === "true"),
+    ).toBe(true);
     expect(bookingAccessRequests).toBe(0);
     const details = screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" });
     await userEvent.setup().click(details);
@@ -529,7 +757,9 @@ describe("BookableItemPage", () => {
 
     await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
-    await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }));
+    await user.click(
+      within(screen.getByRole("tabpanel")).getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }),
+    );
 
     expect(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" })).toHaveFocus();
     expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();

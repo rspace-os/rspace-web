@@ -8,6 +8,7 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { currentUser } from "@/modules/booking/pages/calendar/calendarFixtures";
 import BookingPreferencesPage from "../BookingPreferencesPage";
 import { customNewYorkBookingPreferences, inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
 
@@ -26,6 +27,14 @@ function renderPage() {
 describe("BookingPreferencesPage", () => {
   beforeEach(() => {
     server.use(
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/users/me/booking-notification-preferences", () =>
+        HttpResponse.json({ autoSubscribeOwnedItems: false }),
+      ),
+      http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) =>
+        HttpResponse.json(await request.json()),
+      ),
+      http.delete("/api/v2/users/me/booking-notification-subscriptions", () => HttpResponse.json({ updatedCount: 0 })),
       http.get("/api/v2/users/me/booking-calendar-subscription", () =>
         HttpResponse.json(
           { active: false, updatedAt: null, subscriptionUrl: null },
@@ -225,5 +234,39 @@ describe("BookingPreferencesPage", () => {
       "https://example.test/public/booking/calendars/feed.ics?token=user",
     );
     expect(screen.getByRole("link", { name: "booking:preferences.calendarSubscription.google" })).toBeVisible();
+  });
+
+  it("saves the owner auto-subscribe default and unsubscribes from existing instruments", async () => {
+    const user = userEvent.setup();
+    let saved: unknown;
+    let deleted = 0;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
+        saved = await request.json();
+        return HttpResponse.json(saved as { autoSubscribeOwnedItems: boolean });
+      }),
+      http.delete("/api/v2/users/me/booking-notification-subscriptions", () => {
+        deleted += 1;
+        return HttpResponse.json({ updatedCount: 3 });
+      }),
+    );
+    renderPage();
+
+    await user.click(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" }));
+    await user.click(screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("booking:notificationSubscriptions.preferences.saved");
+    expect(saved).toEqual({ autoSubscribeOwnedItems: true });
+
+    await user.click(
+      screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.unsubscribeAll" }),
+    );
+    expect(await screen.findByText("booking:notificationSubscriptions.preferences.unsubscribed")).toBeVisible();
+    expect(deleted).toBe(1);
+    expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
+    expect(
+      screen.getByRole("link", { name: "booking:notificationSubscriptions.preferences.manageSubscriptions" }),
+    ).toHaveAttribute("href", "/booking/all-items");
   });
 });

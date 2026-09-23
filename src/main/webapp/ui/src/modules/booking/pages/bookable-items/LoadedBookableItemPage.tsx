@@ -30,6 +30,7 @@ import { detailColumnsClassName, detailPageClassName } from "../DetailPageShell"
 import { BookableItemAuditLog } from "./BookableItemAuditLog";
 import { BookableItemConfigurationForm } from "./BookableItemConfigurationForm";
 import { BookableItemFactsAside } from "./BookableItemFactsAside";
+import { BookableItemNotificationSubscription } from "./BookableItemNotificationSubscription";
 import { BookableItemRulesReadOut } from "./BookableItemRulesReadOut";
 import { BookableItemSpotlightHeader } from "./BookableItemSpotlightHeader";
 import {
@@ -489,7 +490,14 @@ export function LoadedBookableItemPage({
                 </Card>
               </Tabs.Panel>
             </div>
-            <BookableItemFactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
+            <div className="min-w-0 space-y-6">
+              <BookableItemNotificationSubscription
+                configurationId={configuration.id}
+                globalId={globalId}
+                canManageNotificationSubscription={configuration.capabilities.canManageNotificationSubscription}
+              />
+              <BookableItemFactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
+            </div>
           </div>
         </Tabs.Root>
       </div>

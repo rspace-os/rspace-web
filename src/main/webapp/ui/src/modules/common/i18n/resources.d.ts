@@ -1608,6 +1608,60 @@ export default interface Resources {
       "timezone": "Times are shown in {timezone}.",
       "title": "My Bookings"
     },
+    "notificationSubscriptions": {
+      "bulk": {
+        "description": "Select instruments to subscribe or unsubscribe yourself.",
+        "error": "Notification subscriptions could not be updated. Try again.",
+        "subscribe": "Subscribe",
+        "subscribedCount": "Subscribed to {count, plural, one {# instrument} other {# instruments}}.",
+        "unsubscribe": "Unsubscribe",
+        "unsubscribedCount": "Unsubscribed from {count, plural, one {# instrument} other {# instruments}}."
+      },
+      "item": {
+        "bothEventsDisabled": "Both booking events are off in My Profile.",
+        "cancellations": "Booking cancellations",
+        "conflict": "This subscription changed elsewhere. The latest choice has been loaded; try again if needed.",
+        "description": "Receive notifications when someone else creates or cancels a booking. The corresponding booking events must also be enabled in My Profile. Its email preference controls email delivery only.",
+        "disabledInProfile": "Paused by My Profile",
+        "emailDisabled": "Email is off. Notifications arrive in RSpace only.",
+        "label": "Receive booking notifications",
+        "loadError": "The notification subscription could not be loaded.",
+        "newBookings": "New bookings",
+        "offSummary": "Notifications are off for this instrument.",
+        "profileLink": "Manage My Profile preferences",
+        "retry": "Retry",
+        "rspaceAndEmail": "RSpace and email",
+        "rspaceOnly": "RSpace only",
+        "save": "Save",
+        "saveError": "The notification subscription could not be saved. Try again.",
+        "saved": "Notification subscription saved.",
+        "saving": "Saving…",
+        "someEventsDisabled": "One booking event is off in My Profile.",
+        "title": "Instrument notifications"
+      },
+      "options": {
+        "off": "Off",
+        "on": "On"
+      },
+      "preferences": {
+        "autoSubscribe": {
+          "description": "This applies to new bookable instruments you own. It does not change existing subscriptions.",
+          "label": "Automatically subscribe to new instruments I own"
+        },
+        "existingSubscriptions": {
+          "description": "Unsubscribe from every instrument. This keeps your automatic default and My Profile settings."
+        },
+        "manageSubscriptions": "Manage subscriptions in All bookable items",
+        "save": "Save",
+        "saveError": "Your notification preference could not be saved. The last saved choice has been restored.",
+        "saved": "Notification preference saved.",
+        "saving": "Saving…",
+        "title": "Booking notifications",
+        "unsubscribeAll": "Unsubscribe from all instruments",
+        "unsubscribeError": "Subscriptions could not be removed. Try again.",
+        "unsubscribed": "Unsubscribed from {count, plural, one {# instrument} other {# instruments}}. Your automatic default and My Profile settings are unchanged."
+      }
+    },
     "preferences": {
       "actions": {
         "reset": "Reset to global defaults",
