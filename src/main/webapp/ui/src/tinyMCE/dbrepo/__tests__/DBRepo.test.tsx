@@ -361,9 +361,11 @@ describe("DBRepo dialog body", () => {
     render(<DBRepo />);
 
     expect(await screen.findByText("Research data")).toBeVisible();
-    editorListeners.get("dbrepo-insert-rows")?.();
+    act(() => {
+      editorListeners.get("dbrepo-insert-rows")?.();
+    });
 
-    expect(screen.queryByText("workspace:tinymce.dbrepo.rows.tableLabel")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("selects a database when it is expanded", async () => {
