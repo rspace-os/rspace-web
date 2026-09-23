@@ -3027,11 +3027,10 @@ paths:
         not returned, and pasting such a PID yields no hit.
 
 
-        Each hit carries `alreadyLinked` when an Instrument in this deployment already links that
-        PID, so
-        a client can refuse importing it before the `409`, and `linkedInstrumentGlobalId` only when
-        the caller may read that Instrument (read or limited read). An Instrument the caller may not
-        read is never named.
+        Each hit carries `alreadyLinked`, true when an Instrument in this deployment already links
+        that PID, so a client can refuse importing it before the `409`; and
+        `linkedInstrumentGlobalId` only when the caller may read that Instrument (read or limited
+        read). An Instrument the caller may not read is never named.
 
 
         Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.

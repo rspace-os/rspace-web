@@ -59,8 +59,8 @@ and API field names were ported instead.
    *Amended 2026-09-21 (RSDEV-1505):* the 409 names the instrument only when the caller may
    read it, by the read-or-limited-read rule that decides everywhere else whether a caller gets
    a record or only its no-access view; otherwise it says only that an instrument they cannot
-   access already holds the PID. The search response marks every such hit `linked` and carries
-   `linkedInstrumentGlobalId` under the same rule, so neither the search nor the refusal
+   access already holds the PID. The search response marks every such hit `alreadyLinked` and
+   carries `linkedInstrumentGlobalId` under the same rule, so neither the search nor the refusal
    volunteers the Global ID of an Instrument the caller may not read (the principle of ADR
    0002). The registry record itself is public, so nothing about it is withheld, and the refusal
    keeps a stated reason either way. The disclosure this decision originally accepted was
