@@ -86,8 +86,8 @@ public class DBRepoController extends BaseController {
       DBRepoCredentials credentials = new DBRepoCredentials(dbrepoUsername, dbrepoPassword);
       dbRepoClient.listDatabases(normalizedUrl, credentials);
       User user = userManager.getUserByUsername(principal.getName());
-      saveUrl(user, normalizedUrl);
       saveCredentials(user, credentials);
+      saveUrl(user, normalizedUrl);
       ConnectionResultPage.addConnectionAttributes(
           model, "DBRepo", CONNECTION_CHANNEL, CONNECTION_TYPE);
     } catch (Exception e) {
