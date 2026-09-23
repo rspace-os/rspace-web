@@ -38,7 +38,7 @@ import {
   resolveProcessName,
   usesAmountModes,
 } from "./operations";
-import { describeOperationError, performOperation, sampleNameAvailable } from "./operationsApi";
+import { describeOperationError, type OperationResult, performOperation, sampleNameAvailable } from "./operationsApi";
 import {
   amountIsStorable,
   amountTakenExceedsOrigin,
@@ -143,6 +143,7 @@ function OperationWizard({
   onClose,
   origins,
   pendingRenewals,
+  onPerformed,
 }: {
   open: boolean;
   onClose: () => void;
@@ -152,6 +153,8 @@ function OperationWizard({
    * going through onClose (an unmount) can order its release behind them too.
    */
   pendingRenewals?: React.MutableRefObject<Promise<unknown>>;
+  /** Called once the operation has committed, with the created sample, or null when it creates none. */
+  onPerformed?: (sample: OperationResult | null) => void;
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
   const resolveLabel = resolveLabelFrom(t);
@@ -616,6 +619,7 @@ function OperationWizard({
     }
     setSubmitting(true);
     extendOriginLocks();
+    let created: OperationResult | null;
     try {
       // "fromSample" reads the origin sample's own template, so the parent must be loaded first.
       if (templateSelection.mode === "fromSample") await origin.sample.fetchAdditionalInfo();
@@ -635,7 +639,7 @@ function OperationWizard({
         amountMode,
         perSubsampleAmounts,
       });
-      await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(operation, request));
+      created = await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(operation, request));
     } catch (error) {
       // The error's `message` for a rejected request is just "Errors detected: 1"; the actual reason
       // lives in the field-scoped errors array, which describeOperationError reads instead.
@@ -660,6 +664,11 @@ function OperationWizard({
     // From here the operation has committed (output created, origins decremented), so nothing below
     // may report it as failed or leave the wizard open for a retry that would charge the origins
     // again. Bookkeeping errors are warnings, and the wizard closes.
+    try {
+      onPerformed?.(created);
+    } catch (error) {
+      console.error("onPerformed failed after the operation committed", error);
+    }
     try {
       if (remember) {
         const key = rememberKey(operation, values);

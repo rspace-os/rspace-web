@@ -4073,6 +4073,7 @@ export default interface Resources {
         "headingWithProcess": "{operation}: {process}",
         "inProgress": "Performing operation…",
         "lockExpired": "Your edit session on these subsamples has expired. Close the wizard and start again.",
+        "notEnabled": "Operations are not enabled on this RSpace.",
         "originIndex": "{reason} (origin {index})",
         "originsLocked": "Cannot start this operation",
         "originsOpenElsewhere": "These subsamples are open for editing elsewhere, perhaps in another tab. Close that editor and try again.",
