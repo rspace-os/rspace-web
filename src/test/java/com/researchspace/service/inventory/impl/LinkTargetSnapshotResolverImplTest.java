@@ -160,7 +160,7 @@ class LinkTargetSnapshotResolverImplTest {
     // an inventory target with no snapshot is redacted exactly like an unreadable one, so a
     // caller walking ids learns nothing about which records exist (ADR-0002)
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
-    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.empty());
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -179,7 +179,7 @@ class LinkTargetSnapshotResolverImplTest {
     Sample rec = mock(Sample.class);
     when(rec.getName()).thenReturn("Buffer");
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
-    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -200,7 +200,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
         .thenReturn(null)
         .thenReturn(new AuditedEntity<>(rec, 120));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
     when(user.getUsername()).thenReturn("bob");
 
     ApiInventoryLinkTargetSummary nonexistent =
@@ -220,7 +220,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(rec.getName()).thenReturn("Old buffer");
     when(rec.isDeleted()).thenReturn(true);
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
-    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -236,7 +236,7 @@ class LinkTargetSnapshotResolverImplTest {
   void resolveSummaryRedactsUnreadableAndNonexistentInventoryTargetsIdentically() {
     // ADR-0002: with no snapshot, "no such record" and "not yours to read" must be one response
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
-    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.empty());
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
 
     ApiInventoryLinkTargetSummary nonexistent =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -267,7 +267,7 @@ class LinkTargetSnapshotResolverImplTest {
     assertNull(summary.getType());
     assertFalse(summary.isReadable());
     assertFalse(summary.isDeleted());
-    verify(linkTargetResolver, never()).readableInventoryTarget(any(), any());
+    verify(linkTargetResolver, never()).viewableInventoryTarget(any(), any());
     verify(linkTargetResolver, never()).targetIsLiveAndReadable(any(), any());
     verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
   }
@@ -281,7 +281,7 @@ class LinkTargetSnapshotResolverImplTest {
 
     assertEquals("SD42", summary.getGlobalId());
     assertFalse(summary.isReadable());
-    verify(linkTargetResolver, never()).readableInventoryTarget(any(), any());
+    verify(linkTargetResolver, never()).viewableInventoryTarget(any(), any());
   }
 
   @Test
@@ -290,13 +290,13 @@ class LinkTargetSnapshotResolverImplTest {
     // checked as IT90: collapsing it to the db id would let a readable sample SA90 vouch for
     // a template that does not exist
     when(auditManager.getNewestRevisionForEntity(SampleTemplate.class, 90L)).thenReturn(null);
-    when(linkTargetResolver.readableInventoryTarget(any(), any())).thenReturn(Optional.empty());
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.IT, 90L, null, null, user);
 
     ArgumentCaptor<GlobalIdentifier> gid = ArgumentCaptor.forClass(GlobalIdentifier.class);
-    verify(linkTargetResolver).readableInventoryTarget(gid.capture(), any());
+    verify(linkTargetResolver).viewableInventoryTarget(gid.capture(), any());
     assertEquals(GlobalIdPrefix.IT, gid.getValue().getPrefix());
     assertEquals(Long.valueOf(90), gid.getValue().getDbId());
     assertFalse(summary.isReadable());
@@ -396,7 +396,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(rec.isDeleted()).thenReturn(false);
     when(auditManager.getObjectForRevision(Sample.class, 10L, 99L))
         .thenReturn(new AuditedEntity<>(rec, 99));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary s =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, 3L, 99L, user);
@@ -415,7 +415,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(rec.getName()).thenReturn("Buffer");
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
         .thenReturn(new AuditedEntity<>(rec, 120));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary s =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -432,7 +432,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(rec.isDeleted()).thenReturn(true);
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
         .thenReturn(new AuditedEntity<>(rec, 120));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary s =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -448,7 +448,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(rec.getOwner()).thenReturn(owner);
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
         .thenReturn(new AuditedEntity<>(rec, 120));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
     when(user.getUsername()).thenReturn("bob");
 
     ApiInventoryLinkTargetSummary s =
@@ -594,6 +594,23 @@ class LinkTargetSnapshotResolverImplTest {
     assertFalse(resolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, user).isReadable());
     assertFalse(resolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, user).isReadable());
     verify(permissionUtils, never()).isPermitted(any(), any(), any());
+  }
+
+  @Test
+  void resolveSummaryShowsASnapshotBackedInventoryTargetTheViewerMayLimitedRead() {
+    Sample rec = mock(Sample.class);
+    when(rec.getName()).thenReturn("Buffer");
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
+        .thenReturn(new AuditedEntity<>(rec, 120));
+    when(linkTargetResolver.viewableInventoryTarget(any(), any()))
+        .thenReturn(Optional.of(mock(Sample.class)));
+
+    ApiInventoryLinkTargetSummary s =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertTrue(s.isReadable());
+    assertEquals("Buffer", s.getName());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
   }
 
   private static <T extends BaseRecord> T liveRow(Class<T> cls, String globalId) {

@@ -29,7 +29,7 @@ public interface LinkTargetResolver {
    * does not count, even when it shares the numeric id. Registration flows use this: a deleted
    * target is still readable by its owner, but a permanent registry entry must not name a dead
    * record. The link target summary deliberately does NOT use this: a trashed Inventory item keeps
-   * a working viewer, so the summary reports it through {@link #readableInventoryTarget} as
+   * a working viewer, so the summary reports it through {@link #viewableInventoryTarget} as
    * readable and deleted rather than hiding it.
    *
    * @param target the parsed link target GlobalID (any version suffix is ignored)
@@ -41,10 +41,11 @@ public interface LinkTargetResolver {
   boolean targetIsLiveAndReadable(GlobalIdentifier target, User user);
 
   /**
-   * The Inventory record a link target names, when the acting user may READ it, whether or not it
-   * is soft-deleted. Callers that need the target's state rather than a yes/no use this: a deleted
-   * Inventory item still has a working viewer in the trash, so the link card reports it as readable
-   * and deleted rather than hiding it.
+   * The Inventory record a link target names, when the acting user may view it in full or in the
+   * limited view, whether or not it is soft-deleted. The link target summary uses this: an item
+   * reached through a container, a list of materials or a template opens in the limited view, and a
+   * trashed item keeps a working viewer, so neither should read as "No access". Link creation does
+   * not: it keeps requiring full READ through {@link #targetExistsAndIsReadable}.
    *
    * <p>Type-exact: samples and sample templates share one numeric id space, so a record whose own
    * Global ID prefix differs from the requested one is not the target. Empty for a non-Inventory
@@ -52,9 +53,9 @@ public interface LinkTargetResolver {
    * throw for missing or deleted records and would mark the caller's transaction rollback-only.
    *
    * @param target the parsed link target GlobalID (any version suffix is ignored)
-   * @param user the acting user, whose READ permission decides
-   * @return the record, or empty if it does not exist, is not readable, is of another kind, or the
+   * @param user the acting user, whose READ or limited READ permission decides
+   * @return the record, or empty if it does not exist, is not viewable, is of another kind, or the
    *     prefix is not an Inventory one
    */
-  Optional<InventoryRecord> readableInventoryTarget(GlobalIdentifier target, User user);
+  Optional<InventoryRecord> viewableInventoryTarget(GlobalIdentifier target, User user);
 }

@@ -529,6 +529,36 @@ describe("LinkFieldValue", () => {
     expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeDisabled();
   });
 
+  it("greys out the version-pin clock for a no-access inventory target too", async () => {
+    // the server reports limited read as readable, so readable=false on an inventory target
+    // means the viewer cannot open it at all, the same as for an ELN target
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SA5",
+      name: null,
+      type: null,
+      deleted: false,
+      readable: false,
+    });
+    const user = userEvent.setup();
+    const field = linkField({
+      link: {
+        relationType: "IsDerivedFrom",
+        targetGlobalId: "SA5",
+        versionPin: null,
+      },
+    });
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+
+    expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeDisabled();
+  });
+
   it("shows None in view mode when the field has no link", () => {
     renderField({
       field: linkField(),

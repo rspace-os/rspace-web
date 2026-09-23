@@ -39,7 +39,13 @@ knowledge the viewer is not entitled to.
   `canUserLimitedReadInventoryRecord` grants that view only through container
   containment, a list of materials, or a template, and an owner can set an
   item to "Explicit access list" or "Only the Owner", so a genuinely
-  unreadable inventory target is reachable and should say so.
+  unreadable inventory target is reachable and should say so. For inventory,
+  "readable" in the summary means READ **or** limited read, since either opens
+  the item; link creation and `findReferencingItems` still require full READ.
+* ELN read permission in the summary comes from the live row (a plain DAO
+  read), never from the audit snapshot. Sharing and publishing a document write
+  no audit revision, so a snapshot's ACL can grant what the live row has
+  revoked.
 * RSDEV-1354 (CSV link import) keeps this rule rather than carving an
   exception into it. An imported link whose target cannot be resolved is
   stored anyway and reported as `readable: false`, exactly like an unreadable

@@ -99,7 +99,7 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       // component, so it is safe to consult.
       if (isInventoryPrefix(prefix)) {
         Optional<InventoryRecord> liveTarget =
-            linkTargetResolver.readableInventoryTarget(new GlobalIdentifier(prefix, dbId), user);
+            linkTargetResolver.viewableInventoryTarget(new GlobalIdentifier(prefix, dbId), user);
         if (liveTarget.isPresent()) {
           summary.setReadable(true);
           summary.setType(typeFor(prefix));
@@ -137,7 +137,8 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
    * at commit. A DAO lookup returns empty instead of throwing and crosses no proxy.
    *
    * <p>Inventory targets keep the live check: their lookup throws only its own NotFoundException,
-   * from non-transactional components, so it is safe to consult and reflects current sharing.
+   * from non-transactional components, so it is safe to consult and reflects current sharing. It
+   * accepts limited read as well as full READ, since either opens the item.
    */
   private boolean isReadable(GlobalIdPrefix prefix, Long dbId, Object entity, User user) {
     User owner = ownerOf(entity);
@@ -156,8 +157,10 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
           .map(live -> permissionUtils.isPermitted(live, PermissionType.READ, user))
           .orElse(false);
     }
-    GlobalIdentifier baseGid = new GlobalIdentifier(prefix, dbId);
-    return linkTargetResolver.targetExistsAndIsReadable(baseGid, user);
+    // limited read counts: the item still opens, in the limited view
+    return linkTargetResolver
+        .viewableInventoryTarget(new GlobalIdentifier(prefix, dbId), user)
+        .isPresent();
   }
 
   private Optional<? extends BaseRecord> liveElnRecord(GlobalIdPrefix prefix, Long dbId) {

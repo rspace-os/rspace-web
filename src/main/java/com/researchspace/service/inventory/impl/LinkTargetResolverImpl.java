@@ -90,7 +90,7 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
   }
 
   @Override
-  public Optional<InventoryRecord> readableInventoryTarget(GlobalIdentifier target, User user) {
+  public Optional<InventoryRecord> viewableInventoryTarget(GlobalIdentifier target, User user) {
     if (target == null) {
       return Optional.empty();
     }
@@ -100,10 +100,19 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
     if (!INVENTORY_PREFIXES.contains(base.getPrefix())) {
       return Optional.empty();
     }
-    return readableInventoryRecord(base, user);
+    return typeExactInventoryRecord(base)
+        .filter(
+            record ->
+                inventoryPermissionUtils.canUserReadInventoryRecord(record, user)
+                    || inventoryPermissionUtils.canUserLimitedReadInventoryRecord(record, user));
   }
 
   private Optional<InventoryRecord> readableInventoryRecord(GlobalIdentifier base, User user) {
+    return typeExactInventoryRecord(base)
+        .filter(record -> inventoryPermissionUtils.canUserReadInventoryRecord(record, user));
+  }
+
+  private Optional<InventoryRecord> typeExactInventoryRecord(GlobalIdentifier base) {
     try {
       InventoryRecord record =
           inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
@@ -114,9 +123,7 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
       if (record.getOid() == null || record.getOid().getPrefix() != base.getPrefix()) {
         return Optional.empty();
       }
-      return inventoryPermissionUtils.canUserReadInventoryRecord(record, user)
-          ? Optional.of(record)
-          : Optional.empty();
+      return Optional.of(record);
     } catch (NotFoundException e) {
       return Optional.empty();
     }

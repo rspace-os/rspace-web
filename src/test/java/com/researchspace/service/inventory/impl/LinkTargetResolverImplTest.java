@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -274,7 +275,7 @@ class LinkTargetResolverImplTest {
         .thenReturn(true);
 
     assertFalse(resolver.targetIsLiveAndReadable(new GlobalIdentifier("SA90"), user));
-    assertTrue(resolver.readableInventoryTarget(new GlobalIdentifier("SA90"), user).isPresent());
+    assertTrue(resolver.viewableInventoryTarget(new GlobalIdentifier("SA90"), user).isPresent());
   }
 
   @Test
@@ -308,26 +309,55 @@ class LinkTargetResolverImplTest {
   }
 
   @Test
-  void readableInventoryTargetIsEmptyForWrongPrefixSibling() {
+  void viewableInventoryTargetIsEmptyForWrongPrefixSibling() {
     InventoryRecord sample = mock(InventoryRecord.class);
     when(sample.getOid()).thenReturn(new GlobalIdentifier("SA90"));
     when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
             any(GlobalIdentifier.class)))
         .thenReturn(sample);
 
-    assertFalse(resolver.readableInventoryTarget(new GlobalIdentifier("IT90"), user).isPresent());
+    assertFalse(resolver.viewableInventoryTarget(new GlobalIdentifier("IT90"), user).isPresent());
   }
 
   @Test
-  void readableInventoryTargetIsEmptyForElnPrefix() {
+  void viewableInventoryTargetIsEmptyForElnPrefix() {
     // ELN resolution runs through transactional *Manager proxies that throw for a missing or
     // deleted record and would mark the caller's transaction rollback-only
-    assertFalse(resolver.readableInventoryTarget(new GlobalIdentifier("NB7"), user).isPresent());
+    assertFalse(resolver.viewableInventoryTarget(new GlobalIdentifier("NB7"), user).isPresent());
     verify(baseRecordManager, never()).getByGlobalIdsAndReadPermission(any(), eq(user));
   }
 
   @Test
   void nullTargetResolvesFalse() {
     assertFalse(resolver.targetExistsAndIsReadable(null, user));
+  }
+
+  @Test
+  void viewableInventoryTargetCountsLimitedRead() {
+    // an item reached through a container, a list of materials or a template opens in the
+    // limited view, so the link card must not call it "No access"
+    limitedReadOnly("SA90");
+
+    assertTrue(resolver.viewableInventoryTarget(new GlobalIdentifier("SA90"), user).isPresent());
+  }
+
+  @Test
+  void limitedReadIsNotEnoughToLinkToATarget() {
+    limitedReadOnly("SA90");
+
+    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA90"), user));
+  }
+
+  private InventoryRecord limitedReadOnly(String globalId) {
+    InventoryRecord rec = mock(InventoryRecord.class);
+    when(rec.getOid()).thenReturn(new GlobalIdentifier(globalId));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
+            any(GlobalIdentifier.class)))
+        .thenReturn(rec);
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(eq(rec), eq(user))).thenReturn(false);
+    lenient()
+        .when(inventoryPermissionUtils.canUserLimitedReadInventoryRecord(eq(rec), eq(user)))
+        .thenReturn(true);
+    return rec;
   }
 }
