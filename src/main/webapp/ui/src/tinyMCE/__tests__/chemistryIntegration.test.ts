@@ -88,7 +88,7 @@ type ContextToolbar = {
   predicate: (node: { getAttribute: (name: string) => string | null }) => boolean;
 };
 
-function loadChemistryToolbars(chemistryEnabled: boolean) {
+function loadChemistryToolbars(chemistryEnabled: boolean, chemistryProvider = "indigo") {
   const toolbars = new Map<string, ContextToolbar>();
   const selectedNode = {
     getAttribute: vi.fn<(name: string) => string | null>(),
@@ -108,7 +108,7 @@ function loadChemistryToolbars(chemistryEnabled: boolean) {
   };
   const sandbox = {
     $: vi.fn(),
-    RS: { chemistryEnabled, chemistryProvider: "indigo" },
+    RS: { chemistryEnabled, chemistryProvider },
     tinymce: {
       PluginManager: {
         add: (_name: string, register: (registeredEditor: typeof editor) => void) => register(editor),
@@ -148,6 +148,7 @@ describe("legacy TinyMCE chemistry integration", () => {
       items: "downloadImage | resizeImage",
     });
     expect(toolbars.get("chemicalElementEditableKetcher")?.predicate(selectedNode)).toBe(true);
+    expect(toolbars.has("stoichiometryTableOnly")).toBe(false);
   });
 
   it("includes Ketcher and stoichiometry actions when chemistry is enabled", () => {
@@ -155,5 +156,16 @@ describe("legacy TinyMCE chemistry integration", () => {
 
     expect(toolbars.get("chemicalFileViewableKetcher")?.items).toContain("ketcherViewable | stoichiometry");
     expect(toolbars.get("chemicalElementEditableKetcher")?.items).toContain("ketcherEditable | stoichiometry");
+    expect(toolbars.get("stoichiometryTableOnly")?.items).toBe("stoichiometry");
+  });
+
+  it("hides Ketcher and stoichiometry actions for a non-Indigo provider", () => {
+    const { toolbars } = loadChemistryToolbars(true, "chemaxon");
+
+    expect(toolbars.get("chemicalFileViewableKetcher")?.items).toBe(
+      "attachmentinfopopup attachmentdownload | resizeImage",
+    );
+    expect(toolbars.get("chemicalElementEditableKetcher")?.items).toBe("downloadImage | resizeImage");
+    expect(toolbars.has("stoichiometryTableOnly")).toBe(false);
   });
 });

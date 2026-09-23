@@ -802,6 +802,7 @@ function initTinyMCE(selector) {
 		const chemistryProvider = properties["chemistry.provider"];
 		// Both gates must be on: the sysadmin setting and the user's Apps page toggle.
 		chemistryAvailable = chemistryEnabled;
+		// Read by the contexttoolbars plugin when the editor is built, so set it before tinymce.init.
 		RS.chemistryEnabled = chemistryEnabled;
 
 		// File repositories section
