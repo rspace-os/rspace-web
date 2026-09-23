@@ -1,14 +1,15 @@
 package com.researchspace.webapp.integrations.dbrepo;
 
-import static com.researchspace.webapp.integrations.b2inst.B2instConnectorImpl.timeoutBoundedRequestFactory;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestClientException;
@@ -38,12 +40,14 @@ public class DBRepoClient {
   static final String VIEW_TYPE = "view";
   private static final String SUBSET_TYPE = "subset";
   private static final MediaType TEXT_CSV = MediaType.parseMediaType("text/csv");
+  private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
+  private static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
 
   private final RestTemplate restTemplate;
   private final ObjectMapper objectMapper;
 
   public DBRepoClient() {
-    this(new RestTemplate(timeoutBoundedRequestFactory()), new ObjectMapper());
+    this(new RestTemplate(noRedirectTimeoutBoundedRequestFactory()), new ObjectMapper());
   }
 
   DBRepoClient(RestTemplate restTemplate) {
@@ -148,6 +152,7 @@ public class DBRepoClient {
         HttpMethod.GET,
         request -> request.getHeaders().putAll(headers(credentials, TEXT_CSV)),
         response -> {
+          validateCsvContentType(response.getHeaders().getContentType());
           StreamUtils.copy(response.getBody(), outputStream);
           return null;
         });
@@ -369,6 +374,30 @@ public class DBRepoClient {
     if (!TABLE_TYPE.equals(resourceType) && !VIEW_TYPE.equals(resourceType)) {
       throw new IllegalArgumentException(
           "DBRepo row insertion is only supported for tables and views.");
+    }
+  }
+
+  private void validateCsvContentType(MediaType contentType) {
+    if (contentType == null || !TEXT_CSV.isCompatibleWith(contentType)) {
+      throw new RestClientException(
+          "DBRepo CSV download returned unexpected Content-Type: " + contentType);
+    }
+  }
+
+  private static NoRedirectSimpleClientHttpRequestFactory noRedirectTimeoutBoundedRequestFactory() {
+    NoRedirectSimpleClientHttpRequestFactory factory =
+        new NoRedirectSimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(CONNECT_TIMEOUT);
+    factory.setReadTimeout(READ_TIMEOUT);
+    return factory;
+  }
+
+  static class NoRedirectSimpleClientHttpRequestFactory extends SimpleClientHttpRequestFactory {
+    @Override
+    protected void prepareConnection(HttpURLConnection connection, String httpMethod)
+        throws IOException {
+      super.prepareConnection(connection, httpMethod);
+      connection.setInstanceFollowRedirects(false);
     }
   }
 

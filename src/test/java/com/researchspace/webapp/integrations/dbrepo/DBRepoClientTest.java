@@ -53,13 +53,15 @@ public class DBRepoClientTest {
   }
 
   @Test
-  public void defaultRestTemplateBoundsConnectAndReadTimeouts() {
+  public void defaultRestTemplateBoundsConnectAndReadTimeoutsAndDisablesRedirects() {
     DBRepoClient defaultClient = new DBRepoClient();
     RestTemplate defaultRestTemplate =
         (RestTemplate) ReflectionTestUtils.getField(defaultClient, "restTemplate");
     SimpleClientHttpRequestFactory requestFactory =
         (SimpleClientHttpRequestFactory) defaultRestTemplate.getRequestFactory();
 
+    assertEquals(
+        DBRepoClient.NoRedirectSimpleClientHttpRequestFactory.class, requestFactory.getClass());
     assertEquals(10_000, ReflectionTestUtils.getField(requestFactory, "connectTimeout"));
     assertEquals(30_000, ReflectionTestUtils.getField(requestFactory, "readTimeout"));
   }
@@ -193,6 +195,28 @@ public class DBRepoClientTest {
         csv);
 
     assertEquals("id,name\n1,Experiment\n", csv.toString(StandardCharsets.UTF_8));
+    server.verify();
+  }
+
+  @Test
+  public void rejectsCsvDownloadWhenUpstreamContentTypeIsNotCsv() {
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/view/view-1/data"))
+        .andRespond(withSuccess("{\"error\":\"not csv\"}", MediaType.APPLICATION_JSON));
+    ByteArrayOutputStream csv = new ByteArrayOutputStream();
+
+    assertThrows(
+        RestClientException.class,
+        () ->
+            client.streamResourceCsv(
+                "https://dbrepo.example",
+                "db-1",
+                "view",
+                "view-1",
+                new DBRepoCredentials("user", "pass"),
+                csv));
+
+    assertEquals("", csv.toString(StandardCharsets.UTF_8));
     server.verify();
   }
 
