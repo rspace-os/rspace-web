@@ -338,7 +338,7 @@
       <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.typeLabel"/></td><td class="dbrepoInfoPanel-type"> </td></tr>
       <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.instanceLabel" /></td><td><a class="dbrepoInfoPanel-instance" target="_blank" rel="noopener"> </a></td></tr>
       <tr class="dbrepoInfoDatabaseRow"><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.databaseLabel"/></td><td class="dbrepoInfoPanel-database"> </td></tr>
-      <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.identifierLabel"/></td><td class="dbrepoInfoPanel-identifier"> </td></tr>
+      <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.identifierLabel"/></td><td class="dbrepoIdentifierCell"><span class="dbrepoInfoPanel-identifier"> </span><button type="button" class="dbrepoCopyIdentifierBtn" title="<spring:message code="apps.dbrepo.info.dialog.copyIdentifierButtonTitle"/>" data-copy-label="<spring:message code="apps.dbrepo.info.dialog.copyIdentifierButton"/>" data-copied-label="<spring:message code="apps.dbrepo.info.dialog.copiedIdentifierButton"/>"><spring:message code="apps.dbrepo.info.dialog.copyIdentifierButton"/></button></td></tr>
       <tr class="dbrepoInfoQueryRow"><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.queryLabel"/></td><td class="dbrepoInfoPanel-query"> </td></tr>
     </table>
     <div class="dbrepoInfoPanelButtons">

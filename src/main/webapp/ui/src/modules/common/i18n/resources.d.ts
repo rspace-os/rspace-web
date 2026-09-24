@@ -5115,6 +5115,9 @@ export default interface Resources {
         },
         "info": {
           "dialog": {
+            "copiedIdentifierButton": "Copied",
+            "copyIdentifierButton": "Copy",
+            "copyIdentifierButtonTitle": "Copy identifier to clipboard",
             "databaseLabel": "Database:",
             "downloadButton": "Download CSV",
             "downloadButtonTitle": "Download CSV through RSpace",

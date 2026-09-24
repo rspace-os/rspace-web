@@ -725,6 +725,30 @@ div.externalLinkedRecordNoticeDiv {
     overflow-wrap: anywhere;
 }
 
+.dbrepoInfoPanel .dbrepoIdentifierCell {
+    align-items: flex-start;
+    display: flex;
+    gap: 6px;
+}
+
+.dbrepoInfoPanel .dbrepoInfoPanel-identifier {
+    flex: 1;
+    overflow-wrap: anywhere;
+}
+
+.dbrepoInfoPanel .dbrepoCopyIdentifierBtn {
+    background-color: #00adef;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    flex: 0 0 auto;
+    padding: 3px 8px;
+}
+
+.dbrepoInfoPanel .dbrepoCopyIdentifierBtn:hover {
+    background-color: #575c70;
+}
+
 .separateToolbarGroup button:first-of-type {
   margin-left: 6px; }
 

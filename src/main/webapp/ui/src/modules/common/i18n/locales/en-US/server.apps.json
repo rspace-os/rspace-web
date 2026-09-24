@@ -18,6 +18,9 @@
         "dialog": {
           "downloadButton": "Download CSV",
           "downloadButtonTitle": "Download CSV through RSpace",
+          "copiedIdentifierButton": "Copied",
+          "copyIdentifierButton": "Copy",
+          "copyIdentifierButtonTitle": "Copy identifier to clipboard",
           "databaseLabel": "Database:",
           "header": "DBRepo link details",
           "identifierLabel": "Identifier:",
