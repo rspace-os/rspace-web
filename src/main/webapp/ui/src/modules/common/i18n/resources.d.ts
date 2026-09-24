@@ -2866,6 +2866,10 @@ export default interface Resources {
         "extraFields": "Extra fields",
         "relationshipFields": "Related record fields"
       },
+      "fields": {
+        "createdBy": "Created by",
+        "updatedBy": "Updated by"
+      },
       "filters": {
         "alsoShowAsColumn": "Show as column",
         "and": "And",

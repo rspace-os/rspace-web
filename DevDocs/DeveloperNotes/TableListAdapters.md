@@ -155,7 +155,11 @@ The adapter replaces field capabilities with the generated API rules. The table 
 
 A collection config declares a relationship once. The adapter derives one optional field for each
 target field in `x-rspace-relationship-fields`. For example, it names `target.name` as
-"Bookable item → Name". You do not have to declare each target field separately.
+"Bookable item → Name". You do not have to declare each target field separately. The adapter also
+exposes published relationship fields when their owner is absent from the collection config, such
+as `createdBy.username` and `updatedBy.username`. These fields remain filter-only and serialize the
+published selector without adding response fields. Their owner label uses the relationship's
+`viaTitle` metadata, falling back to the owner selector when no title is published.
 
 `createApiV2CollectionAdapter` makes each derived field an optional hidden column and sets
 `form: false`. A published field with operators is also a filter field. A field without operators
@@ -546,48 +550,44 @@ A `relationship` field filters on the target global ID. When the target has a re
 the filter panel shows a relationship picker. A user can search the target collection by name or
 global ID and select a record.
 
-The picker finds its backend from the `relationTo` value on the field. Add one entry for each
-pickable target in
-`src/modules/common/relationship-picker/relationshipSources.tsx`:
+API v2 identity selectors can publish an optional `picker` descriptor containing
+`resource`, `identity: "globalId"`, and `globalIdPrefix`. The adapter carries this
+into `filterPicker` on the resolved field. Metadata selects an application-owned
+source; it never supplies a fetch URL. Without picker metadata, existing relationship
+fields retain their `relationTo` lookup. An unregistered source retains typed input.
 
-```tsx
-const instruments: RelationshipSource = {
-  resourceName: "instruments",
-  globalIdPrefix: "IN",
-  fields: ["id", "name", "globalId"],
-  searchField: "name",
-  toOption: (document, context) => {
-    const instrument = parseOrThrow(InstrumentSchema, document);
-    return {
-      value: instrument.globalId,
-      label: instrument.name,
-      content: (
-        <InventoryItem
-          name={instrument.name}
-          globalId={instrument.globalId}
-          idLinkLabel={context.idLinkLabel(instrument.globalId)}
-          compact={context.compact}
-          size="xs"
-        />
-      ),
-    };
-  },
-};
-```
+Register sources in `src/modules/common/relationship-picker/relationshipSources.tsx`,
+or provide a collection's `relationshipSources` override keyed by resource name.
+Booking keeps its `booking-instruments` override so archived references resolve
+through booking configurations, using the same access policy as the booking list.
 
-Rules for one source:
+Each source owns these operations:
 
-- `resourceName` must be a REST API v2 collection that permits `LIST` and `READ`.
-- Keep `fields` to the values that `toOption` uses. The request asks for these fields only.
-- `searchField` must accept `=contains=`.
-- `globalIdPrefix` lets the picker recognize a pasted global ID. The picker then searches by row
-  ID because the derived global ID is not filterable.
+- `search(term, token, signal)` returns display documents from its fixed route.
+- `normalizeValue(value)` returns a canonical wire value or `null` for invalid input.
+  Keep case-sensitive identities unchanged; the instrument adapter normalizes `IN` IDs.
+- `ownsValue(value)` identifies values belonging to this source.
+- `resolveMany(values, token, signal)` restores selected documents in bounded batches.
+  Unknown and inaccessible values produce the same missing result.
+- `toOption(document, context)` validates a document and supplies its stable value,
+  accessible label, and optional rendered content.
 
-The picker caches each search and selected record in React Query for minutes. Reopening a dropdown
-or restoring a shared filter does not repeat those requests.
+The source's batch limit must not exceed its endpoint's page or argument limits.
+Instrument restoration uses the collection's typed-ID `in` filter and sparse display
+fields. Deduplicate canonical values before chunking. Query keys include the source,
+caller scope, token, and selected values; never share cached options across callers.
+Keep the older optional `resolve` for callers that have not migrated to batch restore.
 
-The `equals` and `notEquals` operators select one record. The `in` and `notIn` operators select
-several.
+A saved predicate remains present while restoration loads, fails, or cannot find its
+value. Restoring a label must never remove part of a filter. The `equals` and
+`notEquals` operators select one value; `in` and `notIn` select several.
+
+Runtime catalog routes are checked against the application allowlist both when
+metadata is parsed and immediately before fetch. The current approved routes are
+`/api/v2/instruments/fields/customFields` and
+`/api/v2/instruments/fields/extraFields`, including when a booking target delegates
+to them. New providers require an explicit allowlist entry. Queries are constructed
+locally and authenticated catalog requests refuse redirects.
 
 ## Reuse collection fields in forms
 
@@ -772,17 +772,22 @@ Give each table a unique `parameterPrefix`.
 
 ## Configure and test relationship-target filters
 
-For example, a booking-configuration table can filter by its instrument name. Declare only the
-relationship in the collection config:
+For example, a booking-configuration table can filter by its instrument name. API metadata supplies
+the relationship's scalar filters even when the relationship is absent from the local config.
+Declare the relationship when the table also needs its column or a custom label:
 
 ```ts
 { name: "target", labelKey: "...", type: "relationship", relationTo: "instruments", hasMany: false },
 ```
 
-When the target has a registered relationship source, the value box suggests records from that
-collection. The value remains free text because the server matches text. Without a registered
-source, the field uses a plain input. An input bound to a datalist has the ARIA role `combobox`.
-Tests must query `combobox`, not `textbox`.
+Relationship identity filters use a record picker when a source is registered. Related scalar
+fields use their declared input type: text fields have a plain text input, numbers have a numeric
+input, and dates have a date input. Scalar fields do not fetch record-name suggestions.
+
+The filter picker groups target fields and their custom-field option under the relationship's
+label. Shared audit relationships use localized `Created by` and `Updated by` labels unless the
+config supplies its own label. New relationship rules default to `equals` when supported;
+opening a saved rule preserves its operator.
 
 The server permits the `equals`, `in`, `contains`, and `matches` operators on a target field. It
 rejects all negative operators.
