@@ -1,0 +1,99 @@
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import WizardTemplatePicker from "../WizardTemplatePicker";
+
+const state = vi.hoisted(() => ({
+  results: [] as Array<{ id: number; name: string; globalId: string }>,
+  loading: false,
+}));
+const performInitialSearch = vi.hoisted(() => vi.fn((_args: unknown) => Promise.resolve()));
+
+vi.mock("@/stores/models/Search", () => ({
+  default: class {
+    get results() {
+      return state.results;
+    }
+    fetcher = {
+      performInitialSearch,
+      get loading() {
+        return state.loading;
+      },
+    };
+  },
+}));
+vi.mock("@/stores/models/Factory/AlwaysNewFactory", () => ({ default: class {} }));
+vi.mock("@/components/GlobalId", () => ({
+  default: ({ record }: { record: { globalId: string | null } }) => (
+    <span data-testid="global-id-pill">{record.globalId}</span>
+  ),
+}));
+
+beforeEach(() => {
+  performInitialSearch.mockClear();
+  state.results = [
+    { id: 5, name: "Cells", globalId: "IT5" },
+    { id: 7, name: "Buffer", globalId: "IT7" },
+  ];
+  state.loading = false;
+});
+
+describe("WizardTemplatePicker", () => {
+  it("fetches an initial list of templates when it opens", () => {
+    render(<WizardTemplatePicker setTemplate={vi.fn()} />);
+    expect(performInitialSearch).toHaveBeenCalled();
+  });
+
+  it("shows each template as an option with its name and the standard GlobalId pill", async () => {
+    const user = userEvent.setup();
+    render(<WizardTemplatePicker setTemplate={vi.fn()} />);
+    await user.click(screen.getByRole("combobox"));
+    const listbox = screen.getByRole("listbox");
+    expect(within(listbox).getByText("Cells")).toBeInTheDocument();
+    const pills = within(listbox).getAllByTestId("global-id-pill");
+    expect(pills.map((pill) => pill.textContent)).toEqual(["IT5", "IT7"]);
+  });
+
+  it("reports the chosen template through setTemplate", async () => {
+    const setTemplate = vi.fn();
+    const user = userEvent.setup();
+    render(<WizardTemplatePicker setTemplate={setTemplate} />);
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("option", { name: /Buffer/ }));
+    expect(setTemplate).toHaveBeenCalledWith(expect.objectContaining({ id: 7, name: "Buffer" }));
+  });
+
+  it("re-queries the server as the user types and never treats typed text as a new template", async () => {
+    const setTemplate = vi.fn();
+    const user = userEvent.setup();
+    render(<WizardTemplatePicker setTemplate={setTemplate} />);
+    await user.type(screen.getByRole("combobox"), "Buf");
+    await waitFor(() => expect(performInitialSearch).toHaveBeenCalledWith(expect.objectContaining({ query: "Buf" })));
+    expect(setTemplate).not.toHaveBeenCalled();
+  });
+
+  it("does not query the backend for a single character (it enforces a 2-character minimum)", async () => {
+    const user = userEvent.setup();
+    render(<WizardTemplatePicker setTemplate={vi.fn()} />);
+    performInitialSearch.mockClear(); // ignore the initial-list fetch from mount
+    await user.type(screen.getByRole("combobox"), "C");
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(performInitialSearch).not.toHaveBeenCalledWith(expect.objectContaining({ query: "C" }));
+  });
+
+  it("pre-fills the currently-selected template's name so a reopened picker starts on it", () => {
+    render(<WizardTemplatePicker setTemplate={vi.fn()} selectedTemplateId={5} selectedTemplateName="Cells" />);
+    expect(screen.getByRole("combobox")).toHaveValue("Cells");
+  });
+});
+
+describe("WizardTemplatePicker clearing", () => {
+  it("tells the parent the selection is gone, so a cleared box cannot submit the old template", async () => {
+    const setTemplate = vi.fn();
+    const user = userEvent.setup();
+    render(<WizardTemplatePicker setTemplate={setTemplate} selectedTemplateId={5} selectedTemplateName="Cells" />);
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("button", { name: /clear/i }));
+    expect(setTemplate).toHaveBeenCalledWith(null);
+  });
+});

@@ -2,13 +2,14 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createOAuthTokenForUI;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,6 +54,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 public class UserProfileControllerTest {
@@ -119,7 +121,7 @@ public class UserProfileControllerTest {
     // then
     assertNull(aro.getData());
     assertNotNull(aro.getError());
-    assertThat(aro.getErrorMsg().getErrorMessages(), containsInAnyOrder("failed-message"));
+    assertThat(aro.getErrorMsg().getErrorMessages()).containsExactly("failed-message");
   }
 
   @Test
@@ -138,7 +140,7 @@ public class UserProfileControllerTest {
     verify(oAuthAppManager, never()).removeApp(sessionUser, clientId);
     assertNull(aro.getData());
     assertNotNull(aro.getError());
-    assertThat(aro.getErrorMsg().getErrorMessages(), containsInAnyOrder("failed-message"));
+    assertThat(aro.getErrorMsg().getErrorMessages()).containsExactly("failed-message");
   }
 
   @Test
@@ -157,7 +159,7 @@ public class UserProfileControllerTest {
     verify(oAuthAppManager).removeApp(sessionUser, clientId);
     assertNull(aro.getData());
     assertNotNull(aro.getError());
-    assertThat(aro.getErrorMsg().getErrorMessages(), containsInAnyOrder("succeeded"));
+    assertThat(aro.getErrorMsg().getErrorMessages()).containsExactly("succeeded");
   }
 
   @Test
@@ -174,7 +176,7 @@ public class UserProfileControllerTest {
 
     // then
     assertNotNull(aro.getData());
-    assertEquals(1, aro.getData().getOAuthConnectedApps().size());
+    assertThat(aro.getData().getOAuthConnectedApps()).hasSize(1);
     assertEquals(
         appInfo.getAppName(), aro.getData().getOAuthConnectedApps().get(0).getClientName());
   }
@@ -344,20 +346,110 @@ public class UserProfileControllerTest {
   }
 
   private void assertAccountEventsVisible(User queryUser, boolean expected) {
-    assertEquals(
-        expected ? 1 : 0,
-        userProfileController.getAccountEventsByUser(queryUser.getId()).getData().size());
+    assertThat(userProfileController.getAccountEventsByUser(queryUser.getId()).getData())
+        .hasSize(expected ? 1 : 0);
   }
 
   private void assertGroupHidden(AjaxReturnObject<List<UserGroupInfo>> ugs) {
-    assertEquals(1, ugs.getData().size());
+    assertThat(ugs.getData()).hasSize(1);
     assertTrue(ugs.getData().get(0).getPrivateGroup());
     assertNull(ugs.getData().get(0).getGroupDisplayName());
   }
 
   private void assertGroupViewable(AjaxReturnObject<List<UserGroupInfo>> ugs) {
-    assertEquals(1, ugs.getData().size());
+    assertThat(ugs.getData()).hasSize(1);
     assertFalse(ugs.getData().get(0).getPrivateGroup());
     assertNotNull(ugs.getData().get(0).getGroupDisplayName());
+  }
+
+  @Test
+  public void updatePreferenceValueWithKeyMergesInsteadOfReplacing() {
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    UserPreference merged =
+        new UserPreference(Preference.UI_JSON_SETTINGS, anyUser, "{\"A\":1,\"B\":2}");
+    when(usrMgr.mergeUiJsonSetting("B", "{\"value\":2}", "any")).thenReturn(merged);
+
+    AjaxReturnObject<String> response =
+        userProfileController.updatePreferenceValue(
+            "UI_JSON_SETTINGS",
+            "{\"value\":2}",
+            "B",
+            () -> "any",
+            mockRequest,
+            new MockHttpServletResponse());
+
+    assertEquals("{\"A\":1,\"B\":2}", response.getData());
+    verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
+  }
+
+  @Test
+  public void updatePreferenceValueWithoutKeyStillReplacesTheWholeValue() {
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    UserPreference replaced = new UserPreference(Preference.UI_JSON_SETTINGS, anyUser, "whole");
+    when(usrMgr.setPreference(Preference.UI_JSON_SETTINGS, "whole", "any")).thenReturn(replaced);
+
+    AjaxReturnObject<String> response =
+        userProfileController.updatePreferenceValue(
+            "UI_JSON_SETTINGS",
+            "whole",
+            null,
+            () -> "any",
+            mockRequest,
+            new MockHttpServletResponse());
+
+    assertEquals("whole", response.getData());
+    verify(usrMgr, never()).mergeUiJsonSetting(anyString(), anyString(), anyString());
+  }
+
+  @Test
+  public void updatePreferenceValueReturns400WhenTheKeyedValueIsRejected() {
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    when(usrMgr.mergeUiJsonSetting("BAD", "not json", "any"))
+        .thenThrow(new IllegalArgumentException("not valid JSON"));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    AjaxReturnObject<String> result =
+        userProfileController.updatePreferenceValue(
+            "UI_JSON_SETTINGS", "not json", "BAD", () -> "any", mockRequest, response);
+
+    assertEquals(400, response.getStatus());
+    assertNull(result.getData());
+    assertEquals("not valid JSON", result.getErrorMsg().getErrorMessages().get(0));
+    verify(analMgr, never()).usersPreferencesChanged(any(User.class), any());
+  }
+
+  @Test
+  public void updatePreferenceValueTreatsABlankSuppliedKeyAsInvalidNotAbsent() {
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    when(usrMgr.mergeUiJsonSetting(anyString(), anyString(), anyString()))
+        .thenThrow(new IllegalArgumentException("bad key"));
+
+    for (String blank : java.util.List.of("", " ")) {
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      AjaxReturnObject<String> result =
+          userProfileController.updatePreferenceValue(
+              "UI_JSON_SETTINGS", "{}", blank, () -> "any", mockRequest, response);
+      assertEquals(400, response.getStatus());
+      assertNull(result.getData());
+    }
+    verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
+  }
+
+  @Test
+  public void updatePreferenceValueRejectsAKeyOnAPreferenceThatIsNotTheJsonBlob() {
+    when(messages.getMessage(
+            "errors.preference.keyNotSupported", new Object[] {"UI_CLIENT_SETTINGS"}))
+        .thenReturn("not a keyed preference");
+    MockHttpServletResponse servletResponse = new MockHttpServletResponse();
+
+    AjaxReturnObject<String> response =
+        userProfileController.updatePreferenceValue(
+            "UI_CLIENT_SETTINGS", "whole", "B", () -> "any", mockRequest, servletResponse);
+
+    assertEquals(400, servletResponse.getStatus());
+    assertNull(response.getData());
+    assertEquals("not a keyed preference", response.getErrorMsg().getErrorMessages().get(0));
+    verify(usrMgr, never()).mergeUiJsonSetting(anyString(), anyString(), anyString());
+    verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
   }
 }

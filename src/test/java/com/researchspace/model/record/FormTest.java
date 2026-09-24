@@ -1,6 +1,7 @@
 package com.researchspace.model.record;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -156,8 +157,8 @@ public class FormTest {
     form.publish();
     form.addFieldForm(FieldTestUtils.createANumberFieldForm());
     RSForm formCopy = form.copy(new CopyIndependentFormAndFieldFormPolicy());
-    assertTrue(formCopy.getCreationDateAsDate().after(form.getCreationDateAsDate()));
-    assertTrue(formCopy.getModificationDateAsDate().after(form.getModificationDateAsDate()));
+    assertThat(formCopy.getCreationDateAsDate()).isAfter(form.getCreationDateAsDate());
+    assertThat(formCopy.getModificationDateAsDate()).isAfter(form.getModificationDateAsDate());
     assertEquals(form.getName(), formCopy.getName());
     assertEquals(form.getDescription(), formCopy.getDescription());
 
@@ -177,7 +178,7 @@ public class FormTest {
     toIgnore2.add("stableID");
     ModelTestUtils.assertCopiedFieldsAreEqual(formCopy, form, toIgnore2, classesToConsider2);
 
-    assertEquals(2, formCopy.getFieldForms().size());
+    assertThat(formCopy.getFieldForms()).hasSize(2);
     TextFieldForm origF = (TextFieldForm) form.getFieldForms().get(0);
     TextFieldForm copyF = (TextFieldForm) formCopy.getFieldForms().get(0);
 
@@ -218,17 +219,17 @@ public class FormTest {
   public void addRemoveFieldForm() {
     FieldForm ft = createAnyFieldForm(1L);
     assertTrue(form.addFieldForm(ft));
-    assertEquals(2, form.getFieldForms().size());
+    assertThat(form.getFieldForms()).hasSize(2);
     // duplicates not allowwed, can't be added twice
     assertFalse(form.addFieldForm(ft));
-    assertEquals(2, form.getFieldForms().size());
+    assertThat(form.getFieldForms()).hasSize(2);
     form.removeFieldForm(ft);
-    assertEquals(1, form.getFieldForms().size());
+    assertThat(form.getFieldForms()).hasSize(1);
   }
 
   @Test
   public void numFieldsTest() {
-    assertEquals(form.getNumAllFields(), form.getFieldForms().size());
+    assertThat(form.getFieldForms()).hasSize(form.getNumAllFields());
   }
 
   @Test
@@ -285,14 +286,16 @@ public class FormTest {
   public void testReorderRequiresSameNumberOfFields() {
     setUpFormWith3Fields();
     // too few args
-    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(toList(1L)));
+    List<Long> fieldIds = toList(1L);
+    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
   }
 
   @Test
   public void testReorderRequiresSameFieldIds() {
     setUpFormWith3Fields();
     // 4L is not in form
-    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(toList(1L, 2L, 4L)));
+    List<Long> fieldIds = toList(1L, 2L, 4L);
+    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
   }
 
   @Test
@@ -300,9 +303,8 @@ public class FormTest {
     setUpFormWith3Fields();
     form.getFieldForms().get(0).setDeleted(true);
     // one is now delted
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> form.reorderFields(TransformerUtils.toList(1L, 2L, 3L)));
+    List<Long> fieldIds = TransformerUtils.toList(1L, 2L, 3L);
+    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
   }
 
   private void setUpFormWith3Fields() {

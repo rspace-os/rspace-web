@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -28,6 +31,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 @WebAppConfiguration
 public class ProtocolsIOControllerMVCIT extends MVCTestBase {
 
+  private @Autowired FieldParser fieldParser;
   private ObjectMapper objectMapper;
 
   @BeforeEach
@@ -64,7 +68,7 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
             .andReturn();
     ProtocolsIOController.PIOResponse recordInformation =
         getFromJsonAjaxReturnObject(result, ProtocolsIOController.PIOResponse.class);
-    assertEquals(1, recordInformation.getResults().size());
+    assertThat(recordInformation.getResults()).hasSize(1);
     // check 2 images are imported - we don't import duplicates
     assertEquals(initialImageCount + 2, getCountOfEntityTable("EcatImage").intValue());
     String docContentString = getFieldData(anyUser, recordInformation);
@@ -124,6 +128,6 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
     assertEquals(parent.getId().intValue(), getJsonPathValue(result, "$.data.importFolderId"));
     String contentString =
         fieldMgr.getFieldsByRecordId(newDoc.getId(), anyUser).get(0).getFieldData();
-    assertTrue(contentString.contains("colorimetric"));
+    assertThat(contentString).contains("colorimetric");
   }
 }

@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller.cloud;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,6 +29,7 @@ import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.cloud.impl.CommunityPostSignupVerification;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -52,6 +54,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 public class CloudInvitedSignupTestMVCIT extends MVCTestBase {
 
   @Autowired private RSCommunityController cloudController;
+  @Autowired private IPropertyHolder propertyHolder;
 
   private HttpServletRequest mockRequest;
 
@@ -251,7 +254,7 @@ public class CloudInvitedSignupTestMVCIT extends MVCTestBase {
   private User assertUserActivated(final String randomEmail, final TokenBasedVerification token) {
     // 1. Only 1 user is in DB with email
     List<User> created = userMgr.getUserByEmail(randomEmail);
-    assertEquals(1, created.size());
+    assertThat(created).hasSize(1);
     User newUser = created.get(0);
     assertUserStateOK(newUser);
     // check that the token is inactivated

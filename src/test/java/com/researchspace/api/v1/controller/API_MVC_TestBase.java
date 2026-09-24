@@ -13,14 +13,12 @@ import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.preference.HierarchicalPermission;
-import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.util.zip.ZipInputStream;
 import org.junit.jupiter.api.Assertions;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -32,8 +30,6 @@ public class API_MVC_TestBase extends MVCTestBase {
   protected static final String testOAuthAppClientSecret = "clientSecret1";
 
   protected API_ModelTestUtils apiModelTestUtils = new API_ModelTestUtils();
-
-  protected @Autowired SystemPropertyManager sysPropMgr;
 
   static final int MIN_KEY_LENGTH = 16;
 

@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -100,14 +101,14 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
     assertEquals(null, el);
-    assertEquals(1, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(1);
     ConstraintBasedPermission finalPermission =
         (ConstraintBasedPermission) u.getPermissions().iterator().next();
-    assertEquals(1, finalPermission.getActions().size());
+    assertThat(finalPermission.getActions()).hasSize(1);
     assertEquals(PermissionType.WRITE, finalPermission.getActions().iterator().next());
     assertEquals(finalPermission.getIdConstraint().getId().iterator().next(), record.getId());
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:WRITE:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -120,14 +121,14 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
     assertEquals(null, el);
-    assertEquals(1, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(1);
     ConstraintBasedPermission finalPermission =
         (ConstraintBasedPermission) u.getPermissions().iterator().next();
-    assertEquals(1, finalPermission.getActions().size());
+    assertThat(finalPermission.getActions()).hasSize(1);
     assertEquals(PermissionType.READ, finalPermission.getActions().iterator().next());
     assertEquals(finalPermission.getIdConstraint().getId().iterator().next(), record.getId());
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:READ:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -140,14 +141,14 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
     assertEquals(null, el);
-    assertEquals(1, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(1);
     ConstraintBasedPermission finalPermission =
         (ConstraintBasedPermission) u.getPermissions().iterator().next();
-    assertEquals(1, finalPermission.getActions().size());
+    assertThat(finalPermission.getActions()).hasSize(1);
     assertEquals(PermissionType.READ, finalPermission.getActions().iterator().next());
     assertEquals(finalPermission.getIdConstraint().getId().iterator().next(), record.getId());
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:READ:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -160,14 +161,14 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
     assertEquals(null, el);
-    assertEquals(1, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(1);
     ConstraintBasedPermission finalPermission =
         (ConstraintBasedPermission) u.getPermissions().iterator().next();
-    assertEquals(1, finalPermission.getActions().size());
+    assertThat(finalPermission.getActions()).hasSize(1);
     assertEquals(PermissionType.WRITE, finalPermission.getActions().iterator().next());
     assertEquals(finalPermission.getIdConstraint().getId().iterator().next(), record.getId());
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:WRITE:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -181,7 +182,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
     assertEquals(null, el);
-    assertEquals(2, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(2);
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -200,7 +201,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     assertEquals(true, readFound);
     assertEquals(true, writeFound);
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:WRITE:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -214,7 +215,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
     assertEquals(null, el);
-    assertEquals(2, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(2);
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -240,7 +241,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     assertEquals(true, doc1Found);
     assertEquals(true, doc2Found);
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:READ:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -256,7 +257,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
     assertEquals(null, el);
-    assertEquals(2, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(2);
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -275,7 +276,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     assertEquals(true, readFound);
     assertEquals(true, writeFound);
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:WRITE:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -288,7 +289,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
     assertEquals(null, el);
-    assertEquals(2, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(2);
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -314,7 +315,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     assertEquals(true, doc1Found);
     assertEquals(true, doc2Found);
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:READ:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -327,7 +328,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
     assertEquals(null, el);
-    assertEquals(2, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(2);
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -346,7 +347,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     assertEquals(true, readFound);
     assertEquals(true, writeFound);
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:READ:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -359,7 +360,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
     assertEquals(null, el);
-    assertEquals(2, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(2);
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -385,7 +386,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     assertEquals(true, doc1Found);
     assertEquals(true, doc2Found);
 
-    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
+    assertThat(rgs.getShared().getSharingACL().getAclElements()).hasSize(1);
     assertEquals(
         "Test user=RECORD:WRITE:",
         rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
@@ -409,7 +410,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
     assertEquals(null, el);
-    assertEquals(5, u.getPermissions().size());
+    assertThat(u.getPermissions()).hasSize(5);
 
     boolean readFound = false;
     boolean writeFound = false;

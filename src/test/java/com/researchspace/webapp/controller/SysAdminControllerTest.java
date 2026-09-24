@@ -1,8 +1,10 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.Constants.SYSADMIN_ROLE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,7 +12,6 @@ import static org.mockito.Mockito.when;
 import com.researchspace.Constants;
 import com.researchspace.admin.service.SysAdminManager;
 import com.researchspace.admin.service.UsageListingDTO;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.model.Community;
@@ -84,7 +85,7 @@ public class SysAdminControllerTest {
     sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
 
     when(properties.getDeleteUser()).thenReturn(Boolean.FALSE.toString());
-    CoreTestUtils.assertIllegalStateExceptionThrown(() -> ctrller.removeUserAccount(2L));
+    assertThrows(IllegalStateException.class, () -> ctrller.removeUserAccount(2L));
     Mockito.verifyNoInteractions(userExportHandler);
     verify(delMgr, Mockito.never()).removeUser(2L, noRestriction(), sysadmin);
   }
@@ -97,13 +98,13 @@ public class SysAdminControllerTest {
     comm.addLabGroup(grpGroup);
     when(commService.getCommunityWithAdminsAndGroups(1L)).thenReturn(comm);
     AjaxReturnObject<List<GroupListResult>> resultAjaxReturnObject = ctrller.getLabGroups(1L);
-    assertEquals(1, resultAjaxReturnObject.getData().size());
+    assertThat(resultAjaxReturnObject.getData()).hasSize(1);
     assertNotNull(resultAjaxReturnObject.getData().get(0).getPiFullname());
 
     // handle group with no PI. e.g. an empty group
     assertTrue(grpGroup.removeMember(piUser));
     resultAjaxReturnObject = ctrller.getLabGroups(1L);
-    assertEquals(1, resultAjaxReturnObject.getData().size());
+    assertThat(resultAjaxReturnObject.getData()).hasSize(1);
     assertEquals("No PI set", resultAjaxReturnObject.getData().get(0).getPiAffiliation());
     assertEquals("No PI set", resultAjaxReturnObject.getData().get(0).getPiFullname());
   }

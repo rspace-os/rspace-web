@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiPidinstSearchResult;
 import com.researchspace.api.v1.model.ApiTargetLocation;
@@ -17,12 +18,20 @@ public interface PidinstLookupManager {
   int MAX_HITS = 50;
 
   /**
+   * Shortest query a search accepts, after trimming. Below this a free-text query matches most of
+   * the registry, which is a slow call for a page of results nobody wanted.
+   */
+  int MIN_QUERY_LENGTH = 4;
+
+  /**
    * A DOI or Handle, bare or as a doi.org / hdl.handle.net address, is a direct lookup on the
    * enabled provider; a PID of the other registry yields no hit; anything else is one full-text
    * query. Only PUBLIC records are offered - B2INST {@code accepted}, DataCite {@code findable} -
    * because only those may be linked to an instrument. Hits are sorted by name and carry {@code
    * linkedInstrumentGlobalId} when an instrument in this deployment already links the PID.
    *
+   * @throws ApiRuntimeException when the query is shorter than {@link #MIN_QUERY_LENGTH} after
+   *     trimming, so a direct caller is held to the same rule as the import dialog
    * @throws UnsupportedOperationException when no PIDINST provider is enabled
    */
   ApiPidinstSearchResult search(String query, User user);

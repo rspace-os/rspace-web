@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.webapp.controller.MvcTestUtils.parseOAuthTokenResponse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,7 +50,7 @@ public class OAuthAPIAccessMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiRecordTreeItemListing folders =
         getFromJsonResponseBody(result, ApiRecordTreeItemListing.class);
-    assertTrue(folders.getTotalHits() > 0);
+    assertThat(folders.getTotalHits()).isGreaterThan(0);
 
     // confirm that access token request doesn't succeed if oauth authentication is disabled
     disableApiOAuthAuthentication();

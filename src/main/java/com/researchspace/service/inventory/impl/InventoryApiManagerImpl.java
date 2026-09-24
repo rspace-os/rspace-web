@@ -46,6 +46,7 @@ import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryApiManager;
+import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryLinkValidator;
@@ -194,10 +195,9 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     InventoryLink existing = field.getLink();
     if (StringUtils.isBlank(target)) {
       if (existing == null) {
-        return false; // no link before, none requested now
+        return false;
       }
       if (omittedLinkPreservesExisting && !apiField.isLinkProvided()) {
-        // a partial template update that never mentions the link: leave it alone
         return false;
       }
       field.setLink(null); // orphanRemoval hard-deletes the dereferenced row at flush
@@ -214,7 +214,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
         && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
         && Objects.equals(effectivePin, existing.getVersionPin())
         && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
-      return false; // unchanged
+      return false;
     }
     assertRelationAllowed(field, apiLink.getRelationType());
     if (existing != null) {
@@ -286,7 +286,6 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       InventoryRecord dbTemplate,
       User user) {
     if (toAdd instanceof InventoryLinkField linkField) {
-      // adding a link field to a saved template must not smuggle in a default targeting it
       rejectSelfLink(apiField.getLink(), dbTemplate);
       applyLinkFieldValue(linkField, apiField, user, true);
     }
@@ -544,11 +543,9 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   @Override
   public void createImagesForRecord(InventoryRecord invRec, String base64Image, User user)
       throws IOException {
-    // main image
     FileProperty mainImage = saveImageFile(user, base64Image);
     invRec.setImageFileProperty(mainImage);
 
-    // thumbnail version
     FileProperty thumbnail = saveThumbnailImageFile(user, base64Image);
     invRec.setThumbnailFileProperty(thumbnail);
   }
@@ -658,7 +655,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   protected boolean lockItemForEdit(InventoryRecord invRec, User user) {
     ApiInventoryEditLock apiLock = tracker.attemptToLockForEdit(invRec.getGlobalIdentifier(), user);
     if (ApiInventoryEditLockStatus.CANNOT_LOCK.equals(apiLock.getStatus())) {
-      throw new IllegalArgumentException(apiLock.getMessage());
+      throw new InventoryEditLockHeldException(invRec.getGlobalIdentifier(), apiLock.getOwner());
     }
 
     return ApiInventoryEditLockStatus.LOCKED_OK.equals(apiLock.getStatus());

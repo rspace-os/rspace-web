@@ -232,7 +232,7 @@ public class ApiExtraFieldsHelper implements Validator {
       ExtraLinkField dbLinkField = (ExtraLinkField) dbFieldOpt.get();
       // the controller-layer validator is skipped when the payload omits "type",
       // so the self-link and relation-type rules must also hold on this service-layer path
-      rejectSelfLink(apiLink, dbLinkField);
+      rejectSelfLink(apiLink, dbLinkField.getConnectedRecordGlobalIdentifier());
       assertRelationTypeValid(apiLink);
       InventoryLink dbLink = dbLinkField.getLink();
       if (dbLink == null) {
@@ -246,11 +246,14 @@ public class ApiExtraFieldsHelper implements Validator {
     return changed;
   }
 
-  private void rejectSelfLink(ApiInventoryLink apiLink, ExtraLinkField dbLinkField) {
+  /**
+   * Both the update path (which knows the source from the persisted field) and the create path
+   * (which knows it from the persisted parent) must enforce this against the AUTHORITATIVE source
+   * id, never the client-supplied parentGlobalId, which can be forged or omitted.
+   */
+  private void rejectSelfLink(ApiInventoryLink apiLink, String sourceGlobalId) {
     GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
-    if (target != null
-        && InventoryLinkValidator.isSelfLink(
-            target, dbLinkField.getConnectedRecordGlobalIdentifier())) {
+    if (target != null && InventoryLinkValidator.isSelfLink(target, sourceGlobalId)) {
       throw new ApiRuntimeException(
           "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
     }
@@ -309,7 +312,9 @@ public class ApiExtraFieldsHelper implements Validator {
               apiField.getName(), apiField.getTypeAsFieldType(), user, parentInvRec);
       newField.setData(apiField.getContent());
     }
-    parentInvRec.addExtraField(newField); // update parent's field list
+    // Read-only on the DTO, so this value is already server-authored or null, never client input.
+    newField.setOperationFieldKey(apiField.getOperationFieldKey());
+    parentInvRec.addExtraField(newField);
   }
 
   private ExtraLinkField buildExtraLinkField(
@@ -323,6 +328,7 @@ public class ApiExtraFieldsHelper implements Validator {
     linkField.setModifiedBy(user.getUsername());
     ApiInventoryLink apiLink = apiField.getLink();
     if (apiLink != null) {
+      rejectSelfLink(apiLink, parentInvRec.getGlobalIdentifier());
       InventoryLink persisted = inventoryLinkManager.createLink(apiLink, user);
       linkField.setLink(persisted);
     }

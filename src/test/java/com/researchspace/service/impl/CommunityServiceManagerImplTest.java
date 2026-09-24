@@ -2,8 +2,7 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createAnyUserWithRole;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -39,7 +38,7 @@ public class CommunityServiceManagerImplTest {
   @Test
   public void isUserUniqueAdminInAnyCommunityIsFalseNotInCommunity() {
     when(communityDao.hasCommunity(communityAdmin1)).thenReturn(false);
-    assertThat(impl.isUserUniqueAdminInAnyCommunity(communityAdmin1), is(false));
+    assertEquals(false, impl.isUserUniqueAdminInAnyCommunity(communityAdmin1));
   }
 
   @Test
@@ -49,7 +48,7 @@ public class CommunityServiceManagerImplTest {
     when(communityDao.listCommunitiesForAdmin(communityAdmin1.getId()))
         .thenReturn(toList(community));
 
-    assertThat(impl.isUserUniqueAdminInAnyCommunity(communityAdmin1), is(true));
+    assertEquals(true, impl.isUserUniqueAdminInAnyCommunity(communityAdmin1));
   }
 
   @Test
@@ -60,7 +59,7 @@ public class CommunityServiceManagerImplTest {
     when(communityDao.hasCommunity(communityAdmin1)).thenReturn(true);
     when(communityDao.listCommunitiesForAdmin(communityAdmin1.getId()))
         .thenReturn(toList(community));
-    assertThat(impl.isUserUniqueAdminInAnyCommunity(communityAdmin1), is(false));
+    assertEquals(false, impl.isUserUniqueAdminInAnyCommunity(communityAdmin1));
   }
 
   @Test
@@ -74,7 +73,7 @@ public class CommunityServiceManagerImplTest {
     when(communityDao.hasCommunity(communityAdmin1)).thenReturn(true);
     when(communityDao.listCommunitiesForAdmin(communityAdmin1.getId()))
         .thenReturn(toList(community1, community2));
-    assertThat(impl.isUserUniqueAdminInAnyCommunity(communityAdmin1), is(true));
+    assertEquals(true, impl.isUserUniqueAdminInAnyCommunity(communityAdmin1));
   }
 
   private Community createCommunityWithCommunityAdmin1() {

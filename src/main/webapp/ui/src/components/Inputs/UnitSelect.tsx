@@ -33,13 +33,15 @@ function UnitSelect({ disabled, handleChange, value, categories }: UnitSelectArg
   return (
     <InputAdornment position="end">
       <FormControl>
-        <Select
+        <Select<number>
           disabled={disabled}
           onChange={handleChange}
           inputProps={{
             "aria-label": t("inputs.unitSelect.quantityUnits"),
           }}
-          value={value}
+          // A non-positive id means "no unit chosen" (e.g. after amounts are cleared for a new
+          // process); render the dropdown empty rather than as an out-of-range value.
+          value={value > 0 ? value : ""}
           size="small"
           sx={{
             [`& .${selectClasses.select}`]: {

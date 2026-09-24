@@ -401,6 +401,7 @@
       "sample": "Info on creating samples.",
       "template": "Info on creating templates."
     },
+    "importPidinst": "From PIDINST registry",
     "newContainer": "New Container",
     "newInstrument": "New Instrument",
     "newInstrumentTemplate": "New Instrument Template",
@@ -1686,6 +1687,151 @@
     },
     "showItems": "Show items being moved"
   },
+  "operations": {
+    "action": {
+      "process": "Process"
+    },
+    "aliquot": {
+      "description": "Take equal-volume aliquots. Same material; parent volume decremented.",
+      "label": "Aliquot",
+      "linkFieldName": "Derived from"
+    },
+    "confirm": {
+      "cardSubheader": "New sample · via {operation}",
+      "cardSubheaderTerminal": "Origin subsample · via {operation}",
+      "labels": {
+        "amountTaken": "Amount taken",
+        "amountTakenEach": "Amount taken from each subsample",
+        "documentation": "Documented by",
+        "linkBack": "Links back to",
+        "originEmptied": "Origin volume",
+        "process": "Process",
+        "storageTemp": "Storage temperature",
+        "subsamples": "New subsamples",
+        "template": "Template"
+      },
+      "values": {
+        "amountTaken": "{amount} {unit}",
+        "emptied": "Will be set to 0",
+        "originAmount": "{origin}: {amount}",
+        "storageTemp": "{temp} °C",
+        "subsamples": "{count} × {amount} {unit} each",
+        "takeAll": "All (subsamples emptied)"
+      }
+    },
+    "cryopreserve": {
+      "cryomediumField": "Cryomedium",
+      "description": "Freeze material into new vials at a chosen storage temperature.",
+      "label": "Cryopreserve",
+      "linkFieldName": "Frozen from"
+    },
+    "derive": {
+      "description": "Extract or process material into a new sample, recording a derivation.",
+      "label": "Derive",
+      "linkFieldName": "Is Derived From using process: {processName}"
+    },
+    "destroy": {
+      "description": "Dispose of the subsample: set its volume to zero and record today's disposal date.",
+      "disposedField": "Disposed",
+      "label": "Destroy"
+    },
+    "documentation": {
+      "choose": "Choose document",
+      "description": "Optionally link this operation to a document in ELN or Gallery, such as a protocol (SOP).",
+      "fieldName": "Documented by",
+      "none": "No document linked.",
+      "selected": "Linked document: {name}"
+    },
+    "fields": {
+      "amountMode": "Amount to take",
+      "amountModeAll": "Take all",
+      "amountModeAllHelp": "Every selected subsample will be emptied (reduced to 0).",
+      "amountModePerSubsample": "Per subsample",
+      "amountModeSame": "Same amount",
+      "amountTaken": "Amount taken from original",
+      "amountTakenEach": "Amount taken from each",
+      "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
+      "count": "Number of new subsamples",
+      "countMin": "Enter a whole number of {min} or more.",
+      "countRange": "Enter a whole number between {min} and {max}.",
+      "cryomedium": "Cryomedium",
+      "eachAmount": "Amount per new subsample",
+      "originAmountZero": "Subsample has an amount of 0.",
+      "originCategoryUnsupported": "This subsample's quantity is not an amount (volume, mass or count), so no operation can take from it.",
+      "processName": "Process name",
+      "processNameRequired": "Enter a process name first.",
+      "rememberProcessValues": "Remember values for this process: {name}",
+      "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
+      "sampleName": "New sample name",
+      "storageTemp": "Storage temperature",
+      "storageTempInvalid": "Enter a temperature at or above -273.15°C, with at most 3 decimal places.",
+      "storageTempMax": "Storage temperature must be at most {max}°C.",
+      "storageTempMin": "Storage temperature must be at least {min}°C.",
+      "temperatureUnit": "°C"
+    },
+    "passage": {
+      "description": "Create the next passage as a new sample, numbering it from the parent's passage number.",
+      "label": "Passage",
+      "linkFieldName": "Passaged from",
+      "numberField": "Passage number"
+    },
+    "picker": {
+      "needsMultiple": "Select two or more subsamples to pool.",
+      "sameCategory": "Select subsamples of the same measurement type to pool.",
+      "singleOnly": "Select a single subsample for this operation.",
+      "tooManySelected": "Select at most 100 subsamples for this operation."
+    },
+    "pool": {
+      "description": "Combine an equal amount from several subsamples into one new pooled sample.",
+      "label": "Pool",
+      "linkFieldName": "Pooled from: {originName}"
+    },
+    "revive": {
+      "description": "Revive frozen material into a new sample, recorded as a variant of the original.",
+      "label": "Revive",
+      "linkFieldName": "Revived from"
+    },
+    "template": {
+      "checking": "Checking template…",
+      "description": "Optionally choose a template for the new sample.",
+      "fromSample": "Use the parent sample's template",
+      "loadingTemplates": "Loading templates…",
+      "lookupFailed": "This template could not be checked. Try choosing it again.",
+      "mandatoryFieldsError": "{count, plural, one {This template cannot be used: the required field {fields} has no default value. Choose another template.} other {This template cannot be used: the required fields {fields} have no default value. Choose another template.}}",
+      "none": "No template",
+      "noTemplates": "No templates found",
+      "parentHasNoTemplate": "The parent sample has no template, so this option is unavailable. Choose an existing template or none.",
+      "pick": "Choose an existing template",
+      "rememberedDeleted": "The remembered template \"{name}\" is in the trash and cannot be used. Choose another template.",
+      "searchLabel": "Search templates",
+      "selectedLabel": "Selected template: {name}",
+      "templateDeleted": "The template \"{name}\" is in the trash and cannot be used. Choose another template.",
+      "valueFromSample": "From {name}",
+      "valueNone": "None (ad-hoc sample)"
+    },
+    "wizard": {
+      "failed": "The operation could not be completed",
+      "fieldReason": "{label}: {reason}",
+      "headingWithProcess": "{operation}: {process}",
+      "inProgress": "Performing operation…",
+      "lockExpired": "Your edit session on these subsamples has expired. Close the wizard and start again.",
+      "notEnabled": "Operations are not enabled on this RSpace.",
+      "originIndex": "{reason} (origin {index})",
+      "originsLocked": "Cannot start this operation",
+      "originsOpenElsewhere": "These subsamples are open for editing elsewhere, perhaps in another tab. Close that editor and try again.",
+      "perform": "Perform",
+      "refreshFailed": "The operation completed, but the view could not be refreshed. Reload to see the changes.",
+      "reviewEdit": "Review / edit",
+      "step": {
+        "amounts": "Amounts",
+        "confirm": "Confirm",
+        "details": "Details",
+        "documentation": "Documentation",
+        "template": "Template"
+      },
+      "title": "Process subsample"
+    }
+  },
   "pageTitle": "RSpace Inventory",
   "pageTitleWithContext": "{pageContext} | RSpace Inventory",
   "peopleField": {
@@ -1709,6 +1855,76 @@
     },
     "pending": {
       "exportData": "Exporting User Data..."
+    }
+  },
+  "pidinstImport": {
+    "appBarTitle": "PIDINST",
+    "closeConfirm": {
+      "cancel": "Continue importing",
+      "confirm": "Close anyway",
+      "message": "An import is in progress. Closing this dialog will not stop it, but you will not see the result here.",
+      "title": "Import in progress"
+    },
+    "columns": {
+      "commissioned": "Commissioned",
+      "instrumentTypes": "Instrument type",
+      "linkedTo": "Linked to",
+      "manufacturers": "Manufacturer",
+      "model": "Model",
+      "name": "Name",
+      "owners": "Owner",
+      "pid": "PID",
+      "state": "Registry state"
+    },
+    "description": "Search the PID registry enabled for this RSpace for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
+    "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
+    "helpTitle": "PIDINST help",
+    "importError": "Could not import the instrument.",
+    "importing": {
+      "message": "Importing \"{name}\" from the PID registry.",
+      "title": "Importing instrument"
+    },
+    "importSuccess": "Successfully imported the instrument.",
+    "preview": {
+      "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
+      "alternateIdentifier": "Alternate identifier",
+      "commissioned": "Commissioned",
+      "decommissioned": "Decommissioned",
+      "description": "Description",
+      "instrumentTypes": "Instrument types",
+      "landingPage": "Landing page",
+      "manufacturers": "Manufacturers",
+      "measuredVariables": "Measured variables",
+      "model": "Model",
+      "owners": "Owners",
+      "pid": "PID",
+      "providerRecord": "Registry record",
+      "title": "Selected record"
+    },
+    "providers": {
+      "b2inst": "B2INST",
+      "datacite": "DataCite"
+    },
+    "results": {
+      "none": "No published instrument records match this search.",
+      "prompt": "Search to list published instrument records.",
+      "summary": "{shown} of {total, plural, one {# record} other {# records}} found at {provider}.",
+      "truncated": "Only the first {shown, plural, one {# record is} other {# records are}} shown. Refine the search to find a specific instrument."
+    },
+    "search": {
+      "label": "Search the registry",
+      "placeholder": "Name, manufacturer, owner, DOI or Handle",
+      "searching": "Searching the PID registry…",
+      "validation": {
+        "tooShort": "Enter at least {min} characters to search."
+      }
+    },
+    "searchError": "Could not search the PID registry.",
+    "selectRadioLabel": "Select record: {name}",
+    "title": "Import Instrument from PIDINST",
+    "validation": {
+      "alreadyLinked": "This PID is already linked to instrument {globalId}.",
+      "noSelection": "Select a record to import."
     }
   },
   "print": {

@@ -1,8 +1,9 @@
 package com.researchspace.documentconversion.ext;
 
 import static org.apache.commons.io.FilenameUtils.getBaseName;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,7 +18,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileAttribute;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -69,7 +69,7 @@ public class AsposeWebAppClientTestIT {
     assertNotNull(converted);
     assertEquals(EXPECTED_WORDFILE_TO_HTML_LENGTH, converted.length());
     // html + 3 image files
-    assertEquals(4, tempFolder.listFiles().length);
+    assertThat(tempFolder.listFiles()).hasSize(4);
   }
 
   @Test
@@ -87,7 +87,7 @@ public class AsposeWebAppClientTestIT {
   public void version() {
     SemanticVersion result = client.getVersion();
     assertNotNull(result);
-    assertThat(SemanticVersion.UNKNOWN_VERSION, Matchers.not(Matchers.equalTo(result)));
+    assertNotEquals(result, SemanticVersion.UNKNOWN_VERSION);
   }
 
   @Test
@@ -96,6 +96,6 @@ public class AsposeWebAppClientTestIT {
     client = new AsposeWebAppClient(unknownUri, null, () -> "customerID");
     SemanticVersion result = client.getVersion();
     assertNotNull(result);
-    assertThat(SemanticVersion.UNKNOWN_VERSION, Matchers.equalTo(result));
+    assertEquals(result, SemanticVersion.UNKNOWN_VERSION);
   }
 }

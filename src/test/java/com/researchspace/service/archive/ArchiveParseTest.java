@@ -1,5 +1,6 @@
 package com.researchspace.service.archive;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -318,9 +319,9 @@ public class ArchiveParseTest {
     ArchivalDocumentParserRef ref = model.findCurrentDocArchiveByName(EXPORTED_RECORD).get(0);
     List<File> files = ref.getFileList();
     // annotation, chemd, image
-    assertEquals(1, files.size());
+    assertThat(files).hasSize(1);
     ArchivalDocument doc = ref.getArchivalDocument();
-    assertEquals(7, doc.getListFields().size());
+    assertThat(doc.getListFields()).hasSize(7);
 
     ArchiveManifest manifest = model.getManifest();
     final SemanticVersion EXPECTED_VERSION = new SemanticVersion("0.19.0.begin");
@@ -337,9 +338,9 @@ public class ArchiveParseTest {
     ArchivalDocumentParserRef ref = model.findCurrentDocArchiveByName(EXPORTED_RECORD).get(0);
     List<File> files = ref.getFileList();
     // annotation, chemd, image
-    assertEquals(1, files.size());
+    assertThat(files).hasSize(1);
     ArchivalDocument doc = ref.getArchivalDocument();
-    assertEquals(7, doc.getListFields().size());
+    assertThat(doc.getListFields()).hasSize(7);
 
     ArchiveManifest manifest = model.getManifest();
     final SemanticVersion EXPECTED_VERSION = new SemanticVersion("0.19.0.begin");

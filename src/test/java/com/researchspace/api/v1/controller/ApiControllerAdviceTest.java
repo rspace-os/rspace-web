@@ -4,12 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.apiutils.ApiError;
+import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.chemistry.ChemistryClientException;
+import com.researchspace.service.inventory.InventoryEditLockHeldException;
+import com.researchspace.service.inventory.InventoryOperationInProgressException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -48,6 +52,56 @@ class ApiControllerAdviceTest {
     assertEquals(
         "Error fetching notebooks due to the Fieldmark server",
         errorList.getValidationErrors().get(1).getMessage());
+  }
+
+  @Test
+  void inventoryEditLockHeldMapsTo409NamingTheHolder() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleInventoryEditLockHeld(
+            new InventoryEditLockHeldException(
+                "SS123", new ApiUser(1L, "bob", "bob@x.com", "Bob", "Builder")),
+            null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(ApiErrorCodes.EDIT_CONFLICT.getCode(), error.getInternalCode());
+    assertEquals("SS123 is currently being edited by Bob Builder.", error.getMessage());
+  }
+
+  @Test
+  void inventoryEditLockHeldFallsBackToTheHoldersUsername() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleInventoryEditLockHeld(
+            new InventoryEditLockHeldException(
+                "SA9", new ApiUser(1L, "bob", "bob@x.com", "", null)),
+            null);
+
+    assertEquals(
+        "SA9 is currently being edited by bob.", ((ApiError) response.getBody()).getMessage());
+  }
+
+  @Test
+  void anOperationAlreadyInProgressOnAnOriginIsAConflictNamingIt() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleInventoryOperationInProgress(
+            new InventoryOperationInProgressException("SS123"), null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(ApiErrorCodes.EDIT_CONFLICT.getCode(), error.getInternalCode());
+    assertEquals(
+        "Another operation on SS123 is still in progress. Wait for it to finish, then reload and"
+            + " try again.",
+        error.getMessage());
   }
 
   private static class TestForm {

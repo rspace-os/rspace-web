@@ -19,7 +19,6 @@ class TemperatureValidationTest extends JakartaValidatorTestJU5 {
     q.setUnitId(RSUnitDef.CELSIUS.getId());
     Measurable m = new Measurable(q);
     assertValid(m);
-    // c
     q.setNumericValue(new BigDecimal(-274));
     assertNErrors(m, 1, true);
     q.setNumericValue(new BigDecimal(-273));
@@ -44,5 +43,13 @@ class TemperatureValidationTest extends JakartaValidatorTestJU5 {
     q.setUnitId(RSUnitDef.MICRO_GRAM.getId());
     q.setNumericValue(new BigDecimal(20));
     assertNErrors(m, 1, true);
+  }
+
+  @Test
+  void aTemperatureWithAUnitButNoNumberIsInvalidNotAServerError() {
+    QuantityInfo q = new QuantityInfo();
+    q.setUnitId(RSUnitDef.CELSIUS.getId());
+    q.setNumericValue(null);
+    assertNErrors(new Measurable(q), 1, true);
   }
 }

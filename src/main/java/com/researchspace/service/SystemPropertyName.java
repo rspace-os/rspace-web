@@ -27,6 +27,7 @@ public enum SystemPropertyName {
   GOOGLE_DRIVE_AVAILABLE("googledrive.available"),
   GROUP_AUTOSHARING_AVAILABLE("group_autosharing.available"),
   INVENTORY_AVAILABLE("inventory.available"),
+  INVENTORY_OPERATIONS_AVAILABLE("inventory.operations.available"),
   SAMPLE_REQUESTS_AVAILABLE("sampleRequests.available"),
   ORCID_AVAILABLE("orcid.available"),
   PUBLIC_LAST_LOGIN_AVAILABLE("publicLastLogin.available"),

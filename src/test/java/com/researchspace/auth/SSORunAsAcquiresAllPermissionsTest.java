@@ -1,9 +1,11 @@
 package com.researchspace.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -12,10 +14,12 @@ import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
 
 public class SSORunAsAcquiresAllPermissionsTest extends SpringTransactionalTest {
 
+  private @Autowired IPermissionUtils permissionUtils;
   MockHttpSession session;
 
   @BeforeEach
@@ -40,8 +44,8 @@ public class SSORunAsAcquiresAllPermissionsTest extends SpringTransactionalTest 
     // assert runAs has worked
     assertEquals(target.getUsername(), getSubject().getPrincipal().toString());
     // and is using correct realm
-    assertTrue(
-        getSubject().getPrincipals().getRealmNames().contains(SSOPassThruRealm.SSO_REALM_NAME));
+    assertThat(getSubject().getPrincipals().getRealmNames())
+        .contains(SSOPassThruRealm.SSO_REALM_NAME);
 
     // and that run as has picked permissions
     assertTrue(permissionUtils.isPermitted("FORM:CREATE"));

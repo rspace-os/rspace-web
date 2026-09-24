@@ -2,7 +2,7 @@
 status: accepted
 ---
 
-# Linked identifiers for instruments imported from a PID registry (RSDEV-1326)
+# Linked identifiers for instruments imported from a PID registry (RSDEV-1326, UI RSDEV-1325)
 
 ## Context
 
@@ -70,6 +70,49 @@ and API field names were ported instead.
    resolvable landing page, so linking one would put an address in the Identifiers card
    that answers nothing.
 
+6. **A search needs at least 4 characters**, counted after trimming, for either provider
+   (RSDEV-1325). Below that a free-text query matches a large part of the registry, which is a slow
+   provider call for a page nobody wanted, and it is the shortest DOI suffix fragment worth
+   matching. The rule lives in `PidinstLookupManagerImpl.search`, not the controller, so a direct
+   caller gets it too; it subsumes the blank check the controller used to make, and answers 422
+   with `errors.inventory.identifier.pidinstQueryTooShort` rather than a bare
+   IllegalArgumentException. The import dialog mirrors the number and keeps Search disabled below
+   it, naming the minimum under the field, so the ordinary case never makes the round trip; the
+   server stays the authority, and a client that ignores it still gets the 422.
+7. **The DataCite free-text query is escaped, and a search that finds nothing is retried as
+   `doi:*<query>*`** (RSDEV-1325). DataCite's `query` is Elasticsearch query-string syntax whatever
+   the caller intends, so user text reaches it escaped: unbalanced syntax answers 400 rather than an
+   empty page, and a dialog can only show a 400 as an error. Verified 2026-09-18 against
+   api.datacite.org: `foo"bar`, `foo[bar`, `foo{bar`, `(foo`, `foo!`, `foo^`, `zeiss &&` and a
+   dangling `abc OR` all answer 400, and every escaped form answers 200. The escape covers the
+   reserved characters and the bare `AND`/`OR`/`NOT`, so the search box is literal text rather than
+   a query console. `/` is left alone on the same evidence that keeps it in the allow-list below:
+   `10.5281\/zenodo` answers 400 where `10.5281/zenodo` answers 200, so escaping it would break the
+   pasted fragments this search exists to match. Escaping costs nothing elsewhere: `\Zeiss` and
+   `Zeiss` both answer 71, `spectrometer\*` and `spectrometer` both 146. `<`, `>` and `=` are
+   deliberately *not* escaped, and cannot be: a backslash before one is ignored. They need no
+   handling, because a range exists only against a field and the `:` that builds one is escaped.
+   `publicationYear:>2020` answers 95,411,191, but `publicationYear\:>2020`, which is what RSpace
+   sends, answers 15, the same as the plain `publicationYear 2020`. Loose, `Zeiss>4` answers 6,539,
+   exactly what `Zeiss 4` and every other separator the analyser splits on answer, so the character
+   is inert rather than parsed; comparing it against `Zeiss` alone (42,170) only measures the second
+   term. Pinned by a test, because this has already been raised once in review.
+
+   The retry is the second half. DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one: a
+   search for `qvtb-aw74` answers nothing though `10.82316/qvtb-aw74` is findable, which is what a
+   user who pasted half a DOI sees. Verified against api.test.datacite.org on 2026-09-16: the bare
+   suffix returns 0, `doi:*qvtb-aw74*` returns 1, `doi:*qvtb*` returns 1, and the wildcard matches
+   across the slash and whatever the case. The retry runs only when the first page is empty, so a
+   search that already found something still costs one call, and only when the query is a bare
+   `[A-Za-z0-9._/-]+`, so what the user typed cannot close the `doi:` clause or open another. That
+   allow-list is evidence-led rather than derived from the syntax: `/` and `-` *are* reserved in
+   query-string syntax but DataCite accepts them inside a wildcard term, and keeping `/` is what
+   lets a pasted prefix/suffix pair match. Verified 2026-09-17 against api.datacite.org:
+   `doi:*qvtb/aw74*` answers 200, `doi:*5281/zenodo*` (12.89M) narrows `doi:*5281*` (12.91M) so the
+   wildcard really does span the slash, and `doi:*"broken*` answers 400. Widening the class further
+   needs the same kind of evidence, and both halves are pinned by tests. The B2INST side is left
+   alone: InvenioRDM tokenises its Handle field, and no equivalent miss has been reported.
+
 ## Considered options
 
 - **Fields only** (Alternate Identifier and Landing page, no identifier row): no link
@@ -83,8 +126,18 @@ and API field names were ported instead.
 - **Two-step import** (the server returns a prefilled instrument the client posts
   back): the create endpoint would have to re-fetch the PID to verify client-sent
   metadata, and `identifiers` are ignored on create today.
+- **For the DOI miss: always search `(<query>) OR doi:*<query>*`.** One call instead of two on a
+  miss, but it would make RSpace *build a clause* out of user text on every search, so a stray
+  quote errors the query rather than simply not matching. (The plain query is already passed to the
+  same Elasticsearch-backed `query` parameter, so the difference is who composes the syntax, not
+  whether the parameter interprets it.) Rejected in favour of the guarded retry, which composes a
+  clause only on an empty page and only from characters DataCite is known to accept.
+- **For the DOI miss: reconstruct the full DOI from the deployment's repository prefix.** Exact,
+  but it only finds a DOI minted under that prefix, and the lookup is for the whole registry.
 - **Allow duplicate links, flagged**: rejected in favour of one RSpace record per PID;
-  the search response still flags an already-linked PID so the UI can disable Import.
+  the search response still flags an already-linked PID. The UI (RSDEV-1325) keeps such a hit
+  selectable and refuses Import with the reason, rather than disabling the button, so the user
+  can still read the record and follow the chip to the instrument that holds the link.
 
 ## Consequences
 
@@ -109,9 +162,10 @@ and API field names were ported instead.
   choice that the provider also enforces, not merely a policy of ours.
 - The UI offers no way to unlink, and that is intended for now (Nico, 2026-09-09): the row shows
   Retract, disabled, and never Delete, so removing a link needs the API (`DELETE
-  /identifiers/{id}`, which the server allows in every state). Revisit in RSDEV-1325 if users need
-  to unlink from the page. Half-superseded by ADR 0010: there is still no unlink action on the
-  page, but trashing the Instrument now unlinks whatever it carried (RSDEV-1504).
+  /identifiers/{id}`, which the server allows in every state). RSDEV-1325 shipped the import UI
+  without an unlink action, so this stands; revisit if users ask to unlink from the page.
+  Half-superseded by ADR 0010: there is still no unlink action on the page, but trashing the
+  Instrument now unlinks whatever it carried (RSDEV-1504).
   - The disabling is now explicit rather than incidental. It used to hold only for B2INST, where
     the review-state rule happened to disable the button; a linked DataCite PID is `findable`, so
     nothing caught it and the row offered an enabled Retract that the server answers with 422.

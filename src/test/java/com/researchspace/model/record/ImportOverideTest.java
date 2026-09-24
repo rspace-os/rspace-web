@@ -1,7 +1,7 @@
 package com.researchspace.model.record;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,19 +13,14 @@ class ImportOverideTest {
 
   @Test
   void constructorInvariants() {
-    assertThrows(
-        IllegalArgumentException.class, () -> new ImportOverride(null, Instant.now(), null));
-    assertThrows(
-        IllegalArgumentException.class, () -> new ImportOverride(Instant.now(), null, null));
+    Instant now = Instant.now();
+    assertThrows(IllegalArgumentException.class, () -> new ImportOverride(null, now, null));
+    assertThrows(IllegalArgumentException.class, () -> new ImportOverride(now, null, null));
 
     final int TOLERANCE_EXCEEDED_SECONDS = ImportOverride.TOLERANCE_SECONDS + 1;
+    Instant tooEarly = now.minusSeconds(TOLERANCE_EXCEEDED_SECONDS);
     assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            new ImportOverride(
-                Instant.now(),
-                Instant.now().minusSeconds(TOLERANCE_EXCEEDED_SECONDS),
-                "someusername"));
+        IllegalArgumentException.class, () -> new ImportOverride(now, tooEarly, "someusername"));
   }
 
   @Test
@@ -40,6 +35,6 @@ class ImportOverideTest {
     String TOO_LONG_USERNAME = randomAlphabetic(User.MAX_UNAME_LENGTH + 1);
     ImportOverride imp =
         new ImportOverride(Instant.now(), Instant.now().plusSeconds(500), TOO_LONG_USERNAME);
-    assertEquals(User.MAX_UNAME_LENGTH, imp.getOriginalCreatorUsername().length());
+    assertThat(imp.getOriginalCreatorUsername()).hasSize(User.MAX_UNAME_LENGTH);
   }
 }

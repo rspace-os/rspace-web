@@ -1,5 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.EcatDocumentFile;
@@ -42,7 +43,7 @@ public class AddLinksToDocumentIT extends RealTransactionSpringTestBase {
     openTransaction();
     EcatDocumentFile attachment =
         addAttachmentDocumentToField(RSpaceTestUtils.getResource("genFilesi.txt"), toAdd, u);
-    assertEquals(1, attachment.getLinkedFields().size());
+    assertThat(attachment.getLinkedFields()).hasSize(1);
     commitTransaction();
     // create links
     openTransaction();

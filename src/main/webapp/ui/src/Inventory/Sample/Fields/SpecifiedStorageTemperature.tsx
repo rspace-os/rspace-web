@@ -9,7 +9,7 @@ import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import NumberField from "../../../components/Inputs/NumberField";
+import TemperatureField from "@/components/Inputs/TemperatureField";
 import {
   ABSOLUTE_ZERO,
   CELSIUS,
@@ -23,7 +23,7 @@ import {
 } from "../../../stores/definitions/Units";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
-const DECIMAL = 10; // for parseInt/parseFloat
+const DECIMAL = 10;
 
 type LabelArgs = {
   min: number;
@@ -43,6 +43,31 @@ const Label = ({ min, max, unitId }: LabelArgs): React.ReactNode => {
   if (min === max) return render(min);
   return <>{t("sample.fields.storageTemperature.between", { max: render(max), min: render(min) })}</>;
 };
+
+type TemperatureFieldArgs = {
+  value: string;
+  onChange: (value: string) => void;
+  error: boolean;
+  label: string;
+};
+
+const StorageTemperatureField = ({ value, onChange, error, label }: TemperatureFieldArgs) => (
+  <TemperatureField
+    value={value}
+    onChange={onChange}
+    variant="outlined"
+    size="small"
+    error={error}
+    slotProps={{
+      input: {
+        startAdornment: <InputAdornment position="start">{label}</InputAdornment>,
+      },
+      htmlInput: {
+        "aria-label": label,
+      },
+    }}
+  />
+);
 
 type TemperatureButtonArgs = {
   onClick: () => void;
@@ -192,45 +217,19 @@ function SpecifiedStorageTemperature({
                   <>
                     <Grid container direction="row" spacing={1}>
                       <Grid size={6}>
-                        <NumberField
+                        <StorageTemperatureField
                           value={minField}
-                          onChange={(e) => {
-                            handleMinFieldChange(e.target.value);
-                          }}
-                          variant="outlined"
-                          size="small"
+                          onChange={handleMinFieldChange}
                           error={validateTemperature({ numericValue: min, unitId }).isError}
-                          fullWidth
-                          slotProps={{
-                            input: {
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  {t("sample.fields.storageTemperature.min")}
-                                </InputAdornment>
-                              ),
-                            },
-                          }}
+                          label={t("sample.fields.storageTemperature.min")}
                         />
                       </Grid>
                       <Grid size={6}>
-                        <NumberField
+                        <StorageTemperatureField
                           value={maxField}
-                          onChange={(e) => {
-                            handleMaxFieldChange(e.target.value);
-                          }}
-                          variant="outlined"
-                          size="small"
+                          onChange={handleMaxFieldChange}
                           error={validateTemperature({ numericValue: max, unitId }).isError}
-                          fullWidth
-                          slotProps={{
-                            input: {
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  {t("sample.fields.storageTemperature.max")}
-                                </InputAdornment>
-                              ),
-                            },
-                          }}
+                          label={t("sample.fields.storageTemperature.max")}
                         />
                       </Grid>
                     </Grid>
