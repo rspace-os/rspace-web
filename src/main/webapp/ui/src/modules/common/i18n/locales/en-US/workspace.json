@@ -300,8 +300,11 @@
       },
       "expandDatabase": "Show DBRepo resources for {name}",
       "insert": "Insert DBRepo link",
+      "connectedTo": "Connected to",
+      "insertRowsHint": "Insert rows needs a table or view. Expand a database to choose one.",
       "loading": "Loading DBRepo databases...",
       "loadingResources": "Loading DBRepo resources...",
+      "orientation": "Select a database to insert a link to it. Expand a database to pick a table, view or subset; tables and views can also insert rows into your document.",
       "resourceTypes": {
         "database": "database",
         "subset": "subset",

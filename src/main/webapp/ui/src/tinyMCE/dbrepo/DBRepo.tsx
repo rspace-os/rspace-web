@@ -43,6 +43,11 @@ export type DBRepoDatabase = {
   url: string;
 };
 
+type DBRepoDatabaseList = {
+  instanceUrl: string;
+  databases: DBRepoDatabase[];
+};
+
 type DBRepoResourceType = "table" | "view" | "subset";
 
 type DBRepoLinkedResource = {
@@ -167,6 +172,7 @@ export function buildDBRepoLinkTemplateData(target: TemplateTarget): DBRepoLinkT
 function DBRepo(): React.ReactNode {
   const { t } = useTranslation(["workspace", "common"]);
   const [databases, setDatabases] = useState<DBRepoDatabase[]>([]);
+  const [instanceUrl, setInstanceUrl] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [expandedDatabaseId, setExpandedDatabaseId] = useState("");
   const [resourcesByDatabase, setResourcesByDatabase] = useState<Record<string, ResourceState>>({});
@@ -178,11 +184,12 @@ function DBRepo(): React.ReactNode {
     let cancelled = false;
     setLoading(true);
     void axios
-      .get<DBRepoDatabase[]>("/apps/dbrepo/databases")
+      .get<DBRepoDatabaseList>("/apps/dbrepo/databases")
       .then(({ data }) => {
         if (cancelled) return;
-        setDatabases(data);
-        setSelectedId(data[0]?.id ? databaseSelectionId(data[0].id) : "");
+        setDatabases(data.databases);
+        setInstanceUrl(data.instanceUrl);
+        setSelectedId(data.databases[0]?.id ? databaseSelectionId(data.databases[0].id) : "");
       })
       .catch((e: unknown) => {
         if (cancelled) return;
@@ -299,6 +306,23 @@ function DBRepo(): React.ReactNode {
 
   return (
     <Stack spacing={2} sx={{ p: 2 }}>
+      {instanceUrl && (
+        <Typography variant="body2" color="text.secondary">
+          {t("tinymce.dbrepo.connectedTo")}{" "}
+          <Box
+            component="a"
+            href={instanceUrl}
+            target="_blank"
+            rel="noreferrer"
+            sx={{ color: "primary.main", overflowWrap: "anywhere" }}
+          >
+            {instanceName(instanceUrl)}
+          </Box>
+        </Typography>
+      )}
+      <Typography variant="body2" color="text.secondary">
+        {t("tinymce.dbrepo.orientation")}
+      </Typography>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", color: "#1565c0" }}>
         <StorageIcon fontSize="small" />
         <Typography variant="subtitle2">{t(`tinymce.dbrepo.categories.databases`)}</Typography>
@@ -793,6 +817,14 @@ function resourceApiPath(target: RowTemplateTarget, suffix: "metadata" | "rows")
   return `/apps/dbrepo/databases/${encodeURIComponent(target.databaseId)}/${target.dbrepoType}/${encodeURIComponent(
     target.resourceId,
   )}/${suffix}`;
+}
+
+function instanceName(instanceUrl: string): string {
+  try {
+    return new URL(instanceUrl).host;
+  } catch {
+    return instanceUrl;
+  }
 }
 
 function rowKey(row: DBRepoRow): string {

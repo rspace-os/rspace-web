@@ -9,6 +9,11 @@ const DBREPO_LOGO_PATH = "/images/icons/dbrepo.svg";
 
 const mockAxios = new MockAdapter(axios);
 
+const databaseList = (databases: Array<{ id: string; name: string; description?: string; url: string }>) => ({
+  instanceUrl: "https://dbrepo.example",
+  databases,
+});
+
 afterEach(() => {
   mockAxios.reset();
   vi.restoreAllMocks();
@@ -33,18 +38,22 @@ describe("DBRepo dialog body", () => {
     (window as unknown as { RS?: unknown }).RS = {
       insertTemplateIntoTinyMCE,
     };
-    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
-      {
-        id: "db-1",
-        name: "Research data",
-        description: "Primary project database",
-        url: "https://dbrepo.example/database/db-1",
-      },
-    ]);
+    mockAxios.onGet("/apps/dbrepo/databases").reply(
+      200,
+      databaseList([
+        {
+          id: "db-1",
+          name: "Research data",
+          description: "Primary project database",
+          url: "https://dbrepo.example/database/db-1",
+        },
+      ]),
+    );
 
     render(<DBRepo />);
 
     expect(await screen.findByText("Research data")).toBeVisible();
+    expect(screen.getByRole("link", { name: "dbrepo.example" })).toHaveAttribute("href", "https://dbrepo.example");
     await waitFor(() => expect(editorListeners.has("dbrepo-insert")).toBe(true));
     editorListeners.get("dbrepo-insert")?.();
 
@@ -82,14 +91,17 @@ describe("DBRepo dialog body", () => {
     (window as unknown as { RS?: unknown }).RS = {
       insertTemplateIntoTinyMCE,
     };
-    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
-      {
-        id: "db-1",
-        name: "Research data",
-        description: "Primary project database",
-        url: "https://dbrepo.example/database/db-1",
-      },
-    ]);
+    mockAxios.onGet("/apps/dbrepo/databases").reply(
+      200,
+      databaseList([
+        {
+          id: "db-1",
+          name: "Research data",
+          description: "Primary project database",
+          url: "https://dbrepo.example/database/db-1",
+        },
+      ]),
+    );
     mockAxios.onGet("/apps/dbrepo/databases/db-1/resources").reply(200, {
       databaseId: "db-1",
       tables: [
@@ -173,13 +185,16 @@ describe("DBRepo dialog body", () => {
     (window as unknown as { RS?: unknown }).RS = {
       insertTemplateIntoTinyMCE,
     };
-    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
-      {
-        id: "db-1",
-        name: "Research data",
-        url: "https://dbrepo.example/database/db-1",
-      },
-    ]);
+    mockAxios.onGet("/apps/dbrepo/databases").reply(
+      200,
+      databaseList([
+        {
+          id: "db-1",
+          name: "Research data",
+          url: "https://dbrepo.example/database/db-1",
+        },
+      ]),
+    );
     mockAxios.onGet("/apps/dbrepo/databases/db-1/resources").reply(200, {
       databaseId: "db-1",
       tables: [
@@ -259,14 +274,17 @@ describe("DBRepo dialog body", () => {
     (window as unknown as { tinymce?: unknown }).tinymce = {
       activeEditor,
     };
-    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
-      {
-        id: "db-1",
-        name: "Research data",
-        description: "Primary project database",
-        url: "https://dbrepo.example/database/db-1",
-      },
-    ]);
+    mockAxios.onGet("/apps/dbrepo/databases").reply(
+      200,
+      databaseList([
+        {
+          id: "db-1",
+          name: "Research data",
+          description: "Primary project database",
+          url: "https://dbrepo.example/database/db-1",
+        },
+      ]),
+    );
     mockAxios.onGet("/apps/dbrepo/databases/db-1/resources").reply(200, {
       databaseId: "db-1",
       tables: [
@@ -350,13 +368,16 @@ describe("DBRepo dialog body", () => {
     (window as unknown as { tinymce?: unknown }).tinymce = {
       activeEditor,
     };
-    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
-      {
-        id: "db-1",
-        name: "Research data",
-        url: "https://dbrepo.example/database/db-1",
-      },
-    ]);
+    mockAxios.onGet("/apps/dbrepo/databases").reply(
+      200,
+      databaseList([
+        {
+          id: "db-1",
+          name: "Research data",
+          url: "https://dbrepo.example/database/db-1",
+        },
+      ]),
+    );
 
     render(<DBRepo />);
 
@@ -385,18 +406,21 @@ describe("DBRepo dialog body", () => {
     (window as unknown as { RS?: unknown }).RS = {
       insertTemplateIntoTinyMCE,
     };
-    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
-      {
-        id: "db-1",
-        name: "Research data",
-        url: "https://dbrepo.example/database/db-1",
-      },
-      {
-        id: "db-2",
-        name: "Archive data",
-        url: "https://dbrepo.example/database/db-2",
-      },
-    ]);
+    mockAxios.onGet("/apps/dbrepo/databases").reply(
+      200,
+      databaseList([
+        {
+          id: "db-1",
+          name: "Research data",
+          url: "https://dbrepo.example/database/db-1",
+        },
+        {
+          id: "db-2",
+          name: "Archive data",
+          url: "https://dbrepo.example/database/db-2",
+        },
+      ]),
+    );
     mockAxios.onGet("/apps/dbrepo/databases/db-2/resources").reply(200, {
       databaseId: "db-2",
       tables: [],
@@ -443,13 +467,16 @@ describe("DBRepo dialog body", () => {
     (window as unknown as { RS?: unknown }).RS = {
       insertTemplateIntoTinyMCE,
     };
-    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
-      {
-        id: "db-1",
-        name: "Research data",
-        url: "https://dbrepo.example/database/db-1",
-      },
-    ]);
+    mockAxios.onGet("/apps/dbrepo/databases").reply(
+      200,
+      databaseList([
+        {
+          id: "db-1",
+          name: "Research data",
+          url: "https://dbrepo.example/database/db-1",
+        },
+      ]),
+    );
     mockAxios.onGet("/apps/dbrepo/databases/db-1/resources").reply(200, {
       databaseId: "db-1",
       tables: [
@@ -493,7 +520,7 @@ describe("DBRepo dialog body", () => {
   });
 
   it("shows an empty state when DBRepo returns no databases", async () => {
-    mockAxios.onGet("/apps/dbrepo/databases").reply(200, []);
+    mockAxios.onGet("/apps/dbrepo/databases").reply(200, databaseList([]));
 
     render(<DBRepo />);
 

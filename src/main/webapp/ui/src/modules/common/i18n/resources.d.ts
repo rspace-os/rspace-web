@@ -7080,7 +7080,8 @@ export default interface Resources {
         "dbrepo": {
           "dialogTitle": "DBRepo link details",
           "insertLink": "Insert link",
-          "insertRows": "Insert rows"
+          "insertRows": "Insert rows",
+          "insertRowsHint": "Insert rows needs a table or view. Expand a database to choose one."
         },
         "document": {
           "creating": "Creating a document..."
@@ -10518,6 +10519,7 @@ export default interface Resources {
         },
         "categoryCount": "({count})",
         "collapseDatabase": "Hide DBRepo resources for {name}",
+        "connectedTo": "Connected to",
         "databaseList": "DBRepo databases",
         "empty": "No DBRepo databases were returned.",
         "emptyCategory": "No resources returned.",
@@ -10530,8 +10532,10 @@ export default interface Resources {
         },
         "expandDatabase": "Show DBRepo resources for {name}",
         "insert": "Insert DBRepo link",
+        "insertRowsHint": "Insert rows needs a table or view. Expand a database to choose one.",
         "loading": "Loading DBRepo databases...",
         "loadingResources": "Loading DBRepo resources...",
+        "orientation": "Select a database to insert a link to it. Expand a database to pick a table, view or subset; tables and views can also insert rows into your document.",
         "resourceTypes": {
           "database": "database",
           "subset": "subset",

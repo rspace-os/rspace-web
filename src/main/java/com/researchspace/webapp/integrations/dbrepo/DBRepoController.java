@@ -23,7 +23,6 @@ import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -110,13 +109,15 @@ public class DBRepoController extends BaseController {
   }
 
   @GetMapping("/databases")
-  public @ResponseBody ResponseEntity<List<DBRepoDatabaseDTO>> databases(Principal principal) {
+  public @ResponseBody ResponseEntity<DBRepoDatabaseListDTO> databases(Principal principal) {
     Optional<DBRepoConnectionDetails> details = findConnectionDetails(principal);
     if (details.isEmpty()) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
     return ResponseEntity.ok(
-        dbRepoClient.listDatabases(details.get().baseUrl(), details.get().credentials()));
+        new DBRepoDatabaseListDTO(
+            details.get().baseUrl(),
+            dbRepoClient.listDatabases(details.get().baseUrl(), details.get().credentials())));
   }
 
   @GetMapping("/databases/{databaseId}/resources")
