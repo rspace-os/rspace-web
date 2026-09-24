@@ -1,34 +1,34 @@
-import { existsSync } from "node:fs";
-import { type Browser, type BrowserContextOptions, request } from "@playwright/test";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { request } from "@playwright/test";
 import { storageStatePath } from "./authState";
 import { env } from "./env";
-import { LoginPage } from "./pageObjects/auth/LoginPage";
 import { type AppUser, SYSADMIN, USERS } from "./users";
 
 type Credentials = Pick<AppUser, "username" | "password">;
+type SavedLogin = { cookies: unknown[]; origins: unknown[] };
 
 /**
  * Returns the path of a seeded account's saved login, logging in again first if it has expired.
  * auth.setup.ts saves each login once per run, but web.xml expires sessions idle for 30 minutes,
- * which a long single-worker run exceeds for accounts it isn't currently using.
+ * which a long single-worker run exceeds for accounts it isn't currently using. Renewal uses HTTP
+ * only, so API-only projects that install no browser can still depend on it.
  */
-export async function freshStorageState(
-  browser: Browser,
-  browserContextOptions: BrowserContextOptions,
-  account: Credentials,
-): Promise<string> {
+export async function freshStorageState(account: Credentials): Promise<string> {
   const path = storageStatePath(account.username);
   if (await isLoggedIn(path)) return path;
-  const context = await browser.newContext({ ...browserContextOptions, storageState: undefined });
+  const api = await request.newContext({ baseURL: env.baseURL, ignoreHTTPSErrors: true });
   try {
-    const page = await context.newPage();
-    const loginPage = new LoginPage(page);
-    await loginPage.open();
-    await loginPage.login(account.username, account.password);
-    await page.waitForURL((url) => url.pathname === "/workspace");
-    await context.storageState({ path });
+    const response = await api.post("/login", {
+      form: { username: account.username, password: account.password },
+    });
+    if (new URL(response.url()).pathname !== "/workspace") {
+      throw new Error(`Logging '${account.username}' in again landed on ${response.url()}, not /workspace.`);
+    }
+    const { cookies } = await api.storageState();
+    const origins = existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as SavedLogin).origins : [];
+    writeFileSync(path, JSON.stringify({ cookies, origins } satisfies SavedLogin));
   } finally {
-    await context.close();
+    await api.dispose();
   }
   return path;
 }

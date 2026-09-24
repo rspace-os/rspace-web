@@ -80,8 +80,11 @@ export class GalleryPage extends BasePage {
   }
 
   async openSection(section: GallerySection): Promise<void> {
-    // Re-selecting the section already shown doesn't refetch its listing.
-    if (!(await this.sidebar.isSelected(section))) {
+    // Always click: on small viewports that also closes the drawer. Re-selecting the section
+    // already shown doesn't refetch its listing, so only a change must produce a response.
+    if (await this.sidebar.isSelected(section)) {
+      await this.sidebar.openSection(section);
+    } else {
       const [response] = await Promise.all([
         this.page.waitForResponse((res) => res.url().includes("/gallery/getUploadedFiles")),
         this.sidebar.openSection(section),

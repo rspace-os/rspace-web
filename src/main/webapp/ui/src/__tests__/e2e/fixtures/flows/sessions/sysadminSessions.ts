@@ -45,7 +45,7 @@ async function withSysadminPage<T>(
 ): Promise<void> {
   const ctx = await browser.newContext({
     ...browserContextOptions,
-    storageState: await freshStorageState(browser, browserContextOptions, SYSADMIN),
+    storageState: await freshStorageState(SYSADMIN),
   });
   try {
     const page = await ctx.newPage();

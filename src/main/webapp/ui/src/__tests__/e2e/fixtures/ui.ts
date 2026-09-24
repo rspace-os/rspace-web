@@ -90,9 +90,9 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
     await use({ baseURL: env.baseURL, ignoreHTTPSErrors: browserName === "webkit" });
   },
   // Projects load a login saved once by auth.setup.ts; renew it if the session has since expired.
-  storageState: async ({ storageState, browser, browserContextOptions }, use) => {
+  storageState: async ({ storageState }, use) => {
     const account = typeof storageState === "string" ? savedLoginAccount(storageState) : undefined;
-    await use(account ? await freshStorageState(browser, browserContextOptions, account) : storageState);
+    await use(account ? await freshStorageState(account) : storageState);
   },
   pageLogin: pageFixture(LoginPage),
   pageRequestPasswordReset: pageFixture(RequestPasswordResetPage),
@@ -114,7 +114,7 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
       await use(async (user) => {
         const context = await browser.newContext({
           ...browserContextOptions,
-          storageState: await freshStorageState(browser, browserContextOptions, user),
+          storageState: await freshStorageState(user),
         });
         contexts.push(context);
         return new InventoryPage(await context.newPage());

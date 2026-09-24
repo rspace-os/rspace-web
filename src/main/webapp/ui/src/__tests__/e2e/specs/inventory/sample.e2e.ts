@@ -88,7 +88,7 @@ test.describe(`Inventory Samples`, { tag: [tags.INVENTORY, tags.MOBILE] }, () =>
 
     const ctx = await browser.newContext({
       ...browserContextOptions,
-      storageState: await freshStorageState(browser, browserContextOptions, SYSADMIN),
+      storageState: await freshStorageState(SYSADMIN),
     });
     try {
       const page = await ctx.newPage();
