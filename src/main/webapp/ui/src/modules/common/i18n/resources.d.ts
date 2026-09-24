@@ -1115,10 +1115,6 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
-    "preferences": {
-      "saveFailedMessage": "This preference did not save to your account and may be lost when you next sign in. Try again, or contact support if this keeps happening.",
-      "saveFailedTitle": "A setting could not be saved"
-    },
     "profile": {
       "accountActivity": {
         "action": "Action",
@@ -5785,13 +5781,6 @@ export default interface Resources {
         "insecurePassword": "Please choose a more secure password.",
         "invalid": "Invalid password.",
         "notEqualUsername": "Please use a password other than your username."
-      },
-      "preference": {
-        "invalidJsonValue": "The value for preference key ''{0}'' is not valid JSON.",
-        "invalidKey": "''{0}'' is not a valid preference key.",
-        "keyNotSupported": "Preference ''{0}'' is stored as a single value, so it cannot be updated one key at a time.",
-        "settingsTooLarge": "Saving ''{0}'' would make your saved UI settings too large. The limit is {1} bytes.",
-        "valueTooLarge": "The value for preference key ''{0}'' is too large. The limit is {1} characters."
       },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {

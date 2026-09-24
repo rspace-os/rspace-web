@@ -20,13 +20,7 @@ vi.mock("@/stores/stores/getRootStore", () => ({
 }));
 
 vi.mock("@/hooks/api/useUiPreference", () => ({
-  PREFERENCES: {
-    INVENTORY_OPERATION_PROCESS_NAMES: Symbol.for("INVENTORY_OPERATION_PROCESS_NAMES"),
-    INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: Symbol.for("INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS"),
-  },
   default: (_pref: symbol, opts: { defaultValue: unknown }) => [opts.defaultValue, vi.fn()],
-  useRawUiPreferences: () => ({}),
-  readUiPreference: (_uiPreferences: Record<string, unknown>, _pref: symbol, defaultValue: unknown) => defaultValue,
 }));
 
 vi.mock("../../ContextMenu/useProcessAvailable", () => ({ useProcessAvailable: () => true }));

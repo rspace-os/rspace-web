@@ -1,3 +1,4 @@
+import axios from "@/common/axios";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 import type { DocumentationSelection } from "./DocumentationStep";
 import type { TemplateDefault, TemplateMode } from "./templateResolution";
@@ -79,4 +80,31 @@ export function normalizeProcessValues(stored: unknown): ProcessValues | null {
   if (s.perSubsampleAmounts !== undefined)
     result.perSubsampleAmounts = normalizePerSubsampleAmounts(s.perSubsampleAmounts);
   return result;
+}
+
+/** The wizard's one UI preference: remembered values, and the process names and last-used name per operation. */
+export const OPERATION_PREFERENCES = Symbol.for("INVENTORY_OPERATIONS");
+
+export type OperationPreferences = {
+  values: Record<string, unknown>;
+  names: Record<string, Array<string>>;
+  defaults: Record<string, string>;
+};
+
+const asRecord = <T>(v: unknown): Record<string, T> =>
+  typeof v === "object" && v !== null ? (v as Record<string, T>) : {};
+
+export function normalizeOperationPreferences(stored: unknown): OperationPreferences {
+  const s = asRecord<unknown>(stored);
+  return { values: asRecord(s.values), names: asRecord(s.names), defaults: asRecord(s.defaults) };
+}
+
+/**
+ * The preference as the server holds it now. useUiPreference only has the copy loaded with the page,
+ * so saving from that would overwrite what another tab saved since.
+ */
+export async function fetchLatestOperationPreferences(): Promise<OperationPreferences> {
+  const { data } = await axios.get<unknown>("/userform/ajax/preference?preference=UI_JSON_SETTINGS");
+  const stored = asRecord<{ value?: unknown } | undefined>(data)[Symbol.keyFor(OPERATION_PREFERENCES) ?? ""];
+  return normalizeOperationPreferences(stored?.value);
 }

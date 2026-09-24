@@ -18,22 +18,26 @@ function render(ui: React.ReactElement) {
 const prefs = vi.hoisted(() => ({ store: {} as Record<string, unknown> }));
 
 vi.mock("@/hooks/api/useUiPreference", () => ({
-  PREFERENCES: {
-    INVENTORY_OPERATION_PROCESS_NAMES: Symbol.for("INVENTORY_OPERATION_PROCESS_NAMES"),
-    INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: Symbol.for("INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS"),
-  },
   default: (pref: symbol, opts: { defaultValue: unknown }) => {
     const key = Symbol.keyFor(pref) ?? "";
     const value = key in prefs.store ? prefs.store[key] : opts.defaultValue;
     return [value, (v: unknown) => (prefs.store[key] = v)];
   },
-  useRawUiPreferences: () => prefs.store,
-  readUiPreference: (uiPreferences: Record<string, unknown>, pref: symbol, defaultValue: unknown) => {
-    const key = Symbol.keyFor(pref) ?? "";
-    // prefs.store holds values unwrapped; the real implementation unwraps a { value } envelope.
-    return key in uiPreferences ? uiPreferences[key] : defaultValue;
-  },
 }));
+vi.mock("../processValues", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../processValues")>();
+  return {
+    ...actual,
+    fetchLatestOperationPreferences: () =>
+      Promise.resolve(actual.normalizeOperationPreferences(prefs.store.INVENTORY_OPERATIONS)),
+  };
+});
+
+/** The wizard's one preference, INVENTORY_OPERATIONS, as held by the mocked hook above. */
+function ops(): { values: Record<string, unknown>; names: Record<string, unknown>; defaults: Record<string, unknown> } {
+  prefs.store.INVENTORY_OPERATIONS ??= { values: {}, names: {}, defaults: {} };
+  return prefs.store.INVENTORY_OPERATIONS as ReturnType<typeof ops>;
+}
 
 const OPERATION_URL = "/api/inventory/v1/operations/:key";
 const posted: Array<Record<string, unknown>> = [];
@@ -272,7 +276,7 @@ async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processNam
 /** The remembered bundle for "derive dna", the process name every test below types. */
 function rememberDerive(template: unknown, values: unknown = DEFAULT_REMEMBERED_VALUES) {
   const bundle = { "derive dna": { values, template, documentation: null } };
-  prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = bundle;
+  ops().values = bundle;
   return bundle;
 }
 
@@ -993,15 +997,15 @@ describe("OperationWizard remember bundle", () => {
       templateId: 5,
       documentedByGlobalId: "SD1",
     });
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toEqual({
+    expect(ops().values).toEqual({
       "derive dna extraction": {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 5, templateName: "T5" },
         documentation: { globalId: "SD1", name: "D1" },
       },
     });
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAMES).toEqual({ derive: ["dna extraction"] });
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS).toEqual({ derive: "dna extraction" });
+    expect(ops().names).toEqual({ derive: ["dna extraction"] });
+    expect(ops().defaults).toEqual({ derive: "dna extraction" });
   });
 
   it("performs a Pool: per-origin amounts posted for every origin, and remembered", async () => {
@@ -1035,7 +1039,7 @@ describe("OperationWizard remember bundle", () => {
       { globalId: "SS2", amountTaken: { numericValue: 1, unitId: 3 } },
     ]);
 
-    const bundle = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_POOL as Record<
+    const bundle = ops().values as Record<
       string,
       { amountMode?: string; perSubsampleAmounts?: Record<string, unknown> }
     >;
@@ -1056,8 +1060,7 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toBeUndefined();
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAMES).toBeUndefined();
+    expect(prefs.store.INVENTORY_OPERATIONS).toBeUndefined();
   });
 
   it("loads a saved bundle (ticked) when its process name is entered", async () => {
@@ -1161,7 +1164,7 @@ describe("OperationWizard remember bundle", () => {
     await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
     await user.click(screen.getByTestId("toggle-remember")); // untick
     expect(screen.getByTestId("count")).toHaveTextContent("1");
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toEqual(saved); // store untouched
+    expect(ops().values).toEqual(saved); // store untouched
   });
 
   it("re-ticking remember keeps the values typed after unticking and saves those, not the old bundle", async () => {
@@ -1192,7 +1195,7 @@ describe("OperationWizard remember bundle", () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(posted[0]).toMatchObject({ count: 1, eachAmount: { numericValue: 5, unitId: 3 }, templateId: 5 });
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toEqual({
+    expect(ops().values).toEqual({
       "derive dna": {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 5, templateName: "T5" },
@@ -1202,8 +1205,8 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("pre-fills the last-used process name and, on Review / edit, shows its bundle", async () => {
-    prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
+    ops().defaults = { derive: "boil" };
+    ops().values = {
       "derive boil": {
         values: { count: 3, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "none", templateId: null },
@@ -1223,8 +1226,8 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("performs a remembered run directly from the step-one fast path", async () => {
-    prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
+    ops().defaults = { derive: "boil" };
+    ops().values = {
       "derive boil": {
         values: { count: 3, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "none", templateId: null },
@@ -1257,7 +1260,7 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    const stored = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE as Record<string, unknown>;
+    const stored = ops().values as Record<string, unknown>;
     expect(Object.keys(stored)).toEqual(["cryopreserve"]);
   });
 });
