@@ -1418,6 +1418,12 @@ export default interface Resources {
       }
     },
     "dashboard": {
+      "agenda": {
+        "bookingDetails": "Booking details",
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "viewDetailsFor": "View booking details for {name} (booking {id})"
+      },
       "calendar": {
         "bookingCount": "{count, plural, one {# booking} other {# bookings}}",
         "dayLabel": "{date}: {count, plural, one {# booking} other {# bookings}}",
