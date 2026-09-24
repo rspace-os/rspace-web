@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
+import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.AccessControl;
@@ -219,6 +220,26 @@ public class FormDaoTest extends BaseDaoTestCase {
     // will get all forms: 5 created in test, plus existing ones
     assertEquals(11, countReadableForms(ownerOfFourForms, fsc, getAllPgCrit()));
     assertEquals(11, countReadableForms(otherOwnerOf1Form, fsc, getAllPgCrit()));
+  }
+
+  @Test
+  public void userFormsOnlyWithUnrelatedPermissions() throws InterruptedException {
+    User owner = createAndSaveUserWithNoPermissions("any");
+    owner.addPermission(parser.resolvePermission("FORM:READ"));
+    // a real user carries permissions in other domains too; those are skipped when the form
+    // query is built, so nothing they contribute may be left behind in it
+    owner.addPermission(parser.resolvePermission("RECORD:READ"));
+    owner.addPermission(parser.resolvePermission("COMMS:READ"));
+    setUpDBWith4Forms(owner);
+    flushDatabaseState();
+
+    FormSearchCriteria fsc = new FormSearchCriteria();
+    fsc.setIncludeSystemForm(false);
+    fsc.setInUserMenu(false);
+    fsc.setPublishedOnly(false);
+    fsc.setUserFormsOnly(true);
+
+    assertEquals(4, countReadableForms(owner, fsc, getAllPgCrit()));
   }
 
   @Test
@@ -509,6 +530,31 @@ public class FormDaoTest extends BaseDaoTestCase {
     g.addMember(user, RoleInGroup.DEFAULT);
     groupdao.save(g);
     return g;
+  }
+
+  @Test
+  public void writePermissionByGlobalGroupOrOwnerProperty() {
+    forms[0].setAccessControl(
+        new AccessControl(PermissionType.WRITE, PermissionType.WRITE, PermissionType.WRITE));
+    for (int i = 1; i < forms.length; i++) {
+      forms[i].setAccessControl(
+          new AccessControl(PermissionType.READ, PermissionType.READ, PermissionType.READ));
+    }
+    for (RSForm form : forms) {
+      formDao.save(form);
+    }
+    flushDatabaseState();
+
+    for (String property :
+        new String[] {"global=true", "group=true", "owner=" + user.getUsername()}) {
+      User editor = createAndSaveUserWithNoPermissions("editor" + CoreTestUtils.getRandomName(6));
+      editor.addPermission(parser.resolvePermission("FORM:WRITE:property_" + property));
+      List<RSForm> editable = getPublishedForms(editor, PermissionType.WRITE, true).getResults();
+      assertTrue(editable.contains(forms[0]), property);
+      for (int i = 1; i < forms.length; i++) {
+        assertFalse(editable.contains(forms[i]), property);
+      }
+    }
   }
 
   private void clearPermissions(User user2) {

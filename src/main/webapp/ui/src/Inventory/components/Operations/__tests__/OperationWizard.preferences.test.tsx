@@ -9,10 +9,8 @@ import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mock
 import OperationWizard from "../OperationWizard";
 
 /*
- * OperationWizard.test.tsx mocks useUiPreference at module level (vi.mock is file-wide), so the
- * wizard and the real preference hook are never exercised together there.
- * This file therefore uses the real hook and provider over an MSW-backed store, so a regression in
- * either the wizard's save order or the hook's chaining shows up as a missing key on the server.
+ * OperationWizard.test.tsx mocks useUiPreference, so this file runs the wizard with the real hook
+ * and provider over an MSW store that, like the server, replaces the whole settings object on save.
  */
 
 const PREFERENCE_URL = "/userform/ajax/preference";
@@ -28,8 +26,7 @@ beforeEach(() => {
     http.get(PREFERENCE_URL, () => HttpResponse.json(stored)),
     http.post(PREFERENCE_URL, async ({ request }) => {
       const form = await request.formData();
-      const key = String(form.get("key"));
-      stored = { ...stored, [key]: JSON.parse(String(form.get("value"))) as (typeof stored)[string] };
+      stored = JSON.parse(String(form.get("value"))) as typeof stored;
       writes += 1;
       return HttpResponse.json({});
     }),
@@ -123,7 +120,7 @@ vi.mock("../OperationConfirmation", () => ({
 const nextButton = () => screen.getByRole("button", { name: /actions\.next/i });
 
 describe("OperationWizard with the real preference hook", () => {
-  it("persists all three remembered preferences from one Perform, none overwriting another", async () => {
+  async function performDeriveWithRemember(processName: string, beforePerform: () => void = () => {}) {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const origin = makeMockSubSample({});
@@ -138,7 +135,7 @@ describe("OperationWizard with the real preference hook", () => {
     );
 
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    await user.type(screen.getByTestId("proc"), "dna extraction");
+    await user.type(screen.getByTestId("proc"), processName);
     await user.click(screen.getByTestId("fill-amounts"));
     await user.click(nextButton()); // details -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
@@ -147,42 +144,66 @@ describe("OperationWizard with the real preference hook", () => {
     await user.click(screen.getByTestId("doc-choose"));
     await user.click(nextButton()); // documentation -> confirm
     await user.click(screen.getByTestId("toggle-remember"));
+    beforePerform();
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
-
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    await waitFor(() => expect(writes).toBe(3));
-    expect(Object.keys(stored).sort()).toEqual([
-      "INVENTORY_OPERATION_PROCESS_NAMES",
-      "INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS",
-      "INVENTORY_OPERATION_PROCESS_VALUES_DERIVE",
-    ]);
-    expect(stored.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE.value).toEqual({
-      "derive dna extraction": {
-        values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
-        template: { mode: "pick", templateId: 5, templateName: "T5" },
-        documentation: { globalId: "SD1", name: "D1" },
+    await waitFor(() => expect(writes).toBe(1));
+  }
+
+  it("saves the remembered values, process name and default together in one save", async () => {
+    await performDeriveWithRemember("dna extraction");
+
+    expect(stored.INVENTORY_OPERATIONS.value).toEqual({
+      values: {
+        "derive dna extraction": {
+          values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+          template: { mode: "pick", templateId: 5, templateName: "T5" },
+          documentation: { globalId: "SD1", name: "D1" },
+        },
       },
+      names: { derive: ["dna extraction"] },
+      defaults: { derive: "dna extraction" },
     });
-    expect(stored.INVENTORY_OPERATION_PROCESS_NAMES.value).toEqual({ derive: ["dna extraction"] });
-    expect(stored.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS.value).toEqual({ derive: "dna extraction" });
   });
 
-  it("restores a bundle saved only under the new per-operation key on selecting that operation", async () => {
+  it("keeps what another tab saved after this page loaded", async () => {
+    await performDeriveWithRemember("dna extraction", () => {
+      stored = {
+        INVENTORY_OPERATIONS: {
+          value: { values: { aliquot: { from: "other tab" } }, names: { derive: ["PCR"] }, defaults: {} },
+          time: 0,
+        },
+      };
+    });
+
+    const saved = stored.INVENTORY_OPERATIONS.value as {
+      values: Record<string, unknown>;
+      names: Record<string, Array<string>>;
+    };
+    expect(saved.values.aliquot).toEqual({ from: "other tab" });
+    expect(Object.keys(saved.values)).toContain("derive dna extraction");
+    expect(saved.names.derive).toEqual(["PCR", "dna extraction"]);
+  });
+
+  it("restores a saved bundle on selecting that operation", async () => {
     // No typing and no manual Remember toggle: only the restore on selecting the operation can
     // load this bundle.
     stored = {
-      INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: { value: { derive: "dna extraction" }, time: 0 },
-      INVENTORY_OPERATION_PROCESS_VALUES_DERIVE: {
+      INVENTORY_OPERATIONS: {
         value: {
-          "derive dna extraction": {
-            values: {
-              count: 1,
-              eachAmount: { numericValue: 5, unitId: 3 },
-              amountTaken: { numericValue: 1, unitId: 3 },
+          values: {
+            "derive dna extraction": {
+              values: {
+                count: 1,
+                eachAmount: { numericValue: 5, unitId: 3 },
+                amountTaken: { numericValue: 1, unitId: 3 },
+              },
+              template: { mode: "pick", templateId: 5, templateName: "T5" },
+              documentation: { globalId: "SD1", name: "D1" },
             },
-            template: { mode: "pick", templateId: 5, templateName: "T5" },
-            documentation: { globalId: "SD1", name: "D1" },
           },
+          names: {},
+          defaults: { derive: "dna extraction" },
         },
         time: 0,
       },
