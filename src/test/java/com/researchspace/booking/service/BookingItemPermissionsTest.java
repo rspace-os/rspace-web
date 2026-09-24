@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -49,8 +50,10 @@ class BookingItemPermissionsTest {
         new BookableTargetReference(BookableTargetType.INSTRUMENT, TARGET_ID));
 
     when(subject.isEnabled()).thenReturn(true);
-    when(instrument.getOwner()).thenReturn(itemOwner);
-    when(inventoryPermissions.canUserReadInventoryRecord(instrument, subject)).thenReturn(true);
+    lenient().when(instrument.getOwner()).thenReturn(itemOwner);
+    lenient()
+        .when(inventoryPermissions.canUserReadInventoryRecord(instrument, subject))
+        .thenReturn(true);
   }
 
   @Test
@@ -127,8 +130,9 @@ class BookingItemPermissionsTest {
     BookingConfiguration second = new BookingConfiguration();
     second.setId(24L);
     second.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 18L));
-    when(instruments.getBookingRelationshipTargets(eq(java.util.Set.of(TARGET_ID, 18L))))
-        .thenReturn(java.util.Map.of(TARGET_ID, instrument));
+    when(instruments.getBookingItemAccess(eq(java.util.Set.of(TARGET_ID, 18L)), eq(subject)))
+        .thenReturn(
+            java.util.Map.of(TARGET_ID, new InstrumentDao.BookingItemAccess("owner", false)));
 
     assertEquals(
         java.util.Map.of(

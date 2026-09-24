@@ -383,6 +383,36 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
+  public Map<Long, BookingItemAccess> getBookingItemAccess(Set<Long> instrumentIds, User user) {
+    if (instrumentIds.isEmpty() || user == null || !user.isEnabled() || user.isAccountLocked()) {
+      return Map.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(user);
+    String readablePermission = context.permissionPredicate(this, "instrument.");
+    String directEditPermission =
+        getInventoryReadPermissionSqlPredicate(
+            user, context.groupMembers(), context.groupNames(), List.of(), "instrument.");
+    String hql =
+        "select instrument.id, instrument.owner.username, case when "
+            + directEditPermission
+            + " then true else false end from Instrument instrument where "
+            + "type(instrument) = Instrument and instrument.id in (:instrumentIds) "
+            + "and instrument.deleted = false and instrument.owner is not null and "
+            + readablePermission;
+    Query<Object[]> query =
+        getSession()
+            .createQuery(hql, Object[].class)
+            .setParameterList("instrumentIds", instrumentIds);
+    context.bind(query, null);
+    return query
+        .getResultStream()
+        .collect(
+            Collectors.toMap(
+                row -> (Long) row[0],
+                row -> new BookingItemAccess((String) row[1], Boolean.TRUE.equals(row[2]))));
+  }
+
+  @Override
   public Map<Long, Instrument> getBookingRelationshipTargets(Set<Long> instrumentIds) {
     if (instrumentIds.isEmpty()) {
       return Map.of();

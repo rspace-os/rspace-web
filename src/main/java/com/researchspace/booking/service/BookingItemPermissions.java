@@ -81,7 +81,7 @@ public class BookingItemPermissions {
     if (configurations.isEmpty()) {
       return Map.of();
     }
-    Map<Long, Instrument> targets = new LinkedHashMap<>();
+    boolean eligible = eligibleSubject(subject);
     Set<Long> targetIds =
         configurations.stream()
             .map(BookingConfiguration::getTarget)
@@ -89,24 +89,23 @@ public class BookingItemPermissions {
             .map(BookableTargetReference::id)
             .filter(java.util.Objects::nonNull)
             .collect(java.util.stream.Collectors.toSet());
-    if (!targetIds.isEmpty()) {
-      targets.putAll(instruments.getBookingRelationshipTargets(targetIds));
-    }
+    Map<Long, InstrumentDao.BookingItemAccess> targets =
+        eligible && !targetIds.isEmpty()
+            ? instruments.getBookingItemAccess(targetIds, subject)
+            : Map.of();
     Map<Long, ResolvedResourceAccess> resolved = new LinkedHashMap<>();
     for (BookingConfiguration configuration : configurations) {
       if (configuration.getId() == null) {
         throw new IllegalArgumentException("Persisted booking configuration id is required");
       }
       BookableTargetReference target = configuration.getTarget();
-      Instrument instrument =
+      InstrumentDao.BookingItemAccess access =
           target == null || target.type() != BookableTargetType.INSTRUMENT
               ? null
               : targets.get(target.id());
       resolved.put(
           configuration.getId(),
-          eligibleSubject(subject) && readableInstrument(instrument, subject)
-              ? resolve(instrument, subject)
-              : ResolvedResourceAccess.none());
+          access != null ? resolve(access, subject) : ResolvedResourceAccess.none());
     }
     return Map.copyOf(resolved);
   }
@@ -130,6 +129,26 @@ public class BookingItemPermissions {
       return role(BookingResourceRoleScheme.BOOKER);
     }
     return role(BookingResourceRoleScheme.VIEWER);
+  }
+
+  private ResolvedResourceAccess resolve(InstrumentDao.BookingItemAccess access, User subject) {
+    boolean owner =
+        subject.hasSysadminRole()
+            || (access.ownerUsername() != null
+                && access.ownerUsername().equals(subject.getUsername()));
+    if (owner) {
+      Set<String> capabilities =
+          new java.util.HashSet<>(
+              withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)));
+      capabilities.add(MANAGE_NOTIFICATION_SUBSCRIPTION);
+      return new ResolvedResourceAccess(
+          Optional.of(BookingResourceRoleScheme.OWNER),
+          capabilities,
+          List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.OWNER)));
+    }
+    return access.directEdit()
+        ? role(BookingResourceRoleScheme.BOOKER)
+        : role(BookingResourceRoleScheme.VIEWER);
   }
 
   private boolean readableInstrument(Instrument instrument, User subject) {
