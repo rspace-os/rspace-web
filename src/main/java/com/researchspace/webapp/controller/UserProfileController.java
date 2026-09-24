@@ -80,7 +80,6 @@ import io.github.resilience4j.retry.RetryConfig;
 import io.vavr.control.Try;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -166,6 +165,7 @@ public class UserProfileController extends BaseController {
   @Qualifier("loginPasswordResetHandler")
   private PasswordChangeHandlerBase passwordResetHandler;
 
+  // perf testing suggests <= items to share  will take less than 5s
   static final int MAX_TO_AUTO_SHARE_SYNC = 100;
 
   static final List<Preference> desiredMessageDisplayOrder =
@@ -206,7 +206,7 @@ public class UserProfileController extends BaseController {
     User user;
 
     if (userId == null) {
-      user = sessionUser;
+      user = sessionUser; // own profile by default
     } else {
       try {
         user = userManager.getUser(userId + "");
@@ -327,6 +327,7 @@ public class UserProfileController extends BaseController {
     model.addAttribute("categories", PreferenceCategory.values());
   }
 
+  // rspac 953
   private List<UserPreference> sortAndFilterDisplayedPrefs(List<UserPreference> anyOrder) {
     List<UserPreference> actual = new ArrayList<>();
     desiredMessageDisplayOrder.stream()
@@ -414,6 +415,7 @@ public class UserProfileController extends BaseController {
             AFFILIATION,
             ERRORS_REQUIRED,
             new Object[] {new DefaultMessageSourceResolvable("label.affiliation")});
+        // rspac-932
         if (!StringUtils.isBlank(u.getAffiliation())
             && u.getAffiliation().length() > Organisation.MAX_INDEXABLE_UTF_LENGTH) {
           errors.rejectValue(
@@ -543,6 +545,7 @@ public class UserProfileController extends BaseController {
     return new AjaxReturnObject<>(pui, null);
   }
 
+  // RSPAC-1208
   private ErrorList checkIfNameEditedWhenShouldntBe(
       User user, String firstNameInput, String surnameInput) {
     ErrorList el = new ErrorList();
@@ -666,6 +669,8 @@ public class UserProfileController extends BaseController {
     User user = userManager.getUserByUsername(principal.getName());
     Set<UserPreference> allPrefs = userManager.getUserAndPreferencesForUser(principal.getName());
     if (!allPrefs.isEmpty()) {
+      // assume at this stage that all are booleans; need to refactor when dealing with other
+      // preferences
       for (Preference pref : Preference.values()) {
         if (pref.getPrefType().equals(SettingsType.BOOLEAN) && pref.isMessagingPreference()) {
           boolean preferenceValue = prefsToEnable.contains(pref.toString());
@@ -678,6 +683,11 @@ public class UserProfileController extends BaseController {
     return new AjaxReturnObject<>(getText("userProfile.messageSettingsChanged.confirmation"), null);
   }
 
+  /**
+   * @param preference
+   * @param principal
+   * @return
+   */
   @ResponseBody
   @GetMapping("/ajax/preference")
   public String getPreferenceValue(
@@ -697,37 +707,13 @@ public class UserProfileController extends BaseController {
   public AjaxReturnObject<String> updatePreferenceValue(
       @RequestParam(value = "preference") String preferenceName,
       @RequestParam(value = "value") String value,
-      @RequestParam(value = "key", required = false) String key,
       Principal principal,
-      HttpServletRequest req,
-      HttpServletResponse response) {
+      HttpServletRequest req) {
 
     Preference pref = Preference.valueOf(preferenceName);
-    // Supplied means keyed, even when blank: treating "" or " " as absent would route the request
-    // to setPreference and silently replace the whole JSON blob, bypassing the key validation and
-    // the merge; the merge itself rejects a blank key as a 400.
-    boolean keyed = key != null;
-    if (keyed && !Preference.UI_JSON_SETTINGS.equals(pref)) {
-      // Without an explicit status here the client would see this rejection as a 200.
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      return new AjaxReturnObject<>(
-          null,
-          ErrorList.of(
-              getText("errors.preference.keyNotSupported", new Object[] {preferenceName})));
-    }
     User user = userManager.getUserByUsername(principal.getName());
-    UserPreference updatedPreference;
-    try {
-      updatedPreference =
-          keyed
-              ? userManager.mergeUiJsonSetting(key, "" + value, user.getUsername())
-              : userManager.setPreference(pref, "" + value, user.getUsername());
-    } catch (IllegalArgumentException rejected) {
-      // A value that is not JSON or a malformed key is the caller's mistake, not a server fault:
-      // the generic handler would turn it into a 500.
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      return new AjaxReturnObject<>(null, ErrorList.of(rejected.getMessage()));
-    }
+    UserPreference updatedPreference =
+        userManager.setPreference(pref, "" + value, user.getUsername());
     analyticsManager.usersPreferencesChanged(user, req);
     return new AjaxReturnObject<>(updatedPreference.getValue(), null);
   }
@@ -772,12 +758,16 @@ public class UserProfileController extends BaseController {
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ApiKeyInfo {
+    /** The actual API key */
     private String key = null;
 
+    /** Whether or not key can be revoked */
     private boolean revokable = false;
 
+    /** Whether or not key can be regenerated */
     private boolean regenerable = true;
 
+    /** Whether or not key is enabled */
     private boolean enabled = true;
 
     /** If key is not available, an explanatory message */
@@ -911,6 +901,12 @@ public class UserProfileController extends BaseController {
 
   private static final String PROFILE_IMAGE_LINK_FMT = "/userform/profileImage/%d/%d";
 
+  /**
+   * Gets mini-profile information for a user RSPAC-683 without
+   *
+   * @param userId ID of user whose profile should be retrieved.
+   * @return AjaxReturnObject
+   */
   @GetMapping("/ajax/miniprofile/{userId}")
   @ResponseBody
   public AjaxReturnObject<MiniProfile> miniprofile(@PathVariable(name = "userId") Long userId) {
@@ -1019,6 +1015,7 @@ public class UserProfileController extends BaseController {
     private String groupDisplayName;
     private String roleInGroup;
     private Boolean labGroup = true;
+    // whether or not autoshare folder is set.
     private Boolean autoshareFolderSet = false;
 
     public UserGroupInfo(UserGroup ug) {

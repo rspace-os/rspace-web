@@ -11,7 +11,7 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
-import useUiPreference, { PREFERENCES, readUiPreference, useRawUiPreferences } from "@/hooks/api/useUiPreference";
+import useUiPreference from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
@@ -47,13 +47,15 @@ import {
   quantityExceedsOrigin,
   reconcileRestoredQuantities,
 } from "./operationValidation";
+import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
 import {
-  addProcessName,
-  processNameDefaultAfterPerform,
-  processValuesPreferenceFor,
-  rememberKey,
-} from "./processNames";
-import { normalizeProcessValues, type ProcessValues } from "./processValues";
+  fetchLatestOperationPreferences,
+  normalizeOperationPreferences,
+  normalizeProcessValues,
+  OPERATION_PREFERENCES,
+  type OperationPreferences,
+  type ProcessValues,
+} from "./processValues";
 import { derivedSampleName, firstAvailableName } from "./sampleNaming";
 import TemplateStep, { type TemplateSelection } from "./TemplateStep";
 import {
@@ -186,25 +188,15 @@ function OperationWizard({
     templateId: null,
     remember: false,
   });
-  // Each operation type has its own collection: useUiPreference derives its value fresh from
-  // context every render rather than caching it, so a DIFFERENT preference key reads that
-  // operation's data immediately rather than a stale mirror of the first one selected.
-  const [processValues, setProcessValues] = useUiPreference<Record<string, ProcessValues>>(
-    processValuesPreferenceFor(operation?.key ?? ""),
-    { defaultValue: {} },
+  const [storedOperationPreferences, setOperationPreferences] = useUiPreference<OperationPreferences | null>(
+    OPERATION_PREFERENCES,
+    { defaultValue: null },
   );
-  // The raw context, for reading a bundle for an operation OTHER than the one `processValues` above
-  // is currently bound to: `processValues` only starts reading a new operation's collection on the
-  // render AFTER `operation` state actually changes.
-  const uiPreferences = useRawUiPreferences();
-  const [processNames, setProcessNames] = useUiPreference<Record<string, Array<string>>>(
-    PREFERENCES.INVENTORY_OPERATION_PROCESS_NAMES,
-    { defaultValue: {} },
-  );
-  const [processNameDefaults, setProcessNameDefaults] = useUiPreference<Record<string, string>>(
-    PREFERENCES.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS,
-    { defaultValue: {} },
-  );
+  const {
+    values: processValues,
+    names: processNames,
+    defaults: processNameDefaults,
+  } = normalizeOperationPreferences(storedOperationPreferences);
 
   const stepKeys: ReadonlyArray<string> = operation
     ? (operation.steps ?? ["details", "template", "amounts", "documentation", "confirm"])
@@ -374,14 +366,9 @@ function OperationWizard({
       perOriginUnitIds: Object.fromEntries(origins.map((o) => [o.globalId ?? "", getUnitId(o.quantity)])),
     });
 
-  const bundleFor = (op: InventoryOperation, key: string): ProcessValues | null => {
-    const own = readUiPreference<Record<string, ProcessValues>>(uiPreferences, processValuesPreferenceFor(op.key), {});
-    return normalizeProcessValues(own[key]);
-  };
-
   const stateForKey = (op: InventoryOperation, vals: OperationInputs) => {
     const key = rememberKey(op, vals);
-    const bundle = bundleFor(op, key);
+    const bundle = normalizeProcessValues(processValues[key]);
     const base = freshValues(op, origin, vals);
     if (bundle) {
       const restoredTemplate = restoredTemplateSelection(templateSelectionFor(bundle.template));
@@ -683,14 +670,21 @@ function OperationWizard({
             ? { amountMode, perSubsampleAmounts: amountMode === "perSubsample" ? perSubsampleAmounts : {} }
             : {}),
         };
-        setProcessValues({ ...(processValues ?? {}), [key]: bundle });
-        if (operation.effect.processNameFrom) {
-          const name = String(values[operation.effect.processNameFrom] ?? "");
-          const list = processNames?.[operation.key] ?? [];
-          const updated = addProcessName(list, name);
-          if (updated !== list) setProcessNames({ ...(processNames ?? {}), [operation.key]: updated });
-          setProcessNameDefaults(processNameDefaultAfterPerform(processNameDefaults ?? {}, operation.key, name));
-        }
+        // One save of all three, applied to what the server holds now rather than this page's copy.
+        const latest = await fetchLatestOperationPreferences().catch((error: unknown) => {
+          console.warn("Could not read the latest remembered values; saving over this page's copy", error);
+          return normalizeOperationPreferences(storedOperationPreferences);
+        });
+        const name = operation.effect.processNameFrom ? String(values[operation.effect.processNameFrom] ?? "") : "";
+        setOperationPreferences({
+          values: { ...latest.values, [key]: bundle },
+          names: operation.effect.processNameFrom
+            ? { ...latest.names, [operation.key]: addProcessName(latest.names[operation.key] ?? [], name) }
+            : latest.names,
+          defaults: operation.effect.processNameFrom
+            ? processNameDefaultAfterPerform(latest.defaults, operation.key, name)
+            : latest.defaults,
+        });
       }
       closing.current = true;
       await renewals.current;
