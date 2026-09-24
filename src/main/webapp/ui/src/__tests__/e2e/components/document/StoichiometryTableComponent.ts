@@ -15,10 +15,11 @@ const COLUMN_FIELD: Record<string, string> = {
   Notes: "notes",
 };
 
+/** The read-only reaction table rendered in a document field's view mode. */
 export class StoichiometryTableComponent {
   readonly grid: Locator;
 
-  constructor(protected readonly root: Locator) {
+  constructor(root: Locator) {
     this.grid = root.getByRole("grid");
   }
 
@@ -44,32 +45,7 @@ export class StoichiometryTableComponent {
     return this.rowByCompoundName(compoundName).locator(`[role="gridcell"][data-field="${field}"]`);
   }
 
-  async getCompoundCount(): Promise<number> {
-    return this.dataRows().count();
-  }
-
-  async hasCompound(name: string): Promise<boolean> {
-    return (await this.rowByCompoundName(name).count()) > 0;
-  }
-
   async getCellText(compoundName: string, columnHeader: string): Promise<string> {
     return (await this.cell(compoundName, columnHeader).innerText()).trim();
-  }
-
-  /** Edits a numeric cell (Mass, Moles, etc.) — MUI renders its edit control as a spinbutton. */
-  async editCell(compoundName: string, columnHeader: string, value: string): Promise<void> {
-    const cell = this.cell(compoundName, columnHeader);
-    await cell.click();
-    await this.root.page().keyboard.press("Enter");
-    await cell.getByRole("spinbutton").fill(value);
-    await this.root.page().keyboard.press("Enter");
-  }
-
-  limitingReagentRadio(name: string): Locator {
-    return this.rowByCompoundName(name).getByRole("radio", { name: `Select ${name} as limiting reagent` });
-  }
-
-  async selectLimitingReagent(name: string): Promise<void> {
-    await this.limitingReagentRadio(name).click();
   }
 }

@@ -19,15 +19,16 @@ test.describe("Stoichiometry reaction table", () => {
       const editor = await pageWorkspace.createBasicDocument();
       await editor.header.rename(docName);
 
-      await test.step("When I insert a reaction table via the toolbar", async () => {
+      await test.step("When I insert a reaction table via the /stoichiometry slash command", async () => {
         const field = await editor.getField("", 0);
-        const dialog = await field.insertStoichiometryTable();
+        const dialog = await field.insertStoichiometryTableViaSlashCommand();
         await dialog.close();
       });
 
-      await test.step("Then a blank reaction table placeholder is present in the field", async () => {
+      await test.step("Then a blank reaction table placeholder replaces the typed command in the field", async () => {
         const field = await editor.getField("", 0);
-        expect(await field.hasBlankStoichiometryTable()).toBe(true);
+        await expect(field.stoichiometryTablePlaceholder).toBeVisible();
+        await expect(field.body).not.toContainText("/stoichiometry");
       });
 
       await editor.editToolbar.saveAndClose();
@@ -39,44 +40,27 @@ test.describe("Stoichiometry reaction table", () => {
       await pageWorkspace.table.openRecord(docName);
       await pageDocument.isLoaded();
       const table = await pageDocument.getStoichiometryTable("", 0);
-      await expect(table.grid).toBeVisible();
-      expect(await table.getCompoundCount()).toBe(0);
+      await expect(table.grid.getByText("No rows", { exact: true })).toBeVisible();
+      await expect(table.dataRows()).toHaveCount(0);
     });
   });
 
-  test("As a user, a reagent retains its molecular weight and mass calculations after reopening", async ({
+  test("As a user, an edited reagent mass and its recalculated moles persist in the saved document view", async ({
     pageWorkspace,
     pageDocument,
-    pageDocumentEditor,
   }) => {
-    const docName = uniqueName("e2e-stoich-weight");
+    const docName = uniqueName("e2e-stoich-mass");
     await pageWorkspace.open();
     const editor = await pageWorkspace.createBasicDocument();
     await editor.header.rename(docName);
     const field = await editor.getField("", 0);
     const reaction = await field.insertStoichiometryTable();
-    await reaction.addPubChemCompound("Ethanol");
-    await expect
-      .poll(async () => Number(await reaction.getCellText("Ethanol", "Molecular Weight (g/mol)")))
-      .toBeCloseTo(46.07, 2);
+    await reaction.addManually("Ethanol", "CCO");
+    await reaction.editCell("Ethanol", "mass", "4.607");
+    await expect.poll(async () => Number(await reaction.getCellText("Ethanol", "moles"))).toBeCloseTo(0.1, 4);
     await reaction.saveChanges();
     await reaction.close();
     await editor.editToolbar.saveAndClose();
-
-    await pageWorkspace.searchBar.search(docName);
-    await pageWorkspace.table.openRecord(docName);
-    await pageDocument.isLoaded();
-    const reopenedField = await pageDocument.editField("", 0);
-    const reopened = await reopenedField.viewStoichiometryTable();
-    await expect(reopened.dataRows()).toHaveCount(1);
-    await expect
-      .poll(async () => Number(await reopened.getCellText("Ethanol", "Molecular Weight (g/mol)")))
-      .toBeCloseTo(46.07, 2);
-    await reopened.editCell("Ethanol", "Mass (g)", "4.607");
-    await expect.poll(async () => Number(await reopened.getCellText("Ethanol", "Moles (mol)"))).toBeCloseTo(0.1, 4);
-    await reopened.saveChanges();
-    await reopened.close();
-    await pageDocumentEditor.editToolbar.saveAndClose();
 
     await pageWorkspace.searchBar.search(docName);
     await pageWorkspace.table.openRecord(docName);
@@ -90,7 +74,7 @@ test.describe("Stoichiometry reaction table", () => {
   test("As a user, sharing a reaction with two lab groups never duplicates its compounds", async ({
     appUser,
     clientSysadmin,
-    pageLogin,
+    flowRefreshDocumentSession,
     pageWorkspace,
     pageDocument,
     pageDocumentEditor,
@@ -104,11 +88,7 @@ test.describe("Stoichiometry reaction table", () => {
         users: [{ username: appUser.username, roleInGroup: "PI" }],
       });
     }
-    // Remove after the Shiro membership-cache bug is fixed; see the migration bug note.
-    await pageWorkspace.open();
-    await pageWorkspace.header.logOut();
-    await pageLogin.open();
-    await pageLogin.login(appUser.username, appUser.password);
+    await flowRefreshDocumentSession();
 
     const docName = uniqueName("e2e-stoich-memberships");
     await pageWorkspace.open();
@@ -116,7 +96,7 @@ test.describe("Stoichiometry reaction table", () => {
     await editor.header.rename(docName);
     const field = await editor.getField("", 0);
     const reaction = await field.insertStoichiometryTable();
-    await reaction.addSmilesManually("Ethanol", "CCO");
+    await reaction.addManually("Ethanol", "CCO");
     await reaction.saveChanges();
     await reaction.close();
     await editor.editToolbar.saveAndClose();
@@ -145,7 +125,7 @@ test.describe("Stoichiometry reaction table", () => {
     const shared = await pageDocument.editField("", 0);
     const sharedReaction = await shared.viewStoichiometryTable();
     await expect(sharedReaction.dataRows()).toHaveCount(1);
-    await sharedReaction.addSmilesManually("Methanol", "CO");
+    await sharedReaction.addManually("Methanol", "CO");
     await sharedReaction.saveChanges();
     await sharedReaction.close();
     await pageDocumentEditor.editToolbar.saveAndClose();

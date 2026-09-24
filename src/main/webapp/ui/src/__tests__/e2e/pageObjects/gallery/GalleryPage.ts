@@ -62,6 +62,10 @@ export class GalleryPage extends BasePage {
     await this.page.goto(`${this.path}/item/${fileId}`);
   }
 
+  /**
+   * Waits for the listing, then normalises to Grid view, which every file helper here addresses.
+   * An empty section renders the same empty state in every view and is left as it is.
+   */
   async isLoaded(): Promise<void> {
     await this.filesListingRegion.waitFor({ state: "visible" });
     const emptyState = galleryEmptyStateLocator(this.filesListingRegion);
@@ -76,12 +80,16 @@ export class GalleryPage extends BasePage {
   }
 
   async openSection(section: GallerySection): Promise<void> {
-    await Promise.all([
-      this.page
-        .waitForResponse((res) => res.url().includes("/gallery/getUploadedFiles"), { timeout: 10_000 })
-        .catch(() => undefined),
-      this.sidebar.openSection(section),
-    ]);
+    // Re-selecting the section already shown doesn't refetch its listing.
+    if (!(await this.sidebar.isSelected(section))) {
+      const [response] = await Promise.all([
+        this.page.waitForResponse((res) => res.url().includes("/gallery/getUploadedFiles")),
+        this.sidebar.openSection(section),
+      ]);
+      if (!response.ok()) {
+        throw new Error(`Loading the ${section} section failed: ${response.status()} ${response.statusText()}`);
+      }
+    }
     await this.isLoaded();
   }
 
