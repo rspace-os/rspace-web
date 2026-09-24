@@ -33,9 +33,15 @@ import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.ResolvedRuntimeField;
+import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.RuntimeFieldBinding;
+import com.researchspace.model.collection.RuntimeFieldDefinition;
+import com.researchspace.model.collection.RuntimeFieldSelection;
+import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.permissions.SecurityLogger;
 import jakarta.ws.rs.NotFoundException;
@@ -183,6 +189,35 @@ class ApiV2ResourceAccessTest {
     Map<String, Object> document = anonymous.docs().get(0);
     assertEquals(7L, document.get("id"));
     assertFalse(document.containsKey("secret"), "secret must not be rendered: " + document);
+  }
+
+  @Test
+  void fieldNarrowingPreservesTheResolvedRuntimeSelection() {
+    CollectionDescription<Widget> widgets =
+        describe(AccessPolicy.readOnly(AccessFunction.anyone()), AccessFunction.sysadmin());
+    String selector = "customFields.SF1";
+    ResolvedRuntimeField resolved =
+        new ResolvedRuntimeField(
+            new RuntimeFieldDefinition(
+                "SF1", selector, "Field", RuntimeFieldValueType.TEXT, "", "", List.of()),
+            new RuntimeFieldBinding(Widget.class, "widget.id", "data", Map.of()));
+    RuntimeFieldSelection runtime =
+        new RuntimeFieldSelection(Map.of(selector, resolved), Set.of(), Map.of());
+    ResourceRequest request =
+        new ResourceRequest(
+            new FilterExpression.Comparison(selector, Operator.EQUAL, List.of("value"), false),
+            List.of(),
+            new ResourceRequest.Page(1, 20),
+            ResourceFieldSelections.root(FieldSelection.all()),
+            IncludeTree.empty(),
+            runtime);
+    when(operations.find(any(), nullable(User.class))).thenReturn(new ResourcePage<>(List.of(), 0));
+
+    register(widgets).list(request, user(false));
+
+    ArgumentCaptor<ResourceRequest> captor = ArgumentCaptor.forClass(ResourceRequest.class);
+    verify(operations).find(captor.capture(), any(User.class));
+    assertEquals(runtime, captor.getValue().runtime());
   }
 
   @Test

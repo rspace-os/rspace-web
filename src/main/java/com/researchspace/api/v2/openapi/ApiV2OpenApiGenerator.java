@@ -1293,6 +1293,10 @@ public final class ApiV2OpenApiGenerator {
         if (title != null && !title.isBlank()) {
           definition.put("title", title);
         }
+        String viaTitle = relationship.openApi().title();
+        if (viaTitle != null && !viaTitle.isBlank()) {
+          definition.put("viaTitle", viaTitle);
+        }
         published.put(relationship.name() + "." + candidate.name(), definition);
       }
     }
@@ -1391,6 +1395,8 @@ public final class ApiV2OpenApiGenerator {
                   .filter(title -> title != null && !title.isBlank())
                   .findFirst()
                   .ifPresent(title -> definition.put("title", title));
+              relationshipPicker(resource, filter.selector())
+                  .ifPresent(picker -> definition.put("picker", picker));
               selectors.put(filter.selector(), definition);
             });
     return ordered(
@@ -1404,6 +1410,29 @@ public final class ApiV2OpenApiGenerator {
         CollectionQueryLimits.MAX_ARGUMENTS,
         "selectors",
         selectors);
+  }
+
+  private static Optional<Map<String, Object>> relationshipPicker(
+      ResourceSchema resource, String selector) {
+    return resource.relationships().stream()
+        .filter(relationship -> relationship.name().equals(selector))
+        .filter(relationship -> relationship.targetResources().size() == 1)
+        .findFirst()
+        .flatMap(
+            relationship -> {
+              String target = relationship.targetResources().get(0);
+              String globalIdPrefix = relationship.globalIdPrefixesByTarget().get(target);
+              return globalIdPrefix == null
+                  ? Optional.empty()
+                  : Optional.of(
+                      ordered(
+                          "resource",
+                          target,
+                          "identity",
+                          "globalId",
+                          "globalIdPrefix",
+                          globalIdPrefix));
+            });
   }
 
   private static Map<String, Object> filterSchema(
