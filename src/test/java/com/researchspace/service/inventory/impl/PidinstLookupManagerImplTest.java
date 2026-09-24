@@ -92,7 +92,6 @@ class PidinstLookupManagerImplTest {
     lenient().when(b2instConnector.isConfiguredAndEnabled()).thenReturn(true);
     // nothing is linked unless a test says so; search annotates every page through this one query
     lenient().when(doiDao.findActiveByIdentifiersAndType(any(), any())).thenReturn(List.of());
-    lenient().when(messages.getMessage(anyString())).thenAnswer(inv -> inv.getArgument(0));
     lenient()
         .when(messages.getMessage(anyString(), any(Object[].class)))
         .thenAnswer(
@@ -233,8 +232,8 @@ class PidinstLookupManagerImplTest {
             PidinstAlreadyLinkedException.class,
             () -> manager.importInstrument(HANDLE, null, user));
 
-    assertTrue(
-        ex.getMessage().contains("pidinstAlreadyLinked") && ex.getMessage().contains("IN99"));
+    assertEquals("errors.inventory.identifier.pidinstAlreadyLinked", ex.getMessageKey());
+    assertArrayEquals(new Object[] {"IN99"}, ex.getArgs());
     verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
   }
 
@@ -263,7 +262,7 @@ class PidinstLookupManagerImplTest {
             PidinstAlreadyLinkedException.class,
             () -> manager.importInstrument(HANDLE, null, user));
 
-    assertTrue(ex.getMessage().contains("IN77"), ex.getMessage());
+    assertArrayEquals(new Object[] {"IN77"}, ex.getArgs());
     verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
   }
 
@@ -285,8 +284,9 @@ class PidinstLookupManagerImplTest {
             PidinstAlreadyLinkedException.class,
             () -> manager.importInstrument(HANDLE, null, user));
 
-    assertTrue(ex.getMessage().contains("pidinstAlreadyLinkedNoAccess"), ex.getMessage());
-    assertFalse(ex.getMessage().contains("IN99"), ex.getMessage());
+    assertEquals("errors.inventory.identifier.pidinstAlreadyLinkedNoAccess", ex.getMessageKey());
+    // stronger than reading the rendered text: the hidden Global ID is not in the exception at all
+    assertEquals(0, ex.getArgs().length);
     verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
   }
 

@@ -398,7 +398,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   /**
    * The refusal for a PID an instrument already links, naming the instrument only to a caller who
    * may read it, so the refusal keeps a stated reason without disclosing a Global ID the search
-   * itself withheld (RSDEV-1505).
+   * itself withheld (RSDEV-1505). The permission check picks the key; the controller renders it.
    */
   private PidinstAlreadyLinkedException alreadyLinked(
       DigitalObjectIdentifier identifier, User user) {
@@ -406,14 +406,11 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         .map(
             globalId ->
                 new PidinstAlreadyLinkedException(
-                    messages.getMessage(
-                        "errors.inventory.identifier.pidinstAlreadyLinked",
-                        new Object[] {globalId})))
+                    "errors.inventory.identifier.pidinstAlreadyLinked", globalId))
         .orElseGet(
             () ->
                 new PidinstAlreadyLinkedException(
-                    messages.getMessage(
-                        "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess")));
+                    "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess"));
   }
 
   /** Same translation {@code InstrumentsApiController.createNewInstrument} applies to a POST. */

@@ -10,6 +10,7 @@ import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.chemistry.ChemistryClientException;
+import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -84,6 +85,44 @@ class ApiControllerAdviceTest {
     assertEquals(
         "Unsuccessful search request to the chemistry service, status code: 503.",
         error.getMessage());
+  }
+
+  /**
+   * RSDEV-1505: the service decides which key to throw, from a permission check it alone can make;
+   * the boundary only renders it. Both branches are pinned here because the no-access one is the
+   * disclosure rule, and a renderer that silently produced the bare key would still be a 409.
+   */
+  @Test
+  void pidinstAlreadyLinkedMessageIsResolvedAtApiBoundary() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handlePidinstAlreadyLinkedException(
+            new PidinstAlreadyLinkedException(
+                "errors.inventory.identifier.pidinstAlreadyLinked", "IN99"),
+            null);
+
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(
+        "This PID is already linked to instrument IN99.",
+        ((ApiError) response.getBody()).getMessage());
+  }
+
+  @Test
+  void pidinstAlreadyLinkedNoAccessMessageNamesNothing() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handlePidinstAlreadyLinkedException(
+            new PidinstAlreadyLinkedException(
+                "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess"),
+            null);
+
+    assertEquals(
+        "This PID is already linked to an instrument in RSpace that you cannot access.",
+        ((ApiError) response.getBody()).getMessage());
   }
 
   @Test
