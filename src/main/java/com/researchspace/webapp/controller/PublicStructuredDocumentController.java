@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,8 @@ public class PublicStructuredDocumentController extends BaseController {
   public static final String STRUCTURED_DOCUMENT_EDITOR_VIEW_NAME =
       "workspace/editor/public_structuredDocument";
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
+  private final PublicDocumentHtmlSanitizer publicDocumentHtmlSanitizer =
+      new PublicDocumentHtmlSanitizer();
 
   private @Autowired RecordSigningManager signingManager;
   @Autowired private RecordSharingManager recordSharingManager;
@@ -80,6 +83,7 @@ public class PublicStructuredDocumentController extends BaseController {
     Long recordId = rgs.getShared().getId();
     DocumentEditContext docEditContext = getDocEditContext(recordId, user);
     StructuredDocument structuredDocument = docEditContext.getStructuredDocument();
+    sanitizeForPublicView(structuredDocument);
     model.addAttribute("documentName", structuredDocument.getName());
 
     prepareDocumentForView(model, structuredDocument);
@@ -169,5 +173,17 @@ public class PublicStructuredDocumentController extends BaseController {
     model.addAttribute(
         "modificationDate",
         hasAutosave ? tempRecord.getModificationDate() : doc.getModificationDate());
+  }
+
+  private void sanitizeForPublicView(StructuredDocument structuredDocument) {
+    structuredDocument
+        .getFields()
+        .forEach(
+            field -> {
+              String sanitized = publicDocumentHtmlSanitizer.sanitize(field.getFieldData());
+              if (!Objects.equals(field.getFieldData(), sanitized)) {
+                field.setFieldData(sanitized);
+              }
+            });
   }
 }

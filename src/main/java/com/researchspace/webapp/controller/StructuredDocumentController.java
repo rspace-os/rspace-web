@@ -63,6 +63,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -70,6 +71,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -121,6 +123,8 @@ public class StructuredDocumentController extends BaseController {
   private @Autowired DocumentHTMLPreviewHandler htmlGenerator;
   private @Autowired SystemPropertyPermissionManager systemPropertyMgr;
   private @Autowired @Setter(value = AccessLevel.PROTECTED) SharingHandler recordShareHandler;
+  private final PublicDocumentHtmlSanitizer publicDocumentHtmlSanitizer =
+      new PublicDocumentHtmlSanitizer();
 
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
   @Autowired private DocumentTagManager documentTagManager;
@@ -531,12 +535,16 @@ public class StructuredDocumentController extends BaseController {
       @RequestParam(value = "fromNotebook", required = false) Long fromNotebook,
       Model model,
       HttpSession session,
+      HttpServletRequest request,
       Principal principal)
       throws RecordAccessDeniedException {
 
     User user = userManager.getUserByUsername(principal.getName(), true);
     DocumentEditContext docEditContext = getDocEditContext(recordId, user);
     StructuredDocument structuredDocument = docEditContext.getStructuredDocument();
+    if (isPublicViewRequest(request)) {
+      sanitizeForPublicView(structuredDocument);
+    }
     EditStatus res = docEditContext.getEditStatus();
     // Opening Basic Documents in "Edit Mode" when editMode flag is true or coming
     // from notebook view
@@ -606,6 +614,45 @@ public class StructuredDocumentController extends BaseController {
             ? STRUCTURED_DOCUMENT_MS_TEAMS_SIMPLE_VIEW_NAME
             : STRUCTURED_DOCUMENT_EDITOR_VIEW_NAME;
     return new ModelAndView(view, model.asMap());
+  }
+
+  public ModelAndView openDocument(
+      long recordId,
+      String settingsKey,
+      boolean editMode,
+      boolean msTeamsDocView,
+      Long fromNotebook,
+      Model model,
+      HttpSession session,
+      Principal principal)
+      throws RecordAccessDeniedException {
+    return openDocument(
+        recordId,
+        settingsKey,
+        editMode,
+        msTeamsDocView,
+        fromNotebook,
+        model,
+        session,
+        null,
+        principal);
+  }
+
+  private boolean isPublicViewRequest(HttpServletRequest request) {
+    return request != null
+        && request.getRequestURI().startsWith(request.getContextPath() + "/public/publicView/");
+  }
+
+  private void sanitizeForPublicView(StructuredDocument structuredDocument) {
+    structuredDocument
+        .getFields()
+        .forEach(
+            field -> {
+              String sanitized = publicDocumentHtmlSanitizer.sanitize(field.getFieldData());
+              if (!Objects.equals(field.getFieldData(), sanitized)) {
+                field.setFieldData(sanitized);
+              }
+            });
   }
 
   @Getter
