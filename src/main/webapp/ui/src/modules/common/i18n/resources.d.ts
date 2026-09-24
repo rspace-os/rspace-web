@@ -4125,6 +4125,7 @@ export default interface Resources {
         "cancelRequestHint": "Cancel this request if you no longer require this material.",
         "chooseMethodDialog": {
           "body": "Choose how you wish to prepare the sample:",
+          "otherActiveRequestsWarning": "There are other requests against this sample that are either in the Pending or Approved states. These other requests will be closed automatically when this sample is transferred.",
           "proceedButton": "Proceed",
           "title": "Choose Sample to Prepare",
           "transferOption": "Transfer the existing sample and all subsamples",
@@ -4148,7 +4149,8 @@ export default interface Resources {
           "sampleRequested": "Requested Sample",
           "status": "Status",
           "submitted": "Submitted",
-          "subsampleColumn": "Subsample"
+          "subsampleColumn": "Subsample",
+          "transferredSample": "Transferred Sample"
         },
         "fulfilDialog": {
           "fulfilButton": "Fulfil",
@@ -7127,6 +7129,9 @@ export default interface Resources {
       },
       "listOfMaterials": {
         "label": "List of materials"
+      },
+      "sampleRequest": {
+        "autoRejectedReason": "This request has been cancelled as a result of the sample being transferred to user {0}. If you still need this sample make another request for the new owner to action."
       }
     }
   },

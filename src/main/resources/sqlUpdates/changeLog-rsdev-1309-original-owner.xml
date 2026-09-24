@@ -1,0 +1,31 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-09-24a" context="run" author="mrowe-tan">
+        <comment>Record the requested sample's owner at the time a SampleRequest was raised, so
+            the request's history stays accurate even after a later ownership transfer (RSDEV-1309).
+            Added nullable first so existing rows can be backfilled from the sample's current
+            owner (the closest available approximation for a pre-existing request), then made
+            not-null to match requesterUsername.
+        </comment>
+
+        <addColumn tableName="SampleRequest">
+            <column name="originalOwner" type="VARCHAR(50)"/>
+        </addColumn>
+
+        <sql>
+            UPDATE SampleRequest sr
+            JOIN Sample s ON sr.sample_id = s.id
+            JOIN User u ON s.owner_id = u.id
+            SET sr.originalOwner = u.username
+            WHERE sr.originalOwner IS NULL;
+        </sql>
+
+        <addNotNullConstraint tableName="SampleRequest" columnName="originalOwner"
+                               columnDataType="VARCHAR(50)"/>
+    </changeSet>
+
+</databaseChangeLog>

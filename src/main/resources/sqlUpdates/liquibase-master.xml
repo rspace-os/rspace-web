@@ -70,6 +70,8 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1366.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1368.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1326.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1309-transferred-sample.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1309-original-owner.xml"/>
 
   <!-- These two run last: recurring-changeLog.xml (runAlways diagnostics / batch re-init) then
        customUpdates-changeLog.xml. customUpdates-changeLog.xml must ALWAYS be the final include

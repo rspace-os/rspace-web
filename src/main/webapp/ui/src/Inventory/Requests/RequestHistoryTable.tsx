@@ -24,6 +24,7 @@ export type ApiSampleRequestStatusChangeItem = {
   created: string;
   createdBy: { id: number; firstName: string; lastName: string };
   reason: string | null;
+  transferredSample: { id: number; globalId: string; name: string } | null;
 };
 
 type HistoryColumn = "date" | "additionalNotes";

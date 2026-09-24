@@ -39,17 +39,23 @@ public class SampleRequestStatusChange implements Serializable {
   private String createdByUsername;
   private SampleRequestStatus status;
   private String reason;
+  private Sample transferredSample;
   private Date created = new Date();
 
   /** for hibernate */
   public SampleRequestStatusChange() {}
 
   public SampleRequestStatusChange(
-      SampleRequest sampleRequest, User createdBy, SampleRequestStatus status, String reason) {
+      SampleRequest sampleRequest,
+      User createdBy,
+      SampleRequestStatus status,
+      String reason,
+      Sample transferredSample) {
     this.sampleRequest = sampleRequest;
     this.createdByUsername = createdBy.getUsername();
     this.status = status;
     this.reason = reason;
+    this.transferredSample = transferredSample;
   }
 
   @Id
@@ -90,6 +96,15 @@ public class SampleRequestStatusChange implements Serializable {
   @Column(length = REASON_COLUMN_LENGTH)
   public String getReason() {
     return reason;
+  }
+
+  /**
+   * The sample this transition fulfilled the request with, if any: transferred or newly created.
+   */
+  @ManyToOne
+  @JoinColumn
+  public Sample getTransferredSample() {
+    return transferredSample;
   }
 
   @Temporal(TemporalType.TIMESTAMP)

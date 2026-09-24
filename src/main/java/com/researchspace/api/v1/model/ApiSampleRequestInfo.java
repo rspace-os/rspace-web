@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@JsonPropertyOrder({"id", "status", "note", "created", "requester", "sample"})
+@JsonPropertyOrder({"id", "status", "note", "created", "requester", "originalOwner", "sample"})
 public class ApiSampleRequestInfo extends LinkableApiObject implements IdentifiableObject {
 
   @JsonProperty("id")
@@ -36,6 +36,10 @@ public class ApiSampleRequestInfo extends LinkableApiObject implements Identifia
 
   @JsonProperty("requester")
   private ApiUser requester;
+
+  /** Who owned the requested sample when this request was raised; read-only, set at creation. */
+  @JsonProperty("originalOwner")
+  private ApiUser originalOwner;
 
   /** Summary only. Callers needing subsample locations fetch the sample itself. */
   @JsonProperty("sample")

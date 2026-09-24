@@ -134,8 +134,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     Transition transition = transitionTo(request.getStatus(), post.getStatus());
     assertPermittedActor(request, user, transition);
     String reason = validatedReason(post, transition);
+    Sample transferredSample = resolveTransferredSample(post.getTransferredSample());
 
-    request.recordStatus(user, post.getStatus(), reason);
+    request.recordStatus(user, post.getStatus(), reason, transferredSample);
     SampleRequest saved = sampleRequestDao.save(request);
     publisher.publishEvent(new SampleRequestStatusEvent(saved, user));
     return toDetail(saved, user);
@@ -187,12 +188,14 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   private ApiSampleRequestInfo toInfo(SampleRequest request, User user) {
     ApiSampleRequestInfo info = new ApiSampleRequestInfo(request);
     info.setRequester(toApiUser(request.getRequesterUsername()));
+    info.setOriginalOwner(toApiUser(request.getOriginalOwner()));
     return applyOutgoingSampleRules(info, request, user);
   }
 
   private ApiSampleRequest toDetail(SampleRequest request, User user) {
     ApiSampleRequest detail = new ApiSampleRequest(request);
     detail.setRequester(toApiUser(request.getRequesterUsername()));
+    detail.setOriginalOwner(toApiUser(request.getOriginalOwner()));
     for (int i = 0; i < detail.getStatusChanges().size(); i++) {
       detail
           .getStatusChanges()
@@ -246,9 +249,41 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
                     messages.getResourceNotFoundMessage("Sample", oid.getDbId())));
   }
 
-  /** Only the requester and the sample's current owner may see a request. */
+  /** Absent when no transferredSample id was supplied; a supplied id must name a real sample. */
+  private Sample resolveTransferredSample(Long transferredSampleId) {
+    if (transferredSampleId == null) {
+      return null;
+    }
+    return sampleDao
+        .getSafeNull(transferredSampleId)
+        .orElseThrow(
+            () ->
+                new NotFoundException(
+                    messages.getResourceNotFoundMessage("Sample", transferredSampleId)));
+  }
+
+  @Override
+  public void autoRejectActiveRequestsForTransferredSample(
+      Long sampleId, User actor, User newOwner) {
+    String reason =
+        messages.getMessage(
+            "inventory.sampleRequest.autoRejectedReason",
+            new Object[] {newOwner.getFirstName() + " " + newOwner.getLastName()});
+    for (SampleRequest request : sampleRequestDao.getActiveRequestsForSample(sampleId)) {
+      request.recordStatus(actor, SampleRequestStatus.REJECTED, reason);
+      SampleRequest saved = sampleRequestDao.save(request);
+      publisher.publishEvent(new SampleRequestStatusEvent(saved, actor));
+    }
+  }
+
+  /**
+   * The requester, the sample's current owner (who may have inherited the request via a transfer),
+   * and its original owner (whose "Received" listing keeps showing it under originalOwner even once
+   * the sample has since moved on) may see a request.
+   */
   private void assertUserIsPartyToRequest(SampleRequest request, User user) {
     if (!user.getUsername().equals(request.getRequesterUsername())
+        && !user.getUsername().equals(request.getOriginalOwner())
         && !user.equals(request.getSample().getOwner())) {
       throw requestNotFound(request.getId());
     }

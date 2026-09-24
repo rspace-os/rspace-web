@@ -100,6 +100,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
   const [sampleOwnerName, setSampleOwnerName] = useState<string | null>(null);
   const [subSampleCount, setSubSampleCount] = useState<number | null>(null);
+  const [otherActiveRequestsCount, setOtherActiveRequestsCount] = useState<number | null>(null);
   const currentUser = useWhoAmI();
   const { peopleStore, uiStore } = useStores();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
@@ -149,6 +150,32 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     };
   }, [request]);
 
+  // Only needed to size the "other requests will be closed automatically" warning in the
+  // Choose Sample to Prepare dialog; refetched whenever this request's own status changes,
+  // since that can move it into or out of the "active" set counted here.
+  useEffect(() => {
+    if (!request) return;
+    let cancelled = false;
+    const params = new URLSearchParams({
+      sampleId: String(request.sample.id),
+      status: "PENDING,APPROVED",
+      pageSize: "100",
+    });
+    ApiService.query<{ requests: Array<{ id: number }> }>("sampleRequests", params)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setOtherActiveRequestsCount(data.requests.filter((r) => r.id !== request.id).length);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        console.error("Failed to fetch other active sample requests", error);
+        setOtherActiveRequestsCount(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [request, status]);
+
   const comment = statusChanges
     .filter((change) => change.status === status)
     .reduce<ApiSampleRequestStatusChangeItem | null>(
@@ -156,6 +183,17 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
       null,
     )?.reason;
+
+  // Falls back to the originally requested sample when the fulfilling transition didn't
+  // record a transferredSample (e.g. handled outside of RSpace, via the "Fulfil" dialog).
+  const transferredSampleGlobalId =
+    statusChanges
+      .filter((change) => change.status === "FULFILLED")
+      .reduce<ApiSampleRequestStatusChangeItem | null>(
+        (latest, change) =>
+          !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
+        null,
+      )?.transferredSample?.globalId ?? request?.sample.globalId;
 
   if (!request) {
     return (
@@ -412,9 +450,19 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
                   </Typography>
                 )}
               </DetailField>
-              <DetailField label={t("requestsManagement.detail.fields.commentFromApprover")}>
-                {comment ? comment : <NoValue label={t("requestsManagement.detail.fields.noComment")} />}
-              </DetailField>
+              {status === "FULFILLED" ? (
+                <DetailField label={t("requestsManagement.detail.fields.transferredSample")}>
+                  {transferredSampleGlobalId ? (
+                    <GlobalId record={new LinkableRecordFromGlobalId(transferredSampleGlobalId)} onClick={() => {}} />
+                  ) : (
+                    <NoValue label={t("requestsManagement.detail.fields.noComment")} />
+                  )}
+                </DetailField>
+              ) : (
+                <DetailField label={t("requestsManagement.detail.fields.commentFromApprover")}>
+                  {comment ? comment : <NoValue label={t("requestsManagement.detail.fields.noComment")} />}
+                </DetailField>
+              )}
             </Box>
           </HeadingContext>
         </Collapse>
@@ -713,6 +761,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
                 count: subSampleCount,
                 requester: `${request.requester.firstName} ${request.requester.lastName}`,
               })}
+            </Alert>
+          )}
+          {preparationMethod === "transfer" && otherActiveRequestsCount !== null && otherActiveRequestsCount > 0 && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              {t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarning")}
             </Alert>
           )}
         </DialogContent>

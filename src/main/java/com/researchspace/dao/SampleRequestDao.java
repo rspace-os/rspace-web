@@ -6,6 +6,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
+import java.util.List;
 import java.util.Set;
 
 /** For DAO operations on Inventory SampleRequest. */
@@ -32,4 +33,10 @@ public interface SampleRequestDao extends GenericDao<SampleRequest, Long> {
       Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user);
+
+  /**
+   * Every PENDING or APPROVED request against one sample, regardless of who raised or currently
+   * owns it. Used to cascade-close outstanding requests when a sample's ownership changes.
+   */
+  List<SampleRequest> getActiveRequestsForSample(Long sampleId);
 }

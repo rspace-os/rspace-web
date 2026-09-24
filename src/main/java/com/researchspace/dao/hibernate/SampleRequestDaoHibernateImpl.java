@@ -58,7 +58,6 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
     Long total =
         bind(
-                role,
                 sessionFactory
                     .getCurrentSession()
                     .createQuery("select count(req) from SampleRequest req" + where, Long.class),
@@ -69,7 +68,6 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
     List<SampleRequest> page =
         bind(
-                role,
                 sessionFactory
                     .getCurrentSession()
                     .createQuery(
@@ -88,43 +86,48 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
   }
 
   /**
-   * The approver is never stored, so the owner side joins through the sample's current owner. A
-   * null role means no filtering by role: the user is either the requester or the owner.
-   *
-   * <p>OWNER excludes the caller's own requests even if a since-fulfilled transfer has made them
-   * the sample's current owner: "received" means someone else asked the caller for material, not a
-   * request the caller sent to themselves that they since ended up owning the sample for.
+   * The approver is never stored as such, so "received" is driven by originalOwner: who owned the
+   * requested sample at the moment the request was raised, not the sample's current owner. This is
+   * deliberately stable across a later ownership transfer, so a request keeps showing up for the
+   * person who was actually asked, even once they've since given the sample away; conversely a
+   * transfer recipient never sees someone else's old request appear under "received" just because
+   * they now happen to own the sample. A null role means no filtering by role: the user is either
+   * the requester or the original owner.
    */
   private String roleClause(SampleRequestRole role) {
     if (role == null) {
-      return "(req.requesterUsername = :username or req.sample.owner = :user)";
+      return "(req.requesterUsername = :username or req.originalOwner = :username)";
     }
     switch (role) {
       case REQUESTER:
         return "req.requesterUsername = :username";
       case OWNER:
-        return "req.sample.owner = :user and req.requesterUsername <> :username";
+        return "req.originalOwner = :username";
       default:
         throw new UnsupportedOperationException("Unhandled sample request role: " + role);
     }
   }
 
+  @Override
+  public List<SampleRequest> getActiveRequestsForSample(Long sampleId) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from SampleRequest req where req.sample.id = :sampleId"
+                + " and req.status in (:statuses) and req.sample.deleted = false",
+            SampleRequest.class)
+        .setParameter("sampleId", sampleId)
+        .setParameterList(
+            "statuses", List.of(SampleRequestStatus.PENDING, SampleRequestStatus.APPROVED))
+        .list();
+  }
+
   private <T> org.hibernate.query.Query<T> bind(
-      SampleRequestRole role,
       org.hibernate.query.Query<T> query,
       Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user) {
-    // only the parameters named by the role's clause are in the query, so bind exactly those
-    if (role == null) {
-      query.setParameter("username", user.getUsername());
-      query.setParameter("user", user);
-    } else if (SampleRequestRole.REQUESTER.equals(role)) {
-      query.setParameter("username", user.getUsername());
-    } else {
-      query.setParameter("user", user);
-      query.setParameter("username", user.getUsername());
-    }
+    query.setParameter("username", user.getUsername());
     if (CollectionUtils.isNotEmpty(statuses)) {
       query.setParameterList("statuses", statuses);
     }

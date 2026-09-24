@@ -48,6 +48,7 @@ public class SampleRequest implements Serializable {
   private Long id;
   private Sample sample;
   private String requesterUsername;
+  private String originalOwner;
   private SampleRequestStatus status = SampleRequestStatus.PENDING;
   private String note;
   private Date created = new Date();
@@ -59,6 +60,7 @@ public class SampleRequest implements Serializable {
   public SampleRequest(Sample sample, User requester, String note) {
     this.sample = sample;
     this.requesterUsername = requester.getUsername();
+    this.originalOwner = sample.getOwner().getUsername();
     this.note = note;
   }
 
@@ -91,6 +93,16 @@ public class SampleRequest implements Serializable {
   @AuditTrailProperty(name = "requester")
   public String getRequesterUsername() {
     return requesterUsername;
+  }
+
+  /**
+   * The username of the requested sample's owner at the moment this request was raised, captured so
+   * the request's history is accurate even if the sample is later transferred elsewhere. Set only
+   * at creation; never changed by the API afterwards.
+   */
+  @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
+  public String getOriginalOwner() {
+    return originalOwner;
   }
 
   @Enumerated(EnumType.STRING)
@@ -132,8 +144,17 @@ public class SampleRequest implements Serializable {
   /** Records a new current status and appends it to the history. */
   public SampleRequestStatusChange recordStatus(
       User author, SampleRequestStatus newStatus, String reason) {
+    return recordStatus(author, newStatus, reason, null);
+  }
+
+  /**
+   * Records a new current status and appends it to the history, including the sample this
+   * transition fulfilled the request with, if any: transferred or newly created.
+   */
+  public SampleRequestStatusChange recordStatus(
+      User author, SampleRequestStatus newStatus, String reason, Sample transferredSample) {
     SampleRequestStatusChange change =
-        new SampleRequestStatusChange(this, author, newStatus, reason);
+        new SampleRequestStatusChange(this, author, newStatus, reason, transferredSample);
     statusChanges.add(change);
     setStatus(newStatus);
     return change;

@@ -22,4 +22,11 @@ public class ApiSampleRequestStatusPut {
   @Size(max = SampleRequestStatusChange.REASON_COLUMN_LENGTH)
   @JsonProperty("reason")
   private String reason;
+
+  /**
+   * Optional id of the sample the request is being fulfilled with, e.g. the original sample whose
+   * ownership was transferred, or a new sample created from it.
+   */
+  @JsonProperty("transferredSample")
+  private Long transferredSample;
 }

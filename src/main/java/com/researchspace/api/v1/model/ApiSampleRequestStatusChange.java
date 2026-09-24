@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonPropertyOrder({"id", "status", "created", "createdBy", "reason"})
+@JsonPropertyOrder({"id", "status", "created", "createdBy", "reason", "transferredSample"})
 public class ApiSampleRequestStatusChange {
 
   @JsonProperty("id")
@@ -38,10 +38,20 @@ public class ApiSampleRequestStatusChange {
   @JsonProperty("reason")
   private String reason;
 
+  /**
+   * The sample this transition fulfilled the request with, if any: transferred or newly created.
+   */
+  @JsonProperty("transferredSample")
+  private ApiSampleInfo transferredSample;
+
   public ApiSampleRequestStatusChange(SampleRequestStatusChange change) {
     this.id = change.getId();
     this.status = change.getStatus();
     this.createdMillis = change.getCreated().getTime();
     this.reason = change.getReason();
+    this.transferredSample =
+        change.getTransferredSample() != null
+            ? new ApiSampleInfo(change.getTransferredSample())
+            : null;
   }
 }

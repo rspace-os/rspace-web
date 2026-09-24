@@ -132,6 +132,22 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     assertEquals("Need 2ml for the binding assay", created.getNote());
     assertEquals(sample.getGlobalId(), created.getSample().getGlobalId());
     assertEquals(requester.getUsername(), created.getRequester().getUsername());
+    assertEquals(owner.getUsername(), created.getOriginalOwner().getUsername());
+  }
+
+  @Test
+  public void originalOwner_isUnaffectedByALaterOwnershipTransfer() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // originalOwner is fixed at creation time, so it still names the owner at the time the
+    // request was raised, not the sample's current (now transferred-away) owner
+    ApiSampleRequest reloaded = sampleRequestApiMgr.getRequestById(raised.getId(), requester);
+    assertEquals(owner.getUsername(), reloaded.getOriginalOwner().getUsername());
   }
 
   @Test
@@ -154,6 +170,65 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
     // the requester owns no requested sample, so nothing is awaiting them
     assertEquals(0L, listFor(SampleRequestRole.OWNER, requester).getTotalHits().longValue());
+  }
+
+  @Test
+  public void getRequestsForUser_ownerRole_usesOriginalOwnerRatherThanTheSamplesCurrentOwner() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // the original owner still sees the request under "Received": they were the one asked,
+    // regardless of who owns the sample now
+    ApiSampleRequestSearchResult originalOwnersView = listFor(SampleRequestRole.OWNER, owner);
+    assertEquals(1L, originalOwnersView.getTotalHits().longValue());
+    assertEquals(raised.getId(), originalOwnersView.getRequests().get(0).getId());
+
+    // the sample's new owner does not: they were never asked for anything
+    assertEquals(0L, listFor(SampleRequestRole.OWNER, newOwner).getTotalHits().longValue());
+  }
+
+  @Test
+  public void changeApiSampleOwner_autoRejectsOtherActiveRequestsAgainstTheSample() {
+    ApiSampleRequest beingFulfilled = raiseRequest("Need 2ml for the binding assay");
+    ApiSampleRequest otherPending = raiseRequestAgainst(sample, "Need 1ml too");
+    ApiSampleRequest otherApproved = raiseRequestAgainst(sample, "Need 3ml as well");
+    sampleRequestApiMgr.updateStatus(
+        otherApproved.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    // matches the UI's own ordering: the request actually being fulfilled is marked FULFILLED
+    // before the transfer, so it's no longer PENDING/APPROVED by the time the transfer runs
+    sampleRequestApiMgr.updateStatus(
+        beingFulfilled.getId(), statusPost(SampleRequestStatus.FULFILLED, null), owner);
+
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // viewed as the original owner: still party to the request even though the sample has since
+    // moved on to newOwner, so the reason for the auto-rejection is visible to them too
+    assertEquals(
+        SampleRequestStatus.FULFILLED,
+        sampleRequestApiMgr.getRequestById(beingFulfilled.getId(), owner).getStatus());
+
+    // the other PENDING and APPROVED requests are auto-rejected, with a reason naming the new
+    // owner
+    for (ApiSampleRequest other : List.of(otherPending, otherApproved)) {
+      ApiSampleRequest reloaded = sampleRequestApiMgr.getRequestById(other.getId(), owner);
+      assertEquals(SampleRequestStatus.REJECTED, reloaded.getStatus());
+      ApiSampleRequestStatusChange latest =
+          reloaded.getStatusChanges().get(reloaded.getStatusChanges().size() - 1);
+      assertEquals(SampleRequestStatus.REJECTED, latest.getStatus());
+      assertTrue(
+          latest.getReason().contains(newOwner.getFirstName() + " " + newOwner.getLastName()),
+          "reason missing new owner's name: " + latest.getReason());
+    }
   }
 
   @Test
@@ -344,6 +419,25 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     assertThrows(
         NotFoundException.class,
         () -> sampleRequestApiMgr.getRequestById(raised.getId(), outsider));
+  }
+
+  @Test
+  public void getRequestById_remainsVisibleToTheOriginalOwnerAfterATransfer() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // the original owner keeps seeing this in their "Received" listing (originalOwner is fixed
+    // at creation), so they must still be able to open it
+    assertEquals(raised.getId(), sampleRequestApiMgr.getRequestById(raised.getId(), owner).getId());
+
+    // the sample's new (current) owner can see it too, e.g. to review requests they've inherited
+    assertEquals(
+        raised.getId(), sampleRequestApiMgr.getRequestById(raised.getId(), newOwner).getId());
   }
 
   @Test
@@ -587,10 +681,57 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
                 raised.getId(), statusPost(SampleRequestStatus.PENDING, null), owner));
   }
 
+  @Test
+  public void updateStatus_transferredSampleIsStoredOnTheStatusChange() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest fulfilled =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null, sample.getId()), owner);
+
+    ApiSampleRequestStatusChange latest =
+        fulfilled.getStatusChanges().get(fulfilled.getStatusChanges().size() - 1);
+    assertEquals(SampleRequestStatus.FULFILLED, latest.getStatus());
+    assertNotNull(latest.getTransferredSample());
+    assertEquals(sample.getId(), latest.getTransferredSample().getId());
+  }
+
+  @Test
+  public void updateStatus_transferredSampleIsAbsentWhenNotSupplied() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest approved =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ApiSampleRequestStatusChange latest =
+        approved.getStatusChanges().get(approved.getStatusChanges().size() - 1);
+    assertNull(latest.getTransferredSample());
+  }
+
+  @Test
+  public void updateStatus_unknownTransferredSampleIsRefused() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(),
+                statusPost(SampleRequestStatus.FULFILLED, null, Long.MAX_VALUE),
+                owner));
+  }
+
   private ApiSampleRequestStatusPut statusPost(SampleRequestStatus status, String reason) {
+    return statusPost(status, reason, null);
+  }
+
+  private ApiSampleRequestStatusPut statusPost(
+      SampleRequestStatus status, String reason, Long transferredSample) {
     ApiSampleRequestStatusPut post = new ApiSampleRequestStatusPut();
     post.setStatus(status);
     post.setReason(reason);
+    post.setTransferredSample(transferredSample);
     return post;
   }
 
