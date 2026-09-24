@@ -77,6 +77,12 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
       // when the main search's parameters change, the URL should be updated
       navigate(`/inventory/search?${search.fetcher.generateQuery(args).toString()}`);
     };
+    // `search` is a session-lifetime singleton, not scoped to this route: left set, this override
+    // would fire on any later performSearch() call from anywhere else in the app (e.g. a wizard on
+    // an unrelated page), navigating away from wherever the user actually is.
+    return () => {
+      search.overrideSearchOnFilter = null;
+    };
   }, [search]);
 
   const sidebarId = React.useId();

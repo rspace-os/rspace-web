@@ -17,7 +17,7 @@ import { darken, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomTooltip from "@/components/CustomTooltip";
 import { Heading, HeadingContext } from "@/components/DynamicHeadingLevel";
@@ -27,13 +27,17 @@ import UserDetails from "@/components/UserDetails";
 import useWhoAmI from "@/hooks/api/useWhoAmI";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
+import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import type PersonModel from "@/stores/models/PersonModel";
+import SubSampleModel, { type SubSampleAttrs } from "@/stores/models/SubSampleModel";
 import useStores from "@/stores/use-stores";
 import * as FetchingData from "@/util/fetchingData";
 import { isoToLocale } from "@/util/Util";
 import ApiService from "../../common/InvApiService";
 import PeopleField from "../components/Inputs/PeopleField";
+import type { OperationResult } from "../components/Operations/operationsApi";
+import { useOperationWizardLauncher } from "../components/Operations/useOperationWizardLauncher";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
 import type { ApiSampleRequestListItem } from "./RequestsList";
@@ -94,8 +98,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const [selectedSubsampleName, setSelectedSubsampleName] = useState<string | null>(null);
   const [chooseMethodDialogOpen, setChooseMethodDialogOpen] = useState(false);
   const [preparationMethod, setPreparationMethod] = useState<"wizard" | "transfer" | null>(null);
-  const [prepareDialogOpen, setPrepareDialogOpen] = useState(false);
+  const [wizardOrigin, setWizardOrigin] = useState<SubSampleModel | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  // Which sample the Transfer Ownership dialog acts on: the originally requested sample when
+  // reached via the "transfer" radio, or the sample the Operations Wizard just created when
+  // reached via the "wizard" radio's Passage step.
+  const [transferTarget, setTransferTarget] = useState<{ id: number; name: string } | null>(null);
   const [transferRecipient, setTransferRecipient] = useState<PersonModel | null>(null);
   const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
   const [sampleOwnerName, setSampleOwnerName] = useState<string | null>(null);
@@ -106,6 +114,25 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
     .map((user) => request != null && user.id === request.sample.owner.id)
     .orElse(false);
+
+  // Reassigned below, after `request` is known non-null, so it always calls this render's
+  // markRequestFulfilled with a real request id rather than a stale one from whichever earlier
+  // render first constructed the (necessarily hook-stable) callback below.
+  const onWizardPerformedRef = useRef<(sample: OperationResult | null) => void>(() => {});
+  const wizardOrigins = wizardOrigin ? [wizardOrigin] : [];
+  const { launch: launchOperationWizard, wizard: operationWizard } = useOperationWizardLauncher(wizardOrigins, {
+    onPerformed: (sample) => onWizardPerformedRef.current(sample),
+    onClose: () => setWizardOrigin(null),
+  });
+
+  // launchOperationWizard is deliberately excluded from the deps: it is a fresh closure every
+  // render (not memoised by the hook), so including it would refire this on every render rather
+  // than only when a freshly-fetched origin is set.
+  useEffect(() => {
+    if (wizardOrigin) {
+      void launchOperationWizard();
+    }
+  }, [wizardOrigin]);
 
   useEffect(() => {
     if (!request) return;
@@ -242,9 +269,10 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       });
   };
 
-  const markRequestFulfilled = () => {
+  const markRequestFulfilled = (transferredSample?: number) => {
     return ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
       status: "FULFILLED",
+      ...(transferredSample !== undefined ? { transferredSample } : {}),
     })
       .then(({ data }) => {
         setStatus(data.status);
@@ -259,11 +287,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     void markRequestFulfilled().then(() => setFulfilDialogOpen(false));
   };
 
-  // The requester was pre-fetched as a PersonModel via peopleStore.getUser when the
-  // Preparing Sample dialog's "Next" button was pressed; if that lookup hasn't resolved
-  // yet, the field just starts empty and the owner can pick a recipient manually.
-  const openTransferDialog = () => {
-    setPrepareDialogOpen(false);
+  // The requester is pre-fetched as a PersonModel via peopleStore.getUser the first time this
+  // opens (for either route into it: the "transfer" radio directly, or the "wizard" radio once
+  // its Passage step has produced a new sample); if that lookup hasn't resolved yet, the field
+  // just starts empty and the owner can pick a recipient manually.
+  const openTransferDialog = (target: { id: number; name: string }) => {
+    setTransferTarget(target);
     setTransferDialogOpen(true);
     if (!transferRecipient) {
       void peopleStore.getUser(request.requester.username).then((person) => {
@@ -272,30 +301,53 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     }
   };
 
+  // Kept in sync every render (see the ref declaration above): the Operations Wizard's Passage
+  // step hands back the new sample it created, which is what then gets offered up in the
+  // Transfer Ownership dialog, exactly as the "transfer" radio does for the original sample.
+  onWizardPerformedRef.current = (sample) => {
+    setWizardOrigin(null);
+    if (sample) {
+      openTransferDialog({ id: sample.id, name: sample.name });
+    }
+  };
+
+  const launchOperationsWizardForSelectedSubsample = () => {
+    if (selectedSubsampleId === null) return;
+    ApiService.get<SubSampleAttrs>("subSamples", selectedSubsampleId)
+      .then(({ data }) => {
+        setWizardOrigin(new SubSampleModel(new AlwaysNewFactory(), data));
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load the selected subsample for the Operations Wizard", error);
+      });
+  };
+
   const proceedWithPreparationMethod = () => {
     if (!preparationMethod) return;
     setChooseMethodDialogOpen(false);
     setPreparationMethod(null);
     if (preparationMethod === "wizard") {
-      setPrepareDialogOpen(true);
+      launchOperationsWizardForSelectedSubsample();
     } else {
-      openTransferDialog();
+      openTransferDialog({ id: request.sample.id, name: request.sample.name });
     }
   };
 
   // A SubSample has no owner of its own (it always derives from its parent Sample), so
-  // "preparing" a subsample for transfer means transferring ownership of the whole Sample.
+  // "preparing" a subsample for transfer means transferring ownership of a whole Sample: either
+  // the originally requested one (the "transfer" radio), or the new one the Operations Wizard's
+  // Passage step just created (the "wizard" radio) - either way, transferTarget names it.
   //
   // The request is marked fulfilled BEFORE the transfer, not after: the backend authorises
-  // the fulfil transition against the sample's current owner, and that's still the caller
-  // here. Doing the transfer first would change the sample's owner away from the caller,
+  // the fulfil transition against the transferred sample's current owner, and that's still the
+  // caller here. Doing the transfer first would change that sample's owner away from the caller,
   // so the follow-up fulfil call would then fail as the caller no longer being party to
   // the request (reported back as 404, to avoid disclosing the request's existence).
   const submitTransfer = () => {
-    if (!transferRecipient) return;
-    void markRequestFulfilled()
+    if (!transferRecipient || !transferTarget) return;
+    void markRequestFulfilled(transferTarget.id)
       .then(() =>
-        ApiService.update<{ id: number }>("samples", `${request.sample.id}/actions/changeOwner`, {
+        ApiService.update<{ id: number }>("samples", `${transferTarget.id}/actions/changeOwner`, {
           owner: { username: transferRecipient.username },
         }),
       )
@@ -306,7 +358,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             variant: "success",
             message: t("requestsManagement.detail.transferSuccessMessage", {
               id: request.id,
-              sampleName: request.sample.name,
+              sampleName: transferTarget.name,
               requester: `${request.requester.firstName} ${request.requester.lastName}`,
             }),
           }),
@@ -783,23 +835,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={prepareDialogOpen} onClose={() => setPrepareDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t("requestsManagement.detail.prepareDialog.title")}</DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ mb: 1 }}>
-            {t("requestsManagement.detail.prepareDialog.body", { subsample: selectedSubsampleName ?? "" })}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t("requestsManagement.detail.prepareDialog.comingSoon")}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPrepareDialogOpen(false)}>{t("common:actions.cancel")}</Button>
-          <Button variant="contained" onClick={openTransferDialog}>
-            {t("requestsManagement.detail.prepareDialog.nextButton")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {operationWizard}
       <Dialog open={transferDialogOpen} onClose={() => setTransferDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{t("contextMenu.transfer.dialog.title")}</DialogTitle>
         <DialogContent>
