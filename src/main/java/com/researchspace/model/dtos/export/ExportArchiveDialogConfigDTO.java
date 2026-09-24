@@ -5,6 +5,7 @@ import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.model.dtos.NfsExportConfig;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,6 +25,7 @@ public class ExportArchiveDialogConfigDTO extends AbstractExportDialog {
     Integer maxLinkLevel;
 
     @NotNull(message = "{validation.errors.archiveTypeRequired}")
+    @Pattern(regexp = "xml|html|eln", message = "{validation.errors.archiveTypeInvalid}")
     String archiveType;
 
     @Size(max = 500, message = "{validation.errors.descriptionStringMax}")
