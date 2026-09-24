@@ -30,10 +30,6 @@ import com.researchspace.service.inventory.PidinstLookupManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.UncheckedIOException;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -41,15 +37,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -229,73 +221,27 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one, and
-   * a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an empty
-   * first page is retried that way (ADR 0009 decision 7). A fragment the analyser splits into words
-   * carries that clause in the first request instead: its words can never match the keyword, and
-   * unrelated records matching them would stop the retry from running.
+   * The query reaches DataCite as the user typed it, escaped but not wildcarded, so a search here
+   * returns what the same words return in DataCite's own portal (RSDEV-1522, ADR 0009 decision 8).
+   * The escape only keeps query-string syntax from reaching the parser, which would answer 400
+   * rather than an empty page; it does not change which records match.
    *
-   * <p>The free-text call is cut into words and wildcarded; the retry is neither, because it
-   * composes its own clause and {@link #DOI_FRAGMENT} already limits what may go in it. Both gates
-   * read the raw query, so neither transformation can change which searches retry.
-   *
-   * <p>{@link #containsForDataCite(List, String)} has made the retry rare rather than redundant: a
-   * wildcarded single word usually matches the DOI fragment by itself. It is kept because it costs
-   * nothing on a non-empty first page and addresses the keyword field directly. Measured 2026-09-24
-   * on api.datacite.org, the combined form costs ~2s over the ~23s of its words alone.
+   * <p>DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one
+   * and a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an
+   * empty first page is retried that way (ADR 0009 decision 7). The retry carries the raw query
+   * rather than the escaped one, because it composes its own clause and {@link #DOI_FRAGMENT}
+   * already limits what may go in it; its gate reads the raw query too, so escaping cannot change
+   * which searches retry.
    */
   private DataCiteDoiSearchResult searchDataCite(String query) {
-    List<String> words = dataCiteWords(query);
-    String freeText = containsForDataCite(words, query);
-    String doiClause = "doi:*" + query + "*";
-    boolean doiShaped = DOI_FRAGMENT.matcher(query).matches();
-    if (doiShaped && words.size() > 1) {
-      DataCiteDoiSearchResult page =
-          dataCiteConnector.searchInstrumentDois(
-              "(" + freeText + ") OR " + doiClause, MAX_HITS, InventorySettingType.PIDINST);
-      return page.getMeta().getTotal() > page.getData().size()
-          ? toppedUpWithDoiMatches(page, doiClause)
-          : page;
-    }
     DataCiteDoiSearchResult hits =
-        dataCiteConnector.searchInstrumentDois(freeText, MAX_HITS, InventorySettingType.PIDINST);
-    if (!hits.getData().isEmpty() || !doiShaped) {
+        dataCiteConnector.searchInstrumentDois(
+            escapeForDataCite(query), MAX_HITS, InventorySettingType.PIDINST);
+    if (!hits.getData().isEmpty() || !DOI_FRAGMENT.matcher(query).matches()) {
       return hits;
     }
     return dataCiteConnector.searchInstrumentDois(
-        doiClause, MAX_HITS, InventorySettingType.PIDINST);
-  }
-
-  /**
-   * The {@code OR} only makes a DOI match eligible for the page: DataCite's default order is not by
-   * relevance (verified 2026-09-24, the DOI came first only under {@code sort=relevance} with a
-   * boost), so more than a page of records matching the words can push it off. A truncated page
-   * therefore gets the DOI clause's own matches in place of its last entries; {@code total} is left
-   * alone, since the combined query already counted them.
-   *
-   * <p>Built as a new result, never in place: the connector's result is cached on the heap by
-   * reference, so editing it would change the page every later identical search is served, and race
-   * concurrent ones.
-   */
-  private DataCiteDoiSearchResult toppedUpWithDoiMatches(
-      DataCiteDoiSearchResult page, String doiClause) {
-    List<DataCiteDoi> data = new ArrayList<>(page.getData());
-    Set<String> onPage = data.stream().map(DataCiteDoi::getId).collect(Collectors.toSet());
-    List<DataCiteDoi> missing =
-        dataCiteConnector
-            .searchInstrumentDois(doiClause, MAX_HITS, InventorySettingType.PIDINST)
-            .getData()
-            .stream()
-            .filter(doi -> !onPage.contains(doi.getId()))
-            .limit(MAX_HITS)
-            .toList();
-    data.subList(Math.max(0, Math.min(data.size(), MAX_HITS - missing.size())), data.size())
-        .clear();
-    data.addAll(0, missing);
-    DataCiteDoiSearchResult toppedUp = new DataCiteDoiSearchResult();
-    toppedUp.setData(data);
-    toppedUp.getMeta().setTotal(page.getMeta().getTotal());
-    return toppedUp;
+        "doi:*" + query + "*", MAX_HITS, InventorySettingType.PIDINST);
   }
 
   /**
@@ -314,58 +260,6 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private static String containsForB2inst(String query) {
     return "*" + query.replaceAll("\\s+", "\\\\ ") + "*";
-  }
-
-  /**
-   * The DataCite query: the same "contains", but with the words joined by {@code AND} because
-   * DataCite does not honour the escaped space (RSDEV-1522, ADR 0009 decision 8).
-   *
-   * <p>Measured 2026-09-22 against api.test.datacite.org on a record titled {@code nicos
-   * instr234_COPY_COPY}: {@code *instr234*} finds it, and so does {@code *nicos AND instr234*}, but
-   * {@code *nicos\ instr234*} answers 0. So the escape that makes B2INST exact makes DataCite
-   * blind, and the two providers are sent different queries.
-   *
-   * <p>The consequence, accepted: this is "ends-with the first word AND starts-with the last", not
-   * a substring of the whole string, so a partial first word does not match on DataCite. A wildcard
-   * per word would fix that but costs a leading wildcard each - three words measure 31s and four
-   * 66s, each second holding a database connection - so it is not affordable there.
-   *
-   * <p>The words are cut where the analyser cut them, because a wildcard term cannot span two
-   * indexed tokens: {@code *X\-ray AND microscope*} answers 0 where {@code *X AND ray AND
-   * microscope*} finds the record, {@code *test/instrument*} 0 where {@code *test AND instrument*}
-   * gives 27, and {@code *Zeiss AND \&\&*} 0 where {@code *Zeiss*} gives the 3 the unwrapped query
-   * did (api.test.datacite.org, instruments, 2026-09-24). Each word is still escaped, for a typed
-   * {@code AND}/{@code OR}/{@code NOT}; a query with no word at all is sent escaped whole.
-   */
-  private static String containsForDataCite(List<String> words, String query) {
-    String joined =
-        words.stream()
-            .map(PidinstLookupManagerImpl::escapeForDataCite)
-            .collect(Collectors.joining(" AND "));
-    return "*" + (words.isEmpty() ? escapeForDataCite(query) : joined) + "*";
-  }
-
-  /**
-   * The query as DataCite's standard analyser tokenises it, by running the same tokenizer (Lucene's
-   * UAX #29 {@link StandardTokenizer}) rather than approximating it: {@code 14.1} and {@code
-   * TEM:STEM} stay whole, {@code X-ray} and {@code test/instrument} split, each CJK ideograph is
-   * its own word, and punctuation on its own is dropped.
-   */
-  private static List<String> dataCiteWords(String query) {
-    try (StandardTokenizer tokenizer = new StandardTokenizer()) {
-      CharTermAttribute term = tokenizer.addAttribute(CharTermAttribute.class);
-      tokenizer.setReader(new StringReader(query));
-      tokenizer.reset();
-      List<String> words = new ArrayList<>();
-      while (tokenizer.incrementToken()) {
-        words.add(term.toString());
-      }
-      tokenizer.end();
-      return words;
-    } catch (IOException e) {
-      // a StringReader does not throw
-      throw new UncheckedIOException(e);
-    }
   }
 
   /**

@@ -131,101 +131,55 @@ and API field names were ported instead.
    (verified 2026-09-22, `twwkx` finds `21.T11975/twwkx-1zd85`). Its *escaping* is a different
    matter and is a known gap, tracked as RSDEV-1524.
 
-8. **A free-text query is wrapped in `*...*` once for the whole query, and the two providers are
-   sent differently shaped multi-word queries**
-   (RSDEV-1522). Both registries match whole *analysed tokens*, and the standard analyser splits on
-   a hyphen but not on an underscore (the standard tokenizer follows Unicode UAX #29, where `_` is
-   a word character and `-` is not, documented at
-   https://www.elastic.co/docs/reference/text-analysis/analysis-standard-tokenizer), so
-   `Nico-PIDINST_VAIDA_TILO` indexes as `nico` and `pidinst_vaida_tilo`. A search for `Vaida` or
-   `Tilo` therefore found nothing although the record was plainly there, and a search for `Nico`
-   returned a subset rather than everything matching.
-   Verified 2026-09-22: `Vaida` answers 0 on both registries, while `*Vaida*` answers 3 on
-   b2inst-test.gwdg.de and 1 on api.test.datacite.org, and `mmunit` answers 0 where `*mmunit*`
-   answers 12. Wildcards are case-insensitive on the analysed fields of both, so `*vaida*` and
-   `*Vaida*` agree; a keyword field such as the DataCite DOI is case-sensitive.
+8. **B2INST gets a substring search; DataCite gets the query as typed** (RSDEV-1522).
 
-   One pair of wildcards for the whole query, **not** a pair per word. DataCite pays for each
-   leading wildcard separately and the client's read timeout was 30s: measured 2026-09-22 against
-   api.datacite.org, `zeiss` 0.15s, `*zeiss*` 11s, `*electron* *microscope*` 25s, and
-   `*scanning* *electron* *microscope*` **32s**, which would abort the call and show the dialog an
-   error rather than results. One pair stays flat at ~14s however many words the query holds, so no
-   cap on query length is needed.
+   The defect: both registries match whole *analysed tokens*, and the standard tokenizer follows
+   Unicode UAX #29, where `_` is a word character but `-` is not
+   (https://www.elastic.co/docs/reference/text-analysis/analysis-standard-tokenizer). So
+   `Nico-PIDINST_VAIDA_TILO` indexes as `nico` and `pidinst_vaida_tilo`, and a search for `Vaida`
+   found nothing although the record was plainly there. Verified 2026-09-22: `Vaida` answers 0 on
+   both registries while `*Vaida*` answers 3 on b2inst-test.gwdg.de and 1 on
+   api.test.datacite.org.
 
-   A multi-word query needs more than the wrap, and that is where the providers part company.
-   Elasticsearch parses the query *before* the wildcards apply and splits it on whitespace itself,
-   so a bare `*a b*` is never one term spanning the space: it is `*a` (ends-with) and `b*`
-   (starts-with). B2INST joins terms with OR, so `*Instr1 prova_COPY*` returned a record named
-   `Instr1 prova 123` on its `instr1` token alone - reported by Nico on 2026-09-22.
+   **B2INST: the whole query, spaces escaped, wrapped in `*...*`.** The escape keeps it a single
+   wildcard term, so it is a real "contains" including spaces. Verified against b2inst-test.gwdg.de:
+   `*Instr1\ prova_COPY*` answers 1 where the unescaped `*Instr1 prova_COPY*` answers 2, and
+   `*nstr1\ prova_CO*` still finds `Instr1 prova_COPY` with both words cut at both ends. It is also
+   the cheapest shape, one leading wildcard however many words: 0.2-0.4s. Leaving the spaces raw
+   does not work, because Elasticsearch parses the query *before* the wildcards apply and splits it
+   on whitespace itself, leaving `*Instr1` (ends-with) and `prova_COPY*` (starts-with), which
+   B2INST joins with OR.
 
-   **B2INST: the spaces are escaped**, which keeps the whole query one wildcard term and makes it a
-   real "contains", spaces included. Verified 2026-09-22 against b2inst-test.gwdg.de:
-   `*Instr1\ prova_COPY*` answers 1 where the unescaped form answers 2, and `*nstr1\ prova_CO*`
-   still finds `Instr1 prova_COPY` - both words cut at both ends, the match spanning the space. It
-   is also the cheapest shape, one leading wildcard however many words: 0.2-0.4s.
+   **DataCite: the query as typed, escaped but not wildcarded**, so a search returns what the same
+   words return in DataCite's own portal. This is a deliberate reversal, decided by Nico on
+   2026-09-24 after seeing what wildcarding did there, and it gives up the defect above on the
+   DataCite side: `Vaida` answers 0 again, as it does in the portal.
 
-   **DataCite: the words are joined with `AND`**, because it does not honour the escaped space.
-   Measured the same day against api.test.datacite.org on a record titled
-   `nicos instr234_COPY_COPY`: `*instr234*` finds it and `*nicos AND instr234*` finds it, but
-   `*nicos\ instr234*` answers **0**, as does `titles.title:*nicos\ instr234*`. So the escape that
-   makes B2INST exact makes DataCite blind, and sending both providers the same string would break
-   one of them either way. The accepted consequence on DataCite is that `*a AND b*` means
-   "ends-with a AND starts-with b" rather than a substring of the whole string, so a partial *first*
-   word does not match there.
+   The reversal was driven by over-matching, not by cost. On api.test.datacite.org, `PIDINST Test`
+   answers **1** both in the portal and as plain free text, but **145** once wildcarded. The 145 are
+   e2e fixtures matching on fields the results list never shows - a title tokenising to a `pidinst`
+   word, and `TestDescriptionAbstract` / `TestSubject` in `descriptions` and `subjects` - so a
+   common word like "test" matches almost everything in a test registry. A wildcard per word
+   (`*PIDINST* AND *Test*`) answers the same 145 at 3.8s against 0.45s, so it does not help either.
+   Scope is not the cause: plain `PIDINST Test` across all of DataCite, instruments only, also
+   answers 1.
 
-   On DataCite the words are cut where the standard analyser cuts them, by running the same
-   tokenizer (Lucene's UAX #29 `StandardTokenizer`, already on the classpath) rather than an
-   approximation of it: `14.1` and `TEM:STEM` stay one word, `X-ray` and `test/instrument` split,
-   each CJK ideograph is its own word, and punctuation on its own is dropped. A wildcard term
-   cannot span two indexed tokens, so anything else loses the record. Measured 2026-09-24 on
-   api.test.datacite.org, instruments only: `test-instrument` answered 15 before RSDEV-1522 and
-   **0** as `*test\-instrument*`, `test/instrument` 15 and **0** as `*test/instrument*`, while
-   `*test AND instrument*` answers 27; `Zeiss &&` answered 3, `*Zeiss AND \&\&*` **0**, and
-   `*Zeiss*` 3; `*station AND 14.1*` answers 8 where `*station AND 14 AND 1*` answers 0; plain
-   `test\:instrument` answers 0 where `test/instrument` answers 15, so DataCite keeps `a:b` whole
-   exactly as the tokenizer does. Only words reach DataCite, so the user's punctuation is never
-   parsed as syntax; each word is still escaped, for a typed `AND`/`OR`/`NOT` and the `:` a word
-   may keep.
+   The consequence is asymmetry between the providers, which is accepted: B2INST finds a substring
+   of a name, DataCite does not. Two earlier shapes were tried and reverted along the way, a
+   wildcard per word (`*a* AND *b*`: one word 24s, two 23s, three **31s**, four **66s**, against
+   the DataCite client's then-30s read timeout) and splitting the query into analyser words before
+   wildcarding (`*a AND b*`), both superseded by this decision. Filtering the returned page inside
+   RSpace was also built and rejected: it made `total` disagree with the registry and silently
+   dropped hits matched on fields the response does not carry.
 
-   A DOI-shaped fragment that the tokenizer splits (`qvtb-aw74`, `82316/qvtb-aw74`) can no longer
-   match the DOI keyword as free text, and the decision 7 retry runs only on an empty first page,
-   which unrelated records matching the words would prevent. So such a query carries the DOI clause
-   in the same request: `(*qvtb AND aw74*) OR doi:*qvtb-aw74*`. Measured on api.datacite.org, that
-   costs ~2s over the ~23s of the words alone.
-   The `OR` only makes the DOI eligible: DataCite's default order is not by relevance (the DOI came
-   first only under `sort=relevance` with a boost, which the client does not send), so when the
-   combined page is truncated its last entries are replaced by the DOI clause's own matches, and
-   `total` is kept, since the combined query already counted them.
-
-   A wildcard per word (`*a* AND *b*`) would give DataCite the same quality as B2INST and was
-   tried, but it costs a leading wildcard each and DataCite pays for every one: measured against
-   api.datacite.org, one word 24s, two 23s, three **31s**, four **66s**, against the DataCite
-   client's 30s read timeout. It was reverted for that reason. The client's search ceiling has
-   since been raised to 90s, as headroom for the single-wildcard shape rather than a licence for
-   this one: four words already take 66s, and rspace-web holds a database connection for the whole
-   call (RSDEV-1506). Filtering the returned page inside RSpace was also built and rejected: it
-   made `total` disagree with the registry and silently dropped hits matched on fields the response does not
-   carry.
-
-   Always, not as a fallback. Retrying only when the plain search finds nothing would leave the
-   reported defect half-fixed, because a partial match suppresses the broader search: `Nico` on
-   b2inst-test.gwdg.de answers 9 where `*nico*` answers 14. The wrap is also applied
-   unconditionally, with no attempt to detect wildcards the user typed: `**nico**` answers exactly
-   what `*nico*` answers on both registries. A user's own `AND`, `OR` or `NOT` is escaped for
-   DataCite before the join, so it stays a search term rather than becoming an operator, and the
-   composed form is accepted: `*Zeiss AND \AND AND Bruker*` answers 200. B2INST is not escaped at
-   all, which is its own defect (RSDEV-1524) and unchanged here.
-
-   On DataCite the wildcards go **outside** the escape of decision 7, so the `*` this adds is live
-   while the user's own text stays literal. The `doi:*<query>*` retry is untouched and still reads
-   the raw query. A single-word fragment matches as free text on its own (`*qvtb*` answers 1, the
-   same as `doi:*qvtb*`), and one the tokenizer splits carries the DOI clause itself (above), so
-   the retry is rarely reached. It is kept because it costs nothing on a non-empty first page and addresses the keyword field
-   directly. The 4-character minimum of decision 6 is unchanged: `Nico` and `Tilo` are exactly 4.
-
-   Separately, the same sweep found that B2INST receives the query with no escaping at all, so
-   some inputs answer 400 rather than an empty page. That is RSDEV-1524, not this decision; the
-   wrap neither causes nor worsens it (no query answering 200 answers 400 once wrapped).
+   The rest is unchanged. The escape of decision 7 still applies to the DataCite query, because
+   unbalanced syntax answers 400 rather than an empty page; it is transparent otherwise, so it does
+   not change which records match. The `doi:*<query>*` retry of decision 7 is load-bearing again,
+   since plain free text cannot match the DOI keyword: verified 2026-09-24, `82316/qvtb\-aw74` and
+   `qvtb\-aw74` both answer 0 as free text while `doi:*82316/qvtb-aw74*` and `doi:*qvtb-aw74*`
+   answer 1. The 4-character minimum of decision 6 is unchanged. B2INST receives its query with no
+   escaping at all, which is its own defect (RSDEV-1524) and unchanged here; the wrap neither
+   causes nor worsens it.
 
 ## Considered options
 

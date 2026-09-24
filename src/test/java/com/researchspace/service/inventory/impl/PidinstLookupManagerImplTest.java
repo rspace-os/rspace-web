@@ -13,7 +13,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -57,7 +56,6 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -179,7 +177,7 @@ class PidinstLookupManagerImplTest {
     manager.search("Instr1 prova_COPY", user);
 
     verify(dataCiteConnector)
-        .searchInstrumentDois("*Instr1 AND prova_COPY*", 50, InventorySettingType.PIDINST);
+        .searchInstrumentDois("Instr1 prova_COPY", 50, InventorySettingType.PIDINST);
   }
 
   /** RSDEV-1522: both registries match whole analysed tokens, so a bare substring found nothing. */
@@ -194,23 +192,26 @@ class PidinstLookupManagerImplTest {
     verify(b2instConnector).searchRecords("*microscope*", 50);
   }
 
+  /**
+   * DataCite gets the query as typed, escaped but not wildcarded, so a search here returns what the
+   * same words return in DataCite's own portal (ADR 0009 decision 8).
+   */
   @Test
-  void dataCiteFreeTextSearchWrapsTheQueryInWildcards() {
+  void dataCiteFreeTextSearchSendsTheQueryAsTyped() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
         .thenReturn(dataCitePage(0));
 
     manager.search("microscope", user);
 
-    verify(dataCiteConnector)
-        .searchInstrumentDois("*microscope*", 50, InventorySettingType.PIDINST);
+    verify(dataCiteConnector).searchInstrumentDois("microscope", 50, InventorySettingType.PIDINST);
   }
 
   /**
-   * One pair of wildcards around the whole query, its spaces escaped so it stays a single term. A
-   * pair per word would match more on DataCite but takes 31s at three words and 66s at four, and
-   * leaving the spaces raw lets B2INST's OR return records holding only one word (ADR 0009 decision
-   * 8). This pins both.
+   * One pair of wildcards around the whole query, its spaces escaped so it stays a single term and
+   * matches a substring of the whole name. Leaving the spaces raw lets B2INST's OR return records
+   * holding only one of the words (ADR 0009 decision 8). B2INST only: DataCite gets the query
+   * unwildcarded.
    */
   @Test
   void aMultiWordB2instQueryIsOneTermWithItsSpacesEscaped() {
@@ -573,8 +574,7 @@ class PidinstLookupManagerImplTest {
     onADataCiteDeployment();
     String shortest = "qvtb";
     assertEquals(MIN_QUERY_LENGTH, shortest.length(), "the point of this test is the boundary");
-    when(dataCiteConnector.searchInstrumentDois(
-            "*" + shortest + "*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois(shortest, 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
 
     ApiPidinstSearchResult result = manager.search(shortest, user);
@@ -586,7 +586,7 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteRetriesADoiWildcardWhenFreeTextFindsNothing() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("*qvtb*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("qvtb", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
     when(dataCiteConnector.searchInstrumentDois("doi:*qvtb*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
@@ -598,27 +598,10 @@ class PidinstLookupManagerImplTest {
     assertEquals(1, result.getTotal(), "the total comes from the retry, not the empty first page");
   }
 
-  /**
-   * A fragment the analyser splits cannot match the DOI keyword as free text, and a retry would
-   * never run if unrelated records matched the words. So the DOI clause rides in the same request.
-   */
-  @Test
-  void aSplitDoiFragmentCarriesTheDoiClauseInTheSameRequest() {
-    onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois(
-            "(*qvtb AND aw74*) OR doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
-        .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
-
-    ApiPidinstSearchResult result = manager.search("qvtb-aw74", user);
-
-    assertEquals(1, result.getHits().size());
-    verify(dataCiteConnector, times(1)).searchInstrumentDois(anyString(), eq(50), any());
-  }
-
   @Test
   void dataCiteDoesNotRetryWhenFreeTextAlreadyFoundSomething() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("*Zeiss*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(3, dataCiteInstrument(DOI, "findable", "Instrument")));
 
     manager.search("Zeiss", user);
@@ -630,8 +613,7 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteDoesNotRetryAQueryThatIsNotADoiFragment() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois(
-            "*Carl AND Zeiss*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("Carl Zeiss", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
 
     ApiPidinstSearchResult result = manager.search("Carl Zeiss", user);
@@ -643,41 +625,40 @@ class PidinstLookupManagerImplTest {
 
   static Stream<Arguments> queriesCarryingQueryStringSyntax() {
     return Stream.of(
-        arguments("Zeiss\"broken", "*Zeiss AND broken*"),
-        arguments("Zeiss[broken", "*Zeiss AND broken*"),
-        arguments("(Zeiss", "*Zeiss*"),
-        arguments("Zeiss!", "*Zeiss*"),
-        arguments("Zeiss^2", "*Zeiss AND 2*"),
-        arguments("((((", "*\\(\\(\\(\\(*"),
-        arguments("Zeiss &&", "*Zeiss*"),
-        arguments("&&&&", "*\\&\\&\\&\\&*"),
-        arguments("X-ray microscope", "*X AND ray AND microscope*"),
-        arguments("-Zeiss", "*Zeiss*"),
-        arguments("test/instrument", "(*test AND instrument*) OR doi:*test/instrument*"),
-        arguments("TEM:STEM", "*TEM\\:STEM*"),
-        arguments("中国显微镜", "*中 AND 国 AND 显 AND 微 AND 镜*"),
-        arguments("station 14.1", "*station AND 14.1*"),
-        arguments("Zeiss>4", "*Zeiss AND 4*"),
-        arguments("82316/qvtb", "(*82316 AND qvtb*) OR doi:*82316/qvtb*"),
-        arguments("Zeiss. Bruker", "*Zeiss AND Bruker*"),
-        arguments("Zeiss OR", "*Zeiss AND \\OR*"),
-        arguments("NOT Zeiss", "*\\NOT AND Zeiss*"),
-        arguments("Zeiss AND Bruker", "*Zeiss AND \\AND AND Bruker*"));
+        arguments("Zeiss\"broken", "Zeiss\\\"broken"),
+        arguments("Zeiss[broken", "Zeiss\\[broken"),
+        arguments("(Zeiss", "\\(Zeiss"),
+        arguments("Zeiss!", "Zeiss\\!"),
+        arguments("Zeiss^2", "Zeiss\\^2"),
+        arguments("((((", "\\(\\(\\(\\("),
+        arguments("Zeiss &&", "Zeiss \\&\\&"),
+        arguments("&&&&", "\\&\\&\\&\\&"),
+        arguments("X-ray microscope", "X\\-ray microscope"),
+        arguments("-Zeiss", "\\-Zeiss"),
+        arguments("test/instrument", "test/instrument"),
+        arguments("TEM:STEM", "TEM\\:STEM"),
+        arguments("\u4e2d\u56fd\u663e\u5fae\u955c", "\u4e2d\u56fd\u663e\u5fae\u955c"),
+        arguments("station 14.1", "station 14.1"),
+        arguments("Zeiss>4", "Zeiss>4"),
+        arguments("82316/qvtb", "82316/qvtb"),
+        arguments("Zeiss. Bruker", "Zeiss. Bruker"),
+        arguments("Zeiss OR", "Zeiss \\OR"),
+        arguments("NOT Zeiss", "\\NOT Zeiss"),
+        arguments("Zeiss AND Bruker", "Zeiss \\AND Bruker"));
   }
 
   /**
    * DataCite's {@code query} is Elasticsearch query-string syntax, so user syntax must not reach
    * it: unbalanced syntax answers 400 rather than no hits, which the dialog can only show as an
-   * error. The word split removes the punctuation, the analyser having dropped it anyway, and the
-   * escape covers what is left: a typed operator, or a query with no word in it. Verified
-   * 2026-09-18 against api.datacite.org, where {@code foo"bar}, {@code foo[bar}, {@code (foo},
-   * {@code foo!}, {@code foo^}, {@code zeiss &&} and a dangling {@code abc OR} all answer 400 while
-   * every escaped form answers 200.
+   * error. The escape covers the reserved characters and the bare operators, and is transparent
+   * otherwise, so what the user typed is what DataCite matches on. Verified 2026-09-18 against
+   * api.datacite.org, where {@code foo"bar}, {@code foo[bar}, {@code (foo}, {@code foo!}, {@code
+   * foo^}, {@code zeiss &&} and a dangling {@code abc OR} all answer 400 while every escaped form
+   * answers 200.
    */
   @ParameterizedTest
   @MethodSource("queriesCarryingQueryStringSyntax")
-  void dataCiteFreeTextSearchSendsOnlyTheWordsWithQuerySyntaxNeutralised(
-      String typed, String sent) {
+  void dataCiteFreeTextSearchEscapesQueryStringSyntaxOnly(String typed, String sent) {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
         .thenReturn(dataCitePage(0));
@@ -713,42 +694,14 @@ class PidinstLookupManagerImplTest {
    * it is deliberately in DOI_FRAGMENT: it is what lets a pasted prefix/suffix pair match. Pinned
    * because the syntax alone argues for removing it, which would silently drop that case.
    */
-  /**
-   * The {@code OR} only makes the DOI eligible for the page, and DataCite's default order is not by
-   * relevance, so more than a page of records matching the words can push it off. A truncated page
-   * is topped up from the DOI clause alone.
-   */
-  @Test
-  void aSplitDoiFragmentKeepsItsDoiWhenTheWordsFillThePage() {
-    onADataCiteDeployment();
-    DataCiteDoi[] unrelated =
-        IntStream.range(0, 50)
-            .mapToObj(i -> dataCiteInstrument("10.1/unrelated-" + i, "findable", "Instrument"))
-            .toArray(DataCiteDoi[]::new);
-    DataCiteDoiSearchResult combined = dataCitePage(120, unrelated);
-    when(dataCiteConnector.searchInstrumentDois(
-            "(*qvtb AND aw74*) OR doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
-        .thenReturn(combined);
-    when(dataCiteConnector.searchInstrumentDois(
-            "doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
-        .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
-
-    ApiPidinstSearchResult result = manager.search("qvtb-aw74", user);
-
-    assertTrue(result.getHits().stream().anyMatch(hit -> DOI.equals(hit.getPid())));
-    assertEquals(50, result.getHits().size(), "still one page");
-    assertEquals(120, result.getTotal(), "the combined query already counted the DOI");
-    // the connector's result is cached on the heap by reference and shared between requests
-    assertEquals(List.of(unrelated), combined.getData(), "the cached page is left untouched");
-  }
-
   @Test
   void dataCiteFindsAPastedPrefixAndSuffixPair() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(
-            "(*82316 AND qvtb AND aw74*) OR doi:*82316/qvtb-aw74*",
-            50,
-            InventorySettingType.PIDINST))
+            "82316/qvtb\\-aw74", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(0));
+    when(dataCiteConnector.searchInstrumentDois(
+            "doi:*82316/qvtb-aw74*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
 
     ApiPidinstSearchResult result = manager.search("82316/qvtb-aw74", user);
@@ -759,7 +712,7 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteFreeTextSearchReturnsFindableInstrumentsAndFlagsLinkedOnes() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("*Zeiss*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(7, dataCiteInstrument(DOI, "findable", "Instrument")));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier(DOI, "ID21 Beamline", "suffix1234567890");
@@ -786,7 +739,7 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteSearchDropsAHitThatIsNotAFindableInstrument() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("*Zeiss*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST))
         .thenReturn(
             dataCitePage(
                 3,
