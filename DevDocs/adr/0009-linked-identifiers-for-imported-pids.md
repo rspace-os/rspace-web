@@ -173,17 +173,25 @@ and API field names were ported instead.
    "ends-with a AND starts-with b" rather than a substring of the whole string, so a partial *first*
    word does not match there.
 
-   On DataCite the words are cut where the standard analyser cuts them, not only at spaces: at
-   anything but a letter, a digit or `_`, except a `.` or `'` between two letters or digits (so
-   `14.1` stays one word). A wildcard term cannot span two indexed tokens, so anything else loses
-   the record. Measured 2026-09-24 on api.test.datacite.org, instruments only: `test-instrument`
-   answered 15 before RSDEV-1522 and **0** as `*test\-instrument*`, `test/instrument` 15 and
-   **0** as `*test/instrument*`, while `*test AND instrument*` answers 27; `Zeiss &&` answered 3,
-   `*Zeiss AND \&\&*` **0**, and `*Zeiss*` 3; `*station AND 14.1*` answers 8 where
-   `*station AND 14 AND 1*` answers 0. Only words reach DataCite, so the user's punctuation is
-   never parsed as syntax; each word is still escaped for a typed `AND`/`OR`/`NOT`. The split
-   loses a pasted DOI fragment (the DOI is a keyword, which `*qvtb\-aw74*` did match), and the
-   decision 7 retry finds it instead.
+   On DataCite the words are cut where the standard analyser cuts them, by running the same
+   tokenizer (Lucene's UAX #29 `StandardTokenizer`, already on the classpath) rather than an
+   approximation of it: `14.1` and `TEM:STEM` stay one word, `X-ray` and `test/instrument` split,
+   each CJK ideograph is its own word, and punctuation on its own is dropped. A wildcard term
+   cannot span two indexed tokens, so anything else loses the record. Measured 2026-09-24 on
+   api.test.datacite.org, instruments only: `test-instrument` answered 15 before RSDEV-1522 and
+   **0** as `*test\-instrument*`, `test/instrument` 15 and **0** as `*test/instrument*`, while
+   `*test AND instrument*` answers 27; `Zeiss &&` answered 3, `*Zeiss AND \&\&*` **0**, and
+   `*Zeiss*` 3; `*station AND 14.1*` answers 8 where `*station AND 14 AND 1*` answers 0; plain
+   `test\:instrument` answers 0 where `test/instrument` answers 15, so DataCite keeps `a:b` whole
+   exactly as the tokenizer does. Only words reach DataCite, so the user's punctuation is never
+   parsed as syntax; each word is still escaped, for a typed `AND`/`OR`/`NOT` and the `:` a word
+   may keep.
+
+   A DOI-shaped fragment that the tokenizer splits (`qvtb-aw74`, `82316/qvtb-aw74`) can no longer
+   match the DOI keyword as free text, and the decision 7 retry runs only on an empty first page,
+   which unrelated records matching the words would prevent. So such a query carries the DOI clause
+   in the same request: `(*qvtb AND aw74*) OR doi:*qvtb-aw74*`. Measured on api.datacite.org, that
+   costs ~2s over the ~23s of the words alone.
 
    A wildcard per word (`*a* AND *b*`) would give DataCite the same quality as B2INST and was
    tried, but it costs a leading wildcard each and DataCite pays for every one: measured against
@@ -207,8 +215,8 @@ and API field names were ported instead.
    On DataCite the wildcards go **outside** the escape of decision 7, so the `*` this adds is live
    while the user's own text stays literal. The `doi:*<query>*` retry is untouched and still reads
    the raw query. A single-word fragment matches as free text on its own (`*qvtb*` answers 1, the
-   same as `doi:*qvtb*`), but one holding a `-` or `/` is split into words and misses the keyword,
-   so the retry is what finds a pasted DOI such as `82316/qvtb-aw74`. It is kept because it costs nothing on a non-empty first page and addresses the keyword field
+   same as `doi:*qvtb*`), and one the tokenizer splits carries the DOI clause itself (above), so
+   the retry is rarely reached. It is kept because it costs nothing on a non-empty first page and addresses the keyword field
    directly. The 4-character minimum of decision 6 is unchanged: `Nico` and `Tilo` are exactly 4.
 
    Separately, the same sweep found that B2INST receives the query with no escaping at all, so

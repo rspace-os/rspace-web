@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -584,20 +585,33 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteRetriesADoiWildcardWhenFreeTextFindsNothing() {
     onADataCiteDeployment();
-    // the free-text call breaks the words at the hyphen, which misses a DOI (a keyword field); the
-    // retry composes its own clause from the raw query, so it still finds it
-    when(dataCiteConnector.searchInstrumentDois(
-            "*qvtb AND aw74*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("*qvtb*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
-    when(dataCiteConnector.searchInstrumentDois(
-            "doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("doi:*qvtb*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
 
-    ApiPidinstSearchResult result = manager.search("qvtb-aw74", user);
+    ApiPidinstSearchResult result = manager.search("qvtb", user);
 
     assertEquals(1, result.getHits().size(), "the wildcard retry's hit is returned");
     assertEquals(DOI, result.getHits().get(0).getPid());
     assertEquals(1, result.getTotal(), "the total comes from the retry, not the empty first page");
+  }
+
+  /**
+   * A fragment the analyser splits cannot match the DOI keyword as free text, and a retry would
+   * never run if unrelated records matched the words. So the DOI clause rides in the same request.
+   */
+  @Test
+  void aSplitDoiFragmentCarriesTheDoiClauseInTheSameRequest() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(
+            "(*qvtb AND aw74*) OR doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
+
+    ApiPidinstSearchResult result = manager.search("qvtb-aw74", user);
+
+    assertEquals(1, result.getHits().size());
+    verify(dataCiteConnector, times(1)).searchInstrumentDois(anyString(), eq(50), any());
   }
 
   @Test
@@ -638,11 +652,12 @@ class PidinstLookupManagerImplTest {
         arguments("&&&&", "*\\&\\&\\&\\&*"),
         arguments("X-ray microscope", "*X AND ray AND microscope*"),
         arguments("-Zeiss", "*Zeiss*"),
-        arguments("test/instrument", "*test AND instrument*"),
-        arguments("TEM:STEM", "*TEM AND STEM*"),
+        arguments("test/instrument", "(*test AND instrument*) OR doi:*test/instrument*"),
+        arguments("TEM:STEM", "*TEM\\:STEM*"),
+        arguments("中国显微镜", "*中 AND 国 AND 显 AND 微 AND 镜*"),
         arguments("station 14.1", "*station AND 14.1*"),
         arguments("Zeiss>4", "*Zeiss AND 4*"),
-        arguments("82316/qvtb", "*82316 AND qvtb*"),
+        arguments("82316/qvtb", "(*82316 AND qvtb*) OR doi:*82316/qvtb*"),
         arguments("Zeiss. Bruker", "*Zeiss AND Bruker*"),
         arguments("Zeiss OR", "*Zeiss AND \\OR*"),
         arguments("NOT Zeiss", "*\\NOT AND Zeiss*"),
@@ -672,22 +687,6 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
-   * Escaping is the free-text call's business; the retry composes its own clause from the raw
-   * query, so the allow-listed fragment must reach {@code doi:*...*} unescaped.
-   */
-  @Test
-  void dataCiteWildcardRetryUsesTheUnescapedQuery() {
-    onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
-        .thenReturn(dataCitePage(0));
-
-    manager.search("qvtb-aw74", user);
-
-    verify(dataCiteConnector)
-        .searchInstrumentDois("doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST);
-  }
-
-  /**
    * A space is the weakest possible negative case: it would still be refused by a class that had
    * been widened to admit query-string metacharacters. These are the characters that actually break
    * the query - verified 2026-09-17 against api.datacite.org, where {@code doi:*"broken*} answers
@@ -714,13 +713,12 @@ class PidinstLookupManagerImplTest {
    * because the syntax alone argues for removing it, which would silently drop that case.
    */
   @Test
-  void dataCiteRetriesAPastedPrefixAndSuffixPair() {
+  void dataCiteFindsAPastedPrefixAndSuffixPair() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(
-            "*82316 AND qvtb AND aw74*", 50, InventorySettingType.PIDINST))
-        .thenReturn(dataCitePage(0));
-    when(dataCiteConnector.searchInstrumentDois(
-            "doi:*82316/qvtb-aw74*", 50, InventorySettingType.PIDINST))
+            "(*82316 AND qvtb AND aw74*) OR doi:*82316/qvtb-aw74*",
+            50,
+            InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
 
     ApiPidinstSearchResult result = manager.search("82316/qvtb-aw74", user);
