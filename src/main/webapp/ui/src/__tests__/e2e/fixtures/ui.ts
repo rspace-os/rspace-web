@@ -1,5 +1,6 @@
 import type { BrowserContext, BrowserContextOptions, Page, TestFixture } from "@playwright/test";
 import { test as base } from "@playwright/test";
+import { BookableItemsFilterPage } from "@/modules/booking/__tests__/pageObjects/BookableItemsFilterPage";
 import { BookingPermissionsPage } from "@/modules/booking/__tests__/pageObjects/BookingPermissionsPage";
 import { GitHubAppsCardComponent } from "@/modules/github/__tests__/pageObjects/GitHubAppsCardComponent";
 import { MsTeamsShareDialogComponent } from "@/modules/msteams/__tests__/pageObjects/MsTeamsShareDialogComponent";
@@ -46,6 +47,7 @@ type UiFixtures = {
   pageSignup: SignupPage;
   pageApps: AppsPage;
   pageBookableItem: BookingPermissionsPage;
+  pageBookableItemsFilter: BookableItemsFilterPage;
   pageWorkspace: WorkspacePage;
   pageDocument: DocumentPage;
   pageDocumentEditor: DocumentEditorPage;
@@ -92,6 +94,7 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageSignup: pageFixture(SignupPage),
   pageApps: pageFixture(AppsPage),
   pageBookableItem: pageFixture(BookingPermissionsPage),
+  pageBookableItemsFilter: pageFixture(BookableItemsFilterPage),
   pageWorkspace: pageFixture(WorkspacePage),
   pageDocument: pageFixture(DocumentPage),
   pageDocumentEditor: pageFixture(DocumentEditorPage),
