@@ -30,16 +30,19 @@ export class AddRemoveTagsDialog {
     return chips.filter((text) => !controlLabels.has(text.trim().toLowerCase()));
   }
 
-  /** Adds a tag by exact text — selects a matching suggestion if one appears, else free-text via Enter. */
+  /** Adds a new free-text tag; use selectSuggestedTag() for an existing or ontology tag. */
   async addTag(tag: string): Promise<void> {
     await this.addTagButton.click();
     await this.filterInput.fill(tag);
-    const option = this.page.getByRole("option", { name: tag, exact: true });
-    if (await option.isVisible().catch(() => false)) {
-      await option.click();
-    } else {
-      await this.filterInput.press("Enter");
-    }
+    await this.filterInput.press("Enter");
+    await this.tagChip(tag).waitFor({ state: "visible" });
+  }
+
+  /** Adds an existing tag by picking it from the suggestions; fails if RSpace doesn't suggest it. */
+  async selectSuggestedTag(tag: string): Promise<void> {
+    await this.addTagButton.click();
+    await this.filterInput.fill(tag);
+    await this.page.getByRole("option", { name: tag, exact: true }).click();
     await this.tagChip(tag).waitFor({ state: "visible" });
   }
 
@@ -47,10 +50,6 @@ export class AddRemoveTagsDialog {
     const chip = this.tagChip(tag);
     await chip.locator(".MuiChip-deleteIcon").click();
     await chip.waitFor({ state: "hidden" });
-  }
-
-  async noCommonTagsAreDisplayed(): Promise<boolean> {
-    return (await this.getTags()).length === 0;
   }
 
   async save(): Promise<void> {

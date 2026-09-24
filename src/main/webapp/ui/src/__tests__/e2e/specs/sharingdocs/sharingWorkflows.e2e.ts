@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test";
+import { ApiError } from "@/__tests__/e2e/api/clients/BaseApiClient";
 import { expectDocumentUnavailable } from "@/__tests__/e2e/assertions/documents";
 import type { SelectionBarAction } from "@/__tests__/e2e/components/workspace/WorkspaceSelectionBar";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
@@ -6,37 +7,47 @@ import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
 
 test.describe("Sharing workflows and permissions", () => {
-  test("As a PI with read-only access to a member's notebook, I cannot create entries", async ({
+  test("As a group member with read-only access to a colleague's notebook, I can read its entries but cannot create one", async ({
     appUser,
     clientSysadmin,
     flowDocumentSession,
   }) => {
-    const member = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eReadNotebookMember");
+    const ownerUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eReadNotebookOwner");
+    const readerUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eReadNotebookReader");
     const groupName = uniqueName("ReadNotebookGroup");
     await clientSysadmin.createGroup({
       displayName: groupName,
       type: "LAB_GROUP",
       users: [
         { username: appUser.username, roleInGroup: "PI" },
-        { username: member.username, roleInGroup: "DEFAULT" },
+        { username: ownerUser.username, roleInGroup: "DEFAULT" },
+        { username: readerUser.username, roleInGroup: "DEFAULT" },
       ],
     });
-    const owner = await flowDocumentSession(member);
-    const notebook = await owner.folders.create({
-      name: alphaNumericUnique("ReadNotebook"),
-      notebook: true,
-    });
+    const owner = await flowDocumentSession(ownerUser);
+    const notebook = await owner.folders.create({ name: alphaNumericUnique("ReadNotebook"), notebook: true });
+    const entryContent = alphaNumericUnique("ReadNotebookEntry");
+    await owner.documents.create({ name: "Entry 1", parentFolderId: notebook.id, fields: [{ content: entryContent }] });
     await owner.workspace.shareRecord(notebook.name, { recipient: groupName, permission: "READ" });
 
-    // Authenticate after group creation so Shiro loads the PI's current group permissions.
-    const pi = await flowDocumentSession(appUser);
-    await pi.workspace.searchBar.search(notebook.name);
-    await pi.workspace.table.openNotebook(notebook.name);
-    const viewed = pi.notebook;
-    await viewed.isLoaded();
-    await expect(viewed.toolbar.createMenu.createButton).toHaveCount(0);
-    await pi.workspace.open(notebook.id);
-    await expect(pi.workspace.table.dataRows).toHaveCount(0);
+    await owner.workspace.table.openNotebook(notebook.name);
+    await owner.notebook.isLoaded();
+    await expect(owner.notebook.toolbar.createMenu.createButton).toBeVisible();
+
+    const reader = await flowDocumentSession(readerUser);
+    await reader.workspace.searchBar.search(notebook.name);
+    await reader.workspace.table.openNotebook(notebook.name);
+    await reader.notebook.isLoaded();
+    await expect(reader.notebook.entryContent).toContainText(entryContent);
+    await expect(reader.notebook.toolbar.createMenu.createButton).toBeHidden();
+
+    const rejected = await reader.documents
+      .create({ name: "Unauthorised entry", parentFolderId: notebook.id, fields: [{ content: "x" }] })
+      .then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+    expect(rejected, "Creating an entry in a read-only notebook must be refused").toBeInstanceOf(ApiError);
   });
 
   test("As a lab admin, group sharing grants edit access and a downgrade revokes editing", async ({
@@ -139,8 +150,8 @@ test.describe("Sharing workflows and permissions", () => {
 
     const shares = owner.sharedDocuments;
     await shares.open();
-    expect(await shares.isListed(doc.name, groupName)).toBe(false);
-    expect(await shares.isListed(doc.name, recipient.fullName)).toBe(true);
+    await expect(shares.row(doc.name, recipient.fullName)).toBeVisible();
+    await expect(shares.row(doc.name, groupName)).toHaveCount(0);
     expect((await documents.getById(doc.id)).fields[0].content).toContain(content);
     const reader = await flowDocumentSession(recipient);
     const viewed = await reader.workspace.openDocument(doc.id);

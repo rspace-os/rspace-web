@@ -14,9 +14,16 @@ type DynamicUserFixtures = {
   flowFreshPiPermissions: (namePrefix?: string) => Promise<{ username: string; apiKey: string; groupName: string }>;
 };
 
+export const DYNAMIC_APP_USER_LAST_NAME = "DynamicUser";
+
 export const dynamicUserTest = test.extend<DynamicUserFixtures>({
   appUser: async ({ clientSysadmin }, use) => {
-    const { username, apiKey } = await createDynamicUser(clientSysadmin, "ROLE_PI", "e2eDynUser", "DynamicUser");
+    const { username, apiKey } = await createDynamicUser(
+      clientSysadmin,
+      "ROLE_PI",
+      "e2eDynUser",
+      DYNAMIC_APP_USER_LAST_NAME,
+    );
     await use({ username, password: DYNAMIC_USER_PASSWORD, apiKey, roles: ["ROLE_PI", "ROLE_USER"] });
   },
   storageState: async ({ appUser, browser, browserContextOptions }, use) => {

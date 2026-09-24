@@ -4,11 +4,16 @@ import { rowWithLink } from "@/__tests__/e2e/pageObjects/rowHelpers";
 import { MiniProfilePopover } from "./MiniProfilePopover";
 import { WorkspaceSelectionBar } from "./WorkspaceSelectionBar";
 
+/** The workspace listing re-renders #file_table as a new element; the stale one proves nothing refreshed. */
 export async function waitForTableSwap(page: Page, staleTable: ElementHandle | null): Promise<void> {
   if (!staleTable) return;
   await page
-    .waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable, { timeout: 5_000 })
-    .catch(() => {});
+    .waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable)
+    .catch((error: unknown) => {
+      throw new Error("The workspace table was not re-rendered after the refresh it was waiting for.", {
+        cause: error,
+      });
+    });
 }
 
 export async function awaitTableRefresh(page: Page, trigger: () => Promise<void>): Promise<void> {
@@ -33,6 +38,10 @@ export class WorkspaceTable {
 
   checkbox(name: string): Locator {
     return this.row(name).getByRole("checkbox", { name: "Select record" });
+  }
+
+  signedIcon(name: string): Locator {
+    return this.row(name).getByRole("img", { name: "Record Is Signed" });
   }
 
   globalIdLink(name: string): Locator {

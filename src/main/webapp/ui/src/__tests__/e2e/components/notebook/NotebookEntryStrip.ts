@@ -97,9 +97,10 @@ export class NotebookEntryStrip {
 
   async search(query: string): Promise<void> {
     await this.searchInput.fill(query);
-    await Promise.all([
+    const [response] = await Promise.all([
       this.page.waitForResponse((res) => res.url().includes("/journal/ajax/quicksearch/")),
       this.searchSubmit.click(),
     ]);
+    expect(response.ok(), `Notebook entry search returned HTTP ${response.status()}`).toBe(true);
   }
 }

@@ -77,15 +77,15 @@ test.describe("Notebook sharing and signing", () => {
     });
 
     await test.step("Then that entry is marked signed and can no longer be re-signed", async () => {
-      expect(await owner.notebook.isSigned()).toBe(true);
-      expect(await owner.notebook.canSign()).toBe(false);
+      await expect(owner.notebook.signedStatus.first()).toBeVisible();
+      await expect(owner.notebook.toolbar.signButton).toBeHidden();
       await expectSignedContentProtected(owner.documents, entries.secondId, secondContent);
     });
 
     await test.step("And the other entry is still unsigned", async () => {
       await owner.notebook.previousEntry();
-      expect(await owner.notebook.isSigned()).toBe(false);
-      expect(await owner.notebook.canSign()).toBe(true);
+      await expect(owner.notebook.signedStatus).toHaveCount(0);
+      await expect(owner.notebook.toolbar.signButton).toBeVisible();
       const editor = await owner.notebook.enterEditMode();
       expect(editor.getId()).toBe(entries.firstId);
       await (await editor.getField("", 0)).fill(editedFirstContent);
@@ -94,10 +94,10 @@ test.describe("Notebook sharing and signing", () => {
       expect((await owner.documents.getById(entries.firstId)).fields[0].content).toContain(editedFirstContent);
     });
 
-    await test.step("When the document owner signs the second entry too", async () => {
+    await test.step("When the document owner signs the first entry too", async () => {
       await owner.notebook.sign(docOwner.password);
-      expect(await owner.notebook.isSigned()).toBe(true);
-      expect(await owner.notebook.canSign()).toBe(false);
+      await expect(owner.notebook.signedStatus.first()).toBeVisible();
+      await expect(owner.notebook.toolbar.signButton).toBeHidden();
       await expectSignedContentProtected(owner.documents, entries.firstId, editedFirstContent);
     });
 
@@ -127,9 +127,9 @@ test.describe("Notebook sharing and signing", () => {
     });
 
     await test.step("Then the entry is marked signed and can no longer be re-signed, awaiting the witness", async () => {
-      expect(await pageNotebook.isSigned()).toBe(true);
-      expect(await pageNotebook.canSign()).toBe(false);
-      expect(await pageNotebook.isWitnessed()).toBe(false);
+      await expect(pageNotebook.signedStatus.first()).toBeVisible();
+      await expect(pageNotebook.toolbar.signButton).toBeHidden();
+      await expect(pageNotebook.witnessedStatus).toBeHidden();
       await expectSignedContentProtected(clientDocuments, sharedEntryId, sharedContent);
     });
 
@@ -138,20 +138,20 @@ test.describe("Notebook sharing and signing", () => {
       await owner.workspace.searchBar.search(sharedNotebookName);
       await owner.workspace.table.openNotebook(sharedNotebookName);
       await owner.notebook.isLoaded();
-      expect(await owner.notebook.canWitness()).toBe(true);
+      await expect(owner.notebook.toolbar.witnessButton).toBeVisible();
       await owner.notebook.confirmWitness(docOwner.password);
     });
 
     await test.step("Then the entry is fully witnessed", async () => {
-      expect(await owner.notebook.isWitnessed()).toBe(true);
-      expect(await owner.notebook.canWitness()).toBe(false);
+      await expect(owner.notebook.witnessedStatus).toBeVisible();
+      await expect(owner.notebook.toolbar.witnessButton).toBeHidden();
     });
 
     await test.step("And the PI sees the same fully-witnessed status on reopening the entry", async () => {
       await pageWorkspace.open();
       await pageWorkspace.table.openNotebook(sharedNotebookName);
       await pageNotebook.isLoaded();
-      expect(await pageNotebook.isWitnessed()).toBe(true);
+      await expect(pageNotebook.witnessedStatus).toBeVisible();
     });
   });
 

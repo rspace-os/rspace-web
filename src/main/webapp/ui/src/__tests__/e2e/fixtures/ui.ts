@@ -5,7 +5,6 @@ import { MsTeamsShareDialogComponent } from "@/modules/msteams/__tests__/pageObj
 import { OrcidProfilePage } from "@/modules/orcid/__tests__/pageObjects/OrcidProfilePage";
 import { SlackDialogComponent } from "@/modules/slack/__tests__/pageObjects/SlackDialogComponent";
 import { SlackShareDialogComponent } from "@/modules/slack/__tests__/pageObjects/SlackShareDialogComponent";
-import { storageStatePath } from "../authState";
 import { CustomDocumentFields } from "../components/document/CustomDocumentFields";
 import { ExportWizardComponent } from "../components/shared/ExportWizardComponent";
 import { NotificationsDialogComponent } from "../components/shared/NotificationsDialogComponent";
@@ -35,6 +34,7 @@ import { MyRSpacePage } from "../pageObjects/myrspace/MyRSpacePage";
 import { UserProfilePage } from "../pageObjects/myrspace/UserProfilePage";
 import { NotebookPage } from "../pageObjects/notebook/NotebookPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
+import { freshStorageState, savedLoginAccount } from "../savedSessions";
 import { type AppUser, USERS } from "../users";
 
 export type E2EOptions = { appUser: AppUser };
@@ -89,6 +89,11 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   browserContextOptions: async ({ browserName }, use) => {
     await use({ baseURL: env.baseURL, ignoreHTTPSErrors: browserName === "webkit" });
   },
+  // Projects load a login saved once by auth.setup.ts; renew it if the session has since expired.
+  storageState: async ({ storageState, browser, browserContextOptions }, use) => {
+    const account = typeof storageState === "string" ? savedLoginAccount(storageState) : undefined;
+    await use(account ? await freshStorageState(browser, browserContextOptions, account) : storageState);
+  },
   pageLogin: pageFixture(LoginPage),
   pageRequestPasswordReset: pageFixture(RequestPasswordResetPage),
   pageResetPassword: pageFixture(ResetPasswordPage),
@@ -109,7 +114,7 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
       await use(async (user) => {
         const context = await browser.newContext({
           ...browserContextOptions,
-          storageState: storageStatePath(user.username),
+          storageState: await freshStorageState(browser, browserContextOptions, user),
         });
         contexts.push(context);
         return new InventoryPage(await context.newPage());

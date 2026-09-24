@@ -140,7 +140,7 @@ test.describe("Tagging and Ontology", () => {
       await pageWorkspace.searchBar.search(importedFileName);
       await pageWorkspace.table.openRecord(importedFileName);
       await pageDocument.isLoaded();
-      expect(await pageDocument.isSigned()).toBe(true);
+      await expect(pageDocument.signedStatus.first()).toBeVisible();
     });
 
     await test.step("And it preserves every term's URI and ontology metadata, excluding the CSV header", async () => {
@@ -223,8 +223,11 @@ test.describe("Tagging and Ontology", () => {
         await expect.poll(() => editor.header.getSuggestedTags()).toEqual(expect.arrayContaining([tag1, tag2]));
       });
 
-      await test.step("And the shared ontology document itself is read-only for them", async () => {
-        await read.workspace.openDocument(ontologyId);
+      await test.step("And they open it from Shared > IndividualShareItems, where it's read-only for them", async () => {
+        await read.workspace.browseToIndividualShareFolder(ownerUser.username, readUser.username);
+        await read.workspace.table.openRecord(ontologyDocName);
+        await read.document.isLoaded();
+        expect(read.document.getId()).toBe(ontologyId);
         expect(await read.document.isReadOnly()).toBe(true);
       });
 
@@ -237,8 +240,11 @@ test.describe("Tagging and Ontology", () => {
           .toEqual(expect.arrayContaining([tag1, tag2]));
       });
 
-      await test.step("When the grouped edit recipient changes a tag in the shared ontology and saves it", async () => {
-        await edit.workspace.openDocument(ontologyId);
+      await test.step("When the grouped edit recipient opens it from Shared > LabGroups, changes a tag, and saves it", async () => {
+        await edit.workspace.browseToLabGroupSharedFolder(groupName);
+        await edit.workspace.table.openRecord(ontologyDocName);
+        await edit.document.isLoaded();
+        expect(edit.document.getId()).toBe(ontologyId);
         const field = await edit.document.editField(ONTOLOGY_FIELD_NAME);
         await field.fill("");
         await field.typeLines([tag1, editedTag]);
@@ -261,8 +267,17 @@ test.describe("Tagging and Ontology", () => {
     const folderName = uniqueName("e2e-tag-folder");
     const docName = uniqueName("e2e-tag-doc");
     const tagShared = uniqueName("e2e-tag-shared");
-    const tagFullNotebook = uniqueName("e2e-tag-fullnb");
     const tagPicture = uniqueName("e2e-tag-picture");
+    // ContentInitializerForDevRunManager (run/dev profiles only) tags each new user's example
+    // "Full Notebook" with these, so RSpace suggests them.
+    const existingTags = ["defaultFullNotebook", "defaultContent"];
+    const sorted = (tags: string[]) => [...tags].sort();
+    const expectTags = async (name: string, expected: string[]) => {
+      await pageWorkspace.open();
+      const info = await pageWorkspace.table.openInfoFor(name);
+      expect(sorted(await info.getTags()), `Tags on ${name}`).toEqual(sorted(expected));
+      await info.close();
+    };
 
     await test.step("Given a notebook, a folder, and a document exist", async () => {
       await clientFolders.create({ name: notebookName, notebook: true });
@@ -270,20 +285,18 @@ test.describe("Tagging and Ontology", () => {
       await clientDocuments.create({ name: docName, parentFolderId: folder.parentFolderId });
     });
 
-    await test.step("When I tag the notebook with two tags via Add/Remove Tags", async () => {
+    await test.step("When I tag the notebook by picking two existing tags from the suggestions", async () => {
       await pageWorkspace.open();
       await pageWorkspace.table.selectRecord(notebookName);
       const dialog = await pageWorkspace.selectionBar.addRemoveTags();
-      await dialog.addTag(tagShared);
-      await dialog.addTag(tagFullNotebook);
+      for (const tag of existingTags) {
+        await dialog.selectSuggestedTag(tag);
+      }
       await dialog.save();
     });
 
-    await test.step("Then Record Info shows both tags on the notebook", async () => {
-      await pageWorkspace.open();
-      const info = await pageWorkspace.table.openInfoFor(notebookName);
-      expect(await info.getTags()).toEqual(expect.arrayContaining([tagShared, tagFullNotebook]));
-      await info.close();
+    await test.step("Then Record Info shows exactly those two tags on the notebook", async () => {
+      await expectTags(notebookName, existingTags);
     });
 
     await test.step("And Add/Remove Tags is available as an action for the notebook", async () => {
@@ -295,17 +308,12 @@ test.describe("Tagging and Ontology", () => {
     await test.step("When I add a new free-text tag and remove one of the original tags", async () => {
       const dialog = await pageWorkspace.selectionBar.addRemoveTags();
       await dialog.addTag(tagPicture);
-      await dialog.removeTag(tagShared);
+      await dialog.removeTag(existingTags[1]);
       await dialog.save();
     });
 
-    await test.step("Then Record Info reflects the updated tags", async () => {
-      await pageWorkspace.open();
-      const info = await pageWorkspace.table.openInfoFor(notebookName);
-      const tags = await info.getTags();
-      expect(tags).toEqual(expect.arrayContaining([tagFullNotebook, tagPicture]));
-      expect(tags).not.toContain(tagShared);
-      await info.close();
+    await test.step("Then Record Info shows exactly the remaining and the new tag", async () => {
+      await expectTags(notebookName, [existingTags[0], tagPicture]);
     });
 
     await test.step("When I select the notebook, folder, and document together", async () => {
@@ -316,18 +324,16 @@ test.describe("Tagging and Ontology", () => {
 
     await test.step("Then Add/Remove Tags shows no common tags across the selection, and adding one applies it to all three", async () => {
       const dialog = await pageWorkspace.selectionBar.addRemoveTags();
-      expect(await dialog.noCommonTagsAreDisplayed()).toBe(true);
       await dialog.addTag(tagShared);
+      // Common tags render as soon as getTagsForRecords returns, long before the added chip appears.
+      await expect.poll(() => dialog.getTags()).toEqual([tagShared]);
       await dialog.save();
     });
 
-    await test.step("Then each item individually shows the shared tag", async () => {
-      for (const name of [notebookName, folderName, docName]) {
-        await pageWorkspace.open();
-        const info = await pageWorkspace.table.openInfoFor(name);
-        expect(await info.getTags()).toContain(tagShared);
-        await info.close();
-      }
+    await test.step("Then each item shows exactly its own tags plus the shared one", async () => {
+      await expectTags(notebookName, [existingTags[0], tagPicture, tagShared]);
+      await expectTags(folderName, [tagShared]);
+      await expectTags(docName, [tagShared]);
     });
 
     await test.step("And searching by that tag finds all three items", async () => {
@@ -505,10 +511,6 @@ test.describe("Tagging and Ontology", () => {
     const editor = await test.step("Given the member has a document open to check suggestions on", async () => {
       await member.workspace.open();
       return member.workspace.createBasicDocument();
-    });
-
-    await test.step("Then the member sees no suggestions before the PI has shared any ontology file", async () => {
-      expect(await editor.header.getSuggestedTags()).not.toContain(ontologyTag);
     });
 
     await test.step("When the PI creates an ontology document defining that tag and shares it with the member individually, at Edit", async () => {

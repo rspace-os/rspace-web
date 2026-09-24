@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
-import { storageStatePath } from "@/__tests__/e2e/authState";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
+import { freshStorageState } from "@/__tests__/e2e/savedSessions";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN } from "@/__tests__/e2e/users";
 
@@ -155,7 +155,7 @@ test.describe(`Workspace search operations`, () => {
   }) => {
     const ctx = await browser.newContext({
       ...browserContextOptions,
-      storageState: storageStatePath(SYSADMIN.username),
+      storageState: await freshStorageState(browser, browserContextOptions, SYSADMIN),
     });
     try {
       const page = await ctx.newPage();

@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 import { DocumentHeader } from "@/__tests__/e2e/components/document/DocumentHeader";
 import { signedStatusLocator } from "@/__tests__/e2e/components/document/SignedStatus";
 import { SigningDialogComponent } from "@/__tests__/e2e/components/document/SigningDialogComponent";
-import { WitnessDialogComponent } from "@/__tests__/e2e/components/document/WitnessDialogComponent";
+import { WitnessDocumentDialogComponent } from "@/__tests__/e2e/components/document/WitnessDocumentDialogComponent";
 import { NotebookEntryStrip } from "@/__tests__/e2e/components/notebook/NotebookEntryStrip";
 import { NotebookViewToolbar } from "@/__tests__/e2e/components/notebook/NotebookViewToolbar";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
@@ -19,12 +19,13 @@ export class NotebookPage extends BasePage {
   readonly toolbar: NotebookViewToolbar;
   readonly entryStrip: NotebookEntryStrip;
   readonly signingDialog: SigningDialogComponent;
-  readonly witnessDialog: WitnessDialogComponent;
+  readonly witnessDialog: WitnessDocumentDialogComponent;
   readonly ribbon: Locator;
   readonly entryContent: Locator;
   readonly emptyState: Locator;
-  private readonly signedStatuses: Locator;
-  private readonly witnessedStatus: Locator;
+  /** Any signed/witnessed banner; count 0 once isLoaded() resolves means the entry is unsigned. */
+  readonly signedStatus: Locator;
+  readonly witnessedStatus: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -32,23 +33,21 @@ export class NotebookPage extends BasePage {
     this.toolbar = new NotebookViewToolbar(page);
     this.entryStrip = new NotebookEntryStrip(page);
     this.signingDialog = new SigningDialogComponent(page);
-    this.witnessDialog = new WitnessDialogComponent(page);
+    this.witnessDialog = new WitnessDocumentDialogComponent(page);
     // Legacy jQuery-rendered ribbon container; no stable accessible role or label.
     this.ribbon = page.locator("#journalEntriesRibbon");
     // The journal renders field headings and bare text in this legacy content panel.
     this.entryContent = page.locator("#journalPage");
     this.emptyState = page.getByText("There are no entries to display.").first();
-    this.signedStatuses = signedStatusLocator(page);
+    this.signedStatus = signedStatusLocator(page);
     this.witnessedStatus = page.locator("#witnessedStatus");
   }
 
   async isLoaded(): Promise<void> {
     await this.page.waitForURL("**/notebookEditor/**");
-    await Promise.race([
-      this.entryStrip.entryCounter.waitFor({ state: "visible" }),
-      this.emptyState.waitFor({ state: "visible" }),
-    ]);
-    await this.page.waitForLoadState("networkidle").catch(() => undefined);
+    await this.entryStrip.entryCounter.or(this.emptyState).first().waitFor({ state: "visible" });
+    await this.toolbar.mounted.waitFor({ state: "visible" });
+    await this.page.waitForLoadState("networkidle");
   }
 
   async openByGlobalId(notebook: { id: number; globalId: string }): Promise<void> {
@@ -108,18 +107,6 @@ export class NotebookPage extends BasePage {
     await this.page.locator('[data-test-id="toast-close"]').click();
   }
 
-  async canEdit(): Promise<boolean> {
-    return this.toolbar.editButton.isVisible();
-  }
-
-  async canSign(): Promise<boolean> {
-    return this.toolbar.signButton.isVisible();
-  }
-
-  async isSigned(): Promise<boolean> {
-    return (await this.signedStatuses.count()) > 0;
-  }
-
   async sign(password: string): Promise<void> {
     await this.toolbar.signButton.click();
     await this.signingDialog.waitForOpen();
@@ -132,20 +119,10 @@ export class NotebookPage extends BasePage {
     await this.signingDialog.signWithWitness(password, witnessUsername);
   }
 
-  /** Whether the current user has a pending witness request on this entry. */
-  async canWitness(): Promise<boolean> {
-    return this.toolbar.witnessButton.isVisible();
-  }
-
-  /** Whether the current entry has been fully witnessed (all pending witnesses confirmed). */
-  async isWitnessed(): Promise<boolean> {
-    return this.witnessedStatus.isVisible();
-  }
-
   async confirmWitness(password: string): Promise<void> {
     await this.toolbar.witnessButton.click();
-    await this.witnessDialog.waitForOpen();
-    await this.witnessDialog.confirm(password);
+    await this.witnessDialog.waitUntilVisible();
+    await this.witnessDialog.witnessWithPassword(password);
   }
 
   async share(): Promise<ShareDialog> {
@@ -197,16 +174,8 @@ export class NotebookPage extends BasePage {
     await this.isLoaded();
   }
 
-  async closeNotebook(): Promise<void> {
-    await this.toolbar.actions.closeLink.click();
-  }
-
   async previousEntry(): Promise<void> {
     await this.entryStrip.previous();
-  }
-
-  async nextEntry(): Promise<void> {
-    await this.entryStrip.next();
   }
 
   /** Switches the active entry to the named one via its ribbon thumbnail. */
@@ -220,18 +189,5 @@ export class NotebookPage extends BasePage {
 
   async isEntryVisibleInRibbon(name: string): Promise<boolean> {
     return this.entryThumbnail(name).isVisible();
-  }
-
-  async getAllEntriesText(): Promise<string[]> {
-    const handles = await this.ribbon.locator("[title^='Name:']").all();
-    const names: string[] = [];
-    const prefix = "Name: '";
-    for (const handle of handles) {
-      const title = await handle.getAttribute("title");
-      if (title?.startsWith(prefix) && title.endsWith("'")) {
-        names.push(title.slice(prefix.length, -1));
-      }
-    }
-    return names;
   }
 }

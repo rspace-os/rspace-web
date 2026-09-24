@@ -9,7 +9,7 @@ import { CreateNotebookDialog } from "@/__tests__/e2e/components/workspace/Creat
 import { WorkspacePagination } from "@/__tests__/e2e/components/workspace/WorkspacePagination";
 import { WorkspaceSearchBar } from "@/__tests__/e2e/components/workspace/WorkspaceSearchBar";
 import { WorkspaceSelectionBar } from "@/__tests__/e2e/components/workspace/WorkspaceSelectionBar";
-import { WorkspaceTable } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
+import { awaitTableRefresh, WorkspaceTable } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
 import { WorkspaceTemplatePickerDialog } from "@/__tests__/e2e/components/workspace/WorkspaceTemplatePickerDialog";
 import { WorkspaceToolbar } from "@/__tests__/e2e/components/workspace/WorkspaceToolbar";
 import { WorkspaceTree } from "@/__tests__/e2e/components/workspace/WorkspaceTree";
@@ -110,6 +110,33 @@ export class WorkspacePage extends BasePage {
     await this.breadcrumbFolderName.filter({ hasText: folderName }).waitFor({ state: "visible" });
   }
 
+  private async browseInto(folderName: string): Promise<void> {
+    await awaitTableRefresh(this.page, () => this.table.openRecord(folderName));
+    await this.waitUntilBreadcrumbShows(folderName);
+  }
+
+  /** Browses Shared > LabGroups > "<group>_SHARED" via the toolbar shortcut, so the paginated root listing isn't paged. */
+  async browseToLabGroupSharedFolder(groupName: string): Promise<void> {
+    await this.open();
+    await this.toolbar.clickLabGroupShortcut();
+    await this.browseInto(`${groupName}_SHARED`);
+  }
+
+  /**
+   * Browses Shared > IndividualShareItems > RSpace's per-pair folder for individual shares. The backend
+   * (DefaultGroupNamingStrategy.getIndividualSharedFolderName) names it "<lower>-<higher>" by username order.
+   */
+  async browseToIndividualShareFolder(ownerUsername: string, recipientUsername: string): Promise<void> {
+    await this.open();
+    await this.toolbar.clickLabGroupShortcut();
+    await awaitTableRefresh(this.page, () =>
+      this.page.locator("#breadcrumbTag_workspaceBcrumb").getByRole("link", { name: "Shared", exact: true }).click(),
+    );
+    await this.waitUntilBreadcrumbShows("Shared");
+    await this.browseInto("IndividualShareItems");
+    await this.browseInto([ownerUsername, recipientUsername].sort().join("-"));
+  }
+
   async findRecord(name: string, { maxPages = 50 }: { maxPages?: number } = {}): Promise<void> {
     if (await this.isTreeView()) {
       throw new Error("findRecord: pagination is list-view only — switch to list view first.");
@@ -155,7 +182,7 @@ export class WorkspacePage extends BasePage {
     await this.toolbar.createMenu.createFromCustomForm(formName);
     const doc = new DocumentPage(this.page);
     await doc.isLoaded();
-    await this.page.waitForLoadState("networkidle").catch(() => undefined);
+    await this.page.waitForLoadState("networkidle");
     return doc;
   }
 

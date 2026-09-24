@@ -68,9 +68,10 @@ export async function loginInNewContext(
 }
 
 /**
- * Re-authenticates the main `page`/`pageWorkspace` fixtures' own user so Shiro reloads
- * permissions granted after its original login (e.g. group membership just created) — see
- * .claude/automation/shiro-authorization-cache-not-refreshed-2026-08-30.md.
+ * Logs the user out and back in so Shiro reloads permissions granted after an earlier login,
+ * such as a group membership just created. Shiro caches authorization per principal, not per
+ * session, and clears that cache only on logout; a new browser context alone can still see the
+ * cached, pre-change permissions.
  */
 export async function refreshOwnSessionAfterGroupChange(
   page: Page,
@@ -79,10 +80,7 @@ export async function refreshOwnSessionAfterGroupChange(
 ): Promise<void> {
   await pageWorkspace.open();
   await pageWorkspace.header.logOut();
-  const loginPage = new LoginPage(page);
-  await loginPage.open();
-  await loginPage.login(appUser.username, appUser.password);
-  await pageWorkspace.open();
+  await performLogin(page, appUser.username, appUser.password);
 }
 
 export const test = sysadminSessionTest.extend<UserSessionFixtures>({

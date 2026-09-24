@@ -5,14 +5,15 @@ import { alphaNumericUnique } from "@/__tests__/e2e/testData";
 
 test.describe("Deleting and moving shared records", () => {
   test.describe.configure({ timeout: 120_000 });
-  for (const sharing of ["individual", "collaboration"] as const) {
+  for (const sharing of ["individual", "lab", "collaboration"] as const) {
     test(`As an owner, deleting a ${sharing}-shared document revokes access and removes its share records`, async ({
       flowSharingGroup,
       clientDocuments,
     }) => {
       const group = await flowSharingGroup(sharing === "collaboration" ? "collaboration" : "lab");
-      const recipient = sharing === "individual" ? group.recipientUsername : group.name;
-      const recipientLabel = sharing === "individual" ? group.recipientName : group.name;
+      const groupShare = sharing !== "individual";
+      const recipient = groupShare ? group.name : group.recipientUsername;
+      const recipientLabel = groupShare ? group.name : group.recipientName;
       const document = await clientDocuments.create({
         name: alphaNumericUnique("SharedDelete"),
         fields: [{ content: "Recipient can read this before owner deletion" }],
@@ -25,22 +26,23 @@ test.describe("Deleting and moving shared records", () => {
       await management.open();
       await expect(management.row(document.name, recipientLabel)).toBeVisible();
 
-      if (sharing === "collaboration") {
-        await group.recipient.workspace.openSharedFolder(group);
-        await expect(group.recipient.workspace.table.row(document.name)).toBeVisible();
+      if (groupShare) {
+        for (const actor of [group.owner, group.recipient]) {
+          await actor.workspace.openSharedFolder(group);
+          await expect(actor.workspace.table.row(document.name)).toBeVisible();
+        }
       }
 
       await group.owner.workspace.searchFor(document.name);
       await group.owner.workspace.table.selectRecord(document.name);
       await group.owner.workspace.selectionBar.delete();
 
+      await management.open();
+      await expect(management.row(document.name, recipientLabel)).toHaveCount(0);
       for (const actor of [group.owner, group.recipient]) {
         await actor.workspace.searchFor(document.name);
         await expect(actor.workspace.table.row(document.name)).toHaveCount(0);
-        const management = actor.sharedDocuments;
-        await management.open();
-        await expect(management.row(document.name, recipientLabel)).toHaveCount(0);
-        if (sharing === "collaboration") {
+        if (groupShare) {
           await actor.workspace.openSharedFolder(group);
           await expect(actor.workspace.table.row(document.name)).toHaveCount(0);
         }

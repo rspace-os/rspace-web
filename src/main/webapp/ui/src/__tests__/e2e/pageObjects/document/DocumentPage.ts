@@ -11,6 +11,7 @@ import { StoichiometryTableComponent } from "@/__tests__/e2e/components/document
 import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { WitnessDocumentDialogComponent } from "@/__tests__/e2e/components/document/WitnessDocumentDialogComponent";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
 import { BasePage } from "../BasePage";
 
 export class DocumentPage extends BasePage {
@@ -22,7 +23,9 @@ export class DocumentPage extends BasePage {
   readonly signingDialog: SigningDialogComponent;
   readonly editingStatus: Locator;
   readonly lastModifiedDates: Locator;
-  private readonly signedStatuses: Locator;
+  /** Any signed/witnessed banner; count 0 once isLoaded() resolves means the record is unsigned. */
+  readonly signedStatus: Locator;
+  readonly witnessedStatus: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -33,7 +36,8 @@ export class DocumentPage extends BasePage {
     // Legacy JSP status banner; the same indicator covers document and entry editing.
     this.editingStatus = page.locator("#editingStatus");
     this.lastModifiedDates = page.getByText("Last modified:", { exact: false });
-    this.signedStatuses = signedStatusLocator(page);
+    this.signedStatus = signedStatusLocator(page);
+    this.witnessedStatus = page.locator("#witnessedStatus");
   }
 
   getId(): number {
@@ -43,29 +47,12 @@ export class DocumentPage extends BasePage {
   async isLoaded(): Promise<void> {
     await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
     await this.page.locator("#status .state:not(#editingStatus):visible").waitFor({ state: "visible" });
+    await this.toolbar.mounted.waitFor({ state: "visible" });
   }
 
   /** True when shared with this user at READ only (status.tag's #viewAmberStatusReadPermission). */
   async isReadOnly(): Promise<boolean> {
     return this.page.locator("#viewAmberStatusReadPermission").isVisible();
-  }
-
-  async isSigned(): Promise<boolean> {
-    return (await this.signedStatuses.count()) > 0;
-  }
-
-  /** Whether the current user has a pending witness request on this document. */
-  async canWitness(): Promise<boolean> {
-    return this.toolbar.witnessButton.isVisible();
-  }
-
-  /** Whether the document has been fully witnessed (all pending witnesses confirmed). */
-  async isWitnessed(): Promise<boolean> {
-    return this.page.locator("#witnessedStatus").isVisible();
-  }
-
-  async canSign(): Promise<boolean> {
-    return this.toolbar.signButton.isVisible();
   }
 
   async getFieldViewContent(fieldName: string, index = 0): Promise<Locator> {
@@ -137,7 +124,7 @@ export class DocumentPage extends BasePage {
     const editButton = this.page.locator(`#edit_${fieldId}`);
     const editorId = `rtf_${fieldId}`;
     const editorIframe = this.page.locator(`iframe#${editorId}_ifr`);
-    await this.page.waitForLoadState("networkidle").catch(() => undefined);
+    await this.page.waitForLoadState("networkidle");
     await expect(async () => {
       if (!(await editorIframe.isVisible().catch(() => false)) && (await editButton.isVisible().catch(() => false))) {
         await editButton.click();
@@ -171,8 +158,13 @@ export class DocumentPage extends BasePage {
     await this.isLoaded();
   }
 
-  /** Leaves editing without an explicit Save; completed autosaves remain available for recovery. */
+  /**
+   * Leaves editing without an explicit Save; completed autosaves remain available for recovery.
+   * documentEdit.js releases the edit lock with an async request from its unload handler, which
+   * WebKit drops, so the lock is released here explicitly; reopening then doesn't depend on the browser.
+   */
   async leaveWithoutSaving(): Promise<void> {
+    const id = this.getId();
     const handleDialog = (dialog: Dialog): Promise<void> =>
       dialog.type() === "beforeunload" ? dialog.accept() : dialog.dismiss();
     this.page.on("dialog", handleDialog);
@@ -182,6 +174,10 @@ export class DocumentPage extends BasePage {
     } finally {
       this.page.off("dialog", handleDialog);
     }
+    const response = await this.page.request.post("/workspace/editor/structuredDocument/ajax/unlockrecord", {
+      form: { id: String(id) },
+    });
+    expect(response.ok(), `Releasing the edit lock returned HTTP ${response.status()}`).toBe(true);
   }
 
   async saveAsTemplate(templateName: string): Promise<void> {
@@ -221,6 +217,73 @@ export class DocumentPage extends BasePage {
     const dialog = new WitnessDocumentDialogComponent(this.page);
     await dialog.waitUntilVisible();
     await dialog.witnessWithPassword(password);
+  }
+
+  /**
+   * Submits an incorrect signing password; the Signing Document dialog stays open behind the resulting alert,
+   * so the caller can dismiss the alert and retry with the correct password on the returned dialog.
+   */
+  async signExpectingInvalidPassword(
+    password: string,
+    witnessLabels: string[] = [],
+  ): Promise<{ dialog: SignDocumentDialogComponent; alert: AppriseAlertComponent }> {
+    await this.toolbar.signButton.click();
+    const dialog = new SignDocumentDialogComponent(this.page);
+    await dialog.waitUntilVisible();
+    for (const label of witnessLabels) {
+      await dialog.selectWitness(label);
+    }
+    const alert = await dialog.signWithPasswordExpectingInvalid(password);
+    return { dialog, alert };
+  }
+
+  async declineWitness(password: string, reason: string): Promise<void> {
+    await this.toolbar.witnessButton.click();
+    const dialog = new WitnessDocumentDialogComponent(this.page);
+    await dialog.waitUntilVisible();
+    await dialog.declineWithPassword(password, reason);
+  }
+
+  /** Deletes via the document view's own Delete button; documentView.js confirms, then returns to the workspace. */
+  async delete(): Promise<void> {
+    await this.toolbar.actions.deleteButton.click();
+    const confirm = new AppriseAlertComponent(this.page);
+    await confirm.waitUntilVisible();
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/ajax/deleteStructuredDocument/")),
+      confirm.confirmButton.click(),
+    ]);
+    expect(response.ok(), "The document delete request succeeds").toBe(true);
+    await this.page.waitForURL(/\/workspace(\/\d+)?(\?.*)?$/);
+  }
+
+  get signedAwaitingWitnessStatus(): Locator {
+    return this.page.locator("#signedAwaitingWitnessStatus");
+  }
+
+  /** Clicking a signed status banner shows the signer and witness details in a legacy jQuery toast (signature.tag). */
+  async openSignatureStatusMessage(): Promise<Locator> {
+    await this.signedStatus.first().click();
+    return this.page.locator(".toast-container .toast-item").last();
+  }
+
+  /** Reveals signature.tag's hash list and returns the signed-content checksum label. */
+  async showSignatureChecksum(): Promise<Locator> {
+    await this.page.locator(".signatureHashesToggle", { hasText: "Show" }).click();
+    return this.page.locator("#signatureHashesContainer .hashLabel").first();
+  }
+
+  /**
+   * Returns the short-lived (3s) confirmation, which this legacy page renders outside the React alerts region.
+   * Assert it immediately.
+   */
+  async verifySignatureChecksum(): Promise<Locator> {
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/ajax/currentContentHash/")),
+      this.page.locator("#signatureHashesContainer").getByRole("button", { name: "Verify" }).click(),
+    ]);
+    expect(response.ok(), "The current content hash was fetched").toBe(true);
+    return this.page.getByText("Current content matches the checksum from the time of signing.", { exact: true });
   }
 
   statusText(text: string): Locator {

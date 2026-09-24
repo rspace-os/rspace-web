@@ -1,5 +1,7 @@
 import { DocumentsClient } from "@/__tests__/e2e/api/clients/DocumentsClient";
 import { FoldersClient } from "@/__tests__/e2e/api/clients/FoldersClient";
+import { NotificationsDialogComponent } from "@/__tests__/e2e/components/shared/NotificationsDialogComponent";
+import { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsComponent";
 import { DocumentEditorPage } from "@/__tests__/e2e/pageObjects/document/DocumentEditorPage";
 import { DocumentPage } from "@/__tests__/e2e/pageObjects/document/DocumentPage";
 import { SharedDocumentsPage } from "@/__tests__/e2e/pageObjects/myrspace/SharedDocumentsPage";
@@ -20,6 +22,8 @@ export type DocumentSession = {
   sharedDocuments: SharedDocumentsPage;
   groupDetails: GroupDetailsPage;
   directory: DirectoryPage;
+  notifications: NotificationsDialogComponent;
+  toasts: ToastsComponent;
   documents: DocumentsClient;
   folders: FoldersClient;
   refreshAfterGroupChange: () => Promise<void>;
@@ -47,6 +51,8 @@ export const test = userSessionTest.extend<{
           sharedDocuments: new SharedDocumentsPage(page),
           groupDetails: new GroupDetailsPage(page),
           directory: new DirectoryPage(page),
+          notifications: new NotificationsDialogComponent(page),
+          toasts: new ToastsComponent(page),
           documents: new DocumentsClient(apiContext, user.apiKey),
           folders: new FoldersClient(apiContext, user.apiKey),
           refreshAfterGroupChange: () => refreshOwnSessionAfterGroupChange(page, workspace, user),

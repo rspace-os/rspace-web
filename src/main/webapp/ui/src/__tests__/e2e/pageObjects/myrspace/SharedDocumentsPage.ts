@@ -101,10 +101,6 @@ export class SharedDocumentsPage extends BasePage {
       .filter({ hasText: sharedWith });
   }
 
-  async isListed(recordName: string, sharedWith: string): Promise<boolean> {
-    return (await this.row(recordName, sharedWith).count()) > 0;
-  }
-
   async getPermission(recordName: string, sharedWith: string): Promise<SharedRecordPermission> {
     const label = await this.row(recordName, sharedWith)
       .getByRole("combobox", { name: "Permission" })

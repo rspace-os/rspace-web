@@ -7,6 +7,8 @@ export class DocumentHeader {
   readonly editTagsButton: Locator;
   readonly tagInput: Locator;
   readonly tagInfoDialogText: Locator;
+  /** The tag editor's BioPortal availability note, rendered by coreEditor.js when the editor opens. */
+  readonly tagEditorNotice: Locator;
   readonly uniqueIdLink: Locator;
   readonly recordInfoLink: Locator;
   readonly showLastModifiedCheckbox: Locator;
@@ -20,6 +22,7 @@ export class DocumentHeader {
       .getByRole("textbox", { name: "Separate tags by comma..." })
       .or(page.getByRole("textbox", { name: "Ontologies enforced..." }));
     this.tagInfoDialogText = page.locator("#tag-info-dialog-content");
+    this.tagEditorNotice = this.tags.locator(".smallText");
     this.uniqueIdLink = page.locator("a[href*='/globalId/']").first();
     this.recordInfoLink = page.getByRole("link", { name: "Record Info" });
     this.showLastModifiedCheckbox = page.getByRole("checkbox", { name: "Show last modified date" });
@@ -73,10 +76,13 @@ export class DocumentHeader {
   async removeTag(tag: string): Promise<void> {
     await this.openTagEditor();
     const chip = this.tagChip(tag);
-    await Promise.all([
+    const [response] = await Promise.all([
       this.page.waitForResponse((res) => res.url().includes("/tagRecord")),
       chip.getByText("×", { exact: true }).click(),
     ]);
+    if (!response.ok()) {
+      throw new Error(`Removing tag '${tag}' failed: ${response.status()} ${response.statusText()}`);
+    }
     await chip.waitFor({ state: "hidden" });
   }
 
@@ -99,6 +105,32 @@ export class DocumentHeader {
     const items = this.page.locator(".ui-autocomplete li.ui-menu-item").filter({ visible: true });
     const texts = await items.allInnerTexts();
     return texts.map((text) => text.trim()).filter((text) => text.length > 0 && text !== "&nbsp;");
+  }
+
+  /**
+   * Types a search term and returns the suggestions shown for it. The dropdown formats ontology terms as
+   * "<term> - ontology: <name>, version: <version>, uri:<uri>". The same term twice reuses cached results.
+   */
+  async searchTagSuggestions(term: string): Promise<string[]> {
+    await this.openTagEditor();
+    await this.tagInput.press("Escape");
+    await this.tagInput.fill("");
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => {
+        const url = new URL(res.url());
+        return (
+          url.pathname === "/workspace/editor/structuredDocument/userTagsAndOntologies" &&
+          url.searchParams.get("tagFilter") === term
+        );
+      }),
+      this.tagInput.pressSequentially(term, { delay: 100 }),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Searching tag suggestions for '${term}' failed: ${response.status()} ${response.statusText()}`);
+    }
+    await this.page.locator("#ajaxTagsLoadingImg").waitFor({ state: "hidden" });
+    const items = this.page.locator(".ui-autocomplete li.ui-menu-item").filter({ visible: true });
+    return (await items.allInnerTexts()).map((text) => text.trim()).filter((text) => text.length > 0);
   }
 
   /** Adds a tag by clicking it from the suggestions dropdown, rather than typing it as free text. */
@@ -130,9 +162,11 @@ export class DocumentHeader {
     const input = this.page.locator("#recordNameInHeaderEditor");
     await input.waitFor({ state: "visible" });
     await input.fill(newName);
+    // Enter submits the rename form from the focused input; clicking the save icon can miss it
+    // while TinyMCE is still reflowing the page (seen on WebKit).
     const [response] = await Promise.all([
       this.page.waitForResponse((res) => res.url().includes("/ajax/rename")),
-      this.page.locator("#renameRecordSubmit").click(),
+      input.press("Enter"),
     ]);
     if (!response.ok()) {
       throw new Error(`Renaming to '${newName}' failed: ${response.status()} ${response.statusText()}`);

@@ -128,7 +128,7 @@ test.describe("Notebook CRUD", () => {
     });
   });
 
-  test("As a user, I can insert two gallery images into a notebook entry", async ({
+  test("As a user, I can insert two gallery images into a notebook entry and save them", async ({
     pageWorkspace,
     pageNotebook,
     clientFolders,
@@ -139,13 +139,19 @@ test.describe("Notebook CRUD", () => {
     const image1 = { name: `${uniqueName("e2e-nb-image1")}.png`, mimeType: "image/png", buffer: TINY_PNG };
     const image2 = { name: `${uniqueName("e2e-nb-image2")}.png`, mimeType: "image/png", buffer: TINY_PNG };
 
-    const uploadedImages = await test.step("Given a notebook entry and two gallery images exist", async () => {
-      const notebook = await clientFolders.create({ name: notebookName, notebook: true });
-      await clientDocuments.create({ name: "Entry 1", parentFolderId: notebook.id, fields: [{ content: "text" }] });
-      const uploadedImage1 = await clientFiles.uploadFile(image1);
-      const uploadedImage2 = await clientFiles.uploadFile(image2);
-      return [uploadedImage1, uploadedImage2];
-    });
+    const { entryId, uploadedImages } =
+      await test.step("Given a notebook entry and two gallery images exist", async () => {
+        const notebook = await clientFolders.create({ name: notebookName, notebook: true });
+        const entry = await clientDocuments.create({
+          name: "Entry 1",
+          parentFolderId: notebook.id,
+          fields: [{ content: "text" }],
+        });
+        const uploadedImage1 = await clientFiles.uploadFile(image1);
+        const uploadedImage2 = await clientFiles.uploadFile(image2);
+        return { entryId: entry.id, uploadedImages: [uploadedImage1, uploadedImage2] };
+      });
+    const expectedSourceIds = uploadedImages.map(({ id }) => String(id)).sort();
 
     await test.step("When I open the entry and insert both images from the gallery", async () => {
       await pageWorkspace.open();
@@ -160,9 +166,18 @@ test.describe("Notebook CRUD", () => {
 
       await test.step("Then the two uploaded images are inserted", async () => {
         const field = await editor.getField("", 0);
-        const expectedSourceIds = uploadedImages.map(({ id }) => String(id)).sort();
         await expect.poll(async () => (await field.getImageSourceIds()).sort()).toEqual(expectedSourceIds);
       });
+      await editor.editToolbar.saveAndClose();
+    });
+
+    await test.step("And the saved entry references both images", async () => {
+      const content = (await clientDocuments.getById(entryId)).fields[0].content ?? "";
+      const savedSourceIds = content
+        .split("sourceId=")
+        .slice(1)
+        .map((rest) => String(Number.parseInt(rest, 10)));
+      expect([...new Set(savedSourceIds)].sort()).toEqual(expectedSourceIds);
     });
   });
 
@@ -294,6 +309,25 @@ test.describe("Notebook CRUD", () => {
   }) => {
     const notebookName = uniqueName("e2e-nb-rename");
     const renamedNotebookName = uniqueName("e2e-nb-renamed");
+    const expectNotebookActions = async (name: string) => {
+      await pageWorkspace.open();
+      await pageWorkspace.table.selectRecord(name);
+      for (const action of [
+        "Duplicate",
+        "Move",
+        "Rename",
+        "Delete",
+        "Export",
+        "Add to Favorites",
+        "Add/Remove Tags",
+      ] as const) {
+        expect(await pageWorkspace.selectionBar.isActionVisible(action), `${action} is offered`).toBe(true);
+      }
+      for (const action of ["CSV", "Revisions"] as const) {
+        expect(await pageWorkspace.selectionBar.isActionVisible(action), `${action} is not offered`).toBe(false);
+      }
+      await pageWorkspace.table.deselectRecord(name);
+    };
 
     await test.step("Given a notebook with two entries exists", async () => {
       await pageWorkspace.open();
@@ -307,28 +341,19 @@ test.describe("Notebook CRUD", () => {
     });
 
     await test.step("Then the notebook-applicable workspace actions are available", async () => {
-      await pageWorkspace.open();
-      await pageWorkspace.table.selectRecord(notebookName);
-      for (const action of [
-        "Duplicate",
-        "Move",
-        "Rename",
-        "Delete",
-        "Export",
-        "Add to Favorites",
-        "Add/Remove Tags",
-      ] as const) {
-        expect(await pageWorkspace.selectionBar.isActionVisible(action)).toBe(true);
-      }
-      for (const action of ["CSV", "Revisions"] as const) {
-        expect(await pageWorkspace.selectionBar.isActionVisible(action)).toBe(false);
-      }
-      await pageWorkspace.table.deselectRecord(notebookName);
+      await expectNotebookActions(notebookName);
     });
 
-    await test.step("When I rename the notebook and reopen it via its icon", async () => {
+    await test.step("When I rename the notebook", async () => {
       await pageWorkspace.table.selectRecord(notebookName);
       await pageWorkspace.selectionBar.rename(renamedNotebookName);
+    });
+
+    await test.step("Then the same workspace actions apply under its new name", async () => {
+      await expectNotebookActions(renamedNotebookName);
+    });
+
+    await test.step("When I reopen it via its icon", async () => {
       await pageWorkspace.open();
       await pageWorkspace.table.openNotebook(renamedNotebookName);
       await pageNotebook.isLoaded();

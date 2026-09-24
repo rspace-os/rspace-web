@@ -9,7 +9,12 @@ export class CustomDocumentFields {
     const id = await resolveFieldId(this.page, name, 0, "setInput");
     // JSP inputs use the numeric field ID and have no accessible name.
     const input = this.page.locator(`#field_${id}`).locator("input:not([type=hidden]):visible");
-    if (!(await input.isVisible())) await this.page.locator(`#edit_${id}`).click();
+    const editButton = this.page.locator(`#edit_${id}`);
+    await input.or(editButton).first().waitFor({ state: "visible" });
+    if (!(await input.isVisible())) {
+      await editButton.click();
+      await input.waitFor({ state: "visible" });
+    }
     // The legacy timepicker parses key events; fill() alone is reverted on blur.
     await input.press("ControlOrMeta+A");
     await input.pressSequentially(value);

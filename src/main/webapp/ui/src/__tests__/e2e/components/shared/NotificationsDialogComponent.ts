@@ -43,6 +43,11 @@ export class NotificationsDialogComponent {
     await this.root.locator("tr.notificationRow").first().waitFor({ state: "visible" });
   }
 
+  /** Notification rows containing every given text fragment. */
+  row(...texts: string[]): Locator {
+    return texts.reduce((rows, text) => rows.filter({ hasText: text }), this.root.locator("tr.notificationRow"));
+  }
+
   async getNotificationTexts(): Promise<Array<string>> {
     return this.root.locator("tr.notificationRow").allInnerTexts();
   }
@@ -54,11 +59,16 @@ export class NotificationsDialogComponent {
       await this.bellButton.click();
       await this.root.waitFor({ state: "visible" });
       await this.root.getByRole("heading", { name: "My Notifications" }).waitFor({ state: "visible" });
-      if (!(await notification.isVisible())) {
+      // Rows render by AJAX after the heading; give them time before reopening to re-fetch.
+      const arrived = await notification
+        .waitFor({ state: "visible", timeout: 5_000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!arrived) {
         await this.close();
         throw new Error(`The export notification for ${fileName} has not arrived.`);
       }
-    }).toPass({ timeout: 45_000 });
+    }).toPass({ timeout: 60_000 });
     const downloadPrefix = new URL("/export/ajax/downloadArchive/", this.page.url()).href;
     const [download] = await Promise.all([
       this.page.waitForEvent("download"),

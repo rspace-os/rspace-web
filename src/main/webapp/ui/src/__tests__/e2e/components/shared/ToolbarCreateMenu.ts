@@ -45,20 +45,22 @@ export class ToolbarCreateMenu {
   }
 
   /**
-   * The Create menu sometimes lists a form directly as a menu item, and sometimes only
-   * exposes it via "From Form" > the "Choose a form" picker dialog. Handle both so
-   * callers don't need to know which applies to a given form.
+   * Uses the form's own menu entry when it has one, otherwise "From Form" > "Choose a form" (a
+   * paginated picker). Per-form entries load asynchronously (createMenuEntries) and "From Form"
+   * renders in the same update, so its appearance means the direct entries are complete.
    */
   async createFromCustomForm(name: string): Promise<void> {
     await this.createButton.click();
     const menu = this.page.getByRole("menu").filter({ visible: true });
     await expect(menu).toHaveCount(1);
+    const fromForm = menu.getByRole("menuitem", { name: "From Form", exact: true });
+    await fromForm.waitFor({ state: "visible" });
     const directItem = menu.getByRole("menuitem", { name, exact: true });
-    if (await directItem.isVisible().catch(() => false)) {
+    if ((await directItem.count()) > 0) {
       await directItem.click();
       return;
     }
-    await menu.getByRole("menuitem", { name: "From Form", exact: true }).click();
+    await fromForm.click();
     const dialog = this.page.getByRole("dialog", { name: "Choose a form" });
     await dialog.waitFor({ state: "visible" });
     await dialog.getByRole("link", { name, exact: true }).click();

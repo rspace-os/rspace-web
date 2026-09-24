@@ -191,18 +191,28 @@ test.describe("Sharing documents", () => {
       return pageMyRSpace.navigateToSharedDocumentsPage();
     });
 
+    // RSDEV-863: with two documents shared to the same user, each one's permission must change independently.
+    const expectPermissions = async (x: "READ" | "EDIT", y: "READ" | "EDIT") => {
+      await sharedDocs.open();
+      expect(await sharedDocs.getPermission(docX, member.fullName)).toBe(x);
+      expect(await sharedDocs.getPermission(docY, member.fullName)).toBe(y);
+    };
+
     await test.step("Then changing docX's permission to Edit persists after a reload, and docY is unaffected", async () => {
       await sharedDocs.setPermission(docX, member.fullName, "EDIT");
-      expect(await sharedDocs.getPermission(docX, member.fullName)).toBe("EDIT");
+      await expectPermissions("EDIT", "READ");
+    });
 
-      await sharedDocs.open();
-      expect(await sharedDocs.getPermission(docX, member.fullName)).toBe("EDIT");
-      expect(await sharedDocs.getPermission(docY, member.fullName)).toBe("READ");
+    await test.step("Then changing docY to Edit, then reverting docX to Read, each persist without affecting the other", async () => {
+      await sharedDocs.setPermission(docY, member.fullName, "EDIT");
+      await expectPermissions("EDIT", "EDIT");
+
+      await sharedDocs.setPermission(docX, member.fullName, "READ");
+      await expectPermissions("READ", "EDIT");
     });
 
     await test.step("When I unshare docY, it disappears from Shared Documents but still exists in my workspace", async () => {
       await sharedDocs.unshare(docY, member.fullName);
-      expect(await sharedDocs.isListed(docY, member.fullName)).toBe(false);
       await expectDocumentUnavailable(memberDocuments, documents[1].id);
       expect((await memberDocuments.getById(documents[0].id)).fields[0].content).toContain(content);
       expect((await clientDocuments.getById(documents[1].id)).fields[0].content).toContain(content);

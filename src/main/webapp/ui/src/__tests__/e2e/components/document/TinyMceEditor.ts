@@ -2,11 +2,11 @@ import { basename } from "node:path";
 import { expect, type FrameLocator, type Locator, type Page } from "@playwright/test";
 import { ChemistryFieldContent } from "@/__tests__/e2e/components/document/ChemistryFieldContent";
 import { ImageQuickToolbar } from "@/__tests__/e2e/components/document/ImageQuickToolbar";
-import { StoichiometryReactionDialogComponent } from "@/__tests__/e2e/components/document/StoichiometryReactionDialogComponent";
+import { StoichiometryDialogComponent } from "@/modules/stoichiometry/__tests__/pageObjects/StoichiometryDialogComponent";
 
 export class TinyMceEditor {
   private readonly frame: FrameLocator;
-  private readonly body: Locator;
+  readonly body: Locator;
   readonly container: Locator;
   private readonly menubar: Locator;
   readonly editorId: string;
@@ -55,10 +55,14 @@ export class TinyMceEditor {
     expect(await response.json(), "The edited text was accepted by autosave").toMatchObject({ data: true });
   }
 
-  async menuItems(name: string): Promise<Locator> {
-    await this.openMenu(name);
+  /**
+   * An entry of the open menu by its exact label. TinyMCE appends any keyboard shortcut to the
+   * accessible name ("Undo Ctrl+Z"), so match the label text instead; "Save" must not match "Save...".
+   */
+  menuItem(label: string): Locator {
     const menu = this.page.getByRole("menu");
-    return menu.getByRole("menuitem").or(menu.getByRole("menuitemcheckbox"));
+    const labelled = { has: this.page.getByText(label, { exact: true }) };
+    return menu.getByRole("menuitem").filter(labelled).or(menu.getByRole("menuitemcheckbox").filter(labelled));
   }
 
   async closeMenu(): Promise<void> {
@@ -127,7 +131,7 @@ export class TinyMceEditor {
       this.page.locator(`#stopEdit_${this.fieldId}`).click(),
     ]);
     if (!response.ok()) {
-      throw new Error(`Save and View failed: ${response.status()} ${response.statusText()}`);
+      throw new Error(`Saving field failed: ${response.status()} ${response.statusText()}`);
     }
     if (!refreshedFields.ok()) {
       throw new Error(`Reloading saved fields failed: ${refreshedFields.status()} ${refreshedFields.statusText()}`);
@@ -167,10 +171,6 @@ export class TinyMceEditor {
     return this.frame.locator('img[src*="sourceType=IMAGE"]');
   }
 
-  async countImages(): Promise<number> {
-    return this.imageElement.count();
-  }
-
   async getImageSourceIds(): Promise<string[]> {
     const srcs = await this.imageElement.evaluateAll((imgs) => imgs.map((img) => img.getAttribute("src") ?? ""));
     return srcs.map((src) => new URL(src, "http://localhost").searchParams.get("sourceId") ?? "");
@@ -188,21 +188,27 @@ export class TinyMceEditor {
     return this.frame.getByRole("button", { name: "Reaction Table" });
   }
 
-  async hasBlankStoichiometryTable(): Promise<boolean> {
-    return this.stoichiometryTablePlaceholder.isVisible();
-  }
-
-  async insertStoichiometryTable(): Promise<StoichiometryReactionDialogComponent> {
+  async insertStoichiometryTable(): Promise<StoichiometryDialogComponent> {
     await this.clickToolbarButton("Insert reaction table");
-    const dialog = new StoichiometryReactionDialogComponent(this.page);
+    const dialog = new StoichiometryDialogComponent(this.page);
     await dialog.waitForOpen();
     return dialog;
   }
 
-  async viewStoichiometryTable(): Promise<StoichiometryReactionDialogComponent> {
+  /** Inserts via the "/" insert-actions autocompleter rather than the toolbar button (RSDEV-874). */
+  async insertStoichiometryTableViaSlashCommand(): Promise<StoichiometryDialogComponent> {
+    await this.body.click();
+    await this.body.pressSequentially("/stoichiometry");
+    await this.page.locator(".tox-autocompleter").getByRole("menuitem", { name: "Stoichiometry Table" }).click();
+    const dialog = new StoichiometryDialogComponent(this.page);
+    await dialog.waitForOpen();
+    return dialog;
+  }
+
+  async viewStoichiometryTable(): Promise<StoichiometryDialogComponent> {
     // Saved nodes render this text instead of the fresh placeholder's button role.
     await this.frame.getByText("Stoichiometry Table (no preview)", { exact: true }).click();
-    const dialog = new StoichiometryReactionDialogComponent(this.page);
+    const dialog = new StoichiometryDialogComponent(this.page);
     await this.page.getByRole("button", { name: "View stoichiometry", exact: true }).click();
     await dialog.waitForOpen();
     return dialog;
@@ -210,10 +216,6 @@ export class TinyMceEditor {
 
   get attachmentIcon(): Locator {
     return this.frame.locator("img.attachmentIcon");
-  }
-
-  async hasAttachment(): Promise<boolean> {
-    return this.attachmentIcon.isVisible();
   }
 
   attachmentName(fileName: string): Locator {
@@ -228,10 +230,6 @@ export class TinyMceEditor {
   /** The equation's own LaTeX source, read back from its `data-equation` attribute. */
   get equationSource(): Locator {
     return this.frame.locator(".rsEquation");
-  }
-
-  async getEquationSource(): Promise<string | null> {
-    return this.equationSource.getAttribute("data-equation");
   }
 
   async insertEquation(latex: string): Promise<void> {

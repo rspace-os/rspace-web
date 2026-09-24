@@ -82,6 +82,14 @@ export class WorkspaceSelectionBar {
     await dialog.submit(newName);
   }
 
+  async renameExpectingRejection(newName: string): Promise<WorkspaceRenameDialog> {
+    await this.clickAction("Rename");
+    const dialog = new WorkspaceRenameDialog(this.page);
+    await dialog.waitUntilVisible();
+    await dialog.submitExpectingRejection(newName);
+    return dialog;
+  }
+
   async move(): Promise<MoveDialog> {
     await this.clickAction("Move");
     const dialog = new MoveDialog(this.page);
@@ -128,7 +136,7 @@ export class WorkspaceSelectionBar {
     if (!response.ok()) {
       throw new Error(`getTagsForRecords failed: ${response.status()} ${response.statusText()}`);
     }
-    await this.page.waitForLoadState("networkidle").catch(() => undefined);
+    await this.page.waitForLoadState("networkidle");
     const dialog = new AddRemoveTagsDialog(this.page);
     await dialog.waitUntilVisible();
     return dialog;

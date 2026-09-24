@@ -15,6 +15,7 @@ export class WorkspacePagination {
   }
 
   private get activePageItem(): Locator {
+    // Bootstrap exposes the current page only through its active class.
     return this.root.locator("li.active");
   }
 

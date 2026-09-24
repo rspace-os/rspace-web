@@ -5,22 +5,37 @@ import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
 import { readArchiveDocuments } from "@/__tests__/e2e/zipArchive";
 
 test.describe("Document editor menus and history", () => {
-  test("As a user, I can access the remaining actions across all seven TinyMCE menus", async ({ pageWorkspace }) => {
+  test("As a user, each of the seven TinyMCE menus exposes its expected actions", async ({ pageWorkspace }) => {
     await pageWorkspace.open();
     const editor = await pageWorkspace.createBasicDocument();
     const field = await editor.getField("", 0);
     const menus = {
-      File: ["Undo", "Redo", "Create a snippet"],
+      File: ["Save", "Print...", "Find and replace...", "Select all", "Undo", "Redo", "Create a snippet"],
       Insert: [
+        "From Gallery",
+        "External Link",
+        "Internal Link",
+        "Equation",
         "File from computer",
-        "Special character",
+        "Special character...",
         "Nonbreaking space",
         "Date/time",
         "Horizontal line",
         "Comment",
         "Sketch",
       ],
-      Format: ["Strikethrough", "Superscript", "Subscript", "Formats", "Increase indent", "Decrease indent"],
+      Format: [
+        "Bold",
+        "Italic",
+        "Underline",
+        "Clear formatting",
+        "Strikethrough",
+        "Superscript",
+        "Subscript",
+        "Formats",
+        "Increase indent",
+        "Decrease indent",
+      ],
       Table: [
         "Insert Table",
         "Insert Advanced Table",
@@ -42,8 +57,8 @@ test.describe("Document editor menus and history", () => {
       ],
     };
     for (const [name, expected] of Object.entries(menus)) {
-      const items = await field.menuItems(name);
-      for (const item of expected) await expect(items.filter({ hasText: item })).toBeVisible();
+      await field.openMenu(name);
+      for (const item of expected) await expect.soft(field.menuItem(item), `${name} > ${item}`).toBeVisible();
       await field.closeMenu();
     }
   });
@@ -62,7 +77,8 @@ test.describe("Document editor menus and history", () => {
     await popup.close();
   });
 
-  test("As a user, each saved equation revision retains its original LaTeX", async ({
+  test("As a user, each saved equation revision retains its original LaTeX, and an HTML payload never renders or executes", async ({
+    page,
     pageWorkspace,
     pageDocument,
     pageDocumentRevisions,
@@ -72,7 +88,14 @@ test.describe("Document editor menus and history", () => {
     const editor = await pageWorkspace.createBasicDocument();
     await editor.header.rename(name);
     const id = editor.getId();
-    const equations = [String.raw`x^2 + \sqrt{y}`, String.raw`\pi r^2`, String.raw`\frac{a}{b}`];
+    // A <script> inserted via innerHTML never runs, so it couldn't detect unsanitised rendering; onerror does.
+    const htmlPayload = "<img src=x onerror=alert(1)>";
+    const equations = [String.raw`x^2 + \sqrt{y}`, htmlPayload, String.raw`\pi r^2`];
+    const dialogs: string[] = [];
+    page.on("dialog", async (dialog) => {
+      dialogs.push(dialog.message());
+      await dialog.dismiss();
+    });
     const versions: number[] = [];
     const initialField = await editor.getField("", 0);
     await initialField.insertEquation(equations[0]);
@@ -89,12 +112,14 @@ test.describe("Document editor menus and history", () => {
       await pageDocumentRevisions.openForDocument(id);
       versions.push(await pageDocumentRevisions.latestVersion());
     }
-    expect(new Set(versions).size, "Each explicit save creates a distinct revision").toBe(3);
+    expect(new Set(versions).size, "Each explicit save creates a distinct revision").toBe(equations.length);
     for (const [index, version] of versions.entries()) {
       await pageDocumentRevisions.openForDocument(id);
       await pageDocumentRevisions.openVersion(version);
       await expect(await pageDocument.equationInField("", 0)).toHaveAttribute("data-equation", equations[index]);
+      await expect(page.locator('img[src="x"]'), "The payload must not render as an element").toHaveCount(0);
     }
+    expect(dialogs, "The payload is stored as equation text and never executed").toEqual([]);
   });
 });
 
