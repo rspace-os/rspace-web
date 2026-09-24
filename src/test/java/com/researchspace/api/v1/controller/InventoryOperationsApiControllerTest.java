@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,6 +69,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
@@ -201,24 +203,34 @@ class InventoryOperationsApiControllerTest {
   }
 
   @Test
-  void yamlBodiesAreRejectedWith415BeforeAnyInventoryEffect() throws Exception {
-    // The app registers a global YAML converter (WebConfig.YamlJackson2HttpMessageConverter), so
-    // without an explicit JSON-only consumes clause these endpoints would bind YAML bodies too. The
-    // same converter is registered here so this test fails if the consumes guard is ever dropped.
+  void aNonJsonContentTypeIsNotRefusedAtTheMappingLikeEveryOtherInventoryEndpoint()
+      throws Exception {
+    // A consumes clause on the mapping made Spring raise 415 before choosing a handler, so the
+    // API's
+    // JSON error advice never ran and clients got the container's HTML page. The other Inventory
+    // endpoints declare no consumes; these must not either.
     MockMvc mvc =
         MockMvcBuilders.standaloneSetup(controller)
             .setMessageConverters(
                 new MappingJackson2HttpMessageConverter(),
                 new WebConfig.YamlJackson2HttpMessageConverter())
             .build();
-    for (String yamlType : List.of("application/x-yaml", "application/yaml", "text/yaml")) {
-      mvc.perform(
-              post("/api/inventory/v1/operations/aliquot")
-                  .contentType(yamlType)
-                  .content("sampleName: Aliquots"))
-          .andExpect(status().isUnsupportedMediaType());
+    int status;
+    try {
+      status =
+          mvc.perform(
+                  post("/api/inventory/v1/operations/aliquot")
+                      .contentType("application/x-yaml")
+                      .content("sampleName: Aliquots"))
+              .andReturn()
+              .getResponse()
+              .getStatus();
+    } catch (Exception reachedTheHandler) {
+      // the body was bound and the handler ran; standalone MockMvc has no advice to turn its
+      // exception into a response, which is what a chosen handler looks like here
+      return;
     }
-    verifyNoInteractions(operationManager);
+    assertNotEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(), status);
   }
 
   // --- the in-flight claim that refuses a second overlapping request, whoever sent it ---
