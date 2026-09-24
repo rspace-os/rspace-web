@@ -142,10 +142,11 @@ and API field names were ported instead.
    returned a subset rather than everything matching.
    Verified 2026-09-22: `Vaida` answers 0 on both registries, while `*Vaida*` answers 3 on
    b2inst-test.gwdg.de and 1 on api.test.datacite.org, and `mmunit` answers 0 where `*mmunit*`
-   answers 12. Wildcards are case-insensitive on both, so `*vaida*` and `*Vaida*` agree.
+   answers 12. Wildcards are case-insensitive on the analysed fields of both, so `*vaida*` and
+   `*Vaida*` agree; a keyword field such as the DataCite DOI is case-sensitive.
 
    One pair of wildcards for the whole query, **not** a pair per word. DataCite pays for each
-   leading wildcard separately and the client's read timeout is 30s: measured 2026-09-22 against
+   leading wildcard separately and the client's read timeout was 30s: measured 2026-09-22 against
    api.datacite.org, `zeiss` 0.15s, `*zeiss*` 11s, `*electron* *microscope*` 25s, and
    `*scanning* *electron* *microscope*` **32s**, which would abort the call and show the dialog an
    error rather than results. One pair stays flat at ~14s however many words the query holds, so no
@@ -172,13 +173,21 @@ and API field names were ported instead.
    "ends-with a AND starts-with b" rather than a substring of the whole string, so a partial *first*
    word does not match there.
 
+   On DataCite a hyphen also breaks words, and a word with no letter or digit is dropped, because
+   the analyser indexed neither and a wildcard term cannot span two tokens. Measured 2026-09-24 on
+   api.test.datacite.org, instruments only: `test-instrument` answered 15 before RSDEV-1522 and
+   **0** as `*test\-instrument*`, while `*test AND instrument*` answers 27; `Zeiss &&` answered 3,
+   `*Zeiss AND \&\&*` **0**, and `*Zeiss*` 3. The split loses a pasted hyphenated DOI (the DOI is
+   a keyword, which `*qvtb\-aw74*` did match), and the decision 7 retry finds it instead.
+
    A wildcard per word (`*a* AND *b*`) would give DataCite the same quality as B2INST and was
    tried, but it costs a leading wildcard each and DataCite pays for every one: measured against
    api.datacite.org, one word 24s, two 23s, three **31s**, four **66s**, against the DataCite
-   client's hardcoded 30s read timeout. It was reverted for that reason. Raising that timeout needs
-   a datacite-java-client release and is the follow-up if DataCite quality matters more than
-   latency. Filtering the returned page inside RSpace was also built and rejected: it made `total`
-   disagree with the registry and silently dropped hits matched on fields the response does not
+   client's 30s read timeout. It was reverted for that reason. The client's search ceiling has
+   since been raised to 90s, as headroom for the single-wildcard shape rather than a licence for
+   this one: four words already take 66s, and rspace-web holds a database connection for the whole
+   call (RSDEV-1506). Filtering the returned page inside RSpace was also built and rejected: it
+   made `total` disagree with the registry and silently dropped hits matched on fields the response does not
    carry.
 
    Always, not as a fallback. Retrying only when the plain search finds nothing would leave the

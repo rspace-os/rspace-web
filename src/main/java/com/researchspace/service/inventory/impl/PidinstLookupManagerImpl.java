@@ -30,6 +30,7 @@ import com.researchspace.service.inventory.PidinstLookupManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -106,6 +108,11 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * first letter is what stops the parser reading the word as an operator.
    */
   private static final Pattern DATACITE_OPERATOR = Pattern.compile("\\b(AND|OR|NOT)\\b");
+
+  /** Where the DataCite query is cut into words: whitespace, or a hyphen already escaped. */
+  private static final Pattern DATACITE_WORD_BREAK = Pattern.compile("\\s+|\\\\-");
+
+  private static final Pattern HAS_LETTER_OR_DIGIT = Pattern.compile("[\\p{L}\\p{N}]");
 
   /** A Handle under an ePIC prefix (B2INST mints 21.xxx), bare or behind hdl.handle.net. */
   static final Pattern HANDLE_QUERY =
@@ -230,8 +237,9 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * query, so neither transformation can change which searches retry.
    *
    * <p>{@link #containsForDataCite(String)} has made the retry rare rather than redundant: a
-   * wildcarded free text usually matches the DOI fragment by itself. It is kept because it costs
-   * nothing on a non-empty first page and addresses the keyword field directly.
+   * wildcarded free text usually matches the DOI fragment by itself, though not one holding a
+   * hyphen, which the word split breaks. It is kept because it costs nothing on a non-empty first
+   * page and addresses the keyword field directly.
    */
   private DataCiteDoiSearchResult searchDataCite(String query) {
     DataCiteDoiSearchResult hits =
@@ -273,11 +281,20 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    *
    * <p>The consequence, accepted: this is "ends-with the first word AND starts-with the last", not
    * a substring of the whole string, so a partial first word does not match on DataCite. A wildcard
-   * per word would fix that but costs a leading wildcard each - three words measure 31s against the
-   * client's 30s read timeout - so it is not affordable there.
+   * per word would fix that but costs a leading wildcard each - three words measure 31s and four
+   * 66s, each second holding a database connection - so it is not affordable there.
+   *
+   * <p>A hyphen breaks words like a space does, and a word with no letter or digit is dropped,
+   * because the analyser indexed neither: {@code *X\-ray AND microscope*} answers 0 where {@code *X
+   * AND ray AND microscope*} finds the record, and {@code *Zeiss AND \&\&*} 0 where {@code *Zeiss*}
+   * gives the 3 the unwrapped query did (api.test.datacite.org, instruments, 2026-09-24).
    */
   private static String containsForDataCite(String query) {
-    return "*" + query.replaceAll("\\s+", " AND ") + "*";
+    String words =
+        Arrays.stream(DATACITE_WORD_BREAK.split(query))
+            .filter(word -> HAS_LETTER_OR_DIGIT.matcher(word).find())
+            .collect(Collectors.joining(" AND "));
+    return "*" + (words.isEmpty() ? query : words) + "*";
   }
 
   /**

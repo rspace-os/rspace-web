@@ -162,7 +162,6 @@ class PidinstLookupManagerImplTest {
     verify(b2instConnector).searchRecords("*Instr1\\ prova_COPY*", 50);
   }
 
-  /** The sentence may sit in any field the hit exposes, not only the name. */
   /**
    * The providers get different queries for the same input, because they disagree about the escaped
    * space. On B2INST {@code *a\ b*} stays one term and matches the whole string including the
@@ -207,7 +206,7 @@ class PidinstLookupManagerImplTest {
 
   /**
    * One pair of wildcards around the whole query, its spaces escaped so it stays a single term. A
-   * pair per word would match more on DataCite but exceeds its 30s read timeout at three words, and
+   * pair per word would match more on DataCite but takes 31s at three words and 66s at four, and
    * leaving the spaces raw lets B2INST's OR return records holding only one word (ADR 0009 decision
    * 8). This pins both.
    */
@@ -219,19 +218,6 @@ class PidinstLookupManagerImplTest {
     manager.search("electro micro stub", user);
 
     verify(b2instConnector).searchRecords("*electro\\ micro\\ stub*", 50);
-  }
-
-  /** Escaping runs first, so our wildcards stay live while the user's own text stays literal. */
-  @Test
-  void dataCiteWildcardsGoOutsideTheEscapeNotInsideIt() {
-    onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
-        .thenReturn(dataCitePage(0));
-
-    manager.search("Zeiss &&", user);
-
-    verify(dataCiteConnector)
-        .searchInstrumentDois("*Zeiss AND \\&\\&*", 50, InventorySettingType.PIDINST);
   }
 
   @Test
@@ -598,9 +584,10 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteRetriesADoiWildcardWhenFreeTextFindsNothing() {
     onADataCiteDeployment();
-    // the free-text call carries the hyphen escaped and the query wildcarded; the retry composes
-    // its own clause from the raw query, so neither applies to the second of these two
-    when(dataCiteConnector.searchInstrumentDois("*qvtb\\-aw74*", 50, InventorySettingType.PIDINST))
+    // the free-text call breaks the words at the hyphen, which misses a DOI (a keyword field); the
+    // retry composes its own clause from the raw query, so it still finds it
+    when(dataCiteConnector.searchInstrumentDois(
+            "*qvtb AND aw74*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
     when(dataCiteConnector.searchInstrumentDois(
             "doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
@@ -646,7 +633,10 @@ class PidinstLookupManagerImplTest {
         arguments("(Zeiss", "*\\(Zeiss*"),
         arguments("Zeiss!", "*Zeiss\\!*"),
         arguments("Zeiss^2", "*Zeiss\\^2*"),
-        arguments("Zeiss &&", "*Zeiss AND \\&\\&*"),
+        arguments("Zeiss &&", "*Zeiss*"),
+        arguments("&&&&", "*\\&\\&\\&\\&*"),
+        arguments("X-ray microscope", "*X AND ray AND microscope*"),
+        arguments("-Zeiss", "*Zeiss*"),
         arguments("Zeiss OR", "*Zeiss AND \\OR*"),
         arguments("NOT Zeiss", "*\\NOT AND Zeiss*"),
         arguments("Zeiss AND Bruker", "*Zeiss AND \\AND AND Bruker*"));
@@ -756,7 +746,7 @@ class PidinstLookupManagerImplTest {
   void dataCiteRetriesAPastedPrefixAndSuffixPair() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(
-            "*82316/qvtb\\-aw74*", 50, InventorySettingType.PIDINST))
+            "*82316/qvtb AND aw74*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
     when(dataCiteConnector.searchInstrumentDois(
             "doi:*82316/qvtb-aw74*", 50, InventorySettingType.PIDINST))
