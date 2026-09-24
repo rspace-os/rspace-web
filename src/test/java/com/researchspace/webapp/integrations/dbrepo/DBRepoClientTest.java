@@ -1,7 +1,9 @@
 package com.researchspace.webapp.integrations.dbrepo;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withResourceNotFound;
@@ -11,6 +13,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpHeaders;
@@ -187,6 +190,7 @@ public class DBRepoClientTest {
                 "id,name\n1,Experiment\n", MediaType.parseMediaType("text/csv;charset=utf-8")));
 
     ByteArrayOutputStream csv = new ByteArrayOutputStream();
+    AtomicBoolean beforeStreamingCalled = new AtomicBoolean(false);
 
     client.streamResourceCsv(
         "https://dbrepo.example",
@@ -194,8 +198,10 @@ public class DBRepoClientTest {
         "view",
         "view-1",
         new DBRepoCredentials("user", "pass"),
-        csv);
+        csv,
+        () -> beforeStreamingCalled.set(true));
 
+    assertTrue(beforeStreamingCalled.get());
     assertEquals("id,name\n1,Experiment\n", csv.toString(StandardCharsets.UTF_8));
     server.verify();
   }
@@ -208,6 +214,7 @@ public class DBRepoClientTest {
             withSuccess("id,name\n1,Experiment\n", null)
                 .header(HttpHeaders.CONTENT_TYPE, "text/*"));
     ByteArrayOutputStream csv = new ByteArrayOutputStream();
+    AtomicBoolean beforeStreamingCalled = new AtomicBoolean(false);
 
     assertThrows(
         RestClientException.class,
@@ -218,8 +225,10 @@ public class DBRepoClientTest {
                 "view",
                 "view-1",
                 new DBRepoCredentials("user", "pass"),
-                csv));
+                csv,
+                () -> beforeStreamingCalled.set(true)));
 
+    assertFalse(beforeStreamingCalled.get());
     assertEquals("", csv.toString(StandardCharsets.UTF_8));
     server.verify();
   }

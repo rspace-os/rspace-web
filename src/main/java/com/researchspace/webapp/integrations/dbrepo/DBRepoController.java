@@ -193,17 +193,14 @@ public class DBRepoController extends BaseController {
       response.sendError(HttpStatus.UNAUTHORIZED.value());
       return;
     }
-    ResponseHeaders.setContentTypeAndPreventSniffing(response, TEXT_CSV);
-    response.setHeader(
-        "Content-Disposition",
-        String.format("attachment; filename=\"%s\"", csvFilename(resourceType, resourceId)));
     dbRepoClient.streamResourceCsv(
         details.get().baseUrl(),
         databaseId,
         resourceType,
         resourceId,
         details.get().credentials(),
-        response.getOutputStream());
+        response.getOutputStream(),
+        () -> setCsvDownloadHeaders(response, resourceType, resourceId));
   }
 
   private void saveUrl(User user, String normalizedUrl) {
@@ -244,6 +241,14 @@ public class DBRepoController extends BaseController {
   private String csvFilename(String resourceType, String resourceId) {
     return ("dbrepo-" + resourceType + "-" + resourceId + ".csv")
         .replaceAll("[^A-Za-z0-9._-]", "_");
+  }
+
+  private void setCsvDownloadHeaders(
+      HttpServletResponse response, String resourceType, String resourceId) {
+    ResponseHeaders.setContentTypeAndPreventSniffing(response, TEXT_CSV);
+    response.setHeader(
+        "Content-Disposition",
+        String.format("attachment; filename=\"%s\"", csvFilename(resourceType, resourceId)));
   }
 
   private boolean supportsRowInsertion(String resourceType) {

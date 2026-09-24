@@ -131,6 +131,18 @@ public class DBRepoClient {
       String resourceId,
       DBRepoCredentials credentials,
       OutputStream outputStream) {
+    streamResourceCsv(
+        baseUrl, databaseId, resourceType, resourceId, credentials, outputStream, () -> {});
+  }
+
+  void streamResourceCsv(
+      String baseUrl,
+      String databaseId,
+      String resourceType,
+      String resourceId,
+      DBRepoCredentials credentials,
+      OutputStream outputStream,
+      Runnable afterCsvContentTypeValidated) {
     if (!TABLE_TYPE.equals(resourceType)
         && !VIEW_TYPE.equals(resourceType)
         && !SUBSET_TYPE.equals(resourceType)) {
@@ -153,6 +165,7 @@ public class DBRepoClient {
         request -> request.getHeaders().putAll(headers(credentials, TEXT_CSV)),
         response -> {
           validateCsvContentType(response.getHeaders().getContentType());
+          afterCsvContentTypeValidated.run();
           StreamUtils.copy(response.getBody(), outputStream);
           return null;
         });
