@@ -143,11 +143,11 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
-   * RSDEV-1522 follow-up. The query reaches the registry unsplit, but Elasticsearch parses it
-   * before the wildcards apply and splits it on whitespace itself: {@code *Instr1 prova_COPY*} is
-   * two terms, {@code *Instr1} and {@code prova_COPY*}. B2INST joins terms with OR, so a record
-   * named {@code Instr1 prova 123} came back on its {@code instr1} token alone. The {@code AND}
-   * restores "all of it".
+   * RSDEV-1522 follow-up. Unescaped, the query does not reach the registry as one term:
+   * Elasticsearch parses it before the wildcards apply and splits it on whitespace itself, leaving
+   * {@code *Instr1} and {@code prova_COPY*}, which B2INST joins with OR - so a record named {@code
+   * Instr1 prova 123} came back on its {@code instr1} token alone. Escaping the space keeps it one
+   * term, and a real substring match.
    */
   @Test
   void aMultiWordQueryDoesNotMatchARecordHoldingOnlyOneOfTheWords() {
@@ -206,12 +206,13 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
-   * One pair of wildcards for the whole query, with the words ANDed. A pair per word would match
-   * more but exceeds DataCite's 30s read timeout at three words, and dropping the AND lets B2INST's
-   * OR return records holding only one word (ADR 0009 decision 8). This pins both.
+   * One pair of wildcards around the whole query, its spaces escaped so it stays a single term. A
+   * pair per word would match more on DataCite but exceeds its 30s read timeout at three words, and
+   * leaving the spaces raw lets B2INST's OR return records holding only one word (ADR 0009 decision
+   * 8). This pins both.
    */
   @Test
-  void aMultiWordQueryIsOnePairOfWildcardsWithTheWordsAnded() {
+  void aMultiWordB2instQueryIsOneTermWithItsSpacesEscaped() {
     when(b2instConnector.searchRecords("*electro\\ micro\\ stub*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
 
@@ -403,7 +404,7 @@ class PidinstLookupManagerImplTest {
   /** RSDEV-1505: defensive, but it decides a disclosure, so it is pinned rather than asserted. */
   @Test
   void aLinkedRowHoldingNoInstrumentIsHiddenRatherThanUnlinked() {
-    when(b2instConnector.searchRecords("microscope", 50))
+    when(b2instConnector.searchRecords("*microscope*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier orphan =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
@@ -421,7 +422,7 @@ class PidinstLookupManagerImplTest {
   /** RSDEV-1505: the registry record is public, so the PID is; the RSpace instrument is not. */
   @Test
   void searchMarksAHitLinkedWithoutNamingAnInstrumentTheCallerCannotOpen() {
-    when(b2instConnector.searchRecords("microscope", 50))
+    when(b2instConnector.searchRecords("*microscope*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
