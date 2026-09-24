@@ -96,7 +96,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         new ApiError(
             HttpStatus.CONFLICT,
             ApiErrorCodes.EDIT_CONFLICT.getCode(),
-            ex.getLocalizedMessage(),
+            messages.getMessage(ex.getMessageKey(), ex.getArgs()),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }

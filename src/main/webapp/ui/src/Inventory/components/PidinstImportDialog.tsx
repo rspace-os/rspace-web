@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -9,6 +10,7 @@ import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
@@ -62,6 +64,9 @@ export type PidinstRecord = {
   alternateIdentifier?: string;
   created?: string;
   updated?: string;
+  /** Whether an Instrument in this RSpace already links this PID; Import is refused either way. */
+  alreadyLinked: boolean;
+  /** Present only when the current user may read that Instrument (RSDEV-1505). */
   linkedInstrumentGlobalId?: string;
 };
 
@@ -155,12 +160,16 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
       <Typography id={headingId} variant="h6" component="h3" sx={{ mb: 1 }}>
         {t("pidinstImport.preview.title")}
       </Typography>
-      {record.linkedInstrumentGlobalId && (
+      {record.alreadyLinked && (
         <Alert severity="info" sx={{ mb: 1, alignItems: "center" }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <span>{t("pidinstImport.preview.alreadyLinked")}</span>
-            <GlobalId record={new LinkableRecordFromGlobalId(record.linkedInstrumentGlobalId)} />
-          </Stack>
+          {record.linkedInstrumentGlobalId ? (
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <span>{t("pidinstImport.preview.alreadyLinked")}</span>
+              <GlobalId record={new LinkableRecordFromGlobalId(record.linkedInstrumentGlobalId)} />
+            </Stack>
+          ) : (
+            t("pidinstImport.preview.alreadyLinkedNoAccess")
+          )}
         </Alert>
       )}
       <Box component="dl" sx={{ m: 0, columnCount: { xs: 1, md: 2 }, columnGap: 4 }}>
@@ -397,13 +406,15 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
 
   const importValidation = !selected
     ? IsInvalid(t("pidinstImport.validation.noSelection"))
-    : selected.linkedInstrumentGlobalId
-      ? IsInvalid(
-          t("pidinstImport.validation.alreadyLinked", {
-            globalId: selected.linkedInstrumentGlobalId,
-          }),
-        )
-      : IsValid();
+    : !selected.alreadyLinked
+      ? IsValid()
+      : selected.linkedInstrumentGlobalId
+        ? IsInvalid(
+            t("pidinstImport.validation.alreadyLinked", {
+              globalId: selected.linkedInstrumentGlobalId,
+            }),
+          )
+        : IsInvalid(t("pidinstImport.validation.alreadyLinkedNoAccess"));
 
   return (
     <ThemeProvider theme={createAccentedTheme(INSTRUMENT_ACCENT_COLOR)}>
@@ -539,9 +550,16 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                       flex: 0.7,
                       sortable: false,
                       renderCell: ({ row }) =>
-                        row.linkedInstrumentGlobalId ? (
+                        !row.alreadyLinked ? null : row.linkedInstrumentGlobalId ? (
                           <GlobalId record={new LinkableRecordFromGlobalId(row.linkedInstrumentGlobalId)} />
-                        ) : null,
+                        ) : (
+                          // the same chip the link fields show for an unreadable target: the grid
+                          // clips a cell, and only adds its own hover title when there is no
+                          // renderCell, so a sentence here would be cut off with no way to read it
+                          <Tooltip title={t("pidinstImport.linkedTo.noAccessDetail")}>
+                            <Chip size="small" color="warning" label={t("pidinstImport.linkedTo.noAccess")} />
+                          </Tooltip>
+                        ),
                     },
                   ),
                   DataGridColumn.newColumnWithValueGetter<"model", PidinstRecord, string>(

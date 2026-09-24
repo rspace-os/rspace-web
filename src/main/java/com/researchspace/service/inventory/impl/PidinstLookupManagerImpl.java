@@ -20,9 +20,11 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
+import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import com.researchspace.service.inventory.PidinstLookupManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
@@ -117,6 +119,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   @Autowired private InstrumentEntityApiManager instrumentApiMgr;
   @Autowired private InventoryIdentifierApiManager identifierMgr;
   @Autowired private MessageSourceUtils messages;
+  @Autowired private InventoryPermissionUtils invPermissions;
 
   @Override
   public ApiPidinstSearchResult search(String query, User user) {
@@ -155,7 +158,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         .sort(
             Comparator.comparing(
                 hit -> StringUtils.defaultString(hit.getName()).toLowerCase(Locale.ROOT)));
-    annotateLinkedInstruments(result.getHits(), provider);
+    annotateLinkedInstruments(result.getHits(), provider, user);
     return result;
   }
 
@@ -173,11 +176,8 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
                             "errors.inventory.identifier.pidinstNotFound", new Object[] {pid})));
     linkedInstrumentOf(record, provider)
         .ifPresent(
-            globalId -> {
-              throw new PidinstAlreadyLinkedException(
-                  messages.getMessage(
-                      "errors.inventory.identifier.pidinstAlreadyLinked", new Object[] {globalId}),
-                  globalId);
+            identifier -> {
+              throw alreadyLinked(identifier, user);
             });
     InstrumentTemplate template =
         instrumentTemplateDao
@@ -323,33 +323,57 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * Stamps every hit with the instrument already linking its PID, in one query rather than one per
-   * hit: a full page is {@link PidinstLookupManager#MAX_HITS} rows, and none of it is cached with
-   * the provider page because link status is local and changes independently of it.
+   * Stamps every hit whose PID an instrument in this deployment already links. The link rows are
+   * one query for the whole page rather than one per hit, and none of them is cached with the
+   * provider page because link status is local and changes independently of it. Visibility is then
+   * one permission check per <em>linked</em> hit, bounded by {@link PidinstLookupManager#MAX_HITS},
+   * which for a caller who cannot plainly read the holder reaches the list-of-materials query
+   * inside limited read.
+   *
+   * <p>Every such hit is marked {@code alreadyLinked}, so Import can be refused with a reason, but
+   * names the instrument only when {@code user} may read it: the registry record is public, an
+   * RSpace instrument the caller may not read is not the search's to name (RSDEV-1505).
    */
-  private void annotateLinkedInstruments(List<ApiPidinstRecord> hits, IdentifierType provider) {
+  private void annotateLinkedInstruments(
+      List<ApiPidinstRecord> hits, IdentifierType provider, User user) {
     List<String> stored =
-        hits.stream()
-            .flatMap(hit -> Stream.of(hit.getPid(), hit.getProviderRecordId()))
-            .filter(Objects::nonNull)
-            .distinct()
-            .toList();
-    Map<String, String> linkedByStoredValue = new HashMap<>();
+        hits.stream().flatMap(PidinstLookupManagerImpl::storedValuesOf).distinct().toList();
+    Map<String, DigitalObjectIdentifier> linkedByStoredValue = new HashMap<>();
     for (DigitalObjectIdentifier identifier :
         doiDao.findActiveByIdentifiersAndType(stored, provider)) {
       // rows come oldest first, and putIfAbsent keeps the oldest, which is the row the
       // single-identifier query would have returned should two ever exist
-      linkedByStoredValue.putIfAbsent(
-          identifier.getIdentifier(), identifier.getConnectedRecordGlobalIdentifier());
+      linkedByStoredValue.putIfAbsent(identifier.getIdentifier(), identifier);
     }
-    hits.forEach(
-        hit ->
-            hit.setLinkedInstrumentGlobalId(
-                storedValuesOf(hit)
-                    .map(linkedByStoredValue::get)
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .orElse(null)));
+    for (ApiPidinstRecord hit : hits) {
+      Optional<DigitalObjectIdentifier> link =
+          storedValuesOf(hit).map(linkedByStoredValue::get).filter(Objects::nonNull).findFirst();
+      hit.setAlreadyLinked(link.isPresent());
+      hit.setLinkedInstrumentGlobalId(
+          link.flatMap(identifier -> visibleGlobalIdOf(identifier, user)).orElse(null));
+    }
+  }
+
+  /**
+   * The Global ID of the instrument holding {@code identifier}, when {@code user} may read it by
+   * the same read-or-limited-read rule that decides everywhere else whether a caller gets a record
+   * or only its no-access view; empty otherwise (RSDEV-1505).
+   *
+   * <p>This governs what the search volunteers, not what is secret: {@code GET /instruments/{id}}
+   * deliberately answers 200 with a name-only public view rather than 404, so a guessed id still
+   * yields the name.
+   *
+   * <p>A row with no record is defensive: no production path leaves a PIDINST identifier without
+   * one. It counts as hidden rather than unlinked, so the PID still reads as taken and the
+   * permission check is never handed a null. The refusal then says an instrument the caller cannot
+   * access holds the PID, which in that unreachable state names an instrument that is not there.
+   */
+  private Optional<String> visibleGlobalIdOf(DigitalObjectIdentifier identifier, User user) {
+    InventoryRecord holder = identifier.getInventoryRecord();
+    if (holder == null || !invPermissions.canUserReadOrLimitedReadInventoryRecord(holder, user)) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(identifier.getConnectedRecordGlobalIdentifier());
   }
 
   /**
@@ -363,12 +387,30 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     return Stream.of(record.getPid(), record.getProviderRecordId()).filter(Objects::nonNull);
   }
 
-  private Optional<String> linkedInstrumentOf(ApiPidinstRecord record, IdentifierType provider) {
+  private Optional<DigitalObjectIdentifier> linkedInstrumentOf(
+      ApiPidinstRecord record, IdentifierType provider) {
     return storedValuesOf(record)
         .map(value -> doiDao.findActiveByIdentifierAndType(value, provider))
         .flatMap(Optional::stream)
-        .findFirst()
-        .map(DigitalObjectIdentifier::getConnectedRecordGlobalIdentifier);
+        .findFirst();
+  }
+
+  /**
+   * The refusal for a PID an instrument already links, naming the instrument only to a caller who
+   * may read it, so the refusal keeps a stated reason without disclosing a Global ID the search
+   * itself withheld (RSDEV-1505). The permission check picks the key; the controller renders it.
+   */
+  private PidinstAlreadyLinkedException alreadyLinked(
+      DigitalObjectIdentifier identifier, User user) {
+    return visibleGlobalIdOf(identifier, user)
+        .map(
+            globalId ->
+                new PidinstAlreadyLinkedException(
+                    "errors.inventory.identifier.pidinstAlreadyLinked", globalId))
+        .orElseGet(
+            () ->
+                new PidinstAlreadyLinkedException(
+                    "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess"));
   }
 
   /** Same translation {@code InstrumentsApiController.createNewInstrument} applies to a POST. */
