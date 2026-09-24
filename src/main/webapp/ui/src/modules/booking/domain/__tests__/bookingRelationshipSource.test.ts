@@ -11,6 +11,7 @@ describe("booking relationship source", () => {
         const params = new URL(request.url).searchParams;
         expect(params.get("where")).toBe("target==IN42");
         expect(params.get("depth")).toBe("1");
+        expect(params.get("limit")).toBe("1");
         return HttpResponse.json({
           docs: [{ target: { globalId: "IN42", value: { id: 42, name: "Archived centrifuge" } } }],
         });
@@ -21,6 +22,29 @@ describe("booking relationship source", () => {
       globalId: "IN42",
       name: "Archived centrifuge",
     });
+  });
+  it("restores archived targets in one bounded target=in request", async () => {
+    let requested: URL | undefined;
+    server.use(
+      http.get("/api/v2/booking-configurations", ({ request }) => {
+        requested = new URL(request.url);
+        return HttpResponse.json({
+          docs: [
+            { target: { globalId: "IN42", value: { id: 42, name: "Archived centrifuge" } } },
+            { target: { globalId: "IN43", value: { id: 43, name: "Archived microscope" } } },
+          ],
+        });
+      }),
+    );
+
+    await expect(bookingInstrumentSource.resolveMany?.(["in0042", "IN43"], "token", signal())).resolves.toEqual({
+      IN42: { id: 42, name: "Archived centrifuge", globalId: "IN42" },
+      IN43: { id: 43, name: "Archived microscope", globalId: "IN43" },
+    });
+    expect(bookingInstrumentSource.normalizeValue?.("in0042")).toBe("IN42");
+    expect(requested?.searchParams.get("where")).toBe("target=in=(IN42,IN43)");
+    expect(requested?.searchParams.get("limit")).toBe("2");
+    expect(requested?.searchParams.get("depth")).toBe("1");
   });
   it("does not resolve historical targets when the configuration is unavailable", async () => {
     server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json({ docs: [] })));

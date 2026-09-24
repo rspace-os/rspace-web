@@ -15,6 +15,7 @@ import {
   ComboboxValue,
   useComboboxAnchor,
 } from "@/modules/common/ui/combobox";
+import { Spinner } from "@/modules/common/ui/spinner";
 import { cn } from "@/modules/common/utils/cn";
 import {
   useRelationshipOptionAvailability,
@@ -26,13 +27,23 @@ import type { RelationshipOptionWithSource, RelationshipSource } from "./relatio
 // Matches the h-8 / text-xs controls a filter row uses. The inner input needs its own rules because
 // `Input` hard-codes h-9 and md:text-sm, which a class on the wrapper cannot override.
 const compactInputClasses = "h-8 w-full text-xs [&_input]:h-8 [&_input]:py-0 [&_input]:text-xs";
-const compactChipsClasses = "min-h-8 w-full py-1 text-xs [&_input]:h-6 [&_input]:py-0 [&_input]:text-xs";
+const compactChipsClasses =
+  "min-h-8 max-h-24 w-full overflow-y-auto py-1 text-xs [&_input]:h-6 [&_input]:py-0 [&_input]:text-xs";
 
-function splitValue(value: string): readonly string[] {
+function splitValue(value: string, sources: readonly RelationshipSource[]): readonly string[] {
+  const seen = new Set<string>();
   return value
     .split(",")
     .map((item) => item.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((item) => {
+      const owner = sources.find((candidate) => candidate.ownsValue(item));
+      const canonical = owner?.normalizeValue?.(item) ?? item;
+      const key = JSON.stringify([owner?.id ?? "unknown", canonical]);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function sameOption(option: RelationshipOptionWithSource, other: RelationshipOptionWithSource) {
@@ -49,6 +60,7 @@ export function RelationshipPicker({
   source,
   sources,
   availabilitySource,
+  authScope,
   value,
   onChange,
   onOptionChange,
@@ -74,6 +86,8 @@ export function RelationshipPicker({
   /** Sources searched in parallel and merged in declaration order. */
   sources?: readonly RelationshipSource[];
   availabilitySource?: RelationshipOptionAvailabilitySource;
+  /** Caller identity used to partition cached options when permissions differ between callers. */
+  authScope?: string | number;
   value: string;
   onChange: (value: string) => void;
   /** Receives the selected option for consumers that need its display metadata. */
@@ -107,6 +121,7 @@ export function RelationshipPicker({
     () => ({
       idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }),
       unavailableLabel: (value: string) => t("relationshipPicker.unavailable", { value }),
+      failedLabel: () => t("relationshipPicker.restoreFailed"),
       compact,
     }),
     [t, compact],
@@ -114,14 +129,16 @@ export function RelationshipPicker({
 
   const selected = useSelectedRelationshipOptions({
     sources: sourceList,
-    values: splitValue(value),
+    values: splitValue(value, sourceList),
     token,
+    authScope,
     labels,
   });
-  const { options, failed } = useRelationshipOptions({
+  const { options, failed, loading } = useRelationshipOptions({
     sources: sourceList,
     term,
     token,
+    authScope,
     labels,
     enabled: hasSearchTerm,
   });
@@ -135,6 +152,7 @@ export function RelationshipPicker({
     options,
     availabilitySource,
     token,
+    authScope,
   });
   // Keeps the selected options selectable while a fresh search is in flight, so a chip never
   // disappears from the list mid-typing.
@@ -146,9 +164,11 @@ export function RelationshipPicker({
     return shown;
   }, [hasSearchTerm, options, selected]);
   const emptyMessage = hasSearchTerm
-    ? failed
-      ? t("relationshipPicker.failed")
-      : t("relationshipPicker.empty")
+    ? loading
+      ? t("loading")
+      : failed
+        ? t("relationshipPicker.failed")
+        : t("relationshipPicker.empty")
     : t("relationshipPicker.enterSearchTerm");
   const handleInputValueChange = (nextTerm: string, { reason }: { reason: string }) => {
     if (reason === "input-change") setTerm(nextTerm);
@@ -235,6 +255,11 @@ export function RelationshipPicker({
             triggerLabel={t("relationshipPicker.openOptions")}
           />
           <ComboboxContent>
+            {loading && hasSearchTerm ? (
+              <div role="status" className="px-2 py-1 text-xs text-muted-foreground">
+                {t("loading")}
+              </div>
+            ) : null}
             <ComboboxList>
               {(option: RelationshipOptionWithSource) => (
                 <ComboboxItem
@@ -247,7 +272,7 @@ export function RelationshipPicker({
                 </ComboboxItem>
               )}
             </ComboboxList>
-            <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
+            <ComboboxEmpty>{loading && hasSearchTerm ? null : emptyMessage}</ComboboxEmpty>
           </ComboboxContent>
         </Combobox>
       </>
@@ -273,16 +298,28 @@ export function RelationshipPicker({
           }
         }}
       >
-        <ComboboxChips ref={anchor} className={cn(compact && compactChipsClasses, className)}>
+        <ComboboxChips
+          ref={anchor}
+          className={cn(compact && compactChipsClasses, className)}
+          aria-busy={selected.some((option) => option.restoreStatus === "loading") || undefined}
+        >
           <ComboboxValue>
             {(shown: RelationshipOptionWithSource[] | null) =>
               // base-ui passes null while the multiple value is empty
               (shown ?? []).map((option) => (
                 <ComboboxChip
                   key={`${option.sourceId}:${option.value}`}
+                  aria-invalid={option.restoreStatus === "invalid" || undefined}
+                  aria-busy={option.restoreStatus === "loading" || undefined}
                   removeLabel={t("relationshipPicker.remove", { item: option.label })}
                 >
                   {option.label}
+                  {option.restoreStatus === "loading" ? (
+                    <>
+                      <span className="sr-only">{t("loading")}</span>
+                      <Spinner aria-hidden="true" className="size-3" />
+                    </>
+                  ) : null}
                 </ComboboxChip>
               ))
             }
@@ -290,6 +327,11 @@ export function RelationshipPicker({
           <ComboboxChipsInput {...common} />
         </ComboboxChips>
         <ComboboxContent anchor={anchor}>
+          {loading && hasSearchTerm ? (
+            <div role="status" className="px-2 py-1 text-xs text-muted-foreground">
+              {t("loading")}
+            </div>
+          ) : null}
           <ComboboxList>
             {(option: RelationshipOptionWithSource) => (
               <ComboboxItem
@@ -302,7 +344,7 @@ export function RelationshipPicker({
               </ComboboxItem>
             )}
           </ComboboxList>
-          <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
+          <ComboboxEmpty>{loading && hasSearchTerm ? null : emptyMessage}</ComboboxEmpty>
         </ComboboxContent>
       </Combobox>
     </>

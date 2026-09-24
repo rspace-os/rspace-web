@@ -2508,6 +2508,7 @@ export default interface Resources {
       "openOptions": "Show matching records",
       "openRecord": "Open record {globalId}",
       "remove": "Remove {item}",
+      "restoreFailed": "Could not restore this saved selection. Try again.",
       "search": "Search by name or global ID",
       "unavailable": "{value} (unavailable)"
     },
