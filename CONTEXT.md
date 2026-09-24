@@ -230,7 +230,8 @@ resolved during design. This file is a glossary only — no implementation detai
   of the registry. Free text is matched as a *substring*, not as a whole word: what the user typed
   is found anywhere inside a record's text, so part of a name finds the record that carries it, and
   the whole phrase is matched as typed rather than split into separate words. DataCite is the
-  exception: there each word is matched by its start or end, not the phrase as a whole. Only
+  exception: there the words are matched separately, the first by its end, the last by its start
+  and any in between as whole words, not the phrase as a whole. Only
   *public* records are found: a PID whose registration is still in progress, or has been
   declined, is not a lookup result and cannot be imported, because it has no resolvable
   landing page to link to.
