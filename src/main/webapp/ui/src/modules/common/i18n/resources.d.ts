@@ -7075,8 +7075,7 @@ export default interface Resources {
           "descriptionTooLong": "Description cannot be longer than 255 chars",
           "elnFieldIdRequired": "elnFieldId cannot be null",
           "nameRequired": "name cannot be empty",
-          "nameTooLong": "Name cannot be longer than 255 chars",
-          "tooManyMaterials": "A list of materials accepts at most {max} materials."
+          "nameTooLong": "Name cannot be longer than 255 chars"
         },
         "location": {
           "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
@@ -7187,7 +7186,8 @@ export default interface Resources {
           "invalidUnit": "Unit id is not a valid temperature unit.",
           "minGreaterThanMax": "Min temperature is greater than max temperature.",
           "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
-          "unitsNotComparable": "Temperature units are not mutually comparable."
+          "unitsNotComparable": "Temperature units are not mutually comparable.",
+          "valueRequired": "A temperature needs a numeric value."
         },
         "template": {
           "deleted": "Sample template {0} is in the trash and cannot be used to create a sample. Restore it, or choose another template.",

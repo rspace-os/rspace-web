@@ -1,7 +1,11 @@
 package com.researchspace.model.units;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.researchspace.core.testutilJU5.JakartaValidatorTestJU5;
+import jakarta.validation.ConstraintViolation;
 import java.math.BigDecimal;
+import java.util.Set;
 import lombok.Value;
 import org.junit.jupiter.api.Test;
 
@@ -51,5 +55,34 @@ class TemperatureValidationTest extends JakartaValidatorTestJU5 {
     q.setUnitId(RSUnitDef.CELSIUS.getId());
     q.setNumericValue(null);
     assertNErrors(new Measurable(q), 1, true);
+  }
+
+  @Test
+  void aTemperatureWithAUnitButNoNumberSaysTheNumberIsMissingNotAbsoluteZero() {
+    QuantityInfo q = new QuantityInfo();
+    q.setUnitId(RSUnitDef.CELSIUS.getId());
+    q.setNumericValue(null);
+    assertEquals(
+        "{errors.inventory.temperature.valueRequired}", singleMessageTemplate(new Measurable(q)));
+  }
+
+  @Test
+  void otherTemperatureFailuresKeepTheDefaultMessage() {
+    QuantityInfo q = new QuantityInfo();
+    q.setUnitId(RSUnitDef.CELSIUS.getId());
+    q.setNumericValue(new BigDecimal(-274));
+    assertEquals(DEFAULT_MESSAGE, singleMessageTemplate(new Measurable(q)));
+    q.setUnitId(RSUnitDef.MICRO_GRAM.getId());
+    q.setNumericValue(new BigDecimal(20));
+    assertEquals(DEFAULT_MESSAGE, singleMessageTemplate(new Measurable(q)));
+  }
+
+  private static final String DEFAULT_MESSAGE =
+      "Invalid temperature - must be a temperature measurement greater than absolute zero";
+
+  private String singleMessageTemplate(Measurable m) {
+    Set<ConstraintViolation<Measurable>> violations = validator.validate(m);
+    assertEquals(1, violations.size());
+    return violations.iterator().next().getMessageTemplate();
   }
 }

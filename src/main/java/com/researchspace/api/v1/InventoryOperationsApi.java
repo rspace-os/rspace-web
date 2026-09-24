@@ -4,7 +4,6 @@ import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import com.researchspace.api.v1.model.ApiInventoryOperationResult;
 import com.researchspace.model.User;
 import jakarta.validation.Valid;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -22,53 +21,50 @@ public interface InventoryOperationsApi {
 
   // A creating operation answers 201 with a Location header pointing at the new sample; Destroy
   // answers 200 (it creates nothing).
-  //
-  // JSON only: the app registers a global YAML converter (WebConfig), so without this consumes
-  // guard the endpoints would accept YAML bodies with laxer parsing than the JSON contract.
 
-  @PostMapping(value = "/aliquot", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(value = "/aliquot")
   ResponseEntity<ApiInventoryOperationResult> aliquot(
       @RequestBody @Valid ApiInventoryOperationRequests.Aliquot request,
       BindingResult errors,
       User user)
       throws BindException;
 
-  @PostMapping(value = "/passage", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(value = "/passage")
   ResponseEntity<ApiInventoryOperationResult> passage(
       @RequestBody @Valid ApiInventoryOperationRequests.Passage request,
       BindingResult errors,
       User user)
       throws BindException;
 
-  @PostMapping(value = "/pool", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(value = "/pool")
   ResponseEntity<ApiInventoryOperationResult> pool(
       @RequestBody @Valid ApiInventoryOperationRequests.Pool request,
       BindingResult errors,
       User user)
       throws BindException;
 
-  @PostMapping(value = "/derive", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(value = "/derive")
   ResponseEntity<ApiInventoryOperationResult> derive(
       @RequestBody @Valid ApiInventoryOperationRequests.Derive request,
       BindingResult errors,
       User user)
       throws BindException;
 
-  @PostMapping(value = "/cryopreserve", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(value = "/cryopreserve")
   ResponseEntity<ApiInventoryOperationResult> cryopreserve(
       @RequestBody @Valid ApiInventoryOperationRequests.Cryopreserve request,
       BindingResult errors,
       User user)
       throws BindException;
 
-  @PostMapping(value = "/revive", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(value = "/revive")
   ResponseEntity<ApiInventoryOperationResult> revive(
       @RequestBody @Valid ApiInventoryOperationRequests.Revive request,
       BindingResult errors,
       User user)
       throws BindException;
 
-  @PostMapping(value = "/destroy", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(value = "/destroy")
   ResponseEntity<ApiInventoryOperationResult> destroy(
       @RequestBody @Valid ApiInventoryOperationRequests.Destroy request,
       BindingResult errors,

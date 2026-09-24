@@ -61,9 +61,10 @@ unknown property is ignored exactly as on every other endpoint.
 
 ### D3 Seven typed endpoints are the public API
 
-`POST /api/inventory/v1/operations/<key>`, one per operation, JSON only
-(`consumes = application/json`: the app registers a global YAML converter whose laxer
-parsing would bypass the JSON contract, so YAML bodies get 415). A singular `origin` for
+`POST /api/inventory/v1/operations/<key>`, one per operation, accepting the same media
+types as the rest of the Inventory API. An earlier JSON-only `consumes` guard was removed:
+a content-type mismatch was raised before a handler was chosen, so the API's error advice
+never ran and clients got the container's HTML 415 page. A singular `origin` for
 the six single-origin operations and `origins` for Pool, input fields named after the
 definition's input keys, numeric `templateId`, `documentedByGlobalId`, and one response
 envelope of the created sample plus each origin's remaining state. The generic endpoint is
@@ -92,6 +93,14 @@ rejected, not rounded, because the stored decrement would differ from the valida
 zero amount is rejected everywhere: an operation that takes an amount needs more than
 zero, and one that does not (Passage) rejects the field whatever its value. Created
 amounts are independent of the amount taken.
+
+On the UI side the wizard's amount and temperature fields hold the raw text the user typed
+(a controlled number input re-rendered from its parsed value drops every "0" typed after the
+point, so 1.05 became 1.5). An amount field refuses a fourth decimal at the keystroke, so the
+3dp rule cannot be tripped from the wizard and Next is never disabled for a reason the field
+does not show. A temperature field takes whole degrees only, exactly as the sample form's
+storage temperature does, so a sample created by an operation carries the same kind of
+temperature a user could have typed on the sample itself.
 
 Pool's take-all is `takeAll: true` on the body, not a per-origin mode. The server reads
 each origin's live quantity at processing time, as Destroy does, so the client never states

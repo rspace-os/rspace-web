@@ -38,12 +38,6 @@ public class ApiListOfMaterials {
   @JsonProperty("elnDocument")
   ApiDocumentInfo elnDocument;
 
-  /**
-   * Each material that decrements stock costs a read and an update cycle, so an uncapped list is an
-   * uncapped amount of work from one call. 250 is well above any real list and well below a denial
-   * of service.
-   */
-  @Size(max = 250, message = "{errors.inventory.listOfMaterials.tooManyMaterials}")
   @JsonProperty("materials")
   List<ApiMaterialUsage> materials;
 
