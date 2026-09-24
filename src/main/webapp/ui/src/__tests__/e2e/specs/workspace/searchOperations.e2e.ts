@@ -165,13 +165,7 @@ test.describe(`Workspace search operations`, () => {
         await workspace.open();
       });
 
-      await test.step("When I search with a term shorter than 5 characters", async () => {
-        await workspace.searchBar.search("abcd");
-      });
-
-      await test.step("Then a validation message tells me the term must be at least 5 characters", async () => {
-        await expect(page.getByText("at least 5 characters")).toBeVisible();
-      });
+      await workspace.searchBar.searchExpectingValidationError("abcd", "at least 5 characters");
     } finally {
       await ctx.close();
     }
