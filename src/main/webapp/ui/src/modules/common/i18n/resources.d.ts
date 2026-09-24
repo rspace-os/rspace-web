@@ -262,7 +262,7 @@ export default interface Resources {
           "httpWarning": "This endpoint uses HTTP. DBRepo credentials may be sent without transport encryption."
         },
         "credentialsFormLabel": "DBRepo connection details",
-        "description": "A repository software for relational databases.",
+        "description": "Insert data from relational databases published in DBRepo directly into your RSpace documents, or link back to the published record.",
         "fields": {
           "password": "Password",
           "url": "DBRepo URL",
