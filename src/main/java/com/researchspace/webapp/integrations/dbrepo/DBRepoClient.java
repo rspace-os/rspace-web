@@ -378,7 +378,7 @@ public class DBRepoClient {
   }
 
   private void validateCsvContentType(MediaType contentType) {
-    if (contentType == null || !TEXT_CSV.isCompatibleWith(contentType)) {
+    if (contentType == null || !TEXT_CSV.includes(contentType)) {
       throw new RestClientException(
           "DBRepo CSV download returned unexpected Content-Type: " + contentType);
     }

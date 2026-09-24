@@ -182,7 +182,9 @@ public class DBRepoClientTest {
         .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/view/view-1/data"))
         .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
         .andExpect(header(HttpHeaders.ACCEPT, "text/csv"))
-        .andRespond(withSuccess("id,name\n1,Experiment\n", MediaType.parseMediaType("text/csv")));
+        .andRespond(
+            withSuccess(
+                "id,name\n1,Experiment\n", MediaType.parseMediaType("text/csv;charset=utf-8")));
 
     ByteArrayOutputStream csv = new ByteArrayOutputStream();
 
@@ -195,6 +197,30 @@ public class DBRepoClientTest {
         csv);
 
     assertEquals("id,name\n1,Experiment\n", csv.toString(StandardCharsets.UTF_8));
+    server.verify();
+  }
+
+  @Test
+  public void rejectsCsvDownloadWhenUpstreamContentTypeIsWildcard() {
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/view/view-1/data"))
+        .andRespond(
+            withSuccess("id,name\n1,Experiment\n", null)
+                .header(HttpHeaders.CONTENT_TYPE, "text/*"));
+    ByteArrayOutputStream csv = new ByteArrayOutputStream();
+
+    assertThrows(
+        RestClientException.class,
+        () ->
+            client.streamResourceCsv(
+                "https://dbrepo.example",
+                "db-1",
+                "view",
+                "view-1",
+                new DBRepoCredentials("user", "pass"),
+                csv));
+
+    assertEquals("", csv.toString(StandardCharsets.UTF_8));
     server.verify();
   }
 
