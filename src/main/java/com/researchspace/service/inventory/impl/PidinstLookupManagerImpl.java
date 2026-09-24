@@ -41,6 +41,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -249,8 +250,13 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     String doiClause = "doi:*" + query + "*";
     boolean doiShaped = DOI_FRAGMENT.matcher(query).matches();
     if (doiShaped && words.size() > 1) {
-      return dataCiteConnector.searchInstrumentDois(
-          "(" + freeText + ") OR " + doiClause, MAX_HITS, InventorySettingType.PIDINST);
+      DataCiteDoiSearchResult page =
+          dataCiteConnector.searchInstrumentDois(
+              "(" + freeText + ") OR " + doiClause, MAX_HITS, InventorySettingType.PIDINST);
+      if (page.getMeta().getTotal() > page.getData().size()) {
+        topUpWithDoiMatches(page, doiClause);
+      }
+      return page;
     }
     DataCiteDoiSearchResult hits =
         dataCiteConnector.searchInstrumentDois(freeText, MAX_HITS, InventorySettingType.PIDINST);
@@ -259,6 +265,29 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     }
     return dataCiteConnector.searchInstrumentDois(
         doiClause, MAX_HITS, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * The {@code OR} only makes a DOI match eligible for the page: DataCite's default order is not by
+   * relevance (verified 2026-09-24, the DOI came first only under {@code sort=relevance} with a
+   * boost), so more than a page of records matching the words can push it off. A truncated page
+   * therefore gets the DOI clause's own matches in place of its last entries; {@code total} is left
+   * alone, since the combined query already counted them.
+   */
+  private void topUpWithDoiMatches(DataCiteDoiSearchResult page, String doiClause) {
+    List<DataCiteDoi> data = page.getData();
+    Set<String> onPage = data.stream().map(DataCiteDoi::getId).collect(Collectors.toSet());
+    List<DataCiteDoi> missing =
+        dataCiteConnector
+            .searchInstrumentDois(doiClause, MAX_HITS, InventorySettingType.PIDINST)
+            .getData()
+            .stream()
+            .filter(doi -> !onPage.contains(doi.getId()))
+            .limit(MAX_HITS)
+            .toList();
+    data.subList(Math.max(0, Math.min(data.size(), MAX_HITS - missing.size())), data.size())
+        .clear();
+    data.addAll(0, missing);
   }
 
   /**

@@ -57,6 +57,7 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -712,6 +713,32 @@ class PidinstLookupManagerImplTest {
    * it is deliberately in DOI_FRAGMENT: it is what lets a pasted prefix/suffix pair match. Pinned
    * because the syntax alone argues for removing it, which would silently drop that case.
    */
+  /**
+   * The {@code OR} only makes the DOI eligible for the page, and DataCite's default order is not by
+   * relevance, so more than a page of records matching the words can push it off. A truncated page
+   * is topped up from the DOI clause alone.
+   */
+  @Test
+  void aSplitDoiFragmentKeepsItsDoiWhenTheWordsFillThePage() {
+    onADataCiteDeployment();
+    DataCiteDoi[] unrelated =
+        IntStream.range(0, 50)
+            .mapToObj(i -> dataCiteInstrument("10.1/unrelated-" + i, "findable", "Instrument"))
+            .toArray(DataCiteDoi[]::new);
+    when(dataCiteConnector.searchInstrumentDois(
+            "(*qvtb AND aw74*) OR doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(120, unrelated));
+    when(dataCiteConnector.searchInstrumentDois(
+            "doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
+
+    ApiPidinstSearchResult result = manager.search("qvtb-aw74", user);
+
+    assertTrue(result.getHits().stream().anyMatch(hit -> DOI.equals(hit.getPid())));
+    assertEquals(50, result.getHits().size(), "still one page");
+    assertEquals(120, result.getTotal(), "the combined query already counted the DOI");
+  }
+
   @Test
   void dataCiteFindsAPastedPrefixAndSuffixPair() {
     onADataCiteDeployment();

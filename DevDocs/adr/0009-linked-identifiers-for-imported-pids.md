@@ -192,6 +192,10 @@ and API field names were ported instead.
    which unrelated records matching the words would prevent. So such a query carries the DOI clause
    in the same request: `(*qvtb AND aw74*) OR doi:*qvtb-aw74*`. Measured on api.datacite.org, that
    costs ~2s over the ~23s of the words alone.
+   The `OR` only makes the DOI eligible: DataCite's default order is not by relevance (the DOI came
+   first only under `sort=relevance` with a boost, which the client does not send), so when the
+   combined page is truncated its last entries are replaced by the DOI clause's own matches, and
+   `total` is kept, since the combined query already counted them.
 
    A wildcard per word (`*a* AND *b*`) would give DataCite the same quality as B2INST and was
    tried, but it costs a leading wildcard each and DataCite pays for every one: measured against
