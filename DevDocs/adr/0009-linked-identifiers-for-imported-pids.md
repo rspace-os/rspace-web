@@ -173,12 +173,17 @@ and API field names were ported instead.
    "ends-with a AND starts-with b" rather than a substring of the whole string, so a partial *first*
    word does not match there.
 
-   On DataCite a hyphen also breaks words, and a word with no letter or digit is dropped, because
-   the analyser indexed neither and a wildcard term cannot span two tokens. Measured 2026-09-24 on
-   api.test.datacite.org, instruments only: `test-instrument` answered 15 before RSDEV-1522 and
-   **0** as `*test\-instrument*`, while `*test AND instrument*` answers 27; `Zeiss &&` answered 3,
-   `*Zeiss AND \&\&*` **0**, and `*Zeiss*` 3. The split loses a pasted hyphenated DOI (the DOI is
-   a keyword, which `*qvtb\-aw74*` did match), and the decision 7 retry finds it instead.
+   On DataCite the words are cut where the standard analyser cuts them, not only at spaces: at
+   anything but a letter, a digit or `_`, except a `.` or `'` between two letters or digits (so
+   `14.1` stays one word). A wildcard term cannot span two indexed tokens, so anything else loses
+   the record. Measured 2026-09-24 on api.test.datacite.org, instruments only: `test-instrument`
+   answered 15 before RSDEV-1522 and **0** as `*test\-instrument*`, `test/instrument` 15 and
+   **0** as `*test/instrument*`, while `*test AND instrument*` answers 27; `Zeiss &&` answered 3,
+   `*Zeiss AND \&\&*` **0**, and `*Zeiss*` 3; `*station AND 14.1*` answers 8 where
+   `*station AND 14 AND 1*` answers 0. Only words reach DataCite, so the user's punctuation is
+   never parsed as syntax; each word is still escaped for a typed `AND`/`OR`/`NOT`. The split
+   loses a pasted DOI fragment (the DOI is a keyword, which `*qvtb\-aw74*` did match), and the
+   decision 7 retry finds it instead.
 
    A wildcard per word (`*a* AND *b*`) would give DataCite the same quality as B2INST and was
    tried, but it costs a leading wildcard each and DataCite pays for every one: measured against
@@ -201,9 +206,9 @@ and API field names were ported instead.
 
    On DataCite the wildcards go **outside** the escape of decision 7, so the `*` this adds is live
    while the user's own text stays literal. The `doi:*<query>*` retry is untouched and still reads
-   the raw query; it has become nearly unreachable rather than redundant, because a wildcarded free
-   text now matches a DOI fragment on its own (`*qvtb*` answers 1, the same as `doi:*qvtb*`), and it
-   is kept because it costs nothing on a non-empty first page and addresses the keyword field
+   the raw query. A single-word fragment matches as free text on its own (`*qvtb*` answers 1, the
+   same as `doi:*qvtb*`), but one holding a `-` or `/` is split into words and misses the keyword,
+   so the retry is what finds a pasted DOI such as `82316/qvtb-aw74`. It is kept because it costs nothing on a non-empty first page and addresses the keyword field
    directly. The 4-character minimum of decision 6 is unchanged: `Nico` and `Tilo` are exactly 4.
 
    Separately, the same sweep found that B2INST receives the query with no escaping at all, so

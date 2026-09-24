@@ -628,30 +628,40 @@ class PidinstLookupManagerImplTest {
 
   static Stream<Arguments> queriesCarryingQueryStringSyntax() {
     return Stream.of(
-        arguments("Zeiss\"broken", "*Zeiss\\\"broken*"),
-        arguments("Zeiss[broken", "*Zeiss\\[broken*"),
-        arguments("(Zeiss", "*\\(Zeiss*"),
-        arguments("Zeiss!", "*Zeiss\\!*"),
-        arguments("Zeiss^2", "*Zeiss\\^2*"),
+        arguments("Zeiss\"broken", "*Zeiss AND broken*"),
+        arguments("Zeiss[broken", "*Zeiss AND broken*"),
+        arguments("(Zeiss", "*Zeiss*"),
+        arguments("Zeiss!", "*Zeiss*"),
+        arguments("Zeiss^2", "*Zeiss AND 2*"),
+        arguments("((((", "*\\(\\(\\(\\(*"),
         arguments("Zeiss &&", "*Zeiss*"),
         arguments("&&&&", "*\\&\\&\\&\\&*"),
         arguments("X-ray microscope", "*X AND ray AND microscope*"),
         arguments("-Zeiss", "*Zeiss*"),
+        arguments("test/instrument", "*test AND instrument*"),
+        arguments("TEM:STEM", "*TEM AND STEM*"),
+        arguments("station 14.1", "*station AND 14.1*"),
+        arguments("Zeiss>4", "*Zeiss AND 4*"),
+        arguments("82316/qvtb", "*82316 AND qvtb*"),
+        arguments("Zeiss. Bruker", "*Zeiss AND Bruker*"),
         arguments("Zeiss OR", "*Zeiss AND \\OR*"),
         arguments("NOT Zeiss", "*\\NOT AND Zeiss*"),
         arguments("Zeiss AND Bruker", "*Zeiss AND \\AND AND Bruker*"));
   }
 
   /**
-   * DataCite's {@code query} is Elasticsearch query-string syntax, so user text reaches it escaped:
-   * unbalanced syntax answers 400 rather than no hits, which the dialog can only show as an error.
-   * Verified 2026-09-18 against api.datacite.org, where {@code foo"bar}, {@code foo[bar}, {@code
-   * (foo}, {@code foo!}, {@code foo^}, {@code zeiss &&} and a dangling {@code abc OR} all answer
-   * 400 while every escaped form answers 200.
+   * DataCite's {@code query} is Elasticsearch query-string syntax, so user syntax must not reach
+   * it: unbalanced syntax answers 400 rather than no hits, which the dialog can only show as an
+   * error. The word split removes the punctuation, the analyser having dropped it anyway, and the
+   * escape covers what is left: a typed operator, or a query with no word in it. Verified
+   * 2026-09-18 against api.datacite.org, where {@code foo"bar}, {@code foo[bar}, {@code (foo},
+   * {@code foo!}, {@code foo^}, {@code zeiss &&} and a dangling {@code abc OR} all answer 400 while
+   * every escaped form answers 200.
    */
   @ParameterizedTest
   @MethodSource("queriesCarryingQueryStringSyntax")
-  void dataCiteFreeTextSearchEscapesQueryStringSyntax(String typed, String sent) {
+  void dataCiteFreeTextSearchSendsOnlyTheWordsWithQuerySyntaxNeutralised(
+      String typed, String sent) {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
         .thenReturn(dataCitePage(0));
@@ -659,45 +669,6 @@ class PidinstLookupManagerImplTest {
     manager.search(typed, user);
 
     verify(dataCiteConnector).searchInstrumentDois(sent, 50, InventorySettingType.PIDINST);
-  }
-
-  /**
-   * The range operators are left alone on purpose, and a reviewer has already asked for them once.
-   * A backslash before one is ignored, so they cannot be escaped, and they need no handling: a
-   * range exists only against a field, and the {@code :} that builds one is escaped above. Measured
-   * 2026-09-18 against api.datacite.org: {@code publicationYear:>2020} answers 95,411,191 while
-   * {@code publicationYear\:>2020}, which is what this sends, answers 15, the same as the plain
-   * {@code publicationYear 2020}. Loose, {@code Zeiss>4} answers 6,539, exactly what {@code Zeiss
-   * 4} and every other separator answer, so it is inert rather than parsed.
-   */
-  @ParameterizedTest
-  @ValueSource(strings = {"Zeiss>4", "Zeiss<4", "Zeiss=4"})
-  void dataCiteFreeTextSearchLeavesRangeOperatorsAlone(String query) {
-    onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
-        .thenReturn(dataCitePage(0));
-
-    manager.search(query, user);
-
-    verify(dataCiteConnector)
-        .searchInstrumentDois("*" + query + "*", 50, InventorySettingType.PIDINST);
-  }
-
-  /**
-   * The slash is reserved in query-string syntax, but DataCite answers 400 for {@code
-   * 10.5281\/zenodo} and 200 for {@code 10.5281/zenodo} (verified 2026-09-18), so escaping it would
-   * break the DOI fragments this search exists to match.
-   */
-  @Test
-  void dataCiteFreeTextSearchLeavesTheSlashAlone() {
-    onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
-        .thenReturn(dataCitePage(0));
-
-    manager.search("82316/qvtb", user);
-
-    verify(dataCiteConnector)
-        .searchInstrumentDois("*82316/qvtb*", 50, InventorySettingType.PIDINST);
   }
 
   /**
@@ -746,7 +717,7 @@ class PidinstLookupManagerImplTest {
   void dataCiteRetriesAPastedPrefixAndSuffixPair() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(
-            "*82316/qvtb AND aw74*", 50, InventorySettingType.PIDINST))
+            "*82316 AND qvtb AND aw74*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
     when(dataCiteConnector.searchInstrumentDois(
             "doi:*82316/qvtb-aw74*", 50, InventorySettingType.PIDINST))

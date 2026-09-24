@@ -109,8 +109,13 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private static final Pattern DATACITE_OPERATOR = Pattern.compile("\\b(AND|OR|NOT)\\b");
 
-  /** Where the DataCite query is cut into words: whitespace, or a hyphen already escaped. */
-  private static final Pattern DATACITE_WORD_BREAK = Pattern.compile("\\s+|\\\\-");
+  /**
+   * Where DataCite's standard analyser cuts words (Unicode UAX #29): at anything but a letter, a
+   * digit or {@code _}, except a {@code .} or {@code '} with a letter or digit on both sides, so
+   * {@code 14.1} stays one word while {@code test/instrument} and {@code X-ray} are two.
+   */
+  private static final Pattern DATACITE_WORD_BREAK =
+      Pattern.compile("[^\\p{L}\\p{M}\\p{N}_.']+|(?<![\\p{L}\\p{N}])[.']|[.'](?![\\p{L}\\p{N}])");
 
   private static final Pattern HAS_LETTER_OR_DIGIT = Pattern.compile("[\\p{L}\\p{N}]");
 
@@ -232,19 +237,19 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an empty
    * first page is retried that way (ADR 0009 decision 7).
    *
-   * <p>The free-text call is escaped and wildcarded; the retry is neither, because it composes its
-   * own clause and {@link #DOI_FRAGMENT} already limits what may go in it. Both gates read the raw
-   * query, so neither transformation can change which searches retry.
+   * <p>The free-text call is cut into words and wildcarded; the retry is neither, because it
+   * composes its own clause and {@link #DOI_FRAGMENT} already limits what may go in it. Both gates
+   * read the raw query, so neither transformation can change which searches retry.
    *
    * <p>{@link #containsForDataCite(String)} has made the retry rare rather than redundant: a
    * wildcarded free text usually matches the DOI fragment by itself, though not one holding a
-   * hyphen, which the word split breaks. It is kept because it costs nothing on a non-empty first
-   * page and addresses the keyword field directly.
+   * hyphen or a slash, which the word split breaks. It is kept because it costs nothing on a
+   * non-empty first page and addresses the keyword field directly.
    */
   private DataCiteDoiSearchResult searchDataCite(String query) {
     DataCiteDoiSearchResult hits =
         dataCiteConnector.searchInstrumentDois(
-            containsForDataCite(escapeForDataCite(query)), MAX_HITS, InventorySettingType.PIDINST);
+            containsForDataCite(query), MAX_HITS, InventorySettingType.PIDINST);
     if (!hits.getData().isEmpty() || !DOI_FRAGMENT.matcher(query).matches()) {
       return hits;
     }
@@ -284,17 +289,21 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * per word would fix that but costs a leading wildcard each - three words measure 31s and four
    * 66s, each second holding a database connection - so it is not affordable there.
    *
-   * <p>A hyphen breaks words like a space does, and a word with no letter or digit is dropped,
-   * because the analyser indexed neither: {@code *X\-ray AND microscope*} answers 0 where {@code *X
-   * AND ray AND microscope*} finds the record, and {@code *Zeiss AND \&\&*} 0 where {@code *Zeiss*}
-   * gives the 3 the unwrapped query did (api.test.datacite.org, instruments, 2026-09-24).
+   * <p>The words are cut where {@link #DATACITE_WORD_BREAK} says the analyser cut them, because a
+   * wildcard term cannot span two indexed tokens: {@code *X\-ray AND microscope*} answers 0 where
+   * {@code *X AND ray AND microscope*} finds the record, {@code *test/instrument*} 0 where {@code
+   * *test AND instrument*} gives 27, and {@code *Zeiss AND \&\&*} 0 where {@code *Zeiss*} gives the
+   * 3 the unwrapped query did (api.test.datacite.org, instruments, 2026-09-24). Each word is still
+   * escaped, for a typed {@code AND}/{@code OR}/{@code NOT}; a query with no word at all is sent
+   * escaped whole.
    */
   private static String containsForDataCite(String query) {
     String words =
         Arrays.stream(DATACITE_WORD_BREAK.split(query))
             .filter(word -> HAS_LETTER_OR_DIGIT.matcher(word).find())
+            .map(PidinstLookupManagerImpl::escapeForDataCite)
             .collect(Collectors.joining(" AND "));
-    return "*" + (words.isEmpty() ? query : words) + "*";
+    return "*" + (words.isEmpty() ? escapeForDataCite(query) : words) + "*";
   }
 
   /**
