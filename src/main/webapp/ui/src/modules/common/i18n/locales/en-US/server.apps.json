@@ -20,6 +20,8 @@
           "downloadButtonTitle": "Download CSV through RSpace",
           "databaseLabel": "Database:",
           "header": "DBRepo link details",
+          "identifierLabel": "Identifier:",
+          "instanceLabel": "Instance:",
           "nameLabel": "Name:",
           "openButton": "Open in DBRepo",
           "openButtonTitle": "Open DBRepo in a new tab",

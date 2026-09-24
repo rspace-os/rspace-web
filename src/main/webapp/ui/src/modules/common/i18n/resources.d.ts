@@ -5119,6 +5119,8 @@ export default interface Resources {
             "downloadButton": "Download CSV",
             "downloadButtonTitle": "Download CSV through RSpace",
             "header": "DBRepo link details",
+            "identifierLabel": "Identifier:",
+            "instanceLabel": "Instance:",
             "nameLabel": "Name:",
             "openButton": "Open in DBRepo",
             "openButtonTitle": "Open DBRepo in a new tab",

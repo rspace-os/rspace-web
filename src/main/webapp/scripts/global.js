@@ -1915,12 +1915,27 @@ RS.initAndOpenNetFileInfoDialog = function ($link) {
 /* show DBRepo link info panel */
 var dbRepoInfoDialogInitialised = false;
 
+function dbrepoInstanceDetails(dbrepoUrl) {
+  try {
+    var url = new URL(dbrepoUrl);
+    return {
+      name: url.hostname,
+      url: url.origin
+    };
+  } catch (e) {
+    return {
+      name: dbrepoUrl,
+      url: dbrepoUrl
+    };
+  }
+}
+
 RS.initAndOpenDBRepoInfoDialog = function ($link) {
   if (!dbRepoInfoDialogInitialised) {
     $(document).ready(function () {
       RS.switchToBootstrapButton();
       $('#dbrepoInfoDialog').dialog({
-        title: $.trim($('.dbrepoInfoTableHeaderRow').text()),
+        title: $('#dbrepoInfoDialog').data('dialogTitle'),
         autoOpen: false,
         modal: true,
         minWidth: 350,
@@ -1946,11 +1961,16 @@ RS.initAndOpenDBRepoInfoDialog = function ($link) {
   var resourceId = $link.data('dbrepoResourceId');
   var query = $link.data('dbrepoQuery');
   var dbrepoUrl = $link.data('dbrepoUrl') || $link.attr('href');
+  var dbrepoInstance = dbrepoInstanceDetails(dbrepoUrl);
   var $infoPanel = $('.dbrepoInfoPanel');
 
   $infoPanel.find('.dbrepoInfoPanel-type').text(dbrepoType);
 
+  $infoPanel.find('.dbrepoInfoPanel-instance')
+    .text(dbrepoInstance.name)
+    .attr('href', dbrepoInstance.url);
   $infoPanel.find('.dbrepoInfoPanel-name').text(name);
+  $infoPanel.find('.dbrepoInfoPanel-identifier').text(dbrepoUrl);
   $infoPanel.find('.dbrepoInfoPanel-database').text(databaseName || "");
   $infoPanel.find('.dbrepoInfoPanel-query').text(query || (dbrepoType === 'subset' ? name : ""));
   $infoPanel.find('.dbrepoInfoPanel-name').closest('tr').toggle(dbrepoType !== 'subset');

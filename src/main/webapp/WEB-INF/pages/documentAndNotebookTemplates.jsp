@@ -331,13 +331,14 @@
   </div>
 </div>
 
-<div id="dbrepoInfoDialog" style="display: none">
+<div id="dbrepoInfoDialog" style="display: none" data-dialog-title="<spring:message code="apps.dbrepo.info.dialog.header"/>">
   <div class="dbrepoInfoPanel">
     <table class="dbrepoInfoTable">
-      <tr><td colspan="2" class="dbrepoInfoTableHeaderRow"><spring:message code="apps.dbrepo.info.dialog.header"/></td></tr>
       <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.nameLabel"/></td><td class="dbrepoInfoPanel-name"> </td></tr>
       <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.typeLabel"/></td><td class="dbrepoInfoPanel-type"> </td></tr>
+      <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.instanceLabel" /></td><td><a class="dbrepoInfoPanel-instance" target="_blank" rel="noopener"> </a></td></tr>
       <tr class="dbrepoInfoDatabaseRow"><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.databaseLabel"/></td><td class="dbrepoInfoPanel-database"> </td></tr>
+      <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.identifierLabel"/></td><td class="dbrepoInfoPanel-identifier"> </td></tr>
       <tr class="dbrepoInfoQueryRow"><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.queryLabel"/></td><td class="dbrepoInfoPanel-query"> </td></tr>
     </table>
     <div class="dbrepoInfoPanelButtons">
