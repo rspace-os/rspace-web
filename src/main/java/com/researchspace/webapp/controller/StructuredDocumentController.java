@@ -82,6 +82,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -1443,7 +1444,7 @@ public class StructuredDocumentController extends BaseController {
    * copied elements, not to original ones (RSPAC-1957).
    */
   @ResponseBody
-  @PostMapping("/copyContentIntoField")
+  @PostMapping(value = "/copyContentIntoField", produces = MediaType.TEXT_PLAIN_VALUE)
   public String copyContentIntoField(
       @RequestParam("content") String content,
       @RequestParam("fieldId") Long fieldId,

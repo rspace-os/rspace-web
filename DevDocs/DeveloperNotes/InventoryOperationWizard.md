@@ -338,16 +338,18 @@ confirmation — (a plain
 checkbox with explanatory helper text beneath it, `rememberProcessValuesHelp`) governs
 everything kept for a process name — the template choice, the
 documentation link, and the collected amounts — as a single bundle
-(`processValues.ts`, preference `INVENTORY_OPERATION_PROCESS_VALUES`; supersedes the
+(`processValues.ts`, preference `INVENTORY_OPERATIONS`; supersedes the
 earlier per-item template/doc/amount preferences). Ticking it only marks the current
 form for saving; it never reloads the stored bundle, so untick, edit, re-tick saves the
 edited values. Unticking resets the form to defaults **without deleting** what was
 saved. The checkbox reflects the saved state as the process name changes (checked +
 loaded when that name has a bundle, unchecked + defaults otherwise). On a successful
 Perform, and only when ticked, the bundle is saved, the name added to the operation's
-autocomplete list (`INVENTORY_OPERATION_PROCESS_NAMES`), and recorded as the
-most-recently-used name (`INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS`, pre-filled on the
-next run).
+autocomplete list, and recorded as the most-recently-used name (pre-filled on the next run).
+All three live in the one preference, `{ values, names, defaults }`, saved in a single
+`useUiPreference` call. That call writes the page's copy, so the wizard first re-reads the
+preference from the server (`fetchLatestOperationPreferences`) and applies this run's changes
+to that: a second tab that loaded earlier cannot overwrite what was saved since.
 
 ## The amount model (DevDocs/adr/0011)
 

@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PREFERENCES } from "@/hooks/api/useUiPreference";
 import type { InventoryOperation } from "../operations";
-import {
-  addProcessName,
-  filterProcessNames,
-  processNameDefaultAfterPerform,
-  processValuesPreferenceFor,
-  rememberKey,
-} from "../processNames";
+import { addProcessName, filterProcessNames, processNameDefaultAfterPerform, rememberKey } from "../processNames";
 import { operations } from "./testOperations";
 
 const DERIVE_DNA = ["derive", "dna extraction"].join(" ");
@@ -65,26 +58,6 @@ describe("filterProcessNames", () => {
 
   it("returns nothing when the prefix matches no option (user can still free-type)", () => {
     expect(filterProcessNames(options, "de")).toEqual([]);
-  });
-});
-
-describe("processValuesPreferenceFor", () => {
-  it("gives every one of the seven operations its own, distinct preference key", () => {
-    const keys = [
-      ["aliquot", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT],
-      ["passage", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE],
-      ["pool", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_POOL],
-      ["derive", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE],
-      ["cryopreserve", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE],
-      ["revive", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_REVIVE],
-      ["destroy", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DESTROY],
-    ] as const;
-    for (const [key, expected] of keys) expect(processValuesPreferenceFor(key)).toBe(expected);
-    expect(new Set(keys.map(([key]) => processValuesPreferenceFor(key))).size).toBe(keys.length);
-  });
-
-  it("derives the same name for an operation type the map does not list", () => {
-    expect(processValuesPreferenceFor("teleport")).toBe(Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_TELEPORT"));
   });
 });
 

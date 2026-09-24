@@ -1,4 +1,4 @@
-import type { ApiInventoryRecordInfo } from "./inventoryRecordInfo";
+import type { ApiInventoryQuantity, ApiInventoryRecordInfo } from "./inventoryRecordInfo";
 
 export interface ApiInventorySample extends ApiInventoryRecordInfo {
   subSamples: ApiInventorySubSample[];
@@ -16,6 +16,8 @@ export interface ApiInventorySampleCreateRequest {
   name: string;
   newSampleSubSamplesCount?: number;
   barcodes?: ApiInventoryBarcode[];
+  /** Sets each new subsample's starting quantity, e.g. { numericValue: 10, unitId: 7 } for 10 g. */
+  quantity?: ApiInventoryQuantity;
 }
 
 export interface ApiInventoryIdentifierCreateRequest {

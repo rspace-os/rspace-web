@@ -30,14 +30,7 @@ public class NfsFileTreeNode {
 
   /** sets node name, removes slashes from beginning and end */
   public void calculateFileName(String fileName) {
-    String newName = fileName;
-    if (StringUtils.startsWith(newName, "/")) {
-      newName = newName.replaceAll("^/+", "");
-    }
-    if (StringUtils.endsWith(newName, "/")) {
-      newName = newName.replaceAll("/+$", "");
-    }
-    name = newName;
+    name = StringUtils.strip(fileName, "/");
   }
 
   // add child node, put it in right place according to ordering type

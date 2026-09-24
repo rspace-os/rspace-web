@@ -285,6 +285,55 @@ class B2instConnectorImplTest {
     server.verify();
   }
 
+  @Test
+  void publishDoiRefusesSubmitActionOnAnotherHost() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    expectNoExistingReview(server);
+    // shares the configured host as a prefix, so a startsWith check would have followed it
+    String elsewhere =
+        "https://b2inst-test.gwdg.de.attacker.example/api/requests/REQ-1/actions/submit";
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withSuccess(
+                "{\"status\":\"created\",\"links\":{\"actions\":{\"submit\":\""
+                    + elsewhere
+                    + "\"}}}",
+                MediaType.APPLICATION_JSON));
+
+    B2instConnectionException thrown =
+        assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+
+    assertEquals("errors.inventory.identifier.b2instSubmitActionOtherHost", thrown.getReason());
+    // no POST went to the other host: every expected request has been consumed
+    server.verify();
+  }
+
+  @Test
+  void publishDoiRefusesUnparseableSubmitAction() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    expectNoExistingReview(server);
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withSuccess(
+                "{\"status\":\"created\",\"links\":{\"actions\":"
+                    + "{\"submit\":\"https://b2inst-test.gwdg.de/a b\"}}}",
+                MediaType.APPLICATION_JSON));
+
+    B2instConnectionException thrown =
+        assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+
+    assertEquals("errors.inventory.identifier.b2instSubmitActionOtherHost", thrown.getReason());
+    server.verify();
+  }
+
   /**
    * Submitting is two calls, so a response lost between them leaves B2INST holding a submitted
    * review while RSpace still records a draft. Re-PUTting that record is answered with {@code 400

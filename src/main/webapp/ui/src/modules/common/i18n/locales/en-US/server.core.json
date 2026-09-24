@@ -301,6 +301,7 @@
   "validation": {
     "errors": {
       "allVersionsRequired": "allVersions is a required field.",
+      "archiveTypeInvalid": "archiveType must be one of xml, html or eln.",
       "archiveTypeRequired": "archiveType is a required field.",
       "authorsCollectionRange": "Authors must contain between {min} and {max} entries.",
       "authorsRequired": "Authors are required.",
