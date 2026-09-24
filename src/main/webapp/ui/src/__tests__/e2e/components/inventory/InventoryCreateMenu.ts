@@ -32,15 +32,12 @@ export class InventoryCreateMenu {
     return (await this.menuItem("Fieldmark").count()) > 0;
   }
 
-  async hasPidinstImport(): Promise<boolean> {
-    return (await this.menuItem("From PIDINST registry").count()) > 0;
+  pidinstImportItem(): Locator {
+    return this.menuItem("From PIDINST registry");
   }
 
   async openPidinstImport(): Promise<PidinstImportDialog> {
-    return openDialog(
-      () => this.root.getByRole("menuitem", { name: "From PIDINST registry", exact: true }).click(),
-      new PidinstImportDialog(this.page),
-    );
+    return openDialog(() => this.pidinstImportItem().click(), new PidinstImportDialog(this.page));
   }
 
   async click(item: InventoryCreateMenuItem): Promise<void> {

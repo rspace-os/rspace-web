@@ -2,7 +2,9 @@ import type { Locator, Page } from "@playwright/test";
 import { CollapsibleSections } from "./CollapsibleSections";
 import { CustomFieldsEditor } from "./CustomFieldsEditor";
 
-const SAVED_ENTITY_PATHS = ["containers", "samples", "instruments", "instrumentTemplates", "sampleTemplates"];
+// Templates re-fetch their pinned version (sampleTemplates/5/versions/1); other sub-resources are not a re-fetch.
+const SAVED_ENTITY_REFETCH =
+  /^\/api\/inventory\/v1\/(containers|samples|instruments|instrumentTemplates|sampleTemplates)\/\d+(\/versions\/\d+)?$/;
 
 export class NewItemFormShell {
   readonly root: Locator;
@@ -48,18 +50,9 @@ export class NewItemFormShell {
   // a GET re-fetch after edit-mode exit. Navigating too fast trips a spurious "Leave the
   // editor?" prompt, so this also waits for that re-fetch.
   async save(): Promise<void> {
-    const refetchResponse = this.page.waitForResponse((r) => {
-      if (r.request().method() !== "GET") return false;
-      const [, api, inventory, v1, entity, id] = new URL(r.url()).pathname.split("/");
-      return (
-        api === "api" &&
-        inventory === "inventory" &&
-        v1 === "v1" &&
-        SAVED_ENTITY_PATHS.includes(entity) &&
-        !!id &&
-        Number.isInteger(Number(id))
-      );
-    });
+    const refetchResponse = this.page.waitForResponse(
+      (r) => r.request().method() === "GET" && SAVED_ENTITY_REFETCH.test(new URL(r.url()).pathname),
+    );
     await this.saveButton.click();
     await this.saveButton.waitFor({ state: "detached" });
     const response = await refetchResponse;

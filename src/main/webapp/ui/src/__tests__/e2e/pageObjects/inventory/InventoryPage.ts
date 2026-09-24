@@ -37,6 +37,16 @@ export class InventoryPage extends BasePage {
     await this.isLoaded();
   }
 
+  // The create menu hides PIDINST import until the app's separate flag request resolves,
+  // so absence of the menu item is only meaningful once that response has arrived.
+  async openAndReadPidinstEnabled(): Promise<boolean> {
+    const flagResponse = this.page.waitForResponse(
+      (r) => r.request().method() === "GET" && /\/identifiers\/pidinstEnabled\/?$/.test(new URL(r.url()).pathname),
+    );
+    await this.open();
+    return (await (await flagResponse).json()) as boolean;
+  }
+
   async openSearch(resultType: InventoryResultType, parentGlobalId?: string): Promise<void> {
     const search = new URLSearchParams({ resultType });
     if (parentGlobalId) search.set("parentGlobalId", parentGlobalId);

@@ -136,9 +136,8 @@ test.describe(`Inventory PIDINST Import`, { tag: [tags.INVENTORY] }, () => {
     }
     await dialog.close();
 
-    await pageInventory.open();
-    await pageInventory.isLoaded();
+    expect(await pageInventory.openAndReadPidinstEnabled()).toBe(false);
     const menu = await pageInventory.openCreateMenu();
-    expect(await menu.hasPidinstImport()).toBe(false);
+    await expect(menu.pidinstImportItem()).toHaveCount(0);
   });
 });
