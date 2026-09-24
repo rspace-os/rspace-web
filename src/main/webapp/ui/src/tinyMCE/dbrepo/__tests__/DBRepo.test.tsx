@@ -14,6 +14,19 @@ const databaseList = (databases: Array<{ id: string; name: string; description?:
   databases,
 });
 
+const checkboxInputsByName = (name: RegExp): HTMLInputElement[] =>
+  screen
+    .getAllByRole("checkbox", { name })
+    .filter((element): element is HTMLInputElement => element instanceof HTMLInputElement);
+
+const checkboxInputByName = (name: RegExp): HTMLInputElement => {
+  const checkbox = checkboxInputsByName(name)[0];
+  if (!checkbox) {
+    throw new Error(`Expected to find checkbox matching ${name}.`);
+  }
+  return checkbox;
+};
+
 afterEach(() => {
   mockAxios.reset();
   vi.restoreAllMocks();
@@ -261,6 +274,83 @@ describe("DBRepo dialog body", () => {
     expect(close).toHaveBeenCalled();
   });
 
+  it("keeps identical rows selectable independently", async () => {
+    const user = userEvent.setup();
+    const editorListeners = new Map<string, () => void>();
+    const activeEditor = {
+      getBody: () => document.body,
+      execCommand: vi.fn(),
+      on: vi.fn((eventName: string, callback: () => void) => editorListeners.set(eventName, callback)),
+      off: vi.fn((eventName: string) => editorListeners.delete(eventName)),
+      windowManager: { close: vi.fn() },
+    };
+    (window as unknown as { tinymce?: unknown }).tinymce = {
+      activeEditor,
+    };
+    mockAxios.onGet("/apps/dbrepo/databases").reply(
+      200,
+      databaseList([
+        {
+          id: "db-1",
+          name: "Research data",
+          url: "https://dbrepo.example/database/db-1",
+        },
+      ]),
+    );
+    mockAxios.onGet("/apps/dbrepo/databases/db-1/resources").reply(200, {
+      databaseId: "db-1",
+      tables: [
+        {
+          id: "table-1",
+          type: "table",
+          label: "Experiments",
+          secondaryText: "",
+          url: "https://dbrepo.example/database/db-1/table/table-1",
+        },
+      ],
+      views: [],
+      subsets: [],
+      failedTypes: [],
+    });
+    mockAxios.onGet("/apps/dbrepo/databases/db-1/table/table-1/metadata").reply(200, {
+      id: "table-1",
+      type: "table",
+      name: "Experiments",
+      query: "",
+      columns: [
+        { id: "col-1", name: "Experiment ID", internalName: "experiment_id", type: "int" },
+        { id: "col-2", name: "Title", internalName: "title", type: "varchar", size: 255 },
+      ],
+    });
+    mockAxios.onGet("/apps/dbrepo/databases/db-1/table/table-1/rows").reply(200, {
+      rows: [
+        { "Experiment ID": 1, Title: "Duplicate" },
+        { "Experiment ID": 1, Title: "Duplicate" },
+      ],
+      page: 0,
+      size: 10,
+      totalCount: 2,
+    });
+
+    render(<DBRepo />);
+
+    expect(await screen.findByText("Research data")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.expandDatabase" }));
+    await user.click(await screen.findByRole("radio", { name: "Experiments" }));
+    act(() => {
+      editorListeners.get("dbrepo-insert-rows")?.();
+    });
+
+    expect(await screen.findByText("Experiment ID")).toBeVisible();
+    const duplicateCheckboxes = checkboxInputsByName(/Duplicate/);
+    expect(duplicateCheckboxes).toHaveLength(2);
+
+    await user.click(duplicateCheckboxes[0]);
+
+    expect(duplicateCheckboxes[0]).toBeChecked();
+    expect(duplicateCheckboxes[1]).not.toBeChecked();
+  });
+
   it("keeps selected rows checked after changing rows per page", async () => {
     const user = userEvent.setup();
     const editorListeners = new Map<string, () => void>();
@@ -311,18 +401,22 @@ describe("DBRepo dialog body", () => {
       ],
     });
     const rowRequests: Array<unknown> = [];
+    const rowData = Array.from({ length: 12 }, (_, index) => ({
+      "Experiment ID": index + 1,
+      Title: index === 10 ? "Selected row" : `Row ${index + 1}`,
+    }));
     mockAxios.onGet("/apps/dbrepo/databases/db-1/table/table-1/rows").reply((config) => {
       rowRequests.push(config.params);
+      const page = Number(config.params?.page ?? 0);
+      const size = Number(config.params?.size ?? 10);
+      const start = page * size;
       return [
         200,
         {
-          rows: [
-            { "Experiment ID": 1, Title: "Alpha" },
-            { "Experiment ID": 2, Title: "Beta" },
-          ],
-          page: config.params?.page,
-          size: config.params?.size,
-          totalCount: 2,
+          rows: rowData.slice(start, start + size),
+          page,
+          size,
+          totalCount: rowData.length,
         },
       ];
     });
@@ -336,23 +430,20 @@ describe("DBRepo dialog body", () => {
       editorListeners.get("dbrepo-insert-rows")?.();
     });
 
-    const alphaCheckboxes = await screen.findAllByRole("checkbox", { name: /Alpha/ });
-    const selectedRowCheckbox = alphaCheckboxes.find((element) => element instanceof HTMLInputElement);
-    if (!selectedRowCheckbox) {
-      throw new Error("Expected to find Alpha row checkbox input.");
-    }
+    await user.click(await screen.findByRole("button", { name: /go to next page/i }));
+    expect(await screen.findByText("Selected row")).toBeVisible();
+    const selectedRowCheckbox = checkboxInputByName(/Selected row/);
     await user.click(selectedRowCheckbox);
     expect(selectedRowCheckbox).toBeChecked();
 
     await user.click(screen.getByRole("combobox", { name: /rows per page/i }));
     await user.click(screen.getByRole("option", { name: "5" }));
     await waitFor(() => expect(rowRequests).toContainEqual({ page: 0, size: 5 }));
+    await user.click(screen.getByRole("button", { name: /go to next page/i }));
+    await user.click(screen.getByRole("button", { name: /go to next page/i }));
 
     await waitFor(() => {
-      const updatedAlphaCheckbox = screen
-        .getAllByRole("checkbox", { name: /Alpha/ })
-        .find((element) => element instanceof HTMLInputElement);
-      expect(updatedAlphaCheckbox).toBeChecked();
+      expect(checkboxInputByName(/Selected row/)).toBeChecked();
     });
   });
 

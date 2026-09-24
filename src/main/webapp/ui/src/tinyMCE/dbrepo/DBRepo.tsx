@@ -483,8 +483,8 @@ function DBRepoRowPicker({
   const toggleCurrentPage = (checked: boolean) => {
     setSelectedRows((current) => {
       const next = new Map(current);
-      rows.forEach((row) => {
-        const key = rowKey(row);
+      rows.forEach((row, index) => {
+        const key = rowKey(row, absoluteRowIndex(page, rowsPerPage, index));
         if (checked) {
           next.set(key, row);
         } else {
@@ -504,7 +504,9 @@ function DBRepoRowPicker({
     onInserted();
   };
 
-  const selectedOnPage = rows.filter((row) => selectedRowKeys.has(rowKey(row))).length;
+  const selectedOnPage = rows.filter((row, index) =>
+    selectedRowKeys.has(rowKey(row, absoluteRowIndex(page, rowsPerPage, index))),
+  ).length;
   const count = totalCount ?? -1;
 
   return (
@@ -647,7 +649,7 @@ function DBRepoRowsTable({
           </TableHead>
           <TableBody>
             {rows.map((row, index) => {
-              const key = rowKey(row);
+              const key = rowKey(row, absoluteRowIndex(page, rowsPerPage, index));
               const selected = selectedRowKeys.has(key);
               const labelId = `dbrepo-row-selector-${page}-${index}`;
               return (
@@ -827,8 +829,12 @@ function instanceName(instanceUrl: string): string {
   }
 }
 
-function rowKey(row: DBRepoRow): string {
-  return JSON.stringify(row);
+function absoluteRowIndex(page: number, rowsPerPage: number, rowIndex: number): number {
+  return page * rowsPerPage + rowIndex;
+}
+
+function rowKey(row: DBRepoRow, fullResultSetIndex: number): string {
+  return `${fullResultSetIndex}:${JSON.stringify(row)}`;
 }
 
 function columnKey(column: DBRepoColumn): string {
