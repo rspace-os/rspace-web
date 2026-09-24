@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -24,10 +26,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
+import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriUtils;
 
@@ -45,6 +50,7 @@ public class DBRepoClient {
 
   private final RestTemplate restTemplate;
   private final ObjectMapper objectMapper;
+  private final HostAddressResolver hostAddressResolver;
 
   public DBRepoClient() {
     this(new RestTemplate(noRedirectTimeoutBoundedRequestFactory()), new ObjectMapper());
@@ -55,8 +61,17 @@ public class DBRepoClient {
   }
 
   DBRepoClient(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    this(restTemplate, objectMapper, InetAddress::getAllByName);
+  }
+
+  DBRepoClient(
+      RestTemplate restTemplate,
+      ObjectMapper objectMapper,
+      HostAddressResolver hostAddressResolver) {
     this.restTemplate = restTemplate;
+    this.restTemplate.setErrorHandler(new RedirectRejectingResponseErrorHandler());
     this.objectMapper = objectMapper;
+    this.hostAddressResolver = hostAddressResolver;
   }
 
   public String normalizeBaseUrl(String url) {
@@ -80,6 +95,7 @@ public class DBRepoClient {
         throw new IllegalArgumentException(
             "DBRepo URL must not include a query string or fragment.");
       }
+      validatePublicHost(uri.getHost());
       URI cleaned =
           new URI(
               scheme.toLowerCase(),
@@ -412,6 +428,77 @@ public class DBRepoClient {
       super.prepareConnection(connection, httpMethod);
       connection.setInstanceFollowRedirects(false);
     }
+  }
+
+  private static class RedirectRejectingResponseErrorHandler extends DefaultResponseErrorHandler {
+    @Override
+    public boolean hasError(ClientHttpResponse response) throws IOException {
+      return response.getStatusCode().is3xxRedirection() || super.hasError(response);
+    }
+
+    @Override
+    public void handleError(ClientHttpResponse response) throws IOException {
+      if (response.getStatusCode().is3xxRedirection()) {
+        throwRedirectResponseException(response);
+      }
+      super.handleError(response);
+    }
+
+    @Override
+    public void handleError(URI url, HttpMethod method, ClientHttpResponse response)
+        throws IOException {
+      if (response.getStatusCode().is3xxRedirection()) {
+        throwRedirectResponseException(response);
+      }
+      super.handleError(url, method, response);
+    }
+
+    private void throwRedirectResponseException(ClientHttpResponse response) throws IOException {
+      throw new RestClientResponseException(
+          "DBRepo returned an unsupported redirect response.",
+          response.getStatusCode().value(),
+          response.getStatusText(),
+          response.getHeaders(),
+          StreamUtils.copyToByteArray(response.getBody()),
+          null);
+    }
+  }
+
+  private void validatePublicHost(String host) {
+    try {
+      for (InetAddress address : hostAddressResolver.resolve(host)) {
+        if (isInternalAddress(address)) {
+          throw new IllegalArgumentException("DBRepo URL must not point to an internal address.");
+        }
+      }
+    } catch (UnknownHostException e) {
+      throw new IllegalArgumentException("DBRepo URL host could not be resolved.", e);
+    }
+  }
+
+  private boolean isInternalAddress(InetAddress address) {
+    return address.isAnyLocalAddress()
+        || address.isLoopbackAddress()
+        || address.isLinkLocalAddress()
+        || address.isSiteLocalAddress()
+        || isCarrierGradeNatAddress(address)
+        || isUniqueLocalIpv6Address(address)
+        || address.isMulticastAddress();
+  }
+
+  private boolean isCarrierGradeNatAddress(InetAddress address) {
+    byte[] bytes = address.getAddress();
+    return bytes.length == 4 && (bytes[0] & 0xff) == 100 && (bytes[1] & 0xc0) == 64;
+  }
+
+  private boolean isUniqueLocalIpv6Address(InetAddress address) {
+    byte[] bytes = address.getAddress();
+    return bytes.length == 16 && (bytes[0] & 0xfe) == 0xfc;
+  }
+
+  @FunctionalInterface
+  interface HostAddressResolver {
+    InetAddress[] resolve(String host) throws UnknownHostException;
   }
 
   private HttpHeaders headers(DBRepoCredentials credentials) {

@@ -8,15 +8,21 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withResourceNotFound;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -32,7 +38,7 @@ public class DBRepoClientTest {
   @Before
   public void setUp() {
     RestTemplate restTemplate = new RestTemplate();
-    client = new DBRepoClient(restTemplate);
+    client = new DBRepoClient(restTemplate, new ObjectMapper(), host -> publicAddress());
     server = MockRestServiceServer.createServer(restTemplate);
   }
 
@@ -40,7 +46,8 @@ public class DBRepoClientTest {
   public void normalizesHttpAndHttpsUrls() {
     assertEquals(
         "https://dbrepo.example/base", client.normalizeBaseUrl(" https://dbrepo.example/base/ "));
-    assertEquals("http://localhost:8080", client.normalizeBaseUrl("http://localhost:8080/"));
+    assertEquals(
+        "http://dbrepo.example:8080", client.normalizeBaseUrl("http://dbrepo.example:8080/"));
   }
 
   @Test
@@ -53,6 +60,19 @@ public class DBRepoClientTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> client.normalizeBaseUrl("https://dbrepo.example?a=b"));
+  }
+
+  @Test
+  public void rejectsInternalUrls() {
+    DBRepoClient internalClient =
+        new DBRepoClient(
+            new RestTemplate(),
+            new ObjectMapper(),
+            host -> new InetAddress[] {InetAddress.getByAddress(new byte[] {127, 0, 0, 1})});
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> internalClient.normalizeBaseUrl("https://dbrepo.example"));
   }
 
   @Test
@@ -87,6 +107,20 @@ public class DBRepoClientTest {
     assertEquals("Research data", databases.get(0).name());
     assertEquals("Primary", databases.get(0).description());
     assertEquals("https://dbrepo.example/database/db-1", databases.get(0).url());
+    server.verify();
+  }
+
+  @Test
+  public void rejectsRedirectResponsesWhenListingDatabases() {
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database"))
+        .andRespond(
+            withStatus(HttpStatus.FOUND).location(URI.create("https://redirect.example/login")));
+
+    assertThrows(
+        RestClientException.class,
+        () ->
+            client.listDatabases("https://dbrepo.example", new DBRepoCredentials("user", "pass")));
     server.verify();
   }
 
@@ -234,6 +268,32 @@ public class DBRepoClientTest {
   }
 
   @Test
+  public void rejectsCsvDownloadWhenUpstreamRedirectsBeforeStreaming() {
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/view/view-1/data"))
+        .andRespond(
+            withStatus(HttpStatus.FOUND).location(URI.create("https://redirect.example/export")));
+    ByteArrayOutputStream csv = new ByteArrayOutputStream();
+    AtomicBoolean beforeStreamingCalled = new AtomicBoolean(false);
+
+    assertThrows(
+        RestClientException.class,
+        () ->
+            client.streamResourceCsv(
+                "https://dbrepo.example",
+                "db-1",
+                "view",
+                "view-1",
+                new DBRepoCredentials("user", "pass"),
+                csv,
+                () -> beforeStreamingCalled.set(true)));
+
+    assertFalse(beforeStreamingCalled.get());
+    assertEquals("", csv.toString(StandardCharsets.UTF_8));
+    server.verify();
+  }
+
+  @Test
   public void rejectsCsvDownloadWhenUpstreamContentTypeIsNotCsv() {
     server
         .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/view/view-1/data"))
@@ -267,6 +327,12 @@ public class DBRepoClientTest {
                 "db-1",
                 new DBRepoCredentials("user", "pass"),
                 new ByteArrayOutputStream()));
+  }
+
+  private InetAddress[] publicAddress() throws UnknownHostException {
+    return new InetAddress[] {
+      InetAddress.getByAddress(new byte[] {93, (byte) 184, (byte) 216, 34})
+    };
   }
 
   @Test
