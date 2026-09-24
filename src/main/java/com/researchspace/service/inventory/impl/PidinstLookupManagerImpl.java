@@ -253,10 +253,9 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
       DataCiteDoiSearchResult page =
           dataCiteConnector.searchInstrumentDois(
               "(" + freeText + ") OR " + doiClause, MAX_HITS, InventorySettingType.PIDINST);
-      if (page.getMeta().getTotal() > page.getData().size()) {
-        topUpWithDoiMatches(page, doiClause);
-      }
-      return page;
+      return page.getMeta().getTotal() > page.getData().size()
+          ? toppedUpWithDoiMatches(page, doiClause)
+          : page;
     }
     DataCiteDoiSearchResult hits =
         dataCiteConnector.searchInstrumentDois(freeText, MAX_HITS, InventorySettingType.PIDINST);
@@ -273,9 +272,14 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * boost), so more than a page of records matching the words can push it off. A truncated page
    * therefore gets the DOI clause's own matches in place of its last entries; {@code total} is left
    * alone, since the combined query already counted them.
+   *
+   * <p>Built as a new result, never in place: the connector's result is cached on the heap by
+   * reference, so editing it would change the page every later identical search is served, and race
+   * concurrent ones.
    */
-  private void topUpWithDoiMatches(DataCiteDoiSearchResult page, String doiClause) {
-    List<DataCiteDoi> data = page.getData();
+  private DataCiteDoiSearchResult toppedUpWithDoiMatches(
+      DataCiteDoiSearchResult page, String doiClause) {
+    List<DataCiteDoi> data = new ArrayList<>(page.getData());
     Set<String> onPage = data.stream().map(DataCiteDoi::getId).collect(Collectors.toSet());
     List<DataCiteDoi> missing =
         dataCiteConnector
@@ -288,6 +292,10 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     data.subList(Math.max(0, Math.min(data.size(), MAX_HITS - missing.size())), data.size())
         .clear();
     data.addAll(0, missing);
+    DataCiteDoiSearchResult toppedUp = new DataCiteDoiSearchResult();
+    toppedUp.setData(data);
+    toppedUp.getMeta().setTotal(page.getMeta().getTotal());
+    return toppedUp;
   }
 
   /**

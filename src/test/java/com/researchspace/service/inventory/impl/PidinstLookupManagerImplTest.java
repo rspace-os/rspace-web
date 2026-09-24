@@ -725,9 +725,10 @@ class PidinstLookupManagerImplTest {
         IntStream.range(0, 50)
             .mapToObj(i -> dataCiteInstrument("10.1/unrelated-" + i, "findable", "Instrument"))
             .toArray(DataCiteDoi[]::new);
+    DataCiteDoiSearchResult combined = dataCitePage(120, unrelated);
     when(dataCiteConnector.searchInstrumentDois(
             "(*qvtb AND aw74*) OR doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
-        .thenReturn(dataCitePage(120, unrelated));
+        .thenReturn(combined);
     when(dataCiteConnector.searchInstrumentDois(
             "doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
@@ -737,6 +738,8 @@ class PidinstLookupManagerImplTest {
     assertTrue(result.getHits().stream().anyMatch(hit -> DOI.equals(hit.getPid())));
     assertEquals(50, result.getHits().size(), "still one page");
     assertEquals(120, result.getTotal(), "the combined query already counted the DOI");
+    // the connector's result is cached on the heap by reference and shared between requests
+    assertEquals(List.of(unrelated), combined.getData(), "the cached page is left untouched");
   }
 
   @Test
