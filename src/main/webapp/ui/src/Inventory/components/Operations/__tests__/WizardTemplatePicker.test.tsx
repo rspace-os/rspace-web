@@ -6,8 +6,15 @@ import WizardTemplatePicker from "../WizardTemplatePicker";
 const state = vi.hoisted(() => ({
   results: [] as Array<{ id: number; name: string; globalId: string }>,
   loading: false,
+  /** What the real fetcher keeps between searches: a query it was given stays until overwritten. */
+  query: "",
 }));
-const performInitialSearch = vi.hoisted(() => vi.fn((_args: unknown) => Promise.resolve()));
+const performInitialSearch = vi.hoisted(() =>
+  vi.fn((args: { query?: string } | null) => {
+    if (args?.query !== undefined) state.query = args.query;
+    return Promise.resolve();
+  }),
+);
 
 vi.mock("@/stores/models/Search", () => ({
   default: class {
@@ -16,6 +23,9 @@ vi.mock("@/stores/models/Search", () => ({
     }
     fetcher = {
       performInitialSearch,
+      setAttributes: (attrs: { query?: string }) => {
+        if (attrs.query !== undefined) state.query = attrs.query;
+      },
       get loading() {
         return state.loading;
       },
@@ -36,6 +46,7 @@ beforeEach(() => {
     { id: 7, name: "Buffer", globalId: "IT7" },
   ];
   state.loading = false;
+  state.query = "";
 });
 
 describe("WizardTemplatePicker", () => {
@@ -79,6 +90,22 @@ describe("WizardTemplatePicker", () => {
     await user.type(screen.getByRole("combobox"), "C");
     await new Promise((resolve) => setTimeout(resolve, 400));
     expect(performInitialSearch).not.toHaveBeenCalledWith(expect.objectContaining({ query: "C" }));
+  });
+
+  it("forgets the previous query when the box is cleared or holds a single character", async () => {
+    const user = userEvent.setup();
+    render(<WizardTemplatePicker setTemplate={vi.fn()} />);
+    const box = screen.getByRole("combobox");
+    await user.type(box, "Buf");
+    await waitFor(() => expect(state.query).toBe("Buf"));
+
+    await user.clear(box);
+    await waitFor(() => expect(state.query).toBe(""));
+    expect(performInitialSearch).toHaveBeenLastCalledWith(null);
+
+    await user.type(box, "C");
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(state.query).toBe("");
   });
 
   it("pre-fills the currently-selected template's name so a reopened picker starts on it", () => {

@@ -54,6 +54,8 @@ function WizardTemplatePicker({
   }, [search]);
 
   // Below MIN_SEARCH_CHARS the unfiltered list is shown, rather than sending a query that would 422.
+  // The fetcher keeps the last query it was given and performInitialSearch(null) re-sends it, so the
+  // stored query is cleared first or the old results would stay on screen under an empty box.
   const runSearch = React.useMemo(
     () =>
       debounce((query: string) => {
@@ -61,6 +63,7 @@ function WizardTemplatePicker({
         if (trimmed.length >= MIN_SEARCH_CHARS) {
           void search.fetcher.performInitialSearch({ query: trimmed, resultType: "SAMPLE_TEMPLATE" });
         } else {
+          search.fetcher.setAttributes({ query: "" });
           void search.fetcher.performInitialSearch(null);
         }
       }, SEARCH_DEBOUNCE_MS),
