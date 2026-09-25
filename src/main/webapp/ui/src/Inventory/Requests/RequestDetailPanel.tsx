@@ -44,6 +44,11 @@ import type { ApiSampleRequestListItem } from "./RequestsList";
 import RequestsStatusChip, { STATUS_BACKGROUND } from "./RequestsStatusChip";
 import { notifySampleRequestStatusChanged } from "./sampleRequestEvents";
 
+// Preparing a sample for a request always ends in transferring it to the requester, so
+// destroying the origin has no sensible place in this flow; Pool requires multiple origins,
+// but this flow only ever offers the single subsample selected in Sample Locations.
+const OPERATION_WIZARD_EXCLUDED_KEYS = new Set(["destroy", "pool"]);
+
 const STATUS_HELP_KEY = {
   FULFILLED: "requestsManagement.detail.statusHelp.fulfilled",
   REJECTED: "requestsManagement.detail.statusHelp.rejected",
@@ -104,11 +109,18 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // reached via the "transfer" radio, or the sample the Operations Wizard just created when
   // reached via the "wizard" radio's Passage step.
   const [transferTarget, setTransferTarget] = useState<{ id: number; name: string } | null>(null);
+  // Extra context shown above the dialog's usual "Select someone..." text; only the wizard path
+  // sets one, to explain that the sample it just created already sits in the owner's own
+  // Inventory and will stay there if the transfer is cancelled.
+  const [transferDialogInfoText, setTransferDialogInfoText] = useState<string | null>(null);
   const [transferRecipient, setTransferRecipient] = useState<PersonModel | null>(null);
   const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
   const [sampleOwnerName, setSampleOwnerName] = useState<string | null>(null);
   const [subSampleCount, setSubSampleCount] = useState<number | null>(null);
-  const [otherActiveRequestsCount, setOtherActiveRequestsCount] = useState<number | null>(null);
+  const [otherActiveRequests, setOtherActiveRequests] = useState<Array<{
+    id: number;
+    requesterUsername: string;
+  }> | null>(null);
   const currentUser = useWhoAmI();
   const { peopleStore, uiStore } = useStores();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
@@ -123,6 +135,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const { launch: launchOperationWizard, wizard: operationWizard } = useOperationWizardLauncher(wizardOrigins, {
     onPerformed: (sample) => onWizardPerformedRef.current(sample),
     onClose: () => setWizardOrigin(null),
+    excludedOperationKeys: OPERATION_WIZARD_EXCLUDED_KEYS,
   });
 
   // launchOperationWizard is deliberately excluded from the deps: it is a fresh closure every
@@ -177,9 +190,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     };
   }, [request]);
 
-  // Only needed to size the "other requests will be closed automatically" warning in the
-  // Choose Sample to Prepare dialog; refetched whenever this request's own status changes,
-  // since that can move it into or out of the "active" set counted here.
+  // Backs both the "other requests will be closed automatically" warning in the Choose Sample to
+  // Prepare dialog (any other active request) and the Transfer Ownership dialog's own note about
+  // requests from OTHER users specifically (see otherActiveRequestsFromMultipleUsers below).
+  // Refetched whenever this request's own status changes, since that can move it into or out of
+  // the "active" set counted here.
   useEffect(() => {
     if (!request) return;
     let cancelled = false;
@@ -188,20 +203,33 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       status: "PENDING,APPROVED",
       pageSize: "100",
     });
-    ApiService.query<{ requests: Array<{ id: number }> }>("sampleRequests", params)
+    ApiService.query<{ requests: Array<{ id: number; requester: { username: string } }> }>("sampleRequests", params)
       .then(({ data }) => {
         if (cancelled) return;
-        setOtherActiveRequestsCount(data.requests.filter((r) => r.id !== request.id).length);
+        setOtherActiveRequests(
+          data.requests
+            .filter((r) => r.id !== request.id)
+            .map((r) => ({ id: r.id, requesterUsername: r.requester.username })),
+        );
       })
       .catch((error: unknown) => {
         if (cancelled) return;
         console.error("Failed to fetch other active sample requests", error);
-        setOtherActiveRequestsCount(null);
+        setOtherActiveRequests(null);
       });
     return () => {
       cancelled = true;
     };
   }, [request, status]);
+
+  const otherActiveRequestsCount = otherActiveRequests?.length ?? null;
+  // "From more than 1 different user" means at least one OTHER active request whose requester
+  // differs from the CURRENT request's own requester - not distinct requesters among the others
+  // alone, which would never fire for the common case of exactly one other request (a set of one
+  // is never ">1" no matter who it belongs to).
+  const otherActiveRequestsFromMultipleUsers = (otherActiveRequests ?? []).some(
+    (r) => r.requesterUsername !== request?.requester.username,
+  );
 
   const comment = statusChanges
     .filter((change) => change.status === status)
@@ -291,8 +319,9 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // opens (for either route into it: the "transfer" radio directly, or the "wizard" radio once
   // its Passage step has produced a new sample); if that lookup hasn't resolved yet, the field
   // just starts empty and the owner can pick a recipient manually.
-  const openTransferDialog = (target: { id: number; name: string }) => {
+  const openTransferDialog = (target: { id: number; name: string }, infoText: string | null = null) => {
     setTransferTarget(target);
+    setTransferDialogInfoText(infoText);
     setTransferDialogOpen(true);
     if (!transferRecipient) {
       void peopleStore.getUser(request.requester.username).then((person) => {
@@ -303,11 +332,15 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
 
   // Kept in sync every render (see the ref declaration above): the Operations Wizard's Passage
   // step hands back the new sample it created, which is what then gets offered up in the
-  // Transfer Ownership dialog, exactly as the "transfer" radio does for the original sample.
+  // Transfer Ownership dialog, exactly as the "transfer" radio does for the original sample -
+  // with an added note that the new sample already sits in the owner's own Inventory.
   onWizardPerformedRef.current = (sample) => {
     setWizardOrigin(null);
     if (sample) {
-      openTransferDialog({ id: sample.id, name: sample.name });
+      openTransferDialog(
+        { id: sample.id, name: sample.name },
+        t("requestsManagement.detail.transferDialog.newSampleHint", { sampleName: sample.name }),
+      );
     }
   };
 
@@ -329,7 +362,17 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     if (preparationMethod === "wizard") {
       launchOperationsWizardForSelectedSubsample();
     } else {
-      openTransferDialog({ id: request.sample.id, name: request.sample.name });
+      const hints: Array<string> = [];
+      if (subSampleCount !== null && subSampleCount > 1) {
+        hints.push(t("requestsManagement.detail.transferDialog.subsamplesHint"));
+      }
+      if (otherActiveRequestsFromMultipleUsers) {
+        hints.push(t("requestsManagement.detail.transferDialog.otherRequestsHint"));
+      }
+      openTransferDialog(
+        { id: request.sample.id, name: request.sample.name },
+        hints.length > 0 ? hints.join(" ") : null,
+      );
     }
   };
 
@@ -353,6 +396,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       )
       .then(() => {
         setTransferDialogOpen(false);
+        // The transfer just took effect, which server-side may have auto-rejected other
+        // requests against the same sample (see SampleApiManagerImpl.changeApiSampleOwner);
+        // notify again, now that's actually happened, so the list picks up their new status
+        // too. The earlier notification from markRequestFulfilled fires before this transfer
+        // call even runs, so it can't have reflected that on its own.
+        notifySampleRequestStatusChanged();
         uiStore.addAlert(
           mkAlert({
             variant: "success",
@@ -839,6 +888,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       <Dialog open={transferDialogOpen} onClose={() => setTransferDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{t("contextMenu.transfer.dialog.title")}</DialogTitle>
         <DialogContent>
+          {transferDialogInfoText && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {transferDialogInfoText}
+            </Alert>
+          )}
           <Typography component="p" variant="body1" sx={{ mb: 2 }}>
             <TransRichText i18nKey="inventory:contextMenu.transfer.dialog.body" />
           </Typography>

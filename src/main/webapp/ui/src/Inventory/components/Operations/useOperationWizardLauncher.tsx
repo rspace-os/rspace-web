@@ -18,12 +18,14 @@ const releaseAll = (records: Array<SubSampleModel>) => Promise.allSettled(record
 type LauncherOptions = {
   onPerformed?: (sample: OperationResult | null) => void;
   onClose?: (performed: boolean) => void;
+  /** Hides matching operations from the picker, e.g. a caller for whom Destroy makes no sense. */
+  excludedOperationKeys?: ReadonlySet<string>;
 };
 
 /** The caller must render `wizard`. */
 export function useOperationWizardLauncher(
   origins: Array<SubSampleModel>,
-  { onPerformed, onClose }: LauncherOptions = {},
+  { onPerformed, onClose, excludedOperationKeys }: LauncherOptions = {},
 ): { launch: () => Promise<boolean>; wizard: React.ReactNode } {
   const { t } = useTranslation("inventory");
   const available = useProcessAvailable();
@@ -139,6 +141,7 @@ export function useOperationWizardLauncher(
         }}
         origins={open ? lockedOrigins : origins}
         pendingRenewals={renewals}
+        excludedOperationKeys={excludedOperationKeys}
       />
     ) : null;
 

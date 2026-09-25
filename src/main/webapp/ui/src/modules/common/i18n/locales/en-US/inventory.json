@@ -2156,6 +2156,11 @@
         "rejected": "Closed. Your reason for rejecting is shown in the history."
       },
       "title": "Request {id}: {sampleName}",
+      "transferDialog": {
+        "newSampleHint": "The new sample {sampleName} has now been created and is currently in your own Inventory. If you Cancel the transfer now it will remain in your Inventory until it has been transferred manually.",
+        "otherRequestsHint": "Other Pending or Approved requests from other users will be closed automatically when this sample is transferred.",
+        "subsamplesHint": "Transferring this sample will also transfer all subsamples."
+      },
       "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
     },
     "feedback": "{count} sample requests found.",
