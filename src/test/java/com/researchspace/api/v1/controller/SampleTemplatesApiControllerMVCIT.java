@@ -114,8 +114,6 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().isOk())
             .andReturn();
     searchHits = getFromJsonResponseBody(result, ApiSampleTemplateSearchResult.class);
-    //	List<ApiSampleTemplateInfo>templates =
-    // searchHits.getTemplates().stream().filter(f->f.isTemplate()).collect(Collectors.toList());
     assertEquals(allTemplatesCount, searchHits.getTotalHits().intValue());
     assertThat(searchHits.getTemplates()).hasSize(1);
     assertThat(searchHits.getLinks().size()).isGreaterThan(1);
@@ -782,9 +780,14 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
         "sample3 with r2 selected and no text content",
         bulkUpdateResult.getResults().get(2).getRecord().getName());
     // error from attempt to update the 4th sample - edit lock
-    assertEquals(
-        "Item is currently edited by another user (" + otherUser.getUsername() + ")",
-        bulkUpdateResult.getResults().get(3).getError().getErrors().get(0));
+    assertTrue(
+        bulkUpdateResult
+            .getResults()
+            .get(3)
+            .getError()
+            .getErrors()
+            .get(0)
+            .endsWith(" is currently being edited by " + otherUser.getUsername()));
   }
 
   @Test

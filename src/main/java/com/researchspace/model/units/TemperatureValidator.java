@@ -28,6 +28,11 @@ public class TemperatureValidator {
     if (!RSUnits.TEMPERATURE_CATEGORY.equalsIgnoreCase(def.getCategory())) {
       return false;
     }
+    // A present temperature must carry a number: Quantities.getQuantity throws on a null value,
+    // which would turn a malformed request's Bean Validation pass into a 500.
+    if (value.getNumericValue() == null) {
+      return false;
+    }
 
     Quantity<Temperature> q =
         Quantities.getQuantity(value.getNumericValue(), def.getDefinition())

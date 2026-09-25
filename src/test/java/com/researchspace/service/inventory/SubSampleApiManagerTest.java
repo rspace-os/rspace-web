@@ -1097,21 +1097,21 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
         invLockTracker.attemptToLockForEdit(apiSubSample.getGlobalId(), piUser);
     assertEquals(ApiInventoryEditLockStatus.LOCKED_OK, apiLock.getStatus());
 
-    // try edit by testUser
     apiSubSample.setName("updated name");
-    IllegalArgumentException iae =
+    InventoryEditLockHeldException held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> subSampleApiMgr.updateApiSubSample(apiSubSample, testUser));
-    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
+    assertEquals(apiSubSample.getGlobalId(), held.getGlobalId());
+    assertEquals(piUser.getUsername(), held.getOwner().getUsername());
 
     // try delete by testUser
     Long subSampleId = apiSubSample.getId();
-    iae =
+    held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> subSampleApiMgr.markSubSampleAsDeleted(subSampleId, testUser, false));
-    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
+    assertEquals(apiSubSample.getGlobalId(), held.getGlobalId());
 
     // pi can edit fine
     ApiSubSample updatedSubSample = subSampleApiMgr.updateApiSubSample(apiSubSample, piUser);

@@ -7,13 +7,13 @@ import DoubleEditIcon from "../../../assets/graphics/DoubleEditIcon";
 import SingleEditIcon from "../../../assets/graphics/SingleEditIcon";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import type { InventoryRecord, LockStatus } from "../../../stores/definitions/InventoryRecord";
-import { RecordLockedError } from "../../../stores/models/InventoryBaseRecord";
 import useStores from "../../../stores/use-stores";
 import { getErrorMessage, UserCancelledAction } from "../../../util/error";
 import RsSet from "../../../util/set";
 import type { AllSettled } from "../../../util/types";
 import { match, partitionAllSettled } from "../../../util/Util";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
+import { displayErrorIfAllLocksCouldNotBeAcquired } from "./lockAlerts";
 
 type EditActionArgs = {
   as: ContextMenuRenderOptions;
@@ -27,47 +27,16 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
     const { t, i18n } = useTranslation(["inventory", "common"]);
     const language = i18n.resolvedLanguage ?? i18n.language;
     const { searchStore, uiStore } = useStores();
+    const isBatchSelection = selectedResults.length > 1;
 
-    const displayErrorIfAllLocksCouldNotBeAcquired = (error: Error): boolean => {
-      const isBatchEdit = selectedResults.length > 1;
-      const lockedRecords = [];
-      if (error instanceof AggregateError) {
-        for (const err of error.errors) {
-          if (err instanceof RecordLockedError) {
-            lockedRecords.push({
-              record: err.record,
-              lockOwner: err.lockOwner,
-            });
-          }
-        }
-      }
-      if (error instanceof RecordLockedError) {
-        lockedRecords.push({
-          record: error.record,
-          lockOwner: error.lockOwner,
-        });
-      }
-      if (lockedRecords.length > 0) {
-        uiStore.addAlert(
-          mkAlert({
-            title: isBatchEdit ? t("contextMenu.edit.cannotEditSome") : t("contextMenu.edit.cannotEditThis"),
-            message: isBatchEdit ? t("contextMenu.edit.someoneEditingThem") : t("contextMenu.edit.someoneEditingIt"),
-            variant: "error",
-            isInfinite: true,
-            details: lockedRecords.map(({ record, lockOwner }) => ({
-              title: record.name,
-              record,
-              variant: "error",
-              help: t("contextMenu.edit.beingEditedBy", {
-                name: [lockOwner.firstName, lockOwner.lastName].filter(Boolean).join(" ") || lockOwner.username,
-              }),
-            })),
-          }),
-        );
-        return true;
-      }
-      return false;
-    };
+    const showLockedAlert = (error: Error): boolean =>
+      displayErrorIfAllLocksCouldNotBeAcquired({
+        error,
+        title: isBatchSelection ? t("contextMenu.edit.cannotEditSome") : t("contextMenu.edit.cannotEditThis"),
+        message: isBatchSelection ? t("contextMenu.edit.someoneEditingThem") : t("contextMenu.edit.someoneEditingIt"),
+        beingEditedBy: (name) => t("contextMenu.edit.beingEditedBy", { name }),
+        addAlert: uiStore.addAlert.bind(uiStore),
+      });
 
     const removeAllExistingLocks = async () => {
       await searchStore.search.setActiveResult(null, {
@@ -99,10 +68,6 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
       await Promise.all(selectedResults.map((r) => r.setEditing(false, true, true)));
     };
 
-    /*
-     * Would be good if this could live in SearchStore, but importing Alert in
-     * SearchStore introduces a cyclical dependency.
-     */
     const doEdit = async () => {
       const isBatchEdit = selectedResults.length > 1;
 
@@ -133,7 +98,7 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
         } catch {
           // don't need to display this error
         }
-        const displayedError = displayErrorIfAllLocksCouldNotBeAcquired(e);
+        const displayedError = showLockedAlert(e);
         if (!displayedError) {
           uiStore.addAlert(
             mkAlert({

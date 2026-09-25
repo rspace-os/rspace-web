@@ -11,6 +11,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -81,6 +82,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     invSample.setId(200L);
     invSubSample = new SubSample();
     invSubSample.setId(300L);
+    invSubSample.setSample(invSample);
     owningRecord = mock(StructuredDocument.class);
   }
 
@@ -106,7 +108,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
     req.setInventoryItemGlobalId("SA200");
 
-    // molecule already linked
     molecule.setInventoryLink(new StoichiometryInventoryLink());
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
@@ -212,6 +213,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         manager.deductStock(stoichiometryId, List.of(321L, 321L, 321L), user);
 
     // the repeat is dropped before any stock is touched, so the amount comes off once (RSDEV-1319)
+    verify(linkDao, times(1)).getSafeNull(321L);
     verify(subSampleMgr)
         .registerApiSubSampleUsage(eq(invSubSample.getId()), any(QuantityInfo.class), eq(user));
     // but the public API contract is one result row per submitted entry, so the response
@@ -236,7 +238,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     original.setStoichiometryMolecule(molecule);
     original.setInventoryRecord(invSubSample);
 
-    // SubSample has only 5 g stock
     invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(5), RSUnitDef.GRAM.getId()));
 
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
@@ -257,6 +258,9 @@ public class StoichiometryInventoryLinkManagerImplTest {
       Long linkId, Long subSampleId, StoichiometryMolecule mol) {
     SubSample sub = new SubSample();
     sub.setId(subSampleId);
+    Sample parent = new Sample();
+    parent.setId(subSampleId * 10);
+    sub.setSample(parent);
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setId(linkId);
     link.setStoichiometryMolecule(mol);

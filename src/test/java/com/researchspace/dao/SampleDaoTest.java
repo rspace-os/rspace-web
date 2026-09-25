@@ -2,7 +2,9 @@ package com.researchspace.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
@@ -43,5 +45,20 @@ public class SampleDaoTest extends SpringTransactionalTest {
     assertThat(sampleDao.getAllDistinct()).hasSize(initialCount + 1);
     sampleDao.remove(updatedSample.getId());
     assertThat(sampleDao.getAllDistinct()).hasSize(initialCount);
+  }
+
+  @Test
+  public void entityNameExistsForUserIgnoresDeletedSamples() {
+    User user = createAndSaveRandomUser();
+    Container workbench = containerDao.getWorkbenchForUser(user);
+    String name = "unique name for deletion test";
+    Sample sample = recordFactory.createSample(name, user);
+    sample.getSubSamples().get(0).moveToNewParent(workbench);
+    Sample created = sampleDao.persistNewSample(sample);
+
+    assertTrue(sampleDao.entityNameExistsForUser(name, user));
+
+    sampleApiMgr.markSampleAsDeleted(created.getId(), false, user);
+    assertFalse(sampleDao.entityNameExistsForUser(name, user));
   }
 }

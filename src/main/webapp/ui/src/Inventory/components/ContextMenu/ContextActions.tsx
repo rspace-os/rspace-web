@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { menuIDs } from "../../../util/menuIDs";
 import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import { isProcessableSelection } from "../Operations/useOperationWizardLauncher";
 import AddToBasketAction from "./AddToBasketAction";
 import type { ContextMenuRenderOptions } from "./ContextMenuAction";
 import CreateAction from "./CreateAction";
@@ -11,6 +12,7 @@ import EditAction from "./EditAction";
 import ExportAction from "./ExportAction";
 import MoveAction from "./MoveAction";
 import PrintBarcodeAction from "./PrintBarcodeAction";
+import ProcessAction from "./ProcessAction";
 import RemoveFromBasketAction from "./RemoveFromBasketAction";
 import RestoreAction from "./RestoreAction";
 import SelectAction from "./SelectAction";
@@ -24,6 +26,7 @@ type ContextActionsArgs = {
   onSelectOptions?: Array<SplitButtonOption>;
   menuID: (typeof menuIDs)[keyof typeof menuIDs];
   basketSearch: boolean;
+  processAvailable: boolean;
 };
 
 type ContextAction = {
@@ -39,6 +42,7 @@ const contextActions = ({
   closeMenu,
   menuID,
   basketSearch,
+  processAvailable,
 }: ContextActionsArgs): ((as: ContextMenuRenderOptions) => Array<ContextAction>) => {
   const contextActionsGenerator = (as: ContextMenuRenderOptions) => {
     const allSelectedAvailable: boolean = selectedResults.every((r: InventoryRecord) => !r.deleted);
@@ -88,6 +92,18 @@ const contextActions = ({
           />
         ),
         hidden: hideInPickerAndWhenNotAllCurrent,
+      },
+      {
+        component: (
+          <ProcessAction
+            key="process"
+            selectedResults={selectedResults}
+            as={as}
+            disabled={disableAllActions}
+            closeMenu={closeMenu}
+          />
+        ),
+        hidden: hideInPickerAndWhenNotAllCurrent || !processAvailable || !isProcessableSelection(selectedResults),
       },
       {
         component: (

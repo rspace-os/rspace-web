@@ -35,6 +35,9 @@
         "locationsImageTooLarge": "Container locations image cannot be larger than 10MB",
         "typeRequired": "Container type (cType) is required and must be one of {0}."
       },
+      "editLock": {
+        "heldBy": "{0} is currently being edited by {1}."
+      },
       "export": {
         "exportMode": {
           "invalid": "exportMode should be either 'FULL' or 'COMPACT'"
@@ -139,8 +142,8 @@
       "listOfMaterials": {
         "descriptionTooLong": "Description cannot be longer than 255 chars",
         "elnFieldIdRequired": "elnFieldId cannot be null",
-        "nameTooLong": "Name cannot be longer than 255 chars",
-        "nameRequired": "name cannot be empty"
+        "nameRequired": "name cannot be empty",
+        "nameTooLong": "Name cannot be longer than 255 chars"
       },
       "location": {
         "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
@@ -154,6 +157,42 @@
           "notFoundInImageContainer": "Target location not found.",
           "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
         }
+      },
+      "operation": {
+        "inProgress": "Another operation on {0} is still in progress. Wait for it to finish, then reload and try again.",
+        "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
+        "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
+        "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
+        "amountTakenNotApplicable": "This operation decides what it takes from each origin, so no amount taken may be sent.",
+        "amountTakenNotSubtractable": "The amount taken is too fine to record against this origin; it cannot be represented in any unit of its category.",
+        "amountTakenNotWithTakeAll": "takeAll takes each origin's whole quantity, so no amount taken may be sent with it.",
+        "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
+        "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
+        "countNotWhole": "Must be a whole number.",
+        "createdAmountNotPositive": "Each created subsample must be given a quantity greater than zero.",
+        "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
+        "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+        "inputAboveMaximum": "Must be at most {value}.",
+        "inputBelowMinimum": "Must be at least {value}.",
+        "inputNotStorable": "Supports at most 3 decimal places.",
+        "inputRequired": "Required by this operation.",
+        "inputTooLong": "This input supports at most {max} characters.",
+        "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
+        "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
+        "originCountMinimum": "This operation requires at least two origin subsamples.",
+        "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+        "originGlobalIdInvalid": "Each origin must be identified by a subsample global id (SS followed by a number), was [{0}].",
+        "originIdRequired": "Each origin must identify a subsample by id.",
+        "originsRequired": "At least one origin subsample must be provided for the operation.",
+        "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
+        "storageTempNotWhole": "The storage temperature must be whole degrees.",
+        "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
+        "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
+        "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
+        "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples."
+      },
+      "operations": {
+        "notEnabled": "Inventory operations API is not enabled on this RSpace instance (inventory.operations.available=DENIED)."
       },
       "publicLink": {
         "unavailable": "The item you try to see is not publicly available right now."
@@ -170,6 +209,7 @@
         "nameExists": "There is already a sample named [{0}]",
         "notFound": "No sample with id: {0}",
         "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
+        "tooManySubSamples": "A sample can be created with at most {max} subsamples",
         "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
         "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
         "templateNotFound": "No sample template with id: {0}",
@@ -206,9 +246,12 @@
         "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
       },
       "temperature": {
+        "belowAbsoluteZero": "The temperature is below absolute zero.",
         "invalidUnit": "Unit id is not a valid temperature unit.",
         "minGreaterThanMax": "Min temperature is greater than max temperature.",
-        "unitsNotComparable": "Temperature units are not mutually comparable."
+        "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
+        "unitsNotComparable": "Temperature units are not mutually comparable.",
+        "valueRequired": "A temperature needs a numeric value."
       },
       "validation": {
         "failed": "Validation failed for provided record"
@@ -218,6 +261,7 @@
         "validationTooLong": "Name cannot be longer than 255 characters"
       },
       "template": {
+        "deleted": "Sample template {0} is in the trash and cannot be used to create a sample. Restore it, or choose another template.",
         "emptyFieldName": "Field name cannot be empty",
         "emptyFieldType": "Field type cannot be empty",
         "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
