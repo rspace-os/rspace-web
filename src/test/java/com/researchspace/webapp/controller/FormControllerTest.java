@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -12,9 +13,13 @@ import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.record.AbstractForm;
+import com.researchspace.model.record.FormOperation;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.Set;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.web.servlet.ModelAndView;
 
 @ExtendWith(MockitoExtension.class)
 public class FormControllerTest extends SpringTransactionalTest {
@@ -110,6 +116,44 @@ public class FormControllerTest extends SpringTransactionalTest {
         rsFormController.saveEditedStringField("def", "yes", "", rc.getData().getId(), false);
     assertNull(rc2.getData());
     assertNotNull(rc2.getErrorMsg());
+  }
+
+  @Test
+  public void viewFieldRowReturnsRowViewAndModelAttributes() {
+    User user = createAndSaveUserIfNotExists("form_row_owner");
+    logoutAndLoginAs(user);
+    RSForm form = createAnyForm(user);
+    AjaxReturnObject<TextFieldForm> createdField =
+        rsFormController.createTextField(new TextFieldDTO<>("Default", "Field"), form.getId());
+    Model rowModel = new ExtendedModelMap();
+
+    ModelAndView modelAndView =
+        rsFormController.viewFieldRow(createdField.getData().getId(), rowModel);
+    TextFieldForm rowField = (TextFieldForm) rowModel.asMap().get("field");
+    AbstractForm rowForm = (AbstractForm) rowModel.asMap().get("template");
+
+    assertEquals("workspace/editor/include/fieldFormRow", modelAndView.getViewName());
+    assertEquals(createdField.getData().getId(), rowField.getId());
+    assertEquals(form.getId(), rowForm.getId());
+    assertEquals(
+        form.isNewState() ? FormOperation.CREATE : FormOperation.EDIT,
+        rowModel.asMap().get("templateOperation"));
+    assertThat(rowModel.asMap().get("copiedTemporaryFieldIds")).isEqualTo(Set.of());
+  }
+
+  @Test
+  public void viewFieldRowRejectsUserWithoutEditPermission() {
+    User owner = createInitAndLoginAnyUser();
+    RSForm ownerForm = createAnyPrivateForm(owner);
+    AjaxReturnObject<TextFieldForm> createdField =
+        rsFormController.createTextField(new TextFieldDTO<>("Default", "Field"), ownerForm.getId());
+    RSpaceTestUtils.logout();
+    createInitAndLoginAnyUser();
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            rsFormController.viewFieldRow(createdField.getData().getId(), new ExtendedModelMap()));
   }
 
   // rspac-2427 fix
