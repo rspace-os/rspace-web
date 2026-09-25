@@ -1,5 +1,5 @@
 import { createBrowserHistory, createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -661,19 +661,8 @@ describe("Calendar page", () => {
     await expect.element(card.getByLabelText("End time")).toHaveValue("12:05");
 
     const end = page.getByRole("button", { name: "Change booking end time" });
-    const endElement = end.element();
-    const endBounds = endElement.getBoundingClientRect();
-    const editor = endElement.closest<HTMLElement>("[data-timeline-window-editor]");
-    if (!editor) throw new Error("Resize handle must be rendered inside a timeline editor");
-    const pointerY = endBounds.top + endBounds.height / 2;
-    const targetX = editor.getBoundingClientRect().right - fiveMinutes;
-    fireEvent.pointerDown(endElement, {
-      pointerId: 2,
-      clientX: endBounds.left + endBounds.width / 2,
-      clientY: pointerY,
-    });
-    fireEvent.pointerMove(endElement, { pointerId: 2, clientX: targetX, clientY: pointerY });
-    fireEvent.pointerUp(endElement, { pointerId: 2, clientX: targetX, clientY: pointerY });
+    end.element().focus();
+    await userEvent.keyboard("{ArrowLeft}");
     await expect.element(card.getByLabelText("Start time")).toHaveValue("10:05");
     await expect.element(card.getByLabelText("End time")).toHaveValue("12:00");
   });
@@ -843,27 +832,87 @@ describe("Calendar page", () => {
   });
 
   test("does not reject a drag across a repeated hour", async () => {
-    history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-10-25"] });
-    render(
-      <CalendarPageStory
-        history={history}
-        preferences={{
-          ...customNewYorkBookingPreferences,
-          timezoneMode: "CUSTOM",
-          customTimezone: "Europe/Berlin",
-        }}
-      />,
-    );
-    await calendar.resources.click();
-    await calendar.day.click();
-    await expect.poll(() => calendar.resourceCanvases.length).toBe(5);
-    const canvas = calendar.resourceCanvases[0];
-    await userEvent.dragAndDrop(canvas, canvas, {
-      sourcePosition: { x: 120, y: 60 },
-      targetPosition: { x: 180, y: 60 },
-    });
-    await expect.element(calendar.bookingDialog).toBeVisible();
-    expect(calendar.bookingDialog.getByText("booking:bookings.errors.endAfterStart")).not.toBeInTheDocument();
+    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
+    try {
+      await page.viewport(1440, 900);
+      history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-10-25"] });
+      const confocal = bookableItemFixtures.find((fixture) => fixture.target.globalId === "IN123");
+      if (!confocal) throw new Error("Confocal microscope must be available in the catalogue fixture");
+      worker.use(
+        http.get(/\/api\/v2\/booking-catalogue(?:\/calendar)?$/, () =>
+          HttpResponse.json({
+            items: [
+              {
+                ...bookableItemOption(confocal),
+                configurationVersion: confocal.configurationVersion,
+                targetType: "INSTRUMENT",
+                openingStart: "00:00",
+                openingEnd: "24:00",
+                effectiveRole: confocal.effectiveRole,
+                capabilities: confocal.capabilities,
+                location: {
+                  name: confocal.target.value.parentContainerName,
+                  globalId: confocal.target.value.parentContainerGlobalId,
+                },
+              },
+            ],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+            facets: { types: ["INSTRUMENT"] },
+          }),
+        ),
+      );
+      render(
+        <CalendarPageStory
+          history={history}
+          preferences={{
+            ...customNewYorkBookingPreferences,
+            availabilityWindowStart: "00:00",
+            availabilityWindowEnd: "24:00",
+            timezoneMode: "CUSTOM",
+            customTimezone: "Europe/Berlin",
+          }}
+        />,
+      );
+      await calendar.resources.click();
+      await calendar.day.click();
+      await expect.poll(() => calendar.resourceCanvases.length).toBe(1);
+      const canvas = calendar.resourceCanvases[0];
+      await expect.element(canvas).not.toHaveAttribute("data-creation-disabled", "true");
+      const scroller = page.getByTestId("day-timeline-scroller").first();
+      scroller.element().scrollTo({ left: 0 });
+      await expect.poll(() => scroller.element().scrollLeft).toBe(0);
+      const canvasBounds = canvas.element().getBoundingClientRect();
+      const scrollerBounds = scroller.element().getBoundingClientRect();
+      const dayLengthMinutes = 25 * 60;
+      const positionAt = (minute: number) => ({
+        x: canvasBounds.left - scrollerBounds.left + (minute / dayLengthMinutes) * canvasBounds.width,
+        y: canvasBounds.top - scrollerBounds.top + 60,
+      });
+      // Target the viewport so Playwright does not center the oversized canvas and hide the drag origin.
+      await userEvent.dragAndDrop(scroller, scroller, {
+        sourcePosition: positionAt(150),
+        targetPosition: positionAt(210),
+      });
+      await expect.element(calendar.bookingDialog).toBeVisible();
+      const dialog = calendar.bookingDialog;
+      await expect.element(dialog.getByLabelText("Start time")).toHaveValue("02:30");
+      await expect.element(dialog.getByLabelText("End time")).toHaveValue("02:30");
+      const occurrences = dialog.getByRole("group", { name: "Repeated local time" });
+      await expect.element(occurrences.nth(0).getByRole("radio", { name: /Earlier occurrence/ })).toBeChecked();
+      await expect.element(occurrences.nth(1).getByRole("radio", { name: /Later occurrence/ })).toBeChecked();
+
+      await dialog.getByRole("textbox", { name: "Purpose" }).fill("Berlin repeated hour");
+      await dialog.getByRole("button", { name: "Book", exact: true }).click();
+      await expect.poll(() => bookingPageRequests.createdPayloads.length).toBe(1);
+      expect(bookingPageRequests.createdPayloads[0]).toMatchObject({
+        start: "2026-10-25T00:30:00Z",
+        end: "2026-10-25T01:30:00Z",
+      });
+    } finally {
+      await page.viewport(originalViewport.width, originalViewport.height);
+    }
   });
 
   test("ends pristine creation when leaving Calendar so resource dragging works after returning", async () => {

@@ -1309,6 +1309,7 @@ export default interface Resources {
       "loadingConfiguration": "Loading bookable item settings.",
       "maintenanceLabel": "Maintenance blockout",
       "warnings": {
+        "availabilityUnknown": "Availability could not be checked. The server will validate this booking when you submit.",
         "past": "This booking starts in the past and cannot be created."
       }
     },
@@ -1496,6 +1497,31 @@ export default interface Resources {
         "current": "Now {time}"
       },
       "scrollLabel": "24-hour calendar for {date} in {timezone}",
+      "vertical": {
+        "adjusting": "Adjusting draft booking…",
+        "continuesAfter": "Continues into the next day",
+        "continuesBefore": "Continues from the previous day",
+        "dateNavigation": "Schedule date",
+        "draftLabel": "Draft",
+        "draftOutsideDay": "The draft booking is outside this displayed day: {period}",
+        "empty": "No bookings or maintenance on this day.",
+        "eventDetails": "Event details",
+        "intervalChanged": "Draft booking updated to {period}.",
+        "keyboardInstructions": "Press Up or Down on a draft handle to adjust by one slot. Use the date and time fields for short intervals.",
+        "loadError": "Could not load this day’s schedule.",
+        "loading": "Loading schedule…",
+        "moveDraft": "Move draft booking, {period}",
+        "nextDay": "Next day",
+        "noTarget": "Choose a bookable item to see its day schedule.",
+        "previousDay": "Previous day",
+        "resizeEnd": "Adjust draft end, {period}",
+        "resizeStart": "Adjust draft start, {period}",
+        "retry": "Retry",
+        "returnToDraftDay": "Draft day",
+        "saving": "The booking is being saved.",
+        "schedule": "Day schedule",
+        "title": "Day schedule"
+      },
       "zoom": {
         "in": "Zoom in",
         "legend": "Timeline zoom",
