@@ -18,6 +18,7 @@ import TitledBox from "@/components/TitledBox";
 import { ErrorReason } from "@/eln/eln-external-workflows/Enums";
 import ErrorView from "@/eln/eln-external-workflows/ErrorView";
 import { WorkFlowIcon } from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import materialTheme from "@/theme";
 import { DataGridColumn } from "@/util/table";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
@@ -271,11 +272,11 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                     </>
                   )}
                   <p>{t("tinymce.galaxy.chooseAttachedFiles")}</p>
-                  {t("tinymce.galaxy.allSelectedFilesCombined")}
-                  <p>
-                    <strong>{t("tinymce.galaxy.datasetNameFormat")}</strong>
-                  </p>
-                  {t("tinymce.galaxy.uploadToGalaxyNote")}
+                  <TransRichText
+                    i18nKey="workspace:tinymce.galaxy.allSelectedFilesCombined"
+                    values={{ format: t("tinymce.galaxy.datasetNameFormat") }}
+                  />
+                  <p>{t("tinymce.galaxy.uploadToGalaxyNote")}</p>
                   <p>
                     <strong>{t("tinymce.galaxy.rspaceWillStoreDetails")}</strong>
                   </p>
