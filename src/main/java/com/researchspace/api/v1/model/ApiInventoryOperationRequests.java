@@ -66,7 +66,10 @@ public final class ApiInventoryOperationRequests {
      */
     @Min(value = 1, message = "{errors.inventory.operation.inputBelowMinimum}")
     @Max(value = 100, message = "{errors.inventory.operation.inputAboveMaximum}")
-    @Digits(integer = 3, fraction = 0, message = "{errors.inventory.operation.countNotWhole}")
+    @Digits(
+        integer = Integer.MAX_VALUE,
+        fraction = 0,
+        message = "{errors.inventory.operation.countNotWhole}")
     @JsonProperty("count")
     private BigDecimal count;
 

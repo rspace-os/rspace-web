@@ -73,6 +73,16 @@ class ApiInventoryOperationRequestsBeanValidationTest {
   }
 
   @Test
+  void aCountOfManyDigitsIsOnlyAboveTheMaximumNotAlsoNotWhole() {
+    for (String count : List.of("1001", "123456789012")) {
+      ApiInventoryOperationRequests.Aliquot request = aliquot();
+      request.setCount(new BigDecimal(count));
+      assertEquals(
+          Set.of("errors.inventory.operation.inputAboveMaximum"), keysFor(request, "count"), count);
+    }
+  }
+
+  @Test
   void aCountOutsideItsBoundsIsRejected() {
     ApiInventoryOperationRequests.Aliquot tooMany = aliquot();
     tooMany.setCount(new BigDecimal("101"));

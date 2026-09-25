@@ -110,6 +110,24 @@ class OperationQuantityRulesTest {
   }
 
   @Test
+  void aTemperatureWithAFractionOfADegreeIsRejectedInAnyUnit() {
+    // Whole degrees as sent, in the unit sent: the wizard takes whole degrees and the sample form
+    // can only show and save whole degrees, so an operation must not create what they cannot keep.
+    for (ApiQuantityInfo fractional :
+        List.of(
+            celsius("-18.5"),
+            new ApiQuantityInfo(new BigDecimal("77.5"), RSUnitDef.KELVIN.getId()))) {
+      MapBindingResult own = new MapBindingResult(new HashMap<>(), "request");
+      OperationQuantityRules.temperature(fractional, "storageTemp", null, null, own);
+      assertEquals(
+          "errors.inventory.operation.storageTempNotWhole",
+          own.getFieldError("storageTemp") == null
+              ? null
+              : own.getFieldError("storageTemp").getCode());
+    }
+  }
+
+  @Test
   void aBoundedTemperatureInsideItsRangeIsAccepted() {
     for (String celsiusValue : List.of("4", "-80", "120")) {
       MapBindingResult own = new MapBindingResult(new HashMap<>(), "request");

@@ -4024,6 +4024,7 @@ export default interface Resources {
         "storageTempMax": "Storage temperature must be at most {max}°C.",
         "storageTempMin": "Storage temperature must be at least {min}°C.",
         "storageTempRequired": "Enter a storage temperature.",
+        "storageTempWhole": "Enter whole degrees only.",
         "temperatureUnit": "°C",
         "unitRequired": "Choose a unit."
       },
@@ -7127,6 +7128,7 @@ export default interface Resources {
           "originsRequired": "At least one origin subsample must be provided for the operation.",
           "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
           "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
+          "storageTempNotWhole": "The storage temperature must be whole degrees.",
           "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
           "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
           "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples."

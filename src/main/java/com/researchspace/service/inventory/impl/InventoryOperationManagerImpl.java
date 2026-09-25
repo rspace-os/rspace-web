@@ -186,13 +186,13 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
         QuantityInfo currentQuantity = subSampleApiMgr.getIfExists(origin.getId()).getQuantity();
         if (originHoldsNothing(currentQuantity)) {
           errors.rejectValue(
-              "id",
+              "globalId",
               "errors.inventory.operation.originEmpty",
               "An origin subsample that currently holds nothing cannot be operated on.");
         } else if (firstOriginQuantity != null
             && !quantityUtils.isComparableQuantities(firstOriginQuantity, currentQuantity)) {
           errors.rejectValue(
-              "id",
+              "globalId",
               "errors.inventory.operation.originCategoryMismatch",
               "All origin subsamples must use the same measurement category.");
         } else if (origin.getAmountTaken() != null

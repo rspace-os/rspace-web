@@ -1769,6 +1769,7 @@
       "storageTempMax": "Storage temperature must be at most {max}°C.",
       "storageTempMin": "Storage temperature must be at least {min}°C.",
       "storageTempRequired": "Enter a storage temperature.",
+      "storageTempWhole": "Enter whole degrees only.",
       "temperatureUnit": "°C",
       "unitRequired": "Choose a unit."
     },

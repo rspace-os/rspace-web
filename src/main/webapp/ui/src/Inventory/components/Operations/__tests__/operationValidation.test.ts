@@ -95,6 +95,11 @@ describe("detailsValid temperature limit", () => {
     expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -80, unitId: 8 } })).toBe(true);
   });
 
+  it("refuses a storage temperature that is not whole degrees", () => {
+    expect(detailsValid(cryo, { ...validValues, storageTemp: { numericValue: -18.5, unitId: 8 } })).toBe(false);
+    expect(detailsValid(cryo, { ...validValues, storageTemp: { numericValue: -18, unitId: 8 } })).toBe(true);
+  });
+
   it("does not constrain the temperature when no maximum is configured", () => {
     expect(detailsValid(cryo, { ...validValues, storageTemp: { numericValue: 20, unitId: 8 } })).toBe(true);
   });
@@ -118,7 +123,7 @@ describe("detailsValid temperature limit", () => {
     for (const numericValue of [-300, -80.0005]) {
       expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue, unitId: 8 } })).toBe(false);
     }
-    expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -273.15, unitId: 8 } })).toBe(true);
+    expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -273, unitId: 8 } })).toBe(true);
   });
 });
 

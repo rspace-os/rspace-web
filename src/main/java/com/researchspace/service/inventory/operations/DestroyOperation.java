@@ -42,6 +42,7 @@ public class DestroyOperation implements InventoryOperation<ApiInventoryOperatio
     for (OriginState origin : origins) {
       ApiInventoryOperationOriginUpdate update = new ApiInventoryOperationOriginUpdate();
       update.setId(origin.id());
+      update.setGlobalId(origin.globalId());
       update.setAmountTaken(Amounts.wholeOf(origin));
       update.setExtraFields(
           List.of(
