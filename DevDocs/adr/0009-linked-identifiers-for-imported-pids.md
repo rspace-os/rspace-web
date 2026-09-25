@@ -126,8 +126,79 @@ and API field names were ported instead.
    lets a pasted prefix/suffix pair match. Verified 2026-09-17 against api.datacite.org:
    `doi:*qvtb/aw74*` answers 200, `doi:*5281/zenodo*` (12.89M) narrows `doi:*5281*` (12.91M) so the
    wildcard really does span the slash, and `doi:*"broken*` answers 400. Widening the class further
-   needs the same kind of evidence, and both halves are pinned by tests. The B2INST side is left
-   alone: InvenioRDM tokenises its Handle field, and no equivalent miss has been reported.
+   needs the same kind of evidence, and both halves are pinned by tests. The B2INST side needs no
+   retry: InvenioRDM tokenises its Handle field, so a bare suffix fragment already matches
+   (verified 2026-09-22, `twwkx` finds `21.T11975/twwkx-1zd85`). Its *escaping* is a different
+   matter and is a known gap, tracked as RSDEV-1524.
+
+8. **B2INST gets a substring search; DataCite gets the query as typed** (RSDEV-1522).
+
+   The defect: both registries match whole *analysed tokens*, and the standard tokenizer follows
+   Unicode UAX #29, where `_` is a word character but `-` is not
+   (https://www.elastic.co/docs/reference/text-analysis/analysis-standard-tokenizer). So
+   `Nico-PIDINST_VAIDA_TILO` indexes as `nico` and `pidinst_vaida_tilo`, and a search for `Vaida`
+   found nothing although the record was plainly there. Verified 2026-09-22: `Vaida` answers 0 on
+   both registries while `*Vaida*` answers 3 on b2inst-test.gwdg.de and 1 on
+   api.test.datacite.org.
+
+   **B2INST: the whole query, spaces escaped, wrapped in `*...*`.** The escape keeps it a single
+   wildcard term, so it is a real "contains" including spaces. Verified against b2inst-test.gwdg.de:
+   `*Instr1\ prova_COPY*` answers 1 where the unescaped `*Instr1 prova_COPY*` answers 2, and
+   `*nstr1\ prova_CO*` still finds `Instr1 prova_COPY` with both words cut at both ends. It is also
+   the cheapest shape, one leading wildcard however many words: 0.2-0.4s. Leaving the spaces raw
+   does not work, because Elasticsearch parses the query *before* the wildcards apply and splits it
+   on whitespace itself, leaving `*Instr1` (ends-with) and `prova_COPY*` (starts-with), which
+   B2INST joins with OR.
+
+   **DataCite: the query as typed, escaped but not wildcarded**, so a search returns what the same
+   words return in DataCite's own portal. This is a deliberate reversal, decided by Nico on
+   2026-09-24 after seeing what wildcarding did there, and it gives up the defect above on the
+   DataCite side: `Vaida` answers 0 again, as it does in the portal.
+
+   The reversal was driven by over-matching, not by cost. On api.test.datacite.org, `PIDINST Test`
+   answers **1** both in the portal and as plain free text, but **145** once wildcarded. The 145 are
+   e2e fixtures matching on fields the results list never shows - a title tokenising to a `pidinst`
+   word, and `TestDescriptionAbstract` / `TestSubject` in `descriptions` and `subjects` - so a
+   common word like "test" matches almost everything in a test registry. A wildcard per word
+   (`*PIDINST* AND *Test*`) answers the same 145 at 3.8s against 0.45s, so it does not help either.
+   Scope is not the cause: plain `PIDINST Test` across all of DataCite, instruments only, also
+   answers 1.
+
+   The consequence is asymmetry between the providers, which is accepted: B2INST finds a substring
+   of a name, DataCite does not. Two earlier shapes were tried and reverted along the way, a
+   wildcard per word (`*a* AND *b*`: one word 24s, two 23s, three **31s**, four **66s**, against
+   the DataCite client's then-30s read timeout) and splitting the query into analyser words before
+   wildcarding (`*a AND b*`), both superseded by this decision. Filtering the returned page inside
+   RSpace was also built and rejected: it made `total` disagree with the registry and silently
+   dropped hits matched on fields the response does not carry.
+
+   The rest is unchanged. The escape of decision 7 still applies to the DataCite query, because
+   unbalanced syntax answers 400 rather than an empty page; it is transparent otherwise, so it does
+   not change which records match. The `doi:*<query>*` retry of decision 7 is load-bearing again,
+   since plain free text cannot match the DOI keyword: verified 2026-09-24, `82316/qvtb\-aw74` and
+   `qvtb\-aw74` both answer 0 as free text while `doi:*82316/qvtb-aw74*` and `doi:*qvtb-aw74*`
+   answer 1. The 4-character minimum of decision 6 is unchanged.
+
+   **B2INST query syntax is neutralised before the wrap**, because the wildcards turn it into
+   operators. Measured 2026-09-25 on b2inst-test.gwdg.de: `"Instr1 prova_COPY"` answers 1, but
+   wrapped as `*"Instr1\ prova_COPY"*` it is `*` OR a phrase OR `*` and answers all **810**
+   records; `(Instr1)`, `Instr1~2` and `Instr1^2` did the same, and `"Instr1` and `Name:Instr1`
+   answered 400. Quotes are removed, the whole query already being one phrase
+   (`*Instr1\ prova_COPY*` answers that same 1), and removed rather than replaced by a space,
+   which would cut a word in two (`*Instr\ 1*` answers 0 where `*Instr1*` answers 2); `<` and `>`
+   are removed too, because Elasticsearch documents them as impossible to escape;
+   `\ + - = & | ! ( ) { } [ ] ^ ~ : /` are escaped to literals, so a pasted partial Handle such as `T11975/97g70-tsv60` now finds its
+   record instead of answering 400; `*` and `?` stay live wildcards. This covers the 400s filed as
+   RSDEV-1524 for free-text B2INST searches.
+
+   The 4-character minimum of decision 6 is checked again on what is left once quotes, `<` and `>`
+   are removed and typed `*`/`?` are discounted: `<<<a` would otherwise go out as `*a*`, which
+   matched all 810 records. A query below it there finds nothing, without asking B2INST.
+
+   "Spaces" means every character Lucene's classic query parser splits on, which includes U+3000
+   (ideographic space) although Java's `\s` does not: left raw it split the query back into
+   clauses, and `*Instr1<U+3000>OR<U+3000>**` matched all 810 records. For the same reason the
+   minimum strips Unicode whitespace rather than trimming ASCII only, so padding cannot pass it.
 
 ## Considered options
 
