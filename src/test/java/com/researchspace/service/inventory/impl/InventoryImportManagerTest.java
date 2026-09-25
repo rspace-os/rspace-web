@@ -472,7 +472,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     String sampleErrorMsg = sampleResult.getResults().get(1).getError().getErrors().get(0);
     assertEquals("name: name is a required field.", sampleErrorMsg);
     sampleErrorMsg = sampleResult.getResults().get(2).getError().getErrors().get(0);
-    assertEquals("Unexpected number of values in CSV line, expected: 5, was: 6", sampleErrorMsg);
+    assertEquals(
+        "Unexpected CSV line field count: expected 5 values, but found 6 values.", sampleErrorMsg);
     sampleErrorMsg = sampleResult.getResults().get(3).getError().getErrors().get(0);
     assertEquals("Text 'TestData3' could not be parsed at index 0", sampleErrorMsg);
     sampleErrorMsg = sampleResult.getResults().get(5).getError().getErrors().get(0);

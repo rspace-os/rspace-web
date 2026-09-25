@@ -46,6 +46,7 @@ public abstract class InventoryItemCsvImporter {
 
   @Autowired protected InventoryBulkOperationHandler bulkOperationHandler;
   @Autowired protected InventoryImportSampleFieldCreator importedFieldCreator;
+  @Autowired protected CsvLinkValueParser linkParser;
   @Autowired protected InventoryIdentifierApiManager inventoryIdentifierApiManager;
   @Autowired protected MessageSourceUtils messages;
   @Autowired private ApiAvailabilityHandler apiHandler;

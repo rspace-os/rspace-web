@@ -59,7 +59,11 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
         target.hasVersionId() ? new GlobalIdentifier(target.getPrefix(), target.getDbId()) : target;
     GlobalIdPrefix prefix = base.getPrefix();
     if (INVENTORY_PREFIXES.contains(prefix)) {
-      return isInventoryReadable(base, user);
+      // deliberately deleted-tolerant: a trashed target the actor can read is still a legitimate
+      // link target, and only targetIsLiveAndReadable adds the not-deleted filter. The shared
+      // helper supplies the type-exact check this method needs just as much, since it gates link
+      // creation and findReferencingItems.
+      return readableInventoryRecord(base, user).isPresent();
     }
     if (ELN_BASE_RECORD_PREFIXES.contains(prefix)) {
       return isElnReadable(base, user);
@@ -77,14 +81,7 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
         target.hasVersionId() ? new GlobalIdentifier(target.getPrefix(), target.getDbId()) : target;
     GlobalIdPrefix prefix = base.getPrefix();
     if (INVENTORY_PREFIXES.contains(prefix)) {
-      try {
-        InventoryRecord record =
-            inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
-        return !record.isDeleted()
-            && inventoryPermissionUtils.canUserReadInventoryRecord(record, user);
-      } catch (NotFoundException e) {
-        return false;
-      }
+      return readableInventoryRecord(base, user).filter(record -> !record.isDeleted()).isPresent();
     }
     if (ELN_BASE_RECORD_PREFIXES.contains(prefix)) {
       return liveReadableElnRecord(base, user).isPresent();
@@ -92,11 +89,43 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
     return false;
   }
 
-  private boolean isInventoryReadable(GlobalIdentifier target, User user) {
+  @Override
+  public Optional<InventoryRecord> viewableInventoryTarget(GlobalIdentifier target, User user) {
+    if (target == null) {
+      return Optional.empty();
+    }
+    permissionUtils.refreshCacheIfNotified();
+    GlobalIdentifier base =
+        target.hasVersionId() ? new GlobalIdentifier(target.getPrefix(), target.getDbId()) : target;
+    if (!INVENTORY_PREFIXES.contains(base.getPrefix())) {
+      return Optional.empty();
+    }
+    return typeExactInventoryRecord(base)
+        .filter(
+            record ->
+                inventoryPermissionUtils.canUserReadInventoryRecord(record, user)
+                    || inventoryPermissionUtils.canUserLimitedReadInventoryRecord(record, user));
+  }
+
+  private Optional<InventoryRecord> readableInventoryRecord(GlobalIdentifier base, User user) {
+    return typeExactInventoryRecord(base)
+        .filter(record -> inventoryPermissionUtils.canUserReadInventoryRecord(record, user));
+  }
+
+  private Optional<InventoryRecord> typeExactInventoryRecord(GlobalIdentifier base) {
     try {
-      return inventoryPermissionUtils.canUserReadInventoryRecord(target, user);
+      InventoryRecord record =
+          inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
+      // samples and sample templates share one numeric id space and the retriever resolves both
+      // SA and IT through the same lookup, so "IT90" can load sample SA90 (readableElnRecord
+      // guards the same way); only a record whose own oid prefix matches the requested one is
+      // the target
+      if (record.getOid() == null || record.getOid().getPrefix() != base.getPrefix()) {
+        return Optional.empty();
+      }
+      return Optional.of(record);
     } catch (NotFoundException e) {
-      return false;
+      return Optional.empty();
     }
   }
 

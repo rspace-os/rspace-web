@@ -6,25 +6,35 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
+import com.researchspace.dao.FolderDao;
+import com.researchspace.dao.RecordDao;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.inventory.LinkTargetResolver;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -38,6 +48,9 @@ class LinkTargetSnapshotResolverImplTest {
 
   @Mock private AuditManager auditManager;
   @Mock private LinkTargetResolver linkTargetResolver;
+  @Mock private IPermissionUtils permissionUtils;
+  @Mock private RecordDao recordDao;
+  @Mock private FolderDao folderDao;
   @Mock private User user;
   @InjectMocks private LinkTargetSnapshotResolverImpl resolver;
 
@@ -143,17 +156,227 @@ class LinkTargetSnapshotResolverImplTest {
   }
 
   @Test
-  void resolveSummaryDegradesToGlobalIdOnlyWhenNoAuditSnapshotExists() {
-    // old databases may hold links whose audit rows were purged; the summary
-    // must degrade to the globalId rather than NPE on the missing snapshot
+  void resolveSummaryRedactsMissingInventoryTargetRatherThanCallingItDeleted() {
+    // an inventory target with no snapshot is redacted exactly like an unreadable one, so a
+    // caller walking ids learns nothing about which records exist (ADR-0002)
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
 
     assertEquals("SA10", summary.getGlobalId());
     assertNull(summary.getName());
+    assertNull(summary.getType());
     assertFalse(summary.isReadable());
+    assertFalse(summary.isDeleted());
+  }
+
+  @Test
+  void resolveSummaryKeepsALiveReadableTargetOpenableWhenItsAuditRowsArePurged() {
+    // audit history can be purged while the record lives on. Reporting it unreadable would put
+    // a "No access" pill and remove Open from a target whose page works perfectly well.
+    Sample rec = mock(Sample.class);
+    when(rec.getName()).thenReturn("Buffer");
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertEquals("SA10", summary.getGlobalId());
+    assertEquals("Buffer", summary.getName());
+    assertEquals("SAMPLE", summary.getType());
+    assertTrue(summary.isReadable());
+    assertFalse(summary.isDeleted());
+  }
+
+  @Test
+  void resolveSummaryMakesUnreadableInventoryTargetIndistinguishableFromNonexistent() {
+    Sample rec = mock(Sample.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(rec.getOwner()).thenReturn(owner);
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
+        .thenReturn(null)
+        .thenReturn(new AuditedEntity<>(rec, 120));
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
+    when(user.getUsername()).thenReturn("bob");
+
+    ApiInventoryLinkTargetSummary nonexistent =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+    ApiInventoryLinkTargetSummary unreadable =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertEquals(nonexistent, unreadable);
+  }
+
+  @Test
+  void resolveSummaryReportsSoftDeletedInventoryTargetWhoseAuditRowsWerePurgedAsDeletedNotHidden() {
+    // a trashed Inventory item still has a working viewer, so the card must say "Target deleted"
+    // and keep Open, exactly as it does when the audit snapshot is present. Reporting it as
+    // unreadable would hide a record the actor can open everywhere else in the app.
+    Sample rec = mock(Sample.class);
+    when(rec.getName()).thenReturn("Old buffer");
+    when(rec.isDeleted()).thenReturn(true);
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertEquals("SA10", summary.getGlobalId());
+    assertEquals("Old buffer", summary.getName());
+    assertEquals("SAMPLE", summary.getType());
+    assertTrue(summary.isReadable());
+    assertTrue(summary.isDeleted());
+  }
+
+  @Test
+  void resolveSummaryRedactsUnreadableAndNonexistentInventoryTargetsIdentically() {
+    // ADR-0002: with no snapshot, "no such record" and "not yours to read" must be one response
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
+
+    ApiInventoryLinkTargetSummary nonexistent =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+    ApiInventoryLinkTargetSummary unreadable =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertEquals(nonexistent, unreadable);
+    assertFalse(nonexistent.isReadable());
+    assertFalse(nonexistent.isDeleted());
+  }
+
+  @Test
+  void resolveSummaryRedactsElnTargetWithNoSnapshotWithoutAnyLiveLookup() {
+    // the ELN live lookup runs through transactional *Managers (BaseRecordManager ->
+    // FolderManager), and folderDao.get plus the read/not-deleted assertions all throw for a
+    // missing, unreadable or deleted record. Catching that is not enough: the throw crosses a
+    // transactional proxy and marks the caller's transaction rollback-only, so getTargetSummary
+    // fails at commit with UnexpectedRollbackException instead of returning this redacted
+    // summary. Import can store a dangling NB link, so the path is reachable. Only inventory
+    // targets, whose lookup is non-transactional, take the fallback.
+    when(auditManager.getNewestRevisionForEntity(Folder.class, 42L)).thenReturn(null);
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.NB, 42L, null, null, user);
+
+    assertEquals("NB42", summary.getGlobalId());
+    assertNull(summary.getName());
+    assertNull(summary.getType());
+    assertFalse(summary.isReadable());
+    assertFalse(summary.isDeleted());
+    verify(linkTargetResolver, never()).viewableInventoryTarget(any(), any());
+    verify(linkTargetResolver, never()).targetIsLiveAndReadable(any(), any());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+  }
+
+  @Test
+  void resolveSummaryRedactsDocumentTargetWithNoSnapshotWithoutAnyLiveLookup() {
+    when(auditManager.getNewestRevisionForEntity(StructuredDocument.class, 42L)).thenReturn(null);
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, user);
+
+    assertEquals("SD42", summary.getGlobalId());
+    assertFalse(summary.isReadable());
+    verify(linkTargetResolver, never()).viewableInventoryTarget(any(), any());
+  }
+
+  @Test
+  void resolveSummaryChecksTheRequestedPrefixNotJustTheDbIdWhenAuditRowsArePurged() {
+    // samples and sample templates share a numeric id space, so a template request must be
+    // checked as IT90: collapsing it to the db id would let a readable sample SA90 vouch for
+    // a template that does not exist
+    when(auditManager.getNewestRevisionForEntity(SampleTemplate.class, 90L)).thenReturn(null);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.IT, 90L, null, null, user);
+
+    ArgumentCaptor<GlobalIdentifier> gid = ArgumentCaptor.forClass(GlobalIdentifier.class);
+    verify(linkTargetResolver).viewableInventoryTarget(gid.capture(), any());
+    assertEquals(GlobalIdPrefix.IT, gid.getValue().getPrefix());
+    assertEquals(Long.valueOf(90), gid.getValue().getDbId());
+    assertFalse(summary.isReadable());
+  }
+
+  @Test
+  void resolveSummaryNeverRunsTheThrowingElnLookupForANonOwnerWithASnapshot() {
+    // the ELN live lookup goes BaseRecordManager -> FolderManager, whose folderDao.get,
+    // assertUserHasReadPermission and assertNotDeleted all throw inside transactional proxies.
+    // Catching that is not enough: the caller's transaction is already rollback-only, so
+    // getTargetSummary fails at commit instead of returning this redacted summary, and the card
+    // then leaves Open enabled on a target it could not resolve. Permission is decided from the
+    // live row, loaded through the non-throwing DAO lookup instead.
+    Folder notebook = mock(Folder.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(notebook.getOwner()).thenReturn(owner);
+    when(auditManager.getNewestRevisionForEntity(Folder.class, 7L))
+        .thenReturn(new AuditedEntity<>(notebook, 12));
+    Folder liveNotebook = liveRow(Folder.class, "NB7");
+    when(folderDao.getSafeNull(7L)).thenReturn(Optional.of(liveNotebook));
+    when(user.getUsername()).thenReturn("bob");
+    when(permissionUtils.isPermitted(liveNotebook, PermissionType.READ, user)).thenReturn(false);
+
+    ApiInventoryLinkTargetSummary s =
+        resolver.resolveSummary(GlobalIdPrefix.NB, 7L, null, null, user);
+
+    assertEquals("NB7", s.getGlobalId());
+    assertNull(s.getName());
+    assertNull(s.getType());
+    assertFalse(s.isReadable());
+    assertFalse(s.isDeleted());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+    verify(linkTargetResolver, never()).targetIsLiveAndReadable(any(), any());
+  }
+
+  @Test
+  void resolveSummaryShowsASnapshotBackedElnTargetTheViewerMayRead() {
+    Folder notebook = mock(Folder.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(notebook.getOwner()).thenReturn(owner);
+    when(notebook.getName()).thenReturn("Shared notebook");
+    when(auditManager.getNewestRevisionForEntity(Folder.class, 7L))
+        .thenReturn(new AuditedEntity<>(notebook, 12));
+    Folder liveNotebook = liveRow(Folder.class, "NB7");
+    when(folderDao.getSafeNull(7L)).thenReturn(Optional.of(liveNotebook));
+    when(user.getUsername()).thenReturn("bob");
+    when(permissionUtils.isPermitted(liveNotebook, PermissionType.READ, user)).thenReturn(true);
+
+    ApiInventoryLinkTargetSummary s =
+        resolver.resolveSummary(GlobalIdPrefix.NB, 7L, null, null, user);
+
+    assertEquals("Shared notebook", s.getName());
+    assertEquals("NOTEBOOK", s.getType());
+    assertTrue(s.isReadable());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+  }
+
+  @Test
+  void resolveSummaryAppliesAPendingPermissionRefreshBeforeCheckingElnPermission() {
+    // an unshare only queues the revocation: Shiro keeps the viewer's RECORD:READ grant until a
+    // permission-checked request applies it. The live lookup this branch replaced did that first,
+    // so without it a former sharee would keep getting the name and type until the cache expired.
+    Folder notebook = mock(Folder.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(notebook.getOwner()).thenReturn(owner);
+    when(auditManager.getNewestRevisionForEntity(Folder.class, 7L))
+        .thenReturn(new AuditedEntity<>(notebook, 12));
+    Folder liveNotebook = liveRow(Folder.class, "NB7");
+    when(folderDao.getSafeNull(7L)).thenReturn(Optional.of(liveNotebook));
+    when(user.getUsername()).thenReturn("bob");
+    when(permissionUtils.isPermitted(liveNotebook, PermissionType.READ, user)).thenReturn(false);
+
+    resolver.resolveSummary(GlobalIdPrefix.NB, 7L, null, null, user);
+
+    InOrder inOrder = inOrder(permissionUtils);
+    inOrder.verify(permissionUtils).refreshCacheIfNotified();
+    inOrder.verify(permissionUtils).isPermitted(liveNotebook, PermissionType.READ, user);
   }
 
   @Test
@@ -173,7 +396,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(rec.isDeleted()).thenReturn(false);
     when(auditManager.getObjectForRevision(Sample.class, 10L, 99L))
         .thenReturn(new AuditedEntity<>(rec, 99));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary s =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, 3L, 99L, user);
@@ -192,7 +415,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(rec.getName()).thenReturn("Buffer");
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
         .thenReturn(new AuditedEntity<>(rec, 120));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary s =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -209,7 +432,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(rec.isDeleted()).thenReturn(true);
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
         .thenReturn(new AuditedEntity<>(rec, 120));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.of(rec));
 
     ApiInventoryLinkTargetSummary s =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -225,7 +448,7 @@ class LinkTargetSnapshotResolverImplTest {
     when(rec.getOwner()).thenReturn(owner);
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
         .thenReturn(new AuditedEntity<>(rec, 120));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
+    when(linkTargetResolver.viewableInventoryTarget(any(), any())).thenReturn(Optional.empty());
     when(user.getUsername()).thenReturn("bob");
 
     ApiInventoryLinkTargetSummary s =
@@ -235,29 +458,31 @@ class LinkTargetSnapshotResolverImplTest {
     assertNull(s.getName());
     assertNull(s.getType());
     assertFalse(s.isReadable());
+    assertFalse(s.isDeleted());
   }
 
   @Test
-  void resolveSummaryMakesUnreadableTargetIndistinguishableFromNonexistent() {
-    // Non-disclosure invariant (ADR-0002): a target the actor cannot read must
+  void resolveSummaryMakesUnreadableElnTargetIndistinguishableFromNonexistent() {
+    // Non-disclosure invariant (ADR-0002): an ELN target the actor cannot read must
     // produce a payload field-for-field identical to one for a record that does
     // not exist, so probing the summary endpoint with guessed ids learns nothing.
-    Sample rec = mock(Sample.class);
+    StructuredDocument rec = mock(StructuredDocument.class);
     User owner = mock(User.class);
     when(owner.getUsername()).thenReturn("alice");
     when(rec.getOwner()).thenReturn(owner);
-    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
+    when(auditManager.getNewestRevisionForEntity(StructuredDocument.class, 10L))
         .thenReturn(null)
         .thenReturn(new AuditedEntity<>(rec, 120));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
     when(user.getUsername()).thenReturn("bob");
 
     ApiInventoryLinkTargetSummary nonexistent =
-        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+        resolver.resolveSummary(GlobalIdPrefix.SD, 10L, null, null, user);
     ApiInventoryLinkTargetSummary unreadable =
-        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+        resolver.resolveSummary(GlobalIdPrefix.SD, 10L, null, null, user);
 
     assertEquals(nonexistent, unreadable);
+    assertFalse(nonexistent.isReadable());
+    assertFalse(nonexistent.isDeleted());
   }
 
   @Test
@@ -267,7 +492,9 @@ class LinkTargetSnapshotResolverImplTest {
     when(doc.isDeleted()).thenReturn(false);
     when(auditManager.getNewestRevisionForEntity(StructuredDocument.class, 42L))
         .thenReturn(new AuditedEntity<>(doc, 5));
-    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    StructuredDocument liveDoc = liveRow(StructuredDocument.class, "SD42");
+    when(recordDao.getSafeNull(42L)).thenReturn(Optional.of(liveDoc));
+    when(permissionUtils.isPermitted(liveDoc, PermissionType.READ, user)).thenReturn(true);
 
     ApiInventoryLinkTargetSummary s =
         resolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, user);
@@ -326,5 +553,69 @@ class LinkTargetSnapshotResolverImplTest {
     // the snapshot owner is permitted from ownership alone; the live read check is not consulted
     assertEquals("Buffer", s.getName());
     verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+  }
+
+  @Test
+  void resolveSummaryDecidesElnReadFromTheLiveRowNotTheSnapshotAcl() {
+    // unsharing or unpublishing a document writes no audit revision, so the newest snapshot can
+    // still carry a grant the live row has dropped
+    StructuredDocument snapshotDoc = mock(StructuredDocument.class);
+    StructuredDocument liveDoc = liveRow(StructuredDocument.class, "SD42");
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(snapshotDoc.getOwner()).thenReturn(owner);
+    when(auditManager.getNewestRevisionForEntity(StructuredDocument.class, 42L))
+        .thenReturn(new AuditedEntity<>(snapshotDoc, 5));
+    when(recordDao.getSafeNull(42L)).thenReturn(Optional.of(liveDoc));
+    when(user.getUsername()).thenReturn("bob");
+    when(permissionUtils.isPermitted(liveDoc, PermissionType.READ, user)).thenReturn(false);
+
+    ApiInventoryLinkTargetSummary s =
+        resolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, user);
+
+    assertFalse(s.isReadable());
+    assertNull(s.getName());
+    verify(permissionUtils, never()).isPermitted(snapshotDoc, PermissionType.READ, user);
+  }
+
+  @Test
+  void resolveSummaryRedactsAnElnSnapshotWhoseLiveRowIsGoneOrOfAnotherKind() {
+    StructuredDocument snapshotDoc = mock(StructuredDocument.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(snapshotDoc.getOwner()).thenReturn(owner);
+    when(auditManager.getNewestRevisionForEntity(StructuredDocument.class, 42L))
+        .thenReturn(new AuditedEntity<>(snapshotDoc, 5));
+    when(user.getUsername()).thenReturn("bob");
+    when(recordDao.getSafeNull(42L))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(liveRow(StructuredDocument.class, "GL42")));
+
+    assertFalse(resolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, user).isReadable());
+    assertFalse(resolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, user).isReadable());
+    verify(permissionUtils, never()).isPermitted(any(), any(), any());
+  }
+
+  @Test
+  void resolveSummaryShowsASnapshotBackedInventoryTargetTheViewerMayLimitedRead() {
+    Sample rec = mock(Sample.class);
+    when(rec.getName()).thenReturn("Buffer");
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
+        .thenReturn(new AuditedEntity<>(rec, 120));
+    when(linkTargetResolver.viewableInventoryTarget(any(), any()))
+        .thenReturn(Optional.of(mock(Sample.class)));
+
+    ApiInventoryLinkTargetSummary s =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertTrue(s.isReadable());
+    assertEquals("Buffer", s.getName());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+  }
+
+  private static <T extends BaseRecord> T liveRow(Class<T> cls, String globalId) {
+    T row = mock(cls);
+    when(row.getOid()).thenReturn(new GlobalIdentifier(globalId));
+    return row;
   }
 }

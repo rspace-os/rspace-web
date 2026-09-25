@@ -143,6 +143,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(instrumentToSave);
     Instrument savedInstrument = instrumentDao.save(instrumentToSave);
+    assertNoSelfLinkAfterSave(savedInstrument, savedInstrument.getActiveFields());
     saveIncomingInstrumentImage(savedInstrument, apiInstrument, user);
 
     publisher.publishEvent(new InventoryCreationEvent(savedInstrument, user));

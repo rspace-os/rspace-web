@@ -174,7 +174,7 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
 
     if (CsvExportMode.FULL.equals(exportMode) && sample.getActiveExtraFields() != null) {
       for (InventoryEntityField sf : sample.getActiveFields()) {
-        String valueForProp = sf.getData();
+        String valueForProp = csvValueForField(sf);
         int columnIndexForValue = csvColumnNames.indexOf(getColumnNameForSampleField(sf));
         itemProperties.set(columnIndexForValue, valueForProp != null ? valueForProp : "");
       }

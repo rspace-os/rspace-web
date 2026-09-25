@@ -3,20 +3,126 @@ package com.researchspace.service.inventory.csvimport;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class InventoryImportInventoryEntityFieldCreatorTest {
 
   InventoryImportSampleFieldCreator helper = new InventoryImportSampleFieldCreator();
+
+  @BeforeEach
+  void wireLinkParser() {
+    CsvLinkValueParser linkParser = new CsvLinkValueParser();
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
+    linkParser.properties = properties;
+    helper.linkParser = linkParser;
+  }
+
+  @Test
+  public void linkSuggestedOnlyWhenEveryValueIsALinkCell() {
+    List<String> values = new ArrayList<>();
+    values.add("IsDerivedFrom https://rspace.example.com/globalId/SA1v2");
+    values.add("");
+    values.add("Cites https://rspace.example.com/globalId/SD9");
+    InventoryEntityField field = helper.getSuggestedSampleFieldForNameAndValues("links", values);
+    assertEquals(FieldType.LINK, field.getType());
+    assertEquals("links", field.getName());
+
+    values.add("Cites https://elsewhere.example.com/globalId/SD9");
+    field = helper.getSuggestedSampleFieldForNameAndValues("links", values);
+    assertEquals(FieldType.STRING, field.getType());
+  }
+
+  @Test
+  public void exportSentinelDoesNotStopAColumnBeingSuggestedAsLink() {
+    // a multi-record export fills columns a row does not have with "#N/A", so an extra-field or
+    // per-template link column carries the sentinel on every unrelated row. Treating it as real
+    // data infers STRING and the round trip the feature promises never gets off the ground.
+    List<String> values = new ArrayList<>();
+    values.add("IsDerivedFrom https://rspace.example.com/globalId/SA1v2");
+    values.add(InventoryItemCsvExporter.CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY);
+    values.add("Cites https://rspace.example.com/globalId/SD9");
+
+    assertEquals(
+        FieldType.LINK, helper.getSuggestedSampleFieldForNameAndValues("links", values).getType());
+  }
+
+  @Test
+  public void aColumnOfNothingButExportSentinelsIsNotALinkColumn() {
+    // filtering the sentinel out must not leave an empty set voting yes by default: a column no
+    // exported record actually filled in says nothing about links
+    List<String> values = new ArrayList<>();
+    values.add(InventoryItemCsvExporter.CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY);
+    values.add(InventoryItemCsvExporter.CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY);
+
+    assertEquals(
+        FieldType.STRING, helper.getSuggestedSampleFieldForNameAndValues("n", values).getType());
+  }
+
+  @Test
+  public void urlBearingValueIsNonTextUpToExactlyTheRaisedLimit() {
+    // the boundary itself: an off-by-one in the length guard silently stops suggesting Link
+    // for a cell on a long hostname, and the wide 150-vs-576 cases above would not notice
+    String url = "https://x.example.com/y";
+    // text first, as in longValueContainingUrlIsNotForcedToText: a value that IS a bare URI is
+    // suggested as URI, which is a different branch from the length guard under test here
+    String prefix = "see " + url + " ";
+    String atLimit = prefix + StringUtils.repeat("y", 500 - prefix.length());
+    assertEquals(500, atLimit.length());
+    assertEquals(
+        FieldType.STRING,
+        helper.getSuggestedSampleFieldForNameAndValues("n", List.of(atLimit)).getType());
+
+    String overLimit = atLimit + "y";
+    assertEquals(501, overLimit.length());
+    assertEquals(
+        FieldType.TEXT,
+        helper.getSuggestedSampleFieldForNameAndValues("n", List.of(overLimit)).getType());
+  }
+
+  @Test
+  public void longValueContainingUrlIsNotForcedToText() {
+    String url = "https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com/x";
+    String longWithUrl = "see " + url + " " + StringUtils.repeat("y", 150 - url.length() - 5);
+    assertTrue(longWithUrl.length() > InventoryImportSampleFieldCreator.MAX_NON_TEXT_LENGTH);
+    InventoryEntityField field =
+        helper.getSuggestedSampleFieldForNameAndValues("n", List.of(longWithUrl));
+    assertEquals(FieldType.STRING, field.getType());
+
+    String longWithoutUrl = StringUtils.repeat("y", 150);
+    field = helper.getSuggestedSampleFieldForNameAndValues("n", List.of(longWithoutUrl));
+    assertEquals(FieldType.TEXT, field.getType());
+
+    String tooLongEvenWithUrl = url + " " + StringUtils.repeat("y", 500);
+    field = helper.getSuggestedSampleFieldForNameAndValues("n", List.of(tooLongEvenWithUrl));
+    assertEquals(FieldType.TEXT, field.getType());
+
+    // a link cell on a server with a long hostname stays eligible for the Link type
+    String longLinkCell =
+        "IsVersionOf https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com"
+            + "/globalId/SA1711111";
+    helper.linkParser.properties = mock(IPropertyHolder.class);
+    when(helper.linkParser.properties.getServerUrl())
+        .thenReturn(
+            "https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com");
+    field = helper.getSuggestedSampleFieldForNameAndValues("n", List.of(longLinkCell));
+    assertEquals(FieldType.LINK, field.getType());
+  }
 
   @Test
   public void testColumnTypeRecognition() {
