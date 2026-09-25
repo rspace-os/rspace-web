@@ -116,6 +116,16 @@ public final class OperationQuantityRules {
           "The temperature supports at most 3 decimal places.");
       return;
     }
+    // Whole degrees in the unit sent: the sample form can only show and save whole degrees, so an
+    // operation must not create a temperature it would silently truncate. Stricter than
+    // POST /samples, deliberately (ADR 0011 D5).
+    if (temperature.getNumericValue().stripTrailingZeros().scale() > 0) {
+      errors.rejectValue(
+          field,
+          "errors.inventory.operation.storageTempNotWhole",
+          "The storage temperature must be whole degrees.");
+      return;
+    }
     if (!TemperatureValidator.validate(temperature)) {
       // The one thing this validator judges that the checks above do not: below absolute zero. An
       // operation's own bounds need not exclude it (Cryopreserve sets no lower bound at all).

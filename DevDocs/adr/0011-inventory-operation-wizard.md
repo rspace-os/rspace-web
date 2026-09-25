@@ -98,9 +98,15 @@ On the UI side the wizard's amount and temperature fields hold the raw text the 
 (a controlled number input re-rendered from its parsed value drops every "0" typed after the
 point, so 1.05 became 1.5). An amount field refuses a fourth decimal at the keystroke, so the
 3dp rule cannot be tripped from the wizard and Next is never disabled for a reason the field
-does not show. A temperature field takes whole degrees only, exactly as the sample form's
-storage temperature does, so a sample created by an operation carries the same kind of
-temperature a user could have typed on the sample itself.
+does not show. A temperature field stores whole degrees only, the kind of temperature the sample
+form's storage temperature takes, but it does not refuse the point at the keystroke: that let the
+digit typed after a refused point join the integer, so -18.5 became -185 and was stored. A typed
+decimal stays on screen exactly as typed, the field says "Enter whole degrees only." and Next is
+disabled until the fraction is removed. What the user sees is always what would be stored. The
+operations endpoints enforce the same rule (`OperationQuantityRules.temperature`, whole degrees
+in the unit sent), deliberately stricter than `POST /samples`, which stores 3 decimal places: a
+sample created by an operation from any client must survive the sample form, which shows and
+saves whole degrees only.
 
 Pool's take-all is `takeAll: true` on the body, not a per-origin mode. The server reads
 each origin's live quantity at processing time, as Destroy does, so the client never states

@@ -360,6 +360,7 @@ describe("OperationDetailsStep", () => {
     // process name blank, sample name blank: both flagged (the sample name is enabled since a
     // whitespace process name still counts as no process name -> its own hint wins there)
     expect(screen.getAllByText(/fields\.required/)).toHaveLength(1);
+    expect(screen.getByRole("combobox", { name: /fields\.processName/i })).toBeInvalid();
     rerender(
       <OperationDetailsStep
         operation={nameOperation}
@@ -369,6 +370,7 @@ describe("OperationDetailsStep", () => {
       />,
     );
     expect(screen.getAllByText(/fields\.required/)).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: /fields\.sampleName/i })).toBeInvalid();
     rerender(
       <OperationDetailsStep
         operation={nameOperation}
@@ -591,6 +593,7 @@ describe("OperationDetailsStep inline field errors", () => {
       />,
     );
     expect(screen.getAllByText(/fields\.amountRequired/)).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: /fields\.eachAmount/i })).toBeInvalid();
   });
 
   it("asks for a unit when a restored amount lost its unit", () => {
@@ -604,6 +607,7 @@ describe("OperationDetailsStep inline field errors", () => {
       />,
     );
     expect(screen.getAllByText(/fields\.unitRequired/)).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: /fields\.eachAmount/i })).toBeInvalid();
     expect(screen.queryByText(/fields\.amountRequired/)).not.toBeInTheDocument();
   });
 
@@ -653,14 +657,19 @@ describe("OperationDetailsStep sub-zero temperature entry", () => {
 
   const tempField = () => screen.getByRole("textbox", { name: /fields\.storageTemp/i });
 
-  it("takes whole degrees only, as the sample form does: the decimal point is not typed", async () => {
+  it("keeps a typed decimal on screen and refuses it as not whole degrees", async () => {
     const user = userEvent.setup();
     const seen: Array<number> = [];
     render(<Stateful onChange={(v) => seen.push((v.storageTemp as { numericValue: number }).numericValue)} />);
     await user.clear(tempField());
     await user.type(tempField(), "-18.5");
-    expect(tempField()).toHaveValue("-185");
-    expect(seen.at(-1)).toBe(-185);
+    expect(tempField()).toHaveValue("-18.5");
+    expect(seen.at(-1)).toBe(-18.5);
+    expect(tempField()).toBeInvalid();
+    expect(screen.getByText(/fields\.storageTempWhole/)).toBeInTheDocument();
+    await user.type(tempField(), "{Backspace}{Backspace}");
+    expect(tempField()).toHaveValue("-18");
+    expect(screen.queryByText(/fields\.storageTempWhole/)).not.toBeInTheDocument();
   });
 
   it("keeps the minus sign when every digit is deleted", async () => {
@@ -689,6 +698,7 @@ describe("OperationDetailsStep sub-zero temperature entry", () => {
     await user.click(tempField());
     await user.keyboard("{End}{Backspace}{Backspace}");
     expect(screen.getByText(/fields\.storageTempRequired/)).toBeInTheDocument();
+    expect(tempField()).toBeInvalid();
   });
 
   it("accepts a temperature typed minus sign first", async () => {

@@ -31,6 +31,7 @@ import {
   temperatureBelowMin,
   temperatureExceedsMax,
   temperatureNotStorable,
+  temperatureNotWhole,
   validSubSampleCount,
 } from "./operationValidation";
 import { filterProcessNames } from "./processNames";
@@ -173,6 +174,7 @@ function OperationDetailsStep({
                 {...params}
                 label={label(input.labelKey)}
                 required={input.required}
+                error={blank}
                 helperText={requiredHint}
                 margin="dense"
                 fullWidth
@@ -189,6 +191,7 @@ function OperationDetailsStep({
             value={String(values[input.key] ?? "")}
             required={input.required}
             disabled={sampleNameDisabled}
+            error={!sampleNameDisabled && blank}
             helperText={sampleNameDisabled ? label("operations.fields.processNameRequired") : requiredHint}
             fullWidth
             margin="dense"
@@ -202,6 +205,7 @@ function OperationDetailsStep({
           label={label(input.labelKey)}
           value={String(values[input.key] ?? "")}
           required={input.required}
+          error={blank}
           helperText={requiredHint}
           fullWidth
           margin="dense"
@@ -251,6 +255,7 @@ function OperationDetailsStep({
     const overMaxTemp = temperatureExceedsMax(input, quantity);
     const underMinTemp = temperatureBelowMin(input, quantity);
     const unstorableTemp = temperatureNotStorable(input, quantity);
+    const fractionalTemp = temperatureNotWhole(input, quantity);
     const temperatureMissing = isTemperature && !Number.isFinite(quantity?.numericValue);
     if (isTemperature)
       return (
@@ -261,17 +266,19 @@ function OperationDetailsStep({
           parse={parseTemperature}
           allowNegative
           label={label(input.labelKey)}
-          error={overMaxTemp || underMinTemp || unstorableTemp}
+          error={overMaxTemp || underMinTemp || unstorableTemp || fractionalTemp || temperatureMissing}
           helperText={
             unstorableTemp
               ? label("operations.fields.storageTempInvalid")
-              : overMaxTemp
-                ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
-                : underMinTemp
-                  ? label("operations.fields.storageTempMin", { min: input.minCelsius })
-                  : temperatureMissing
-                    ? label("operations.fields.storageTempRequired")
-                    : undefined
+              : fractionalTemp
+                ? label("operations.fields.storageTempWhole")
+                : overMaxTemp
+                  ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
+                  : underMinTemp
+                    ? label("operations.fields.storageTempMin", { min: input.minCelsius })
+                    : temperatureMissing
+                      ? label("operations.fields.storageTempRequired")
+                      : undefined
           }
           endAdornment={<InputAdornment position="end">{label("operations.fields.temperatureUnit")}</InputAdornment>}
         />
@@ -286,7 +293,7 @@ function OperationDetailsStep({
         parse={parseAmount}
         allowNegative={false}
         label={label(input.labelKey)}
-        error={overRemoval}
+        error={overRemoval || amountMissing || unitMissing}
         helperText={
           overRemoval
             ? label("operations.fields.amountTakenExceedsOrigin")

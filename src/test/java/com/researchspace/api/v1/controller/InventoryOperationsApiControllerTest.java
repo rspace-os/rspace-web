@@ -605,9 +605,11 @@ class InventoryOperationsApiControllerTest {
   @Test
   void facadeFieldRenamesEveryCorePathToTheFieldTheCallerSent() {
     assertEquals("origin.amountTaken", facadeField("origins[0].amountTaken", true));
-    assertEquals("origin.globalId", facadeField("origins[0].id", true));
+    assertEquals("origin.globalId", facadeField("origins[0].globalId", true));
+    assertEquals(
+        "origin.id", facadeField("origins[0].id", true)); // the core no longer rejects on id
     assertEquals("origin", facadeField("origins", true));
-    assertEquals("origins[1].globalId", facadeField("origins[1].id", false));
+    assertEquals("origins[1].globalId", facadeField("origins[1].globalId", false));
     assertEquals("origins[1].amountTaken", facadeField("origins[1].amountTaken", false));
     assertEquals("origins", facadeField("origins", false));
     assertEquals("templateId", facadeField("newSample.templateId", true));

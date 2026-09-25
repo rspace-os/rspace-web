@@ -245,10 +245,10 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   /**
    * The caller's name for a field the core reports. The core works with an origin LIST and a
    * server-built sample, so it names {@code origins[0].amountTaken} where a six-operation client
-   * sent {@code origin.amountTaken}, numeric {@code id} where the client sent {@code globalId}, and
-   * {@code newSample.*} for what the template check finds on the built sample: its template id is
-   * the caller's {@code templateId}, and a subsample quantity is the caller's {@code eachAmount},
-   * which every built subsample copies. The caller's own field names pass through.
+   * sent {@code origin.amountTaken}, and {@code newSample.*} for what the template check finds on
+   * the built sample: its template id is the caller's {@code templateId}, and a subsample quantity
+   * is the caller's {@code eachAmount}, which every built subsample copies. The caller's own field
+   * names pass through.
    */
   static String facadeField(String field, boolean singleOrigin) {
     String renamed = field;
@@ -256,7 +256,6 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       renamed = renamed.replaceFirst("^origins(\\[0\\])?(?=\\.|$)", "origin");
     }
     return renamed
-        .replaceFirst("^(origins?(?:\\[\\d+\\])?)\\.id$", "$1.globalId")
         .replaceFirst("^newSample\\.templateId$", "templateId")
         .replaceFirst("^newSample\\.subSamples\\[\\d+\\]\\.quantity$", "eachAmount")
         .replaceFirst("^newSample\\.name$", "sampleName")

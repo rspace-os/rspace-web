@@ -3,10 +3,11 @@ import type React from "react";
 
 // Amounts: at most 3 decimal places, since quantities persist in a DECIMAL(19,3) column and the
 // server rejects anything finer (ADR 0011 D5), so a fourth decimal is not typed rather than accepted
-// and then silently blocking the wizard's Next. Temperatures: whole degrees only, as the sample
-// form's storage temperature takes them.
+// and then silently blocking the wizard's Next. Temperatures: any decimal may be typed and stays on
+// screen; the caller refuses a fraction with a message, because refusing the point at the keystroke
+// let the digit typed after it join the integer (-18.5 became -185).
 const PARTIAL_AMOUNT = /^\d*(\.\d{0,3})?$/;
-const PARTIAL_WHOLE_DEGREES = /^-?\d*$/;
+const PARTIAL_TEMPERATURE = /^-?\d*(\.\d*)?$/;
 
 /**
  * A numeric entry field, deliberately a text input and not type="number".
@@ -29,10 +30,10 @@ export default function NumericTextField({
 }: {
   value: string;
   onChange: (value: string) => void;
-  /** True for a temperature (whole degrees, may be negative); false for an amount (3 dp, never negative). */
+  /** True for a temperature (may be negative, fraction left to the caller); false for an amount (3 dp, never negative). */
   allowNegative?: boolean;
 } & Omit<TextFieldProps, "value" | "onChange">): React.ReactNode {
-  const partial = allowNegative ? PARTIAL_WHOLE_DEGREES : PARTIAL_AMOUNT;
+  const partial = allowNegative ? PARTIAL_TEMPERATURE : PARTIAL_AMOUNT;
   return (
     <TextField
       fullWidth
