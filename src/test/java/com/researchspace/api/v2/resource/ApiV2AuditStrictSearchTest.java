@@ -359,6 +359,32 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void legacyUnknownBookingEventsUseOnlyTheirExactTopLevelIdentifier() throws IOException {
+    String bookingId = "booking-settings:1";
+    Request bookingRequest =
+        new Request(
+            FROM,
+            TO,
+            Set.of(AuditDomain.BOOKING),
+            Set.of(AuditAction.CREATE),
+            bookingId,
+            Set.of(),
+            sysadmin,
+            10);
+    String direct = event("01 Jan 2026 12:00:00,000", bookingId);
+    String nested =
+        event("01 Jan 2026 13:00:00,000", "BC1")
+            .replace("\"id\":\"BC1\"", "\"target\":{\"id\":\"" + bookingId + "\"}");
+    write("RSLogs.txt", direct + "\n" + nested + "\n");
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(bookingRequest);
+
+    assertEquals(1, results.size());
+    assertEquals(AuditDomain.BOOKING, results.get(0).getEvent().getDomain());
+    assertEquals(AuditAction.CREATE, results.get(0).getEvent().getAction());
+  }
+
+  @Test
   void textSearchMatchesDecodedTargetAndPurposeValues() throws IOException {
     write(
         "RSLogs.txt",

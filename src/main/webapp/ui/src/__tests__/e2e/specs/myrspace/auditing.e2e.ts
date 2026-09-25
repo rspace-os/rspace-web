@@ -20,6 +20,10 @@ test.describe("Auditing (ELN)", () => {
     await pageAuditTrail.submitQuery();
     expect(await pageAuditTrail.hitCount()).toBe(0);
 
+    await pageAuditTrail.setDomains(["Bookings"]);
+    await pageAuditTrail.submitQuery();
+    expect(await pageAuditTrail.hitCount()).toBe(0);
+
     await pageAuditTrail.setDomains(["ELN"]);
     await pageAuditTrail.submitQuery();
     await expect(pageAuditTrail.rowsWithName(name).first()).toBeVisible();

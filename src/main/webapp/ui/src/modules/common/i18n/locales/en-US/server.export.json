@@ -77,6 +77,10 @@
     },
     "audit": {
       "csv": {
+        "bookingActionArchived": "Archived",
+        "bookingActionCancelled": "Cancelled",
+        "bookingActionPermanentlyDeleted": "Permanently deleted",
+        "bookingType": "Booking",
         "commentGeneratedAt": "# audit trail download generated at {0}.",
         "exportedItemCount": "{0, plural, one {1 item} other {# items}} exported: {1}",
         "headerDescription": "Description",

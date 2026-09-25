@@ -6194,7 +6194,7 @@ export default interface Resources {
         "communityPrompt": "Enter a Community to audit",
         "dateRangePrompt": "Date range to audit",
         "from": "from",
-        "globalIdPrompt": "Enter a global ID of a document, notebook, or Inventory item, e.g. SD12345",
+        "globalIdPrompt": "Enter a global ID or booking resource ID to audit, e.g. SD12345, bookings:123, booking-configurations:456, or booking-settings:1",
         "labGroupPrompt": "Enter a LabGroup to audit",
         "to": "to",
         "usersPrompt": "Enter a user or users to audit"
@@ -7845,6 +7845,10 @@ export default interface Resources {
       },
       "audit": {
         "csv": {
+          "bookingActionArchived": "Archived",
+          "bookingActionCancelled": "Cancelled",
+          "bookingActionPermanentlyDeleted": "Permanently deleted",
+          "bookingType": "Booking",
           "commentGeneratedAt": "# audit trail download generated at {0}.",
           "exportedItemCount": "{0, plural, one {1 item} other {# items}} exported: {1}",
           "headerDescription": "Description",
@@ -8690,10 +8694,14 @@ export default interface Resources {
         "importingOntologyFile": "Importing ontology file"
       },
       "audit": {
+        "archived": "Archived",
+        "bookingActivityArea": "Bookings",
+        "cancelled": "Cancelled",
         "itemsExported": "{0, plural, one {# item exported} other {# items exported}}",
         "itemsExportedAs": "Items exported as {0} to {1}",
         "itemsExportedWithConfiguration": "{0, plural, one {# item exported as {1} to {2}} other {# items exported as {1} to {2}}}",
         "movedFromTo": "from {0} ({1}) to {2} ({3})",
+        "permanentlyDeleted": "Permanently deleted",
         "queryingAuditTable": "Querying audit table..",
         "queryingAuditTrail": "Querying audit trail"
       },
