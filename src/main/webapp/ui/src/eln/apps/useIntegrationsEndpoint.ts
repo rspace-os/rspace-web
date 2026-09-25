@@ -79,6 +79,11 @@ export type IntegrationStates = {
       }>
     >
   >;
+  DBREPO: IntegrationState<{
+    DBREPO_URL: Optional<string>;
+    DBREPO_CONNECTED: boolean;
+    optionsId: Optional<OptionsId>;
+  }>;
   DIGITALCOMMONSDATA: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
@@ -323,6 +328,29 @@ function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
               : Optional.empty(),
           )
         : [],
+  };
+}
+
+function decodeDBRepo(data: FetchedState): IntegrationStates["DBREPO"] {
+  const optionEntry = Object.entries(data.options).find(([, option]) => {
+    return Parsers.isObject(option)
+      .flatMap(Parsers.isNotNull)
+      .flatMap(Parsers.isRecord)
+      .map((optionRecord) => typeof optionRecord.DBREPO_URL === "string")
+      .orElse(false);
+  });
+  const optionRecord = optionEntry?.[1] as Record<string, unknown> | undefined;
+
+  return {
+    mode: parseState(data),
+    credentials: {
+      DBREPO_URL:
+        optionRecord && typeof optionRecord.DBREPO_URL === "string"
+          ? Optional.present(optionRecord.DBREPO_URL)
+          : Optional.empty(),
+      DBREPO_CONNECTED: parseCredentialBoolean(data.options, "DBREPO_CONNECTED").orElse(false),
+      optionsId: optionEntry ? Optional.present(optionEntry[0]) : Optional.empty(),
+    },
   };
 }
 
@@ -777,6 +805,7 @@ function decodeIntegrationStates(
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),
     DATAVERSE: decodeDataverse(data.DATAVERSE),
+    DBREPO: decodeDBRepo(data.DBREPO),
     DIGITALCOMMONSDATA: decodeDigitalCommonsData(data.DIGITALCOMMONSDATA),
     DMPASSISTANT: decodeDmpAssistant(data.DMPASSISTANT),
     DMPONLINE: decodeDmponline(data.DMPONLINE),
@@ -890,6 +919,18 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
           creds,
         ),
       ),
+    };
+  }
+  if (integration === "DBREPO") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["DBREPO"]["credentials"] = data.credentials;
+    return {
+      name: "DBREPO",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: {
+        ...creds.DBREPO_URL.map((url) => ({ DBREPO_URL: url })).orElse({}),
+      },
     };
   }
   if (integration === "DIGITALCOMMONSDATA") {
@@ -1373,6 +1414,8 @@ export function useIntegrationsEndpoint(): {
               return decodeClustermarket(responseData.data) as IntegrationStates[I];
             case "DATAVERSE":
               return decodeDataverse(responseData.data) as IntegrationStates[I];
+            case "DBREPO":
+              return decodeDBRepo(responseData.data) as IntegrationStates[I];
             case "DIGITALCOMMONSDATA":
               return decodeDigitalCommonsData(responseData.data) as IntegrationStates[I];
             case "DMPASSISTANT":
@@ -1473,6 +1516,8 @@ export function useIntegrationsEndpoint(): {
           return decodeClustermarket(response.data.data) as IntegrationStates[I];
         case "DATAVERSE":
           return decodeDataverse(response.data.data) as IntegrationStates[I];
+        case "DBREPO":
+          return decodeDBRepo(response.data.data) as IntegrationStates[I];
         case "DIGITALCOMMONSDATA":
           return decodeDigitalCommonsData(response.data.data) as IntegrationStates[I];
         case "DMPASSISTANT":

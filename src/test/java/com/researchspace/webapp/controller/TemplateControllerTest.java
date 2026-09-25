@@ -1,7 +1,9 @@
 package com.researchspace.webapp.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -58,6 +60,13 @@ public class TemplateControllerTest extends SpringTransactionalTest {
 
     String equationTemplate = templateController.getTemplate(TemplateController.EQUATION_TEMPLATE);
     assertAllPropsReplaced(equationTemplate);
+
+    String dbrepoTemplate = templateController.getTemplate(TemplateController.DBREPO_LINK_TEMPLATE);
+    assertAllPropsReplaced(dbrepoTemplate);
+    assertTrue(dbrepoTemplate.contains("class=\"dbrepo_link\""));
+    assertTrue(dbrepoTemplate.contains("id=\"dbrepoLink_{{id}}\""));
+    assertFalse(dbrepoTemplate.contains("attachmentLinked"));
+    assertFalse(dbrepoTemplate.contains("attachOnText_"));
   }
 
   private void assertAllPropsReplaced(String processedTemplate) {

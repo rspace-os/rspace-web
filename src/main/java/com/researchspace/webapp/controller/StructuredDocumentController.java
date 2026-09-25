@@ -70,6 +70,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -124,6 +125,8 @@ public class StructuredDocumentController extends BaseController {
   private @Autowired DocumentHTMLPreviewHandler htmlGenerator;
   private @Autowired SystemPropertyPermissionManager systemPropertyMgr;
   private @Autowired @Setter(value = AccessLevel.PROTECTED) SharingHandler recordShareHandler;
+  private final PublicDocumentHtmlSanitizer publicDocumentHtmlSanitizer =
+      new PublicDocumentHtmlSanitizer();
 
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
   @Autowired private DocumentTagManager documentTagManager;
@@ -535,6 +538,7 @@ public class StructuredDocumentController extends BaseController {
     User user = userManager.getUserByUsername(principal.getName(), true);
     DocumentEditContext docEditContext = getDocEditContext(recordId, user);
     StructuredDocument structuredDocument = docEditContext.getStructuredDocument();
+    sanitizeForPublicViewIfAnonymous(structuredDocument, user);
     EditStatus res = docEditContext.getEditStatus();
     // Opening Basic Documents in "Edit Mode" when editMode flag is true or coming
     // from notebook view
@@ -604,6 +608,24 @@ public class StructuredDocumentController extends BaseController {
             ? STRUCTURED_DOCUMENT_MS_TEAMS_SIMPLE_VIEW_NAME
             : STRUCTURED_DOCUMENT_EDITOR_VIEW_NAME;
     return new ModelAndView(view, model.asMap());
+  }
+
+  void sanitizeForPublicViewIfAnonymous(StructuredDocument structuredDocument, User user) {
+    if (RecordGroupSharing.ANONYMOUS_USER.equals(user.getUsername())) {
+      sanitizeForPublicView(structuredDocument);
+    }
+  }
+
+  private void sanitizeForPublicView(StructuredDocument structuredDocument) {
+    structuredDocument
+        .getFields()
+        .forEach(
+            field -> {
+              String sanitized = publicDocumentHtmlSanitizer.sanitize(field.getFieldData());
+              if (!Objects.equals(field.getFieldData(), sanitized)) {
+                field.setFieldData(sanitized);
+              }
+            });
   }
 
   @Getter

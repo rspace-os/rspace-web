@@ -1924,6 +1924,12 @@ $(document).ready(function () {
     RS.initAndOpenNetFileInfoDialog($link);
     return false;
   });
+
+  $(document).on("click", ".dbrepo_link", function () {
+    var $link = $(this);
+    RS.initAndOpenDBRepoInfoDialog($link);
+    return false;
+  });
 });
 
 $(document).ready(function () {
