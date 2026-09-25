@@ -21,9 +21,11 @@ import com.researchspace.model.dtos.RadioFieldDTO;
 import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.dtos.TimeFieldDTO;
+import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
@@ -130,6 +132,16 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
           getRequiredAttribute(formXml, "fieldForm", "name", fieldDefinition.name()),
           fieldDefinition.type() + " form field required flag");
     }
+    assertEquals(
+        "true",
+        getChildElementText(
+            formXml, "fieldForm", "name", passwordStringFieldName(run), "isPassword"),
+        "password string field flag");
+    assertEquals(
+        "yes",
+        getChildElementText(
+            formXml, "fieldForm", "name", multiSelectChoiceFieldName(run), "multipleChoice"),
+        "multi-select choice field flag");
 
     ArchivalImportConfig importConfig =
         createDefaultArchiveImportConfig(user, newFolder(tempImportFolder, "imported-archive"));
@@ -142,6 +154,8 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     Map<String, Boolean> importedFieldRequirements =
         importedForm.getFieldForms().stream()
             .collect(Collectors.toMap(FieldForm::getName, FieldForm::isMandatory));
+    Map<String, FieldForm> importedFields =
+        importedForm.getFieldForms().stream().collect(Collectors.toMap(FieldForm::getName, f -> f));
 
     for (FieldDefinition fieldDefinition : fieldDefinitions) {
       assertEquals(
@@ -149,6 +163,12 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
           importedFieldRequirements.get(fieldDefinition.name()),
           fieldDefinition.type() + " imported form field required flag");
     }
+    assertTrue(
+        ((StringFieldForm) importedFields.get(passwordStringFieldName(run))).isIfPassword(),
+        "imported string field remains a password field");
+    assertTrue(
+        ((ChoiceFieldForm) importedFields.get(multiSelectChoiceFieldName(run))).isMultipleChoice(),
+        "imported choice field remains multi-select");
   }
 
   @Test
@@ -311,6 +331,11 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
             FieldType.STRING,
             new StringFieldDTO<>("Optional_String_" + run, false, "no", "string value")),
         new FieldDefinition(
+            passwordStringFieldName(run),
+            true,
+            FieldType.STRING,
+            new StringFieldDTO<>(passwordStringFieldName(run), true, "yes", "secret value")),
+        new FieldDefinition(
             "Mandatory_Text_" + run,
             true,
             FieldType.TEXT,
@@ -333,11 +358,11 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
             new RadioFieldDTO<>(
                 "0=alpha&1=beta", "alpha", "Optional_Radio_" + run, false, false, false)),
         new FieldDefinition(
-            "Mandatory_Choice_" + run,
+            multiSelectChoiceFieldName(run),
             true,
             FieldType.CHOICE,
             new ChoiceFieldDTO<>(
-                "0=alpha&1=beta", "yes", "0=alpha", "Mandatory_Choice_" + run, true)),
+                "0=alpha&1=beta", "yes", "0=alpha", multiSelectChoiceFieldName(run), true)),
         new FieldDefinition(
             "Optional_Choice_" + run,
             false,
@@ -384,6 +409,14 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
       FieldType type,
       FormFieldSource<? extends FieldForm> source) {}
 
+  private static String passwordStringFieldName(String run) {
+    return "Password_String_" + run;
+  }
+
+  private static String multiSelectChoiceFieldName(String run) {
+    return "MultiSelect_Choice_" + run;
+  }
+
   private static File newFolder(File root, String... subDirs) throws IOException {
     String subFolder = String.join("/", subDirs);
     File result = new File(root, subFolder);
@@ -407,6 +440,22 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
       throws Exception {
     Element element = findElementByChildText(xmlFile, elementName, childElementName, childValue);
     return element.getAttribute("required");
+  }
+
+  private String getChildElementText(
+      File xmlFile,
+      String elementName,
+      String childElementName,
+      String childValue,
+      String targetChildElementName)
+      throws Exception {
+    Element element = findElementByChildText(xmlFile, elementName, childElementName, childValue);
+    NodeList children = element.getElementsByTagName(targetChildElementName);
+    if (children.getLength() == 0) {
+      throw new IllegalStateException(
+          "No <" + targetChildElementName + "> in " + elementName + " named " + childValue);
+    }
+    return children.item(0).getTextContent();
   }
 
   private Element findElementByChildText(
