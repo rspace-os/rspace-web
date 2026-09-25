@@ -1,5 +1,7 @@
 import type { APIRequestContext } from "@playwright/test";
 import { request } from "@playwright/test";
+import { B2instClient } from "../api/clients/B2instClient";
+import { DataCiteClient } from "../api/clients/DataCiteClient";
 import { DocumentsClient } from "../api/clients/DocumentsClient";
 import { FilesClient } from "../api/clients/FilesClient";
 import { FoldersClient } from "../api/clients/FoldersClient";
@@ -26,6 +28,8 @@ type ApiFixtures = {
   clientStoichiometry: StoichiometryClient;
   clientSysadmin: SysadminClient;
   clientMailpit: MailpitClient;
+  clientDataCite: DataCiteClient;
+  clientB2inst: B2instClient;
 };
 
 export const apiTest = uiTest.extend<ApiFixtures>({
@@ -98,6 +102,26 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   clientMailpit: async ({}, use) => {
     const context = await request.newContext({ baseURL: env.mailpitBaseUrl });
     await use(new MailpitClient(context));
+    await context.dispose();
+  },
+
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
+  clientDataCite: async ({}, use) => {
+    const baseURL = env.integrationMode === "real" ? env.igsnServerUrl : env.mockBaseUrl;
+    const context = await request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+    await use(new DataCiteClient(context));
+    await context.dispose();
+  },
+
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
+  clientB2inst: async ({}, use) => {
+    const real = env.integrationMode === "real";
+    const context = await request.newContext({
+      baseURL: real ? env.pidinstB2instServerUrl : env.mockBaseUrl,
+      extraHTTPHeaders: real ? { Authorization: `Bearer ${env.pidinstB2instToken}` } : {},
+      storageState: { cookies: [], origins: [] },
+    });
+    await use(new B2instClient(context));
     await context.dispose();
   },
 });

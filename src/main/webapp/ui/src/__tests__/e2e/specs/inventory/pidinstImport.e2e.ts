@@ -34,10 +34,8 @@ test.describe(`Inventory PIDINST Import`, { tag: [tags.INVENTORY] }, () => {
       await expect(dialog.previewField("Registry record")).toHaveText(`https://b2inst-test.gwdg.de/records/${rid}`);
       await expect(dialog.previewField("Owners")).toHaveText("E2E Test Institution");
       await expect(dialog.previewField("Manufacturers")).toHaveText("E2E Instrument Co");
-      await dialog.clickImport();
-
+      const importedGlobalId = `IN${await pageInventory.waitForNewInstrumentPage(() => dialog.clickImport())}`;
       await expect(componentToasts.byVariant("success", "Successfully imported the instrument.")).toBeVisible();
-      const importedGlobalId = `IN${await pageInventory.waitForNewInstrumentPage()}`;
       await expect(pageInventory.detailsPanel.heading).toContainText(expectedName);
 
       const identifiers = pageInventory.detailsPanel.identifiers();
@@ -88,10 +86,8 @@ test.describe(`Inventory PIDINST Import`, { tag: [tags.INVENTORY] }, () => {
       await expect(dialog.preview).toBeVisible();
 
       await expect(dialog.previewField("PID")).toHaveText(doi);
-      await dialog.clickImport();
-
+      const importedGlobalId = `IN${await pageInventory.waitForNewInstrumentPage(() => dialog.clickImport())}`;
       await expect(componentToasts.byVariant("success", "Successfully imported the instrument.")).toBeVisible();
-      const importedGlobalId = `IN${await pageInventory.waitForNewInstrumentPage()}`;
       await expect(pageInventory.detailsPanel.heading).toContainText(expectedName);
 
       const identifiers = pageInventory.detailsPanel.identifiers();

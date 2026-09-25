@@ -44,7 +44,11 @@ export class InventoryPage extends BasePage {
       (r) => r.request().method() === "GET" && /\/identifiers\/pidinstEnabled\/?$/.test(new URL(r.url()).pathname),
     );
     await this.open();
-    return (await (await flagResponse).json()) as boolean;
+    const response = await flagResponse;
+    if (!response.ok()) {
+      throw new Error(`pidinstEnabled flag request failed: ${response.status()} ${response.statusText()}`);
+    }
+    return (await response.json()) as boolean;
   }
 
   async openSearch(resultType: InventoryResultType, parentGlobalId?: string): Promise<void> {
@@ -66,12 +70,16 @@ export class InventoryPage extends BasePage {
   }
 
   /**
-   * Waits for navigation to a freshly created/imported instrument's own page - its id isn't known
-   * ahead of time and returns that id.
+   * Runs `trigger` and waits for it to land on a different instrument's page than the current one -
+   * the new id isn't known ahead of time - then returns that id. Recording the URL first keeps a
+   * caller already on an instrument page from getting the old id back.
    */
-  async waitForNewInstrumentPage(): Promise<number> {
-    await this.page.waitForURL((url) => url.pathname.startsWith(`${this.path}/instrument/`));
-    return Number(new URL(this.page.url()).pathname.split("/").pop());
+  async waitForNewInstrumentPage(trigger: () => Promise<void>): Promise<number> {
+    const instrumentPath = new RegExp(`^${this.path}/instrument/(\\d+)$`);
+    const before = new URL(this.page.url()).pathname;
+    await trigger();
+    await this.page.waitForURL((url) => url.pathname !== before && instrumentPath.test(url.pathname));
+    return Number(instrumentPath.exec(new URL(this.page.url()).pathname)?.[1]);
   }
 
   async openNewContainerForm() {

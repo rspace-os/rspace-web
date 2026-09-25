@@ -42,8 +42,22 @@ const reviewStatusByRid = new Map<string, string>();
  */
 const acceptedRecords = new Map<string, ReturnType<typeof fixtureB2instRecord>>();
 
-/** Receipt for a silent push - proof it happened, since the UI shows nothing when it does. */
-const lastDraftUpdateByRid = new Map<string, unknown>();
+const draftsByRid = new Map<string, { metadata: unknown; revisionId: number }>();
+
+function draftRecord(rid: string, revisionId: number, metadata?: unknown) {
+  return {
+    id: rid,
+    is_draft: true,
+    is_published: false,
+    status: "draft",
+    revision_id: revisionId,
+    ...(metadata === undefined ? {} : { metadata }),
+    links: {
+      self: `/api/records/${rid}/draft`,
+      self_html: `/uploads/${rid}`,
+    },
+  };
+}
 
 export const b2instHandlers = [
   http.get("/api/communities", () => HttpResponse.json({ hits: { hits: [] }, links: {} })),
@@ -74,22 +88,11 @@ export const b2instHandlers = [
   // Field names are InvenioRDM's own snake_case, which is what B2instDraftRecord maps. Anything
   // spelled camelCase here deserializes to null on the RSpace side without any error, so the stub
   // would answer a shape the real provider never sends.
-  http.post("/api/records", () => {
+  http.post("/api/records", async ({ request }) => {
     const id = `e2e-b2inst-${nextRecordId++}`;
-    return HttpResponse.json(
-      {
-        id,
-        is_draft: true,
-        is_published: false,
-        status: "draft",
-        revision_id: 1,
-        links: {
-          self: `/api/records/${id}/draft`,
-          self_html: `/uploads/${id}`,
-        },
-      },
-      { status: 201 },
-    );
+    const { metadata } = (await request.json()) as { metadata?: unknown };
+    draftsByRid.set(id, { metadata, revisionId: 1 });
+    return HttpResponse.json(draftRecord(id, 1), { status: 201 });
   }),
 
   // The on-save external metadata update (RSDEV-1251): a full-replace PUT of the draft. Without
@@ -97,28 +100,23 @@ export const b2instHandlers = [
   // silently reports a failed push, which no assertion would catch because the toast is generic.
   http.put("/api/records/:rid/draft", async ({ params, request }) => {
     const rid = String(params.rid);
-    lastDraftUpdateByRid.set(rid, await request.json());
-    return HttpResponse.json({
-      id: rid,
-      is_draft: true,
-      is_published: false,
-      status: "draft",
-      revision_id: 2,
-      links: {
-        self: `/api/records/${rid}/draft`,
-        self_html: `/uploads/${rid}`,
-      },
-    });
+    const { metadata } = (await request.json()) as { metadata?: unknown };
+    const revisionId = (draftsByRid.get(rid)?.revisionId ?? 1) + 1;
+    draftsByRid.set(rid, { metadata, revisionId });
+    return HttpResponse.json(draftRecord(rid, revisionId));
   }),
 
-  // Opens the receipt above; never called by RSpace itself.
-  http.get("/__e2e/b2inst/draft-update/:rid", ({ params }) => {
-    const body = lastDraftUpdateByRid.get(String(params.rid));
-    if (!body) return new HttpResponse(null, { status: 404 });
-    return HttpResponse.json(body);
+  http.get("/api/records/:rid/draft", ({ params }) => {
+    const rid = String(params.rid);
+    const draft = draftsByRid.get(rid);
+    if (!draft) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(draftRecord(rid, draft.revisionId, draft.metadata));
   }),
 
-  http.delete("/api/records/:rid/draft", () => new HttpResponse(null, { status: 204 })),
+  http.delete("/api/records/:rid/draft", ({ params }) => {
+    draftsByRid.delete(String(params.rid));
+    return new HttpResponse(null, { status: 204 });
+  }),
 
   http.get("/api/records/:rid/draft/review", ({ params }) => {
     const status = reviewStatusByRid.get(String(params.rid));

@@ -50,9 +50,8 @@ test.describe(`Inventory PIDINST unlink on delete`, { tag: [tags.INVENTORY] }, (
       await dialog.search(doi);
       await dialog.selectResult(expectedName);
       await expect(dialog.alreadyLinkedBanner).toHaveCount(0);
-      await dialog.clickImport();
+      const id = await pageInventory.waitForNewInstrumentPage(() => dialog.clickImport());
       await expect(componentToasts.byVariant("success", "Successfully imported the instrument.")).toBeVisible();
-      const id = await pageInventory.waitForNewInstrumentPage();
       return { id };
     });
     expect(reimported.id).not.toBe(original.id);
