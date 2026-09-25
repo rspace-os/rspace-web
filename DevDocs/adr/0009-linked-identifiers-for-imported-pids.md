@@ -128,8 +128,8 @@ and API field names were ported instead.
    wildcard really does span the slash, and `doi:*"broken*` answers 400. Widening the class further
    needs the same kind of evidence, and both halves are pinned by tests. The B2INST side needs no
    retry: InvenioRDM tokenises its Handle field, so a bare suffix fragment already matches
-   (verified 2026-09-22, `twwkx` finds `21.T11975/twwkx-1zd85`). Its *escaping* is a different
-   matter and is a known gap, tracked as RSDEV-1524.
+   (verified 2026-09-22, `twwkx` finds `21.T11975/twwkx-1zd85`). Its *escaping* was a separate
+   gap, filed as RSDEV-1524 and closed by decision 8 on 2026-09-25.
 
 8. **B2INST gets a substring search; DataCite gets the query as typed** (RSDEV-1522).
 
@@ -189,7 +189,13 @@ and API field names were ported instead.
    are removed too, because Elasticsearch documents them as impossible to escape;
    `\ + - = & | ! ( ) { } [ ] ^ ~ : /` are escaped to literals, so a pasted partial Handle such as `T11975/97g70-tsv60` now finds its
    record instead of answering 400; `*` and `?` stay live wildcards. This covers the 400s filed as
-   RSDEV-1524 for free-text B2INST searches.
+   RSDEV-1524 for free-text B2INST searches. *Verified 2026-09-25, and RSDEV-1524 closed on it:*
+   the exact strings this builds for 65 shapes, the ticket's own `T11975/8q5hq`, `foo"bar` and
+   `zeiss &&` among every other punctuation mark, bare `AND`/`OR`/`NOT`, trailing backslashes,
+   U+3000, a no-break space, CJK, an emoji and a 2000-character query, all answered 200 on
+   b2inst-test.gwdg.de; the partial Handle finds its one record and `zeiss &&` is an empty page.
+   The ticket's note that B2INST rejects the slash "either way" was wrong: it is the escaped slash
+   this relies on.
 
    The 4-character minimum of decision 6 is checked again on what is left once quotes, `<` and `>`
    are removed and typed `*`/`?` are discounted: `<<<a` would otherwise go out as `*a*`, which
@@ -273,5 +279,12 @@ and API field names were ported instead.
 - The lookup shares the provider's availability: a provider outage disables lookup as
   well as registration, and the 10-minute result cache is evicted whenever the
   provider settings are reloaded.
+- A registry failure during a lookup stays an error (decided 2026-09-25, closing RSDEV-1524,
+  which had asked whether a 400 should read as "no results"). Since decision 8 nothing the user
+  types can make B2INST answer 400, so a 400 there can only be a request RSpace built wrongly or
+  a changed registry API, and an empty page would hide it. The error still reaches the client as
+  a 500 carrying the connector's developer text, through the catch-all in rspace-rest-api-utils,
+  because `ApiControllerAdvice` has no handler for either connector's exception; a localized
+  502 would be a separate, small change and was not asked for.
 - DataCite's `searchDois` and typed `contributors`/`identifiers` live in
   datacite-java-client, so the change rides a client release and a pin bump.
