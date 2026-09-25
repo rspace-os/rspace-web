@@ -111,11 +111,9 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * The query-string syntax B2INST (InvenioRDM, Elasticsearch) would parse inside a wildcard term,
    * escaped by {@link #containsForB2inst(String)}. Unlike DataCite's set it includes {@code /},
    * which B2INST answers 400 for unescaped and accepts escaped; it leaves out {@code *} and {@code
-   * ?}, which stay wildcards, and {@link #B2INST_REMOVED}. A quote only lands here when the query
-   * held nothing else.
+   * ?}, which stay wildcards, and {@link #B2INST_REMOVED}.
    */
-  private static final Pattern B2INST_RESERVED =
-      Pattern.compile("([\\\\+\\-=&|!(){}\\[\\]^~:/\"])");
+  private static final Pattern B2INST_RESERVED = Pattern.compile("([\\\\+\\-=&|!(){}\\[\\]^~:/])");
 
   /**
    * Removed from a B2INST query rather than escaped: a quote because the whole query is already one
@@ -227,7 +225,16 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * {@code total} stays the provider's own.
    */
   private void searchB2inst(String query, ApiPidinstSearchResult result) {
-    B2instSearchResult page = b2instConnector.searchRecords(containsForB2inst(query), MAX_HITS);
+    // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
+    String searchable = B2INST_REMOVED.matcher(query).replaceAll("").trim();
+    // the minimum again, on what is left to match: <<<a would otherwise go out as *a*, which
+    // matched all 810 records on b2inst-test.gwdg.de, and typed wildcards match nothing specific
+    if (searchable.replaceAll("[*?]", "").length() < MIN_QUERY_LENGTH) {
+      result.setTotal(0);
+      return;
+    }
+    B2instSearchResult page =
+        b2instConnector.searchRecords(containsForB2inst(searchable), MAX_HITS);
     page.getHits().getHits().stream()
         .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
         .map(PidinstRecordMapper::fromB2inst)
@@ -284,14 +291,8 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * literal, which also turns the 400 on a pasted partial Handle such as {@code T11975/97g70-tsv60}
    * into its one record. {@code *} and {@code ?} stay live.
    */
-  private static String containsForB2inst(String query) {
-    // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
-    String stripped = B2INST_REMOVED.matcher(query).replaceAll("").trim();
-    // with nothing left, ** would match every record; escaped quotes match none
-    String literal =
-        B2INST_RESERVED
-            .matcher(stripped.isEmpty() ? query.replaceAll("[<>]", "\"") : stripped)
-            .replaceAll("\\\\$1");
+  private static String containsForB2inst(String searchable) {
+    String literal = B2INST_RESERVED.matcher(searchable).replaceAll("\\\\$1");
     return "*" + literal.replaceAll("\\s+", "\\\\ ") + "*";
   }
 

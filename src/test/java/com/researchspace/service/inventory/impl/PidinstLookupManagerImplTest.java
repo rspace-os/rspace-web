@@ -230,7 +230,6 @@ class PidinstLookupManagerImplTest {
         arguments("Instr\"1", "*Instr1*"),
         arguments("Instr1 > 2", "*Instr1\\ 2*"),
         arguments("Instr1<=2", "*Instr1\\=2*"),
-        arguments("\"\"\"\"", "*\\\"\\\"\\\"\\\"*"),
         arguments("(Instr1)", "*\\(Instr1\\)*"),
         arguments("Instr1~2", "*Instr1\\~2*"),
         arguments("Instr1^2", "*Instr1\\^2*"),
@@ -586,6 +585,21 @@ class PidinstLookupManagerImplTest {
     assertEquals("errors.inventory.identifier.pidinstQueryTooShort", thrown.getErrorCode());
     verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
     verify(dataCiteConnector, never()).searchInstrumentDois(anyString(), eq(50), any());
+  }
+
+  /**
+   * The minimum is checked again on what B2INST would actually search: removing syntax could shrink
+   * an accepted query to one wildcarded letter, and {@code <<<a} sent as {@code *a*} matched all
+   * 810 records on b2inst-test.gwdg.de (2026-09-25). Wildcards the user typed do not count either.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"<<<a", "\"\"\"\"", "a\"<>", "***a", "?a?b"})
+  void aB2instQueryBelowTheMinimumOnceItsSyntaxIsGoneFindsNothing(String typed) {
+    ApiPidinstSearchResult result = manager.search(typed, user);
+
+    assertTrue(result.getHits().isEmpty());
+    assertEquals(0, result.getTotal());
+    verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
   }
 
   @Test

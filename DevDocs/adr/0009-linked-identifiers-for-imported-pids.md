@@ -191,6 +191,10 @@ and API field names were ported instead.
    record instead of answering 400; `*` and `?` stay live wildcards. This covers the 400s filed as
    RSDEV-1524 for free-text B2INST searches.
 
+   The 4-character minimum of decision 6 is checked again on what is left once quotes, `<` and `>`
+   are removed and typed `*`/`?` are discounted: `<<<a` would otherwise go out as `*a*`, which
+   matched all 810 records. A query below it there finds nothing, without asking B2INST.
+
 ## Considered options
 
 - **Fields only** (Alternate Identifier and Landing page, no identifier row): no link
