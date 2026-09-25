@@ -112,6 +112,10 @@ export const PrototypeItemDetails: Story = {
   },
 };
 
+export const ConditionalGroups: Story = {
+  args: { presentation: "conditional" },
+};
+
 export const Disabled: Story = {
   args: { disabled: true },
 };

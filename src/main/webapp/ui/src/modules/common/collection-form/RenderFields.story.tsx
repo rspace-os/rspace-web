@@ -158,6 +158,28 @@ const itemDetailsFormFields = exampleFields(
   "collaboratorIds",
 );
 
+// Mirrors the Repeat panel pattern: a group shown only for one value, and a row that closes up
+// when one of its fields is hidden.
+const conditionalFormFields: readonly FormFieldConfig<ExampleDocument>[] = [
+  ...exampleFields("enabled", "status"),
+  {
+    type: "row",
+    fields: exampleConfig.fields.flatMap((field) =>
+      field.name === "title"
+        ? [field]
+        : field.name === "score" && field.type === "number"
+          ? [{ ...field, form: { ...(field.form || {}), condition: ({ data }) => data.status === "review" } }]
+          : [],
+    ),
+  },
+  {
+    type: "section",
+    labelKey: "collectionForm.examples.relationships",
+    fields: relationshipFormFields,
+    condition: ({ data }) => data.enabled === true,
+  },
+];
+
 const presentationDescriptions: Record<keyof ExampleDocument, string> = {
   id: "The permanent identifier for this record.",
   title: "The name that identifies this record in lists and search results.",
@@ -240,7 +262,8 @@ export function RenderFieldsStory({
     | "settings"
     | "aligned"
     | "prompt-cards"
-    | "item-details";
+    | "item-details"
+    | "conditional";
   sectionVariant?: "card" | "transparent";
 }) {
   const { t } = useTranslation("common");
@@ -378,6 +401,9 @@ export function RenderFieldsStory({
           </CardContent>
         </Card>
       );
+      break;
+    case "conditional":
+      fields = <RenderFields {...fieldProps} fields={conditionalFormFields} />;
       break;
     case "prompt-cards":
       fields = (

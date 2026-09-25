@@ -1,18 +1,82 @@
+import { type FormStore, getInput, useField } from "@formisch/react";
+import type { ReactNode } from "react";
 import { FieldGroup } from "@/modules/common/ui/field";
 import { cn } from "@/modules/common/utils/cn";
 import { BooleanField } from "./field-types/BooleanField";
 import { DateTimeField } from "./field-types/DateTimeField";
 import { NumberField } from "./field-types/NumberField";
 import { RelationshipField } from "./field-types/RelationshipField";
-import { RowField, RowFieldItem } from "./field-types/RowField";
+import { RowField } from "./field-types/RowField";
 import { SectionField } from "./field-types/SectionField";
 import { SelectField } from "./field-types/SelectField";
 import { TextField } from "./field-types/TextField";
-import type { RenderFieldsProps } from "./RenderFields.types";
+import { UiField } from "./field-types/UiField";
+import type {
+  FieldLayout,
+  FormFieldConfig,
+  GroupCondition,
+  NestedFieldsProps,
+  RenderFieldsProps,
+} from "./RenderFields.types";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
 } from "./responsiveFieldLayout";
+
+/** Renders `children` only while `condition` holds, re-evaluating as the form's values change. */
+function ConditionalGroup<TDocument>({
+  children,
+  condition,
+  form,
+}: {
+  children: ReactNode;
+  condition: GroupCondition<TDocument>;
+  form: FormStore;
+}) {
+  // ponytail: formisch 1.0.0-rc.0 only tracks reads inside a component that called one of its hooks,
+  // and its types require a non-empty path. The empty path resolves to the root store, which is a
+  // valid field store at runtime, so this subscribes to the whole form. Switch to a public
+  // form-level subscription if formisch exports one.
+  useField(form, { path: [] as unknown as [string] });
+  return condition({ data: getInput(form) as Partial<TDocument> }) ? children : null;
+}
+
+// Section, row and ui carry no `name`, or share one with nothing, so they key by position.
+function fieldKey<TDocument>(fieldConfig: FormFieldConfig<TDocument>, index: number) {
+  if (fieldConfig.type === "section") return `${fieldConfig.labelKey}-${index}`;
+  if (fieldConfig.type === "row") return `row-${index}`;
+  return fieldConfig.name;
+}
+
+function RenderField<TDocument extends Record<string, unknown>>({
+  fieldConfig,
+  layout,
+  ...nestedProps
+}: NestedFieldsProps & { fieldConfig: FormFieldConfig<TDocument>; layout: FieldLayout }) {
+  const { disabled, form, relationshipOptionAvailability, relationshipOptions } = nestedProps;
+  const props = { disabled, form, layout, relationshipOptionAvailability, relationshipOptions };
+  switch (fieldConfig.type) {
+    case "section":
+      return <SectionField {...nestedProps} fieldConfig={fieldConfig} layout={layout} />;
+    case "row":
+      return <RowField {...nestedProps} fieldConfig={fieldConfig} />;
+    case "ui":
+      return <UiField disabled={disabled} fieldConfig={fieldConfig} form={form} layout={layout} />;
+    case "text":
+      return <TextField {...props} fieldConfig={fieldConfig} />;
+    case "number":
+      return <NumberField {...props} fieldConfig={fieldConfig} />;
+    case "boolean":
+      return <BooleanField {...props} fieldConfig={fieldConfig} />;
+    case "dateTime":
+      return <DateTimeField {...props} fieldConfig={fieldConfig} />;
+    case "select":
+      return <SelectField {...props} fieldConfig={fieldConfig} />;
+    case "relationship":
+      return <RelationshipField {...props} fieldConfig={fieldConfig} />;
+  }
+  return null;
+}
 
 export function RenderFields<TDocument extends Record<string, unknown>>({
   fields,
@@ -24,6 +88,8 @@ export function RenderFields<TDocument extends Record<string, unknown>>({
   density = "comfortable",
   className,
 }: RenderFieldsProps<TDocument>) {
+  const nestedProps = { form, relationshipOptionAvailability, relationshipOptions, disabled, density };
+
   const renderedFields = fields
     .filter(
       (fieldConfig) =>
@@ -33,87 +99,19 @@ export function RenderFields<TDocument extends Record<string, unknown>>({
         fieldConfig.form !== false,
     )
     .map((fieldConfig, index) => {
-      if (fieldConfig.type === "section") {
-        const key = `${fieldConfig.labelKey}-${index}`;
-        const section = (
-          <SectionField key={key} labelKey={fieldConfig.labelKey} variant={fieldConfig.variant}>
-            <RenderFields
-              fields={fieldConfig.fields}
-              form={form}
-              relationshipOptionAvailability={relationshipOptionAvailability}
-              relationshipOptions={relationshipOptions}
-              disabled={disabled}
-              layout={layout}
-              density={density}
-            />
-          </SectionField>
-        );
-
-        // A section is a block, not a label/control pair, so inside an inline
-        // list it spans both columns instead of sitting in the label one.
-        return layout === "inline" ? (
-          <div key={key} className="@md:col-span-2">
-            {section}
-          </div>
-        ) : (
-          section
-        );
-      }
-
-      if (fieldConfig.type === "row") {
-        return (
-          // A row is its own horizontal grouping, so its fields stay stacked
-          // even inside an inline list.
-          <RowField key={`row-${index}`}>
-            {fieldConfig.fields
-              .filter((field) => field.form !== false)
-              .map((field) => (
-                <RowFieldItem key={field.name} width={field.form ? field.form.width : undefined}>
-                  <RenderFields
-                    fields={[field]}
-                    form={form}
-                    relationshipOptionAvailability={relationshipOptionAvailability}
-                    relationshipOptions={relationshipOptions}
-                    disabled={disabled}
-                    density={density}
-                  />
-                </RowFieldItem>
-              ))}
-          </RowField>
-        );
-      }
-
-      if (fieldConfig.type === "ui") {
-        // Rendered as a component, not called as a function, so its own hooks are its own.
-        const Ui = fieldConfig.component;
-        const ui = <Ui key={fieldConfig.name} form={form} disabled={disabled} />;
-        // Like a section, a ui block is not a label/control pair, so it spans both columns.
-        return layout === "inline" ? (
-          <div key={fieldConfig.name} className="@md:col-span-2">
-            {ui}
-          </div>
-        ) : (
-          ui
-        );
-      }
-
-      const props = { disabled, form, layout, relationshipOptionAvailability, relationshipOptions };
-      switch (fieldConfig.type) {
-        case "text":
-          return <TextField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-        case "number":
-          return <NumberField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-        case "boolean":
-          return <BooleanField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-        case "dateTime":
-          return <DateTimeField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-        case "select":
-          return <SelectField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-        case "relationship":
-          return <RelationshipField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-      }
-
-      return null;
+      const key = fieldKey(fieldConfig, index);
+      const condition =
+        fieldConfig.type === "section" || fieldConfig.type === "row" || fieldConfig.type === "ui"
+          ? fieldConfig.condition
+          : undefined;
+      const field = <RenderField key={key} {...nestedProps} fieldConfig={fieldConfig} layout={layout} />;
+      return condition ? (
+        <ConditionalGroup key={key} condition={condition} form={form}>
+          {field}
+        </ConditionalGroup>
+      ) : (
+        field
+      );
     });
 
   // Inline fields stack until this component's own container is wide enough

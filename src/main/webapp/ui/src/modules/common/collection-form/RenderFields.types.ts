@@ -62,11 +62,19 @@ export type UiFieldProps = {
  * a component rather than a render callback so that the hooks it uses sit behind their own
  * boundary.
  */
-export type UiFieldConfig = {
+/**
+ * Decides whether a section, row or ui block is shown, from the values currently being edited.
+ * It re-runs on every edit. A hidden group keeps its values; only its controls are removed.
+ * A single field uses `form.condition` on its own config instead.
+ */
+export type GroupCondition<TDocument> = (context: { data: Partial<TDocument> }) => boolean;
+
+export type UiFieldConfig<TDocument = Record<string, unknown>> = {
   type: "ui";
   /** Distinguishes sibling ui fields; also the React key. */
   name: string;
   component: React.ComponentType<UiFieldProps>;
+  condition?: GroupCondition<TDocument>;
 };
 
 export type SectionFieldConfig<TDocument> = {
@@ -74,18 +82,20 @@ export type SectionFieldConfig<TDocument> = {
   labelKey: string;
   fields: readonly FormFieldConfig<TDocument>[];
   variant?: "card" | "transparent";
+  condition?: GroupCondition<TDocument>;
 };
 
 export type RowFieldConfig<TDocument> = {
   type: "row";
   fields: readonly ResolvedFieldConfig<TDocument>[];
+  condition?: GroupCondition<TDocument>;
 };
 
 export type FormFieldConfig<TDocument> =
   | ResolvedFieldConfig<TDocument>
   | RowFieldConfig<TDocument>
   | SectionFieldConfig<TDocument>
-  | UiFieldConfig;
+  | UiFieldConfig<TDocument>;
 
 export type RenderFieldsProps<TDocument extends Record<string, unknown>> = {
   fields: readonly FormFieldConfig<TDocument>[];
@@ -97,6 +107,14 @@ export type RenderFieldsProps<TDocument extends Record<string, unknown>> = {
   density?: FieldDensity;
   className?: string;
 };
+
+/** What a section or row hands on to the RenderFields it nests. */
+export type NestedFieldsProps = Required<
+  Pick<
+    RenderFieldsProps<Record<string, unknown>>,
+    "form" | "relationshipOptionAvailability" | "relationshipOptions" | "disabled" | "density"
+  >
+>;
 
 export type FieldRendererProps<
   TDocument extends Record<string, unknown>,

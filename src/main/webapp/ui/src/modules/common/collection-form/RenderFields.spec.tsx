@@ -71,6 +71,31 @@ describe("RenderFields", () => {
     await expect.element(form.notes).not.toBeInTheDocument();
   });
 
+  test("reactively shows sections by their group condition", async () => {
+    render(<RenderFieldsStory presentation="conditional" />);
+
+    await expect.element(form.relationshipsSection).toBeVisible();
+    await form.toggleEnabled();
+    await expect.element(form.relationshipsSection).not.toBeInTheDocument();
+    await form.toggleEnabled();
+    await expect.element(form.relationshipsSection).toBeVisible();
+    await expect.element(form.owner).toHaveValue("Ada Lovelace");
+  });
+
+  test("closes up a row when one of its fields is hidden", async () => {
+    render(<RenderFieldsStory presentation="conditional" />);
+    const visibleRowItems = () =>
+      [...document.querySelectorAll("[data-slot=field-row-item]")].filter(
+        (item) => getComputedStyle(item).display !== "none",
+      ).length;
+
+    await expect.element(form.score).not.toBeInTheDocument();
+    await expect.poll(visibleRowItems).toBe(1);
+    await form.chooseStatus("In review");
+    await expect.element(form.score).toBeVisible();
+    await expect.poll(visibleRowItems).toBe(2);
+  });
+
   test("associates descriptions and validation errors with their controls", async () => {
     render(<RenderFieldsStory />);
 
