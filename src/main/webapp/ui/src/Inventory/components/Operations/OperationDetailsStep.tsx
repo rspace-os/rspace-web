@@ -152,6 +152,8 @@ function OperationDetailsStep({
 
   const renderInput = (input: OperationInput): React.ReactNode => {
     if (input.type === "text") {
+      const blank = Boolean(input.required) && !String(values[input.key] ?? "").trim();
+      const requiredHint = blank ? label("operations.fields.required") : undefined;
       if (input.key === operation.effect.processNameFrom) {
         return (
           <Autocomplete
@@ -167,7 +169,14 @@ function OperationDetailsStep({
               if (reason === "input") set(input.key, value);
             }}
             renderInput={(params) => (
-              <TextField {...params} label={label(input.labelKey)} required={input.required} margin="dense" fullWidth />
+              <TextField
+                {...params}
+                label={label(input.labelKey)}
+                required={input.required}
+                helperText={requiredHint}
+                margin="dense"
+                fullWidth
+              />
             )}
           />
         );
@@ -180,7 +189,7 @@ function OperationDetailsStep({
             value={String(values[input.key] ?? "")}
             required={input.required}
             disabled={sampleNameDisabled}
-            helperText={sampleNameDisabled ? label("operations.fields.processNameRequired") : undefined}
+            helperText={sampleNameDisabled ? label("operations.fields.processNameRequired") : requiredHint}
             fullWidth
             margin="dense"
             onChange={(e) => set(input.key, e.target.value)}
@@ -193,6 +202,7 @@ function OperationDetailsStep({
           label={label(input.labelKey)}
           value={String(values[input.key] ?? "")}
           required={input.required}
+          helperText={requiredHint}
           fullWidth
           margin="dense"
           onChange={(e) => set(input.key, e.target.value)}
@@ -241,6 +251,7 @@ function OperationDetailsStep({
     const overMaxTemp = temperatureExceedsMax(input, quantity);
     const underMinTemp = temperatureBelowMin(input, quantity);
     const unstorableTemp = temperatureNotStorable(input, quantity);
+    const temperatureMissing = isTemperature && !Number.isFinite(quantity?.numericValue);
     if (isTemperature)
       return (
         <RawNumericField
@@ -258,11 +269,15 @@ function OperationDetailsStep({
                 ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
                 : underMinTemp
                   ? label("operations.fields.storageTempMin", { min: input.minCelsius })
-                  : undefined
+                  : temperatureMissing
+                    ? label("operations.fields.storageTempRequired")
+                    : undefined
           }
           endAdornment={<InputAdornment position="end">{label("operations.fields.temperatureUnit")}</InputAdornment>}
         />
       );
+    const amountMissing = !(quantity && quantity.numericValue > 0);
+    const unitMissing = !isTemperature && !(currentUnitId > 0);
     return (
       <RawNumericField
         key={input.key}
@@ -272,7 +287,15 @@ function OperationDetailsStep({
         allowNegative={false}
         label={label(input.labelKey)}
         error={overRemoval}
-        helperText={overRemoval ? label("operations.fields.amountTakenExceedsOrigin") : undefined}
+        helperText={
+          overRemoval
+            ? label("operations.fields.amountTakenExceedsOrigin")
+            : amountMissing
+              ? label("operations.fields.amountRequired")
+              : unitMissing
+                ? label("operations.fields.unitRequired")
+                : undefined
+        }
         endAdornment={
           <UnitSelect
             categories={categoriesForInput}
