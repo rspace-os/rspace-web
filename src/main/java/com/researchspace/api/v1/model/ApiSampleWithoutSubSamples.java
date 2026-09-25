@@ -104,7 +104,7 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
    * @return if any change was applied
    */
   public boolean applyChangesToDatabaseSample(SampleEntity dbSample, User user) {
-    boolean contentChanged = super.applyChangesToDatabaseSample(dbSample);
+    boolean contentChanged = super.applyChangesToDatabaseSample(dbSample, user);
 
     if (fields != null) {
       List<ApiInventoryEntityField> modifiedFields =

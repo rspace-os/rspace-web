@@ -796,6 +796,46 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertTrue(sampleRetrievedByOtherUser.isClearedForPublicView());
 
     /*
+     * check that "requestable" search bypasses ownership/group scoping entirely
+     */
+
+    // mark testUser's sample as requestable by other users
+    ApiSample requestableUpdate = new ApiSample();
+    requestableUpdate.setId(testUserSample.getId());
+    requestableUpdate.setRequestable(true);
+    sampleApiMgr.updateApiSample(requestableUpdate, testUser);
+
+    // otherUser, who is outside testUser's group and normally only sees their own sample, can
+    // now see testUser's sample too when filtering by requestable=true. The result set isn't
+    // asserted to be exactly this one sample, as other requestable samples may pre-exist in the
+    // database; the bypass of ownership/group scoping is what's under test here.
+    ApiSampleSearchResult otherUserRequestableResult =
+        sampleApiMgr.getSamplesForUser(null, null, null, true, otherUser);
+    List<Long> otherUserRequestableResultIds =
+        otherUserRequestableResult.getSamples().stream()
+            .map(ApiSampleInfo::getId)
+            .collect(Collectors.toList());
+    assertTrue(otherUserRequestableResultIds.contains(testUserSample.getId()));
+
+    // otherUser has no read/edit access to testUser's sample at all, so viewing it still returns
+    // only the public-view fields, but "requestable" must survive even that reduced view so the
+    // Request Material UI knows the sample can be requested
+    ApiSample sampleViewedByOtherUser =
+        sampleApiMgr.getApiSampleById(testUserSample.getId(), otherUser);
+    assertTrue(sampleViewedByOtherUser.isClearedForPublicView());
+    assertTrue(sampleViewedByOtherUser.getRequestable());
+
+    // pi has edit permission on testUser's sample (asserted earlier), but is not its owner, and
+    // so cannot change whether it is requestable
+    ApiSample nonOwnerRequestableUpdate = new ApiSample();
+    nonOwnerRequestableUpdate.setId(testUserSample.getId());
+    nonOwnerRequestableUpdate.setRequestable(false);
+    sampleApiMgr.updateApiSample(nonOwnerRequestableUpdate, pi);
+    ApiSample sampleAfterNonOwnerAttempt =
+        sampleApiMgr.getApiSampleById(testUserSample.getId(), testUser);
+    assertTrue(sampleAfterNonOwnerAttempt.getRequestable());
+
+    /*
      * check visibility for community admin administering the group
      */
 
@@ -1243,5 +1283,29 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertNotNull(sampleAsSeenByTestUser.getFields());
     assertNotNull(sampleAsSeenByTestUser.getExtraFields());
     assertNotNull(sampleAsSeenByTestUser.getSubSamples());
+  }
+
+  @Test
+  public void updateOmittingRequestableMustNotClearIt() {
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("reqOwner"));
+    initialiseContentWithEmptyContent(owner);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+
+    ApiSample makeRequestable = new ApiSample();
+    makeRequestable.setId(sample.getId());
+    makeRequestable.setRequestable(true);
+    sampleApiMgr.updateApiSample(makeRequestable, owner);
+    assertTrue(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+
+    // a partial update that says nothing about requestable, as the UI sends when the
+    // requestable field is not among the currently editable fields
+    ApiSample renameOnly = new ApiSample();
+    renameOnly.setId(sample.getId());
+    renameOnly.setName("renamed, nothing to do with requesting");
+    sampleApiMgr.updateApiSample(renameOnly, owner);
+
+    assertTrue(
+        sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable(),
+        "an update that omits 'requestable' must not turn it off");
   }
 }

@@ -86,6 +86,7 @@ function printSettingsList() {
     _printSettings([ 'omero.available' ]);
     _printSettings([ 'pyrat.available' ]);
     _printSettings([ 'snapgene.available' ]);
+    _printSettings([ 'sampleRequests.available' ]);
 
     _printCategory(RS.msg("legacyjs.system.settingsCategory.researchMethodsAndProtocols"));
     _printSettings([ 'protocols_io.available' ]);

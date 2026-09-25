@@ -7,7 +7,7 @@ info:
     This variant additionally documents the beta **Instruments** and **Instrument Templates** endpoints.
 
     **Note:** To switch to the ELN API from the API docs, select **RSpace ELN** from the dropdown at the top of the navigation menu.
-  version: "2.14"
+  version: "2.27"
   license:
     name: AGPL-3.0 License
     url: https://www.gnu.org/licenses/agpl.html
@@ -1191,6 +1191,154 @@ paths:
             application/json:
               schema:
                 type: string
+  /sampleRequests:
+    get:
+      summary: Get sample requests involving the current User
+      description: >
+        Returns a paginated list of requests for material from Inventory Samples,
+        either raised by the current user, or awaiting them as the current owner of
+        the requested sample.
+
+        The approver is not stored on the request: it is always the requested
+        sample's current owner, so transferring a sample moves any open request
+        with it. Requests against a deleted sample are excluded.
+
+        | Request | Explanation |
+
+        | --- | --- |
+
+        /sampleRequests| Gets requests raised by the current user
+
+        /sampleRequests?role=OWNER&status=PENDING| Gets requests awaiting the current user, as owner of the requested samples
+
+        /sampleRequests?role=OWNER&sampleId=123| Gets requests made against the sample with id = 123, for its owner. Note role defaults to REQUESTER, so it is always ANDed with the sampleId filter.
+      tags:
+        - Sample Requests
+      parameters:
+        - $ref: "#/components/parameters/sampleRequestRoleParam"
+        - $ref: "#/components/parameters/sampleRequestStatusParam"
+        - $ref: "#/components/parameters/sampleRequestSampleIdParam"
+        - $ref: "#/components/parameters/pageNumberParam"
+        - $ref: "#/components/parameters/pageSizeParam"
+      responses:
+        "200":
+          description: >-
+            A list of SampleRequest summaries, always newest first. Ordering is
+            not configurable on this endpoint. These do not carry the
+            `statusChanges` history; fetch a single request to get it.
+    post:
+      summary: Raise a request for material from a Sample
+      description: >
+        Raises a request against a requestable Sample. The new request is always
+        created in PENDING state; changing that state is a separate operation.
+
+        Requires the `sampleRequests.available` system property to be enabled, and
+        the sample to be marked `requestable` by its owner. Read access to the
+        sample is not required: marking a sample requestable is the owner's opt-in 
+        to being asked by anyone, and requestable samples are discoverable 
+        instance-wide. A user cannot request material from a sample they own.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+
+        | --- | --- |
+
+        `{ "sampleGlobalId": "SA123", "note": "Need 2ml for the binding assay" }` | Raises a PENDING request against sample SA123, stating what is needed and why.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                sampleGlobalId: SA123
+                note: Need 2ml for the binding assay
+        description: >-
+          The global id of the sample to request from, and a free-text note
+          describing what is needed. Both are required.
+        required: true
+      tags:
+        - Sample Requests
+      responses:
+        "201":
+          description: The created request, in PENDING state.
+        "404":
+          description: >-
+            The sample does not exist, is not visible to the current user, or
+            sample requests are not enabled on this instance.
+        "422":
+          description: >-
+            The request is not valid: the sample is not marked requestable, is
+            owned by the current user, or the global id does not name a sample.
+  "/sampleRequests/{id}/status":
+    put:
+      summary: Move a sample request to a new status
+      description: >
+        Records a status transition and appends an entry to the request's
+        `statusChanges` history, noting who made the change and when.
+
+        Permitted transitions, actors and reasons:
+
+        | To | From | Who | Reason |
+
+        | --- | --- | --- | --- |
+
+        | APPROVED | PENDING | sample's current owner | not accepted |
+
+        | REJECTED | PENDING | sample's current owner | required |
+
+        | CANCELLED | PENDING | the requester | not accepted |
+
+        | FULFILLED | APPROVED | sample's current owner | not accepted |
+
+        REJECTED, CANCELLED and FULFILLED are terminal. PENDING is written only
+        when the request is raised and cannot be set here.
+      tags:
+        - Sample Requests
+      parameters:
+        - $ref: "#/components/parameters/sampleRequestIdParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                status: REJECTED
+                reason: Insufficient material left
+        description: The target status, and a reason when rejecting.
+        required: true
+      responses:
+        "200":
+          description: The updated request, including its extended status history.
+        "404":
+          description: >-
+            No such request, the caller is neither its requester nor the
+            sample's owner, or sample requests are not enabled on this instance.
+        "422":
+          description: >-
+            The caller is not the permitted actor for this transition, the
+            transition is not legal from the request's current status, or the
+            reason is missing on a rejection or supplied when not accepted.
+  "/sampleRequests/{id}":
+    get:
+      summary: Get a specific sample request
+      description: >
+        Returns a single request. Visible only to the requester and the current
+        owner of the requested sample. Any other user receives a 404, so that a
+        request's existence is not disclosed.
+      tags:
+        - Sample Requests
+      parameters:
+        - $ref: "#/components/parameters/sampleRequestIdParam"
+      responses:
+        "200":
+          description: >-
+            The sample request, including a `statusChanges` array giving its full
+            history oldest first. The first entry is always the PENDING entry for
+            the request's creation, so a client never has to reconstruct it from
+            `created` and `requester`. Each entry is
+            `{ id, status, created, createdBy, reason }`, where `reason` is
+            populated for a rejection.
+        "404":
+          $ref: "#/components/responses/NotFound"
   /subSamples:
     get:
       summary: Get all SubSamples visible to the current User
@@ -3776,6 +3924,46 @@ components:
       in: path
       required: true
       description: A unique identifier of the list of materials.
+      schema:
+        type: integer
+        format: int64
+    sampleRequestIdParam:
+      name: id
+      in: path
+      required: true
+      description: A unique identifier of the sample request.
+      schema:
+        type: integer
+        format: int64
+    sampleRequestRoleParam:
+      name: role
+      in: query
+      description: >-
+        Which side of the request to list. REQUESTER returns requests raised by
+        the current user, OWNER returns requests against samples they currently
+        own.
+      schema:
+        type: string
+        enum:
+          - REQUESTER
+          - OWNER
+        default: REQUESTER
+    sampleRequestStatusParam:
+      name: status
+      in: query
+      description: Limits results to requests in the given state.
+      schema:
+        type: string
+        enum:
+          - PENDING
+          - APPROVED
+          - REJECTED
+          - FULFILLED
+          - CANCELLED
+    sampleRequestSampleIdParam:
+      name: sampleId
+      in: query
+      description: Limits results to requests made against the sample with this id.
       schema:
         type: integer
         format: int64

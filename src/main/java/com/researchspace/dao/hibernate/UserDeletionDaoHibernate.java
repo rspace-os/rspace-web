@@ -311,6 +311,20 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
               table));
     }
 
+    // sample requests against this user's samples, and their status history. The actors are
+    // stored as usernames, so only the sample FK needs clearing here.
+    execute(
+        userId,
+        session,
+        "delete sc from SampleRequestStatusChange sc"
+            + " join SampleRequest sr on sc.sampleRequest_id = sr.id"
+            + " join Sample s on sr.sample_id = s.id where s.owner_id = :id");
+    execute(
+        userId,
+        session,
+        "delete sr from SampleRequest sr join Sample s on sr.sample_id = s.id"
+            + " where s.owner_id = :id");
+
     // set sample template FKs to null before deleting samples
     execute(userId, session, "update Sample set STemplate_id = NULL where owner_id=:id");
     execute(userId, session, "update Sample_AUD set STemplate_id = NULL where owner_id=:id");

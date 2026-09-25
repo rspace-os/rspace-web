@@ -37,6 +37,26 @@ public interface SampleDao extends SampleEntityDao<Sample> {
       User user);
 
   /**
+   * As {@link #getSamplesForUser(PaginationCriteria, Long, String, InventorySearchDeletedOption,
+   * User)}, but additionally optionally limits results to samples with a given {@code requestable}
+   * value.
+   *
+   * <p>When {@code requestable} is {@code true}, this is an instance-wide search across all Samples
+   * that are requestable, regardless of the given user's own permissions, ownership, or group
+   * membership: any user may see the existence of any sample flagged as requestable by its owner.
+   *
+   * @param requestable (optional) limits results to samples with a matching {@code requestable}
+   *     value; when {@code true}, bypasses the normal owner/group visibility restrictions entirely
+   */
+  ISearchResults<Sample> getSamplesForUser(
+      PaginationCriteria<Sample> pgCrit,
+      Long parentTemplateId,
+      String ownedBy,
+      InventorySearchDeletedOption deletedItemsOption,
+      Boolean requestable,
+      User user);
+
+  /**
    * Get a global id of a Sample that has a field with given id, or null if there is no such sample.
    */
   GlobalIdentifier getSampleGlobalIdFromFieldId(Long id);

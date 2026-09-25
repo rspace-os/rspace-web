@@ -17,6 +17,8 @@ public enum AuditDomain {
   INV_SUBSAMPLE,
   INV_CONTAINER,
   INV_INSTRUMENT,
+  /** Requests for inventory items, currently sample requests */
+  REQUEST,
   /** A general term for workspace/ all resources */
   WORKSPACE,
   /** Default fall-through domain */

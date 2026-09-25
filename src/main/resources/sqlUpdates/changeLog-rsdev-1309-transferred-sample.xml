@@ -1,0 +1,20 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-09-23a" context="run" author="mrowe-tan">
+        <comment>Record which sample a SampleRequestStatusChange fulfilled the request with, e.g.
+            the sample whose ownership was transferred, or a new sample created from it (RSDEV-1309).
+        </comment>
+
+        <addColumn tableName="SampleRequestStatusChange">
+            <column name="transferredSample_id" type="BIGINT">
+                <constraints nullable="true" foreignKeyName="fk_srsc_transferredsample"
+                             references="Sample(id)"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

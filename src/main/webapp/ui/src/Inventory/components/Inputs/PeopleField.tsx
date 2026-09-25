@@ -18,6 +18,24 @@ type PeopleFieldArgs = {
   outsideGroup?: boolean;
   recipient: PersonModel | null;
   excludedUsernames?: RsSet<Username>;
+  /**
+   * When set, the field offers only this one person as an option (no group
+   * members, no free-text search) rather than the caller's usual pool of
+   * choices. For use when exactly one recipient is already known to be
+   * correct and no other choice should be offered.
+   */
+  restrictToUser?: PersonModel;
+  /**
+   * Suppresses the dropdown auto-opening when the field receives focus.
+   * Kept separate from `restrictToUser`: a caller that pre-populates the
+   * recipient asynchronously (e.g. via an API lookup after mount) only has
+   * `restrictToUser` set on a later render, by which point the field's
+   * `autoFocus` has already fired against `openOnFocus`'s earlier value.
+   * This flag lets such a caller declare "don't auto-open" synchronously
+   * from the very first render, independent of when the restricted person
+   * itself resolves.
+   */
+  disableAutoOpen?: boolean;
 };
 
 /*
@@ -29,6 +47,8 @@ function PeopleField({
   outsideGroup = true,
   recipient,
   excludedUsernames,
+  restrictToUser,
+  disableAutoOpen,
 }: PeopleFieldArgs): ReactNode {
   const { t } = useTranslation("inventory");
   const {
@@ -49,7 +69,7 @@ function PeopleField({
   useEffect(() => {
     let isMounted = true;
     /* 1 - fetch and store group members */
-    if (peopleStore.currentUser) {
+    if (!restrictToUser && peopleStore.currentUser) {
       void peopleStore
         .fetchMembersOfSameGroup()
         .then((members) => {
@@ -78,7 +98,7 @@ function PeopleField({
   }, [peopleStore.currentUser]);
 
   const searchPeople = (searchTerm: string) => {
-    if (outsideGroup) {
+    if (outsideGroup && !restrictToUser) {
       peopleStore
         .searchPeople(searchTerm)
         .then((people) => {
@@ -90,20 +110,22 @@ function PeopleField({
     }
   };
 
-  const loading = peopleStore.groupMembers === null;
-  const allUsers = sortPeople(
-    [
-      ...unionWith<PersonModel, string>(
-        (x: PersonModel) => x.username,
+  const loading = !restrictToUser && peopleStore.groupMembers === null;
+  const allUsers = restrictToUser
+    ? [restrictToUser]
+    : sortPeople(
         [
-          peopleStore.groupMembers ?? new RsSet<PersonModel>(),
-          searchResults,
-          nullishToSingleton(peopleStore.currentUser),
+          ...unionWith<PersonModel, string>(
+            (x: PersonModel) => x.username,
+            [
+              peopleStore.groupMembers ?? new RsSet<PersonModel>(),
+              searchResults,
+              nullishToSingleton(peopleStore.currentUser),
+            ],
+          ).filter((u: PersonModel) => !(excludedUsernames ?? new RsSet<Username>()).has(u.username)),
         ],
-      ).filter((u: PersonModel) => !(excludedUsernames ?? new RsSet<Username>()).has(u.username)),
-    ],
-    { placeCurrentFirst: true },
-  );
+        { placeCurrentFirst: true },
+      );
 
   return (
     <Autocomplete<PersonModel>
@@ -143,7 +165,11 @@ function PeopleField({
       onChange={(_: React.SyntheticEvent, user: Person | null) => handleUserChange(user)}
       onInputChange={(_: React.SyntheticEvent, searchTerm: string) => searchPeople(searchTerm)}
       isOptionEqualToValue={(option: Person, value: Person) => option.username === value.username}
-      openOnFocus
+      // When restricted to a single, already-known-correct recipient, there's nothing useful
+      // to browse, so don't pop the (single-item) dropdown open as soon as the field focuses.
+      // `disableAutoOpen` is checked independently of `restrictToUser` itself, since a caller
+      // may only know the restricted person asynchronously, after this first render.
+      openOnFocus={!restrictToUser && !disableAutoOpen}
       loading={loading}
     />
   );

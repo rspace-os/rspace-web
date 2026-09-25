@@ -3762,6 +3762,7 @@ export default interface Resources {
         "myBench": "My Bench",
         "navigationLabel": "Inventory Sidebar Navigation",
         "otherActionsLabel": "Other places and action",
+        "requests": "Requests",
         "settings": "Settings"
       }
     },
@@ -4182,6 +4183,117 @@ export default interface Resources {
         "name": "Name"
       }
     },
+    "requestsManagement": {
+      "browserTitle": "Requests | RSpace Inventory",
+      "chips": {
+        "requests": "Requests: {value}",
+        "status": "Status: {value}"
+      },
+      "columns": {
+        "id": "Request ID",
+        "requester": "Requested by",
+        "sample": "Requested Sample",
+        "status": "Status",
+        "submitted": "Date Submitted"
+      },
+      "detail": {
+        "approveButton": "Approve",
+        "approvedButton": "✓ Approved",
+        "cancelRequestHint": "Cancel this request if you no longer require this material.",
+        "chooseMethodDialog": {
+          "body": "Choose how you wish to prepare the sample:",
+          "otherActiveRequestsWarning": "There are other requests against this sample that are either in the Pending or Approved states. These other requests will be closed automatically when this sample is transferred.",
+          "proceedButton": "Proceed",
+          "title": "Choose Sample to Prepare",
+          "transferOption": "Transfer the existing sample and all subsamples",
+          "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to user {requester}.",
+          "wizardOption": "Create a new sample derived from the existing sample"
+        },
+        "fields": {
+          "additionalNotes": "Notes from requester",
+          "approvedMessage": "This request has been approved by {owner}. The requested materials are now being prepared for transfer to you.",
+          "commentFromApprover": "Additional notes",
+          "loadingLocations": "Loading locations…",
+          "locationColumn": "Location",
+          "noComment": "No additional notes.",
+          "noNotes": "No notes provided.",
+          "noSubsamples": "This sample has no subsamples.",
+          "notInContainer": "Not in a container.",
+          "requester": "Requested by",
+          "sampleLocation": "Sample Locations",
+          "sampleLocationRestricted": "You do not have permission to view locations for subsamples of this sample. To gain full access, please contact the owner, {owner}.",
+          "sampleLocationTooltip": "Samples are located via their subsamples",
+          "sampleRequested": "Requested Sample",
+          "status": "Status",
+          "submitted": "Submitted",
+          "subsampleColumn": "Subsample",
+          "transferredSample": "Transferred Sample"
+        },
+        "fulfilDialog": {
+          "fulfilButton": "Fulfil",
+          "message": "Are you sure you want to fulfil this request without transferring any materials?"
+        },
+        "history": {
+          "columns": {
+            "additionalNotes": "Additional Notes",
+            "date": "Date",
+            "status": "Status",
+            "user": "User"
+          },
+          "sectionTitle": "Request History"
+        },
+        "markAsFulfilledButton": "Mark as Fulfilled",
+        "preparationHint": {
+          "approvedNoSelection": "Select a subsample from the list below to prepare the sample for transfer. Mark the request fulfilled if it has been handled outside of RSpace.",
+          "approvedSelected": "{subsample} can now be prepared for transfer to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
+          "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer."
+        },
+        "prepareDialog": {
+          "body": "Preparing {subsample} for transfer.",
+          "comingSoon": "Coming soon",
+          "nextButton": "Next",
+          "title": "Operations Wizard Step"
+        },
+        "prepareSampleButton": "Prepare Sample",
+        "rejectButton": "Reject",
+        "rejectDialog": {
+          "reasonLabel": "Provide a reason for rejecting this request.",
+          "rejectRequestButton": "Reject Request",
+          "title": "Confirm request rejection"
+        },
+        "sections": {
+          "approvalResult": "Request Status",
+          "approveReject": "Actions",
+          "details": "Details"
+        },
+        "statusHelp": {
+          "cancelled": "Closed by the requester. No action available.",
+          "fulfilled": "Closed. The requester can raise a new request from the sample.",
+          "rejected": "Closed. Your reason for rejecting is shown in the history."
+        },
+        "title": "Request {id}: {sampleName}",
+        "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
+      },
+      "feedback": "{count} sample requests found.",
+      "filters": {
+        "requests": {
+          "all": "All",
+          "label": "Requests",
+          "received": "Received",
+          "sent": "Sent"
+        },
+        "status": {
+          "active": "Open",
+          "all": "All",
+          "label": "Show",
+          "past": "Closed"
+        }
+      },
+      "landmark": "Requests",
+      "noResults": "No requests found.",
+      "noSelection": "Select a request to see its details.",
+      "pageTitle": "Requests"
+    },
     "sample": {
       "alerts": {
         "updateToLatestFailed": "Updating sample to latest template failed.",
@@ -4299,6 +4411,26 @@ export default interface Resources {
       "imageAlt": "What the sample looks like",
       "newImageAlt": "What the new sample looks like",
       "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
+      "requestMaterialSection": {
+        "cancelRequestButton": "Cancel",
+        "compactDescription": "{owner} reviews each request before producing material.",
+        "compactTitle": "Request this sample",
+        "dialogTitle": "Request {sampleName}",
+        "notAvailableBody": "The owner has not made this sample requestable.",
+        "notAvailableHeader": "Not available for request",
+        "pendingDescription": "Waiting for {owner} to review your request",
+        "pendingSentText": "Sent {date} - waiting for {owner}",
+        "requestSampleButton": "Request Sample",
+        "reviewText": "Ask {owner} for material from this sample. They review each request and decide what to produce; you will be notified once it is approved or rejected.",
+        "sendRequestButton": "Send Request",
+        "whatYouNeedHelperText": "e.g. 5 µg for transfection of HEK293 cells, needed by 25 Sep",
+        "whatYouNeedLabel": "Describe your request"
+      },
+      "requestsSection": {
+        "description": "Let others request material from this sample. You review every request.",
+        "switchLabel": "Requestable",
+        "title": "Sample requests"
+      },
       "subsamplesSection": {
         "tapToPreview": "Tap one of the {plural} in the search section to preview it below.",
         "title": "{count} {alias}"
@@ -4366,6 +4498,11 @@ export default interface Resources {
           "helperText": "Please enter a unique name, no longer than 32 characters.",
           "invalidLength": "Please enter minimum 1 and maximum 32 characters.",
           "name": "Name"
+        },
+        "requestable": {
+          "label": "Requestable",
+          "no": "All items",
+          "yes": "Requestable only"
         },
         "saveSearch": {
           "defaultName": "New saved search",
@@ -4462,6 +4599,7 @@ export default interface Resources {
         "benchOwner": "Bench Owner: {owner}",
         "contentsOf": "Contents of: {globalId}",
         "owner": "Owner: {owner}",
+        "requestable": "Requestable only",
         "status": "Status: {status}",
         "type": "Type: {type}",
         "unknown": "Unknown"
@@ -6967,6 +7105,22 @@ export default interface Resources {
           "templateNotFound": "No sample template with id: {0}",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
+        "sampleRequest": {
+          "illegalTransition": "A sample request cannot move from {0} to {1}.",
+          "notEnabled": "Sample requests are not enabled on this RSpace instance.",
+          "notRequestable": "Sample {0} is not available to request.",
+          "ownSample": "You cannot request material from a sample that you own.",
+          "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
+          "reasonRequired": "A reason is required when rejecting a request.",
+          "role": {
+            "invalid": "Requested role must be one of: REQUESTER or OWNER"
+          },
+          "status": {
+            "invalid": "Requested status must be one of: PENDING, APPROVED, REJECTED, FULFILLED or CANCELLED"
+          },
+          "statusNotSettable": "A sample request cannot be set to {0}.",
+          "wrongActor": "You are not permitted to make this change to the request."
+        },
         "search": {
           "deletedItems": {
             "invalid": "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY"
@@ -7056,6 +7210,9 @@ export default interface Resources {
       },
       "listOfMaterials": {
         "label": "List of materials"
+      },
+      "sampleRequest": {
+        "autoRejectedReason": "This request has been cancelled as a result of the sample being transferred to user {0}. If you still need this sample make another request for the new owner to action."
       }
     }
   },
@@ -8871,6 +9028,7 @@ export default interface Resources {
           "pyratAvailable": "Makes PyRAT integration available. After enabling the integration, users can link to animals in the PyRAT database.",
           "raidAvailable": "Enables RAiD integration. After enabling the integration, users can set up their RAiD accounts through the 'Apps' page",
           "repoAvailable": "Makes {0} repository integration available. After enabling, users can submit exports to a {0} repository.",
+          "sampleRequestsAvailable": "Enables the ability for users to request and transfer samples.",
           "selfServiceLabgroups": "When true, a user with permissions (e.g. a PI) can create a LabGroup.",
           "slackAvailable": "Makes Slack integration available to the users. After enabling the integration, user can connect to their Slack channels to send messages or forward notifications",
           "snapgeneAvailable": "Enables Snapgene viewer for DNA sequence files. This must only be enabled if the deployment property'snapgene.web.url' is configured to point at an RSpace-Snapgene web-service.",

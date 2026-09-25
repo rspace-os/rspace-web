@@ -4,16 +4,21 @@ import { omit } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DropdownButton from "../../../components/DropdownButton";
 import TagsCombobox from "../../../components/Tags/TagsCombobox";
+import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
 import type { Tag } from "../../../stores/definitions/Tag";
 import type BasketModel from "../../../stores/models/Basket";
 import type { SavedSearch } from "../../../stores/stores/SearchStore";
 import useStores from "../../../stores/use-stores";
+import * as FetchingData from "../../../util/fetchingData";
+import * as Parser from "../../../util/parsers";
 import RsSet from "../../../util/set";
 import PeopleField from "../../components/Inputs/PeopleField";
+import RequestableFilter from "./RequestableFilter";
 import SavedList from "./SavedList";
 import StatusFilter from "./StatusFilter";
 import TypeFilter from "./TypeFilter";
@@ -54,7 +59,8 @@ const Panel = ({ anchorEl, children, onClose }: PanelProps) => (
 export type SavedItem = SavedSearch | BasketModel;
 
 function SearchParameterControls(): React.ReactNode {
-  const { searchStore } = useStores();
+  const { t } = useTranslation("inventory");
+  const { searchStore, peopleStore } = useStores();
   const { search } = useContext(SearchContext);
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -66,6 +72,21 @@ function SearchParameterControls(): React.ReactNode {
   const [savedSearchesDropdown, setSavedSearchesDropdown] = useState<HTMLElement | null>(null);
   const [savedBasketsDropdown, setSavedBasketsDropdown] = useState<HTMLElement | null>(null);
   const [tagsDropdown, setTagsDropdown] = useState<HTMLElement | null>(null);
+  const [requestableDropdown, setRequestableDropdown] = useState<HTMLElement | null>(null);
+
+  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+    .flatMap(Parser.isString)
+    .map((value) => value === "ALLOWED")
+    .orElse(false);
+
+  // "Requestable" only makes sense when viewing Samples, whether via the Samples
+  // listing or the current user's own bench (which is itself just a Samples listing).
+  const samplesSelected = !search.fetcher.parentGlobalId && search.fetcher.resultType === "SAMPLE";
+  const myBenchSelected =
+    search.benchSearch &&
+    peopleStore.currentUser != null &&
+    search.fetcher.parentGlobalId === `BE${peopleStore.currentUser.workbenchId}`;
+  const showRequestable = sampleRequestsAvailable && (samplesSelected || myBenchSelected);
 
   return (
     <Grid container direction="row" spacing={1}>
@@ -238,6 +259,23 @@ function SearchParameterControls(): React.ReactNode {
           }}
         />
       </DropdownButton>
+      {showRequestable && (
+        <DropdownButton
+          name={t("search.controls.requestable.label")}
+          onClick={({ target }) => {
+            setRequestableDropdown(target as HTMLElement);
+          }}
+        >
+          <RequestableFilter
+            anchorEl={requestableDropdown}
+            current={search.fetcher.requestable}
+            onClose={(value) => {
+              setRequestableDropdown(null);
+              if (search.fetcher.requestable !== value) search.setRequestable(value);
+            }}
+          />
+        </DropdownButton>
+      )}
     </Grid>
   );
 }

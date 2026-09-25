@@ -47,6 +47,7 @@ import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleRequestApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
@@ -59,6 +60,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service("sampleApiManager")
@@ -74,15 +76,29 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
 
+  // Lazy: SampleRequestApiManagerImpl depends back on SampleApiManager, so eager injection here
+  // would form a cycle at context startup.
+  @Autowired @Lazy private SampleRequestApiManager sampleRequestApiManager;
+
   @Override
   public ApiSampleSearchResult getSamplesForUser(
       PaginationCriteria<Sample> pgCrit,
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
       User user) {
+    return getSamplesForUser(pgCrit, ownedBy, deletedOption, null, user);
+  }
+
+  @Override
+  public ApiSampleSearchResult getSamplesForUser(
+      PaginationCriteria<Sample> pgCrit,
+      String ownedBy,
+      InventorySearchDeletedOption deletedOption,
+      Boolean requestable,
+      User user) {
 
     ISearchResults<Sample> dbSamples =
-        sampleDao.getSamplesForUser(pgCrit, null, ownedBy, deletedOption, user);
+        sampleDao.getSamplesForUser(pgCrit, null, ownedBy, deletedOption, requestable, user);
     List<ApiSampleInfo> sampleInfos = new ArrayList<>();
     for (Sample sample : dbSamples.getResults()) {
       ApiSampleInfo apiSample = new ApiSampleInfo(sample);
@@ -642,6 +658,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
           dbSample = sampleDao.saveAndReindexSubSamples((Sample) dbSample);
         }
         publisher.publishEvent(new InventoryTransferEvent(dbSample, user, originalOwner, newOwner));
+        if (!dbSample.isSampleTemplate()) {
+          sampleRequestApiManager.autoRejectActiveRequestsForTransferredSample(
+              dbSample.getId(), user, newOwner);
+        }
       }
     } finally {
       if (temporaryLock) {

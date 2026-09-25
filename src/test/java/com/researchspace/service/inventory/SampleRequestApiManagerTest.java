@@ -1,0 +1,767 @@
+package com.researchspace.service.inventory;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleRequest;
+import com.researchspace.api.v1.model.ApiSampleRequestInfo;
+import com.researchspace.api.v1.model.ApiSampleRequestPost;
+import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiUser;
+import com.researchspace.dao.SampleRequestDao;
+import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.User;
+import com.researchspace.model.events.SampleRequestStatusEvent;
+import com.researchspace.model.inventory.SampleRequest;
+import com.researchspace.model.inventory.SampleRequestRole;
+import com.researchspace.model.inventory.SampleRequestStatus;
+import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.testutils.SpringTransactionalTest;
+import jakarta.ws.rs.NotFoundException;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+
+public class SampleRequestApiManagerTest extends SpringTransactionalTest {
+
+  private @Autowired SampleRequestApiManager sampleRequestApiMgr;
+  private @Autowired SystemPropertyManager systemPropertyMgr;
+  private @Autowired SampleRequestDao sampleRequestDao;
+  private @Autowired ApplicationEventPublisher realPublisher;
+
+  private User owner;
+  private User requester;
+  private ApiSampleWithFullSubSamples sample;
+
+  @BeforeEach
+  public void setUp() throws Exception {
+    super.setUp();
+    requester = createAndSaveAPi();
+    owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    initialiseContentWithEmptyContent(requester, owner);
+    createGroupForUsers(requester, requester.getUsername(), "", requester, owner);
+
+    sample = createBasicSampleForUser(owner);
+    markRequestable(sample);
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
+  }
+
+  @AfterEach
+  public void restorePublisher() {
+    sampleRequestApiMgr.setPublisher(realPublisher);
+  }
+
+  @Test
+  public void createRequest_publishesStatusEventForAuditing() {
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+    sampleRequestApiMgr.setPublisher(mockPublisher);
+
+    ApiSampleRequest created = raiseRequest("Need 2ml for the binding assay");
+
+    ArgumentCaptor<SampleRequestStatusEvent> published =
+        ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
+    Mockito.verify(mockPublisher).publishEvent(published.capture());
+    assertEquals(created.getId(), published.getValue().getRequest().getId());
+    assertEquals(SampleRequestStatus.PENDING, published.getValue().getRequest().getStatus());
+    assertEquals(requester, published.getValue().getActor());
+  }
+
+  @Test
+  public void updateStatus_publishesStatusEventForAuditing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    // installed after raising, so only the transition's event is captured
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+    sampleRequestApiMgr.setPublisher(mockPublisher);
+
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ArgumentCaptor<SampleRequestStatusEvent> published =
+        ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
+    Mockito.verify(mockPublisher).publishEvent(published.capture());
+    assertEquals(raised.getId(), published.getValue().getRequest().getId());
+    assertEquals(SampleRequestStatus.APPROVED, published.getValue().getRequest().getStatus());
+    assertEquals(owner, published.getValue().getActor());
+  }
+
+  @Test
+  public void refusedTransitionPublishesNothingToAudit() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+    sampleRequestApiMgr.setPublisher(mockPublisher);
+
+    // the requester may not approve their own request
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), requester));
+
+    Mockito.verifyNoInteractions(mockPublisher);
+  }
+
+  @Test
+  public void createRequest_persistsPendingRequestAgainstSample() {
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    post.setSampleGlobalId(sample.getGlobalId());
+    post.setNote("Need 2ml for the binding assay");
+
+    ApiSampleRequest created = sampleRequestApiMgr.createRequest(post, requester);
+
+    assertNotNull(created.getId());
+    assertEquals(SampleRequestStatus.PENDING, created.getStatus());
+    assertEquals("Need 2ml for the binding assay", created.getNote());
+    assertEquals(sample.getGlobalId(), created.getSample().getGlobalId());
+    assertEquals(requester.getUsername(), created.getRequester().getUsername());
+    assertEquals(owner.getUsername(), created.getOriginalOwner().getUsername());
+  }
+
+  @Test
+  public void originalOwner_isUnaffectedByALaterOwnershipTransfer() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // originalOwner is fixed at creation time, so it still names the owner at the time the
+    // request was raised, not the sample's current (now transferred-away) owner
+    ApiSampleRequest reloaded = sampleRequestApiMgr.getRequestById(raised.getId(), requester);
+    assertEquals(owner.getUsername(), reloaded.getOriginalOwner().getUsername());
+  }
+
+  @Test
+  public void getRequestsForUser_asRequester_returnsOwnRequests() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequestSearchResult results = listFor(SampleRequestRole.REQUESTER, requester);
+
+    assertEquals(1L, results.getTotalHits().longValue());
+    assertEquals(raised.getId(), results.getRequests().get(0).getId());
+  }
+
+  @Test
+  public void getRequestsForUser_asSampleOwner_returnsRequestsAgainstOwnedSamples() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequestSearchResult ownersView = listFor(SampleRequestRole.OWNER, owner);
+    assertEquals(1L, ownersView.getTotalHits().longValue());
+    assertEquals(raised.getId(), ownersView.getRequests().get(0).getId());
+
+    // the requester owns no requested sample, so nothing is awaiting them
+    assertEquals(0L, listFor(SampleRequestRole.OWNER, requester).getTotalHits().longValue());
+  }
+
+  @Test
+  public void getRequestsForUser_ownerRole_usesOriginalOwnerRatherThanTheSamplesCurrentOwner() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // the original owner still sees the request under "Received": they were the one asked,
+    // regardless of who owns the sample now
+    ApiSampleRequestSearchResult originalOwnersView = listFor(SampleRequestRole.OWNER, owner);
+    assertEquals(1L, originalOwnersView.getTotalHits().longValue());
+    assertEquals(raised.getId(), originalOwnersView.getRequests().get(0).getId());
+
+    // the sample's new owner does not: they were never asked for anything
+    assertEquals(0L, listFor(SampleRequestRole.OWNER, newOwner).getTotalHits().longValue());
+  }
+
+  @Test
+  public void changeApiSampleOwner_autoRejectsOtherActiveRequestsAgainstTheSample() {
+    ApiSampleRequest beingFulfilled = raiseRequest("Need 2ml for the binding assay");
+    ApiSampleRequest otherPending = raiseRequestAgainst(sample, "Need 1ml too");
+    ApiSampleRequest otherApproved = raiseRequestAgainst(sample, "Need 3ml as well");
+    sampleRequestApiMgr.updateStatus(
+        otherApproved.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    // matches the UI's own ordering: the request actually being fulfilled is marked FULFILLED
+    // before the transfer, so it's no longer PENDING/APPROVED by the time the transfer runs
+    sampleRequestApiMgr.updateStatus(
+        beingFulfilled.getId(), statusPost(SampleRequestStatus.FULFILLED, null), owner);
+
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // viewed as the original owner: still party to the request even though the sample has since
+    // moved on to newOwner, so the reason for the auto-rejection is visible to them too
+    assertEquals(
+        SampleRequestStatus.FULFILLED,
+        sampleRequestApiMgr.getRequestById(beingFulfilled.getId(), owner).getStatus());
+
+    // the other PENDING and APPROVED requests are auto-rejected, with a reason naming the new
+    // owner
+    for (ApiSampleRequest other : List.of(otherPending, otherApproved)) {
+      ApiSampleRequest reloaded = sampleRequestApiMgr.getRequestById(other.getId(), owner);
+      assertEquals(SampleRequestStatus.REJECTED, reloaded.getStatus());
+      ApiSampleRequestStatusChange latest =
+          reloaded.getStatusChanges().get(reloaded.getStatusChanges().size() - 1);
+      assertEquals(SampleRequestStatus.REJECTED, latest.getStatus());
+      assertTrue(
+          latest.getReason().contains(newOwner.getFirstName() + " " + newOwner.getLastName()),
+          "reason missing new owner's name: " + latest.getReason());
+    }
+  }
+
+  @Test
+  public void getRequestsForUser_multipleRequesters_returnsEachRequestsOwnRequesterInfo() {
+    User secondRequester =
+        createAndSaveUserIfNotExists(getRandomAlphabeticString("secondRequester"));
+    ApiSampleRequest fromFirst = raiseRequestAs(requester);
+    ApiSampleRequest fromSecond = raiseRequestAs(secondRequester);
+
+    ApiSampleRequestSearchResult ownersView = listFor(SampleRequestRole.OWNER, owner);
+
+    assertEquals(2L, ownersView.getTotalHits().longValue());
+    ApiSampleRequestInfo listedFirst =
+        ownersView.getRequests().stream()
+            .filter(r -> r.getId().equals(fromFirst.getId()))
+            .findFirst()
+            .orElseThrow();
+    ApiSampleRequestInfo listedSecond =
+        ownersView.getRequests().stream()
+            .filter(r -> r.getId().equals(fromSecond.getId()))
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals(requester.getUsername(), listedFirst.getRequester().getUsername());
+    assertEquals(secondRequester.getUsername(), listedSecond.getRequester().getUsername());
+  }
+
+  @Test
+  public void getRequestsForUser_nullRole_returnsBothSentAndReceivedRequests() {
+    ApiSampleRequest sent = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleWithFullSubSamples requesterOwnedSample = createBasicSampleForUser(requester);
+    ApiSample requesterOwnedSampleUpdate = new ApiSample();
+    requesterOwnedSampleUpdate.setId(requesterOwnedSample.getId());
+    requesterOwnedSampleUpdate.setRequestable(true);
+    sampleApiMgr.updateApiSample(requesterOwnedSampleUpdate, requester);
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    post.setSampleGlobalId(requesterOwnedSample.getGlobalId());
+    post.setNote("Need 1ml of yours");
+    ApiSampleRequest received = sampleRequestApiMgr.createRequest(post, owner);
+
+    ApiSampleRequestSearchResult results = listFor(null, requester);
+
+    assertEquals(2L, results.getTotalHits().longValue());
+    assertTrue(results.getRequests().stream().anyMatch(r -> r.getId().equals(sent.getId())));
+    assertTrue(results.getRequests().stream().anyMatch(r -> r.getId().equals(received.getId())));
+
+    // OWNER-only ("Received") must exclude the request requester themselves sent elsewhere
+    ApiSampleRequestSearchResult receivedOnly = listFor(SampleRequestRole.OWNER, requester);
+    assertEquals(1L, receivedOnly.getTotalHits().longValue());
+    assertEquals(received.getId(), receivedOnly.getRequests().get(0).getId());
+
+    // REQUESTER-only ("Sent") must exclude the request requester received as an owner
+    ApiSampleRequestSearchResult sentOnly = listFor(SampleRequestRole.REQUESTER, requester);
+    assertEquals(1L, sentOnly.getTotalHits().longValue());
+    assertEquals(sent.getId(), sentOnly.getRequests().get(0).getId());
+  }
+
+  @Test
+  public void getRequestsForUser_ownerRole_excludesCallersOwnRequestEvenIfTheyNowOwnTheSample() {
+    ApiSampleRequest ownRequest = raiseRequest("Need 2ml for the binding assay");
+
+    // simulate the sample being transferred to the requester (e.g. as part of fulfilling
+    // someone else's request against it): requester now owns the sample they themselves
+    // once requested material from
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // "Received" must not show requester's own request back to them, even though they are
+    // now, technically, the sample's owner
+    assertEquals(0L, listFor(SampleRequestRole.OWNER, requester).getTotalHits().longValue());
+
+    // it still counts as one of requester's requests overall
+    ApiSampleRequestSearchResult all = listFor(null, requester);
+    assertEquals(1L, all.getTotalHits().longValue());
+    assertEquals(ownRequest.getId(), all.getRequests().get(0).getId());
+  }
+
+  @Test
+  public void getRequestsForUser_returnsNewestFirst() {
+    ApiSampleRequest older = raiseRequest("raised first");
+    ApiSampleRequest newer = raiseRequest("raised second");
+
+    List<ApiSampleRequestInfo> listed =
+        listFor(SampleRequestRole.REQUESTER, requester).getRequests();
+
+    assertEquals(2, listed.size());
+    assertEquals(newer.getId(), listed.get(0).getId(), "the most recent request comes first");
+    assertEquals(older.getId(), listed.get(1).getId());
+  }
+
+  @Test
+  public void getRequestsForUser_filteredBySample_returnsOnlyThatSamplesRequests() {
+    ApiSampleWithFullSubSamples otherSample = createBasicSampleForUser(owner);
+    markRequestable(otherSample);
+    ApiSampleRequest onFirst = raiseRequest("Need 2ml for the binding assay");
+    raiseRequestAgainst(otherSample, "Need 5ml of the other one");
+
+    ApiSampleRequestSearchResult results =
+        sampleRequestApiMgr.getRequestsForUser(
+            PaginationCriteria.createDefaultForClass(SampleRequest.class),
+            SampleRequestRole.OWNER,
+            null,
+            onFirst.getSample().getId(),
+            owner);
+
+    assertEquals(1L, results.getTotalHits().longValue());
+    assertEquals(onFirst.getId(), results.getRequests().get(0).getId());
+  }
+
+  @Test
+  public void getRequestsForUser_filteredByMultipleStatuses_returnsOnlyMatchingStatuses() {
+    ApiSampleRequest pending = raiseRequest("Need 2ml for the binding assay");
+    ApiSampleRequest toReject = raiseRequest("Need 5ml for another assay");
+    SampleRequest rejectedEntity = sampleRequestDao.get(toReject.getId());
+    rejectedEntity.setStatus(SampleRequestStatus.REJECTED);
+    sampleRequestDao.save(rejectedEntity);
+
+    ApiSampleRequestSearchResult activeOnly =
+        sampleRequestApiMgr.getRequestsForUser(
+            PaginationCriteria.createDefaultForClass(SampleRequest.class),
+            SampleRequestRole.REQUESTER,
+            Set.of(SampleRequestStatus.PENDING, SampleRequestStatus.APPROVED),
+            null,
+            requester);
+
+    assertEquals(1L, activeOnly.getTotalHits().longValue());
+    assertEquals(pending.getId(), activeOnly.getRequests().get(0).getId());
+
+    ApiSampleRequestSearchResult pastOnly =
+        sampleRequestApiMgr.getRequestsForUser(
+            PaginationCriteria.createDefaultForClass(SampleRequest.class),
+            SampleRequestRole.REQUESTER,
+            Set.of(
+                SampleRequestStatus.REJECTED,
+                SampleRequestStatus.FULFILLED,
+                SampleRequestStatus.CANCELLED),
+            null,
+            requester);
+
+    assertEquals(1L, pastOnly.getTotalHits().longValue());
+    assertEquals(toReject.getId(), pastOnly.getRequests().get(0).getId());
+  }
+
+  @Test
+  public void createRequest_isAllowedForAUserWhoCannotReadTheSample() {
+    // marking a sample requestable is the owner's opt-in to being asked by anyone, so discovery
+    // is instance-wide and read permission is deliberately not required here
+    User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
+    initialiseContentWithEmptyContent(outsider);
+    // the premise: this user genuinely cannot read the sample
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleApiMgr.assertUserCanReadSample(sample.getId(), outsider));
+
+    ApiSampleRequest raised = raiseRequestAs(outsider);
+
+    assertEquals(SampleRequestStatus.PENDING, raised.getStatus());
+    assertEquals(outsider.getUsername(), raised.getRequester().getUsername());
+  }
+
+  @Test
+  public void createRequest_isRefusedWhenSampleIsNotRequestable() {
+    ApiSampleWithFullSubSamples notRequestable = createBasicSampleForUser(owner);
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () -> raiseRequestAgainst(notRequestable, "not published for requests"));
+  }
+
+  @Test
+  public void createRequest_isRefusedWhenRequesterOwnsTheSample() {
+    assertThrows(ApiRuntimeException.class, () -> raiseRequestAs(owner));
+  }
+
+  @Test
+  public void getRequestById_isVisibleToRequesterAndSampleOwnerOnly() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
+    initialiseContentWithEmptyContent(outsider);
+
+    assertEquals(
+        raised.getId(), sampleRequestApiMgr.getRequestById(raised.getId(), requester).getId());
+    assertEquals(raised.getId(), sampleRequestApiMgr.getRequestById(raised.getId(), owner).getId());
+
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.getRequestById(raised.getId(), outsider));
+  }
+
+  @Test
+  public void getRequestById_remainsVisibleToTheOriginalOwnerAfterATransfer() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    // the original owner keeps seeing this in their "Received" listing (originalOwner is fixed
+    // at creation), so they must still be able to open it
+    assertEquals(raised.getId(), sampleRequestApiMgr.getRequestById(raised.getId(), owner).getId());
+
+    // the sample's new (current) owner can see it too, e.g. to review requests they've inherited
+    assertEquals(
+        raised.getId(), sampleRequestApiMgr.getRequestById(raised.getId(), newOwner).getId());
+  }
+
+  @Test
+  public void getRequestsForUser_excludesRequestsAgainstDeletedSamples() {
+    raiseRequest("Need 2ml for the binding assay");
+    sampleApiMgr.markSampleAsDeleted(sample.getId(), true, owner);
+
+    assertEquals(0L, listFor(SampleRequestRole.OWNER, owner).getTotalHits().longValue());
+    assertEquals(0L, listFor(SampleRequestRole.REQUESTER, requester).getTotalHits().longValue());
+  }
+
+  @Test
+  public void createRequest_isRefusedWhenSampleRequestsDisabled() {
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+
+    assertThrows(UnsupportedOperationException.class, () -> raiseRequestAs(requester));
+  }
+
+  @Test
+  public void updateStatus_isRefusedWhenSampleRequestsDisabled() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner));
+  }
+
+  @Test
+  public void getRequestById_reportsCreationAsAPendingStatusChange() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest fetched = sampleRequestApiMgr.getRequestById(raised.getId(), requester);
+
+    assertEquals(1, fetched.getStatusChanges().size());
+    ApiSampleRequestStatusChange creation = fetched.getStatusChanges().get(0);
+    assertNotNull(creation.getId(), "the creation entry must be a persisted row, not synthesised");
+    assertEquals(SampleRequestStatus.PENDING, creation.getStatus());
+    assertEquals(requester.getUsername(), creation.getCreatedBy().getUsername());
+    assertEquals(fetched.getCreatedMillis(), creation.getCreatedMillis());
+  }
+
+  @Test
+  public void createRequest_isRefusedForANonSampleGlobalId() {
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    // a container global id whose db id happens to match a real sample must not be accepted
+    post.setSampleGlobalId("IC" + sample.getId());
+    post.setNote("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class, () -> sampleRequestApiMgr.createRequest(post, requester));
+  }
+
+  @Test
+  public void getRequestsForUser_isRefusedWhenSampleRequestsDisabled() {
+    raiseRequest("Need 2ml for the binding assay");
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+
+    assertThrows(
+        UnsupportedOperationException.class, () -> listFor(SampleRequestRole.REQUESTER, requester));
+  }
+
+  @Test
+  public void getRequestById_isRefusedWhenSampleRequestsDisabled() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> sampleRequestApiMgr.getRequestById(raised.getId(), requester));
+  }
+
+  @Test
+  public void updateStatus_ownerApprovesPendingRequest() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest approved =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    assertEquals(SampleRequestStatus.APPROVED, approved.getStatus());
+    assertEquals(2, approved.getStatusChanges().size());
+    ApiSampleRequestStatusChange latest = approved.getStatusChanges().get(1);
+    assertEquals(SampleRequestStatus.APPROVED, latest.getStatus());
+    assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
+    assertNull(latest.getReason());
+  }
+
+  @Test
+  public void updateStatus_ownerRejectsWithAReasonStoredOnTheRow() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest rejected =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(),
+            statusPost(SampleRequestStatus.REJECTED, "Insufficient material left"),
+            owner);
+
+    assertEquals(SampleRequestStatus.REJECTED, rejected.getStatus());
+    ApiSampleRequestStatusChange latest = rejected.getStatusChanges().get(1);
+    assertEquals("Insufficient material left", latest.getReason());
+    assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
+  }
+
+  @Test
+  public void updateStatus_rejectionWithoutAReasonIsRefused() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.REJECTED, "  "), owner));
+  }
+
+  @Test
+  public void updateStatus_reasonOnANonRejectionIsRefused() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(),
+                statusPost(SampleRequestStatus.APPROVED, "no reason expected here"),
+                owner));
+  }
+
+  @Test
+  public void updateStatus_requesterCancelsTheirOwnPendingRequest() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest cancelled =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.CANCELLED, null), requester);
+
+    assertEquals(SampleRequestStatus.CANCELLED, cancelled.getStatus());
+    assertEquals(
+        requester.getUsername(), cancelled.getStatusChanges().get(1).getCreatedBy().getUsername());
+  }
+
+  @Test
+  public void updateStatus_isRefusedForTheWrongActor() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    // the requester cannot approve their own request
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), requester));
+
+    // and the owner cannot withdraw it on the requester's behalf
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.CANCELLED, null), owner));
+  }
+
+  @Test
+  public void updateStatus_isRefusedForAnIllegalTransition() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    // approving twice is not legal, the request is no longer PENDING
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner));
+
+    // APPROVED to FULFILLED is legal, and FULFILLED is terminal
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null), owner);
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.REJECTED, "too late"), owner));
+  }
+
+  @Test
+  public void updateStatus_ownerFulfilsPendingRequestDirectly() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    // FULFILLED is reachable directly from PENDING, skipping a separate approval step
+    ApiSampleRequest fulfilled =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null), owner);
+
+    assertEquals(SampleRequestStatus.FULFILLED, fulfilled.getStatus());
+    ApiSampleRequestStatusChange latest = fulfilled.getStatusChanges().get(1);
+    assertEquals(SampleRequestStatus.FULFILLED, latest.getStatus());
+    assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
+    assertNull(latest.getReason());
+
+    // FULFILLED is terminal either way it was reached
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.REJECTED, "too late"), owner));
+  }
+
+  @Test
+  public void updateStatus_requesterCannotFulfilTheirOwnPendingRequest() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null), requester));
+  }
+
+  @Test
+  public void updateStatus_cannotSetPendingExplicitly() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.PENDING, null), owner));
+  }
+
+  @Test
+  public void updateStatus_transferredSampleIsStoredOnTheStatusChange() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest fulfilled =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null, sample.getId()), owner);
+
+    ApiSampleRequestStatusChange latest =
+        fulfilled.getStatusChanges().get(fulfilled.getStatusChanges().size() - 1);
+    assertEquals(SampleRequestStatus.FULFILLED, latest.getStatus());
+    assertNotNull(latest.getTransferredSample());
+    assertEquals(sample.getId(), latest.getTransferredSample().getId());
+  }
+
+  @Test
+  public void updateStatus_transferredSampleIsAbsentWhenNotSupplied() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest approved =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ApiSampleRequestStatusChange latest =
+        approved.getStatusChanges().get(approved.getStatusChanges().size() - 1);
+    assertNull(latest.getTransferredSample());
+  }
+
+  @Test
+  public void updateStatus_unknownTransferredSampleIsRefused() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(),
+                statusPost(SampleRequestStatus.FULFILLED, null, Long.MAX_VALUE),
+                owner));
+  }
+
+  private ApiSampleRequestStatusPut statusPost(SampleRequestStatus status, String reason) {
+    return statusPost(status, reason, null);
+  }
+
+  private ApiSampleRequestStatusPut statusPost(
+      SampleRequestStatus status, String reason, Long transferredSample) {
+    ApiSampleRequestStatusPut post = new ApiSampleRequestStatusPut();
+    post.setStatus(status);
+    post.setReason(reason);
+    post.setTransferredSample(transferredSample);
+    return post;
+  }
+
+  private void markRequestable(ApiSampleWithFullSubSamples target) {
+    ApiSample update = new ApiSample();
+    update.setId(target.getId());
+    update.setRequestable(true);
+    sampleApiMgr.updateApiSample(update, owner);
+  }
+
+  private ApiSampleRequest raiseRequestAs(User user) {
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    post.setSampleGlobalId(sample.getGlobalId());
+    post.setNote("Need 2ml for the binding assay");
+    return sampleRequestApiMgr.createRequest(post, user);
+  }
+
+  private ApiSampleRequest raiseRequest(String note) {
+    return raiseRequestAgainst(sample, note);
+  }
+
+  private ApiSampleRequest raiseRequestAgainst(ApiSampleWithFullSubSamples target, String note) {
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    post.setSampleGlobalId(target.getGlobalId());
+    post.setNote(note);
+    return sampleRequestApiMgr.createRequest(post, requester);
+  }
+
+  private ApiSampleRequestSearchResult listFor(SampleRequestRole role, User user) {
+    return sampleRequestApiMgr.getRequestsForUser(
+        PaginationCriteria.createDefaultForClass(SampleRequest.class), role, null, null, user);
+  }
+}
