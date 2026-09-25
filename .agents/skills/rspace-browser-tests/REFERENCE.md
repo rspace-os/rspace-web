@@ -96,12 +96,14 @@ document/page divs, the TinyMCE contenteditable iframe body.
 
 ## Gotcha catalogue
 
-- **MSW worker lifecycle.** One origin-global service worker, started once in
-  `browserSetup.ts` and never stopped. Files run serially (`fileParallelism:
-  false`) so `worker.use()`/`resetHandlers()` never race. Adding `worker.stop()`
-  in a teardown deactivates interception for later files and 404s them
-  (cross-file flakiness). Files after the first call `worker.start()` redundantly;
-  that warning is silenced in `browserSetup.ts`.
+- **MSW worker lifecycle.** Handlers are file-local; the service-worker
+  registration is origin-global. Firefox can give a new Vitest iframe an
+  active controller that still bypasses MSW, so `browserWorkerRegistration.ts`
+  unregisters the old worker first and the new one `clients.claim()`s the
+  iframe. Keep setup files in list order and files serial. Never
+  `worker.stop()` in teardown or patch the generated worker. Remove the
+  workaround only once `src/__tests__/browserLifecycle` and the full Firefox
+  suite pass without it.
 - **`suppressFireAndForget404([...])`.** Components that fire un-awaited requests
   (folder listings, thumbnails) can 404 after teardown and surface as an
   `unhandledrejection` that fails the run even though every assertion passed.
@@ -150,13 +152,12 @@ document/page divs, the TinyMCE contenteditable iframe body.
   body via `frameLocator` + a `css=` cast on `.tox-edit-area__iframe` and
   `body[contenteditable="true"]`. `pressSequentially` does not exist on Vitest
   locators; use `userEvent.type`.
-- **Firefox CI skips.** A handful of heavy TinyMCE/DataGrid/gallery suites time
-  out on CI's slow Firefox runner; they are skipped only on the Firefox CI leg
-  (see `firefoxCiSkippedFiles` in the config). pdf.js never resolves its worker
-  in headless Firefox, so PDF tests `skipIf(firefox)`.
-- **`optimizeDeps`.** `@mui/material/utils` and `@tinymce/tinymce-react` are
-  pre-bundled to stop a mid-run optimizer reload that duplicates React/emotion
-  instances. The browser config uses its own `cacheDir`
+- **Firefox coverage.** Every spec file runs in every engine. Only the
+  PDF-preview tests in `CallablePdfPreview.spec.tsx` `skipIf(firefox)`, pending
+  a separate pdf.js worker fix.
+- **`optimizeDeps`.** `entries` scans every spec, even in focused runs, and
+  `include` pre-bundles lazily discovered deps, so no mid-run optimizer reload
+  duplicates React/emotion. The browser config has its own `cacheDir`
   (`node_modules/.vite-browser`) so it can run alongside the jsdom suite.
 
 ## API translation (Playwright-CT to Vitest Browser Mode)
