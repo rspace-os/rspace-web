@@ -76,6 +76,23 @@ public class DBRepoClientTest {
   }
 
   @Test
+  public void rejectsUniqueLocalIpv6Urls() {
+    DBRepoClient uniqueLocalIpv6Client =
+        new DBRepoClient(
+            new RestTemplate(),
+            new ObjectMapper(),
+            host ->
+                new InetAddress[] {
+                  InetAddress.getByAddress(
+                      new byte[] {(byte) 0xfd, 0x12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
+                });
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> uniqueLocalIpv6Client.normalizeBaseUrl("https://dbrepo.example"));
+  }
+
+  @Test
   public void defaultRestTemplateBoundsConnectAndReadTimeoutsAndDisablesRedirects() {
     DBRepoClient defaultClient = new DBRepoClient();
     RestTemplate defaultRestTemplate =
