@@ -32,7 +32,9 @@ semantic queries fail. Captured DOM nodes go stale on rerender.
 
 Paths below are relative to `src/main/webapp/ui/`.
 
-- `src/__tests__/browserSetup.ts`: shared `worker`, start/reset lifecycle,
+- `src/__tests__/browserWorkerRegistration.ts`: renews Firefox's MSW
+  registration per file; runs before `browserSetup.ts`.
+- `src/__tests__/browserSetup.ts`: file-local `worker`, start/reset lifecycle,
   CDP media reset, `suppressFireAndForget404(...)`.
 - `src/__tests__/mswAppShellHandlers.ts`: default whoami, navigation, analytics,
   and livechat handlers; survive `resetHandlers()`.
@@ -44,8 +46,9 @@ Paths below are relative to `src/main/webapp/ui/`.
 - `src/__tests__/pageObjects/viewport.ts`: `isFullyInViewport`,
   `moveToastStackIntoViewport`, `clickWhenInViewport`.
 
-The MSW worker is origin-global. Never call `worker.stop()` between files;
-it breaks later interception. Keep `fileParallelism: false` and `retry: 2`.
+Handlers are file-local; the worker registration is origin-global. Never call
+`worker.stop()` in teardown. Keep `fileParallelism: false`, setup files in list
+order, and `retry: 2`. The `browserLifecycle` regression runs first, unretried.
 
 ## Run and verify
 
@@ -65,7 +68,7 @@ Before finishing, run the changed file in all three engines and repeat it
 2–3 times to check for flakes. CI's `browser-tests` job in
 `.github/workflows/lint-and-test.yml` installs browsers with `--with-deps`,
 sets `VITEST_BROWSERS` per matrix job, and writes per-engine JUnit results.
-Some heavy Firefox suites are skipped in the config.
+Every spec file runs in every engine.
 
 ## Common pitfalls
 
