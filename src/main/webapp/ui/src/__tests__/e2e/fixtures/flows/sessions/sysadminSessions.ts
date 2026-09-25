@@ -1,5 +1,4 @@
 import type { Browser, BrowserContextOptions, Page } from "@playwright/test";
-import { storageStatePath } from "@/__tests__/e2e/authState";
 import { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsComponent";
 import { env } from "@/__tests__/e2e/env";
 import { apiTest } from "@/__tests__/e2e/fixtures/api";
@@ -16,6 +15,7 @@ import { GroupDetailsPage } from "@/__tests__/e2e/pageObjects/system/groups/Grou
 import { SystemConfigPage } from "@/__tests__/e2e/pageObjects/system/SystemConfigPage";
 import { SystemUsersPage } from "@/__tests__/e2e/pageObjects/system/users/SystemUsersPage";
 import { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
+import { freshStorageState } from "@/__tests__/e2e/savedSessions";
 import { SYSADMIN } from "@/__tests__/e2e/users";
 
 type SysadminSessionFixtures = {
@@ -45,7 +45,7 @@ async function withSysadminPage<T>(
 ): Promise<void> {
   const ctx = await browser.newContext({
     ...browserContextOptions,
-    storageState: storageStatePath(SYSADMIN.username),
+    storageState: await freshStorageState(SYSADMIN),
   });
   try {
     const page = await ctx.newPage();

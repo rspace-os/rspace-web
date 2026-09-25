@@ -17,8 +17,8 @@ type RaidFixtures = {
 };
 
 const test = base.extend<RaidFixtures>({
-  groupViewPage: async ({ page, raidGroup }, use) => {
-    await use(new GroupViewPage(page, raidGroup.groupId));
+  groupViewPage: async ({ page }, use) => {
+    await use(new GroupViewPage(page));
   },
 
   raidGroup: async ({ clientSysadmin, appUser }, use) => {
@@ -85,7 +85,7 @@ test.describe(`RAiD integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () =
 
       const { raidConnections } = groupViewPage;
 
-      await groupViewPage.open();
+      await groupViewPage.open(raidGroup.groupId);
       await raidConnections.waitForLoaded();
       await raidConnections.addRaidIdentifier(RAID_LABEL);
 

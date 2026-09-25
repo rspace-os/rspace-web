@@ -1,6 +1,7 @@
 import { type Download, expect, type Locator, type Page } from "@playwright/test";
 import { GalleryActionsMenu } from "@/__tests__/e2e/components/gallery/GalleryActionsMenu";
 import { GalleryEditImageDialog } from "@/__tests__/e2e/components/gallery/GalleryEditImageDialog";
+import { galleryEmptyStateLocator } from "@/__tests__/e2e/components/gallery/GalleryEmptyState";
 import { GalleryInfoPanel } from "@/__tests__/e2e/components/gallery/GalleryInfoPanel";
 import { GalleryMoveDialog } from "@/__tests__/e2e/components/gallery/GalleryMoveDialog";
 import type { GallerySection } from "@/__tests__/e2e/components/gallery/GallerySidebar";
@@ -9,6 +10,7 @@ import { GallerySortMenu } from "@/__tests__/e2e/components/gallery/GallerySortM
 import { GalleryVersionHistoryDialog } from "@/__tests__/e2e/components/gallery/GalleryVersionHistoryDialog";
 import { GalleryViewsMenu } from "@/__tests__/e2e/components/gallery/GalleryViewsMenu";
 import { ShareDialog } from "@/__tests__/e2e/components/shared/ShareDialog";
+import { extractPdfText } from "@/__tests__/e2e/pdf";
 import { ArgosImportDialogComponent } from "@/modules/argos/__tests__/pageObjects/ArgosImportDialogComponent";
 import { DMPAssistantImportDialogComponent } from "@/modules/dmpassistant/__tests__/pageObjects/DMPAssistantImportDialogComponent";
 import { DMPOnlineImportDialogComponent } from "@/modules/dmponline/__tests__/pageObjects/DMPOnlineImportDialogComponent";
@@ -60,16 +62,37 @@ export class GalleryPage extends BasePage {
     await this.page.goto(`${this.path}/item/${fileId}`);
   }
 
+  /**
+   * Waits for the listing, then normalises to Grid view, which every file helper here addresses.
+   * An empty section renders the same empty state in every view and is left as it is.
+   */
   async isLoaded(): Promise<void> {
     await this.filesListingRegion.waitFor({ state: "visible" });
-    if (!(await this.fileGrid.isVisible().catch(() => false))) {
-      await this.views.switchTo("Grid");
-      await this.fileGrid.waitFor({ state: "visible" });
-    }
+    const emptyState = galleryEmptyStateLocator(this.filesListingRegion);
+    await this.fileGrid
+      .or(this.page.getByRole("tree"))
+      .or(this.page.getByRole("region", { name: "Carousel view of files" }))
+      .or(emptyState)
+      .first()
+      .waitFor({ state: "visible" });
+    if (await this.fileGrid.isVisible().catch(() => false)) return;
+    await this.views.switchToGridOrEmpty();
   }
 
   async openSection(section: GallerySection): Promise<void> {
-    await this.sidebar.openSection(section);
+    // Always click: on small viewports that also closes the drawer. Re-selecting the section
+    // already shown doesn't refetch its listing, so only a change must produce a response.
+    if (await this.sidebar.isSelected(section)) {
+      await this.sidebar.openSection(section);
+    } else {
+      const [response] = await Promise.all([
+        this.page.waitForResponse((res) => res.url().includes("/gallery/getUploadedFiles")),
+        this.sidebar.openSection(section),
+      ]);
+      if (!response.ok()) {
+        throw new Error(`Loading the ${section} section failed: ${response.status()} ${response.statusText()}`);
+      }
+    }
     await this.isLoaded();
   }
 
@@ -83,8 +106,8 @@ export class GalleryPage extends BasePage {
     return this.fileGrid.getByRole("gridcell", { name, exact: true });
   }
 
-  async waitForFile(name: string): Promise<void> {
-    await this.fileCell(name).waitFor({ state: "visible" });
+  async waitForFile(name: string, options?: { timeout?: number }): Promise<void> {
+    await this.fileCell(name).waitFor({ state: "visible", timeout: options?.timeout });
   }
 
   async selectFile(name: string): Promise<void> {
@@ -140,6 +163,17 @@ export class GalleryPage extends BasePage {
       this.actions.menuItem("Download").click(),
     ]);
     return download;
+  }
+
+  /** Selects the named file, downloads it, and reads its PDF text content, page by page. */
+  async downloadAndExtractText(fileName: string): Promise<string> {
+    await this.selectFile(fileName);
+    const download = await this.downloadSelected();
+    const path = await download.path();
+    if (!path) {
+      throw new Error(`Download of "${fileName}" did not save to a local path.`);
+    }
+    return extractPdfText(path);
   }
 
   async uploadNewVersionOfSelected(filePath: string): Promise<void> {

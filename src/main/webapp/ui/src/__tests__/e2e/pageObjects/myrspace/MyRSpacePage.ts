@@ -79,4 +79,12 @@ export class MyRSpacePage extends BasePage {
     await page.waitUntilLoaded();
     return page;
   }
+
+  async navigateToSharedDocumentsPage(): Promise<SharedDocumentsPage> {
+    await this.page.getByRole("link", { name: "Shared Documents", exact: true }).click();
+    await this.page.waitForURL("**/record/share/manage**");
+    const sharedDocs = new SharedDocumentsPage(this.page);
+    await sharedDocs.isLoaded();
+    return sharedDocs;
+  }
 }

@@ -33,7 +33,17 @@ export class GallerySidebar {
 
   async openSection(section: GallerySection): Promise<void> {
     await this.ensureOpen();
-    await this.root.getByRole("button", { name: section, exact: true }).click();
+    await this.sectionTab(section).click();
+  }
+
+  /** DrawerTab exposes its selected state only as MUI's Mui-selected class, with no ARIA equivalent. */
+  async isSelected(section: GallerySection): Promise<boolean> {
+    await this.ensureOpen();
+    return this.sectionTab(section).evaluate((tab) => tab.classList.contains("Mui-selected"));
+  }
+
+  private sectionTab(section: GallerySection): Locator {
+    return this.root.getByRole("button", { name: section, exact: true });
   }
 
   async clickCreate(): Promise<void> {

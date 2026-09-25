@@ -15,7 +15,23 @@ export class DocumentToolbar {
 
   async save(): Promise<void> {
     await this.saveMenuButton.click();
-    await this.page.getByRole("menuitem", { name: "Save", exact: true }).click();
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/ajax/saveStructuredDocument")),
+      this.page.getByRole("menuitem", { name: "Save", exact: true }).click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Save failed: ${response.status()} ${response.statusText()}`);
+    }
+  }
+
+  async availableSaveActions(): Promise<string[]> {
+    await this.saveMenuButton.click();
+    const menu = this.page.getByRole("menu").filter({ visible: true });
+    await menu.getByRole("menuitem", { name: "Save", exact: true }).waitFor({ state: "visible" });
+    const actions = await menu.getByRole("menuitem").allTextContents();
+    await menu.press("Escape");
+    await menu.waitFor({ state: "hidden" });
+    return actions.map((action) => action.trim());
   }
 
   async saveAndView(): Promise<void> {
@@ -25,7 +41,46 @@ export class DocumentToolbar {
 
   async saveAndClose(): Promise<void> {
     await this.saveMenuButton.click();
-    await this.page.getByRole("menuitem", { name: "Save & Close", exact: true }).click();
+    await Promise.all([
+      this.page.waitForURL((url) => !url.pathname.includes("/workspace/editor/structuredDocument")),
+      this.page.getByRole("menuitem", { name: "Save & Close", exact: true }).click(),
+    ]);
+  }
+
+  async saveAndNew(): Promise<void> {
+    await this.saveAndNavigate("Save & New");
+  }
+
+  async saveAndClone(): Promise<void> {
+    await this.saveAndNavigate("Save & Clone");
+  }
+
+  /** Save-menu items that leave the current document, landing on a different URL. */
+  private async saveAndNavigate(menuItemName: "Save & New" | "Save & Clone"): Promise<void> {
+    await this.saveMenuButton.click();
+    const before = this.page.url();
+    await Promise.all([
+      this.page.waitForURL((url) => url.toString() !== before),
+      this.page.getByRole("menuitem", { name: menuItemName, exact: true }).click(),
+    ]);
+  }
+
+  async saveAsTemplate(templateName: string, fieldsToInclude: string[] = []): Promise<void> {
+    await this.saveMenuButton.click();
+    await this.page.getByRole("menuitem", { name: "Save as Template", exact: true }).click();
+    const dialog = this.page.getByRole("dialog", { name: "Save Template" });
+    await dialog.getByRole("textbox", { name: "Template Name" }).fill(templateName);
+    for (const fieldName of fieldsToInclude) {
+      await dialog.getByRole("checkbox", { name: `${fieldName}:`, exact: true }).check();
+    }
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/workspace/editor/structuredDocument/saveTemplate")),
+      dialog.getByRole("button", { name: "OK" }).click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Save as Template failed: ${response.status()} ${response.statusText()}`);
+    }
+    await dialog.waitFor({ state: "hidden" });
   }
 
   async cancel(): Promise<void> {

@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
 import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type MoveDialogSortField = "name" | "creationdate" | "modificationdate";
@@ -23,6 +24,7 @@ export class MoveDialog {
   readonly path: Locator;
   readonly cancelButton: Locator;
   readonly moveButton: Locator;
+  readonly rejection: AppriseAlertComponent;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Select target folder" });
@@ -32,6 +34,7 @@ export class MoveDialog {
     this.path = this.root.locator("#folder-move-path");
     this.cancelButton = this.root.getByRole("button", { name: "Cancel" });
     this.moveButton = this.root.getByRole("button", { name: "Move" });
+    this.rejection = new AppriseAlertComponent(page);
   }
 
   async waitUntilVisible(): Promise<void> {

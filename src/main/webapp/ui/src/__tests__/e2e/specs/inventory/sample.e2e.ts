@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
-import { storageStatePath } from "@/__tests__/e2e/authState";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
+import { freshStorageState } from "@/__tests__/e2e/savedSessions";
 import { tags } from "@/__tests__/e2e/tags";
 import { fixturePath, uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN } from "@/__tests__/e2e/users";
@@ -88,7 +88,7 @@ test.describe(`Inventory Samples`, { tag: [tags.INVENTORY, tags.MOBILE] }, () =>
 
     const ctx = await browser.newContext({
       ...browserContextOptions,
-      storageState: storageStatePath(SYSADMIN.username),
+      storageState: await freshStorageState(SYSADMIN),
     });
     try {
       const page = await ctx.newPage();

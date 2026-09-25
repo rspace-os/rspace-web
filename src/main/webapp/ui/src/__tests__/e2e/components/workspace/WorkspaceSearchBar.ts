@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type SearchField =
@@ -58,6 +58,16 @@ export class WorkspaceSearchBar {
         this.submitButton.click(),
       ]);
     });
+  }
+
+  async searchExpectingValidationError(term: string, message: string): Promise<void> {
+    await this.searchInput.fill(term);
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
+      this.submitButton.click(),
+    ]);
+    expect(response.ok()).toBe(false);
+    await expect(this.page.getByText(message)).toBeVisible();
   }
 
   async searchByOwner(query: string): Promise<void> {

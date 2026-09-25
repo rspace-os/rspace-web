@@ -54,7 +54,6 @@ export class WorkspacePagination {
       await this.itemsPerPageSelect.selectOption(String(n));
       await expect(this.itemsPerPageSelect).toHaveValue(String(n));
       await this.applyItemsPerPageButton.click();
-      await this.waitForPage(1);
     });
   }
 }

@@ -1,11 +1,13 @@
 import type { Locator, Page } from "@playwright/test";
 import { PublishDialogComponent } from "@/__tests__/e2e/components/myrspace/PublishDialogComponent";
 import { ShareDialog } from "@/__tests__/e2e/components/shared/ShareDialog";
+import { AddRemoveTagsDialog } from "./AddRemoveTagsDialog";
 import { MoveDialog } from "./MoveDialog";
 import { WorkspaceRenameDialog } from "./WorkspaceRenameDialog";
 import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type SelectionBarAction =
+  | "Create Document"
   | "Duplicate"
   | "Move"
   | "Rename"
@@ -47,14 +49,17 @@ export class WorkspaceSelectionBar {
 
   async delete({ viaKeyboard = false }: { viaKeyboard?: boolean } = {}): Promise<void> {
     await this.clickAction("Delete");
-    const dialog = this.page.getByRole("dialog", { name: "Confirm deletion" });
+    const dialog = this.page.getByRole("dialog", { name: "Confirm Deletion" });
     const confirmButton = dialog.getByRole("button", { name: "Confirm" });
     await confirmButton.waitFor({ state: "visible" });
     await awaitTableRefresh(this.page, async () => {
-      await Promise.all([
+      const [response] = await Promise.all([
         this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/delete")),
         viaKeyboard ? confirmButton.focus().then(() => confirmButton.press("Enter")) : confirmButton.click(),
       ]);
+      if (!response.ok()) {
+        throw new Error(`Delete failed: ${response.status()} ${response.statusText()}`);
+      }
       await dialog.waitFor({ state: "hidden" });
     });
   }
@@ -77,11 +82,39 @@ export class WorkspaceSelectionBar {
     await dialog.submit(newName);
   }
 
+  async renameExpectingRejection(newName: string): Promise<WorkspaceRenameDialog> {
+    await this.clickAction("Rename");
+    const dialog = new WorkspaceRenameDialog(this.page);
+    await dialog.waitUntilVisible();
+    await dialog.submitExpectingRejection(newName);
+    return dialog;
+  }
+
   async move(): Promise<MoveDialog> {
     await this.clickAction("Move");
     const dialog = new MoveDialog(this.page);
     await dialog.waitUntilVisible();
     return dialog;
+  }
+
+  async duplicate(): Promise<void> {
+    await awaitTableRefresh(this.page, async () => {
+      const [response] = await Promise.all([
+        this.page.waitForResponse((res) => new URL(res.url()).pathname === "/workspace/ajax/copy"),
+        this.clickAction("Duplicate"),
+      ]);
+      if (!response.ok()) throw new Error(`Duplicate failed: ${response.status()} ${response.statusText()}`);
+    });
+  }
+
+  async createDocumentFromTemplate(newName: string): Promise<void> {
+    await this.item("Create Document").click();
+    const dialog = this.page.getByRole("dialog", { name: "Create Document from Template", exact: true });
+    await dialog.getByRole("textbox", { name: "Document name:" }).fill(newName);
+    await Promise.all([
+      this.page.waitForURL("**/workspace/editor/structuredDocument/**"),
+      dialog.getByRole("button", { name: "Create", exact: true }).click(),
+    ]);
   }
 
   async exportAsCsv(): Promise<void> {
@@ -95,8 +128,18 @@ export class WorkspaceSelectionBar {
     return dialog;
   }
 
-  async addRemoveTags(): Promise<void> {
-    await this.item("Add/Remove Tags").getByRole("link", { name: "Add/Remove Tags" }).click();
+  async addRemoveTags(): Promise<AddRemoveTagsDialog> {
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/getTagsForRecords")),
+      this.item("Add/Remove Tags").getByRole("link", { name: "Add/Remove Tags" }).click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`getTagsForRecords failed: ${response.status()} ${response.statusText()}`);
+    }
+    await this.page.waitForLoadState("networkidle");
+    const dialog = new AddRemoveTagsDialog(this.page);
+    await dialog.waitUntilVisible();
+    return dialog;
   }
 
   async publish(): Promise<PublishDialogComponent> {
