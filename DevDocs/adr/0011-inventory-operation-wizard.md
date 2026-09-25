@@ -182,8 +182,10 @@ choice, documentation link, amounts) as a single bundle, saved only on a success
 Perform. Ticking it only marks the current form for saving. It must not reload the stored
 bundle, because the supported flow is untick, edit, re-tick to save the edited values; an
 earlier implementation reloaded the old bundle at re-tick and lost the edits. The bundle is
-loaded once when the process name changes to a name that has one, and unticking resets the
-form to defaults without deleting what was saved. A bundle is keyed by operation and
+loaded once when the process name changes to a name that has one. Unticking changes nothing
+on the form and deletes nothing that was saved: it only switches the save off, so a user
+can review a remembered run, adjust it for this one time, and perform it without keeping
+the adjustments. A bundle is keyed by operation and
 process name only, so one saved on a volume origin is offered on a mass one; a restored
 amount whose category no longer fits is repaired before it reaches the form.
 

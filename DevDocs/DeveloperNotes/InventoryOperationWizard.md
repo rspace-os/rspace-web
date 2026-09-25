@@ -341,8 +341,8 @@ documentation link, and the collected amounts — as a single bundle
 (`processValues.ts`, preference `INVENTORY_OPERATIONS`; supersedes the
 earlier per-item template/doc/amount preferences). Ticking it only marks the current
 form for saving; it never reloads the stored bundle, so untick, edit, re-tick saves the
-edited values. Unticking resets the form to defaults **without deleting** what was
-saved. The checkbox reflects the saved state as the process name changes (checked +
+edited values. Unticking changes nothing on the form and deletes nothing that was
+saved; it only switches the save off. The checkbox reflects the saved state as the process name changes (checked +
 loaded when that name has a bundle, unchecked + defaults otherwise). On a successful
 Perform, and only when ticked, the bundle is saved, the name added to the operation's
 autocomplete list, and recorded as the most-recently-used name (pre-filled on the next run).

@@ -444,17 +444,8 @@ function OperationWizard({
     setValues(next);
   };
 
-  const onRememberChange = (checked: boolean) => {
-    if (!operation) return;
-    setRemember(checked);
-    if (!checked) {
-      setValues((v) => freshValues(operation, origin, v));
-      setTemplateSelection(initialTemplateSelection(parentHasTemplate));
-      setDocumentation(null);
-      setAmountMode(resolveDefaultAmountMode(operation));
-      setPerSubsampleAmounts({});
-    }
-  };
+  // The checkbox only decides whether Perform saves this run; it never touches what was entered.
+  const onRememberChange = setRemember;
 
   // A template picked in a DIFFERENT measurement category resets the created amount's prefilled
   // unit, so a stale unit from the old category can't survive into the request. The amount taken
@@ -690,7 +681,10 @@ function OperationWizard({
       await renewals.current;
       onClose();
       await Promise.all(origins.map((o) => o.fetchAdditionalInfo()));
-      getRootStore().searchStore.search.performSearch();
+      // Through the fetcher, as Split and Duplicate do: performSearch would navigate to
+      // /inventory/search and, from a record page, drop the permalink and load the default listing.
+      const { fetcher } = getRootStore().searchStore.search;
+      if (!fetcher.permalink) void fetcher.performInitialSearch(null);
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({

@@ -4002,6 +4002,7 @@ export default interface Resources {
         "amountModeAllHelp": "Every selected subsample will be emptied (reduced to 0).",
         "amountModePerSubsample": "Per subsample",
         "amountModeSame": "Same amount",
+        "amountRequired": "Enter an amount greater than zero.",
         "amountTaken": "Amount taken from original",
         "amountTakenEach": "Amount taken from each",
         "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
@@ -4016,12 +4017,15 @@ export default interface Resources {
         "processNameRequired": "Enter a process name first.",
         "rememberProcessValues": "Remember values for this process: {name}",
         "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
+        "required": "This field is required.",
         "sampleName": "New sample name",
         "storageTemp": "Storage temperature",
         "storageTempInvalid": "Enter a temperature at or above -273.15°C, with at most 3 decimal places.",
         "storageTempMax": "Storage temperature must be at most {max}°C.",
         "storageTempMin": "Storage temperature must be at least {min}°C.",
-        "temperatureUnit": "°C"
+        "storageTempRequired": "Enter a storage temperature.",
+        "temperatureUnit": "°C",
+        "unitRequired": "Choose a unit."
       },
       "passage": {
         "description": "Create the next passage as a new sample, numbering it from the parent's passage number.",

@@ -19,7 +19,10 @@ import { operations } from "./testOperations";
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
-    searchStore: { search: { performSearch: vi.fn() }, getTemplate: vi.fn(() => Promise.resolve(null)) },
+    searchStore: {
+      search: { performSearch: vi.fn(), fetcher: { permalink: null, performInitialSearch: vi.fn() } },
+      getTemplate: vi.fn(() => Promise.resolve(null)),
+    },
     uiStore: { addAlert: vi.fn() },
     unitStore: { getUnit: () => undefined, unitsOfCategory: () => [] },
   }),

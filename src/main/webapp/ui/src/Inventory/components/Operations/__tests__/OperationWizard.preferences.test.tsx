@@ -41,7 +41,7 @@ vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
     searchStore: {
-      search: { performSearch: vi.fn() },
+      search: { performSearch: vi.fn(), fetcher: { permalink: null, performInitialSearch: vi.fn() } },
       getTemplate: () => Promise.resolve({ id: 5, name: "T5", quantityCategory: "volume", deleted: false, fields: [] }),
     },
     uiStore: { addAlert: vi.fn() },
