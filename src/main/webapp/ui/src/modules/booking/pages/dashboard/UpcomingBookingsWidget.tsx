@@ -94,7 +94,7 @@ function UpcomingBookingsWidgetContent({
           {t("dashboard.upcoming.viewAll")}
         </Link>
       </div>
-      <Card className="overflow-hidden">
+      <Card className="py-0">
         <CardContent className="p-0">
           {query.isPending ? (
             <div aria-busy="true">
