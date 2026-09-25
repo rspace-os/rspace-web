@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Profiler, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -12,9 +12,11 @@ import { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 describe("DayTimeline table row", () => {
   it("synchronizes differently sized rows in either direction without React renders or scroll echoes", async () => {
     const onRender = vi.fn();
+    const sync: { current?: ReturnType<typeof useDayTimelineScrollSync> } = {};
     function Rows() {
       const [viewState, setViewState] = useState<DayTimelineViewState>({ zoom: 1, centerMinute: 780 });
       const scrollSync = useDayTimelineScrollSync();
+      sync.current = scrollSync;
       return (
         <Profiler id="timelines" onRender={onRender}>
           {["First", "Second"].map((itemName) => (
@@ -43,13 +45,15 @@ describe("DayTimeline table row", () => {
       });
     }
     onRender.mockClear();
+    const scrollSync = sync.current;
+    if (!scrollSync) throw new Error("Scroll synchronization was not initialized");
     scrollers[0].scrollLeft = 400;
-    fireEvent.scroll(scrollers[0]);
+    scrollSync.scroll(scrollers[0]);
     await waitFor(() => expect(scrollers[1].scrollLeft).toBeCloseTo(575));
-    fireEvent.scroll(scrollers[1]);
+    scrollSync.scroll(scrollers[1]);
     expect(scrollers[0].scrollLeft).toBe(400);
     scrollers[1].scrollLeft = 1200;
-    fireEvent.scroll(scrollers[1]);
+    scrollSync.scroll(scrollers[1]);
     await waitFor(() => expect(scrollers[0].scrollLeft).toBeCloseTo(900));
     expect(onRender).not.toHaveBeenCalled();
   });
@@ -253,6 +257,7 @@ describe("DayTimeline table row", () => {
   });
 
   it("renders clock-change bookings with distinct offsets and selectable elapsed positions", async () => {
+    const user = userEvent.setup();
     const wrapper = await createRealI18nWrapper({
       resources: { booking: bookingEnglish, common: commonEnglish },
       defaultNS: "common",
@@ -285,9 +290,9 @@ describe("DayTimeline table row", () => {
     expect(screen.getByRole("article", { name: /Busy, 23:30 \+01:00–00:00 \+01:00/ })).toBeVisible();
     expect(screen.getByText("02:00 +02:00")).toBeVisible();
     expect(screen.getByText("02:00 +01:00")).toBeVisible();
-    await userEvent.setup().click(screen.getByRole("button", { name: /Show details for Repeated hour/ }));
+    await user.click(screen.getByRole("button", { name: /Show details for Repeated hour/ }));
     expect(within(screen.getByRole("dialog")).getByText("30 minutes")).toBeVisible();
-    await userEvent.setup().keyboard("{Escape}");
+    await user.keyboard("{Escape}");
     const canvas = screen.getByTestId("day-timeline-canvas");
     vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
       x: 0,
@@ -300,14 +305,18 @@ describe("DayTimeline table row", () => {
       height: 100,
       toJSON: () => ({}),
     });
-    fireEvent.pointerDown(canvas, { clientX: 165, pointerId: 1 });
-    fireEvent.pointerMove(canvas, { clientX: 195, pointerId: 1 });
+    await user.pointer([
+      { target: canvas, coords: { clientX: 165 } },
+      { keys: "[MouseLeft>]", target: canvas },
+      { target: canvas, coords: { clientX: 195 } },
+    ]);
     expect(screen.getByText("02:45 +02:00–02:15 +01:00")).toBeVisible();
-    fireEvent.pointerUp(canvas, { clientX: 195, pointerId: 1 });
+    await user.pointer("[/MouseLeft]");
     expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 165, endMinute: 195 }, expect.any(HTMLElement));
   });
 
   it("snaps drag selection to the resource increment and disables creation while leased", async () => {
+    const user = userEvent.setup();
     const wrapper = await createRealI18nWrapper({
       resources: { booking: bookingEnglish, common: commonEnglish },
       defaultNS: "common",
@@ -339,10 +348,13 @@ describe("DayTimeline table row", () => {
       toJSON: () => ({}),
     });
 
-    fireEvent.pointerDown(canvas, { clientX: 481, pointerId: 1 });
-    fireEvent.pointerMove(canvas, { clientX: 539, pointerId: 1 });
+    await user.pointer([
+      { target: canvas, coords: { clientX: 481 } },
+      { keys: "[MouseLeft>]", target: canvas },
+      { target: canvas, coords: { clientX: 539 } },
+    ]);
     expect(screen.getByText("08:00–09:00")).toBeVisible();
-    fireEvent.pointerUp(canvas, { clientX: 539, pointerId: 1 });
+    await user.pointer("[/MouseLeft]");
     expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 480, endMinute: 540 }, expect.any(HTMLElement));
 
     rerender(
@@ -358,8 +370,12 @@ describe("DayTimeline table row", () => {
         onRangeSelect={onRangeSelect}
       />,
     );
-    fireEvent.pointerDown(screen.getByTestId("day-timeline-canvas"), { clientX: 600, pointerId: 2 });
-    fireEvent.pointerUp(screen.getByTestId("day-timeline-canvas"), { clientX: 660, pointerId: 2 });
+    await user.pointer([
+      { target: canvas, coords: { clientX: 600 } },
+      { keys: "[MouseLeft>]", target: canvas },
+      { target: canvas, coords: { clientX: 660 } },
+      "[/MouseLeft]",
+    ]);
     expect(onRangeSelect).toHaveBeenCalledTimes(1);
   });
 });

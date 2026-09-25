@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { DraftMarker } from "../CompactBookingCreationDialog";
 
@@ -25,7 +26,8 @@ it("retains the elapsed width of a booking across the repeated hour", () => {
   expect(screen.getByTestId("compact-booking-draft-marker")).toHaveStyle({ left: "11%", width: "2%" });
 });
 
-it("snaps an overnight booking to the timeline edge when moved", () => {
+it("snaps an overnight booking to the timeline edge when moved", async () => {
+  const user = userEvent.setup();
   const onChange = vi.fn();
   render(
     <section id="timeline">
@@ -46,9 +48,8 @@ it("snaps an overnight booking to the timeline edge when moved", () => {
     />,
   );
 
-  fireEvent.keyDown(screen.getByRole("button", { name: "booking:calendar.windowEditor.move" }), {
-    key: "ArrowLeft",
-  });
+  screen.getByRole("button", { name: "booking:calendar.windowEditor.move" }).focus();
+  await user.keyboard("{ArrowLeft}");
 
   expect(onChange).toHaveBeenCalledWith({
     startDate: "2026-08-17",

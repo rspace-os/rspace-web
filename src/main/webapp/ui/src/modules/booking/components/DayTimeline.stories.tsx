@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import * as React from "react";
-import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { DayTimeline, type DayTimelineEvent, type DayTimelineViewState } from "./DayTimeline";
 import { DayTimelineStory } from "./DayTimeline.story";
@@ -202,8 +202,7 @@ export const SynchronizedRows: Story = {
     const scrollers = await canvas.findAllByTestId("day-timeline-scroller");
     const canvases = canvas.getAllByTestId("day-timeline-canvas");
     expect(scrollers).toHaveLength(3);
-    scrollers[0].scrollLeft += 300;
-    fireEvent.scroll(scrollers[0]);
+    scrollers[0].scrollTo({ left: scrollers[0].scrollLeft + 300 });
     await waitFor(() => {
       expect(scrollers[1].scrollLeft).toBeCloseTo(scrollers[0].scrollLeft, 0);
       expect(scrollers[2].scrollLeft).toBeCloseTo(scrollers[0].scrollLeft, 0);

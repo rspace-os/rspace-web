@@ -210,8 +210,7 @@ describe("AllBookableItemsPage", () => {
     await user.click(await screen.findByRole("option", { name: "Bookable item → Instrument name" }));
     await user.click(screen.getByRole("combobox", { name: "Operator for filter 1" }));
     await user.click(screen.getByRole("option", { name: "contains" }));
-    await user.type(screen.getByRole("combobox", { name: "Value for filter 1" }), "confocal");
-    await user.keyboard("{Escape}");
+    await user.type(screen.getByRole("textbox", { name: "Value for filter 1" }), "confocal");
     await user.click(screen.getByRole("button", { name: "Apply filters" }));
 
     await waitFor(() =>
