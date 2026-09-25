@@ -123,6 +123,10 @@ export class InventoryDetailsPanel {
     await this.root.getByRole("button", { name: "Save", exact: true }).waitFor({ state: "visible" });
   }
 
+  async rename(name: string): Promise<void> {
+    await this.root.getByRole("textbox", { name: "Name", exact: true }).fill(name);
+  }
+
   customFields(): CustomFieldsEditor {
     return new CustomFieldsEditor(this.page, this.section("Custom Fields"));
   }

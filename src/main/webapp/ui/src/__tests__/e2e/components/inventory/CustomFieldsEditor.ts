@@ -16,6 +16,10 @@ export class CustomFieldsEditor {
     this.fieldTypeSelect = this.root.getByRole("combobox", { name: "Field type", exact: true });
   }
 
+  fieldValue(name: string): Locator {
+    return this.root.getByRole("group", { name, exact: true }).getByRole("textbox");
+  }
+
   async addNewLinkField(name: string): Promise<LinkFieldEditorComponent> {
     await this.startNewField(name);
     await this.fieldTypeSelect.click();

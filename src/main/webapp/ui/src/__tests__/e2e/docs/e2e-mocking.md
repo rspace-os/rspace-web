@@ -125,8 +125,8 @@ fixture change is always intentional and reviewable in a diff.
 | DSW / FAIR Wizard | none — same per-connection UI field pattern as Dataverse. | `src/modules/dsw/__tests__/mock.ts` |
 | PyRAT | `pyrat.server.config` (JSON **object** keyed by alias — `{"mock":{"url":"http://localhost:9099","token":"..."}}`, NOT an array like Galaxy's) | `src/modules/pyrat/__tests__/mock.ts` |
 | OMERO | `omero.api.url` — unlike Dataverse/DSW's per-connection field, OMERO's base URL is a static JVM property, so the mock server stands in for the *whole* third-party OMERO JSON API (version/urls/servers/token/login/projects/screens), not just one endpoint. | `src/modules/omero/__tests__/mock.ts` |
-| DataCite IGSN/PIDINST | configured on demand by the `flowIgsnConfig` / `flowPidinstDataciteConfig` fixtures through the sysadmin API (separate identifier-type slots, same real sandbox account) | `src/__tests__/e2e/mocks/datacite.ts` |
-| B2INST PIDINST | configured on demand by the `flowPidinstB2instConfig` fixture through the sysadmin API (PIDINST_B2INST provider). Mocks `B2instConnectorImpl`'s outbound calls (`GET /api/communities`, `POST /api/records`, `DELETE /api/records/:rid/draft`, the review/submit sequence) — there's no update-draft-metadata call to mock, since RSpace's B2INST connector doesn't have one. | `src/__tests__/e2e/mocks/b2inst.ts` |
+| DataCite IGSN/PIDINST | configured on demand by the `flowIgsnConfig` / `flowPidinstDataciteConfig` fixtures through the sysadmin API (separate identifier-type slots, same real sandbox account). Also mocks the retrieve-by-id call (`GET /dois/:prefix/:suffix`) for a suffix starting with `IMPORTABLE_DOI_SUFFIX_PREFIX`, used by the search-and-import e2e. The update PUT fails with a 500 when the outbound title contains `FORCE_EXTERNAL_UPDATE_FAILURE_SENTINEL`, for the on-save external-update-failed toast e2e. Minted DOIs are kept in memory and returned by that same GET with a `metadataVersion` bumped on each PUT, as real DataCite does, so the left-unchanged e2e proves no push happened through `clientDataCite.getMetadataVersion` in both modes. | `src/__tests__/e2e/mocks/datacite.ts` |
+| B2INST PIDINST | configured on demand by the `flowPidinstB2instConfig` fixture through the sysadmin API (PIDINST_B2INST provider). Mocks `B2instConnectorImpl`'s outbound calls: `GET /api/communities`, `POST /api/records`, `PUT /api/records/:rid/draft`, `GET /api/records/:rid/draft`, `DELETE /api/records/:rid/draft`, the review/submit sequence, and `GET /api/records/:rid`. The review's status is held in a module-level map so a spec can drive Submitted → Accepted/Declined via the test-only `PUT /__e2e/b2inst/review-status/:rid` control endpoint, since a real curator decision can't be triggered on demand. Drafts are kept in memory, so `GET /api/records/:rid/draft` returns the metadata the last POST/PUT sent, as real B2INST does; the silent-success external-update e2e reads it through `clientB2inst.getDraftName` in both modes. Specs drive the review-status control endpoint through `src/__tests__/e2e/mocks/b2instControl.ts`. Published records carry `pids.epic.identifier`, which Refresh stores as the accepted identifier's public URL. | `src/__tests__/e2e/mocks/b2inst.ts` |
 
 ## CI setup
 
@@ -162,6 +162,9 @@ credentials in `.env`:
 | `IGSN_PASSWORD` | IGSN real-mode specs | DataCite Repository Account password |
 | `IGSN_REPO_PREFIX` | IGSN real-mode specs | Prefix assigned to that DataCite repository account |
 | `IGSN_SERVER_URL` | IGSN real-mode specs | DataCite API URL; defaults to `https://api.test.datacite.org` |
+| `PIDINST_B2INST_COMMUNITY_ID` | B2INST PIDINST real-mode specs | UUID of the B2INST sandbox community records are submitted to |
+| `PIDINST_B2INST_TOKEN` | B2INST PIDINST real-mode specs | B2INST sandbox personal access token of a member of that community |
+| `PIDINST_B2INST_SERVER_URL` | B2INST PIDINST real-mode specs | B2INST API URL; defaults to `https://b2inst-test.gwdg.de` |
 
 Missing a key skips with an actionable message for most specs.
 
@@ -183,6 +186,38 @@ get notebooks from Fieldmark" toast — the RSpace backend swallows the real
 `DATAVERSE_SERVER_URL` — Dataverse's test-connection endpoint
 (`GET /api/v1/dataverses/{alias}`) 404s on an unknown/made-up alias rather
 than creating one. It is not a free-form label like a document title.
+
+### PIDINST scenarios that stay mock-only
+
+Real mode skips these because they need something only the mock server can provide:
+
+| Scenario | Spec | Why real mode can't run it |
+|---|---|---|
+| Refresh after a B2INST review decision | `specs/inventory/pidinst.e2e.ts` | A human curator of the B2INST community accepts or declines a submission, whenever they get to it. The mock stands in for them through `PUT /__e2e/b2inst/review-status/:rid`. |
+| Import from B2INST | `specs/inventory/pidinstImport.e2e.ts` | Only an accepted (published) record has a Handle to import, and acceptance needs that curator. The DataCite import runs in real mode because a DOI can be published straight away through the API. |
+| On-save update rejected by the provider | `specs/inventory/pidinstExternalUpdateToast.e2e.ts` | Real DataCite can't be made to reject an update on demand. |
+
+**Future option: real-mode B2INST import.** This is the one scenario that could move to real mode, using a
+permanently published fixture record in the sandbox community. It is left mocked for now.
+
+1. Create and submit a fixture record once, then get it accepted. The API can do this with
+   `POST /api/requests/{request_id}/actions/accept`, but only the request's reviewer can call it, never its
+   submitter ([InvenioRDM requests API](https://inveniordm.docs.cern.ch/reference/rest_api_requests/)). That needs
+   a token from a curator, manager or owner of the community; a curator clicking Accept in the sandbox UI works too.
+   Since InvenioRDM v12 a community can also auto-accept submissions from those roles
+   ([v12 release notes](https://inveniordm.docs.cern.ch/releases/v12/version-v12.0.0/)). Don't give the everyday
+   `PIDINST_B2INST_TOKEN` account curator rights or turn auto-accept on: other users of the shared sandbox community
+   would be affected, and the real-mode publish flow would stop waiting for review.
+2. Store the fixture's Handle in a new env variable, such as `PIDINST_B2INST_IMPORT_PID`.
+3. Clean up at the start of the test, not the end. RSpace refuses to import a PID it already links, so a run that
+   fails after importing would otherwise break the next one. Search the registry for the Handle; if the result
+   carries `linkedInstrumentGlobalId` (see `PidinstLookupManager`), trash that instrument through the API, which
+   releases the PID (covered by `pidinstUnlinkOnDelete.e2e.ts`). Then import as usual.
+4. Read the expected Owner and Manufacturer from the search result instead of hardcoding them, so editing the record in
+   B2INST doesn't break the test. If the record disappears, fail at search time with a message naming the missing fixture.
+
+Links are stored per RSpace database, so developers and CI using their own instances don't interfere through the
+shared record.
 
 ## Running locally
 
