@@ -63,7 +63,6 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -535,16 +534,13 @@ public class StructuredDocumentController extends BaseController {
       @RequestParam(value = "fromNotebook", required = false) Long fromNotebook,
       Model model,
       HttpSession session,
-      HttpServletRequest request,
       Principal principal)
       throws RecordAccessDeniedException {
 
     User user = userManager.getUserByUsername(principal.getName(), true);
     DocumentEditContext docEditContext = getDocEditContext(recordId, user);
     StructuredDocument structuredDocument = docEditContext.getStructuredDocument();
-    if (isPublicViewRequest(request)) {
-      sanitizeForPublicView(structuredDocument);
-    }
+    sanitizeForPublicViewIfAnonymous(structuredDocument, user);
     EditStatus res = docEditContext.getEditStatus();
     // Opening Basic Documents in "Edit Mode" when editMode flag is true or coming
     // from notebook view
@@ -616,31 +612,10 @@ public class StructuredDocumentController extends BaseController {
     return new ModelAndView(view, model.asMap());
   }
 
-  public ModelAndView openDocument(
-      long recordId,
-      String settingsKey,
-      boolean editMode,
-      boolean msTeamsDocView,
-      Long fromNotebook,
-      Model model,
-      HttpSession session,
-      Principal principal)
-      throws RecordAccessDeniedException {
-    return openDocument(
-        recordId,
-        settingsKey,
-        editMode,
-        msTeamsDocView,
-        fromNotebook,
-        model,
-        session,
-        null,
-        principal);
-  }
-
-  private boolean isPublicViewRequest(HttpServletRequest request) {
-    return request != null
-        && request.getRequestURI().startsWith(request.getContextPath() + "/public/publicView/");
+  void sanitizeForPublicViewIfAnonymous(StructuredDocument structuredDocument, User user) {
+    if (RecordGroupSharing.ANONYMOUS_USER.equals(user.getUsername())) {
+      sanitizeForPublicView(structuredDocument);
+    }
   }
 
   private void sanitizeForPublicView(StructuredDocument structuredDocument) {
