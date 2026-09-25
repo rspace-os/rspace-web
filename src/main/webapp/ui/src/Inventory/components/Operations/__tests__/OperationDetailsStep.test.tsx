@@ -348,6 +348,38 @@ describe("OperationDetailsStep", () => {
     expect(screen.queryByText(/storageTempMin/)).not.toBeInTheDocument();
   });
 
+  it("marks a required text field that is blank or whitespace, and clears the mark once typed", () => {
+    const { rerender } = render(
+      <OperationDetailsStep
+        operation={nameOperation}
+        origin={origin}
+        values={{ ...values, processName: "   ", sampleName: "  " }}
+        onChange={() => undefined}
+      />,
+    );
+    // process name blank, sample name blank: both flagged (the sample name is enabled since a
+    // whitespace process name still counts as no process name -> its own hint wins there)
+    expect(screen.getAllByText(/fields\.required/)).toHaveLength(1);
+    rerender(
+      <OperationDetailsStep
+        operation={nameOperation}
+        origin={origin}
+        values={{ ...values, processName: "dna", sampleName: "  " }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.getAllByText(/fields\.required/)).toHaveLength(1);
+    rerender(
+      <OperationDetailsStep
+        operation={nameOperation}
+        origin={origin}
+        values={{ ...values, processName: "dna", sampleName: "A sample dna" }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.queryByText(/fields\.required/)).not.toBeInTheDocument();
+  });
+
   it("disables the derived sample-name field with a hint until a process name is entered", () => {
     const { rerender } = render(
       <OperationDetailsStep
@@ -548,6 +580,33 @@ describe("OperationDetailsStep inline field errors", () => {
     expect(screen.getByText(/amountTakenExceedsOrigin/)).toBeInTheDocument();
   });
 
+  it("tells the user an amount is needed when the field is empty or zero", () => {
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={{ eachAmount: { numericValue: 0, unitId: 3 }, amountTaken: { numericValue: 2, unitId: 3 } }}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
+    expect(screen.getAllByText(/fields\.amountRequired/)).toHaveLength(1);
+  });
+
+  it("asks for a unit when a restored amount lost its unit", () => {
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={{ eachAmount: { numericValue: 1.25, unitId: 0 }, amountTaken: { numericValue: 2, unitId: 3 } }}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
+    expect(screen.getAllByText(/fields\.unitRequired/)).toHaveLength(1);
+    expect(screen.queryByText(/fields\.amountRequired/)).not.toBeInTheDocument();
+  });
+
   it("leaves the amount-taken field clean when it is within the origin", () => {
     renderWith({});
     expect(screen.getByRole("textbox", { name: /fields\.amountTaken/i })).toBeValid();
@@ -621,6 +680,15 @@ describe("OperationDetailsStep sub-zero temperature entry", () => {
     expect(onChange).toHaveBeenLastCalledWith({
       storageTemp: { numericValue: Number.NaN, unitId: CELSIUS_UNIT },
     });
+  });
+
+  it("asks for a temperature once the field is stripped back to its sign", async () => {
+    const user = userEvent.setup();
+    render(<Stateful onChange={() => undefined} />);
+    expect(screen.queryByText(/fields\.storageTempRequired/)).not.toBeInTheDocument();
+    await user.click(tempField());
+    await user.keyboard("{End}{Backspace}{Backspace}");
+    expect(screen.getByText(/fields\.storageTempRequired/)).toBeInTheDocument();
   });
 
   it("accepts a temperature typed minus sign first", async () => {

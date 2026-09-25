@@ -57,6 +57,12 @@ const operationHandlers = [
 ];
 
 const performSearch = vi.fn();
+const performInitialSearch = vi.fn();
+/** The main search's fetcher; a test sets `permalink` to stand on a record page. */
+const fetcher: { permalink: null | { type: string; id: number }; performInitialSearch: typeof performInitialSearch } = {
+  permalink: null,
+  performInitialSearch,
+};
 const getTemplate = vi.fn();
 const template = (o: Record<string, unknown> = {}) => ({
   id: 9,
@@ -71,7 +77,7 @@ const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
-    searchStore: { search: { performSearch }, getTemplate },
+    searchStore: { search: { performSearch, fetcher }, getTemplate },
     uiStore: { addAlert },
     unitStore: {
       getUnit: (id: number) => ({
@@ -249,6 +255,8 @@ beforeEach(() => {
   postedTo.length = 0;
   taken.length = 0;
   performSearch.mockClear();
+  performInitialSearch.mockClear();
+  fetcher.permalink = null;
   addAlert.mockClear();
   // Reset, not merely cleared: mockClear leaves a queued mockResolvedValueOnce/mockRejectedValueOnce
   // for the next test, and one test here asserts getTemplate is never called.
@@ -854,16 +862,15 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 
-  it("re-gates Perform on every step when un-ticking remember resets the earlier ones", async () => {
-    // Un-ticking resets the template/documentation/values but stays on the confirm step.
+  it("keeps Perform enabled when remember is ticked and un-ticked on the confirm step", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await reachConfirm(user, "dna");
     await user.click(screen.getByTestId("toggle-remember"));
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
 
-    await user.click(screen.getByTestId("toggle-remember")); // un-tick: template selection is reset
-    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeDisabled();
+    await user.click(screen.getByTestId("toggle-remember"));
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
   });
 
   it("reads that heading as 'Derive: dna' in English", async () => {
@@ -1063,6 +1070,33 @@ describe("OperationWizard remember bundle", () => {
     expect(prefs.store.INVENTORY_OPERATIONS).toBeUndefined();
   });
 
+  it("re-runs the current listing through its fetcher after Perform, never by navigating", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
+    await reachConfirm(user, "dna extraction");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    await waitFor(() => expect(performInitialSearch).toHaveBeenCalledWith(null));
+    expect(performSearch).not.toHaveBeenCalled();
+  });
+
+  it("leaves the listing alone after Perform on a record page, where the fetcher holds a permalink", async () => {
+    fetcher.permalink = { type: "subsample", id: 1 };
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = mockOrigin();
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "dna extraction");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    await waitFor(() => expect(origin.fetchAdditionalInfo).toHaveBeenCalled());
+    expect(performInitialSearch).not.toHaveBeenCalled();
+    expect(performSearch).not.toHaveBeenCalled();
+  });
+
   it("loads a saved bundle (ticked) when its process name is entered", async () => {
     rememberDerive(
       { mode: "pick", templateId: 9, templateName: "T9" },
@@ -1146,7 +1180,7 @@ describe("OperationWizard remember bundle", () => {
     expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":1,"unitId":3}');
   });
 
-  it("unticking remember (on the confirmation) resets the form but never deletes the saved bundle", async () => {
+  it("unticking remember (on the confirmation) leaves every entered value in place, performs them, and never deletes the saved bundle", async () => {
     // amountTaken must not exceed the mock origin's quantity (1), or over-removal blocks the
     // step-one fast path this test rides to reach the confirmation.
     const saved = rememberDerive(
@@ -1158,12 +1192,24 @@ describe("OperationWizard remember bundle", () => {
       },
     );
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    const onClose = vi.fn();
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks the saved bundle
     await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
-    await user.click(screen.getByTestId("toggle-remember")); // untick
-    expect(screen.getByTestId("count")).toHaveTextContent("1");
+    await user.click(screen.getByTestId("toggle-remember")); // untick: only the save is off
+    expect(screen.getByTestId("count")).toHaveTextContent("4");
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":3}');
+
+    await user.click(nextButton()); // details -> template
+    expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9");
+    await user.click(nextButton()); // template -> amounts
+    await user.click(nextButton()); // amounts -> documentation
+    await user.click(nextButton()); // documentation -> confirm
+    expect(screen.getByTestId("remember")).toHaveTextContent("false");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(posted[0]).toMatchObject({ count: 4, eachAmount: { numericValue: 7, unitId: 3 }, templateId: 9 });
     expect(ops().values).toEqual(saved); // store untouched
   });
 
@@ -1183,7 +1229,7 @@ describe("OperationWizard remember bundle", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks the saved bundle
     await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
-    await user.click(screen.getByTestId("toggle-remember")); // untick: back to details, defaults
+    await user.click(screen.getByTestId("toggle-remember")); // untick: the loaded values stay
     await user.click(screen.getByTestId("fill-taken-1")); // new data: eachAmount 5
     await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
