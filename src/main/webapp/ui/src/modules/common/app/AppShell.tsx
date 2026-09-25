@@ -1,5 +1,13 @@
 import { useIsFetching } from "@tanstack/react-query";
-import { CatchBoundary, HeadContent, Navigate, Outlet, useMatches, useRouterState } from "@tanstack/react-router";
+import {
+  CatchBoundary,
+  HeadContent,
+  Navigate,
+  Outlet,
+  useMatches,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -14,6 +22,7 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from "@/modules/common/ui/sidebar";
 import { cn } from "@/modules/common/utils/cn";
 import AuthenticatedAppBar, { PublicAppBar } from "./AppBar";
@@ -66,6 +75,14 @@ export function RouteTransitionIndicator() {
       />
     </div>
   );
+}
+
+/** On mobile the sidebar is a modal sheet covering the page, so hide it once a navigation starts. */
+function CloseMobileSidebarOnNavigation() {
+  const router = useRouter();
+  const { setOpenMobile } = useSidebar();
+  React.useEffect(() => router.subscribe("onBeforeNavigate", () => setOpenMobile(false)), [router, setOpenMobile]);
+  return null;
 }
 
 export default function AppShell() {
@@ -124,6 +141,7 @@ function LoadedAppShell() {
       style={{ "--app-header-height": "calc(3rem + 3px)" } as React.CSSProperties}
     >
       <HeadContent />
+      <CloseMobileSidebarOnNavigation />
       {appBarProps !== false && appBarProps.authenticated !== false && authenticatedAppBar}
       {appBarProps !== false && appBarProps.authenticated === false && (
         // Auth-optional page: authenticated bar for a logged-in user, public bar when auth queries reject.

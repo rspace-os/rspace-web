@@ -7,7 +7,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -232,6 +232,24 @@ describe("route sidebar state", () => {
     expect(await screen.findByText(plainRouteText)).toBeVisible();
     expect(screen.queryByRole("status", { name: "Route sidebar state" })).not.toBeInTheDocument();
     expect(screen.queryAllByRole("button", { name: "common:sidebar.toggle" })).toHaveLength(0);
+  });
+
+  it("hides the mobile sidebar sheet when a navigation starts", async () => {
+    const desktopWidth = window.innerWidth;
+    window.innerWidth = 500;
+    try {
+      const router = renderShell("/with-sidebar");
+      expect(await screen.findByText(sidebarRouteText)).toBeVisible();
+
+      fireEvent.click(screen.getByRole("button", { name: "common:sidebar.toggle" }));
+      expect(await screen.findByRole("dialog")).toBeVisible();
+
+      await act(() => router.history.push("/with-sidebar?page=2"));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    } finally {
+      window.innerWidth = desktopWidth;
+    }
   });
 });
 
