@@ -111,10 +111,18 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * The query-string syntax B2INST (InvenioRDM, Elasticsearch) would parse inside a wildcard term,
    * escaped by {@link #containsForB2inst(String)}. Unlike DataCite's set it includes {@code /},
    * which B2INST answers 400 for unescaped and accepts escaped; it leaves out {@code *} and {@code
-   * ?}, which stay wildcards. A quote only lands here when the query is nothing but quotes.
+   * ?}, which stay wildcards, and {@link #B2INST_REMOVED}. A quote only lands here when the query
+   * held nothing else.
    */
   private static final Pattern B2INST_RESERVED =
-      Pattern.compile("([\\\\+\\-=&|><!(){}\\[\\]^~:/\"])");
+      Pattern.compile("([\\\\+\\-=&|!(){}\\[\\]^~:/\"])");
+
+  /**
+   * Removed from a B2INST query rather than escaped: a quote because the whole query is already one
+   * phrase, and {@code <} and {@code >} because Elasticsearch cannot escape them at all
+   * (https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-query-string-query#reserved-characters).
+   */
+  private static final Pattern B2INST_REMOVED = Pattern.compile("[\"<>]");
 
   /** A Handle under an ePIC prefix (B2INST mints 21.xxx), bare or behind hdl.handle.net. */
   static final Pattern HANDLE_QUERY =
@@ -271,14 +279,19 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * {@code *"Instr1\ prova_COPY"*} is {@code *} OR a phrase OR {@code *} and matched all 810
    * records on b2inst-test.gwdg.de where the quoted phrase alone matched 1, and {@code (}, {@code
    * ~} and {@code ^} did the same (2026-09-25). Quotes are dropped, since the whole query is
-   * already one phrase and {@code *Instr1\ prova_COPY*} answers that same 1; the rest of {@link
-   * #B2INST_RESERVED} is escaped to a literal, which also turns the 400 on a pasted partial Handle
-   * such as {@code T11975/97g70-tsv60} into its one record. {@code *} and {@code ?} stay live.
+   * already one phrase and {@code *Instr1\ prova_COPY*} answers that same 1, and so are {@code <}
+   * and {@code >}, which cannot be escaped; the rest of {@link #B2INST_RESERVED} is escaped to a
+   * literal, which also turns the 400 on a pasted partial Handle such as {@code T11975/97g70-tsv60}
+   * into its one record. {@code *} and {@code ?} stay live.
    */
   private static String containsForB2inst(String query) {
-    String unquoted = query.replace('"', ' ').trim();
+    // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
+    String stripped = B2INST_REMOVED.matcher(query).replaceAll("").trim();
+    // with nothing left, ** would match every record; escaped quotes match none
     String literal =
-        B2INST_RESERVED.matcher(unquoted.isEmpty() ? query : unquoted).replaceAll("\\\\$1");
+        B2INST_RESERVED
+            .matcher(stripped.isEmpty() ? query.replaceAll("[<>]", "\"") : stripped)
+            .replaceAll("\\\\$1");
     return "*" + literal.replaceAll("\\s+", "\\\\ ") + "*";
   }
 

@@ -227,6 +227,10 @@ class PidinstLookupManagerImplTest {
     return Stream.of(
         arguments("\"Instr1 prova_COPY\"", "*Instr1\\ prova_COPY*"),
         arguments("\"Instr1", "*Instr1*"),
+        arguments("Instr\"1", "*Instr1*"),
+        arguments("Instr1 > 2", "*Instr1\\ 2*"),
+        arguments("Instr1<=2", "*Instr1\\=2*"),
+        arguments("\"\"\"\"", "*\\\"\\\"\\\"\\\"*"),
         arguments("(Instr1)", "*\\(Instr1\\)*"),
         arguments("Instr1~2", "*Instr1\\~2*"),
         arguments("Instr1^2", "*Instr1\\^2*"),

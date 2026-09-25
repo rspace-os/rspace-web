@@ -183,9 +183,11 @@ and API field names were ported instead.
    operators. Measured 2026-09-25 on b2inst-test.gwdg.de: `"Instr1 prova_COPY"` answers 1, but
    wrapped as `*"Instr1\ prova_COPY"*` it is `*` OR a phrase OR `*` and answers all **810**
    records; `(Instr1)`, `Instr1~2` and `Instr1^2` did the same, and `"Instr1` and `Name:Instr1`
-   answered 400. Quotes are dropped, the whole query already being one phrase
-   (`*Instr1\ prova_COPY*` answers that same 1); `\ + - = & | > < ! ( ) { } [ ] ^ ~ : /` are
-   escaped to literals, so a pasted partial Handle such as `T11975/97g70-tsv60` now finds its
+   answered 400. Quotes are removed, the whole query already being one phrase
+   (`*Instr1\ prova_COPY*` answers that same 1), and removed rather than replaced by a space,
+   which would cut a word in two (`*Instr\ 1*` answers 0 where `*Instr1*` answers 2); `<` and `>`
+   are removed too, because Elasticsearch documents them as impossible to escape;
+   `\ + - = & | ! ( ) { } [ ] ^ ~ : /` are escaped to literals, so a pasted partial Handle such as `T11975/97g70-tsv60` now finds its
    record instead of answering 400; `*` and `?` stay live wildcards. This covers the 400s filed as
    RSDEV-1524 for free-text B2INST searches.
 
