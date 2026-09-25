@@ -109,6 +109,8 @@ public class ArchiveModelFactory {
         RadioFieldForm radfm = (RadioFieldForm) fm;
         rc.setOptions(radfm.getRadioOption());
         rc.setSelection(radfm.getDefaultRadioOption());
+        rc.setDisplayAsPickList(radfm.isShowAsPickList());
+        rc.setSortAlphabetic(radfm.isSortAlphabetic());
         break;
       case CHOICE: // "Choice")
         // <summary>Type: [CHOICE], Choices: [[a, b, c]], Default selection:

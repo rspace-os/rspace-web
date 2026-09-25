@@ -21,6 +21,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.DateFieldForm;
 import com.researchspace.model.field.NumberFieldForm;
+import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -148,5 +149,20 @@ public class ArchiveModelFactoryTest {
     ArchivalForm aform = factory.createArchivalForm(form, "asd");
     assertTrue(aform.getFieldFormList().get(0).isMandatory());
     assertFalse(aform.getFieldFormList().get(1).isMandatory());
+  }
+
+  @Test
+  public void archivalRadioFieldKeepsPickListSettings() {
+    RadioFieldForm radioFieldForm = new RadioFieldForm("radio");
+    radioFieldForm.setShowAsPickList(true);
+    radioFieldForm.setSortAlphabetic(true);
+    RSForm form = new RSForm("form", "desc", createAnyUser("user"));
+    form.addAllFieldForms(radioFieldForm);
+    form.setId(1L);
+
+    ArchivalForm aform = factory.createArchivalForm(form, "asd");
+
+    assertTrue(aform.getFieldFormList().get(0).isDisplayAsPickList());
+    assertTrue(aform.getFieldFormList().get(0).isSortAlphabetic());
   }
 }

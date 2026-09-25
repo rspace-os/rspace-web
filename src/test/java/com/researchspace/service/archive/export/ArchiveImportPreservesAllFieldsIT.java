@@ -25,6 +25,7 @@ import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.BaseRecord;
@@ -142,6 +143,16 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
         getChildElementText(
             formXml, "fieldForm", "name", multiSelectChoiceFieldName(run), "multipleChoice"),
         "multi-select choice field flag");
+    assertEquals(
+        "true",
+        getChildElementText(
+            formXml, "fieldForm", "name", pickListRadioFieldName(run), "displayAsPickList"),
+        "radio pick-list field flag");
+    assertEquals(
+        "true",
+        getChildElementText(
+            formXml, "fieldForm", "name", pickListRadioFieldName(run), "sortAlphabetic"),
+        "radio sort-alphabetic field flag");
 
     ArchivalImportConfig importConfig =
         createDefaultArchiveImportConfig(user, newFolder(tempImportFolder, "imported-archive"));
@@ -169,6 +180,10 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     assertTrue(
         ((ChoiceFieldForm) importedFields.get(multiSelectChoiceFieldName(run))).isMultipleChoice(),
         "imported choice field remains multi-select");
+    RadioFieldForm importedRadio = (RadioFieldForm) importedFields.get(pickListRadioFieldName(run));
+    assertTrue(importedRadio.isShowAsPickList(), "imported radio field remains a pick-list");
+    assertTrue(
+        importedRadio.isSortAlphabetic(), "imported radio field remains sorted alphabetically");
   }
 
   @Test
@@ -358,6 +373,12 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
             new RadioFieldDTO<>(
                 "0=alpha&1=beta", "alpha", "Optional_Radio_" + run, false, false, false)),
         new FieldDefinition(
+            pickListRadioFieldName(run),
+            true,
+            FieldType.RADIO,
+            new RadioFieldDTO<>(
+                "0=gamma&1=alpha&2=beta", "alpha", pickListRadioFieldName(run), true, true, true)),
+        new FieldDefinition(
             multiSelectChoiceFieldName(run),
             true,
             FieldType.CHOICE,
@@ -415,6 +436,10 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
 
   private static String multiSelectChoiceFieldName(String run) {
     return "MultiSelect_Choice_" + run;
+  }
+
+  private static String pickListRadioFieldName(String run) {
+    return "PickList_Radio_" + run;
   }
 
   private static File newFolder(File root, String... subDirs) throws IOException {
