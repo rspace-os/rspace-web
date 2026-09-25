@@ -1,25 +1,24 @@
 package com.researchspace.model.comms;
 
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class HTMLCleanerTest {
 
   HTMLCleaner rtu;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     rtu = new HTMLCleaner();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -28,42 +27,42 @@ public class HTMLCleanerTest {
     String plain = "Plain text with no html";
     assertEquals(plain, rtu.cleanHTMLStrict(plain, true));
     String plainWithNewline = "Plain text \n with newline";
-    assertThat(rtu.cleanHTMLStrict(plainWithNewline, true), containsString("<br>"));
+    assertThat(rtu.cleanHTMLStrict(plainWithNewline, true))
+        .as(rtu.cleanHTMLStrict(plainWithNewline, true))
+        .contains("<br>");
 
     String basicHTML = "Simple html <a href='http://www.google.com'>Google</a>";
-    assertThat(
-        rtu.cleanHTMLStrict(basicHTML, true),
-        allOf(
-            containsString("href=\"http://www.google.com\""),
-            containsString("Google"),
-            containsString("rel=\"nofollow\"")));
+    assertTrue(
+        rtu.cleanHTMLStrict(basicHTML, true).contains("href=\"http://www.google.com\"")
+            && rtu.cleanHTMLStrict(basicHTML, true).contains("Google")
+            && rtu.cleanHTMLStrict(basicHTML, true).contains("rel=\"nofollow\""),
+        rtu.cleanHTMLStrict(basicHTML, true));
 
     basicHTML = "Simple html <a href='http://www.google.com' target='_blank'>Google</a>";
-    assertThat(
-        rtu.cleanHTMLStrict(basicHTML, true),
-        allOf(
-            containsString("href=\"http://www.google.com\""),
-            containsString("Google"),
-            containsString("rel=\"nofollow\""),
-            containsString("target=\"_blank\"")));
+    assertTrue(
+        rtu.cleanHTMLStrict(basicHTML, true).contains("href=\"http://www.google.com\"")
+            && rtu.cleanHTMLStrict(basicHTML, true).contains("Google")
+            && rtu.cleanHTMLStrict(basicHTML, true).contains("rel=\"nofollow\"")
+            && rtu.cleanHTMLStrict(basicHTML, true).contains("target=\"_blank\""),
+        rtu.cleanHTMLStrict(basicHTML, true));
 
     String scriptHTML = "Simple html <script>alert(1);</script>";
     String processedscriptHTML = rtu.cleanHTMLStrict(scriptHTML, true);
-    assertThat(
-        processedscriptHTML,
-        allOf(not(containsString("<script>")), not(containsString("alert(1)"))));
+    assertFalse(
+        processedscriptHTML.contains("<script>") || processedscriptHTML.contains("alert(1)"),
+        processedscriptHTML);
 
     String basicLink = "Simple link \nhttp://www.google.com ";
     String taggedhttp = rtu.cleanHTMLStrict(basicLink, true);
     String EXPECTED =
         "<a href='http://www.google.com' rel='nofollow' class='word-wrap' target='_blank'>";
-    assertThat(taggedhttp, containsString(EXPECTED));
+    assertThat(taggedhttp).as(taggedhttp).contains(EXPECTED);
 
     String basicLink2 = "http://www.google.com google";
     String taggedhttp2 = rtu.cleanHTMLStrict(basicLink2, true);
     String EXPECTED2 =
         "<a href='http://www.google.com' rel='nofollow' class='word-wrap' target='_blank'>";
-    assertThat(taggedhttp2, containsString(EXPECTED2));
+    assertThat(taggedhttp2).as(taggedhttp2).contains(EXPECTED2);
 
     String twoLinks = "http://www.google.com google http://www.bbc.co.uk bbc";
     String taggedtwoLinks = rtu.cleanHTMLStrict(twoLinks, true);
@@ -71,14 +70,15 @@ public class HTMLCleanerTest {
         "<a href='http://www.google.com' rel='nofollow' class='word-wrap' target='_blank'>";
     String EXPECTED4 =
         "<a href='http://www.bbc.co.uk' rel='nofollow' class='word-wrap' target='_blank'>";
-    assertThat(taggedtwoLinks, allOf(containsString(EXPECTED3), containsString(EXPECTED4)));
+    assertTrue(
+        taggedtwoLinks.contains(EXPECTED3) && taggedtwoLinks.contains(EXPECTED4), taggedtwoLinks);
 
     String httpsLink = "Simple link https://www.google.com ";
     String taggedhttps = rtu.cleanHTMLStrict(httpsLink, true);
     EXPECTED = "<a href='https://www.google.com' rel='nofollow' class='word-wrap' target='_blank'>";
-    assertThat(taggedhttps, containsString(EXPECTED));
+    assertThat(taggedhttps).as(taggedhttps).contains(EXPECTED);
 
     taggedhttps = rtu.cleanHTMLStrict(httpsLink, false);
-    assertThat(taggedhttps, not(containsString(EXPECTED)));
+    assertThat(taggedhttps).as(taggedhttps).doesNotContain(EXPECTED);
   }
 }

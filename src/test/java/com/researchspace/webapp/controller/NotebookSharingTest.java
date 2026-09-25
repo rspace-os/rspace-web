@@ -1,13 +1,14 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
@@ -16,8 +17,8 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /** Specific test for asserting the behaviour or notebook sharing/ unsharing */
@@ -27,10 +28,11 @@ public class NotebookSharingTest extends SpringTransactionalTest {
   private Group grp;
   private Notebook nb;
   private StructuredDocument notebookentry;
+  @Autowired private IPermissionUtils permissionUtils;
   @Autowired private RecordManager recordManager;
   @Autowired private WorkspacePermissionsDTOBuilder permBuilder;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     permBuilder.setRecMgr(recordManager);
@@ -40,7 +42,7 @@ public class NotebookSharingTest extends SpringTransactionalTest {
     sharee = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(pi, owner, sharee);
     grp = createGroupForUsers(sysadmin, pi.getUsername(), "", owner, sharee, pi);
-    assertTrue(grp.getPiusers().contains(pi));
+    assertThat(grp.getPiusers()).contains(pi);
     nb = null;
     notebookentry = null;
   }
@@ -112,7 +114,7 @@ public class NotebookSharingTest extends SpringTransactionalTest {
     logoutAndLoginAs(sharee);
     Folder ownershareeShared = folderDao.getIndividualSharedFolderForUsers(owner, sharee, null);
     recordDeletionMgr.deleteFolder(ownershareeShared.getId(), nb.getId(), sharee);
-    assertEquals(0, sharingMgr.getSharedRecordsForUser(owner).size());
+    assertThat(sharingMgr.getSharedRecordsForUser(owner)).isEmpty();
     nb = folderMgr.getNotebook(nb.getId());
     userCanViewNotebookAndEntry(owner, nb, notebookentry);
     userCannotViewNotebookOrEntry(sharee, nb, notebookentry);
@@ -154,7 +156,7 @@ public class NotebookSharingTest extends SpringTransactionalTest {
     logoutAndLoginAs(owner);
     Record doc = createBasicDocumentInRootFolderWithText(owner, "docText");
     Optional<RecordGroupSharing> resultOptional = shareRecordIntoGroupNotebook(doc, nb, grp, owner);
-    assertTrue(resultOptional.isPresent()); // sanity check sharing worked
+    assertThat(resultOptional).isPresent(); // sanity check sharing worked
     assertFalse(
         recordMgr
             .move(doc.getId(), owner.getRootFolder().getId(), nb.getId(), owner)
@@ -170,7 +172,7 @@ public class NotebookSharingTest extends SpringTransactionalTest {
     logoutAndLoginAs(owner);
     Record doc = createBasicDocumentInRootFolderWithText(owner, "docText");
     Optional<RecordGroupSharing> resultOptional = shareRecordIntoGroupNotebook(doc, nb, grp, owner);
-    assertTrue(resultOptional.isPresent()); // sanity check sharing worked
+    assertThat(resultOptional).isPresent(); // sanity check sharing worked
     logoutAndLoginAs(u1);
     assertFalse(
         recordMgr.move(doc.getId(), owner.getRootFolder().getId(), nb.getId(), u1).isSucceeded());
@@ -185,7 +187,7 @@ public class NotebookSharingTest extends SpringTransactionalTest {
     logoutAndLoginAs(owner);
     Record doc = createBasicDocumentInRootFolderWithText(owner, "docText");
     Optional<RecordGroupSharing> resultOptional = shareRecordIntoGroupNotebook(doc, nb, grp, owner);
-    assertTrue(resultOptional.isPresent()); // sanity check sharing worked
+    assertThat(resultOptional).isPresent(); // sanity check sharing worked
     logoutAndLoginAs(pi);
     assertFalse(
         recordMgr.move(doc.getId(), owner.getRootFolder().getId(), nb.getId(), pi).isSucceeded());

@@ -1,8 +1,10 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.PaginationCriteria;
@@ -22,7 +24,7 @@ import com.researchspace.testutils.TestFactory;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
@@ -33,13 +35,11 @@ public class RecordDaoTest extends BaseDaoTestCase {
   static User anyuser = new User("any");
 
   @Autowired private RecordDao dao;
-  @Autowired private FolderDao folderDao;
-  @Autowired private UserDao userDao;
   @Autowired private FormDao formDao;
 
-  @Test(expected = ObjectRetrievalFailureException.class)
+  @Test
   public void testGetRecordInvalid() {
-    dao.get(-1000L);
+    assertThrows(ObjectRetrievalFailureException.class, () -> dao.get(-1000L));
   }
 
   public void testIsRecord() {
@@ -52,7 +52,7 @@ public class RecordDaoTest extends BaseDaoTestCase {
 
   @Test
   public void getMediaLinkedRecords() {
-    assertEquals(0, dao.getInfosOfDocumentsLinkedToMediaFile(1L).size());
+    assertThat(dao.getInfosOfDocumentsLinkedToMediaFile(1L)).isEmpty();
   }
 
   @Test
@@ -70,7 +70,7 @@ public class RecordDaoTest extends BaseDaoTestCase {
     pgCrit.setSortOrder(SortOrder.ASC);
     Map<String, DatabaseUsageByUserGroupByResult> res =
         dao.getTotalRecordsForUsers(List.of(u1, u2), pgCrit);
-    assertEquals(2, res.size());
+    assertThat(res).hasSize(2);
     final long U1Count = res.get(u1.getUsername()).getUsage().longValue();
     assertEquals(U1Count + 1, res.get(u2.getUsername()).getUsage().longValue());
 
@@ -88,13 +88,13 @@ public class RecordDaoTest extends BaseDaoTestCase {
 
     // test the results of retrieveChildRecordIdsExcludeFolders
     List<Long> results = dao.getNotebookContentsExcludeFolders(root.getId());
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
 
     results = dao.getNotebookContentsExcludeFolders(f1.getId());
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
 
     results = dao.getNotebookContentsExcludeFolders(f2.getId());
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
   }
 
   @Test
@@ -105,7 +105,7 @@ public class RecordDaoTest extends BaseDaoTestCase {
 
     createTestData(); // add user and data
     Map<String, DatabaseUsageByUserGroupByResult> res2 = dao.getTotalRecordsForUsers(pgCrit);
-    assertEquals(INITIAL_COUNT + 1, res2.size());
+    assertThat(res2).hasSize(INITIAL_COUNT + 1);
   }
 
   @Test
@@ -115,8 +115,8 @@ public class RecordDaoTest extends BaseDaoTestCase {
     Notebook nb = createNotebookWithNEntries(u.getRootFolder().getId(), "nb", 4, u);
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(u, "any");
     List<Long> docIdsInNotebooks = dao.getAllDocumentIdsInNotebooksForUser(u);
-    assertFalse(docIdsInNotebooks.contains(sd.getId()));
-    assertEquals(4, docIdsInNotebooks.size());
+    assertThat(docIdsInNotebooks).doesNotContain(sd.getId());
+    assertThat(docIdsInNotebooks).hasSize(4);
     assertEquals(
         1,
         dao.getRecordCountForUser(new RecordTypeFilter(EnumSet.of(RecordType.NOTEBOOK), true), u)

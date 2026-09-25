@@ -1,9 +1,10 @@
 package com.researchspace.ldap;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
@@ -11,9 +12,9 @@ import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.UserSignupException;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -29,14 +30,14 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
   private String origProp_ldapEnabled;
   private boolean origProp_ldapAuthEnabled;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     properties = (PropertyHolder) iProperties;
     origProp_ldapEnabled = properties.getLdapEnabled();
     origProp_ldapAuthEnabled = properties.isLdapAuthenticationEnabled();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     properties.setLdapEnabled(origProp_ldapEnabled);
     properties.setLdapAuthenticationEnabled(origProp_ldapAuthEnabled + "");
@@ -47,18 +48,24 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
 
     properties.setLdapEnabled("false");
 
-    CoreTestUtils.assertExceptionThrown(
-        () -> userLdapRepo.findUserByUsername("user"),
-        IllegalStateException.class,
-        containsString("LDAP not configured"));
-    CoreTestUtils.assertExceptionThrown(
-        () -> userLdapRepo.authenticate("user", "pass"),
-        IllegalStateException.class,
-        containsString("LDAP not configured"));
-    CoreTestUtils.assertExceptionThrown(
-        () -> userLdapRepo.signupLdapUser(null),
-        IllegalStateException.class,
-        containsString("LDAP not configured"));
+    var exception1 =
+        assertThrows(IllegalStateException.class, () -> userLdapRepo.findUserByUsername("user"));
+    assertThat(exception1.getMessage()).contains("LDAP not configured");
+    var exception2 =
+        assertThrows(IllegalStateException.class, () -> userLdapRepo.authenticate("user", "pass"));
+    assertThat(exception2.getMessage()).contains("LDAP not configured");
+    var exception3 =
+        assertThrows(IllegalStateException.class, () -> userLdapRepo.signupLdapUser(null));
+    assertThat(exception3.getMessage()).contains("LDAP not configured");
+  }
+
+  @Test
+  public void testEmptyPasswordRejected() {
+    properties.setLdapEnabled("true");
+    properties.setLdapAuthenticationEnabled("true");
+
+    assertNull(userLdapRepo.authenticate("user", null));
+    assertNull(userLdapRepo.authenticate("user", ""));
   }
 
   @Test
@@ -126,19 +133,23 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
         .findUserByUsername(testUser3.getUsername());
 
     // run sid retrieval for non-ldap user
-    CoreTestUtils.assertExceptionThrown(
-        () -> spyUserLdapRepo.retrieveSidForLdapUser(testUser.getUsername()),
-        IllegalArgumentException.class,
-        containsString("non-ldap"));
+    String testUsername = testUser.getUsername();
+    var exception4 =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername));
+    assertThat(exception4.getMessage()).contains("non-ldap");
 
     // run for ldap user without sid
     String retrievedSID = spyUserLdapRepo.retrieveSidForLdapUser(testUser2.getUsername());
     assertEquals(testLdapUser2.getSid(), retrievedSID);
 
     // run for ldap user with sid
-    CoreTestUtils.assertExceptionThrown(
-        () -> spyUserLdapRepo.retrieveSidForLdapUser(testUser3.getUsername()),
-        IllegalArgumentException.class,
-        containsString("user with SID"));
+    String testUsername3 = testUser3.getUsername();
+    var exception5 =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername3));
+    assertThat(exception5.getMessage()).contains("user with SID");
   }
 }

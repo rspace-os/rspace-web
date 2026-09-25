@@ -1,31 +1,33 @@
 package com.researchspace.model.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GlobalIdentifierTest {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testNullOrEmptyThrowsIAE() {
-    new GlobalIdentifier("");
-    new GlobalIdentifier(null);
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(""));
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testInvalidSyntaxThrowsIAE() {
-    new GlobalIdentifier("INVALID_ID");
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier("INVALID_ID"));
   }
 
   @Test
@@ -34,19 +36,20 @@ public class GlobalIdentifierTest {
     new GlobalIdentifier("SD12345v234");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testValidSyntaxThrowsIAE() {
-    new GlobalIdentifier(GlobalIdPrefix.CH, null);
+    assertThrows(
+        IllegalArgumentException.class, () -> new GlobalIdentifier(GlobalIdPrefix.CH, null));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testValidSyntaxThrowsIAE2() {
-    new GlobalIdentifier(null, 2L);
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null, 2L));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testValidSyntaxThrowsIAE3() {
-    new GlobalIdentifier(null, null);
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null, null));
   }
 
   @Test
@@ -82,9 +85,9 @@ public class GlobalIdentifierTest {
     GlobalIdentifier gid2v1 = new GlobalIdentifier("SD124v1");
     GlobalIdentifier gid2v2 = new GlobalIdentifier("SD124v2");
 
-    assertTrue(gid1.compareTo(gid2) < 0);
-    assertTrue(gid2.compareTo(gid2v1) > 0);
-    assertTrue(gid2.compareTo(gid2v2) > 0);
-    assertTrue(gid2v2.compareTo(gid1) > 0);
+    assertThat(gid1.compareTo(gid2)).isLessThan(0);
+    assertThat(gid2.compareTo(gid2v1)).isGreaterThan(0);
+    assertThat(gid2.compareTo(gid2v2)).isGreaterThan(0);
+    assertThat(gid2v2.compareTo(gid1)).isGreaterThan(0);
   }
 }

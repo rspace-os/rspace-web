@@ -1,28 +1,28 @@
 package com.researchspace.model.field;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.testutil.ModelTestUtils;
 import com.researchspace.core.util.TransformerUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RadioFieldFormTest {
   private RadioFieldForm rft;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     rft = new RadioFieldForm();
     rft.setRadioOption("a=b&a=c&a=d");
     rft.setDefaultRadioOption("b");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

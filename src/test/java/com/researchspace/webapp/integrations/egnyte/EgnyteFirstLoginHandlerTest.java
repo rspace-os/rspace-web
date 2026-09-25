@@ -1,24 +1,24 @@
 package com.researchspace.webapp.integrations.egnyte;
 
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.files.service.ExternalFileStoreProvider;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpSession;
 
+@ExtendWith(MockitoExtension.class)
 public class EgnyteFirstLoginHandlerTest {
 
   static class EgnyteAuthConnectorImplTSS extends EgnyteAuthConnectorImpl {
@@ -30,14 +30,12 @@ public class EgnyteFirstLoginHandlerTest {
     }
   }
 
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
-
   private @Mock IPropertyHolder propHolder;
   @InjectMocks private EgnyteAuthConnectorImplTSS egnyteConnector;
   private MockHttpSession mockSession;
   User any;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     Mockito.when(propHolder.getFileStoreType()).thenReturn("LOCAL");
     mockSession = new MockHttpSession();

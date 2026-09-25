@@ -1,5 +1,6 @@
 package com.researchspace.netfiles.s3;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -35,19 +36,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class S3NfsClientTest {
 
-  private final S3Utilities s3Utilities = mock(S3Utilities.class);
-  private final S3NfsClient client = new S3NfsClient("testUser", s3Utilities);
+  @Mock private S3Utilities s3Utilities;
+  private S3NfsClient client;
 
-  /**
-   * Wires the source client's bucket name and returns a fresh destination client backed by its own
-   * mock {@link S3Utilities}. Use this in any test that exercises {@link S3NfsClient#copyObject}.
-   */
-  private DestClientFixture newDestClient(String sourceBucketName) {
-    when(s3Utilities.getBucketName()).thenReturn(sourceBucketName);
+  @BeforeEach
+  void setUp() {
+    client = new S3NfsClient("testUser", s3Utilities);
+  }
+
+  private DestClientFixture newDestClient() {
     S3Utilities destS3Utilities = mock(S3Utilities.class);
     return new DestClientFixture(new S3NfsClient("destUser", destS3Utilities), destS3Utilities);
   }
@@ -113,12 +119,12 @@ public class S3NfsClientTest {
   public void uploadFile_destinationKeyAlreadyExists_throwsIOExceptionAndDoesNotUpload()
       throws IOException {
     when(s3Utilities.isFileInS3("dest/folder", "Picture1.png")).thenReturn(true);
+    File source = new File("Picture1.png");
 
     IOException ex =
-        assertThrows(
-            IOException.class, () -> client.uploadFile(new File("Picture1.png"), "dest/folder"));
-    assertTrue(ex.getMessage().contains("already exists"));
-    verify(s3Utilities, org.mockito.Mockito.never()).uploadToS3(any(), any(), any());
+        assertThrows(IOException.class, () -> client.uploadFile(source, "dest/folder"));
+    assertThat(ex.getMessage()).contains("already exists");
+    verify(s3Utilities, never()).uploadToS3(any(), any(), any());
   }
 
   @Test
@@ -126,8 +132,7 @@ public class S3NfsClientTest {
     File f1 = new File("file1.png");
     File f2 = new File("file2.png");
     WriteAttribution attribution =
-        new WriteAttribution(
-            "alice", Map.of(123L, "file1", 456L, "file2"), java.time.Instant.now());
+        new WriteAttribution("alice", Map.of(123L, "file1", 456L, "file2"), Instant.now());
 
     client.uploadFilesToNfs("dest", Map.of(123L, f1, 456L, f2), attribution);
 
@@ -158,8 +163,9 @@ public class S3NfsClientTest {
   public void createFolder_whenFileExistsAtPath_throws() {
     S3FolderContentItem file = new S3FolderContentItem("new", false, 10L, Instant.now());
     when(s3Utilities.getObjectDetails("parent/new")).thenReturn(file);
+    Map<String, String> metadata = Map.of();
 
-    assertThrows(IOException.class, () -> client.createFolder("parent/new", Map.of()));
+    assertThrows(IOException.class, () -> client.createFolder("parent/new", metadata));
   }
 
   @Test
@@ -167,8 +173,9 @@ public class S3NfsClientTest {
     // Re-creating an existing folder must not overwrite its created-by/created-at provenance.
     S3FolderContentItem folder = new S3FolderContentItem("new", true, null, null);
     when(s3Utilities.getObjectDetails("parent/new")).thenReturn(folder);
+    Map<String, String> metadata = Map.of();
 
-    assertThrows(IOException.class, () -> client.createFolder("parent/new", Map.of()));
+    assertThrows(IOException.class, () -> client.createFolder("parent/new", metadata));
     verify(s3Utilities, never()).createFolder(any(), any());
   }
 
@@ -182,7 +189,7 @@ public class S3NfsClientTest {
     NfsFileTreeNode root = client.createFileTree("", null, null);
 
     verify(s3Utilities).listFolderContents("");
-    assertEquals(1, root.getNodes().size());
+    assertThat(root.getNodes()).hasSize(1);
   }
 
   @Test
@@ -332,7 +339,8 @@ public class S3NfsClientTest {
   @Test
   public void copyObject_toAnotherS3Client_callsCopyObjectFromBucketOnDestination()
       throws IOException {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
+    when(s3Utilities.getBucketName()).thenReturn("source-bucket");
 
     String resultKey = client.copyObject("source/file.txt", dest.client, "dest/file.txt");
 
@@ -344,7 +352,8 @@ public class S3NfsClientTest {
 
   @Test
   public void copyObject_withMetadata_passesMetadataToCopyObjectFromBucket() throws IOException {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
+    when(s3Utilities.getBucketName()).thenReturn("source-bucket");
     Map<String, String> metadata = Map.of("rspace-user", "alice");
 
     String resultKey = client.copyObject("source/file.txt", dest.client, "dest/file.txt", metadata);
@@ -356,7 +365,8 @@ public class S3NfsClientTest {
 
   @Test
   public void copyObject_stripsLeadingSlashesFromBothSourceAndDestKeys() throws IOException {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
+    when(s3Utilities.getBucketName()).thenReturn("source-bucket");
 
     String resultKey = client.copyObject("/source/file.txt", dest.client, "/dest/file.txt");
 
@@ -378,7 +388,7 @@ public class S3NfsClientTest {
 
   @Test
   public void copyObject_sourceOver5GB_throwsIOExceptionAndDoesNotCallCopy() {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
     long fiveGbPlusOne = 5L * 1024L * 1024L * 1024L + 1L;
     S3FolderContentItem huge =
         new S3FolderContentItem("huge.bin", false, fiveGbPlusOne, Instant.now());
@@ -388,14 +398,13 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class,
             () -> client.copyObject("source/huge.bin", dest.client, "dest/huge.bin"));
-    assertTrue(ex.getMessage().contains("5"));
-    verify(dest.mockS3Utilities, org.mockito.Mockito.never())
-        .copyObjectFromBucket(any(), any(), any(), any());
+    assertThat(ex.getMessage()).contains("5");
+    verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
   @Test
   public void copyObject_destinationKeyAlreadyExists_throwsIOExceptionAndDoesNotCopy() {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
     when(dest.mockS3Utilities.getObjectDetails("dest/file.txt"))
         .thenReturn(new S3FolderContentItem("file.txt", false, 100L, Instant.now()));
 
@@ -403,16 +412,15 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class,
             () -> client.copyObject("source/file.txt", dest.client, "dest/file.txt"));
-    assertTrue(ex.getMessage().contains("already exists"));
-    verify(dest.mockS3Utilities, org.mockito.Mockito.never())
-        .copyObjectFromBucket(any(), any(), any(), any());
+    assertThat(ex.getMessage()).contains("already exists");
+    verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
   @Test
   public void copyObject_destinationIsExistingFolder_throwsIOExceptionAndDoesNotCopy() {
     // A folder at the dest key must also block the copy, else file dest/x sits beside folder
     // dest/x/.
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
     when(dest.mockS3Utilities.getObjectDetails("dest/photos"))
         .thenReturn(new S3FolderContentItem("photos", true, null, null));
 
@@ -420,9 +428,8 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class,
             () -> client.copyObject("source/photos", dest.client, "dest/photos"));
-    assertTrue(ex.getMessage().contains("already exists"));
-    verify(dest.mockS3Utilities, org.mockito.Mockito.never())
-        .copyObjectFromBucket(any(), any(), any(), any());
+    assertThat(ex.getMessage()).contains("already exists");
+    verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
   @Test
@@ -472,7 +479,7 @@ public class S3NfsClientTest {
     assertEquals("testTarget", rootNode.getFileName());
     assertEquals("testTopLevelFolder/testTarget", rootNode.getNodePath());
     assertTrue(rootNode.getIsFolder());
-    assertEquals(1, rootNode.getNodes().size());
+    assertThat(rootNode.getNodes()).hasSize(1);
 
     NfsFileTreeNode child = rootNode.getNodes().get(0);
     assertEquals("test1.txt", child.getFileName());
@@ -564,7 +571,7 @@ public class S3NfsClientTest {
     assertEquals("folder", details.getName());
     assertEquals("test/folder", details.getFileSystemFullPath());
     assertEquals("test", details.getFileSystemParentPath());
-    assertEquals(2, details.getContent().size());
+    assertThat(details.getContent()).hasSize(2);
 
     NfsResourceDetails res1 = details.getContent().get(0);
     assertEquals("file1.txt", res1.getName());

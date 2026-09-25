@@ -1,31 +1,27 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.service.impl.SignupCaptchaVerifierImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-@RunWith(ConditionalTestRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
 
   private SignupCaptchaVerifierImpl captchaVerifier = new SignupCaptchaVerifierImpl();
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock private IPropertyHolder propHolder;
 
   @Value("${user.signup.captcha.site.key}")
@@ -38,7 +34,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
 
   private StringAppenderForTestLogging stringLogger;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     captchaVerifier.setProperties(propHolder);
@@ -55,7 +51,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
     when(propHolder.getSignupCaptchaEnabled()).thenReturn("false");
     assertEquals(
         SignupCaptchaVerifier.CAPTCHA_OK, captchaVerifier.verifyCaptchaFromRequest(mockRequest));
-    assertEquals("", stringLogger.logContents);
+    assertThat(stringLogger.logContents).isEmpty();
 
     /* captcha enabled, but token not provided in request */
     when(propHolder.getSignupCaptchaEnabled()).thenReturn("true");
@@ -74,7 +70,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testCaptchaVerificationErrorFromGoogleApi() throws Exception {
 
     /* deployment properties incorrect */

@@ -1,23 +1,23 @@
 package com.researchspace.model.record;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.User;
 import java.util.Date;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class FormUsageTest {
 
   FormUsage formUsage;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -28,7 +28,7 @@ public class FormUsageTest {
     assertNull(formUsage.getId());
 
     assertNotNull(formUsage.getLastUsedTimeInMillis());
-    assertTrue(formUsage.getLastUsedTimeInMillis() > currTime);
+    assertThat(formUsage.getLastUsedTimeInMillis()).isGreaterThan(currTime);
   }
 
   private void createFormUsage() {

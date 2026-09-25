@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -13,8 +14,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.record.StructuredDocument;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
@@ -25,7 +26,7 @@ import org.springframework.test.web.servlet.MvcResult;
  */
 public class ReferencingInventoryItemsControllerMVCIT extends API_MVC_InventoryTestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -55,7 +56,7 @@ public class ReferencingInventoryItemsControllerMVCIT extends API_MVC_InventoryT
 
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-    assertEquals(1, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).hasSize(1);
     assertEquals(source.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
     assertEquals("References", body.getReferencingItems().get(0).getRelationType());
   }
@@ -75,7 +76,7 @@ public class ReferencingInventoryItemsControllerMVCIT extends API_MVC_InventoryT
 
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-    assertEquals(0, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).isEmpty();
   }
 
   @Test
@@ -99,7 +100,7 @@ public class ReferencingInventoryItemsControllerMVCIT extends API_MVC_InventoryT
 
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-    assertEquals(1, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).hasSize(1);
     assertEquals(sample.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
     // attachments carry no DataCite relation type; the client supplies the "Attachment" label
     assertNull(body.getReferencingItems().get(0).getRelationType());
@@ -120,7 +121,7 @@ public class ReferencingInventoryItemsControllerMVCIT extends API_MVC_InventoryT
 
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-    assertEquals(0, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).isEmpty();
   }
 
   private String buildLinkExtraFieldUpdate(String targetGlobalId, String relationType) {

@@ -5,31 +5,25 @@ import static org.mockito.Mockito.verify;
 import com.axiope.search.IFileIndexer;
 import com.researchspace.dao.TextSearchDao;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class LuceneSearchIndexInitialisorTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
   private @Mock TextSearchDao searchDao;
   private @Mock IFileIndexer indexer;
   private LuceneSearchIndexInitialisor luceneInit;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     luceneInit = new LuceneSearchIndexInitialisor();
     luceneInit.setIndexer(indexer);
     luceneInit.setTextDao(searchDao);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void onInitialAppDeploymentInitialisesIndex() throws IOException {

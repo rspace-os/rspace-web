@@ -1,6 +1,7 @@
 package com.researchspace.dao.customliquibaseupdates;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
@@ -10,21 +11,21 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.io.FileNotFoundException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class AddLinksToDocumentIT extends RealTransactionSpringTestBase {
 
   AddLinksToDocumentsInFields fieldLinkerTask;
 
-  @Before
+  @BeforeEach
   public void before() {
     // created outside spring, as it will be created by liquibase in reality
     fieldLinkerTask = new AddLinksToDocumentsInFields();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -42,7 +43,7 @@ public class AddLinksToDocumentIT extends RealTransactionSpringTestBase {
     openTransaction();
     EcatDocumentFile attachment =
         addAttachmentDocumentToField(RSpaceTestUtils.getResource("genFilesi.txt"), toAdd, u);
-    assertEquals(1, attachment.getLinkedFields().size());
+    assertThat(attachment.getLinkedFields()).hasSize(1);
     commitTransaction();
     // create links
     openTransaction();

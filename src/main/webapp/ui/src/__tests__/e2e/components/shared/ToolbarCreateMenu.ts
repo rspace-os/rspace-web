@@ -6,7 +6,6 @@ export type CreateMenuItem =
   | "New entry"
   | "From Form"
   | "From Template"
-  | "From Evernote"
   | "From Protocols.io"
   | "New Form";
 
@@ -16,7 +15,6 @@ const CREATE_ACCESSIBLE_NAME: Record<CreateMenuItem, string> = {
   "New entry": "New entry",
   "From Form": "From Form",
   "From Template": "From Template",
-  "From Evernote": "From Evernote",
   "From Protocols.io": "From Protocols.io",
   "New Form": "New Form",
 };

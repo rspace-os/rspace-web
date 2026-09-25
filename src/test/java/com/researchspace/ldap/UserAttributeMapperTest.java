@@ -6,7 +6,7 @@ import com.researchspace.ldap.impl.UserAttributeMapper;
 import com.researchspace.model.User;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttributes;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class UserAttributeMapperTest {
 

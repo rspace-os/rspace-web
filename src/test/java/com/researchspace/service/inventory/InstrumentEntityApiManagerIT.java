@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -18,7 +19,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase {
 
@@ -62,9 +63,10 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
 
     User otherUser = createAndSaveUser(CoreTestUtils.getRandomName(10));
     setUpUserWithoutCustomContent(otherUser);
+    Long instrumentId = created.getId();
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanEditInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanEditInstrument(instrumentId, otherUser));
   }
 
   @Test
@@ -129,8 +131,7 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
             null,
             InventorySearchDeletedOption.DELETED_ONLY,
             testUser);
-    assertTrue(
-        withDeleted.getInstruments().stream().anyMatch(i -> i.getId().equals(created.getId())));
+    assertThat(withDeleted.getInstruments()).anyMatch(i -> i.getId().equals(created.getId()));
 
     ApiInstrument restored = instrumentApiMgr.restoreDeletedInstrument(created.getId(), testUser);
     assertFalse(restored.isDeleted());
@@ -165,8 +166,7 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
             testUser);
 
     assertTrue(result.getTotalHits() >= 1);
-    assertTrue(
-        result.getInstruments().stream().anyMatch(i -> i.getName().equals("listed-it-instrument")));
+    assertThat(result.getInstruments()).anyMatch(i -> i.getName().equals("listed-it-instrument"));
   }
 
   @Test
@@ -199,9 +199,9 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
 
     // new owner can read it; original owner no longer has access
     assertNotNull(instrumentApiMgr.assertUserCanReadInstrument(transferred.getId(), newOwner));
+    Long transferredId = transferred.getId();
     assertThrows(
-        Exception.class,
-        () -> instrumentApiMgr.assertUserCanEditInstrument(transferred.getId(), owner));
+        Exception.class, () -> instrumentApiMgr.assertUserCanEditInstrument(transferredId, owner));
   }
 
   @Test
@@ -214,9 +214,9 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
     ApiInstrument created = createBasicInstrumentForUser(owner, "perm-delete-it");
 
     assertNotNull(instrumentApiMgr.assertUserCanDeleteInstrument(created.getId(), owner));
+    Long instrumentId = created.getId();
     assertThrows(
-        Exception.class,
-        () -> instrumentApiMgr.assertUserCanDeleteInstrument(created.getId(), other));
+        Exception.class, () -> instrumentApiMgr.assertUserCanDeleteInstrument(instrumentId, other));
   }
 
   @Test
@@ -229,8 +229,9 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
     ApiInstrument created = createBasicInstrumentForUser(owner, "perm-transfer-it");
 
     assertNotNull(instrumentApiMgr.assertUserCanTransferInstrument(created.getId(), owner));
+    Long instrumentId = created.getId();
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanTransferInstrument(created.getId(), other));
+        () -> instrumentApiMgr.assertUserCanTransferInstrument(instrumentId, other));
   }
 }

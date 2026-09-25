@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalStateExceptionThrown;
 import static com.researchspace.testutils.CommsTestUtils.createRequestOfType;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -12,9 +12,9 @@ import com.researchspace.model.comms.MessageType;
 import com.researchspace.service.impl.RSpaceRequestManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class RSpaceRequestManagerTest extends SpringTransactionalTest {
@@ -25,7 +25,7 @@ public class RSpaceRequestManagerTest extends SpringTransactionalTest {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     user = TestFactory.createAnyUser("any");
@@ -38,7 +38,7 @@ public class RSpaceRequestManagerTest extends SpringTransactionalTest {
         requestMgr, "messages", new MessageSourceUtils(new JsonMessageSource()));
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -48,6 +48,6 @@ public class RSpaceRequestManagerTest extends SpringTransactionalTest {
 
     Communication globalMsg = createRequestOfType(user, MessageType.GLOBAL_MESSAGE);
     when(mockCommDao.get(1L)).thenReturn(globalMsg);
-    assertIllegalStateExceptionThrown(() -> requestMgr.replyToMessage("user", 1L, "reply"));
+    assertThrows(IllegalStateException.class, () -> requestMgr.replyToMessage("user", 1L, "reply"));
   }
 }

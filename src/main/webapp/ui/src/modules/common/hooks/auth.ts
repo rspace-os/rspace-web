@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
+  fetchOauthToken,
   getStoredToken,
   isExpiringSoon,
   saveStoredToken,
@@ -79,7 +80,7 @@ export function useOauthTokenQuery() {
         return savedToken;
       }
       // If no valid token exists, fetch a new one
-      return fetchToken();
+      return fetchOauthToken(fetchToken);
     },
     // Calculate stale time based on token expiry
     // We'll consider the token stale 5 minutes before it actually expires

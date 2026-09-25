@@ -1,9 +1,11 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiContainer;
@@ -21,7 +23,8 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
-import org.junit.Test;
+import org.hibernate.LazyInitializationException;
+import org.junit.jupiter.api.Test;
 
 public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
 
@@ -42,21 +45,21 @@ public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
 
     // get sample details, verify subsample parent/grandparent are present
     SampleEntity dbSample = sampleApiMgr.getSampleById(sample.getId(), testUser);
-    assertEquals(1, dbSample.getSubSamples().size());
+    assertThat(dbSample.getSubSamples()).hasSize(1);
     SubSample dbSubSample = dbSample.getSubSamples().get(0);
     assertEquals(subContainer.getId(), dbSubSample.getParentId());
     assertEquals(1, dbSubSample.getParentContainer().getContentCount());
     assertEquals(1, dbSubSample.getParentContainer().getParentContainer().getContentCount());
 
     // but shouldn't be able to access parent's locations at this point, that's lazy-initialized
-    assertLazyInitializationExceptionThrown(
-        () -> dbSubSample.getParentContainer().getLocations().size());
+    var parentLocations = dbSubSample.getParentContainer().getLocations();
+    assertThrows(LazyInitializationException.class, () -> parentLocations.size());
 
     // verify subsample can be mapped to ApiSubSample without extra db queries
     ApiSubSampleInfo infoWithParents = new ApiSubSampleInfo(dbSubSample);
-    assertEquals(3, infoWithParents.getParentContainers().size());
+    assertThat(infoWithParents.getParentContainers()).hasSize(3);
     assertEquals("subContainer", infoWithParents.getParentContainers().get(0).getName());
-    assertEquals(0, infoWithParents.getAttachments().size());
+    assertThat(infoWithParents.getAttachments()).isEmpty();
   }
 
   @Test
@@ -67,12 +70,12 @@ public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
     // create example template
     ApiSampleTemplate createdTemplate = createSampleTemplateWithRadioAndNumericFields(testUser);
     assertEquals(1, createdTemplate.getVersion());
-    assertEquals(2, createdTemplate.getFields().size());
+    assertThat(createdTemplate.getFields()).hasSize(2);
 
     // retrieve the template
     ApiSample retrievedTemplate =
         sampleApiMgr.getApiSampleTemplateById(createdTemplate.getId(), testUser);
-    assertEquals(2, retrievedTemplate.getFields().size());
+    assertThat(retrievedTemplate.getFields()).hasSize(2);
     ApiInventoryEntityField retrievedTemplateRadioField = retrievedTemplate.getFields().get(0);
 
     // prepare & run simple template update (v2)
@@ -114,7 +117,7 @@ public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
     assertEquals(1, firstVersion.getVersion());
     assertNotNull(firstVersion.getRevisionId());
     assertTrue(firstVersion.isHistoricalVersion());
-    assertEquals(2, firstVersion.getFields().size());
+    assertThat(firstVersion.getFields()).hasSize(2);
     retrievedTemplateRadioField = firstVersion.getFields().get(0);
     assertEquals(
         List.of("r1", "r2", "r3"), retrievedTemplateRadioField.getDefinition().getOptions());

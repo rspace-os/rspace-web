@@ -2,8 +2,10 @@ package com.researchspace.webapp.integrations.datacite;
 
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.datacite.model.DataCiteDoi;
+import com.researchspace.datacite.model.DataCiteDoiSearchResult;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import lombok.Getter;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -49,6 +51,27 @@ public class DataCiteConnectorDummy implements DataCiteConnector {
     doiSentToDatacite = dataCiteDoi;
     dataCiteDoi.getAttributes().setState("registered");
     return dataCiteDoi;
+  }
+
+  /** Leaves the state untouched, as a real metadata-only update does. */
+  @Override
+  public DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
+    lastSettingTypeUsed = settingType;
+    doiSentToDatacite = dataCiteDoi;
+    return dataCiteDoi;
+  }
+
+  @Override
+  public Optional<DataCiteDoi> findDoi(String doiId, InventorySettingType settingType) {
+    lastSettingTypeUsed = settingType;
+    return Optional.empty();
+  }
+
+  @Override
+  public DataCiteDoiSearchResult searchInstrumentDois(
+      String query, int pageSize, InventorySettingType settingType) {
+    lastSettingTypeUsed = settingType;
+    return new DataCiteDoiSearchResult();
   }
 
   @Override

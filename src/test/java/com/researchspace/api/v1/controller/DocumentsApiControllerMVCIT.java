@@ -4,11 +4,11 @@ import static com.researchspace.api.v1.controller.ApiDocSearchConfig.MAX_QUERY_L
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,7 +49,6 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.InternalLinkManager;
-import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -60,10 +59,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockServletContext;
@@ -71,12 +69,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-@TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://your-chem-service:8090",
-      "chemistry.provider=indigo"
-    })
-@RunWith(ConditionalTestRunner.class)
+@TestPropertySource(properties = "chemistry.provider=indigo")
 public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
   @Autowired DocumentsApiController docApiCtrller;
@@ -84,7 +77,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Autowired InternalLinkManager internalLinkMgr;
   MockServletContext mockServletCtxt = null;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     mockServletCtxt = new MockServletContext();
@@ -137,7 +130,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiDocumentSearchResult noDocs =
         getFromJsonResponseBody(invalidQuery4, ApiDocumentSearchResult.class);
-    assertEquals(0, noDocs.getDocuments().size()); // 11th page is empty
+    assertThat(noDocs.getDocuments()).isEmpty(); // 11th page is empty
   }
 
   @Test
@@ -333,12 +326,12 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     assertNotNull(apiDoc.getParentFolderId());
     assertEquals(1, getMediaFileCount(apiDoc));
     ApiFile file = apiDoc.getFields().get(0).getFiles().get(0);
-    assertTrue(
-        "No self link for file " + file.getId(),
-        file.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.SELF_REL)));
-    assertTrue(
-        "No self link for file " + file.getId(),
-        file.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.ENCLOSURE_REL)));
+    assertThat(file.getLinks())
+        .as("No self link for file " + file.getId())
+        .anyMatch(link -> link.getRel().equals(ApiLinkItem.SELF_REL));
+    assertThat(file.getLinks())
+        .as("No self link for file " + file.getId())
+        .anyMatch(link -> link.getRel().equals(ApiLinkItem.ENCLOSURE_REL));
     apiModelTestUtils.assertApiDocumentMatchSDoc(apiDoc, doc);
 
     // now simulate user deleting the attachment in UI
@@ -394,8 +387,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     assertNotNull(apiDoc);
     assertNotNull(apiDoc.getParentFolderId());
     List<ApiListOfMaterials> lomInApiDoc = apiDoc.getFields().get(0).getListsOfMaterials();
-    assertEquals(1, lomInApiDoc.size());
-    assertEquals(4, lomInApiDoc.get(0).getMaterials().size());
+    assertThat(lomInApiDoc).hasSize(1);
+    assertThat(lomInApiDoc.get(0).getMaterials()).hasSize(4);
     ApiInventoryRecordInfo usedContainer = lomInApiDoc.get(0).getMaterials().get(0).getRecord();
     assertEquals("listContainer", usedContainer.getName());
     ApiInventoryRecordInfo usedSample = lomInApiDoc.get(0).getMaterials().get(1).getRecord();
@@ -538,7 +531,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     Boolean deleted = doInTransaction(() -> documentIsDeleted(simpleDocId));
     assertTrue(deleted);
     // and no edit lock:
-    assertFalse(tracker.isEditing(recordMgr.get(simpleDocId)).isPresent());
+    assertThat(tracker.isEditing(recordMgr.get(simpleDocId))).isNotPresent();
     // and can't retrieve:
     this.mockMvc.perform(getDocById(anyUser, apiKey, simpleDocId)).andExpect(status().isNotFound());
   }
@@ -574,7 +567,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     ApiDocument docFromEmptyRequest = getFromJsonResponseBody(result, ApiDocument.class);
     assertNotNull(docFromEmptyRequest.getId());
     assertEquals("API all fields form", docFromEmptyRequest.getForm().getName());
-    assertEquals(7, docFromEmptyRequest.getFields().size());
+    assertThat(docFromEmptyRequest.getFields()).hasSize(7);
     for (int i = 0; i < 7; i++) {
       if (i == 1) {
         // field 1 is choice field, and its value is passed to api client in simplified format
@@ -602,7 +595,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiDocument docFromSimpleRequest = getFromJsonResponseBody(result, ApiDocument.class);
     assertNotNull(docFromSimpleRequest.getId());
-    assertEquals(7, docFromEmptyRequest.getFields().size());
+    assertThat(docFromEmptyRequest.getFields()).hasSize(7);
     for (int i = 0; i < 7; i++) {
       if (i == 1) {
         assertEquals("a,c", docFromEmptyRequest.getFields().get(i).getContent());
@@ -638,7 +631,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiDocument created = getFromJsonResponseBody(result, ApiDocument.class);
     // assert link to SD is made.
-    assertEquals(1, internalLinkMgr.getLinksPointingToRecord(sd.getId()).size());
+    assertThat(internalLinkMgr.getLinksPointingToRecord(sd.getId())).hasSize(1);
   }
 
   @Test
@@ -656,7 +649,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isBadRequest())
             .andReturn();
     Exception exception = result.getResolvedException();
-    assertTrue(exception.getMessage().contains("Name cannot be longer than 255 characters"));
+    assertThat(exception.getMessage()).contains("Name cannot be longer than 255 characters");
 
     // basic doc with field provided, but content pointing to unaccessible attachment
     json = "{ \"fields\" : [ { \"content\": \"my attachment <fileId=1234567890>\" } ] }";
@@ -784,7 +777,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
     EcatImage image = addImageToGallery(anyUser);
     // finally, a correct call
-    int initialLinkCount = mediaMgr.getIdsOfLinkedDocuments(image.getId()).size();
+    int initialLinkCount = mediaMgr.getIdsOfLinkedDocuments(image.getId(), anyUser).size();
 
     json =
         String.format(
@@ -798,7 +791,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isCreated())
             .andReturn();
     // assert that media-field link is established
-    assertEquals(initialLinkCount + 1, mediaMgr.getIdsOfLinkedDocuments(image.getId()).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(image.getId(), anyUser))
+        .hasSize(initialLinkCount + 1);
   }
 
   @Test
@@ -859,17 +853,13 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     if (!present) {
       doInTransaction(
           () ->
-              assertFalse(
-                  folderDao
-                      .getApiFolderForContentType(anyUser.getUsername(), anyUser)
-                      .isPresent()));
+              assertThat(folderDao.getApiFolderForContentType(anyUser.getUsername(), anyUser))
+                  .isNotPresent());
     } else {
       doInTransaction(
           () ->
-              assertTrue(
-                  folderDao
-                      .getApiFolderForContentType(anyUser.getUsername(), anyUser)
-                      .isPresent()));
+              assertThat(folderDao.getApiFolderForContentType(anyUser.getUsername(), anyUser))
+                  .isPresent());
     }
   }
 
@@ -903,8 +893,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isBadRequest())
             .andReturn();
     Exception exception = result.getResolvedException();
-    assertTrue(
-        exception.getMessage().contains("Document tags cannot be longer than 8000 characters"));
+    assertThat(exception.getMessage())
+        .contains("Document tags cannot be longer than 8000 characters");
 
     // create a document and request edit lock
     EditStatus editStatus = recordMgr.requestRecordEdit(doc.getId(), anyUser, activeUsers);
@@ -928,9 +918,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         exception.getMessage());
   }
 
-  @Ignore(
-      "Requires chemistry service to run. See"
-          + " https://documentation.researchspace.com/article/1jbygguzoa")
+  @Tag("chemistry")
   @Test
   public void testInsertingChemistryFileViaAPI() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
@@ -948,12 +936,13 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiDocument created = getFromJsonResponseBody(result, ApiDocument.class);
     assertNotNull(created.getId());
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     String actual = created.getFields().get(0).getContent();
     Document doc = Jsoup.parse(actual);
     Elements elements = doc.select("img.chem");
-    assertEquals(
-        "unexpected number of chem replacements, actual content: \n" + actual, 1, elements.size());
+    assertThat(elements)
+        .as("unexpected number of chem replacements, actual content: \n" + actual)
+        .hasSize(1);
     assertTrue(elements.first().select("img.chem").hasAttr("data-chemfileid"));
   }
 

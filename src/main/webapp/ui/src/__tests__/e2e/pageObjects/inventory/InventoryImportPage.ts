@@ -1,12 +1,12 @@
 import type { Locator, Page } from "@playwright/test";
 import { BasePage } from "../BasePage";
 
-export type InventoryImportRecordType = "CONTAINERS" | "SAMPLES" | "SUBSAMPLES";
+export type InventoryImportRecordType = "CONTAINERS" | "SAMPLES" | "SUBSAMPLES" | "INSTRUMENTS";
 
 export class InventoryImportPage extends BasePage {
   readonly path = "/inventory/import";
 
-  private readonly main: Locator;
+  readonly main: Locator;
   readonly importButton: Locator;
 
   readonly blockedWarning: Locator;
@@ -43,6 +43,14 @@ export class InventoryImportPage extends BasePage {
     if ((await checkbox.isChecked()) !== checked) {
       await checkbox.click();
     }
+  }
+
+  async chooseNewTemplate(): Promise<void> {
+    await this.main.getByRole("radio", { name: "Create new template." }).click();
+  }
+
+  async chooseExistingTemplate(): Promise<void> {
+    await this.main.getByRole("radio", { name: "Choose existing template." }).click();
   }
 
   async clickImport(): Promise<void> {

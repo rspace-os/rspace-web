@@ -1,10 +1,12 @@
 package com.researchspace.dao.customliquibaseupdates.v29;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatComment;
@@ -17,7 +19,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.EcatImageAnnotationManager;
-import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
@@ -25,16 +26,16 @@ import java.util.List;
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.SetupException;
 import org.apache.commons.codec.binary.Base64;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelpers {
 
   private @Autowired RecordManager recordManager;
   private @Autowired EcatCommentManager commentManager;
-  private @Autowired RSChemElementManager rsChemElementManager;
   private @Autowired EcatImageAnnotationManager ecatImageAnnotationManager;
+  private @Autowired RecordDao recordDao;
 
   private UpdateReferencesInSnippetAttachments updater;
   private User user;
@@ -46,7 +47,7 @@ public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelper
   private RSChemElement chem;
   private EcatComment comment;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -84,10 +85,10 @@ public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelper
     openTransaction();
     List<Snippet> newSnippets = getAllSnippets();
     newSnippets.removeAll(initSnippets);
-    assertEquals(3, newSnippets.size());
-    assertEquals(0, newSnippets.get(0).getLinkedMediaFiles().size());
-    assertEquals(0, newSnippets.get(1).getLinkedMediaFiles().size());
-    assertEquals(0, newSnippets.get(2).getLinkedMediaFiles().size());
+    assertThat(newSnippets).hasSize(3);
+    assertThat(newSnippets.get(0).getLinkedMediaFiles()).isEmpty();
+    assertThat(newSnippets.get(1).getLinkedMediaFiles()).isEmpty();
+    assertThat(newSnippets.get(2).getLinkedMediaFiles()).isEmpty();
     commitTransaction();
 
     // assert annotation/chemicals/comments are added and are pointing to snippet through parent id
@@ -107,13 +108,13 @@ public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelper
     openTransaction();
     List<Snippet> updatedSnippets = getAllSnippets();
     updatedSnippets.removeAll(initSnippets);
-    assertEquals(3, updatedSnippets.size());
+    assertThat(updatedSnippets).hasSize(3);
     for (Snippet updatedSnip : updatedSnippets) {
       if (snip3.getId().equals(updatedSnip.getId())) {
-        assertEquals(0, updatedSnip.getLinkedMediaFiles().size());
+        assertThat(updatedSnip.getLinkedMediaFiles()).isEmpty();
       } else {
         // snip1 has an image, snip2 image with annotation
-        assertEquals(1, updatedSnip.getLinkedMediaFiles().size());
+        assertThat(updatedSnip.getLinkedMediaFiles()).hasSize(1);
         RecordAttachment recordAttachment =
             (RecordAttachment) updatedSnip.getLinkedMediaFiles().toArray()[0];
         assertEquals(updatedSnip, recordAttachment.getRecord());

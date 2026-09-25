@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -21,8 +22,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -34,7 +35,7 @@ public class ApiIdentifiersHelperTest {
   @Mock private User user;
   @InjectMocks private ApiIdentifiersHelper underTest;
 
-  @Before
+  @BeforeEach
   public void setup() {
     MockitoAnnotations.openMocks(this);
     when(properties.getServerUrl()).thenReturn("https://localhost:8080");
@@ -52,10 +53,8 @@ public class ApiIdentifiersHelperTest {
 
     DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
     assertNotNull(result);
-    assertTrue(
-        result
-            .getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL)
-            .contains("https://localhost:8080/public/inventory/"));
+    assertThat(result.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL))
+        .contains("https://localhost:8080/public/inventory/");
     assertEquals(user, result.getOwner());
   }
 
@@ -164,10 +163,11 @@ public class ApiIdentifiersHelperTest {
     ApiInventoryDOI apiDoi = new ApiInventoryDOI(); // deliberately no generatePublicLinkSuffix()
     apiDoi.setRegisterIdentifierRequest(true);
     InventoryRecord parent = mock(InventoryRecord.class);
+    List<ApiInventoryDOI> identifiers = List.of(apiDoi);
 
     assertThrows(
         IllegalStateException.class,
-        () -> underTest.createDeleteRequestedIdentifiers(List.of(apiDoi), parent, user));
+        () -> underTest.createDeleteRequestedIdentifiers(identifiers, parent, user));
   }
 
   /**
@@ -196,5 +196,32 @@ public class ApiIdentifiersHelperTest {
         attached
             .getValue()
             .getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
+  }
+
+  /**
+   * A linked identifier rides the register path only so the existing attach code persists it, not
+   * because RSpace registered anything. Storing a LOCAL_URL for it advertised an RSpace landing
+   * page that {@code findPublishedItemVersionByPublicLink} deliberately refuses to serve, so the
+   * address surfaced over the API as the identifier's {@code url} and resolved to a 404
+   * (RSDEV-1326, ADR 0009).
+   */
+  @Test
+  public void aLinkedIdentifierGetsNoRSpaceLandingPage() {
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.generatePublicLinkSuffix();
+    apiDoi.setRegisterIdentifierRequest(true);
+    apiDoi.setLinked(true);
+    InventoryRecord parent = mock(InventoryRecord.class);
+    ArgumentCaptor<DigitalObjectIdentifier> persisted =
+        ArgumentCaptor.forClass(DigitalObjectIdentifier.class);
+
+    underTest.createDeleteRequestedIdentifiers(List.of(apiDoi), parent, user);
+
+    verify(parent).addIdentifier(persisted.capture());
+    assertNull(
+        persisted
+            .getValue()
+            .getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL),
+        "a linked identifier must not advertise an RSpace public page");
   }
 }

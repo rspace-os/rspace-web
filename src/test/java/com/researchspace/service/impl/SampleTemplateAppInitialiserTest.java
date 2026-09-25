@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,18 +15,16 @@ import com.researchspace.testutils.TestFactory;
 import java.util.concurrent.Callable;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.Subject;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class SampleTemplateAppInitialiserTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
   StringAppenderForTestLogging strgLogger;
   private @Mock SampleTemplateInitializer sampleTemplateCreator;
   private @Mock UserDao userdao;
@@ -46,7 +43,7 @@ public class SampleTemplateAppInitialiserTest {
 
   User user = TestFactory.createAnyUser(Constants.SYSADMIN_UNAME);
 
-  @Before
+  @BeforeEach
   public void setUp() {
     strgLogger = CoreTestUtils.configureStringLogger(AbstractAppInitializor.log);
   }
@@ -57,7 +54,7 @@ public class SampleTemplateAppInitialiserTest {
     when(subject.execute(any(Callable.class))).thenReturn(Boolean.TRUE);
     sampleTemplateAppInitialiser.onAppStartup(null);
     verifyLoginAndLogout();
-    assertFalse(strgLogger.logContents.contains("error"));
+    assertThat(strgLogger.logContents).doesNotContain("error");
   }
 
   @Test
@@ -66,7 +63,7 @@ public class SampleTemplateAppInitialiserTest {
     when(subject.execute(any(Callable.class))).thenReturn(Boolean.FALSE);
     sampleTemplateAppInitialiser.onAppStartup(null);
     verifyLoginAndLogout();
-    assertTrue(strgLogger.logContents.contains("Fatal error"));
+    assertThat(strgLogger.logContents).contains("Fatal error");
   }
 
   private void verifyLoginAndLogout() {

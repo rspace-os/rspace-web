@@ -1,9 +1,9 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -19,14 +19,14 @@ import jakarta.mail.SendFailedException;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class EmailSenderTest {
 
   @Mock Logger logger;
@@ -43,7 +43,9 @@ public class EmailSenderTest {
     emailSender.init();
     emailSender.sendEmail(anyHtmlBody(), List.of("user@example.com"), new MessageOrRequest());
 
-    verify(logger, times(3)).warn(Mockito.anyString(), new Object[] {Mockito.any()});
+    // one matcher per varargs argument: from Mockito 5 a single any() matches exactly one
+    // argument rather than a varargs array of any length
+    verify(logger, times(3)).warn(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any());
   }
 
   @Test
@@ -78,9 +80,10 @@ public class EmailSenderTest {
   @Test
   public void rateLimiterRejectsExcessBatches() {
     CountingSenderStub sender = countingSenderWithRateLimit(Duration.ofMillis(1));
+    EmailContent htmlBody = anyHtmlBody();
+    List<String> recipients = addresses(7);
 
-    assertThrows(
-        RequestNotPermitted.class, () -> sender.sendEmail(anyHtmlBody(), addresses(7), null));
+    assertThrows(RequestNotPermitted.class, () -> sender.sendEmail(htmlBody, recipients, null));
   }
 
   @Test

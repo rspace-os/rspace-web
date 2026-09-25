@@ -1,35 +1,38 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
-import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.testutils.TestGroup;
 import java.util.HashSet;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.shiro.authz.AuthorizationException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class GroupManagerEditMetadataPermissionsTest extends GroupPermissionsTestBase {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
 
   private @Autowired MessageOrRequestCreatorManager requestCreateMgr;
+  private @Autowired IPermissionUtils permissionUtils;
 
   @Test
   public void groupMetaDataEditPermissionsByRole() throws Exception {
@@ -53,17 +56,17 @@ public class GroupManagerEditMetadataPermissionsTest extends GroupPermissionsTes
 
       assertRenameAuthorized(grp, subject, true);
       User newUserToInvite = createAndSaveRandomUser();
-      assertInviteNewUserAuthorised(subject, newUserToInvite, grp);
+      assertInviteNewUserPermissions(subject, newUserToInvite, grp, true);
     }
     for (User subject : expectedUnauthorisedGroupEditors) {
       assertRenameAuthorized(grp, subject, false);
       User newUserToInvite = createAndSaveRandomUser();
-      assertAuthorisationExceptionThrown(
-          () -> assertInviteNewUserAuthorised(subject, newUserToInvite, grp));
+      assertInviteNewUserPermissions(subject, newUserToInvite, grp, false);
     }
   }
 
-  private void assertInviteNewUserAuthorised(User subject, User newUserToInvite, Group grp) {
+  private void assertInviteNewUserPermissions(
+      User subject, User newUserToInvite, Group grp, boolean authorised) throws Exception {
     if (subject.hasRole(Role.SYSTEM_ROLE)) {
       logoutAndLoginAsSysAdmin();
     } else {
@@ -73,9 +76,15 @@ public class GroupManagerEditMetadataPermissionsTest extends GroupPermissionsTes
     cgf.setGroupId(grp.getId());
     cgf.setMessageType(MessageType.REQUEST_JOIN_LAB_GROUP);
     grp.setMemberString(TransformerUtils.toList(newUserToInvite.getUsername()));
-    MessageOrRequest request =
-        requestCreateMgr.createRequest(
-            cgf, subject.getUsername(), new HashSet<String>(grp.getMemberString()), null, null);
+    String username = subject.getUsername();
+    HashSet<String> recipients = new HashSet<>(grp.getMemberString());
+    if (authorised) {
+      requestCreateMgr.createRequest(cgf, username, recipients, null, null);
+    } else {
+      assertThrows(
+          AuthorizationException.class,
+          () -> requestCreateMgr.createRequest(cgf, username, recipients, null, null));
+    }
   }
 
   private Group assertRenameAuthorized(Group grp, User subject, boolean isAuthorisedExpected)
@@ -101,6 +110,6 @@ public class GroupManagerEditMetadataPermissionsTest extends GroupPermissionsTes
   }
 
   private void assertNotAuthorized(Group saveGroup, User subject) throws Exception {
-    assertAuthorisationExceptionThrown(() -> grpMgr.saveGroup(saveGroup, false, subject));
+    assertThrows(AuthorizationException.class, () -> grpMgr.saveGroup(saveGroup, false, subject));
   }
 }

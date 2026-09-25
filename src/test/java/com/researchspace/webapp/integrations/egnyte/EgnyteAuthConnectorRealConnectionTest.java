@@ -1,20 +1,18 @@
 package com.researchspace.webapp.integrations.egnyte;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Map;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-@RunWith(ConditionalTestRunner.class)
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTest {
 
   @Autowired private EgnyteAuthConnector connector;
@@ -27,7 +25,6 @@ public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTe
   private String testPassword;
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testAccessTokenQuery() throws Exception {
 
     // non-existing user credentials
@@ -40,13 +37,12 @@ public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTe
         connector.queryForEgnyteAccessToken(testUsername, testPassword);
     assertNotNull(happyTokenRequest, "no token after querying egnyte with test credentials");
     assertTrue(happyTokenRequest.size() >= 3, "lack of expected data in egynte response");
-    assertEquals("Bearer", happyTokenRequest.get("token_type"));
+    assertThat(happyTokenRequest).containsEntry("token_type", "Bearer");
     assertNotNull(happyTokenRequest.get("access_token"));
     assertNotNull(happyTokenRequest.get("expires_in"));
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testTokenVerificationQuery() throws Exception {
 
     // invalid token - no entity connected
@@ -63,15 +59,13 @@ public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTe
     Map<String, Object> happyTokenValidation =
         connector.queryForEgnyteUserInfoWithAccessToken(testUserAccessToken);
     assertNotNull(happyTokenValidation, "no user info after querying egnyte with test token");
-    assertEquals(
-        6,
-        happyTokenValidation
-            .size()); // six fields are returned in successful response from 'userinfo' endpoint
-    assertEquals(13, happyTokenValidation.get("id")); // rspaceTest user id (in egnyte)
-    assertEquals("rspacetest", happyTokenValidation.get("username"));
-    assertEquals("dev@researchspace.com", happyTokenValidation.get("email"));
-    assertEquals("RSpace", happyTokenValidation.get("first_name"));
-    assertEquals("Test", happyTokenValidation.get("last_name"));
-    assertEquals("standard", happyTokenValidation.get("user_type"));
+    assertThat(happyTokenValidation)
+        .hasSize(6); // six fields are returned in successful response from 'userinfo' endpoint
+    assertThat(happyTokenValidation).containsEntry("id", 13); // rspaceTest user id (in egnyte)
+    assertThat(happyTokenValidation).containsEntry("username", "rspacetest");
+    assertThat(happyTokenValidation).containsEntry("email", "dev@researchspace.com");
+    assertThat(happyTokenValidation).containsEntry("first_name", "RSpace");
+    assertThat(happyTokenValidation).containsEntry("last_name", "Test");
+    assertThat(happyTokenValidation).containsEntry("user_type", "standard");
   }
 }

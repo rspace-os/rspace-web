@@ -1,14 +1,14 @@
 package com.researchspace.api.v1.controller;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.MockAndStubUtils.modifyUserCreationDate;
 import static com.researchspace.testutils.TestFactory.createAnyGroup;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static com.researchspace.testutils.TestFactory.createNUsers;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
@@ -16,7 +16,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.controller.SysadminApiController.GroupApiPost;
@@ -59,17 +58,16 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -77,9 +75,8 @@ import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
+@ExtendWith(MockitoExtension.class)
 public class SysadminApiControllerTest extends JakartaValidatorTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock UserManager userMgr;
   @Mock UserDeletionManager userDelMgr;
   @Mock WhiteListIPChecker checker;
@@ -99,15 +96,12 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
   MockHttpServletResponse response;
   MockHttpServletRequest request;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
     sysadmin.addRole(Role.SYSTEM_ROLE);
     controller.messages = new MessageSourceUtils(new JsonMessageSource());
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void userMustBeSysadmin() throws Exception {
@@ -134,6 +128,7 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     User toDelete = createAnyUserWithId();
     toDelete.setTempAccount(true);
     setCreationDate2yearsAgo(toDelete);
+    stubSuccessfulDeletion(sysadmin, toDelete);
     basicDeleteTempUserRequest(sysadmin, toDelete);
     assertDeletionManagerInvoked();
   }
@@ -144,8 +139,12 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     User toDelete = createAnyUserWithId();
     toDelete.setTempAccount(false);
     setCreationDate2yearsAgo(toDelete);
-    assertExceptionThrown(
-        () -> basicDeleteTempUserRequest(sysadmin, toDelete), IllegalArgumentException.class);
+    setUpMocksForDeletingUser(sysadmin, toDelete);
+    Long userId = toDelete.getId();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> controller.deleteTempUserOlderThan1Year(request, userId, sysadmin));
     assertDeletionManagerNotInvoked();
   }
 
@@ -169,6 +168,7 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
         .thenReturn(exportResult);
     mockServerUrl();
     // test delete
+    stubSuccessfulDeletion(sysadmin, toDelete);
     basicDeleteAnyUserRequest(sysadmin, toDelete);
     // then
     assertDeletionManagerInvoked();
@@ -191,8 +191,12 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     mockWhiteListedIP(true, sysadmin);
     User toDelete = createAnyUserWithId();
     toDelete.setTempAccount(true);
-    assertExceptionThrown(
-        () -> basicDeleteTempUserRequest(sysadmin, toDelete), IllegalArgumentException.class);
+    setUpMocksForDeletingUser(sysadmin, toDelete);
+    Long userId = toDelete.getId();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> controller.deleteTempUserOlderThan1Year(request, userId, sysadmin));
     assertDeletionManagerNotInvoked();
   }
 
@@ -231,6 +235,9 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
 
   private void setUpMocksForDeletingUser(User sysadmin2, User toDelete) {
     when(userMgr.get(toDelete.getId())).thenReturn(toDelete);
+  }
+
+  private void stubSuccessfulDeletion(User sysadmin2, User toDelete) {
     when(userDelMgr.removeUser(
             Mockito.eq(toDelete.getId()),
             Mockito.any(UserDeletionPolicy.class),
@@ -273,13 +280,18 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
   }
 
   private void assertRequestRejectedAuthException(User subject) throws Exception {
-    assertExceptionThrown(() -> basicRequest(subject), AuthorizationException.class);
+    assertUserListRequestRejected(
+        subject, new ApiSystemUserSearchConfig(), AuthorizationException.class);
   }
 
   private void assertUserListRequestRejected(
       User subject, ApiSystemUserSearchConfig srchConfig, Class<? extends Exception> clazz)
       throws Exception {
-    assertExceptionThrown(() -> basicRequest(subject, srchConfig), clazz);
+    SysadminUserPaginationCriteria pagination = new SysadminUserPaginationCriteria();
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(null, "object");
+
+    assertThrows(
+        clazz, () -> controller.getUsers(request, pagination, srchConfig, errors, subject));
   }
 
   ISearchResults<User> mockNUsers(User subject, int numUsers) {
@@ -310,10 +322,10 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
   public void deleteGroupIfNoMemberLoggedInWithinOneYearRejectedIfSubjectNotSysadmin()
       throws Exception {
     Group toDelete = createAnyGroupWithId();
-    assertExceptionThrown(
-        () ->
-            controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, toDelete.getId(), user),
-        AuthorizationException.class);
+    Long groupId = toDelete.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, groupId, user));
     verify(groupManager, never())
         .removeGroupIfNoMemberLoggedInWithinOneYear(Mockito.anyLong(), Mockito.any(User.class));
   }
@@ -323,11 +335,10 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
       throws Exception {
     Group toDelete = createAnyGroupWithId();
     mockWhiteListedIP(false, sysadmin);
-    assertExceptionThrown(
-        () ->
-            controller.deleteGroupIfNoMemberLoggedInWithinOneYear(
-                request, toDelete.getId(), sysadmin),
-        AuthorizationException.class);
+    Long groupId = toDelete.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, groupId, sysadmin));
     verify(groupManager, never())
         .removeGroupIfNoMemberLoggedInWithinOneYear(Mockito.anyLong(), Mockito.any(User.class));
   }
@@ -354,18 +365,21 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     Group toDelete = createAnyGroupWithId();
     when(groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(toDelete.getId(), sysadmin))
         .thenThrow(new IllegalStateException("internal: user 'alice' logged in 5 days ago"));
+    Long groupId = toDelete.getId();
 
-    IllegalArgumentException ex =
-        org.junit.Assert.assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                controller.deleteGroupIfNoMemberLoggedInWithinOneYear(
-                    request, toDelete.getId(), sysadmin));
+    String message =
+        Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    controller.deleteGroupIfNoMemberLoggedInWithinOneYear(
+                        request, groupId, sysadmin))
+            .getMessage();
 
     // Generic message; no username leaked.
-    org.junit.Assert.assertFalse(
-        "response message must not leak internal usernames", ex.getMessage().contains("alice"));
-    org.junit.Assert.assertTrue(ex.getMessage().contains("within the last year"));
+    assertThat(message)
+        .as("response message must not leak internal usernames")
+        .doesNotContain("alice");
+    assertThat(message).contains("within the last year");
     verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
   }
 
@@ -376,9 +390,9 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     when(groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(999L, sysadmin))
         .thenThrow(new ObjectRetrievalFailureException(Group.class, 999L));
 
-    assertExceptionThrown(
-        () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, 999L, sysadmin),
-        jakarta.ws.rs.NotFoundException.class);
+    assertThrows(
+        jakarta.ws.rs.NotFoundException.class,
+        () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, 999L, sysadmin));
     verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
   }
 
@@ -400,12 +414,12 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     User internalUser = TestFactory.createAnyUser("any");
     when(userMgr.getUserByUsername("any")).thenReturn(internalUser);
     mockWhiteListedIP(true, sysadmin);
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(grpApiPost, "bean");
     // requires PI
-    assertIllegalArgumentException(
-        () ->
-            controller.createGroup(
-                request, grpApiPost, new BeanPropertyBindingResult(grpApiPost, "bean"), sysadmin));
-    verifyZeroInteractions(grpStrategy);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> controller.createGroup(request, grpApiPost, errors, sysadmin));
+    verifyNoInteractions(grpStrategy);
 
     // but with >=1 PI, succeeds
     internalUser.addRole(Role.PI_ROLE);
@@ -513,8 +527,6 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     userToEnable.setEnabled(false);
     userToEnable.addRole(Role.USER_ROLE);
     when(userMgr.get(userToEnable.getId())).thenReturn(userToEnable);
-    when(userMgr.save(userToEnable)).thenReturn(userToEnable);
-
     // when
     controller.enableUser(request, sysadmin, userToEnable.getId());
 
@@ -533,8 +545,6 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     userToEnable.setEnabled(true);
     userToEnable.addRole(Role.USER_ROLE);
     when(userMgr.get(userToEnable.getId())).thenReturn(userToEnable);
-    when(userMgr.save(userToEnable)).thenReturn(userToEnable);
-
     // when
     controller.enableUser(request, sysadmin, userToEnable.getId());
 
@@ -551,15 +561,15 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     userToEnable.setEnabled(false);
     userToEnable.addRole(Role.USER_ROLE);
     when(userMgr.get(userToEnable.getId())).thenReturn(userToEnable);
-    when(userMgr.save(userToEnable)).thenReturn(userToEnable);
     doThrow(new LicenseServerUnavailableException())
         .when(userEnablementUtils)
         .checkLicenseForUserInRole(anyInt(), any(Role.class));
 
     // when
-    assertExceptionThrown(
-        () -> controller.enableUser(request, sysadmin, userToEnable.getId()),
-        LicenseServerUnavailableException.class);
+    Long userId = userToEnable.getId();
+    assertThrows(
+        LicenseServerUnavailableException.class,
+        () -> controller.enableUser(request, sysadmin, userId));
 
     // then
     verify(userMgr, times(0)).save(userToEnable);
@@ -596,8 +606,6 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     disableToDisable.setEnabled(false);
     disableToDisable.addRole(Role.USER_ROLE);
     when(userMgr.get(disableToDisable.getId())).thenReturn(disableToDisable);
-    when(userMgr.save(disableToDisable)).thenReturn(disableToDisable);
-
     // when
     controller.disableUser(request, sysadmin, disableToDisable.getId());
 
@@ -610,22 +618,18 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
   public void doNotRaiseExceptionDisablingUserAccountWhenNoLicense() throws Exception {
     // given
     mockWhiteListedIP(true, sysadmin);
-    User userToEnable = createAnyUser("disabled_to_enable");
-    userToEnable.setEnabled(false);
-    userToEnable.addRole(Role.USER_ROLE);
-    when(userMgr.get(userToEnable.getId())).thenReturn(userToEnable);
-    when(userMgr.save(userToEnable)).thenReturn(userToEnable);
-    doThrow(new LicenseServerUnavailableException())
-        .when(userEnablementUtils)
-        .checkLicenseForUserInRole(anyInt(), any(Role.class));
+    User userToDisable = createAnyUser("enabled_to_disable_without_license");
+    userToDisable.setEnabled(true);
+    userToDisable.addRole(Role.USER_ROLE);
+    when(userMgr.get(userToDisable.getId())).thenReturn(userToDisable);
 
     // when
-    controller.disableUser(request, sysadmin, userToEnable.getId());
+    controller.disableUser(request, sysadmin, userToDisable.getId());
 
     // then
-    verify(userMgr, times(0)).save(userToEnable);
-    verify(userEnablementUtils, times(0)).auditUserEnablementChangeEvent(true, userToEnable);
-    verify(userEnablementUtils, times(0))
-        .notifyByEmailUserEnablementChange(userToEnable, sysadmin, true);
+    verify(userMgr).save(userToDisable);
+    verify(userEnablementUtils, never()).checkLicenseForUserInRole(anyInt(), any(Role.class));
+    verify(userEnablementUtils).auditUserEnablementChangeEvent(false, userToDisable);
+    verify(userEnablementUtils).notifyByEmailUserEnablementChange(userToDisable, sysadmin, false);
   }
 }

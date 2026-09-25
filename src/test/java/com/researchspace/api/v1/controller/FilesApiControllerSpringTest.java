@@ -1,8 +1,9 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiFile;
 import com.researchspace.api.v1.model.ApiFileSearchResult;
@@ -11,9 +12,8 @@ import com.researchspace.model.*;
 import com.researchspace.model.record.Folder;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
-import java.util.Arrays;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -26,7 +26,7 @@ public class FilesApiControllerSpringTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);
@@ -53,7 +53,7 @@ public class FilesApiControllerSpringTest extends SpringTransactionalTest {
     assertNotNull(userFiles);
     assertEquals(5, userFiles.getTotalHits().intValue());
     assertEquals(0, userFiles.getPageNumber().intValue());
-    assertEquals(1, userFiles.getLinks().size());
+    assertThat(userFiles.getLinks()).hasSize(1);
     assertEquals(ApiLinkItem.SELF_REL, userFiles.getLinks().get(0).getRel());
 
     // search for 'image', 'document' and 'av' mediaTypes
@@ -99,9 +99,9 @@ public class FilesApiControllerSpringTest extends SpringTransactionalTest {
 
     byte[] content = resp.getContentAsByteArray();
     assertNotNull(content);
-    assertTrue(content.length > 0);
+    assertThat(content.length).isGreaterThan(0);
 
     byte[] resourceStream = RSpaceTestUtils.getResourceAsByteArray("Picture1.png");
-    assertTrue(Arrays.equals(resourceStream, content));
+    assertThat(content).containsExactly(resourceStream);
   }
 }

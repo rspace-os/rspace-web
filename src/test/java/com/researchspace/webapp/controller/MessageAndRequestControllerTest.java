@@ -1,9 +1,10 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -28,23 +29,21 @@ import java.util.Collections;
 import java.util.Set;
 import net.fortuna.ical4j.validate.ValidationException;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 
+@ExtendWith(MockitoExtension.class)
 public class MessageAndRequestControllerTest {
 
   @InjectMocks MessageAndRequestController ctrller;
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   @Mock CommunicationTargetFinderPolicy comTargetPolicy;
   @Mock UserManager usrMgr;
@@ -58,25 +57,23 @@ public class MessageAndRequestControllerTest {
   IPermissionUtils permUtilsStub;
 
   //
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     permUtilsStub = new PermissionsUtilsStub();
     request = new MockHttpServletRequest();
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void testGetMessageTypesFromStringTypesRejectsNonAdminSendingToAll() {
     User notAdmin = TestFactory.createAnyUserWithRole("sender", Constants.PI_ROLE);
     User recipient = TestFactory.createAnyUser("target");
     MsgOrReqstCreationCfg cfg = new MsgOrReqstCreationCfg(notAdmin, permUtilsStub);
     cfg.setMessageType(MessageType.GLOBAL_MESSAGE);
-
     BindingResult result = new BeanPropertyBindingResult(cfg, "cfg");
-    ctrller.getUsernamesFromInput(
-        notAdmin, cfg, result, comTargetPolicy, TransformerUtils.toSet(recipient));
+    Set<User> recipients = TransformerUtils.toSet(recipient);
+    assertThrows(
+        AuthorizationException.class,
+        () -> ctrller.getUsernamesFromInput(notAdmin, cfg, result, comTargetPolicy, recipients));
   }
 
   @Test
@@ -91,12 +88,10 @@ public class MessageAndRequestControllerTest {
             admin, PaginationCriteria.createDefaultForClass(User.class).setGetAllResults()))
         .thenReturn(results);
     when(results.getResults()).thenReturn(Collections.EMPTY_LIST);
-    when(usrMgr.getUserByUsername("target")).thenReturn(recipient);
-
     Set<String> users =
         ctrller.getUsernamesFromInput(
             admin, cfg, result, comTargetPolicy, TransformerUtils.toSet(recipient));
-    assertTrue(users.isEmpty());
+    assertThat(users).isEmpty();
   }
 
   @Test
@@ -116,7 +111,7 @@ public class MessageAndRequestControllerTest {
     Set<String> users =
         ctrller.getUsernamesFromInput(
             admin, cfg, result, comTargetPolicy, TransformerUtils.toSet(recipient));
-    assertEquals(1, users.size());
+    assertThat(users).hasSize(1);
   }
 
   @Test
@@ -130,7 +125,7 @@ public class MessageAndRequestControllerTest {
     event.setStart("2020-05-19T17:00:00Z");
     AjaxReturnObject<Boolean> aro = ctrller.createCalendarEvent(event, request);
     assertNull(aro.getData());
-    assertEquals(1, aro.getError().getErrorMessages().size());
+    assertThat(aro.getError().getErrorMessages()).hasSize(1);
   }
 
   @Test

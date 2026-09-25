@@ -1,6 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -11,9 +14,10 @@ import com.researchspace.model.dtos.WorkspaceSettings;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.shiro.authz.AuthorizationException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -31,14 +35,14 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
   private User user;
   private PaginationCriteria<BaseRecord> pgcrit = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     user = createInitAndLoginAnyUser();
     pgcrit = PaginationCriteria.createDefaultForClass(BaseRecord.class);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -96,9 +100,11 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
 
     // test unauthorised user can't copy:
     final User other = createInitAndLoginAnyUser();
-    assertAuthorisationExceptionThrown(
-        () ->
-            galleryController.copyGalleries(ids, newNames, new MockPrincipal(other.getUsername())));
+    var otherPrincipal = new MockPrincipal(other.getUsername());
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> galleryController.copyGalleries(ids, newNames, otherPrincipal));
   }
 
   @Test
@@ -148,7 +154,7 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
             MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(fres2.getData());
 
-    assertFalse(name.equalsIgnoreCase("newname"));
+    assertThat(name).isNotEqualToIgnoringCase("newname");
   }
 
   @Test

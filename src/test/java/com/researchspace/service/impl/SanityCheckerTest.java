@@ -1,8 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.core.testutil.CoreTestUtils.configureStringLogger;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,9 +51,7 @@ public class SanityCheckerTest {
         .thenReturn(TestFactory.createAnyUser("any"));
     when(searchStrategy.isLocal()).thenReturn(false);
     sanityChecker.onAppStartup(context);
-    // Mockito.verify(chemModule, Mockito.times(1)).substructureSearch(Mockito.anyString(),
-    // Mockito.any(User.class));
-    assertTrue(strglogger.logContents.contains(SanityChecker.SANITY_CHECK_RUN_ALL_OK_MSG + "true"));
+    assertThat(strglogger.logContents).contains(SanityChecker.SANITY_CHECK_RUN_ALL_OK_MSG + "true");
     // not local search should not run here, it might not be configured yet
     verify(searchStrategy, never()).searchFiles(Mockito.anyString(), Mockito.any(User.class));
     strglogger.logContents = ""; // clear contents
@@ -65,8 +62,8 @@ public class SanityCheckerTest {
     Mockito.doThrow(new IOException()).when(fileIndexer).init(false);
 
     sanityChecker.onAppStartup(context);
-    assertFalse(
-        strglogger.logContents.contains(SanityChecker.SANITY_CHECK_RUN_ALL_OK_MSG + "true"));
+    assertThat(strglogger.logContents)
+        .doesNotContain(SanityChecker.SANITY_CHECK_RUN_ALL_OK_MSG + "true");
   }
 
   @Test
@@ -81,12 +78,12 @@ public class SanityCheckerTest {
             Map.of("xxx-client", FULL_VALUE));
     for (var map : sensitiveMapList) {
       String sanitised = sanityChecker.deploymentPropertiesToString(map);
-      assertFalse(sanitised.contains("56789"));
-      assertTrue(sanitised.contains("123"));
+      assertThat(sanitised).doesNotContain("56789");
+      assertThat(sanitised).contains("123");
     }
 
     String normalProperty =
         sanityChecker.deploymentPropertiesToString(Map.of("any-other-property", "123456789"));
-    assertTrue(normalProperty.contains("123456789"));
+    assertThat(normalProperty).contains("123456789");
   }
 }

@@ -2,7 +2,8 @@ package com.researchspace.webapp.integrations.dmpassistant;
 
 import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -21,8 +22,8 @@ import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.UserConnectionManager;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -52,7 +53,7 @@ public class DMPAssistantControllerMVCIT extends API_MVC_TestBase {
   private User user;
   private MockRestServiceServer mockServer;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     user = createInitAndLoginAnyUser();
@@ -108,7 +109,7 @@ public class DMPAssistantControllerMVCIT extends API_MVC_TestBase {
     mockServer.verify();
 
     List<DMPUser> savedDmps = dmpManager.findDMPsForUser(user);
-    assertEquals(2, savedDmps.size());
+    assertThat(savedDmps).hasSize(2);
     DMPUser dmp101 =
         savedDmps.stream()
             .filter(d -> "101".equals(d.getDmpId()))
@@ -165,7 +166,7 @@ public class DMPAssistantControllerMVCIT extends API_MVC_TestBase {
 
     // the plan imported before the failure is kept; the failed one is not registered
     List<DMPUser> savedDmps = dmpManager.findDMPsForUser(user);
-    assertEquals(1, savedDmps.size());
+    assertThat(savedDmps).hasSize(1);
     assertEquals("101", savedDmps.get(0).getDmpId());
     assertEquals("Plan One", savedDmps.get(0).getTitle());
   }

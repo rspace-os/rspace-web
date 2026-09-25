@@ -3,17 +3,16 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.testutils.RSpaceTestUtils.getResource;
 import static com.researchspace.webapp.controller.StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL;
 import static org.apache.commons.io.FileUtils.readFileToByteArray;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,10 +24,13 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.Transformer;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.linkedelements.FieldContents;
+import com.researchspace.linkedelements.FieldParser;
+import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.FieldAttachment;
 import com.researchspace.model.Group;
 import com.researchspace.model.IFieldLinkableElement;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.SignatureHashInfo;
 import com.researchspace.model.SignatureHashType;
 import com.researchspace.model.SignatureInfo;
@@ -48,6 +50,7 @@ import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -62,10 +65,11 @@ import java.util.Set;
 import java.util.function.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -76,16 +80,48 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
   private @Autowired DummyWord2HTMLConverter dummyConverter;
   private @Autowired AuditManager auditMgr;
+  private @Autowired BaseRecordManager baseRecordMgr;
+  private @Autowired FieldParser fieldParser;
   @Autowired DocumentCopyManager docCopyMgr;
 
-  @Before
+  @Value("${publishing.anonymousGuest.password}")
+  private String anonymousPassword;
+
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
+    // Unpublish only what this class published, keeping later publish-listing MVCITs
+    // share-free. Deliberately NOT a `deleteFromTables("RecordGroupSharing")` wipe: that ran
+    // after every test in the class (most create no shares at all), destroyed share rows other
+    // fixtures had created such as sharingTemplateTest's, and being raw SQL it removed the
+    // sharing row while leaving the corresponding group ACL on the BaseRecord behind.
+    // Unsharing through the manager takes the ACL with it.
+    unpublishRecordsPublishedByThisTest();
     super.tearDown();
+  }
+
+  private void unpublishRecordsPublishedByThisTest() {
+    for (PublishedRecord published : publishedRecords) {
+      for (RecordGroupSharing share : sharingMgr.getRecordSharingInfo(published.recordId)) {
+        sharingHandler.unshare(share.getId(), published.publisher);
+      }
+    }
+    publishedRecords.clear();
+  }
+
+  /** Records published by a test in this class, unpublished again in tearDown. */
+  private record PublishedRecord(Long recordId, User publisher) {}
+
+  private final List<PublishedRecord> publishedRecords = new ArrayList<>();
+
+  /** Publishes a document and registers it for teardown, so no share row outlives the test. */
+  private void publishAndRegisterForCleanup(User publisher, Long recordId) {
+    publishDocumentForUser(publisher, recordId);
+    publishedRecords.add(new PublishedRecord(recordId, publisher));
   }
 
   @Test
@@ -110,7 +146,9 @@ public class SDocControllerMVCIT extends MVCTestBase {
     String name = getNameOfDoc(data);
 
     assertNotNull(id);
-    assertThat(dummyConverter.getWordHtml().getName(), containsString(name));
+    assertThat(dummyConverter.getWordHtml().getName())
+        .as(dummyConverter.getWordHtml().getName())
+        .contains(name);
     Predicate<Boolean> inv =
         t ->
             fieldMgr
@@ -169,19 +207,18 @@ public class SDocControllerMVCIT extends MVCTestBase {
     commitTransaction();
     String templateContent = template.getFirstFieldData();
     assertEquals(
+        0,
+        StringUtils.countMatches(templateContent, "id=\"" + docFieldId + "-"),
         "template content: "
             + templateContent
             + " shouldn't contain orginal field id: "
-            + docFieldId,
-        0,
-        StringUtils.countMatches(templateContent, "id=\"" + docFieldId + "-"));
+            + docFieldId);
     Set<FieldAttachment> templateFieldAttachments =
         fieldMgr.getWithLoadedMediaLinks(templateFieldId, u1).get().getLinkedMediaFiles();
     assertEquals(
-        "template should have as many FieldAttachments as original doc",
         docFieldAttachmentsCount,
-        templateFieldAttachments.size()
-            - 1); // template creation adds image from annotation as extra FieldAttachment
+        templateFieldAttachments.size() - 1,
+        "template should preserve document attachments plus its annotation image");
 
     shareRecordWithGroup(u1, grp, template);
 
@@ -190,18 +227,17 @@ public class SDocControllerMVCIT extends MVCTestBase {
     Long fromTemplateFieldId = fromTemplate.getFields().get(0).getId();
     String fromTemplateContent = fromTemplate.getFirstFieldData();
     assertEquals(
+        0,
+        StringUtils.countMatches(fromTemplateContent, "id=\"" + templateFieldId + "-"),
         "fromTemplate content: "
             + fromTemplateContent
             + " shouldn't contain template field id: "
-            + templateFieldId,
-        0,
-        StringUtils.countMatches(fromTemplateContent, "id=\"" + templateFieldId + "-"));
+            + templateFieldId);
     Set<FieldAttachment> fromTemplateFieldAttachments =
         fieldMgr.getWithLoadedMediaLinks(fromTemplateFieldId, u1).get().getLinkedMediaFiles();
-    assertEquals(
-        "fromTemplate should have as many FieldAttachments as original doc",
-        templateFieldAttachments.size(),
-        fromTemplateFieldAttachments.size());
+    assertThat(fromTemplateFieldAttachments)
+        .as("fromTemplate should have as many FieldAttachments as original doc")
+        .hasSameSizeAs(templateFieldAttachments);
 
     assertAllLinkedElementsNotLinkedDocsCanBeRead(u2, fromTemplate);
 
@@ -225,7 +261,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi, "sharingTemplateTest");
     Field docField = doc.getFields().get(0);
     EcatImage image = addImageToField(docField, pi);
-    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(image.getId()).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(image.getId(), pi)).hasSize(1);
 
     // create template from doc
     openTransaction();
@@ -234,13 +270,13 @@ public class SDocControllerMVCIT extends MVCTestBase {
     String templateContent = templateField.getFieldData();
     commitTransaction();
     assertEquals(
+        0,
+        StringUtils.countMatches(templateContent, "id=\"" + docField.getId() + "-"),
         "template content: "
             + templateContent
             + " shouldn't contain orginal field id: "
-            + docField.getId(),
-        0,
-        StringUtils.countMatches(templateContent, "id=\"" + docField.getId() + "-"));
-    assertEquals(2, mediaMgr.getIdsOfLinkedDocuments(image.getId()).size());
+            + docField.getId());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(image.getId(), pi)).hasSize(2);
 
     // share template with group
     shareRecordWithGroup(pi, grp, template);
@@ -251,13 +287,13 @@ public class SDocControllerMVCIT extends MVCTestBase {
     Field fromTemplateField = fromTemplate.getFields().get(0);
     String fromTemplateContent = fromTemplateField.getFieldData();
     assertEquals(
+        0,
+        StringUtils.countMatches(fromTemplateContent, "id=\"" + templateField.getId() + "-"),
         "fromTemplate content: "
             + fromTemplateContent
             + " shouldn't contain template field id: "
-            + templateField.getId(),
-        0,
-        StringUtils.countMatches(fromTemplateContent, "id=\"" + templateField.getId() + "-"));
-    assertEquals(3, mediaMgr.getIdsOfLinkedDocuments(image.getId()).size());
+            + templateField.getId());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(image.getId(), pi)).hasSize(3);
   }
 
   private void assertAllLinkedElementsNotLinkedDocsCanBeRead(User user, StructuredDocument doc)
@@ -371,7 +407,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     final int nresult = 10;
     List<AuditedRecord> docs =
         (List<AuditedRecord>) result.getModelAndView().getModelMap().get("history");
-    assertEquals(nresult, docs.size());
+    assertThat(docs).hasSize(nresult);
 
     // 2 pages
     List<PaginationObject> pgObs =
@@ -380,7 +416,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
                 .getModelAndView()
                 .getModelMap()
                 .get(PaginationUtil.PAGINATION_LIST_MODEL_ATTR_NAME);
-    assertEquals(2, pgObs.size());
+    assertThat(pgObs).hasSize(2);
   }
 
   @Test
@@ -399,7 +435,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     SignatureInfo sign2 = getFromJsonAjaxReturnObject(res3, SignatureInfo.class);
-    assertThat(sign2.getWitnesses().keySet(), contains(setup.user.getFullName()));
+    assertThat(sign2.getWitnesses()).containsOnlyKeys(setup.user.getFullName());
   }
 
   @Test
@@ -413,15 +449,15 @@ public class SDocControllerMVCIT extends MVCTestBase {
     assertNotNull(sign.getId());
     assertEquals(piUser.getFullName(), sign.getSignerFullName());
     assertNotNull(sign.getSignDate());
-    assertEquals(1, sign.getWitnesses().size());
+    assertThat(sign.getWitnesses()).hasSize(1);
     int EXPECTED_NEW_SIG_HASHES = 4;
-    assertEquals(EXPECTED_NEW_SIG_HASHES, sign.getHashes().size());
+    assertThat(sign.getHashes()).hasSize(EXPECTED_NEW_SIG_HASHES);
 
     int finalSigHashCount = getSigHashCount();
     assertEquals(
-        "Correct number of signature hashes weren't generated ",
         initialSignaturehasCount + EXPECTED_NEW_SIG_HASHES,
-        finalSigHashCount);
+        finalSigHashCount,
+        "Correct number of signature hashes weren't generated ");
 
     openTransaction();
     Folder root = folderDao.getRootRecordForUser(piUser);
@@ -433,8 +469,8 @@ public class SDocControllerMVCIT extends MVCTestBase {
     assertNotNull(sign2);
     assertEquals(piUser.getFullName(), sign2.getSignerFullName());
     assertNotNull(sign2.getSignDate());
-    assertEquals(1, sign2.getWitnesses().size());
-    assertEquals(4, sign.getHashes().size());
+    assertThat(sign2.getWitnesses()).hasSize(1);
+    assertThat(sign.getHashes()).hasSize(4);
 
     // find content hash in signature
     SignatureHashInfo[] hashes = sign2.getHashes().toArray(new SignatureHashInfo[] {});
@@ -515,7 +551,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
     ErrorList errorList = getErrorListFromAjaxReturnObject(result1);
     assertNotNull(errorList);
-    assertEquals(1, errorList.getErrorMessages().size());
+    assertThat(errorList.getErrorMessages()).hasSize(1);
   }
 
   @Test
@@ -559,7 +595,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
     assertEquals(initialRecordsCount + 1, getRecordCountInFolderForUser(rootFolderId));
     assertEquals(1, getRecordCountInFolderForUser(sharedFolderId));
-    assertTrue(redirectUrl.contains("&sharedWithGroup=" + group.getGroup().getDisplayName()));
+    assertThat(redirectUrl).contains("&sharedWithGroup=" + group.getGroup().getDisplayName());
   }
 
   @Test
@@ -590,7 +626,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
     assertEquals(initialRecordsCount + 1, getRecordCountInFolderForUser(rootFolderId));
     assertEquals(1, getRecordCountInFolderForUser(sharedFolderId));
-    assertTrue(redirectUrl.contains("sharedWithGroup=" + group.getGroup().getDisplayName()));
+    assertThat(redirectUrl).contains("sharedWithGroup=" + group.getGroup().getDisplayName());
 
     resultUrl =
         this.mockMvc
@@ -604,7 +640,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
     redirectUrl = resultUrl.getResponse().getHeader("Location");
     assertEquals(1, getRecordCountInFolderForUser(Long.valueOf(notebookId)));
-    assertTrue(redirectUrl.contains("fromNotebook=" + notebookId));
+    assertThat(redirectUrl).contains("fromNotebook=" + notebookId);
 
     Long newDocumentId = Long.valueOf(redirectUrl.split("\\?")[0].split("\\/")[4]);
     Record newDocument = recordMgr.get(newDocumentId);
@@ -671,10 +707,10 @@ public class SDocControllerMVCIT extends MVCTestBase {
     Folder refreshedNotebook = folderMgr.getNotebook(notebook.getId());
     List<BaseRecord> createdEntries = new ArrayList<>(refreshedNotebook.getChildrens());
     commitTransaction();
-    assertTrue(createdEntries.stream().allMatch(BaseRecord::isNotebookEntry));
+    assertThat(createdEntries).allMatch(BaseRecord::isNotebookEntry);
     Collections.sort(createdEntries, BaseRecord.CREATION_DATE_COMPARATOR);
 
-    assertEquals("two new entries were expected ", 2, createdEntries.size());
+    assertThat(createdEntries).as("two new entries were expected ").hasSize(2);
     BaseRecord createdEntry1 = createdEntries.get(0);
 
     assertEquals(defaultEntryId, createdEntry1.getId());
@@ -820,7 +856,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     // this should increment modification date
     doAutosaveAndSaveMVC(field, "text-final", u);
     doc = recordMgr.get(doc.getId()).asStrucDoc();
-    assertTrue(initialModifiedTime < doc.getModificationDateMillis());
+    assertThat(initialModifiedTime).isLessThan(doc.getModificationDateMillis());
   }
 
   private int getFieldAutosaveLogRowCount() throws Exception {
@@ -857,8 +893,8 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
     ErrorList errors = getErrorListFromAjaxReturnObject(res1);
     assertTrue(errors.hasErrorMessages());
-    assertTrue(
-        errors.getErrorMessages().get(0).contains("Only the record owner can sign the record."));
+    assertThat(errors.getErrorMessages().get(0))
+        .contains("Only the record owner can sign the record.");
   }
 
   @Test
@@ -881,14 +917,14 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
     MvcResult result = getUpdatedFields(doc, newerDate);
     List<Field> rc = getFromJsonAjaxReturnObject(result, List.class);
-    assertTrue("field list wasn't empty but should be", rc.isEmpty());
-    assertFalse(result.getResponse().getContentAsString().contains("text2"));
+    assertThat(rc).as("field list wasn't empty but should be").isEmpty();
+    assertThat(result.getResponse().getContentAsString()).doesNotContain("text2");
     // simulates an older modification date on client, so client data is stale and needs refreshing
     Date olderDate = DateUtils.addMinutes(new Date(), -5);
     result = getUpdatedFields(doc, olderDate);
     rc = getFromJsonAjaxReturnObject(result, List.class);
-    assertFalse("field list was empty but should contain updated fields", rc.isEmpty());
-    assertTrue(result.getResponse().getContentAsString().contains("text2"));
+    assertThat(rc).as("field list was empty but should contain updated fields").isNotEmpty();
+    assertThat(result.getResponse().getContentAsString()).contains("text2");
   }
 
   private MvcResult getUpdatedFields(StructuredDocument doc, Date modifiedDate) throws Exception {
@@ -919,6 +955,120 @@ public class SDocControllerMVCIT extends MVCTestBase {
                     .principal(mockPrincipal))
             .andExpect(status().isOk())
             .andReturn();
-    assertTrue(result.getResponse().getContentAsString().contains(root.getId() + ""));
+    assertThat(result.getResponse().getContentAsString()).contains(root.getId() + "");
+  }
+
+  @Test
+  public void getAutoSavedFieldsRequiresAuthAndWritePermission_RSDEV1329() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "autosave auth test");
+
+    // the editing controller must no longer be reachable via the anonymous /public/** prefix
+    mockMvc
+        .perform(
+            get("/public/publicView/workspace/editor/structuredDocument/getAutoSavedFields")
+                .param("recordId", doc.getId() + ""))
+        .andExpect(status().isNotFound());
+
+    // the owner can still read autosaved fields on the authenticated path
+    mockMvc
+        .perform(
+            get(STRUCTURED_DOCUMENT_EDITOR_URL + "/getAutoSavedFields")
+                .param("recordId", doc.getId() + "")
+                .principal(new MockPrincipal(owner.getUsername())))
+        .andExpect(status().isOk());
+
+    // a user without READ permission on the record is refused
+    User other = createInitAndLoginAnyUser();
+    MvcResult result =
+        mockMvc
+            .perform(
+                get(STRUCTURED_DOCUMENT_EDITOR_URL + "/getAutoSavedFields")
+                    .param("recordId", doc.getId() + "")
+                    .principal(new MockPrincipal(other.getUsername())))
+            .andReturn();
+    assertAuthorizationException(result);
+  }
+
+  @Test
+  public void getAutoSavedFieldsRefusedOnPublishedDocument_RSDEV1329() throws Exception {
+    // The exact RSDEV-1329 exploit shape: publishing a document makes PermissionUtils
+    // short-circuit READ to true for every logged-in account, so only the WRITE gate on the
+    // draft buffer can refuse. This pins that distinction against the real PermissionUtils,
+    // which the mocked unit test (FieldManagerImplTest) cannot.
+    // Publishing needs a group member, not a lone user (mirrors GalleryControllerMVCIT).
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, false, 1);
+    User owner = setup.user;
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "published draft");
+    publishAndRegisterForCleanup(owner, doc.getId());
+
+    User other = createInitAndLoginAnyUser();
+
+    // sanity: READ genuinely is granted to the stranger through publication — the same
+    // fieldManager.getFieldsByRecordId READ gate serves getUpdatedFields with 200
+    mockMvc
+        .perform(
+            get(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/getUpdatedFields")
+                .param("recordId", doc.getId() + "")
+                .param("modificationDate", "0")
+                .principal(new MockPrincipal(other.getUsername())))
+        .andExpect(status().isOk());
+
+    // ...but the autosave draft buffer stays WRITE-gated and refuses
+    MvcResult refused =
+        mockMvc
+            .perform(
+                get(STRUCTURED_DOCUMENT_EDITOR_URL + "/getAutoSavedFields")
+                    .param("recordId", doc.getId() + "")
+                    .principal(new MockPrincipal(other.getUsername())))
+            .andReturn();
+    assertAuthorizationException(refused);
+  }
+
+  @Test
+  public void publicGetCommentsServesPublishedDocumentGuest_RSDEV1329() throws Exception {
+    // the positive path the wrapper controller exists for: the published view's anonymous
+    // guest must be able to read comments on a published document.
+    // Publishing needs a group member, not a lone user (mirrors GalleryControllerMVCIT).
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, false, 1);
+    User owner = setup.user;
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "commented doc");
+    EcatComment comment =
+        addNewCommentToField("public comment text", doc.getFields().get(0), owner);
+    publishAndRegisterForCleanup(owner, doc.getId());
+
+    logoutCurrentUser();
+    PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);
+
+    mockMvc
+        .perform(
+            get("/public/publicView/workspace/editor/structuredDocument/getComments")
+                .param("commentId", comment.getComId() + "")
+                .principal(new MockPrincipal(RecordGroupSharing.ANONYMOUS_USER)))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("public comment text")));
+  }
+
+  @Test
+  public void publicGetCommentsRouteStillMapped_RSDEV1329() throws Exception {
+    // comment viewing is the one editor endpoint the published-document view requests under the
+    // anonymous /public/publicView prefix (coreEditor.js), served by
+    // PublicStructuredDocumentCommentsController; it must not 404
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/public/publicView/workspace/editor/structuredDocument/getComments")
+                    .param("commentId", "1"))
+            .andReturn();
+    assertTrue(
+        404 != result.getResponse().getStatus(), "public getComments route must stay mapped");
+    // without the anonymous public login there is no principal, so it fails closed. Asserting the
+    // exception TYPE (not merely that some exception resolved) is what proves it is the
+    // authorization guard refusing, rather than a missing-parameter or database error.
+    assertAuthorizationException(result);
   }
 }

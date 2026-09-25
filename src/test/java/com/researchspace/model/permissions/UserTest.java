@@ -1,27 +1,27 @@
 package com.researchspace.model.permissions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UserTest {
   User u1;
   Group gp1;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     u1 = new User("user1");
     gp1 = new Group("group1", u1);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -85,11 +85,11 @@ public class UserTest {
     u1.addPermission(p3);
     gp1.addMember(u1, RoleInGroup.DEFAULT);
     // get all, inherited
-    assertEquals(3, u1.getAllPermissions(true, true).size());
+    assertThat(u1.getAllPermissions(true, true)).hasSize(3);
     // don't inherit
-    assertEquals(1, u1.getAllPermissions(true, false).size());
+    assertThat(u1.getAllPermissions(true, false)).hasSize(1);
     p1.setEnabled(false);
     // disable permission from group
-    assertEquals(2, u1.getAllPermissions(false, true).size());
+    assertThat(u1.getAllPermissions(false, true)).hasSize(2);
   }
 }

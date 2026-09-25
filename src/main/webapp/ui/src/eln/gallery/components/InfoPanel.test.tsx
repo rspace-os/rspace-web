@@ -1,5 +1,6 @@
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -16,18 +17,23 @@ describe("InfoPanelForSmallViewports", () => {
       http.get("/deploymentproperties/ajax/property", () => HttpResponse.json(false)),
       http.get("/collaboraOnline/supportedExts", () => HttpResponse.json({})),
       http.get("/officeOnline/supportedExts", () => HttpResponse.json({})),
+      http.get("/workspace/getReferencingInventoryItems/:globalId", () => HttpResponse.json({ referencingItems: [] })),
+      http.get("/workspace/getAttachingInventoryItems/:globalId", () => HttpResponse.json({ referencingItems: [] })),
     );
     const user = userEvent.setup();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
     render(
-      <CallableSnippetPreview>
-        <InfoPanelForSmallViewports
-          file={galleryFile({
-            name: "Protocol snippet",
-            isSnippet: true,
-          })}
-        />
-      </CallableSnippetPreview>,
+      <QueryClientProvider client={queryClient}>
+        <CallableSnippetPreview>
+          <InfoPanelForSmallViewports
+            file={galleryFile({
+              name: "Protocol snippet",
+              isSnippet: true,
+            })}
+          />
+        </CallableSnippetPreview>
+      </QueryClientProvider>,
     );
 
     await user.click(screen.getByRole("button", { name: "gallery:actionsMenu.view" }));

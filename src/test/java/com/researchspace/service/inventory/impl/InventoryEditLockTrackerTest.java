@@ -15,14 +15,16 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryEditLockTrackerTest extends SpringTransactionalTest {
 
+  private @Autowired InventoryEditLockTracker invLockTracker;
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("editLock"));
     initialiseContentWithEmptyContent(testUser);
@@ -99,10 +101,11 @@ public class InventoryEditLockTrackerTest extends SpringTransactionalTest {
     assertEquals(piUser.getUsername(), invLockTracker.getLockOwnerForItem(piSample.getGlobalId()));
 
     // try to unlock as testUser
+    String sampleGlobalId = userSample.getGlobalId();
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> invLockTracker.attemptToUnlock(userSample.getGlobalId(), testUser));
+            () -> invLockTracker.attemptToUnlock(sampleGlobalId, testUser));
     assertEquals(
         "Cannot unlock, as current lock belongs to another user (" + piUser.getUsername() + ")",
         iae.getMessage());

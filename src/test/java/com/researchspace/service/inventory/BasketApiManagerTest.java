@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -19,10 +20,13 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 
 public class BasketApiManagerTest extends SpringTransactionalTest {
+
+  private @Autowired InventoryPermissionUtils invPermissionUtils;
 
   @Test
   public void testBasicBasketOperations() throws BindException {
@@ -34,7 +38,7 @@ public class BasketApiManagerTest extends SpringTransactionalTest {
     ApiSubSample basicSubSample = basicSample.getSubSamples().get(0);
 
     List<ApiBasketInfo> userBaskets = basketApiMgr.getBasketsForUser(user);
-    assertEquals(0, userBaskets.size());
+    assertThat(userBaskets).isEmpty();
 
     // create the basket
     ApiBasket createdBasket =
@@ -51,7 +55,7 @@ public class BasketApiManagerTest extends SpringTransactionalTest {
 
     // check created & renamed
     userBaskets = basketApiMgr.getBasketsForUser(user);
-    assertEquals(1, userBaskets.size());
+    assertThat(userBaskets).hasSize(1);
     assertEquals("test basket renamed", userBaskets.get(0).getName());
 
     // add an item (items already in basket are skipped)
@@ -74,7 +78,7 @@ public class BasketApiManagerTest extends SpringTransactionalTest {
     // delete the basket
     basketApiMgr.deleteBasketById(createdBasket.getId(), user);
     userBaskets = basketApiMgr.getBasketsForUser(user);
-    assertEquals(0, userBaskets.size());
+    assertThat(userBaskets).isEmpty();
   }
 
   @Test

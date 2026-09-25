@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -9,8 +10,8 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItems;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
@@ -22,7 +23,7 @@ import org.springframework.test.web.servlet.MvcResult;
  */
 public class InventoryLinkInstrumentTemplateTargetMVCIT extends API_MVC_InventoryTestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -81,7 +82,7 @@ public class InventoryLinkInstrumentTemplateTargetMVCIT extends API_MVC_Inventor
             .andReturn();
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(refs, ApiInventoryReferencingItems.class);
-    assertEquals(1, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).hasSize(1);
     assertEquals(source.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
   }
 }

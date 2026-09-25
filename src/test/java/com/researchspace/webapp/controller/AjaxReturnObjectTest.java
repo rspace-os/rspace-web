@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.model.field.ErrorList;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AjaxReturnObjectTest {
 

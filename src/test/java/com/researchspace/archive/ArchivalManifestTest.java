@@ -1,32 +1,29 @@
 package com.researchspace.archive;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.version.SemanticVersion;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ArchivalManifestTest {
   ArchiveManifest manifest;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     manifest = new ArchiveManifest();
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
   @Test
   public void testAddItem() {
-    assertTrue(manifest.getItems().isEmpty());
+    assertThat(manifest.getItems()).isEmpty();
     manifest.addItem("name", "value");
-    assertEquals(1, manifest.getItems().size());
+    assertThat(manifest.getItems()).hasSize(1);
   }
 
   @Test
@@ -69,6 +66,6 @@ public class ArchivalManifestTest {
     toAdd.put("a", "b");
     toAdd.put("c", "d");
     manifest.addAll(toAdd);
-    assertEquals(2, manifest.getItems().size());
+    assertThat(manifest.getItems()).hasSize(2);
   }
 }

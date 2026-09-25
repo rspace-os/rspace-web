@@ -1,24 +1,24 @@
 package com.researchspace.model.record;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.field.FieldForm;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TemporaryCopyLinkedToOriginalCopyPolicyTest {
   IFormCopyPolicy<RSForm> copier;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     copier = new TemporaryCopyLinkedToOriginalCopyPolicy();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -39,7 +39,7 @@ public class TemporaryCopyLinkedToOriginalCopyPolicyTest {
     assertNull(ftCpy.getTempFieldForm());
     assertEquals(ftCpy, ft.getTempFieldForm());
 
-    assertTrue(copy.getCreationDateAsDate().after(t1.getCreationDateAsDate()));
+    assertThat(copy.getCreationDateAsDate()).isAfter(t1.getCreationDateAsDate());
 
     assertEquals(t1.getNumActiveFields(), copy.getNumActiveFields());
     assertEquals(t1.getNumAllFields(), copy.getNumAllFields());

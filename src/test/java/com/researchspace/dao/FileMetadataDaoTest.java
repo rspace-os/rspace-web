@@ -1,11 +1,12 @@
 package com.researchspace.dao;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
@@ -24,8 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.hibernate.Session;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class FileMetadataDaoTest extends SpringTransactionalTest {
@@ -34,7 +35,7 @@ public class FileMetadataDaoTest extends SpringTransactionalTest {
 
   private User user = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     /* we initialize a random user, so files added to 1st user on the server,
     e.g. default inventory templates, are not polluting subsequent users' stats */
@@ -70,7 +71,7 @@ public class FileMetadataDaoTest extends SpringTransactionalTest {
 
   @Test
   public void fileUsageForGroupsHandlesEmptyList() {
-    assertEquals(0, filedao.getTotalFileUsageForGroups(Collections.emptyList()).size());
+    assertThat(filedao.getTotalFileUsageForGroups(Collections.emptyList())).isEmpty();
   }
 
   private int getTotalFileUsage() {
@@ -125,7 +126,7 @@ public class FileMetadataDaoTest extends SpringTransactionalTest {
     List<User> users2 = List.of(u1LessUsage, u2MoreUsage);
     Map<String, DatabaseUsageByUserGroupByResult> usageForUsers2 =
         filedao.getTotalFileUsageForUsers(users2, pgCrit);
-    assertEquals(2, usageForUsers2.size());
+    assertThat(usageForUsers2).hasSize(2);
 
     // default ordering is desc
     assertEquals(u2MoreUsage.getUsername(), usageForUsers2.keySet().iterator().next());
@@ -209,18 +210,18 @@ public class FileMetadataDaoTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(user);
 
     List<File> paths = filedao.collectUserFilestoreResources(user);
-    assertEquals(0, paths.size());
+    assertThat(paths).isEmpty();
 
     StructuredDocument docD1 = createBasicDocumentInRootFolderWithText(user, "test");
     addAudioFileToField(docD1.getFields().get(0), user);
 
     paths = filedao.collectUserFilestoreResources(user);
-    assertEquals(1, paths.size());
+    assertThat(paths).hasSize(1);
     File audioFile = paths.get(0);
-    assertTrue(
-        "expect audio filename but was " + audioFile.getName(),
-        audioFile.getName().contains("mpthreetest"));
-    assertTrue("expected file to exist", audioFile.exists());
-    assertEquals(198658, audioFile.length());
+    assertThat(audioFile.getName())
+        .as("expect audio filename but was " + audioFile.getName())
+        .contains("mpthreetest");
+    assertThat(audioFile).as("expected file to exist").exists();
+    assertThat(audioFile).hasSize(198658);
   }
 }

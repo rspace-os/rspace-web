@@ -1,14 +1,13 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.apiutils.ApiError;
 import java.io.IOException;
 import java.text.ParseException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.mock.http.MockHttpOutputMessage;
@@ -17,13 +16,10 @@ public class CSVApiErrorMessageConverterTest {
 
   CSVApiErrorMessageConverter csvConverter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     csvConverter = new CSVApiErrorMessageConverter();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testSupportsApiError() {
@@ -40,7 +36,7 @@ public class CSVApiErrorMessageConverterTest {
     String csvResponse = message.getBodyAsString();
     String[] lines = API_ModelTestUtils.parseCSVResponseToLines(csvResponse);
 
-    assertEquals(2, lines.length); // 1 header row and 1 error row
+    assertThat(lines).hasSize(2); // 1 header row and 1 error row
     final int ERROR_PROPERTY_COUNT = 5;
     API_ModelTestUtils.assertRowAndColumnCountForApiError(csvResponse, 2, ERROR_PROPERTY_COUNT);
   }

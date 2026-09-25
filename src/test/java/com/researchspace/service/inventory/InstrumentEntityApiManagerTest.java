@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,15 +21,19 @@ import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInstrumentTemplateSearchResult;
+import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
+import com.researchspace.dao.DigitalObjectIdentifierDao;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
 import com.researchspace.model.events.InventoryDeleteEvent;
@@ -36,15 +41,20 @@ import com.researchspace.model.events.InventoryEditingEvent;
 import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 
 public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
@@ -59,10 +69,23 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
           + " DAcdvqGQAAABWSURBVGje7dUhDsAgEETR5VYcv8fCgUEg1rXdhOR9/ZKRE5LO2kwbH4snHe8EQRAEQWxR88g+m"
           + " yAIgiDeCo9MEARBEP+Lmr/1yARBEARxhyj5fSktYgFPS1k85Tqe JQAAAABJRU5ErkJggg==";
 
+  /** A PID minted elsewhere, as an instrument import would have stored it. */
+  private static final String LINKED_HANDLE = "21.T11148/rsdev1504-test-handle";
+
+  /** A DOI RSpace minted itself: no ORIGIN marker, so {@code isLinked()} is false. */
+  private static final String REGISTERED_DOI = "10.82316/rsdev1504-registered";
+
+  private @Autowired DigitalObjectIdentifierDao doiDao;
+  private @Autowired InstrumentDao instrumentDao;
+  private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
+
+  /** Restored after any test that swaps in a mock, so the shared context is left as it was. */
+  private @Autowired DataCiteConnector realDataCiteConnector;
+
   private ApplicationEventPublisher mockPublisher;
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("instApi"));
@@ -71,6 +94,11 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
     instrumentApiMgr.setPublisher(mockPublisher);
+  }
+
+  @AfterEach
+  public void restoreDataCiteConnector() {
+    inventoryIdentifierApiMgr.setDataCiteConnector(realDataCiteConnector);
   }
 
   @Test
@@ -150,13 +178,14 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     // a second unrelated user cannot read or edit
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
     initialiseContentWithEmptyContent(otherUser);
+    Long instrumentId = created.getId();
 
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanReadInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanReadInstrument(instrumentId, otherUser));
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanEditInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanEditInstrument(instrumentId, otherUser));
   }
 
   @Test
@@ -166,8 +195,8 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     // owner should have read, update and transfer permissions
     assertNotNull(created.getPermittedActions());
     assertTrue(created.getPermittedActions().size() >= 2);
-    assertTrue(created.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
-    assertTrue(created.getPermittedActions().contains(ApiInventoryRecordPermittedAction.UPDATE));
+    assertThat(created.getPermittedActions()).contains(ApiInventoryRecordPermittedAction.READ);
+    assertThat(created.getPermittedActions()).contains(ApiInventoryRecordPermittedAction.UPDATE);
   }
 
   @Test
@@ -182,7 +211,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
     assertNotNull(created);
-    assertEquals(1, created.getExtraFields().size());
+    assertThat(created.getExtraFields()).hasSize(1);
     assertEquals("extra content", created.getExtraFields().get(0).getContent());
   }
 
@@ -224,14 +253,14 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
     assertNotNull(created.getTags());
-    assertFalse(created.getTags().isEmpty());
+    assertThat(created.getTags()).isNotEmpty();
   }
 
   @Test
   public void createInstrumentFromTemplateCopiesFieldsAndLinksTemplate() {
     ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
     assertTrue(template.isTemplate());
-    assertEquals(1, template.getFields().size());
+    assertThat(template.getFields()).hasSize(1);
 
     ApiInstrument request = new ApiInstrument();
     request.setName("from-template");
@@ -244,7 +273,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertEquals(template.getVersion(), created.getTemplateVersion());
     assertFalse(created.isTemplate());
     // fields copied from the template (1 in basic template)
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     assertEquals(template.getFields().get(0).getName(), created.getFields().get(0).getName());
   }
 
@@ -427,7 +456,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertTrue(created.isTemplate());
     assertEquals("created template", created.getName());
     assertEquals(1L, (long) created.getVersion());
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     verify(mockPublisher).publishEvent(Mockito.any(InventoryCreationEvent.class));
     assertTrue(instrumentApiMgr.instrumentTemplateExists(created.getId()));
 
@@ -451,8 +480,8 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     assertNotNull(result);
     assertTrue(result.getTotalHits() >= 1);
-    assertTrue(result.getTemplates().stream().allMatch(t -> t.isTemplate()));
-    assertTrue(result.getTemplates().stream().anyMatch(t -> t.getId().equals(template.getId())));
+    assertThat(result.getTemplates()).allMatch(t -> t.isTemplate());
+    assertThat(result.getTemplates()).anyMatch(t -> t.getId().equals(template.getId()));
   }
 
   @Test
@@ -502,7 +531,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     ApiInstrumentTemplate updated =
         instrumentApiMgr.updateApiInstrumentTemplate(template, testUser);
 
-    assertEquals(1, updated.getFields().size());
+    assertThat(updated.getFields()).hasSize(1);
     assertEquals("added", updated.getFields().get(0).getName());
   }
 
@@ -602,8 +631,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
         instrumentApiMgr.updateInstrumentToLatestTemplateVersion(instrument.getId(), testUser);
     assertEquals(updatedTemplate.getVersion(), resynced.getTemplateVersion());
     // instrument now carries the new field
-    assertTrue(
-        resynced.getFields().stream().anyMatch(f -> "extra-template-field".equals(f.getName())));
+    assertThat(resynced.getFields()).anyMatch(f -> "extra-template-field".equals(f.getName()));
   }
 
   @Test
@@ -668,10 +696,8 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     ApiInstrument lagging = instrumentApiMgr.createNewApiInstrument(instrumentReq, testUser);
 
     // Initially no lagging instruments (instrument is on latest version)
-    assertTrue(
-        instrumentApiMgr
-            .getInstrumentsLinkingOldTemplateVersion(template.getId(), testUser)
-            .isEmpty());
+    assertThat(instrumentApiMgr.getInstrumentsLinkingOldTemplateVersion(template.getId(), testUser))
+        .isEmpty();
 
     // Bump the template — now the existing instrument is lagging
     template.setDescription("new description");
@@ -679,7 +705,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     List<ApiInventoryRecordInfo> lagged =
         instrumentApiMgr.getInstrumentsLinkingOldTemplateVersion(template.getId(), testUser);
-    assertEquals(1, lagged.size());
+    assertThat(lagged).hasSize(1);
     assertEquals(lagging.getId(), lagged.get(0).getId());
   }
 
@@ -933,6 +959,118 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     verify(mockPublisher).publishEvent(Mockito.any(InventoryRestoreEvent.class));
   }
 
+  /**
+   * Trashing an instrument releases its PID: the identifier is unlinked in RSpace, so the same PID
+   * can be imported again (RSDEV-1504).
+   *
+   * <p>This covers the linked case only, and deliberately claims nothing about provider calls: the
+   * explicit delete-identifier path skips the provider for a linked identifier anyway, so no
+   * assertion here could tell the two apart. {@code
+   * markInstrumentAsDeleted_unlinksRegisteredIdentifierWithoutCallingDataCite} is what holds that
+   * line.
+   */
+  @Test
+  public void markInstrumentAsDeleted_unlinksIdentifierAndReleasesPid() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "linked-pid");
+    ApiInstrument linked = linkPidinstTo(created, LINKED_HANDLE);
+    assertEquals(1, linked.getIdentifiers().size());
+    Long identifierId = linked.getIdentifiers().get(0).getId();
+
+    ApiInstrument deleted = instrumentApiMgr.markInstrumentAsDeleted(created.getId(), testUser);
+
+    assertTrue(deleted.isDeleted());
+    assertTrue(deleted.getIdentifiers().isEmpty(), "trashing should have unlinked the identifier");
+    assertTrue(
+        doiDao
+            .findActiveByIdentifierAndType(LINKED_HANDLE, IdentifierType.PIDINST_B2INST)
+            .isEmpty(),
+        "the PID should be importable again");
+    DigitalObjectIdentifier unlinked = doiDao.get(identifierId);
+    assertTrue(unlinked.isDeleted());
+    assertEquals("accepted", unlinked.getState(), "the stored state must not have been rewritten");
+  }
+
+  /**
+   * The unlink is not undone by a restore: trashing is the point of no return for the link, and the
+   * PID may have been imported onto another instrument in the meantime (RSDEV-1504).
+   */
+  @Test
+  public void restoreDeletedInstrument_doesNotBringBackTheIdentifier() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "restore-linked-pid");
+    linkPidinstTo(created, LINKED_HANDLE);
+    instrumentApiMgr.markInstrumentAsDeleted(created.getId(), testUser);
+
+    ApiInstrument restored = instrumentApiMgr.restoreDeletedInstrument(created.getId(), testUser);
+
+    assertFalse(restored.isDeleted());
+    assertTrue(restored.getIdentifiers().isEmpty());
+  }
+
+  /**
+   * The registered half of the rule: an identifier RSpace minted itself is unlinked on trash just
+   * like a linked one, and still without a provider call (RSDEV-1504).
+   *
+   * <p>Asserted against a mock connector rather than on the identifier alone, because the linked
+   * fixture above cannot prove this. The explicit delete-identifier path skips the provider for a
+   * linked identifier anyway, so a regression that routed deletion through {@code
+   * deleteAssociatedIdentifier} would leave those assertions passing while issuing a real DELETE to
+   * DataCite for a registered DOI. This is the test that fails if that happens.
+   */
+  @Test
+  public void markInstrumentAsDeleted_unlinksRegisteredIdentifierWithoutCallingDataCite() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "registered-pid");
+    DigitalObjectIdentifier registered = attachRegisteredPidinstTo(created);
+    assertFalse(registered.isLinked(), "fixture must be a registered identifier, not a linked one");
+    Long identifierId = registered.getId();
+    assertNotNull(identifierId);
+
+    DataCiteConnector noProviderCallExpected = Mockito.mock(DataCiteConnector.class);
+    inventoryIdentifierApiMgr.setDataCiteConnector(noProviderCallExpected);
+
+    ApiInstrument deleted = instrumentApiMgr.markInstrumentAsDeleted(created.getId(), testUser);
+
+    assertTrue(deleted.isDeleted());
+    assertTrue(deleted.getIdentifiers().isEmpty(), "trashing should have unlinked the identifier");
+    DigitalObjectIdentifier unlinked = doiDao.get(identifierId);
+    assertTrue(unlinked.isDeleted());
+    assertEquals("findable", unlinked.getState(), "the DOI must not have been retracted");
+    Mockito.verifyNoInteractions(noProviderCallExpected);
+  }
+
+  /**
+   * Attaches an identifier carrying no ORIGIN marker, which is what one RSpace registered itself
+   * looks like (ADR 0009). Built directly rather than through {@code registerNewIdentifier}, which
+   * calls a provider and takes its type from whichever PIDINST provider the deployment has enabled,
+   * so going through it would make the fixture depend on local configuration.
+   */
+  private DigitalObjectIdentifier attachRegisteredPidinstTo(ApiInstrument instrument) {
+    Instrument dbInstrument = instrumentDao.get(instrument.getId());
+    DigitalObjectIdentifier registered =
+        new DigitalObjectIdentifier(REGISTERED_DOI, instrument.getName());
+    registered.setType(IdentifierType.PIDINST_DATACITE);
+    registered.setState("findable");
+    registered.setOwner(testUser);
+    dbInstrument.addIdentifier(registered);
+    instrumentDao.save(dbInstrument);
+    flushDatabaseState();
+    return registered;
+  }
+
+  /** Attaches a linked PIDINST identifier, the way an instrument import does (ADR 0009). */
+  private ApiInstrument linkPidinstTo(ApiInstrument instrument, String handle) {
+    ApiInventoryDOI link = new ApiInventoryDOI();
+    link.generatePublicLinkSuffix();
+    link.setRegisterIdentifierRequest(true);
+    link.setLinked(true);
+    link.setDoiType(IdentifierType.PIDINST_B2INST.name());
+    link.setDoi(handle);
+    link.setState("accepted");
+    link.setTitle(instrument.getName());
+    return (ApiInstrument)
+        inventoryIdentifierApiMgr.linkExternalIdentifier(
+            new GlobalIdentifier(instrument.getGlobalId()), link, testUser);
+  }
+
   @Test
   public void duplicateInstrument_createsCopy() {
     ApiInstrument original = createBasicInstrumentForUser(testUser, "original");
@@ -968,8 +1106,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     assertNotNull(result);
     assertTrue(result.getTotalHits() >= 1);
-    assertTrue(
-        result.getInstruments().stream().anyMatch(i -> i.getName().equals("listed-instrument")));
+    assertThat(result.getInstruments()).anyMatch(i -> i.getName().equals("listed-instrument"));
   }
 
   @Test
@@ -989,10 +1126,11 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
     initialiseContentWithEmptyContent(otherUser);
+    Long instrumentId = created.getId();
 
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanDeleteInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanDeleteInstrument(instrumentId, otherUser));
   }
 
   @Test
@@ -1012,10 +1150,11 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
     initialiseContentWithEmptyContent(otherUser);
+    Long instrumentId = created.getId();
 
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanTransferInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanTransferInstrument(instrumentId, otherUser));
   }
 
   @Test
@@ -1078,17 +1217,19 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   @Test
   public void assertUserCanReadInstrument_withTemplateId_throwsNotFoundNotClassCast() {
     ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    Long templateId = template.getId();
     assertThrows(
         jakarta.ws.rs.NotFoundException.class,
-        () -> instrumentApiMgr.assertUserCanReadInstrument(template.getId(), testUser));
+        () -> instrumentApiMgr.assertUserCanReadInstrument(templateId, testUser));
   }
 
   @Test
   public void assertUserCanReadInstrumentTemplate_withInstrumentId_throwsNotFoundNotClassCast() {
     ApiInstrument instrument = createBasicInstrumentForUser(testUser, "type-mismatch-test");
+    Long instrumentId = instrument.getId();
     assertThrows(
         jakarta.ws.rs.NotFoundException.class,
-        () -> instrumentApiMgr.assertUserCanReadInstrumentTemplate(instrument.getId(), testUser));
+        () -> instrumentApiMgr.assertUserCanReadInstrumentTemplate(instrumentId, testUser));
   }
 
   @Test
@@ -1123,7 +1264,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertNotNull(copy.getId());
     // permittedActions is set by populateOutgoingApiInstrumentEntity; empty without the call
     assertNotNull(copy.getPermittedActions());
-    assertFalse(copy.getPermittedActions().isEmpty());
+    assertThat(copy.getPermittedActions()).isNotEmpty();
     // owner is also populated by the helper
     assertNotNull(copy.getOwner());
     assertEquals(testUser.getUsername(), copy.getOwner().getUsername());
@@ -1148,7 +1289,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     assertNotNull(created.getId());
     assertTrue(instrumentApiMgr.instrumentTemplateExists(created.getId()));
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     assertEquals("Status", created.getFields().get(0).getName());
     assertEquals(ApiFieldType.RADIO, created.getFields().get(0).getType());
   }

@@ -3,8 +3,9 @@ package com.researchspace.service.fieldmark.impl;
 import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverter.createContainerRequest;
 import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverter.createSampleRequest;
 import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverter.createSampleTemplateRequest;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonElement;
@@ -32,8 +33,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
 public class FieldmarkToRSpaceApiConverterTest {
@@ -43,7 +44,7 @@ public class FieldmarkToRSpaceApiConverterTest {
   private JsonParser parser;
   private FieldmarkNotebookDTO notebookDTO;
 
-  @Before
+  @BeforeEach
   public void init() throws IOException, URISyntaxException {
     MockitoAnnotations.openMocks(this);
     mapper = new ObjectMapper();
@@ -85,7 +86,7 @@ public class FieldmarkToRSpaceApiConverterTest {
     assertEquals(user.getUsername(), underTest.getOwner().getUsername());
     assertEquals(underTest.getName(), "Container RSpace IGSN Demo - 2025-08-20 10:53:26");
 
-    assertEquals(13, underTest.getExtraFields().size());
+    assertThat(underTest.getExtraFields()).hasSize(13);
     assertEquals("item name", underTest.getExtraFields().get(0).getName());
     assertEquals("projectId", underTest.getExtraFields().get(1).getName());
     assertEquals("leadInstitution", underTest.getExtraFields().get(2).getName());

@@ -2,10 +2,12 @@ package com.researchspace.model.units;
 
 import static java.util.stream.Collectors.groupingBy;
 import static javax.measure.MetricPrefix.MILLI;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.JacksonUtil;
 import java.util.EnumSet;
@@ -14,7 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.measure.Quantity;
 import javax.measure.quantity.Temperature;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 
@@ -33,7 +35,7 @@ public class RSUnitDefsTest {
   public void toJsonIgnoresUnitDefinition() {
     for (RSUnitDef def : EnumSet.allOf(RSUnitDef.class)) {
       String json = JacksonUtil.toJson(def);
-      assertFalse(json.contains("definition"));
+      assertThat(json).doesNotContain("definition");
     }
   }
 
@@ -41,12 +43,13 @@ public class RSUnitDefsTest {
   public void fahrenheit() {
     Quantity<Temperature> waterBoilingPointAsC = Quantities.getQuantity(100, Units.CELSIUS);
     assertEquals("212 F", waterBoilingPointAsC.to(RSUnits.FAHRENHEIT).toString());
-    assertEquals(
-        212.0, waterBoilingPointAsC.to(RSUnits.FAHRENHEIT).getValue().doubleValue(), 0.001);
+    assertThat(waterBoilingPointAsC.to(RSUnits.FAHRENHEIT).getValue().doubleValue())
+        .isCloseTo(212.0, within(0.001));
 
     Quantity<Temperature> waterBoilingPointAsF = Quantities.getQuantity(212, RSUnits.FAHRENHEIT);
     assertEquals("100 ℃", waterBoilingPointAsF.to(Units.CELSIUS).toString());
-    assertEquals(373.15, waterBoilingPointAsF.to(Units.KELVIN).getValue().doubleValue(), 0.001);
+    assertThat(waterBoilingPointAsF.to(Units.KELVIN).getValue().doubleValue())
+        .isCloseTo(373.15, within(0.001));
   }
 
   @Test
@@ -65,12 +68,11 @@ public class RSUnitDefsTest {
   }
 
   private void assertIdsAreUnique() {
-    assertEquals(
-        EnumSet.allOf(RSUnitDef.class).size(),
-        EnumSet.allOf(RSUnitDef.class).stream()
-            .map(RSUnitDef::getId)
-            .collect(Collectors.toSet())
-            .size());
+    assertThat(
+            EnumSet.allOf(RSUnitDef.class).stream()
+                .map(RSUnitDef::getId)
+                .collect(Collectors.toSet()))
+        .hasSize(EnumSet.allOf(RSUnitDef.class).size());
   }
 
   @Test

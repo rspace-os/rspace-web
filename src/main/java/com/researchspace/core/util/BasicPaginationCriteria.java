@@ -1,14 +1,10 @@
 package com.researchspace.core.util;
 
 import java.io.Serializable;
-import java.util.regex.Matcher;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * POJO to hold pagination criteria. If not configured otherwise, will return 10 results from page1
@@ -22,30 +18,19 @@ import org.slf4j.LoggerFactory;
 public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> {
 
   private static final long serialVersionUID = 1L;
-  private static Logger logger = LoggerFactory.getLogger(BasicPaginationCriteria.class);
 
   private FilterCriteria searchCriteria;
   private Class<T> clazz;
-  private T instance;
   private String orderBy;
   private SortOrder sortOrder = SortOrder.DESC;
   private Long pageNumber = 0L;
   private Integer resultsPerPage = DEFAULT_RESULTS_PERPAGE;
 
   /**
-   * @param clazz A Class<T> object that can be used to create an instance of the generic type for
-   *     checking orderBy properties.
+   * @param clazz the class of the listed objects
    */
   public BasicPaginationCriteria(Class<T> clazz) {
     this.clazz = clazz;
-    try {
-      this.instance = clazz.newInstance();
-    } catch (InstantiationException e) {
-      logger.trace("Could not instantiate example of class [" + clazz + "] - perhaps is abstract?");
-      this.instance = null;
-    } catch (IllegalAccessException e) {
-      throw new IllegalArgumentException();
-    }
   }
 
   public BasicPaginationCriteria() {}
@@ -227,31 +212,12 @@ public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> 
     if (StringUtils.isBlank(orderByField)) {
       return;
     }
-    setOrderByWithoutChecks(orderByField);
+    this.orderBy = orderByField;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see
-   * com.axiope.util.IPagination#setOrderByWithoutChecks(java.lang.String)
-   */
   @Override
-  public void setOrderByWithoutChecks(String orderByField) {
-    if (isOrderBySafe(orderByField)) {
-      this.orderBy = orderByField;
-    }
-    if (instance != null) {
-      try {
-        BeanUtils.getProperty(instance, orderByField);
-        // nested properties are allowed so we just warn here
-      } catch (Exception e) {
-        logger.warn(
-            "Property [{}] is not a direct property of the generic class [{}]",
-            orderByField,
-            instance.getClass());
-      }
-    }
+  public void clearOrderBy() {
+    this.orderBy = null;
   }
 
   /*
@@ -297,19 +263,5 @@ public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> 
   @Override
   public int getFirstResultIndex() {
     return (int) (getPageNumber() * getResultsPerPage());
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.axiope.util.IPagination#isOrderBySafe(java.lang.String)
-   */
-  @Override
-  public boolean isOrderBySafe(String orderBy) {
-    if (StringUtils.isEmpty(orderBy)) {
-      return true;
-    }
-    Matcher m = ORDERBYBLACKLIST.matcher(orderBy);
-    return !m.find();
   }
 }

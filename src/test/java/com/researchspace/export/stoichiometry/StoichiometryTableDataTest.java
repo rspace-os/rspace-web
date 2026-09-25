@@ -1,6 +1,6 @@
 package com.researchspace.export.stoichiometry;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
@@ -8,7 +8,7 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class StoichiometryTableDataTest {
 

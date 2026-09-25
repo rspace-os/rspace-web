@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,7 +22,7 @@ public class DigitalObjectIdentifierTest {
     assertEquals(0, IdentifierType.IGSN_DATACITE.ordinal());
     assertEquals(1, IdentifierType.PIDINST_DATACITE.ordinal());
     assertEquals(2, IdentifierType.PIDINST_B2INST.ordinal());
-    assertEquals(3, IdentifierType.values().length);
+    assertThat(IdentifierType.values()).hasSize(3);
   }
 
   @Test
@@ -78,6 +79,24 @@ public class DigitalObjectIdentifierTest {
     assertFalse(DigitalObjectIdentifier.isPublishedState(null));
   }
 
+  /**
+   * The state column is free-form text: RSpace writes it for some transitions and copies it
+   * verbatim from a provider response for others, so its case is not guaranteed. This gates the
+   * unauthenticated public landing page, and a case-sensitive comparison would have closed that
+   * page for a record the provider reported as published - and, through {@code
+   * DigitalObjectIdentifierDaoHibernate}, mis-selected which revision the page serves.
+   */
+  @Test
+  public void isPublishedStateIgnoresTheCaseTheProviderUsed() {
+    assertTrue(DigitalObjectIdentifier.isPublishedState("Findable"));
+    assertTrue(DigitalObjectIdentifier.isPublishedState("FINDABLE"));
+    assertTrue(DigitalObjectIdentifier.isPublishedState("Accepted"));
+    assertTrue(DigitalObjectIdentifier.isPublishedState("ACCEPTED"));
+    // still only these two states, whatever the case
+    assertFalse(DigitalObjectIdentifier.isPublishedState("DRAFT"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState("Submitted"));
+  }
+
   @Test
   public void constructorGeneratesPublicLinkWhenGivenNoSuffix() {
     DigitalObjectIdentifier withNull = new DigitalObjectIdentifier("10.12345/test", "t", null);
@@ -87,6 +106,6 @@ public class DigitalObjectIdentifierTest {
     assertNotNull(withBlank.getPublicLink());
     assertNotNull(twoArg.getPublicLink());
     // 16 random bytes, base64url-encoded without padding: pins the entropy, not the char count
-    assertEquals(22, twoArg.getPublicLink().length());
+    assertThat(twoArg.getPublicLink()).hasSize(22);
   }
 }

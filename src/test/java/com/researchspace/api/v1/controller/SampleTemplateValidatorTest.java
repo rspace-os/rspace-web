@@ -1,17 +1,17 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
@@ -30,7 +30,7 @@ public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBa
   @Autowired private SampleTemplatePostValidator postValidator;
   @Autowired private SampleTemplatePutValidator putValidator;
 
-  @Before
+  @BeforeEach
   public void setup() {
     // base class `validator` field unused here — tests pick POST or PUT explicitly.
   }
@@ -169,10 +169,9 @@ public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBa
 
     Errors errors = validate(putValidator, put);
 
-    assertTrue(
-        errors.getFieldErrors().stream()
-            .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode())),
-        "expected an invalid-relation-type error, got: " + errors.getAllErrors());
+    assertThat(errors.getFieldErrors())
+        .as("expected an invalid-relation-type error, got: " + errors.getAllErrors())
+        .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode()));
   }
 
   // --- helpers --------------------------------------------------------------------------

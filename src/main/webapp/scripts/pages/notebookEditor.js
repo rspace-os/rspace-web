@@ -181,8 +181,7 @@ $(document).ready(function(e) {
         e.preventDefault();
         openWordChooserDlg({
           title: RS.msg("legacyjs.workspace.notebookEditor.importWordTitle"),
-          fileType: RS.msg("legacyjs.workspace.notebookEditor.wordFileType"),
-          listNotebooks:true
+          fileType: RS.msg("legacyjs.workspace.notebookEditor.wordFileType")
         });
       });
 

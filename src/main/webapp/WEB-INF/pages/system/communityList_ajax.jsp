@@ -22,5 +22,5 @@
   </table>
   
 <div class="tabularViewBottom bootstrap-custom-flat">
-  <axt:paginate_new paginationList="${paginationList}"></axt:paginate_new> 
+  <axt:paginate paginationList="${paginationList}"></axt:paginate>
 </div>

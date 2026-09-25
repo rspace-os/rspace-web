@@ -4,6 +4,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -21,8 +22,8 @@ import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectRetrievalFailureException;
@@ -41,7 +42,7 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
   private ObjectMapper objectMapper = new ObjectMapper();
   private CreateCloudGroup projectGroupCreationObj;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     this.pi = createAndSaveUser("pi" + getRandomName(10), Constants.PI_ROLE);
@@ -112,10 +113,9 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
         .andExpect(status().is3xxRedirection())
         .andReturn();
 
-    assertExceptionThrown(
-        () -> grpMgr.getGroup(newProjectGroupId), ObjectRetrievalFailureException.class);
-    assertExceptionThrown(
-        () -> raIDServiceManager.getUserRaid(raidId), ObjectRetrievalFailureException.class);
+    assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(newProjectGroupId));
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> raIDServiceManager.getUserRaid(raidId));
   }
 
   @NotNull

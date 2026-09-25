@@ -83,6 +83,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -97,10 +98,12 @@ import org.springframework.web.servlet.ModelAndView;
 /** Main controller for loading, displaying and handling edits for StructuredDocuments */
 @Controller
 @BrowserCacheAdvice(cacheTime = BrowserCacheAdvice.NEVER)
-@RequestMapping({
-  "/workspace/editor/structuredDocument",
-  "/public/publicView/workspace/editor/structuredDocument"
-})
+// RSDEV-1329: this editor controller must never be dual-mapped under the anon /public/** prefix.
+// The one endpoint the published view needs (comment viewing) is served by
+// PublicStructuredDocumentCommentsController. Other controllers still dual-map under /public/**
+// (Gallery, FileDownload, Image, Journal, RSChem, SVGMath, Thumbnail, UserProfile); narrowing
+// those is tracked separately.
+@RequestMapping("/workspace/editor/structuredDocument")
 public class StructuredDocumentController extends BaseController {
 
   /** View name and redirect URLs */
@@ -164,26 +167,22 @@ public class StructuredDocumentController extends BaseController {
     this.externalWordFileImporter = externalFileImporter;
   }
 
-  @Qualifier("evernoteFileImporter")
-  @Autowired
-  private ExternalFileImporter evernoteFileImporter;
-
   private @Autowired WorkspaceHandler workspaceHandler;
 
   @PostMapping("/ajax/createFromWord/{parentId}")
   @ResponseBody
   public AjaxReturnObject<List<RecordInformation>> createSDFromWordFile(
       @PathVariable("parentId") Long parentFolderId,
-      @RequestParam("wordXfile") List<MultipartFile> mswordOrEvernoteFile,
+      @RequestParam("wordXfile") List<MultipartFile> wordFiles,
       @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       HttpSession session)
       throws IOException {
     Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = userManager.getAuthenticatedUserInSession();
-    log.info("Creating RSpace docs from {} submitted files", mswordOrEvernoteFile.size());
+    log.info("Creating RSpace docs from {} submitted files", wordFiles.size());
 
     ErrorList el = new ErrorList();
-    if (!isFileUploaded(mswordOrEvernoteFile)) {
+    if (!isFileUploaded(wordFiles)) {
       el.addErrorMsg(getText("workspace.word.import.noFilesError"));
       return new AjaxReturnObject<List<RecordInformation>>(null, el);
     }
@@ -192,9 +191,10 @@ public class StructuredDocumentController extends BaseController {
     assertAuthorisation(user, originalParentFolder, PermissionType.READ);
     List<RecordInformation> rc = new ArrayList<>();
     ProgressMonitor progress =
-        new ProgressMonitorImpl(mswordOrEvernoteFile.size() * 10, "File import progress");
+        new ProgressMonitorImpl(
+            wordFiles.size() * 10, getText("workspace.word.import.progressStarted"));
     session.setAttribute(BATCH_WORDIMPORT_PROGRESS, progress);
-    for (MultipartFile mf : mswordOrEvernoteFile) {
+    for (MultipartFile mf : wordFiles) {
       try {
         BaseRecord createdOrUpdated = null;
         Optional<ExternalFileImporter> importer = getFileImporterForMultipartFile(mf);
@@ -251,9 +251,7 @@ public class StructuredDocumentController extends BaseController {
   }
 
   private Optional<ExternalFileImporter> getFileImporterForMultipartFile(MultipartFile mf) {
-    if (getExtension(mf.getOriginalFilename()).equalsIgnoreCase("enex")) {
-      return Optional.of(evernoteFileImporter);
-    } else if (isDoc(FilenameUtils.getExtension(mf.getOriginalFilename()))) {
+    if (isDoc(FilenameUtils.getExtension(mf.getOriginalFilename()))) {
       return Optional.of(externalWordFileImporter);
     }
     return Optional.empty();
@@ -716,8 +714,20 @@ public class StructuredDocumentController extends BaseController {
    */
   @GetMapping("/getAutoSavedFields")
   @ResponseBody
-  public List<Field> getAutoSavedFields(@RequestParam("recordId") long recordId) {
-    List<Field> fieldList = fieldManager.getFieldsByRecordId(recordId, null);
+  public List<Field> getAutoSavedFields(
+      @RequestParam("recordId") long recordId, Principal principal) {
+    // RSDEV-1329: fail closed rather than dereferencing a null principal into a 500 with a
+    // non-localized message. Unreachable while this controller is mapped only under the
+    // authenticated /workspace/** prefix, so this guards the mapping changing, not today's
+    // filter chain. Same shape as PublicStructuredDocumentCommentsController.
+    if (principal == null) {
+      throw new AuthorizationException(
+          getText(
+              "errors.authorization.failure.readDraftFields",
+              new Object[] {RecordGroupSharing.ANONYMOUS_USER, recordId}));
+    }
+    User user = getUserByUsername(principal.getName());
+    List<Field> fieldList = fieldManager.getAutoSavedFieldsByRecordId(recordId, user);
     List<Field> tempFieldList = Field.getNewListOfTempFields(fieldList, false);
     for (Field field : tempFieldList) {
       disconnectField(field);
@@ -1456,7 +1466,7 @@ public class StructuredDocumentController extends BaseController {
    * copied elements, not to original ones (RSPAC-1957).
    */
   @ResponseBody
-  @PostMapping("/copyContentIntoField")
+  @PostMapping(value = "/copyContentIntoField", produces = MediaType.TEXT_PLAIN_VALUE)
   public String copyContentIntoField(
       @RequestParam("content") String content,
       @RequestParam("fieldId") Long fieldId,

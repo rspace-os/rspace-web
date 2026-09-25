@@ -7,7 +7,7 @@ import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.core.testutil.JakartaValidatorTest;
 import java.util.Collections;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ShareApiControllerTest extends JakartaValidatorTest {
 

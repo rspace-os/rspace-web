@@ -9,7 +9,6 @@ import com.researchspace.model.audittrail.AuditTrailData;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.beanutils.BeanUtils;
 
 /**
  * POJO to hold pagination criteria, defined as a RequestScope bean. If not configured otherwise,
@@ -75,23 +74,6 @@ public class PaginationCriteria<T> implements Serializable, IPagination<T> {
     rc.setResultsPerPage(resultsPerPage);
     rc.setSortOrder(SortOrder.valueOf(sortOrder));
     return rc;
-  }
-
-  /**
-   * Boolean query for whether the order by term is a basic Javabeans property of the class
-   *
-   * @return <code>true</code> if it is, <code>false</code>otherwise
-   */
-  public boolean isOrderByAnInstanceProperty() {
-    if (getOrderBy() == null) {
-      return false;
-    }
-    try {
-      BeanUtils.getProperty(delegate.getClazz().newInstance(), getOrderBy());
-    } catch (Exception e) {
-      return false;
-    }
-    return true;
   }
 
   @JsonIgnore
@@ -233,13 +215,9 @@ public class PaginationCriteria<T> implements Serializable, IPagination<T> {
     delegate.setOrderBy(orderByField);
   }
 
-  /**
-   * setOrderBy method that allows setting value to null
-   *
-   * @param orderByField
-   */
-  public void setOrderByWithoutChecks(String orderByField) {
-    delegate.setOrderByWithoutChecks(orderByField);
+  @Override
+  public void clearOrderBy() {
+    delegate.clearOrderBy();
   }
 
   /**
@@ -272,15 +250,5 @@ public class PaginationCriteria<T> implements Serializable, IPagination<T> {
    */
   public int getFirstResultIndex() {
     return delegate.getFirstResultIndex();
-  }
-
-  /**
-   * Reject blacklisted orderBy fields
-   *
-   * @param orderBy - can be <code>null</code> or empty.
-   * @return <code>true</code> if <code>orderBy</code> is safe to use, <code>false</code> otherwise
-   */
-  public boolean isOrderBySafe(String orderBy) {
-    return delegate.isOrderBySafe(orderBy);
   }
 }

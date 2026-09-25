@@ -1,8 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates.v47;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.User;
@@ -15,8 +13,8 @@ import java.io.IOException;
 import java.util.List;
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.SetupException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers {
@@ -26,7 +24,7 @@ public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers 
   private UpdateFilestoreLinkTypesInFieldContent updater;
   private User user;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -66,7 +64,7 @@ public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers 
     List<TextField> textFieldsWithLinks =
         getAllTextFieldsWithLinks(UpdateFilestoreLinkTypesInFieldContent.OLD_LINK_MATCHER);
     commitTransaction();
-    assertEquals(initTextFields.size() + 2, textFieldsWithLinks.size());
+    assertThat(textFieldsWithLinks).hasSize(initTextFields.size() + 2);
 
     // call the updater
 
@@ -91,16 +89,18 @@ public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers 
   }
 
   private void assertOldStyleLink(String fieldContent) {
-    assertTrue(fieldContent, fieldContent.contains("<a class=\"nfs_file mceNonEditable\" href"));
-    assertFalse(
-        fieldContent,
-        fieldContent.contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href"));
+    assertThat(fieldContent).as(fieldContent).contains("<a class=\"nfs_file mceNonEditable\" href");
+    assertThat(fieldContent)
+        .as(fieldContent)
+        .doesNotContain("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href");
   }
 
   private void assertNewStyleLink(String fieldContent) {
-    assertFalse(fieldContent, fieldContent.contains("<a class=\"nfs_file mceNonEditable\" href"));
-    assertTrue(
-        fieldContent,
-        fieldContent.contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href"));
+    assertThat(fieldContent)
+        .as(fieldContent)
+        .doesNotContain("<a class=\"nfs_file mceNonEditable\" href");
+    assertThat(fieldContent)
+        .as(fieldContent)
+        .contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href");
   }
 }

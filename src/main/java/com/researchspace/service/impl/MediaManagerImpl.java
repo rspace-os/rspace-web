@@ -32,6 +32,7 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RSMath;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -72,10 +73,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
@@ -893,10 +898,83 @@ public class MediaManagerImpl implements MediaManager {
   }
 
   @Override
-  public List<RecordInformation> getIdsOfLinkedDocuments(Long mediaFileId) {
-    List<RecordInformation> rc = recordDao.getInfosOfDocumentsLinkedToMediaFile(mediaFileId);
-    rc.stream().forEach(info -> info.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, info.getId())));
-    return rc;
+  public List<RecordInformation> getIdsOfLinkedDocuments(Long mediaFileId, User user) {
+    // RSDEV-1329: fail closed — null user, the anonymous published-view guest, unknown id and
+    // no-READ are indistinguishable.
+    // Note: recordDao is a GenericDao<Record, Long> and Folder extends BaseRecord rather than
+    // Record, so a folder id does not resolve to an EcatMediaFile and fails closed here —
+    // intended on this endpoint, but a trap if this shape is reused where folder ids are
+    // legitimate.
+    if (user == null || user.isAnonymousGuestAccount()) {
+      throw refuseListing(user, mediaFileId);
+    }
+    EcatMediaFile media =
+        recordDao
+            .getSafeNull(mediaFileId)
+            .filter(EcatMediaFile.class::isInstance)
+            .map(EcatMediaFile.class::cast)
+            .orElseThrow(() -> refuseListing(user, mediaFileId));
+    if (!permUtils.isRecordAccessPermitted(user, media, PermissionType.READ)) {
+      throw refuseListing(user, mediaFileId);
+    }
+
+    // READ on the media file does not imply READ on every linking document. Unreadable rows are
+    // replaced by an owner-only placeholder rather than dropped, matching
+    // DetailedRecordInformationProvider.getLinkedByRecords and the contract the frontend relies on
+    // (modules/workspace/schema.ts: absent id/oid marks a private row, rendered as
+    // "N private docs belonging to <owner>").
+    // De-duplicated by document id first: LINKED_DOCS_QUERY has no `distinct`, so a document
+    // embedding this file in two fields yields two rows and would be counted as two private
+    // documents.
+    Map<Long, RecordInformation> distinctByDocId = new LinkedHashMap<>();
+    for (RecordInformation info : recordDao.getInfosOfDocumentsLinkedToMediaFile(mediaFileId)) {
+      distinctByDocId.putIfAbsent(info.getId(), info);
+    }
+    Map<Long, Record> byId =
+        recordDao.getRecordsById(List.copyOf(distinctByDocId.keySet())).stream()
+            .collect(Collectors.toMap(Record::getId, Function.identity(), (a, b) -> a));
+    return distinctByDocId.values().stream()
+        .map(info -> toReadableOrPlaceholder(info, byId.get(info.getId()), user))
+        .flatMap(Optional::stream)
+        .toList();
+  }
+
+  /**
+   * One refusal for every branch of {@link #getIdsOfLinkedDocuments}. The AJAX error view echoes
+   * exception messages, so an absent media file, an inaccessible one and a missing subject must all
+   * produce the same text: a distinct message would let a caller use the endpoint as an existence
+   * oracle. Kept as a single factory so a later edit cannot make one branch diverge (RSDEV-1329).
+   */
+  private AuthorizationException refuseListing(User user, Long mediaFileId) {
+    return new AuthorizationException(
+        messages.getMessage(
+            "errors.authorization.failure.listLinkedDocuments",
+            new Object[] {
+              user == null ? RecordGroupSharing.ANONYMOUS_USER : user.getUsername(), mediaFileId
+            }));
+  }
+
+  private Optional<RecordInformation> toReadableOrPlaceholder(
+      RecordInformation info, Record doc, User user) {
+    // A linked id that no longer resolves to a Record cannot be shown to be readable, and there is
+    // no owner to attribute a private row to, so it is omitted rather than emitted as an
+    // unattributable "private doc belonging to <blank>" (RSDEV-1329).
+    if (doc == null) {
+      return Optional.empty();
+    }
+    // isPermitted, not isRecordAccessPermitted: the latter ORs in isPermittedViaMediaLinksToRecords
+    // which grants READ on a record via anything it links to. That fallback is correct for the
+    // media file itself (above) but on a LINKING document it would re-open the leak these
+    // placeholders exist to close.
+    if (permUtils.isPermitted(doc, PermissionType.READ, user)) {
+      info.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, info.getId()));
+      return Optional.of(info);
+    }
+    RecordInformation ownersInfo = new RecordInformation();
+    // full name only: the username is a login identifier, and no consumer of the placeholder
+    // reads it (RSDEV-1329)
+    ownersInfo.setOwnerFullName(doc.getOwner().getFullName());
+    return Optional.of(ownersInfo);
   }
 
   @Override

@@ -2,8 +2,12 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.*;
@@ -15,22 +19,18 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestGroup;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 public class FolderApiControllerMVCIT extends API_MVC_TestBase {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void folderPostGetAndDelete() throws Exception {
@@ -138,7 +138,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertFalse(retrieved.isNotebook());
     assertEquals("Documents", retrieved.getMediaType());
     assertNotNull(retrieved.getPathToRootFolder());
-    assertEquals(2, retrieved.getPathToRootFolder().size());
+    assertThat(retrieved.getPathToRootFolder()).hasSize(2);
 
     // can't create notebook in Gallery
     folderPost.setNotebook(true);
@@ -178,9 +178,8 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(expectedTotalRootFolderContents, listing.getTotalHits().intValue());
 
     // assert Gallery folder is listed
-    assertThat(
-        listing.getRecords().stream().map(RecordTreeItemInfo::getName).collect(toList()),
-        hasItem(Folder.MEDIAROOT));
+    assertThat(listing.getRecords().stream().map(RecordTreeItemInfo::getName).collect(toList()))
+        .contains(Folder.MEDIAROOT);
     RecordTreeItemInfo galleryInfo =
         listing.getRecords().stream()
             .filter(item -> item.getName().equals(Folder.MEDIAROOT))
@@ -189,10 +188,11 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertTrue(galleryInfo.isSystemFolder());
     assertFalse(galleryInfo.isSharedFolder());
     // ISSUE-521 root folder listing doesn't put folderId in self link
-    assertEquals(1, listing.getLinks().size());
+    assertThat(listing.getLinks()).hasSize(1);
     String selfLink = listing.getLinks().get(0).getLink();
-    assertTrue(
-        selfLink, selfLink.endsWith(BaseApiController.FOLDER_TREE_ENDPOINT + "?pageNumber=0"));
+    assertThat(selfLink)
+        .as(selfLink)
+        .endsWith(BaseApiController.FOLDER_TREE_ENDPOINT + "?pageNumber=0");
     assertEquals(anyUser.getRootFolder().getId(), listing.getFolderId());
 
     final int expectedDocumentCount = 1;
@@ -223,7 +223,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     long galleryId = getIdFromNameForListing(Folder.MEDIAROOT, listing);
     ApiRecordTreeItemListing galleryListing = performFolderListingById(anyUser, apiKey, galleryId);
     final int expectedTopLevelGalleryFolders = 8;
-    assertEquals(expectedTopLevelGalleryFolders, galleryListing.getRecords().size());
+    assertThat(galleryListing.getRecords()).hasSize(expectedTopLevelGalleryFolders);
 
     // none of these can be deleted:
     for (RecordTreeItemInfo info : galleryListing.getRecords()) {
@@ -332,12 +332,12 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertFalse(retrievedFolder.isSystemFolder());
 
     // ISSUE-521 listing tree for specific folderId puts that id in self link
-    assertEquals(1, sharedFolderListing.getLinks().size());
+    assertThat(sharedFolderListing.getLinks()).hasSize(1);
     String selfLink = sharedFolderListing.getLinks().get(0).getLink();
-    assertTrue(
-        selfLink,
-        selfLink.endsWith(
-            BaseApiController.FOLDER_TREE_ENDPOINT + "/" + groupSharedFolderId + "?pageNumber=0"));
+    assertThat(selfLink)
+        .as(selfLink)
+        .endsWith(
+            BaseApiController.FOLDER_TREE_ENDPOINT + "/" + groupSharedFolderId + "?pageNumber=0");
     assertEquals(groupSharedFolderId, sharedFolderListing.getFolderId());
   }
 

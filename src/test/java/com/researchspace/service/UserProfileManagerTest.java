@@ -1,6 +1,8 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
@@ -13,7 +15,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UserProfileManagerTest extends SpringTransactionalTest {
@@ -58,14 +60,14 @@ public class UserProfileManagerTest extends SpringTransactionalTest {
     // set user's profile as private
     user = userManager.setAsPrivateProfile(true, user);
     // check it's not included in listing
-    assertTrue(getUser(uname, pgCrit).isEmpty());
+    assertThat(getUser(uname, pgCrit)).isEmpty();
 
     // backdoor sysadmins shouldn't be listed (RSPAC-2189)
     User backdoorSysadmin = createAndSaveRandomUser();
-    assertTrue(getUser(backdoorSysadmin.getUsername(), pgCrit).isPresent());
+    assertThat(getUser(backdoorSysadmin.getUsername(), pgCrit)).isPresent();
     backdoorSysadmin.setSignupSource(SignupSource.SSO_BACKDOOR);
     userManager.saveUser(backdoorSysadmin);
-    assertFalse(getUser(backdoorSysadmin.getUsername(), pgCrit).isPresent());
+    assertThat(getUser(backdoorSysadmin.getUsername(), pgCrit)).isNotPresent();
   }
 
   private Optional<PublicUserList> getUser(String uname, PaginationCriteria<User> pgCrit) {

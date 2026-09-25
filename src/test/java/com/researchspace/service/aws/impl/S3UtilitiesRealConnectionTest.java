@@ -1,15 +1,14 @@
 package com.researchspace.service.aws.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
 import java.io.IOException;
@@ -22,8 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -33,8 +32,8 @@ import org.springframework.beans.factory.annotation.Value;
  *
  * <p>Test buckets need to contain expected files/folders structure for tests to pass.
  */
-@RunWith(ConditionalTestRunner.class)
 @Slf4j
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
   @Autowired private S3UtilitiesFactory s3UtilitiesFactory;
@@ -78,14 +77,12 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   private S3Utilities s3Utilities;
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testDownloadFileAWS() throws IOException {
     initializeS3UtilitiesWithAWS();
     downloadFileScenario("testS3File-AWS.txt");
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testListFolderContentAWS() {
     initializeS3UtilitiesWithAWS();
     S3FolderContentItem testFile = listFolderContentsScenario("testS3File-AWS.txt");
@@ -93,91 +90,78 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testDownloadFileCloudflare() throws IOException {
     initializeS3UtilitiesWithCloudflare();
     downloadFileScenario("testS3File-Cloudflare.txt");
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testListFolderContentCloudflare() {
     initializeS3UtilitiesWithCloudflare();
     listFolderContentsScenario("testS3File-Cloudflare.txt");
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testUploadAndDeleteAWS() throws IOException {
     initializeS3UtilitiesWithAWS();
     uploadAndDeleteScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testUploadAndDeleteCloudflare() throws IOException {
     initializeS3UtilitiesWithCloudflare();
     uploadAndDeleteScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testTopLevelRootFilestoreAWS() throws IOException {
     initializeS3UtilitiesWithAWS();
     topLevelRootScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testTopLevelRootFilestoreCloudflare() throws IOException {
     initializeS3UtilitiesWithCloudflare();
     topLevelRootScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testCopyObjectFromBucketAWS() throws IOException {
     initializeS3UtilitiesWithAWS();
     copyObjectFromBucketScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testCopyObjectFromBucketCloudflare() throws IOException {
     initializeS3UtilitiesWithCloudflare();
     copyObjectFromBucketScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testCreateFolderAndMetadataAWS() {
     initializeS3UtilitiesWithAWS();
     createFolderScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testCreateFolderAndMetadataCloudflare() {
     initializeS3UtilitiesWithCloudflare();
     createFolderScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testDeleteEmptyFolderAWS() throws IOException {
     initializeS3UtilitiesWithAWS();
     deleteEmptyFolderScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testDeleteEmptyFolderCloudflare() throws IOException {
     initializeS3UtilitiesWithCloudflare();
     deleteEmptyFolderScenario();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testCrossBucketCopyObjectAWS() throws IOException {
     // Destination = primary AWS bucket (test instance). Source = rspace-s3-integration-dev,
     // object at unit_test_do_not_remove/transfer_test.txt (content: "s3 transfer test 1").
@@ -194,11 +178,11 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
       // verify the copy landed in the primary bucket with correct size
       S3FolderContentItem dest = s3Utilities.getObjectDetails(destKey);
-      assertTrue("cross-bucket copy destination should exist", dest != null && !dest.isFolder());
+      assertTrue(dest != null && !dest.isFolder(), "cross-bucket copy destination should exist");
       assertEquals(
-          "cross-bucket copy size mismatch",
           Long.valueOf(expectedContent.getBytes().length),
-          dest.getSizeInBytes());
+          dest.getSizeInBytes(),
+          "cross-bucket copy size mismatch");
 
       // download and verify content matches the source file
       File roundTrip = File.createTempFile("cross-bucket-copy", ".txt");
@@ -251,7 +235,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     // download img file from subfolder
     s3Utilities.downloadFromS3(
         UNIT_TESTS_FOLDER_NAME + "/" + UNIT_TESTS_SUBFOLDER_NAME + "/" + "test image.png", tmpFile);
-    assertEquals(168434L, tmpFile.length());
+    assertThat(tmpFile).hasSize(168434L);
 
     // cleanup
     tmpFile.delete();
@@ -262,11 +246,11 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
     // check the root folder
     List<S3FolderContentItem> items = s3Utilities.listFolderContents("");
-    assertEquals(TOP_LEVEL_FOLDER_CONTENT_COUNT, items.size());
+    assertThat(items).hasSize(TOP_LEVEL_FOLDER_CONTENT_COUNT);
 
     // check the top-level unit tests folder
     items = s3Utilities.listFolderContents(UNIT_TESTS_FOLDER_NAME);
-    assertEquals(UNIT_TESTS_FOLDER_CONTENT_COUNT, items.size());
+    assertThat(items).hasSize(UNIT_TESTS_FOLDER_CONTENT_COUNT);
 
     // find the expected test file and verify its size
     Long testS3TxtFileSize = 13L;
@@ -274,15 +258,15 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
         items.stream()
             .filter(item -> item.getName().equals(testTxtFilename) && !item.isFolder())
             .findFirst();
-    assertTrue("Expected to find file 'testS3File.txt'", testS3File.isPresent());
+    assertThat(testS3File).as("Expected to find file 'testS3File.txt'").isPresent();
     assertEquals(
-        "Unexpected testS3File.txt size", testS3TxtFileSize, testS3File.get().getSizeInBytes());
+        testS3TxtFileSize, testS3File.get().getSizeInBytes(), "Unexpected testS3File.txt size");
     assertEquals(
         LocalDate.of(2026, 5, 20),
         testS3File.get().getLastModified().atZone(ZoneOffset.UTC).toLocalDate());
     assertTrue(
-        "listing should surface the object ETag",
-        StringUtils.isNotBlank(testS3File.get().getEtag()));
+        StringUtils.isNotBlank(testS3File.get().getEtag()),
+        "listing should surface the object ETag");
     S3FolderContentItem topLevelTestFile = testS3File.get();
 
     // find the subfolder
@@ -290,20 +274,20 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
         items.stream()
             .filter(item -> item.getName().equals(UNIT_TESTS_SUBFOLDER_NAME) && item.isFolder())
             .findFirst();
-    assertTrue("Expected to find subfolder 'unitTests subfolder'", subfolder.isPresent());
+    assertThat(subfolder).as("Expected to find subfolder 'unitTests subfolder'").isPresent();
 
     // check the content of the subfolder
     items =
         s3Utilities.listFolderContents(UNIT_TESTS_FOLDER_NAME + "/" + UNIT_TESTS_SUBFOLDER_NAME);
-    assertEquals(UNIT_TESTS_SUBFOLDER_CONTENT_COUNT, items.size());
+    assertThat(items).hasSize(UNIT_TESTS_SUBFOLDER_CONTENT_COUNT);
 
     // find the expected test image in subfolder
     String testS3PngFile = "test image.png";
     Long testS3PngFileSize = 168434L;
     testS3File = items.stream().filter(item -> item.getName().equals(testS3PngFile)).findFirst();
-    assertTrue("Expected to find file 'test image.png'", testS3File.isPresent());
+    assertThat(testS3File).as("Expected to find file 'test image.png'").isPresent();
     assertEquals(
-        "Unexpected test image size", testS3PngFileSize, testS3File.get().getSizeInBytes());
+        testS3PngFileSize, testS3File.get().getSizeInBytes(), "Unexpected test image size");
 
     return topLevelTestFile;
   }
@@ -325,21 +309,20 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
       // verify object is present with correct size
       S3FolderContentItem uploaded = s3Utilities.getObjectDetails(s3Key);
-      assertTrue("uploaded object should exist", uploaded != null && !uploaded.isFolder());
+      assertTrue(uploaded != null && !uploaded.isFolder(), "uploaded object should exist");
       assertEquals(
-          "uploaded object size mismatch",
           Long.valueOf(testContent.getBytes().length),
-          uploaded.getSizeInBytes());
+          uploaded.getSizeInBytes(),
+          "uploaded object size mismatch");
 
       // verify the user metadata round-trips (the path uploadFromGallery uses for audit metadata)
-      assertEquals(
-          "uploaded object should carry creator metadata",
-          "realConnTestUser",
-          uploaded.getUserMetadata().get(WriteAttribution.META_CREATED_BY));
-      assertEquals(
-          "uploaded object should carry creation-time metadata",
-          metadata.get(WriteAttribution.META_CREATED_AT),
-          uploaded.getUserMetadata().get(WriteAttribution.META_CREATED_AT));
+      assertThat(uploaded.getUserMetadata())
+          .as("uploaded object should carry creator metadata")
+          .containsEntry(WriteAttribution.META_CREATED_BY, "realConnTestUser");
+      assertThat(uploaded.getUserMetadata())
+          .as("uploaded object should carry creation-time metadata")
+          .containsEntry(
+              WriteAttribution.META_CREATED_AT, metadata.get(WriteAttribution.META_CREATED_AT));
 
       // round-trip: download and verify content
       File roundTrip = File.createTempFile("upload-roundtrip", ".txt");
@@ -356,7 +339,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
     // verify object is gone after delete
     assertTrue(
-        "object should no longer exist after delete", s3Utilities.getObjectDetails(s3Key) == null);
+        s3Utilities.getObjectDetails(s3Key) == null, "object should no longer exist after delete");
   }
 
   private void copyObjectFromBucketScenario() throws IOException {
@@ -382,25 +365,25 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
       // both source and dest should exist after CopyObject
       S3FolderContentItem destDetails = s3Utilities.getObjectDetails(destKey);
-      assertTrue("copy destination should exist", destDetails != null && !destDetails.isFolder());
+      assertTrue(destDetails != null && !destDetails.isFolder(), "copy destination should exist");
       assertEquals(
-          "copy destination size mismatch",
           Long.valueOf(testContent.getBytes().length),
-          destDetails.getSizeInBytes());
+          destDetails.getSizeInBytes(),
+          "copy destination size mismatch");
       assertTrue(
-          "copy source should still exist (CopyObject does not delete source)",
-          s3Utilities.getObjectDetails(sourceKey) != null);
+          s3Utilities.getObjectDetails(sourceKey) != null,
+          "copy source should still exist (CopyObject does not delete source)");
 
       // a no-metadata copy uses S3's COPY directive, which PRESERVES source metadata. The
       // within-filestore move relies on this so a moved item keeps its original created-by/-at.
-      assertEquals(
-          "server-side copy with no metadata should preserve source creator metadata",
-          "realConnTestUser",
-          destDetails.getUserMetadata().get(WriteAttribution.META_CREATED_BY));
-      assertEquals(
-          "server-side copy with no metadata should preserve source creation-time metadata",
-          sourceMetadata.get(WriteAttribution.META_CREATED_AT),
-          destDetails.getUserMetadata().get(WriteAttribution.META_CREATED_AT));
+      assertThat(destDetails.getUserMetadata())
+          .as("server-side copy with no metadata should preserve source creator metadata")
+          .containsEntry(WriteAttribution.META_CREATED_BY, "realConnTestUser");
+      assertThat(destDetails.getUserMetadata())
+          .as("server-side copy with no metadata should preserve source creation-time metadata")
+          .containsEntry(
+              WriteAttribution.META_CREATED_AT,
+              sourceMetadata.get(WriteAttribution.META_CREATED_AT));
     } finally {
       safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, sourceFileName);
       safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, destFileName);
@@ -427,22 +410,22 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
       // discoverable as a (virtual) folder
       S3FolderContentItem folder = s3Utilities.getObjectDetails(folderPath);
-      assertTrue("created folder should be detected", folder != null && folder.isFolder());
+      assertTrue(folder != null && folder.isFolder(), "created folder should be detected");
 
       // the placeholder object itself carries the audit metadata
       S3FolderContentItem placeholder = s3Utilities.getObjectDetails(placeholderKey);
-      assertTrue("folder placeholder object should exist", placeholder != null);
-      assertEquals(
-          "realConnTestUser", placeholder.getUserMetadata().get(WriteAttribution.META_CREATED_BY));
-      assertTrue(
-          "created-at metadata should be present",
-          placeholder.getUserMetadata().containsKey(WriteAttribution.META_CREATED_AT));
+      assertTrue(placeholder != null, "folder placeholder object should exist");
+      assertThat(placeholder.getUserMetadata())
+          .containsEntry(WriteAttribution.META_CREATED_BY, "realConnTestUser");
+      assertThat(placeholder.getUserMetadata())
+          .as("created-at metadata should be present")
+          .containsKey(WriteAttribution.META_CREATED_AT);
     } finally {
       safeDeleteObject(placeholderKey);
     }
     assertTrue(
-        "folder placeholder should be gone after delete",
-        s3Utilities.getObjectDetails(placeholderKey) == null);
+        s3Utilities.getObjectDetails(placeholderKey) == null,
+        "folder placeholder should be gone after delete");
   }
 
   /**
@@ -461,13 +444,14 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
             Instant.now().toString());
     try {
       s3Utilities.createFolder(base, metadata);
-      assertTrue(
-          "a newly created folder should be empty", s3Utilities.listFolderContents(base).isEmpty());
+      assertThat(s3Utilities.listFolderContents(base))
+          .as("a newly created folder should be empty")
+          .isEmpty();
 
       // an empty folder is a single placeholder object; delete it by its exact key
       s3Utilities.deleteObject(placeholderKey);
 
-      assertTrue("folder should be gone after delete", s3Utilities.getObjectDetails(base) == null);
+      assertTrue(s3Utilities.getObjectDetails(base) == null, "folder should be gone after delete");
     } finally {
       safeDeleteObject(placeholderKey);
     }
@@ -491,18 +475,18 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
       s3Utilities.createFolder(folderName, metadata);
 
       S3FolderContentItem folder = s3Utilities.getObjectDetails(folderName);
-      assertTrue("top-level folder should be detected", folder != null && folder.isFolder());
+      assertTrue(folder != null && folder.isFolder(), "top-level folder should be detected");
 
       boolean inRoot =
           s3Utilities.listFolderContents("").stream()
               .anyMatch(item -> item.getName().equals(folderName) && item.isFolder());
-      assertTrue("created folder should appear in the bucket-root listing", inRoot);
+      assertTrue(inRoot, "created folder should appear in the bucket-root listing");
     } finally {
       safeDeleteObject(placeholderKey);
     }
     assertTrue(
-        "top-level folder should be gone after delete",
-        s3Utilities.getObjectDetails(folderName) == null);
+        s3Utilities.getObjectDetails(folderName) == null,
+        "top-level folder should be gone after delete");
   }
 
   /** Best-effort delete by exact key used in test cleanup; never throws (safe in a finally). */
@@ -531,7 +515,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     File scratch = File.createTempFile("s3-test-", ".tmp");
     Files.writeString(scratch.toPath(), content);
     File named = new File(scratch.getParentFile(), fileName);
-    assertTrue("temp file rename failed", scratch.renameTo(named));
+    assertTrue(scratch.renameTo(named), "temp file rename failed");
     return named;
   }
 }

@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -15,8 +15,8 @@ import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -29,7 +29,7 @@ public class ActivityApiControllerMVCIT extends API_MVC_TestBase {
   @Autowired IAuditFileSearch srch;
   @Autowired ActivityApiController eventApiController;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     srch.setLogFilePrefix("RSLog");
     srch.setLogFolder(new File("src/test/resources/TestResources"));
@@ -60,7 +60,7 @@ public class ActivityApiControllerMVCIT extends API_MVC_TestBase {
             .get(0)
             .toString();
     // check order by is preserved
-    assertTrue(selfLink.contains("date%20asc"));
+    assertThat(selfLink).contains("date%20asc");
   }
 
   @Test
@@ -121,7 +121,7 @@ public class ActivityApiControllerMVCIT extends API_MVC_TestBase {
 
     // assert timestamps are in ISO8601 format
     List<String> timestamps = JsonPath.parse(json).read("$..timestamp", List.class);
-    assertEquals(2, timestamps.size());
+    assertThat(timestamps).hasSize(2);
     for (String tstamp : timestamps) {
       assertNotNull(Instant.parse(tstamp));
     }

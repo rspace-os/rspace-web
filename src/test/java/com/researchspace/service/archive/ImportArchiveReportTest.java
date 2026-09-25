@@ -1,21 +1,18 @@
 package com.researchspace.service.archive;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ImportArchiveReportTest {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     report = new ImportArchiveReport();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   ImportArchiveReport report;
 
@@ -25,7 +22,7 @@ public class ImportArchiveReportTest {
     assertFalse(report.isValidationComplete());
     assertFalse(report.isSuccessful());
     assertFalse(report.isValidationSuccessful());
-    assertTrue(report.getImportedRecords().isEmpty());
+    assertThat(report.getImportedRecords()).isEmpty();
     assertFalse(report.getErrorList().hasErrorMessages());
   }
 

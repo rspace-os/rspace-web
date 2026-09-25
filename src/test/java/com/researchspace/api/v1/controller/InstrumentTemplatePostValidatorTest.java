@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,22 +9,20 @@ import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
+@ExtendWith(MockitoExtension.class)
 public class InstrumentTemplatePostValidatorTest extends InventoryRecordValidationTestBase {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   @Autowired private InstrumentTemplatePostValidator postValidator;
 
-  @Before
+  @BeforeEach
   public void setup() {
     validator = postValidator;
   }
@@ -85,7 +84,7 @@ public class InstrumentTemplatePostValidatorTest extends InventoryRecordValidati
     Errors e = new BeanPropertyBindingResult(templatePost, "templatePost");
     postValidator.validate(templatePost, e);
 
-    assertTrue(e.getErrorCount() >= 1);
+    assertThat(e.getErrorCount()).isGreaterThanOrEqualTo(1);
     assertEquals("fields[0].name", e.getFieldError().getField());
     assertEquals("errors.inventory.template.emptyFieldName", e.getFieldError().getCode());
   }
@@ -101,10 +100,9 @@ public class InstrumentTemplatePostValidatorTest extends InventoryRecordValidati
     Errors e = new BeanPropertyBindingResult(templatePost, "templatePost");
     postValidator.validate(templatePost, e);
 
-    assertTrue(e.getErrorCount() >= 1);
-    assertTrue(
-        e.getAllErrors().stream()
-            .anyMatch(err -> "errors.inventory.template.emptyFieldType".equals(err.getCode())));
+    assertThat(e.getErrorCount()).isGreaterThanOrEqualTo(1);
+    assertThat(e.getAllErrors())
+        .anyMatch(err -> "errors.inventory.template.emptyFieldType".equals(err.getCode()));
   }
 
   // @Test
@@ -121,7 +119,7 @@ public class InstrumentTemplatePostValidatorTest extends InventoryRecordValidati
     Errors e = new BeanPropertyBindingResult(templatePost, "templatePost");
     postValidator.validate(templatePost, e);
 
-    assertTrue(e.getErrorCount() >= 1);
+    assertThat(e.getErrorCount()).isGreaterThanOrEqualTo(1);
     assertEquals(
         InventoryFieldNameUniquenessValidator.DUPLICATE_NAME_ERROR_CODE,
         e.getFieldError().getCode());

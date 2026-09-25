@@ -1,12 +1,11 @@
 package com.researchspace.model.dtos;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.field.RadioFieldForm;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
@@ -18,7 +17,7 @@ public class RadioFieldDTOValidatorTest {
   private RadioFieldDTOValidator validator;
   private Errors errors;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     validator = new RadioFieldDTOValidator();
     validInstance = createValidInstance();
@@ -35,9 +34,6 @@ public class RadioFieldDTOValidatorTest {
   private static RadioFieldDTO<RadioFieldForm> createNoName() {
     return new RadioFieldDTO<RadioFieldForm>("a=b&c=d", "b", "", false, false);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testSupports() {

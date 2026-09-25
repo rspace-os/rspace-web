@@ -1,7 +1,7 @@
 package com.researchspace.testutils;
 
 import static com.researchspace.Constants.USER_ROLE;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.Constants;
 import com.researchspace.dao.CommunicationDao;
@@ -9,6 +9,8 @@ import com.researchspace.dao.EcatCommentDao;
 import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.InternalLinkDao;
+import com.researchspace.dao.RecordDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.files.service.ExternalFileStoreProvider;
 import com.researchspace.files.service.InternalFileStore;
 import com.researchspace.model.Community;
@@ -37,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.shiro.util.ThreadContext;
 import org.hibernate.search.mapper.orm.Search;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener;
@@ -45,10 +47,7 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Defines transactional behaviour for Spring transactional tests. Subclasses should remember to add
- * their own @After method which invokes super.tearDown() to ensure correct tidy up after each test.
- */
+/** Transactional base for Spring tests. Overrides of {@link #tearDown()} must call it via super. */
 @TestExecutionListeners(
     value = {
       DependencyInjectionTestExecutionListener.class,
@@ -68,9 +67,11 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   protected @Autowired InternalLinkDao internalLinkDao;
   protected @Autowired EcatImageAnnotationDao imageAnnotationDao;
   protected @Autowired InternalFileStore fileStore;
+  protected @Autowired RecordDao recordDao;
+  protected @Autowired UserDao userDao;
   protected @Autowired UserConnectionManager connMgr;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     contentInitializer.setCustomInitActive(true); // restore defaults
   }

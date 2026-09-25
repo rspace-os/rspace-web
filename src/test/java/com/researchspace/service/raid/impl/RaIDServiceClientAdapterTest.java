@@ -2,9 +2,10 @@ package com.researchspace.service.raid.impl;
 
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static java.net.URLEncoder.encode;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -31,8 +32,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,7 +83,7 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
   private RaIDServicePoint expectedServicePoint;
   private List<RaIDServicePoint> expectedServicePointList;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
     user = createAndSaveUserIfNotExists("testUser");
@@ -251,20 +252,18 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
 
     String actualRedirectedUrl = raidServiceClientAdapter.performRedirectConnect(SERVER_ALIAS);
 
-    assertTrue(
-        actualRedirectedUrl.contains(
-            "https://demo.raid.org/realms/raid/protocol/openid-connect/auth?"));
-    assertTrue(actualRedirectedUrl.contains("client_id=rspace"));
-    assertTrue(
-        actualRedirectedUrl.contains(
-            "redirect_uri=" + encode(getExpectedCallbackUrl(), StandardCharsets.UTF_8)));
-    assertTrue(actualRedirectedUrl.contains("response_type=code"));
-    assertTrue(actualRedirectedUrl.contains("scope=openid"));
-    assertTrue(actualRedirectedUrl.contains("state=" + SERVER_ALIAS));
+    assertThat(actualRedirectedUrl)
+        .contains("https://demo.raid.org/realms/raid/protocol/openid-connect/auth?");
+    assertThat(actualRedirectedUrl).contains("client_id=rspace");
+    assertThat(actualRedirectedUrl)
+        .contains("redirect_uri=" + encode(getExpectedCallbackUrl(), StandardCharsets.UTF_8));
+    assertThat(actualRedirectedUrl).contains("response_type=code");
+    assertThat(actualRedirectedUrl).contains("scope=openid");
+    assertThat(actualRedirectedUrl).contains("state=" + SERVER_ALIAS);
 
     Optional<UserConnection> userConnection =
         userConnectionManager.findByUserNameProviderName(user.getUsername(), RAID_APP_NAME);
-    assertTrue(userConnection.isEmpty());
+    assertThat(userConnection).isEmpty();
   }
 
   @Test
@@ -279,7 +278,7 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
     Optional<UserConnection> userConnection =
         userConnectionManager.findByUserNameProviderName(
             user.getUsername(), RAID_APP_NAME, SERVER_ALIAS);
-    assertTrue(userConnection.isPresent());
+    assertThat(userConnection).isPresent();
     assertEquals(expectedAccessToken.getAccessToken(), userConnection.get().getAccessToken());
     assertEquals(expectedAccessToken.getRefreshToken(), userConnection.get().getRefreshToken());
   }
@@ -305,7 +304,7 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
     Optional<UserConnection> userConnection =
         userConnectionManager.findByUserNameProviderName(
             user.getUsername(), RAID_APP_NAME, SERVER_ALIAS);
-    assertTrue(userConnection.isPresent());
+    assertThat(userConnection).isPresent();
     assertEquals(expectedRefreshToken.getAccessToken(), userConnection.get().getAccessToken());
     assertEquals(expectedRefreshToken.getRefreshToken(), userConnection.get().getRefreshToken());
   }

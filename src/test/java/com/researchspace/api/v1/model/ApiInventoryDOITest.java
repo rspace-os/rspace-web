@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -8,9 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate.Outcome;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class ApiInventoryDOITest {
 
@@ -53,10 +57,54 @@ class ApiInventoryDOITest {
 
     String json = new ObjectMapper().writeValueAsString(doi);
 
-    assertTrue(
-        json.contains("\"providerUrl\":\"https://b2inst-test.gwdg.de/uploads/k2j9p-7yh21\""));
-    assertTrue(json.contains("\"publicUrl\":\"https://doi.org/10.1234/abc\""));
-    assertTrue(json.contains("\"url\":\"https://rspace.example.com/globalId/IN5\""));
+    assertThat(json)
+        .contains("\"providerUrl\":\"https://b2inst-test.gwdg.de/uploads/k2j9p-7yh21\"");
+    assertThat(json).contains("\"publicUrl\":\"https://doi.org/10.1234/abc\"");
+    assertThat(json).contains("\"url\":\"https://rspace.example.com/globalId/IN5\"");
+  }
+
+  /**
+   * The provider record id is the ADDRESS of the external record RSpace writes to, so an existing
+   * identifier must not be retargeted by a payload. The id check in {@code
+   * ApiInventoryRecordInfo.applyChangesToDatabaseIdentifiers} stops a client naming someone else's
+   * identifier row, but not a client pointing its OWN row at someone else's record: without this
+   * guard, one instrument PUT carrying a foreign RID or DOI made the RSDEV-1251 on-save push
+   * overwrite that record with this instrument's metadata, under the deployment's own provider
+   * credentials.
+   *
+   * <p>Guarded here rather than with {@code Access.READ_ONLY} on the field, because the value is
+   * part of every identifier response and READ_ONLY would also stop a Java client reading it back
+   * out of one.
+   */
+  @Test
+  void providerRecordIdNotMutatedOnExistingIdentifier() {
+    DigitalObjectIdentifier existing = new DigitalObjectIdentifier("10.12345/ours-1234", "t");
+    existing.setId(1L);
+
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.setDoi("10.12345/someone-elses");
+
+    boolean changed = apiDoi.applyChangesToDatabaseDOI(existing);
+
+    assertEquals(
+        "10.12345/ours-1234",
+        existing.getIdentifier(),
+        "an existing identifier must not be retargeted at another provider record");
+    assertFalse(changed);
+  }
+
+  /** Registration must still work: it applies the provider's own response to a new identifier. */
+  @Test
+  void providerRecordIdIsAppliedWhileTheIdentifierIsStillBeingCreated() {
+    DigitalObjectIdentifier brandNew = new DigitalObjectIdentifier(null, null, "aSuffix");
+
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.setDoi("10.12345/minted-by-the-provider");
+
+    boolean changed = apiDoi.applyChangesToDatabaseDOI(brandNew);
+
+    assertEquals("10.12345/minted-by-the-provider", brandNew.getIdentifier());
+    assertTrue(changed);
   }
 
   @Test
@@ -110,12 +158,13 @@ class ApiInventoryDOITest {
     assertNotNull(first);
     // 16 random bytes, base64url-encoded without padding. Length alone is only a proxy, so the two
     // properties that actually matter are asserted directly.
-    assertEquals(22, first.length());
-    assertTrue(
-        first.matches("[A-Za-z0-9_-]+"),
-        "must be safe as a URL path segment: it becomes /public/inventory/<suffix>, is persisted as"
-            + " publicLink and is registered with a provider; got: "
-            + first);
+    assertThat(first).hasSize(22);
+    assertThat(first)
+        .as(
+            "must be safe as a URL path segment: it becomes /public/inventory/<suffix>, is"
+                + " persisted as publicLink and is registered with a provider; got: "
+                + first)
+        .matches("[A-Za-z0-9_-]+");
 
     ApiInventoryDOI second = new ApiInventoryDOI();
     second.generatePublicLinkSuffix();
@@ -131,7 +180,7 @@ class ApiInventoryDOITest {
   void publicLinkSuffixIsNeitherSerializedNorDeserializable() throws Exception {
     ApiInventoryDOI doi = new ApiInventoryDOI();
     doi.generatePublicLinkSuffix();
-    assertFalse(new ObjectMapper().writeValueAsString(doi).contains("publicLinkSuffix"));
+    assertThat(new ObjectMapper().writeValueAsString(doi)).doesNotContain("publicLinkSuffix");
 
     ApiInventoryDOI incoming =
         new ObjectMapper()
@@ -159,5 +208,114 @@ class ApiInventoryDOITest {
 
     assertNull(api.getPublicLinkSuffix(), "an entity-derived DTO must not carry a suffix");
     assertEquals(entity.getPublicLink(), api.getRsPublicId());
+  }
+
+  /**
+   * The Inventory UI switches on these exact strings, and the API spec documents them, so the enum
+   * constant names are the wire contract rather than an implementation detail: renaming one would
+   * silently make the frontend report every outcome as a failure.
+   *
+   * <p>Pinned here as well as in {@code InstrumentExternalMetadataUpdateMVCIT} because that test
+   * needs a database and a real Spring context, so it does not run in the fast unit suite that
+   * guards an ordinary change to this class.
+   */
+  @Test
+  void externalMetadataUpdateOutcomeSerializesAsTheLiteralTokenTheUiSwitchesOn() {
+    ObjectMapper mapper = new ObjectMapper();
+
+    for (Outcome outcome : Outcome.values()) {
+      assertEquals(
+          outcome.name(),
+          mapper
+              .valueToTree(new ApiExternalMetadataUpdate(outcome, "any reason"))
+              .path("outcome")
+              .asText(),
+          outcome::name);
+    }
+    /*
+     * And only the outcome. RSDEV-1251's redundant succeeded boolean was removed here; asserted so it
+     * cannot come back by accident, for instance as a derived convenience getter.
+     */
+    assertTrue(
+        mapper
+            .valueToTree(new ApiExternalMetadataUpdate(Outcome.UPDATED, "any reason"))
+            .path("succeeded")
+            .isMissingNode());
+  }
+
+  /**
+   * The guard on the outcome the UI trusts. {@code externalMetadataUpdate} is {@code
+   * Access.READ_ONLY}, so a client cannot forge an {@code UPDATED} on the way in. Pinned because
+   * this project has already had to replace that annotation on the sibling {@code doi} field, which
+   * makes it exactly the kind of thing a future author removes without realising what it holds up.
+   */
+  @Test
+  void externalMetadataUpdateIsDiscardedOnTheWayIn() throws Exception {
+    String forged =
+        "{\"externalMetadataUpdate\": {\"outcome\": \"UPDATED\", \"reason\": \"trust me\"}}";
+
+    ApiInventoryDOI incoming = new ObjectMapper().readValue(forged, ApiInventoryDOI.class);
+
+    assertNull(
+        incoming.getExternalMetadataUpdate(), "a client must not be able to state an outcome");
+  }
+
+  @Test
+  void linkedFlagIsWrittenOnlyIntoATransientIdentifierAndReadBack() {
+    ApiInventoryDOI dto = new ApiInventoryDOI();
+    dto.setLinked(true);
+    dto.setDoi("21.11157/44b18238-bba1-4b42-abcc-975017181420");
+    dto.setDoiType(IdentifierType.PIDINST_B2INST.name());
+
+    DigitalObjectIdentifier created = new DigitalObjectIdentifier(null, null, "suffix1234567890");
+    assertTrue(dto.applyChangesToDatabaseDOI(created));
+    assertTrue(created.isLinked(), "a new row takes the origin from the DTO");
+    assertTrue(new ApiInventoryDOI(created).isLinked(), "and reports it back");
+
+    DigitalObjectIdentifier persisted = new DigitalObjectIdentifier(null, null, "suffix0987654321");
+    ReflectionTestUtils.setField(persisted, "id", 42L);
+    dto.applyChangesToDatabaseDOI(persisted);
+    assertFalse(persisted.isLinked(), "an existing row's origin is immutable");
+  }
+
+  /**
+   * The invariant behind the missing landing page, held where it cannot be routed around. Skipping
+   * the LOCAL_URL in ApiIdentifiersHelper covers the import path, but this method writes the
+   * property again from the DTO's own url, so anything that arrives carrying one would put an
+   * RSpace address on an identifier RSpace does not serve a page for (ADR 0009). Nothing sets that
+   * url on a linked identifier today - three separate facts in three classes see to it - which is
+   * exactly why it is worth pinning here rather than relying on them all staying true.
+   */
+  @Test
+  void aLinkedIdentifierNeverTakesAnRSpaceLandingPageEvenIfTheDtoCarriesOne() {
+    ApiInventoryDOI dto = new ApiInventoryDOI();
+    dto.setLinked(true);
+    dto.setDoi("21.11157/44b18238-bba1-4b42-abcc-975017181420");
+    dto.setDoiType(IdentifierType.PIDINST_B2INST.name());
+    dto.setUrl("https://rspace.example.org/public/inventory/suffix1234567890");
+
+    DigitalObjectIdentifier created = new DigitalObjectIdentifier(null, null, "suffix1234567890");
+    dto.applyChangesToDatabaseDOI(created);
+
+    assertTrue(created.isLinked());
+    assertNull(
+        created.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL),
+        "a linked identifier must not carry an RSpace landing page");
+  }
+
+  /** The same write still happens for an identifier RSpace minted itself. */
+  @Test
+  void anUnlinkedIdentifierStillTakesTheUrlTheDtoCarries() {
+    ApiInventoryDOI dto = new ApiInventoryDOI();
+    dto.setDoi("10.1234/minted-here");
+    dto.setDoiType(IdentifierType.IGSN_DATACITE.name());
+    dto.setUrl("https://rspace.example.org/public/inventory/suffix1234567890");
+
+    DigitalObjectIdentifier created = new DigitalObjectIdentifier(null, null, "suffix1234567890");
+    dto.applyChangesToDatabaseDOI(created);
+
+    assertEquals(
+        "https://rspace.example.org/public/inventory/suffix1234567890",
+        created.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
   }
 }

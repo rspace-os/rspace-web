@@ -1,13 +1,11 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
@@ -23,17 +21,15 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class FolderManagerTest {
-  public @Rule MockitoRule mockery = MockitoJUnit.rule();
   @Mock IPermissionUtils permissionUtils;
   @Mock CommunityServiceManager communityServiceManager;
   @Mock FolderDao folderDao;
@@ -42,7 +38,7 @@ public class FolderManagerTest {
   User anyUser = TestFactory.createAnyUser("any");
   Folder parent = null, child = null;
 
-  @Before
+  @BeforeEach
   public void before() {
     parent = TestFactory.createAFolder("parent", anyUser);
     parent.setId(1L);
@@ -52,7 +48,8 @@ public class FolderManagerTest {
 
   @Test
   public void testCreateGallerySubfolderThrowsIAEIfInvalid() {
-    assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> folderManagerImpl.createGallerySubfolder("any", "unknown", anyUser));
   }
 
@@ -66,11 +63,12 @@ public class FolderManagerTest {
     when(folderDao.get(child.getId())).thenReturn(child);
 
     // this should trigger IACO
-    CoreTestUtils.assertExceptionThrown(
+    Long childId = child.getId();
+    assertThrows(
+        IllegalAddChildOperation.class,
         () ->
             folderManagerImpl.addChild(
-                child.getId(), parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, false),
-        IllegalAddChildOperation.class);
+                childId, parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, false));
 
     assertChildNotAddedtoParent(parent);
 
@@ -78,7 +76,7 @@ public class FolderManagerTest {
     ServiceOperationResult<Folder> result =
         folderManagerImpl.addChild(
             child.getId(), parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, true);
-    assertThat(result.isSucceeded(), Matchers.is(Boolean.FALSE));
+    assertEquals(Boolean.FALSE, result.isSucceeded());
     assertEquals(child, result.getEntity()); // returns the intended parent
     assertChildNotAddedtoParent(parent);
   }
@@ -138,7 +136,7 @@ public class FolderManagerTest {
   }
 
   private void assertResultSucceeded(ServiceOperationResult<Folder> result) {
-    assertThat(result.isSucceeded(), Matchers.is(Boolean.TRUE));
+    assertEquals(Boolean.TRUE, result.isSucceeded());
   }
 
   private ServiceOperationResult<Folder> addChildToParent(boolean suppressException) {
@@ -149,6 +147,6 @@ public class FolderManagerTest {
   }
 
   private void assertChildNotAddedtoParent(Folder intendedChild) {
-    assertThat(intendedChild.getParent(), nullValue());
+    assertNull(intendedChild.getParent());
   }
 }

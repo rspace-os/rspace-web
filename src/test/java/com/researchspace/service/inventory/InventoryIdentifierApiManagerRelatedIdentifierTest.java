@@ -1,9 +1,10 @@
 package com.researchspace.service.inventory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +20,7 @@ import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.datacite.model.DataCiteDoiAttributes;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
@@ -26,9 +28,10 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -47,11 +50,13 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
   private static final String MEASUREMENT_TECHNIQUE = "Measurement technique";
   private static final String CALIBRATION = "Calibration";
 
+  private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
+  private @Autowired IPropertyHolder propertyHolder;
   private User user;
   private DataCiteConnectorDummy dataCiteConnectorDummy;
   private Object realB2instConnector;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     dataCiteConnectorDummy = new DataCiteConnectorDummy();
@@ -74,14 +79,14 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
      */
     String serverUrl = propertyHolder.getServerUrl();
     assertTrue(
-        "this test needs rs.serverurl to carry an http(s) scheme, but it is: " + serverUrl,
         StringUtils.startsWithIgnoreCase(serverUrl, "http://")
-            || StringUtils.startsWithIgnoreCase(serverUrl, "https://"));
+            || StringUtils.startsWithIgnoreCase(serverUrl, "https://"),
+        "this test needs rs.serverurl to carry an http(s) scheme, but it is: " + serverUrl);
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(user);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     // the base tearDown re-enables custom content initialisation for the classes that run after
     // this one in the same cached Spring context; skipping it would starve them of content
@@ -153,11 +158,11 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
       String stage) {
     List<DataCiteDoiAttributes.RelatedIdentifier> sent = lastSentRelatedIdentifiers();
     assertNotNull(
+        sent,
         "no related identifiers reached DataCite on "
             + stage
             + "; the caller most likely converted the DOI directly instead of routing through"
-            + " RspaceToExternalProviderAdapter.buildDataCiteDoi",
-        sent);
+            + " RspaceToExternalProviderAdapter.buildDataCiteDoi");
     return sent;
   }
 
@@ -198,7 +203,7 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
 
     List<DataCiteDoiAttributes.RelatedIdentifier> onPublish =
         requireSentRelatedIdentifiers("publish");
-    assertEquals(2, onPublish.size());
+    assertThat(onPublish).hasSize(2);
     assertNamesTheLinkedRecord(onPublish.get(0), "Measurement Technique", techniqueId);
     assertNamesTheLinkedRecord(onPublish.get(1), "Calibration", calibrationId);
 
@@ -212,7 +217,7 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
 
     List<DataCiteDoiAttributes.RelatedIdentifier> onRetract =
         requireSentRelatedIdentifiers("retract");
-    assertEquals(2, onRetract.size());
+    assertThat(onRetract).hasSize(2);
     assertNamesTheLinkedRecord(onRetract.get(0), "Measurement Technique", techniqueId);
     assertNamesTheLinkedRecord(onRetract.get(1), "Calibration", calibrationId);
   }
@@ -241,7 +246,9 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
     inventoryIdentifierApiMgr.publishIdentifier(instrumentOid, user);
 
     List<DataCiteDoiAttributes.RelatedIdentifier> sent = requireSentRelatedIdentifiers("publish");
-    assertEquals("the cleared Measurement technique field must not be registered", 1, sent.size());
+    assertThat(sent)
+        .as("the cleared Measurement technique field must not be registered")
+        .hasSize(1);
     assertNamesTheLinkedRecord(sent.get(0), "Calibration", calibrationId);
   }
 
@@ -269,8 +276,8 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
     inventoryIdentifierApiMgr.publishIdentifier(instrumentOid, user);
 
     List<DataCiteDoiAttributes.RelatedIdentifier> sent = lastSentRelatedIdentifiers();
-    assertNotNull("both fields cleared must clear the property with [], not leave it absent", sent);
-    assertEquals(0, sent.size());
+    assertNotNull(sent, "both fields cleared must clear the property with [], not leave it absent");
+    assertThat(sent).isEmpty();
   }
 
   /**
@@ -292,8 +299,8 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
 
     List<B2instRelatedIdentifier> sent =
         b2instDummy.getDoiSentToB2inst().getMetadata().getRelatedIdentifier();
-    assertNotNull("no RelatedIdentifier reached B2INST at draft-register time", sent);
-    assertEquals(2, sent.size());
+    assertNotNull(sent, "no RelatedIdentifier reached B2INST at draft-register time");
+    assertThat(sent).hasSize(2);
     assertEquals("Measurement Technique", sent.get(0).getRelatedIdentifierName());
     assertEquals("IsDescribedBy", sent.get(0).getRelationType());
     assertEquals("URL", sent.get(0).getRelatedIdentifierType());

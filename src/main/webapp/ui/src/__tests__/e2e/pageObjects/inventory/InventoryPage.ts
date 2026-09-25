@@ -2,16 +2,13 @@ import type { Locator, Page } from "@playwright/test";
 import { openDialog } from "@/__tests__/e2e/components/inventory/DialogHelpers";
 import { ExportDialogComponent } from "@/__tests__/e2e/components/inventory/ExportDialogComponent";
 import { IdentifierSettingsDialog } from "@/__tests__/e2e/components/inventory/IdentifierSettingsDialog";
-import {
-  InventoryCreateMenu,
-  type InventoryCsvImportItem,
-} from "@/__tests__/e2e/components/inventory/InventoryCreateMenu";
+import { InventoryCreateMenu } from "@/__tests__/e2e/components/inventory/InventoryCreateMenu";
 import { InventoryDetailsPanel } from "@/__tests__/e2e/components/inventory/InventoryDetailsPanel";
 import { InventorySearchPanel } from "@/__tests__/e2e/components/inventory/InventorySearchPanel";
 import { InventorySidebar } from "@/__tests__/e2e/components/inventory/InventorySidebar";
 import { FieldmarkDialogComponent } from "@/modules/fieldmark/__tests__/pageObjects/FieldmarkDialogComponent";
 import { BasePage } from "../BasePage";
-import { InventoryImportPage } from "./InventoryImportPage";
+import { InventoryImportPage, type InventoryImportRecordType } from "./InventoryImportPage";
 
 type InventoryResultType = "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "INSTRUMENT" | "INSTRUMENT_TEMPLATE";
 
@@ -78,11 +75,12 @@ export class InventoryPage extends BasePage {
     );
   }
 
-  async openCsvImport(item: InventoryCsvImportItem): Promise<InventoryImportPage> {
+  async openCsvImport(tab: InventoryImportRecordType): Promise<InventoryImportPage> {
     const menu = await this.openCreateMenu();
-    await menu.clickCsvImport(item);
+    await menu.clickCsvImport();
     const importPage = new InventoryImportPage(this.page);
     await importPage.isLoaded();
+    if (tab !== "SAMPLES") await importPage.selectTab(tab);
     return importPage;
   }
 

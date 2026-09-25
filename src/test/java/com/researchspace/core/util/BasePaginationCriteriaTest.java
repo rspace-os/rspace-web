@@ -1,10 +1,9 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 public class BasePaginationCriteriaTest {
@@ -47,11 +46,11 @@ public class BasePaginationCriteriaTest {
   }
 
   @Test
-  public void setORderByRejectsSQLChars() {
+  public void setOrderByStoresTheRequestedKeyUnchanged() {
     pg = new BasicPaginationCriteria<>(Object.class);
-    pg.setOrderBy("'%%; delete * from User'");
-    assertTrue(StringUtils.isEmpty(pg.getOrderBy()));
-    // now an OK value:
+    // validation happens when a listing resolves the key with its sort enum, not here
+    pg.setOrderBy("name,rand()");
+    assertEquals("name,rand()", pg.getOrderBy());
     pg.setOrderBy("name");
     assertEquals("name", pg.getOrderBy());
   }
@@ -59,13 +58,11 @@ public class BasePaginationCriteriaTest {
   @Test
   public void orderByIfNull() {
     pg = new BasicPaginationCriteria<>(Object.class);
-    pg.setOrderByIfNull("'%%; delete * from User;'");
-    assertTrue(StringUtils.isEmpty(pg.getOrderBy()));
-    // now an OK value:
+    assertThat(pg.getOrderBy()).isNullOrEmpty();
     pg.setOrderByIfNull("name");
     assertEquals("name", pg.getOrderBy());
 
-    // once set, can't be overriddent
+    // once set, can't be overridden
     pg.setOrderByIfNull("othername");
     assertEquals("name", pg.getOrderBy());
   }

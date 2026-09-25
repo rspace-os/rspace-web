@@ -12,6 +12,7 @@ import com.researchspace.archive.ImmutableExportRecordList;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.archive.model.IArchiveExportConfig;
 import com.researchspace.core.util.ResponseUtil;
+import com.researchspace.core.util.SafeTempFiles;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.export.pdf.ExportToFileConfig;
 import com.researchspace.model.ArchivalCheckSum;
@@ -360,7 +361,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
 
   private File multipartToFile(MultipartFile multipart, File ouFolder)
       throws IllegalStateException, IOException {
-    File tmpFile = new File(ouFolder, multipart.getOriginalFilename());
+    File tmpFile =
+        SafeTempFiles.randomFileIn(ouFolder, multipart.getOriginalFilename(), "zip", "eln");
     multipart.transferTo(tmpFile);
     return tmpFile;
   }

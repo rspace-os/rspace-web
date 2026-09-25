@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -28,8 +29,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,7 +43,7 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
 
   @Autowired private InventoryMoveHelper moveHelper;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);
@@ -101,7 +102,9 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
         assertThrows(
             InventoryBulkOperationException.class,
             () -> inventoryBulkOpApiMgr.runBulkOperation(bulkOpConfig));
-    assertTrue(boe.getMessage().contains("is already taken by the record: SS"), boe.getMessage());
+    assertThat(boe.getMessage())
+        .as(boe.getMessage())
+        .contains("is already taken by the record: SS");
   }
 
   @Test

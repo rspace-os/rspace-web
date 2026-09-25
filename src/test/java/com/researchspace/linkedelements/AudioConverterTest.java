@@ -1,7 +1,7 @@
 package com.researchspace.linkedelements;
 
 import static com.researchspace.core.util.FieldParserConstants.AUDIO_CLASSNAME;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.dao.EcatAudioDao;
 import com.researchspace.model.EcatAudio;
@@ -11,31 +11,25 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.jsoup.nodes.Element;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class AudioConverterTest extends AbstractParserTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   private @Mock EcatAudioDao ecatAudioDao;
 
   @InjectMocks AudioConverter audioConverter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void parse() {
@@ -44,8 +38,8 @@ public class AudioConverterTest extends AbstractParserTest {
     Element toconvert = getElementToConvert(elementHTml, AUDIO_CLASSNAME);
     Mockito.when(ecatAudioDao.getSafeNull(3L)).thenReturn(Optional.of(ecatAudio));
     audioConverter.jsoup2LinkableElement(contents, toconvert);
-    assertEquals(ecatAudio, contents.getElements(EcatAudio.class).getElements().get(0));
-    assertEquals(1, contents.getElements(EcatAudio.class).getLinks().size());
+    assertThat(contents.getElements(EcatAudio.class).getElements()).element(0).isEqualTo(ecatAudio);
+    assertThat(contents.getElements(EcatAudio.class).getLinks()).hasSize(1);
   }
 
   @Test
@@ -63,8 +57,8 @@ public class AudioConverterTest extends AbstractParserTest {
     Mockito.when(auditDao.getObjectForRevision(EcatAudio.class, 2L, 23L))
         .thenReturn(new AuditedEntity<EcatAudio>(ecatAudio, 23L));
     audioConverter.jsoup2LinkableElement(contents, toconvert);
-    assertEquals(1, contents.getElements(EcatAudio.class).getElements().size());
-    assertEquals(ecatAudio, contents.getElements(EcatAudio.class).getElements().get(0));
-    assertEquals(1, contents.getElements(EcatAudio.class).getLinks().size());
+    assertThat(contents.getElements(EcatAudio.class).getElements()).hasSize(1);
+    assertThat(contents.getElements(EcatAudio.class).getElements()).element(0).isEqualTo(ecatAudio);
+    assertThat(contents.getElements(EcatAudio.class).getLinks()).hasSize(1);
   }
 }

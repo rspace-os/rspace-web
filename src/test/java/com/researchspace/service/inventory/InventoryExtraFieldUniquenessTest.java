@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,11 +19,13 @@ import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Manager-level coverage for the RSDEV-1066 uniqueness rule on ExtraField names across all
@@ -33,9 +36,10 @@ import org.junit.Test;
  */
 public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
 
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     sampleTemplateDao.resetDefaultTemplateOwner();
@@ -190,9 +194,9 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> sampleApiMgr.createNewApiSample(toCreate, testUser));
-    assertTrue(
-        iae.getMessage().contains("'Subsamples'"),
-        "Expected message to mention 'Subsamples', got: " + iae.getMessage());
+    assertThat(iae.getMessage())
+        .as("Expected message to mention 'Subsamples', got: " + iae.getMessage())
+        .contains("'Subsamples'");
   }
 
   @Test
@@ -313,9 +317,9 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> subSampleApiMgr.updateApiSubSample(update, testUser));
-    assertTrue(
-        iae.getMessage().contains("'Notes'"),
-        "Expected message to mention 'Notes', got: " + iae.getMessage());
+    assertThat(iae.getMessage())
+        .as("Expected message to mention 'Notes', got: " + iae.getMessage())
+        .contains("'Notes'");
   }
 
   @Test
@@ -437,9 +441,9 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(update, testUser));
-    assertTrue(
-        iae.getMessage().contains("'Type'"),
-        "Expected message to mention 'Type', got: " + iae.getMessage());
+    assertThat(iae.getMessage())
+        .as("Expected message to mention 'Type', got: " + iae.getMessage())
+        .contains("'Type'");
   }
 
   @Test

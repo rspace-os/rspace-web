@@ -1,7 +1,7 @@
 package com.researchspace.comms;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.Constants;
 import com.researchspace.model.Group;
@@ -10,7 +10,7 @@ import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Set;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -31,7 +31,7 @@ public class AllPIsFinderPolicyTest extends SpringTransactionalTest {
 
     Set<User> initialPiTargets =
         policy.findPotentialTargetsFor(MessageType.REQUEST_EXTERNAL_SHARE, null, null, pi1);
-    assertEquals(0, initialPiTargets.size());
+    assertThat(initialPiTargets).isEmpty();
     assertNotNull(policy.getFailureMessageIfUserInvalidTarget());
 
     Group g1 = createGroup("g1", pi1);
@@ -43,10 +43,10 @@ public class AllPIsFinderPolicyTest extends SpringTransactionalTest {
 
     Set<User> potentialPITargets =
         policy.findPotentialTargetsFor(MessageType.REQUEST_EXTERNAL_SHARE, null, null, pi1);
-    assertEquals(2, potentialPITargets.size());
+    assertThat(potentialPITargets).hasSize(2);
 
     Set<User> matchingPITargets =
         policy.findPotentialTargetsFor(MessageType.REQUEST_EXTERNAL_SHARE, null, "3", pi1);
-    assertEquals(1, matchingPITargets.size());
+    assertThat(matchingPITargets).hasSize(1);
   }
 }

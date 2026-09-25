@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -16,8 +17,8 @@ import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -29,7 +30,7 @@ public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_Invento
   private User anyUser;
   private String apiKey;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
@@ -63,7 +64,7 @@ public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_Invento
     ApiInstrumentTemplatePost suggestedTemplate = parseResult.getTemplateInfo();
     assertNotNull(suggestedTemplate);
     assertEquals("microscopes", suggestedTemplate.getName());
-    assertEquals(2, suggestedTemplate.getFields().size());
+    assertThat(suggestedTemplate.getFields()).hasSize(2);
   }
 
   @Test

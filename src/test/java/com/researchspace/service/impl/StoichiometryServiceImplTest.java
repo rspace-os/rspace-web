@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.researchspace.model.RSChemElement;
@@ -104,7 +104,7 @@ public class StoichiometryServiceImplTest {
     StoichiometryException ex =
         assertThrows(
             StoichiometryException.class, () -> service.createFromReaction(123L, 2L, user));
-    assertTrue(ex.getMessage().contains("Stoichiometry already exists for reaction chemId=2"));
+    assertThat(ex.getMessage()).contains("Stoichiometry already exists for reaction chemId=2");
   }
 
   @Test
@@ -145,7 +145,7 @@ public class StoichiometryServiceImplTest {
     StoichiometryException ex =
         assertThrows(
             StoichiometryException.class, () -> service.createFromReaction(123L, 2L, user));
-    assertTrue(ex.getMessage().contains("Problem while creating new Stoichiometry: IO fail"));
+    assertThat(ex.getMessage()).contains("Problem while creating new Stoichiometry: IO fail");
   }
 
   @Test
@@ -214,12 +214,11 @@ public class StoichiometryServiceImplTest {
     RSChemElement parent = TestFactory.createChemElement(null, 123L);
     existing.setParentReaction(parent);
     when(stoichiometryManager.get(3L)).thenReturn(existing);
+    StoichiometryUpdateDTO update = mock(StoichiometryUpdateDTO.class);
 
     NotFoundException ex =
-        assertThrows(
-            NotFoundException.class,
-            () -> service.update(3L, mock(StoichiometryUpdateDTO.class), user));
-    assertTrue(ex.getMessage().contains("Record containing stoichiometry with id 3 not found"));
+        assertThrows(NotFoundException.class, () -> service.update(3L, update, user));
+    assertThat(ex.getMessage()).contains("Record containing stoichiometry with id 3 not found");
   }
 
   @Test
@@ -234,10 +233,9 @@ public class StoichiometryServiceImplTest {
     when(stoichiometryManager.get(3L)).thenReturn(existing);
 
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(false);
+    StoichiometryUpdateDTO update = mock(StoichiometryUpdateDTO.class);
 
-    assertThrows(
-        AuthorizationException.class,
-        () -> service.update(3L, mock(StoichiometryUpdateDTO.class), user));
+    assertThrows(AuthorizationException.class, () -> service.update(3L, update, user));
   }
 
   @Test
@@ -274,7 +272,7 @@ public class StoichiometryServiceImplTest {
 
     StoichiometryException ex =
         assertThrows(StoichiometryException.class, () -> service.delete(5L, user, false));
-    assertTrue(ex.getMessage().contains("Error deleting stoichiometry with id 5"));
+    assertThat(ex.getMessage()).contains("Error deleting stoichiometry with id 5");
   }
 
   @Test
@@ -314,7 +312,7 @@ public class StoichiometryServiceImplTest {
     when(mol.getSmiles()).thenReturn("C2H6O");
     when(mol.getMass()).thenReturn(46.07);
     when(mol.getFormula()).thenReturn("C2H6O");
-    when(analysis.getMoleculeInfo()).thenReturn(java.util.Collections.singletonList(mol));
+    when(analysis.getMoleculeInfo()).thenReturn(Collections.singletonList(mol));
     when(rsChemElementManager.getInfo("CCO")).thenReturn(Optional.of(analysis));
 
     StoichiometryMolecule result = service.getMoleculeInfo("CCO");
@@ -463,7 +461,7 @@ public class StoichiometryServiceImplTest {
     DocumentAlreadyEditedException ex =
         assertThrows(
             DocumentAlreadyEditedException.class, () -> service.syncFieldHtml(10L, 7L, user));
-    assertTrue(ex.getMessage().contains("someoneElse"));
+    assertThat(ex.getMessage()).contains("someoneElse");
     verify(fieldManager, never()).getFieldsByRecordId(anyLong(), any());
     verify(fieldManager, never()).save(any(), any());
   }

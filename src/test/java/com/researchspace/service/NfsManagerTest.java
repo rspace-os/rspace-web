@@ -1,12 +1,13 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileSystem;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,8 +30,8 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ public class NfsManagerTest extends SpringTransactionalTest {
 
   private NfsFileSystem testFileSystem;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
     testFileSystem = createAnyNfsFileSystem();
@@ -66,7 +67,7 @@ public class NfsManagerTest extends SpringTransactionalTest {
     nfsMgr.saveNfsFileStore(fileStore);
     assertNotNull(fileStore.getId());
     assertFalse(fileStore.isDeleted());
-    assertEquals(initialFolderCount + 1, nfsMgr.getFileStoreInfosForUser(user).size());
+    assertThat(nfsMgr.getFileStoreInfosForUser(user)).hasSize(initialFolderCount + 1);
     assertNotNull(fileStore.getFileSystem());
     assertEquals(testFileSystem, fileStore.getFileSystem());
 
@@ -74,7 +75,7 @@ public class NfsManagerTest extends SpringTransactionalTest {
     NfsFileStore deletedFolder = nfsMgr.getNfsFileStore(fileStore.getId());
     assertNotNull(deletedFolder);
     assertTrue(deletedFolder.isDeleted());
-    assertEquals(initialFolderCount, nfsMgr.getFileStoreInfosForUser(user).size());
+    assertThat(nfsMgr.getFileStoreInfosForUser(user)).hasSize(initialFolderCount);
   }
 
   @Test
@@ -86,10 +87,10 @@ public class NfsManagerTest extends SpringTransactionalTest {
     nfsMgr.saveNfsFileSystem(testFileSystem);
     assertNotNull(testFileSystem.getId());
     assertFalse(testFileSystem.isDisabled());
-    assertEquals(initialFileSystemsCount + 1, nfsMgr.getFileSystems().size());
+    assertThat(nfsMgr.getFileSystems()).hasSize(initialFileSystemsCount + 1);
 
     nfsMgr.deleteNfsFileSystem(testFileSystem.getId());
-    assertEquals(initialFileSystemsCount, nfsMgr.getFileSystems().size());
+    assertThat(nfsMgr.getFileSystems()).hasSize(initialFileSystemsCount);
   }
 
   @Test
@@ -106,12 +107,12 @@ public class NfsManagerTest extends SpringTransactionalTest {
     nfsMgr.saveNfsFileSystem(fileSystem1);
     nfsMgr.saveNfsFileSystem(fileSystem2);
 
-    assertEquals(initialFileSystemsCount + 2, nfsMgr.getFileSystems().size());
-    assertEquals(initialActiveFileSystemsCount + 1, nfsMgr.getActiveFileSystems().size());
+    assertThat(nfsMgr.getFileSystems()).hasSize(initialFileSystemsCount + 2);
+    assertThat(nfsMgr.getActiveFileSystems()).hasSize(initialActiveFileSystemsCount + 1);
 
     nfsMgr.deleteNfsFileSystem(fileSystem1.getId());
     nfsMgr.deleteNfsFileSystem(fileSystem2.getId());
-    assertEquals(initialFileSystemsCount, nfsMgr.getFileSystems().size());
+    assertThat(nfsMgr.getFileSystems()).hasSize(initialFileSystemsCount);
   }
 
   @Test

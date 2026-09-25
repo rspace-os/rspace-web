@@ -162,11 +162,11 @@
     <!-- initially hidden, this is a jquery-ui dialog that will hold notification content -->
     <div id="notificationsDlg" style="display:none">
       <!--  Holds the dynamic content of notification listings, populated on dialog open -->
-      <div class="notificationList"></div>
+      <div class="notificationList bootstrap-custom-flat"></div>
     </div>
     <div id="messageDlg" style="display:none">
       <!--  initially hidden, this is a jquery-ui dialog and holds the dynamic content of message listings, populated on dialog open -->
-      <div class="messageList"></div>
+      <div class="messageList bootstrap-custom-flat"></div>
     </div>
 
     <rst:hasDeploymentProperty name="fileStoreType" value="EGNYTE">

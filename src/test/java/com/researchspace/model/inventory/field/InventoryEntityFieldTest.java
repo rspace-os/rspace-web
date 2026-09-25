@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory.field;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,15 +42,18 @@ class InventoryEntityFieldTest {
         field.getData()); // selected options string as saved in db
 
     // option outside definition list is invalid
+    List<String> undefinedOption = List.of("a");
     IllegalArgumentException iae =
-        assertThrows(IllegalArgumentException.class, () -> field.setSelectedOptions(List.of("a")));
+        assertThrows(
+            IllegalArgumentException.class, () -> field.setSelectedOptions(undefinedOption));
     assertEquals(
         "[[\"a\"]] is invalid for field type Choice: Some supplied values are not allowed options",
         iae.getMessage());
     // option that differs by trailing space is also invalid
+    List<String> optionWithoutSpace = List.of("pi=3.14");
     iae =
         assertThrows(
-            IllegalArgumentException.class, () -> field.setSelectedOptions(List.of("pi=3.14")));
+            IllegalArgumentException.class, () -> field.setSelectedOptions(optionWithoutSpace));
     assertEquals(
         "[[\"pi=3.14\"]] is invalid for field type Choice: Some supplied values are not allowed"
             + " options",
@@ -185,7 +189,7 @@ class InventoryEntityFieldTest {
     InventoryDateField field = new InventoryDateField("date");
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> field.setFieldData(value));
-    assertTrue(exception.getMessage().contains("is invalid for field type Date"));
+    assertThat(exception.getMessage()).contains("is invalid for field type Date");
   }
 
   @ParameterizedTest
@@ -271,7 +275,7 @@ class InventoryEntityFieldTest {
     InventoryTimeField field = new InventoryTimeField("time");
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> field.setFieldData(value));
-    assertTrue(exception.getMessage().contains("is invalid for field type Time"));
+    assertThat(exception.getMessage()).contains("is invalid for field type Time");
   }
 
   @Test
@@ -283,13 +287,13 @@ class InventoryEntityFieldTest {
     field.setFieldData("test attachment");
     assertEquals(fileA, field.getAttachedFile());
     assertFalse(fileA.isDeleted());
-    assertEquals(1, field.getFiles().size());
+    assertThat(field.getFiles()).hasSize(1);
     assertEquals("test attachment", field.getData());
 
     field.setAttachedFile(fileB);
     assertEquals(fileB, field.getAttachedFile());
     assertTrue(fileA.isDeleted());
-    assertEquals(2, field.getFiles().size());
+    assertThat(field.getFiles()).hasSize(2);
 
     // file parameter validated to be not null
     assertThrows(NullPointerException.class, () -> field.setAttachedFile(null));

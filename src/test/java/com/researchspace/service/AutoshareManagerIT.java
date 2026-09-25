@@ -2,9 +2,10 @@ package com.researchspace.service;
 
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveResult;
@@ -34,11 +35,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -48,8 +48,8 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
   private @Autowired ExportImport exportMgr;
   private @Autowired RecordDeletionManager recordDeletionManager;
   private @Autowired AuditManager auditManager;
-  public @Rule TemporaryFolder tempExportFolder = new TemporaryFolder();
-  public @Rule TemporaryFolder tempImportFolder = new TemporaryFolder();
+  @TempDir public File tempExportFolder;
+  @TempDir public File tempImportFolder;
 
   @Autowired
   @Qualifier("standardPostExportCompletionImpl")
@@ -57,12 +57,12 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
 
   private @Autowired @Qualifier("importUsersAndRecords") ImportStrategy importStrategy;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -212,7 +212,7 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
     // share 1 notebook and 1 doc before enabling autosharing
     shareNotebookWithGroup(u1, sharedNb, grp, "read");
     shareRecordWithGroup(u1, grp, presharedDocument);
-    assertEquals(2, sharingMgr.getSharedRecordsForUser(u1).size());
+    assertThat(sharingMgr.getSharedRecordsForUser(u1)).hasSize(2);
 
     // enable autoshare
     grp = grpMgr.enableAutoshareForUser(u1, grp.getId());
@@ -226,12 +226,12 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
     assertEquals(0, result.getFailureCount());
     assertEquals(unshared.getId(), result.getResults().get(0).getShared().getId());
     // the 2 notebooks & 2 docs are shared now
-    assertEquals(4, sharingMgr.getSharedRecordsForUser(u1).size());
+    assertThat(sharingMgr.getSharedRecordsForUser(u1)).hasSize(4);
 
     // now, create a new entry in the notebook.
     // It shouldn't be shared as its parent notebook is already shared.
     createBasicDocumentInFolder(u1, sharedNb, "text");
-    assertEquals(4, sharingMgr.getSharedRecordsForUser(u1).size());
+    assertThat(sharingMgr.getSharedRecordsForUser(u1)).hasSize(4);
   }
 
   @Test
@@ -258,7 +258,7 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
 
     // share 1 doc before enabling autosharing, otherwise some group configuration problem happens
     shareRecordWithGroup(u1, grp, presharedDocument);
-    assertEquals(1, sharingMgr.getSharedRecordsForUser(u1).size());
+    assertThat(sharingMgr.getSharedRecordsForUser(u1)).hasSize(1);
 
     // enable autoshare
     grp = grpMgr.enableAutoshareForUser(u1, grp.getId());
@@ -282,7 +282,7 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
     Folder subFolder = setUpFolderTree(u1);
     assertDistinctSharedRecordCountForU1(2, testGroup);
     // export top-level folder
-    ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
+    ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder);
     ExportSelection exportSelection =
         ExportSelection.createRecordsExportSelection(
             new Long[] {subFolder.getId()}, new String[] {"FOLDER"});
@@ -292,7 +292,7 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
     File zipFile = result.get().getExportFile();
     // update user
     u1 = userMgr.getUserByUsername(u1.getUsername());
-    ArchivalImportConfig iconfig = createDefaultArchiveImportConfig(u1, tempImportFolder.getRoot());
+    ArchivalImportConfig iconfig = createDefaultArchiveImportConfig(u1, tempImportFolder);
     ImportArchiveReport report =
         exportMgr.importArchive(
             fileToMultipartfile(zipFile.getName(), zipFile),
@@ -334,12 +334,11 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
   }
 
   void assertDistinctSharedRecordCountForU1(int expected, TestGroup testGroup) {
-    assertEquals(
-        expected,
-        getSharedDocsForU1(testGroup).getResults().stream()
-            .map(RecordGroupSharing::getShared)
-            .collect(toSet())
-            .size());
+    assertThat(
+            getSharedDocsForU1(testGroup).getResults().stream()
+                .map(RecordGroupSharing::getShared)
+                .collect(toSet()))
+        .hasSize(expected);
   }
 
   ISearchResults<RecordGroupSharing> getSharedDocsForU1(TestGroup testGroup) {

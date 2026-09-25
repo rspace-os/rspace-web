@@ -90,6 +90,22 @@ export type PublishingState = IGSNPublishingState | PidinstPublishingState;
 export const isPublishedState = (state: PublishingState): boolean => state === "findable" || state === "accepted";
 
 /**
+ * B2INST states in which the community review closed without publishing. The record is still only
+ * a draft at the provider, so the identifier can be deleted, which is how a user clears a failed
+ * submission (RSDEV-1260). An allowlist, so an unrecognised provider status is not treated as
+ * closed.
+ */
+export const B2INST_CLOSED_REVIEW_STATES: ReadonlyArray<PublishingState> = ["declined", "cancelled", "expired"];
+
+/**
+ * Whether a B2INST community review has finished, published or not. Nothing can be published from
+ * RSpace in any of them, so the panel offers no publish action (RSDEV-1326). Reads the state only;
+ * the caller checks the provider.
+ */
+export const isB2instReviewOver = (state: PublishingState): boolean =>
+  state === "accepted" || B2INST_CLOSED_REVIEW_STATES.includes(state);
+
+/**
  * Catalog key for a publication state's label: the same words the identifiers table shows in its
  * State cell. Null for a state RSpace does not recognise, since the server passes an unrecognised
  * provider status through verbatim and the caller has to show that raw value rather than throwing
@@ -128,6 +144,26 @@ export const identifierStateLabelKey = (state: PublishingState) => {
   }
 };
 
+/**
+ * Machine-readable result of one external PIDINST metadata update attempt (RSDEV-1356). UPDATED:
+ * the provider accepted the rebuilt metadata. FAILED: it could not be reached or rejected the
+ * update, or the payload could not be built; the instrument is saved and saving again retries.
+ * NOT_UPDATABLE: the record's own state no longer allows an in-place update, which is normal and
+ * expected rather than an error.
+ */
+export type ExternalMetadataUpdateOutcome = "UPDATED" | "FAILED" | "NOT_UPDATABLE";
+
+/**
+ * Outcome of the external PIDINST metadata update attempted by the save or transfer that returned
+ * this identifier (ADR 0008 item 4). Present only when a push was attempted; absent means nothing
+ * was attempted and must never be shown as a failure. Response-only: the next read of the same
+ * identifier does not carry it. `reason` is a localized sentence from the server, ready to show.
+ */
+export type ExternalMetadataUpdate = {
+  outcome: ExternalMetadataUpdateOutcome;
+  reason: string;
+};
+
 export type IdentifierDate = { value: Date; type: IGSNDateType };
 
 /*
@@ -164,6 +200,9 @@ export type IdentifierAttrs = {
   geoLocations: Array<GeoLocationAttrs> | null;
   _links: Array<_LINK>;
   customFieldsOnPublicPage: boolean;
+  externalMetadataUpdate?: ExternalMetadataUpdate | null;
+  /** See {@link Identifier.linked}. Read-only: the server decides it. */
+  linked: boolean;
 };
 
 export interface Identifier {
@@ -197,6 +236,14 @@ export interface Identifier {
   geoLocations: ReadonlyArray<GeoLocation> | null;
   customFieldsOnPublicPage: boolean;
   _links: Array<_LINK>;
+  externalMetadataUpdate?: ExternalMetadataUpdate | null;
+  /**
+   * True for a *linked* identifier: a PID minted outside RSpace that an instrument import
+   * attached (RSDEV-1326, ADR 0009). RSpace owns nothing on the provider side for it, so it is
+   * never published, retracted or refreshed from here; the UI must not offer those actions.
+   * Read-only: the server decides it.
+   */
+  linked: boolean;
 
   readonly doiTypeLabel: string;
   readonly isValid: boolean;

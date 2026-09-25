@@ -1,8 +1,7 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
@@ -29,8 +28,8 @@ import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class EmailBroadcastTest extends SpringTransactionalTest {
@@ -79,7 +78,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   private CommunicationEmailContentGenerator contentGenerator;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     // we need to explicitly create this, as it is only created by Spring in 'prod' profile
     // and these tests run in dev profile.
@@ -97,9 +96,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     EmailContent msgbody = contentGenerator.generate(mor);
 
     assertEquals("RSpace message", msgbody.subject());
-    assertTrue(msgbody.htmlContent().contains(sender.getFullName()));
-    assertTrue(msgbody.htmlContent().contains(record.getName()));
-    assertTrue(msgbody.htmlContent().contains("message1"));
+    assertThat(msgbody.htmlContent()).contains(sender.getFullName());
+    assertThat(msgbody.htmlContent()).contains(record.getName());
+    assertThat(msgbody.htmlContent()).contains("message1");
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
     assertAllVelocityVarsReplaced(msgbody.plainTextContent());
   }
@@ -111,7 +110,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   }
 
   private void assertAllVelocityVarsReplaced(String msgbody) {
-    assertFalse(msgbody.contains("$"));
+    assertThat(msgbody).doesNotContain("$");
   }
 
   @Test
@@ -128,10 +127,10 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     EmailContent msgbody = contentGenerator.generate(mor);
 
     assertEquals("RSpace request", msgbody.subject());
-    assertTrue(msgbody.htmlContent().contains(sender.getFullName()));
-    assertTrue(msgbody.htmlContent().contains("message1"));
+    assertThat(msgbody.htmlContent()).contains(sender.getFullName());
+    assertThat(msgbody.htmlContent()).contains("message1");
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
-    assertTrue(msgbody.htmlContent().contains(BASEURL + "/workspace/editor/structuredDocument/1"));
+    assertThat(msgbody.htmlContent()).contains(BASEURL + "/workspace/editor/structuredDocument/1");
 
     // now try with a notebook and assert the link is different:
     assertNotebookLinkGenerated(sender, mor);
@@ -143,7 +142,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     mor.setRecord(nb);
     EmailContent msgbody = contentGenerator.generate(mor);
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
-    assertTrue(msgbody.htmlContent().contains(BASEURL + "/notebookEditor/1"));
+    assertThat(msgbody.htmlContent()).contains(BASEURL + "/notebookEditor/1");
   }
 
   @Test
@@ -158,8 +157,8 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     EmailContent msgbody = contentGenerator.generate(not);
     assertEquals("RSpace notification", msgbody.subject());
     assertEquals(2, StringUtils.countMatches(msgbody.htmlContent(), "href"));
-    assertTrue(msgbody.htmlContent().contains(sender.getFullName()));
-    assertTrue(msgbody.htmlContent().contains(record.getName()));
+    assertThat(msgbody.htmlContent()).contains(sender.getFullName());
+    assertThat(msgbody.htmlContent()).contains(record.getName());
 
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
     // now try with a notebook and assert the link is different:
@@ -199,9 +198,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     FailingBroadcasterStub broadcast = new FailingBroadcasterStub(failure);
     broadcast.init();
     broadcast.sendEmail(anyHtmlBody(), List.of("user@example.com"), null);
-    assertTrue(
-        "unexpected content: " + appender.logContents,
-        appender.logContents.startsWith(expectedPrefix));
+    assertThat(appender.logContents)
+        .as("unexpected content: " + appender.logContents)
+        .startsWith(expectedPrefix);
   }
 
   @Test

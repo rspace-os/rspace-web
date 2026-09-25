@@ -1,16 +1,17 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.record.TestFactory;
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UserGroupTest {
 
@@ -18,14 +19,14 @@ public class UserGroupTest {
   Group g1;
   UserGroup usergroup = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     u = TestFactory.createAnyUser("user");
     u2 = TestFactory.createAnyUser("u2");
     g1 = new Group("any");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -58,7 +59,7 @@ public class UserGroupTest {
     usergroup2.setUser(u2);
     set.add(usergroup2);
     set.add(usergroup);
-    assertEquals(2, set.size());
+    assertThat(set).hasSize(2);
   }
 
   @Test
@@ -68,10 +69,10 @@ public class UserGroupTest {
     assertEquals(ug1, ug2);
     Set<UserGroup> set = new HashSet<>();
     set.addAll(TransformerUtils.toList(ug1, ug2));
-    assertEquals(1, set.size());
+    assertThat(set).hasSize(1);
     // group is null
     ug1.setUser(u);
     ug2.setUser(u);
-    assertEquals(1, set.size());
+    assertThat(set).hasSize(1);
   }
 }

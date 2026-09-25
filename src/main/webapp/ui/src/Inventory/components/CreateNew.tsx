@@ -10,6 +10,7 @@ import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { ACCENT_COLOR as FIELDMARK_COLOR } from "../../assets/branding/fieldmark";
 import FieldmarkIcon from "../../assets/branding/fieldmark/logo.svg";
+import PidinstIcon from "../../assets/graphics/PIDINST.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
@@ -18,6 +19,7 @@ import useStores from "../../stores/use-stores";
 import { UserCancelledAction } from "../../util/error";
 import * as FetchingData from "../../util/fetchingData";
 import FieldmarkImportDialog from "./FieldmarkImportDialog";
+import PidinstImportDialog from "./PidinstImportDialog";
 
 type CreateNewArgs = {
   /**
@@ -39,11 +41,12 @@ type CreateNewArgs = {
  */
 function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
-  const { searchStore, trackingStore, uiStore, importStore } = useStores();
+  const { searchStore, trackingStore, uiStore, importStore, authStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
+  const [pidinstOpen, setPidinstOpen] = React.useState(false);
   const showFieldmark = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("FIELDMARK")).orElse(false);
   const handleCreate = async (
     recordType: "sample" | "container" | "instrument" | "template" | "instrumentTemplate",
@@ -64,7 +67,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
       throw e;
     }
   };
-  const handleImport = async (recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES") => {
+  const handleImport = async (recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES" | "INSTRUMENTS") => {
     if (await uiStore.confirmDiscardAnyChanges()) {
       importStore.initializeNewImport(recordType);
       navigate(`/inventory/import?recordType=${recordType}`);
@@ -201,8 +204,6 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
                 width: "28px",
                 height: "28px",
                 padding: "2px",
-                paddingTop: "5px",
-                paddingLeft: "5px",
               }}
             />
           }
@@ -224,8 +225,6 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
                 width: "28px",
                 height: "28px",
                 padding: "2px",
-                paddingTop: "5px",
-                paddingLeft: "5px",
               }}
             />
           }
@@ -238,67 +237,28 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         </Divider>
         <AccentMenuItem
           compact
-          title={t("recordTypes.sample.plural")}
-          avatar={
-            <RecordTypeIcon
-              record={{
-                recordTypeLabel: "",
-                iconName: "sample",
-              }}
-              color=""
-              style={{
-                width: "18px",
-                height: "18px",
-                padding: "5px",
-              }}
-            />
-          }
+          title={t("createNew.fromCsv")}
+          subheader={t("createNew.fromCsvDescription")}
+          avatarBackgroundColor="white"
+          avatar={<CardMedia image="/images/icons/csv.svg" />}
           onClick={() => {
             void handleImport("SAMPLES");
           }}
         />
-        <AccentMenuItem
-          compact
-          title={t("recordTypes.subsample.plural")}
-          avatar={
-            <RecordTypeIcon
-              record={{
-                recordTypeLabel: "",
-                iconName: "subsample",
-              }}
-              color=""
-              style={{
-                width: "18px",
-                height: "18px",
-                padding: "5px",
-              }}
-            />
-          }
-          onClick={() => {
-            void handleImport("SUBSAMPLES");
-          }}
-        />
-        <AccentMenuItem
-          compact
-          title={t("recordTypes.container.plural")}
-          avatar={
-            <RecordTypeIcon
-              record={{
-                recordTypeLabel: "",
-                iconName: "container",
-              }}
-              color=""
-              style={{
-                width: "18px",
-                height: "18px",
-                padding: "5px",
-              }}
-            />
-          }
-          onClick={() => {
-            void handleImport("CONTAINERS");
-          }}
-        />
+        {authStore.pidinstEnabled && (
+          <AccentMenuItem
+            compact
+            title={t("createNew.importPidinst")}
+            avatarBackgroundColor="white"
+            avatar={<CardMedia image={PidinstIcon} />}
+            onClick={() => {
+              setPidinstOpen(true);
+              // closed for the same reason as the Fieldmark item: the menu would float over the dialog
+              setAnchorEl(null);
+            }}
+            aria-haspopup="dialog"
+          />
+        )}
         {showFieldmark && (
           <>
             <Divider textAlign="left" aria-label={t("createNew.thirdPartyImport")}>
@@ -335,6 +295,15 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         open={fieldmarkOpen}
         onClose={() => {
           setFieldmarkOpen(false);
+        }}
+      />
+      <PidinstImportDialog
+        open={pidinstOpen}
+        onClose={() => {
+          setPidinstOpen(false);
+        }}
+        onImported={({ id }) => {
+          navigate(`/inventory/instrument/${id}`);
         }}
       />
     </Box>

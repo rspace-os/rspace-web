@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,8 +15,8 @@ import com.researchspace.model.User;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 
@@ -27,7 +28,7 @@ public class InventoryEditLocksControllerTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createInitAndLoginAnyUser();
     assertTrue(testUser.isContentInitialized());
@@ -75,7 +76,7 @@ public class InventoryEditLocksControllerTest extends SpringTransactionalTest {
     // lock as test user
     ApiInventoryEditLock apiLock = locksController.lockItemForEdit(testSampleGlobalId, testUser);
     assertEquals(ApiInventoryEditLockStatus.LOCKED_OK, apiLock.getStatus());
-    assertEquals(testUser.getUsername(), invLockTracker.getLockOwnerForItem(testSampleGlobalId));
+    assertEquals(testUser.getUsername(), tracker.getLockOwnerForItem(testSampleGlobalId));
 
     // try unlocking as other user
     nfe =
@@ -88,32 +89,32 @@ public class InventoryEditLocksControllerTest extends SpringTransactionalTest {
             + "] could not be retrieved - possibly it has been deleted, does not exist, "
             + "or you do not have permission to access it.",
         nfe.getMessage());
-    assertEquals(testUser.getUsername(), invLockTracker.getLockOwnerForItem(testSampleGlobalId));
+    assertEquals(testUser.getUsername(), tracker.getLockOwnerForItem(testSampleGlobalId));
 
     // testUser can unlock
     locksController.unlockItemAfterEdit(testSampleGlobalId, testUser);
-    assertNull(invLockTracker.getLockOwnerForItem(testSampleGlobalId));
+    assertNull(tracker.getLockOwnerForItem(testSampleGlobalId));
 
     // lock again, then transfer to another user
     locksController.lockItemForEdit(testSampleGlobalId, testUser);
-    assertEquals(testUser.getUsername(), invLockTracker.getLockOwnerForItem(testSampleGlobalId));
+    assertEquals(testUser.getUsername(), tracker.getLockOwnerForItem(testSampleGlobalId));
     ApiSample sampleUpdate = new ApiSample();
     sampleUpdate.setId(testSample.getId());
     sampleUpdate.setOwner(new ApiUser(otherUser));
     sampleApiMgr.changeApiSampleOwner(sampleUpdate, testUser);
-    assertEquals(testUser.getUsername(), invLockTracker.getLockOwnerForItem(testSampleGlobalId));
+    assertEquals(testUser.getUsername(), tracker.getLockOwnerForItem(testSampleGlobalId));
 
     // new owner can try to unlock, but that won't work
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
             () -> locksController.unlockItemAfterEdit(testSampleGlobalId, otherUser));
-    assertTrue(
-        iae.getMessage().startsWith("Cannot unlock, as current lock belongs to another user"));
-    assertEquals(testUser.getUsername(), invLockTracker.getLockOwnerForItem(testSampleGlobalId));
+    assertThat(iae.getMessage())
+        .startsWith("Cannot unlock, as current lock belongs to another user");
+    assertEquals(testUser.getUsername(), tracker.getLockOwnerForItem(testSampleGlobalId));
 
     // original lock creator can still unlock, even though no longer has permission to the item
     locksController.unlockItemAfterEdit(testSampleGlobalId, testUser);
-    assertNull(invLockTracker.getLockOwnerForItem(testSampleGlobalId));
+    assertNull(tracker.getLockOwnerForItem(testSampleGlobalId));
   }
 }

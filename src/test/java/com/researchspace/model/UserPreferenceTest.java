@@ -1,24 +1,25 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.TestFactory;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UserPreferenceTest {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -27,35 +28,34 @@ public class UserPreferenceTest {
         Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, TestFactory.createAnyUser("user"), "true");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testUserPreferenceMaxStringLength() {
     String str = CoreTestUtils.getRandomName(256); // just a string > max length
-    new UserPreference(
-        Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, TestFactory.createAnyUser("user"), str);
+    User user = TestFactory.createAnyUser("user");
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new UserPreference(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, user, str));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testUserPreferenceGetWrongValueTypeThrosISE() {
+    User user = TestFactory.createAnyUser("user");
     UserPreference up =
-        new UserPreference(
-            Preference.NOTIFICATION_DOCUMENT_EDITED_PREF,
-            TestFactory.createAnyUser("user"),
-            "false");
-    up.getValueAsNumber();
+        new UserPreference(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, user, "false");
+
+    assertThrows(IllegalStateException.class, () -> up.getValueAsNumber());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testBooleanPreferenceChecksArgs() {
-    // this is a boolean pref, can only be set with string representation of booleans
     UserPreference up = createUserPref(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF);
-    // all ok
     up.setValue("true");
     up.setValue("false");
     up.setValue("FALSE");
     up.setValue("TRUE");
 
-    // throws IAE
-    up.setValue("otherstring");
+    assertThrows(IllegalArgumentException.class, () -> up.setValue("otherstring"));
   }
 
   @Test
@@ -99,18 +99,18 @@ public class UserPreferenceTest {
   public void testValidLengthDependingOnPreferenceType() {
     String longStringValue = StringUtils.repeat("x", 300);
     String veryLongStringValue = StringUtils.repeat("x", 70000);
+    UserPreference clientSettings = createUserPref(Preference.UI_CLIENT_SETTINGS);
 
     IllegalArgumentException iae =
         Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> createUserPref(Preference.UI_CLIENT_SETTINGS).setValue(longStringValue));
+            IllegalArgumentException.class, () -> clientSettings.setValue(longStringValue));
     assertEquals("Value is too long, is 300 characters but max is 255", iae.getMessage());
 
-    createUserPref(Preference.UI_JSON_SETTINGS).setValue(longStringValue);
+    UserPreference jsonSettings = createUserPref(Preference.UI_JSON_SETTINGS);
+    jsonSettings.setValue(longStringValue);
     iae =
         Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> createUserPref(Preference.UI_JSON_SETTINGS).setValue(veryLongStringValue));
+            IllegalArgumentException.class, () -> jsonSettings.setValue(veryLongStringValue));
     assertEquals("Text value is too long, is 70000 characters but max is 65535", iae.getMessage());
   }
 }

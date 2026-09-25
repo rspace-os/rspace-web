@@ -1,8 +1,9 @@
 package com.researchspace.model.permissions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
@@ -11,9 +12,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserGroup;
 import com.researchspace.model.record.TestFactory;
 import java.util.Collections;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RecordSharingACLTest {
 
@@ -23,7 +24,7 @@ public class RecordSharingACLTest {
   private User piUserInGroup;
   private User notInGroup, alice;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     permResolver = new ConstraintPermissionResolver();
     copy = permResolver.resolvePermission("RECORD:COPY");
@@ -44,7 +45,7 @@ public class RecordSharingACLTest {
     g2.addMember(alice, RoleInGroup.DEFAULT);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -60,11 +61,11 @@ public class RecordSharingACLTest {
     RecordSharingACL acl = new RecordSharingACL();
     acl.addACLElement(alice, multi);
     acl.addACLElement(piUserInGroup, multi);
-    assertTrue(acl.getString().contains("alice"));
+    assertThat(acl.getString()).contains("alice");
     acl.removeACLsforUserOrGroup(alice);
     assertFalse(acl.isPermitted(alice, PermissionType.READ));
     assertFalse(acl.isPermitted(alice, PermissionType.DELETE));
-    assertFalse(acl.getString().contains("alice"));
+    assertThat(acl.getString()).doesNotContain("alice");
     assertTrue(acl.isPermitted(piUserInGroup, PermissionType.READ));
     assertTrue(acl.isPermitted(piUserInGroup, PermissionType.DELETE));
   }

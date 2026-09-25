@@ -1,8 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -15,8 +14,8 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class NfsFileHandlerTest extends SpringTransactionalTest {
@@ -33,7 +32,7 @@ public class NfsFileHandlerTest extends SpringTransactionalTest {
   private NfsTarget testTarget1;
   private NfsTarget testTarget2;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     // let's create nfsFileDetails of a file named 'nfsFile.xlsx' with input stream from
@@ -77,8 +76,8 @@ public class NfsFileHandlerTest extends SpringTransactionalTest {
         nfsFileHandler.downloadNfsFileToRSpace(testTarget1, nfsClient);
     File downloadedFile = downloadedFileDetails.getLocalFile();
     assertNotNull(downloadedFile);
-    assertTrue(downloadedFile.exists());
-    assertEquals(testFileDetails.getName(), downloadedFile.getName()); // name from nfsFileDetails
-    assertEquals(13248L, downloadedFile.length()); // length of simpleExcel.xlsx file
+    assertThat(downloadedFile).exists();
+    assertThat(downloadedFile).hasName(testFileDetails.getName()); // name from nfsFileDetails
+    assertThat(downloadedFile).hasSize(13248L); // length of simpleExcel.xlsx file
   }
 }

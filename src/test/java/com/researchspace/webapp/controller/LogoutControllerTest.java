@@ -1,8 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.auth.ShiroRealm;
@@ -17,8 +18,8 @@ import java.io.IOException;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.apache.shiro.subject.Subject;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
@@ -31,7 +32,7 @@ public class LogoutControllerTest extends SpringTransactionalTest {
 
   private HttpServletRequest request;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     request = new MockHttpServletRequest();
     MockServletContext mockServletCtxt = new MockServletContext();
@@ -47,7 +48,7 @@ public class LogoutControllerTest extends SpringTransactionalTest {
     assertTrue(SecurityUtils.getSubject().isAuthenticated());
 
     ModelAndView mav = logoutController.logout(new MockPrincipal(user.getUsername()), request);
-    assertEquals("/workspace", mav.getModel().get("redirectLocation"));
+    assertThat(mav.getModel()).containsEntry("redirectLocation", "/workspace");
 
     // user is logged out
     assertFalse(SecurityUtils.getSubject().isAuthenticated());
@@ -64,7 +65,7 @@ public class LogoutControllerTest extends SpringTransactionalTest {
         .setAttribute(SSOShiroFormAuthFilterExt.REMOTE_USER_USERNAME_ATTR, user.getUsername());
 
     ModelAndView mav = logoutController.logout(new MockPrincipal(user.getUsername()), request);
-    assertEquals("/public/ssologout", mav.getModel().get("redirectLocation"));
+    assertThat(mav.getModel()).containsEntry("redirectLocation", "/public/ssologout");
 
     // user still logged in
     assertTrue(!SecurityUtils.getSubject().isAuthenticated());

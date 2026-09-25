@@ -1,9 +1,10 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.NumberFieldDTO;
@@ -14,28 +15,19 @@ import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
+@ExtendWith(MockitoExtension.class)
 public class FormControllerTest extends SpringTransactionalTest {
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Autowired RSFormController rsFormController;
   private final Model model = new ExtendedModelMap();
   static final Long ID = 1L;
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testSaveEditedTextField() {
@@ -57,7 +49,7 @@ public class FormControllerTest extends SpringTransactionalTest {
             new TextFieldDTO<>("", "defaultValue2"), form.getFieldForms().get(0).getId());
     assertNull(rc2.getData());
     assertNotNull(rc2.getErrorMsg());
-    assertTrue(rc2.getErrorMsg().getErrorMessages().size() > 0);
+    assertThat(rc2.getErrorMsg().getErrorMessages().size()).isGreaterThan(0);
   }
 
   @Test
@@ -84,7 +76,7 @@ public class FormControllerTest extends SpringTransactionalTest {
     AjaxReturnObject<NumberFieldForm> rc = rsFormController.createNumberField(nfdto);
     assertNull(rc.getData());
     assertTrue(rc.getErrorMsg().hasErrorMessages());
-    assertEquals(1, rc.getErrorMsg().getErrorMessages().size());
+    assertThat(rc.getErrorMsg().getErrorMessages()).hasSize(1);
   }
 
   @Test
@@ -99,7 +91,7 @@ public class FormControllerTest extends SpringTransactionalTest {
     AjaxReturnObject<NumberFieldForm> rc = rsFormController.createNumberField(nfdto);
     assertNull(rc.getData());
     assertTrue(rc.getErrorMsg().hasErrorMessages());
-    assertEquals(1, rc.getErrorMsg().getErrorMessages().size());
+    assertThat(rc.getErrorMsg().getErrorMessages()).hasSize(1);
   }
 
   @Test
@@ -129,9 +121,11 @@ public class FormControllerTest extends SpringTransactionalTest {
       RSpaceTestUtils.logout();
       User unauthorizedUser = createInitAndLoginAnyUser();
       rsFormController.setServletContext(new MockServletContext());
-      assertExceptionThrown(
-          () -> rsFormController.editForm(model, unauthorizedUser::getUsername, formU1.getId()),
-          RecordAccessDeniedException.class);
+      var formId = formU1.getId();
+
+      assertThrows(
+          RecordAccessDeniedException.class,
+          () -> rsFormController.editForm(model, unauthorizedUser::getUsername, formId));
 
     } finally {
       rsFormController.setServletContext(null);

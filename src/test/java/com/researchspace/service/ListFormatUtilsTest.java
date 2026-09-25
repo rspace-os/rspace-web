@@ -1,11 +1,11 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.ibm.icu.text.ListFormatter;
 import java.util.List;
 import java.util.Locale;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 public class ListFormatUtilsTest {

@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.maintenance.service.MaintenanceManager;
@@ -11,14 +12,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
@@ -26,10 +25,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class PublicControllerTest {
 
   private static final String DEFAULT_LOGO_NAME = "mainLogo3.png";
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
   @Mock Principal principal;
   @Mock ResourceLoader resourceLoader;
   @Mock MaintenanceManager maintenanceMgr;
@@ -52,7 +51,7 @@ public class PublicControllerTest {
 
   PublicController publicController;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
     publicController = new PublicControllerTSS();
@@ -60,9 +59,6 @@ public class PublicControllerTest {
     publicController.setResourceLoader(resourceLoader);
     publicController.setMaintenanceManager(maintenanceMgr);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testBannerWithWrongFileTypeReturnsDefault() throws Exception {
@@ -73,7 +69,7 @@ public class PublicControllerTest {
     // mockery.assertIsSatisfied();
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_PNG, resp.getHeaders().getContentType());
-    assertEquals(defaultImageSize, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(defaultImageSize);
     assertEquals(DEFAULT_LOGO_NAME, publicController.bannerImgName());
   }
 
@@ -112,7 +108,7 @@ public class PublicControllerTest {
     // mockery.assertIsSatisfied();
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_JPEG, resp.getHeaders().getContentType());
-    assertEquals(testImageSize, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(testImageSize);
     assertEquals("IS1.jpg", publicController.bannerImgName());
 
     // now we test getting another default image ( for use with RSpace logos)
@@ -121,14 +117,14 @@ public class PublicControllerTest {
     // mockery.assertIsSatisfied();
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_PNG, resp.getHeaders().getContentType());
-    assertEquals(10830, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(10830);
     assertEquals("biggerLogo.png", publicController.bannerImgName());
   }
 
   private void assertDefaultImage(final int defaultImageSize, ResponseEntity<byte[]> resp) {
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_PNG, resp.getHeaders().getContentType());
-    assertEquals(defaultImageSize, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(defaultImageSize);
   }
 
   @Test

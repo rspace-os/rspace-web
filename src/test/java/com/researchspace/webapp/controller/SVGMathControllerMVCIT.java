@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.model.RSMath;
@@ -9,21 +9,21 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 public class SVGMathControllerMVCIT extends MVCTestBase {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -52,7 +52,7 @@ public class SVGMathControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     final int EXPECTED_BYTELENGTH = transientMath.getMathSvg().getData().length;
-    assertEquals(EXPECTED_BYTELENGTH, getResult.getResponse().getContentAsByteArray().length);
+    assertThat(getResult.getResponse().getContentAsByteArray()).hasSize(EXPECTED_BYTELENGTH);
 
     // unknown ID
     final long NOT_EXISTS_ID = -123L;

@@ -1,25 +1,28 @@
 package com.researchspace.netfiles.samba;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.hierynomus.msfscc.fileinformation.FileAllInformation;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 public class SambaUtilsTest {
+
+  private AutoCloseable mocks;
 
   public static final String APATH_TO_AFILE = "apath/to/afile/";
   public static final String A_SAMBA_NAME = "\\apath\\to\\afile";
   private SambaUtils testee;
   @Mock private FileAllInformation smbjFileInfo;
 
-  @Before
+  @BeforeEach
   public void setup() {
     testee = new SambaUtils();
-    initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     when(smbjFileInfo.getNameInformation()).thenReturn(A_SAMBA_NAME);
   }
 
@@ -61,5 +64,10 @@ public class SambaUtilsTest {
     when(smbjFileInfo.getNameInformation()).thenReturn("sambasharename" + A_SAMBA_NAME);
     String result = testee.getNameInformationFromSmbjFileInfo(smbjFileInfo, APATH_TO_AFILE, false);
     assertEquals("sambasharename\\apath\\to\\afile", result);
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    mocks.close();
   }
 }

@@ -1,19 +1,19 @@
 package com.researchspace.model.views;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class CommunityListResultTest {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   // test various valid user inputs can be handled correctly
@@ -30,8 +30,8 @@ public class CommunityListResultTest {
     for (String in : inputs) {
       assertTrue(CommunityListResult.validateMultiCommunityAutocompleteInput(in));
       Set<Long> ids2 = CommunityListResult.getCommunityIdsfromMultiGroupAutocomplete(in);
-      assertEquals(2, ids2.size());
-      assertTrue(ids2.contains(567L));
+      assertThat(ids2).hasSize(2);
+      assertThat(ids2).contains(567L);
     }
   }
 }

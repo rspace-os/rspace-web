@@ -4,10 +4,11 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_DELETED_PREF;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_SHARED_PREF;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_UNSHARED_PREF;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.axiope.search.SearchManager;
 import com.researchspace.Constants;
@@ -21,6 +22,7 @@ import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.testutil.InvokableWithResult;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.AuditDaoIT;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatChemistryFile;
@@ -47,6 +49,7 @@ import com.researchspace.model.comms.ShareRecordMessageOrRequestCreationConfigur
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DeltaType;
@@ -56,7 +59,6 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.EcatImageAnnotationManager;
-import com.researchspace.service.FieldManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordSigningManager;
@@ -86,8 +88,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.util.ThreadContext;
-import org.junit.AfterClass;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -113,7 +114,8 @@ import org.springframework.web.multipart.MultipartFile;
     value = {DependencyInjectionTestExecutionListener.class, SqlScriptsTestExecutionListener.class})
 @Configuration()
 @Profile("dev")
-public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
+public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
+    implements DatabaseCleanerLifecycle {
 
   /*
    * Creates a JdbCTemplate for use in some convenient JdbcTestUtil methods
@@ -127,8 +129,8 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
 
   protected @Autowired IContentInitializer contentInitializer;
   protected @Autowired EcatImageAnnotationManager imgAnnotationMgr;
-  protected @Autowired FieldManager fieldMgr;
-
+  protected @Autowired IPermissionUtils permissionUtils;
+  protected @Autowired SampleTemplateDao sampleTemplateDao;
   protected @Autowired RoleManager roleMgr;
   protected @Autowired RecordDeletionManager recordDeletionMgr;
   protected @Autowired RecordSigningManager signingManager;
@@ -150,14 +152,14 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
 
   protected TransactionStatus status;
 
-  @Before
+  @BeforeEach
   public void beforeEach() {
     sampleTemplateDao.resetDefaultTemplateOwner();
   }
 
-  @AfterClass
-  public static void after() {
-    DatabaseCleaner.cleanUp();
+  @Override
+  public DataSource getDataSourceForCleanup() {
+    return dataSource;
   }
 
   /**
@@ -360,10 +362,10 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
   /**
    * Creating example content saves a media file, and MediaManagerImpl.assertCanAddToFolder runs a
    * Shiro permission check against the current Subject. Integration tests share one JVM fork and
-   * the Subject is thread-bound, while DatabaseCleaner.cleanUp() deletes every User row in {@link
-   * #after()}, so an earlier test class can leave us authenticated as a user that no longer exists.
-   * The realm then fails to reload authorisation info for that dead principal and throws
-   * ObjectRetrievalFailureException.
+   * the Subject is thread-bound, while {@link DatabaseCleaner#cleanUp(Class)} deletes every User
+   * row in {@link #after(TestInfo)}, so an earlier test class can leave us authenticated as a user
+   * that no longer exists. The realm then fails to reload authorisation info for that dead
+   * principal and throws ObjectRetrievalFailureException.
    *
    * <p>Only swap the Subject out when it is already dead. A live one may be a sysadmin the caller
    * deliberately logged in as and still expects to be acting as once init returns.
@@ -1121,7 +1123,7 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
     // check that shared doc is in shared records.
     List<RecordGroupSharing> rgs = sharingMgr.getSharedRecordsForUser(sharer);
     List<BaseRecord> sharedRecords = getSharedRecordsFromList(rgs);
-    assertTrue(sharedRecords.contains(documentOrNotebook));
+    assertThat(sharedRecords).contains(documentOrNotebook);
 
     doInTransaction(
         () -> {

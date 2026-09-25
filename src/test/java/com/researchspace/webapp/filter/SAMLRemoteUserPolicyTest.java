@@ -1,12 +1,13 @@
 package com.researchspace.webapp.filter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 public class SAMLRemoteUserPolicyTest {
@@ -14,7 +15,7 @@ public class SAMLRemoteUserPolicyTest {
   SAMLRemoteUserPolicy samlPolicy;
   MockHttpServletRequest req;
 
-  @Before
+  @BeforeEach
   public void before() {
     samlPolicy = new SAMLRemoteUserPolicy();
     req = new MockHttpServletRequest();
@@ -33,8 +34,7 @@ public class SAMLRemoteUserPolicyTest {
     assertNotNull(samlPolicy.getOtherRemoteAttributes(req));
     // this is a known saml attribute ID
     req.setAttribute("mail", "someone@somewhere.com");
-    assertEquals(
-        "someone@somewhere.com",
-        samlPolicy.getOtherRemoteAttributes(req).get(RemoteUserAttribute.EMAIL));
+    assertThat(samlPolicy.getOtherRemoteAttributes(req))
+        .containsEntry(RemoteUserAttribute.EMAIL, "someone@somewhere.com");
   }
 }

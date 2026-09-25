@@ -1,21 +1,22 @@
 package com.researchspace.linkedelements;
 
 import static com.researchspace.core.util.FieldParserConstants.LINKEDRECORD_CLASS_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
 import org.jsoup.nodes.Element;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 
 public class LinkedRecordConverterTest extends AbstractParserTest {
 
   @InjectMocks private LinkedRecordConverter linkedRecordConverter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
@@ -28,16 +29,18 @@ public class LinkedRecordConverterTest extends AbstractParserTest {
     String versionedLink = rtu.generateURLStringForVersionedInternalLink(toLinkTo);
 
     String expectedOidString = toLinkTo.getOidWithVersion().toString();
-    assertTrue(
-        versionedLink, versionedLink.contains(expectedOidString + ": " + toLinkTo.getName()));
-    assertTrue(versionedLink, versionedLink.contains("/globalId/" + expectedOidString));
-    assertTrue(
-        versionedLink, versionedLink.contains("data-globalid=\"" + expectedOidString + "\""));
+    assertThat(versionedLink)
+        .as(versionedLink)
+        .contains(expectedOidString + ": " + toLinkTo.getName());
+    assertThat(versionedLink).as(versionedLink).contains("/globalId/" + expectedOidString);
+    assertThat(versionedLink)
+        .as(versionedLink)
+        .contains("data-globalid=\"" + expectedOidString + "\"");
 
     // verify that converter finds a versioned id in content
     Element toconvert = getElementToConvert(versionedLink, LINKEDRECORD_CLASS_NAME);
     linkedRecordConverter.jsoup2LinkableElement(contents, toconvert);
-    assertEquals(1, contents.getLinkedRecordsWithRelativeUrl().getElements().size());
+    assertThat(contents.getLinkedRecordsWithRelativeUrl().getElements()).hasSize(1);
     assertTrue(
         contents.getLinkedRecordsWithRelativeUrl().getElements().get(0).getOid().hasVersionId());
     assertEquals(

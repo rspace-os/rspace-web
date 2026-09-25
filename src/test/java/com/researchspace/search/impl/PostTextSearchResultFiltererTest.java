@@ -1,15 +1,15 @@
 package com.researchspace.search.impl;
 
 import static com.researchspace.testutils.TestFactory.createNRecords;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import org.apache.lucene.search.BooleanQuery;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PostTextSearchResultFiltererTest extends LuceneSrchCfgTestBase {
 
@@ -17,7 +17,7 @@ public class PostTextSearchResultFiltererTest extends LuceneSrchCfgTestBase {
   private PostTextSearchResultFilterer filterer;
   private List<BaseRecord> toFilter;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     toFilter = TestFactory.createNRecords(ORIGINAL_SIZE);
     filterer = new PostTextSearchResultFilterer(toFilter, luceneCfg);
@@ -25,10 +25,10 @@ public class PostTextSearchResultFiltererTest extends LuceneSrchCfgTestBase {
 
   @Test
   public void filterByDeleted() {
-    assertEquals(ORIGINAL_SIZE, filterer.filterAll().size());
+    assertThat(filterer.filterAll()).hasSize(ORIGINAL_SIZE);
 
     toFilter.get(0).setRecordDeleted(true);
-    assertEquals(ORIGINAL_SIZE - 1, filterer.filterAll().size());
+    assertThat(filterer.filterAll()).hasSize(ORIGINAL_SIZE - 1);
   }
 
   @Test
@@ -37,28 +37,28 @@ public class PostTextSearchResultFiltererTest extends LuceneSrchCfgTestBase {
     List<BaseRecord> bigListOfTerms = createNRecords(BooleanQuery.getMaxClauseCount() + 1);
     // big list of terms does not include target record
     mutableCfg.setRecordFilterList(bigListOfTerms);
-    assertEquals(0, filterer.filterAll().size());
+    assertThat(filterer.filterAll()).isEmpty();
 
     // big list of terms now includes target record
     bigListOfTerms.add(toFilter.get(0));
-    assertEquals(1, filterer.filterAll().size());
+    assertThat(filterer.filterAll()).hasSize(1);
   }
 
   @Test
   public void filterAllAppliesConditionalNotebookFilter() {
     final long matchingId = -5L;
     setupNotebookParent(toFilter, matchingId);
-    assertEquals(ORIGINAL_SIZE, filterer.filterAll().size());
+    assertThat(filterer.filterAll()).hasSize(ORIGINAL_SIZE);
 
     final long nonMatchingId = -4L;
     mutableCfg.setFolderId(nonMatchingId);
-    assertEquals(ORIGINAL_SIZE, filterer.filterAll().size());
+    assertThat(filterer.filterAll()).hasSize(ORIGINAL_SIZE);
     mutableCfg.setFolderId(matchingId);
-    assertEquals(ORIGINAL_SIZE, filterer.filterAll().size());
+    assertThat(filterer.filterAll()).hasSize(ORIGINAL_SIZE);
     // id has to match search term, and filter must be configured, in order to be
     // applied
     mutableCfg.setNotebookFilter(true);
-    assertEquals(1, filterer.filterAll().size());
+    assertThat(filterer.filterAll()).hasSize(1);
   }
 
   private void setupNotebookParent(List<BaseRecord> toFilter, final long matchingId) {

@@ -1,21 +1,23 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.FormDao;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ShareConfigElement;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
@@ -31,9 +33,9 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RecordSharingTest extends SpringTransactionalTest {
@@ -41,18 +43,20 @@ public class RecordSharingTest extends SpringTransactionalTest {
   private static final String OTHER_USER_PWD = "user";
 
   private @Autowired RecordGroupSharingDao regGrpDao;
+  private @Autowired FormDao formDao;
+  private @Autowired IPermissionUtils permissionUtils;
 
   private Group group;
   private User piUser;
   private User other;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IllegalAddChildOperation {
     piUser = createAndSaveAPi();
     initialiseContentWithEmptyContent(piUser);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -81,7 +85,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     toShare =
         extractDoc(sharingMgr.shareRecord(pi, toShare.getId(), new ShareConfigElement[] {cfg}));
 
-    assertEquals(2, toShare.getShortestPathToParent(toShareInto).size());
+    assertThat(toShare.getShortestPathToParent(toShareInto)).hasSize(2);
 
     // now lets share another record into a folder that is not descended from group folder
     Folder other = folderMgr.createNewFolder(pi.getRootFolder().getId(), "Wrong", pi);
@@ -91,7 +95,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
         extractDoc(sharingMgr.shareRecord(pi, otherRecord.getId(), new ShareConfigElement[] {cfg}));
 
     // we share into group folder by default.
-    assertEquals(2, toShare.getShortestPathToParent(groupFolder).size());
+    assertThat(toShare.getShortestPathToParent(groupFolder)).hasSize(2);
 
     // now let's login as regular user, ensure can create new shared subfolder and share into
     // folder:
@@ -102,8 +106,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
     userDoc =
         extractDoc(sharingMgr.shareRecord(u1, userDoc.getId(), new ShareConfigElement[] {cfg}));
 
-    assertEquals(2, userDoc.getShortestPathToParent(toShareIntoByUser).size());
-    assertEquals(3, userDoc.getShortestPathToParent(groupFolder).size());
+    assertThat(userDoc.getShortestPathToParent(toShareIntoByUser)).hasSize(2);
+    assertThat(userDoc.getShortestPathToParent(groupFolder)).hasSize(3);
   }
 
   private StructuredDocument extractDoc(
@@ -274,9 +278,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
     recordDeletionMgr.deleteRecord(u2SharedFolder.getId(), toShare.getId(), u2Owner);
 
     // now we check that this is unshared:
-    assertEquals(
-        0,
-        folderDao.getIndividualSharedFolderForUsers(u1Owner, u2Owner, null).getChildrens().size());
+    assertThat(folderDao.getIndividualSharedFolderForUsers(u1Owner, u2Owner, null).getChildrens())
+        .isEmpty();
     // and that u2 can no longer see it:
     assertFalse(permissionUtils.isPermitted(toShare, PermissionType.READ, u2Owner));
     logoutAndLoginAs(u1Owner);
@@ -300,14 +303,14 @@ public class RecordSharingTest extends SpringTransactionalTest {
     assertTrue(permissionUtils.isPermitted(toShare, PermissionType.READ, other));
 
     // sanity check
-    assertEquals(2, regGrpDao.getUsersOrGroupsWithRecordAccess(toShare.getId()).size());
+    assertThat(regGrpDao.getUsersOrGroupsWithRecordAccess(toShare.getId())).hasSize(2);
 
     logoutAndLoginAs(piUser);
     // this should delete record for EVeryone, in both groups.
     recordDeletionMgr.deleteRecord(piUser.getRootFolder().getId(), toShare.getId(), piUser);
 
     // should not be in any shared group now
-    assertEquals(0, regGrpDao.getUsersOrGroupsWithRecordAccess(toShare.getId()).size());
+    assertThat(regGrpDao.getUsersOrGroupsWithRecordAccess(toShare.getId())).isEmpty();
     // and should no longer be visible:
     logoutAndLoginAs(extra);
     assertFalse(permissionUtils.isPermitted(toShare, PermissionType.READ, extra));
@@ -320,26 +323,28 @@ public class RecordSharingTest extends SpringTransactionalTest {
 
     // now share record
     sharingMgr.shareRecord(piUser, toShare.getId(), getGrpShareCommand(group, "write"));
-    assertTrue(regGrpDao.getRecordsSharedByGroup(group.getId()).contains(toShare));
+    assertThat(regGrpDao.getRecordsSharedByGroup(group.getId())).contains(toShare);
     logoutCurrUserAndLoginAs(other.getUsername(), OTHER_USER_PWD);
     assertTrue(permissionUtils.isPermitted(toShare, PermissionType.READ, other));
     final Folder sharedFolder = folderDao.getSharedFolderForGroup(group);
     int NUM_CHILDREN_IN_GRPFOLDERS = sharedFolder.getChildren().size();
 
     // deletion attempt by non-auth user should throw exception
-    assertAuthorisationExceptionThrown(
-        () -> recordDeletionMgr.deleteRecord(sharedFolder.getId(), toShare.getId(), other));
+    Long sharedFolderId = sharedFolder.getId();
+    Long recordId = toShare.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordDeletionMgr.deleteRecord(sharedFolderId, recordId, other));
 
     // still should be shared
-    assertTrue(regGrpDao.getRecordsSharedByGroup(group.getId()).contains(toShare));
+    assertThat(regGrpDao.getRecordsSharedByGroup(group.getId())).contains(toShare);
     // user can delete - he;s the owner.
     logoutCurrUserAndLoginAs(piUser.getUsername(), TESTPASSWD);
     recordDeletionMgr.deleteRecord(sharedFolder.getId(), toShare.getId(), piUser);
     // is unshared; back to original state.
-    assertFalse(regGrpDao.getRecordsSharedByGroup(group.getId()).contains(toShare));
-    assertEquals(
-        NUM_CHILDREN_IN_GRPFOLDERS - 1,
-        folderDao.getSharedFolderForGroup(group).getChildren().size());
+    assertThat(regGrpDao.getRecordsSharedByGroup(group.getId())).doesNotContain(toShare);
+    assertThat(folderDao.getSharedFolderForGroup(group).getChildren())
+        .hasSize(NUM_CHILDREN_IN_GRPFOLDERS - 1);
     // now, it is unshared, and inaccessible.
     logoutCurrUserAndLoginAs(other.getUsername(), OTHER_USER_PWD);
     assertFalse(permissionUtils.isPermitted(toShare, PermissionType.READ, other));
@@ -351,8 +356,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
     setUpOtherUserAndRecordToShare();
 
     // other user can see group folder, PI can see both group and other's folder
-    assertEquals(1, folderDao.getLabGroupFolderForUser(other).getChildren().size());
-    assertEquals(2, folderDao.getLabGroupFolderForUser(piUser).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(other).getChildren()).hasSize(1);
+    assertThat(folderDao.getLabGroupFolderForUser(piUser).getChildren()).hasSize(2);
 
     // as other user create two documents, then share with pi individually, and through group
     StructuredDocument userDoc1 = createBasicDocumentInRootFolderWithText(other, "any1");
@@ -364,11 +369,11 @@ public class RecordSharingTest extends SpringTransactionalTest {
 
     // verify sharing information, and that pi can edit first doc through group share permission
     List<RecordGroupSharing> sharingInfo1 = sharingMgr.getRecordSharingInfo(userDoc1.getId());
-    assertEquals(2, sharingInfo1.size());
+    assertThat(sharingInfo1).hasSize(2);
     assertTrue(permissionUtils.isPermitted(userDoc1, PermissionType.WRITE, piUser));
 
     List<RecordGroupSharing> sharingInfo2 = sharingMgr.getRecordSharingInfo(userDoc2.getId());
-    assertEquals(1, sharingInfo2.size());
+    assertThat(sharingInfo2).hasSize(1);
     assertFalse(permissionUtils.isPermitted(userDoc2, PermissionType.WRITE, piUser));
     assertTrue(permissionUtils.isPermitted(userDoc2, PermissionType.READ, piUser));
 
@@ -376,24 +381,24 @@ public class RecordSharingTest extends SpringTransactionalTest {
     grpMgr.removeUserFromGroup(other.getUsername(), group.getId(), piUser);
 
     // other can no longer see group folder, PI can no longer see other's folder
-    assertEquals(0, folderDao.getLabGroupFolderForUser(other).getChildren().size());
-    assertEquals(1, folderDao.getLabGroupFolderForUser(piUser).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(other).getChildren()).isEmpty();
+    assertThat(folderDao.getLabGroupFolderForUser(piUser).getChildren()).hasSize(1);
 
     // verify sharing information and that pi can still view the first document through individual
     // share
     sharingInfo1 = sharingMgr.getRecordSharingInfo(userDoc1.getId());
-    assertEquals(1, sharingInfo1.size());
+    assertThat(sharingInfo1).hasSize(1);
     assertFalse(permissionUtils.isPermitted(userDoc1, PermissionType.WRITE, piUser));
     assertTrue(permissionUtils.isPermitted(userDoc1, PermissionType.READ, piUser));
     // but pi shouldn't see second doc anymore
     sharingInfo2 = sharingMgr.getRecordSharingInfo(userDoc2.getId());
-    assertEquals(0, sharingInfo2.size());
+    assertThat(sharingInfo2).isEmpty();
     assertFalse(permissionUtils.isPermitted(userDoc2, PermissionType.READ, piUser));
 
     // unshare the first doc individually, confirm pi can no longer see
     sharingMgr.unshareRecord(other, userDoc1.getId(), getIndividualShareCommand(piUser, "read"));
     sharingInfo1 = sharingMgr.getRecordSharingInfo(userDoc1.getId());
-    assertEquals(0, sharingInfo1.size());
+    assertThat(sharingInfo1).isEmpty();
     assertFalse(permissionUtils.isPermitted(userDoc1, PermissionType.READ, piUser));
   }
 
@@ -417,13 +422,13 @@ public class RecordSharingTest extends SpringTransactionalTest {
     ShareConfigElement indivCommand = new ShareConfigElement(other.getId(), "write");
     indivCommand.setUserId(other.getId());
     ShareConfigElement[] indivSharingCfgElem = new ShareConfigElement[] {indivCommand};
+    User persistedUser = userDao.get(user.getId());
+    Long documentId = testDoc.getId();
 
     AuthorizationException authorizationException =
         assertThrows(
             AuthorizationException.class,
-            () ->
-                sharingMgr.shareRecord(
-                    userDao.get(user.getId()), testDoc.getId(), indivSharingCfgElem));
+            () -> sharingMgr.shareRecord(persistedUser, documentId, indivSharingCfgElem));
     assertEquals(
         "Unauthorized attempt by ["
             + user.getUsername()
@@ -439,9 +444,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     authorizationException =
         assertThrows(
             AuthorizationException.class,
-            () ->
-                sharingMgr.shareRecord(
-                    userDao.get(user.getId()), testDoc.getId(), groupSharingCfgElem));
+            () -> sharingMgr.shareRecord(persistedUser, documentId, groupSharingCfgElem));
     assertEquals(
         "Unauthorized attempt by ["
             + user.getUsername()
@@ -453,7 +456,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     // confirm test record not shared with anyone
     sharingMgr.updateSharedStatusOfRecords(toList(testDoc), piUser);
     assertEquals(SharedStatus.UNSHARED, testDoc.getSharedStatus());
-    assertEquals(0, regGrpDao.getRecordsSharedByGroup(other.getId()).size());
+    assertThat(regGrpDao.getRecordsSharedByGroup(other.getId())).isEmpty();
   }
 
   // RSPAC-345
@@ -494,12 +497,10 @@ public class RecordSharingTest extends SpringTransactionalTest {
     logoutAndLoginAs(piUser);
     sharingMgr.shareRecord(piUser, docToShare1.getId(), cfg);
     // and assert that doc was shared with individual:
-    assertEquals(
-        1,
-        regGrpDao
-            .findRecordsSharedWithUserOrGroup(
-                newGrpMember.getId(), TransformerUtils.toList(docToShare1.getId()))
-            .size());
+    assertThat(
+            regGrpDao.findRecordsSharedWithUserOrGroup(
+                newGrpMember.getId(), TransformerUtils.toList(docToShare1.getId())))
+        .hasSize(1);
   }
 
   @Test
@@ -533,7 +534,9 @@ public class RecordSharingTest extends SpringTransactionalTest {
     sharingMgr.shareRecord(piUser, toShare.getId(), getGrpShareCommand(group, "write"));
     logoutAndLoginAs(other);
     // other user can't rename even though is shared with group.
-    assertAuthorisationExceptionThrown(() -> recordMgr.renameRecord("XXX", toShare.getId(), other));
+    Long recordId = toShare.getId();
+    assertThrows(
+        AuthorizationException.class, () -> recordMgr.renameRecord("XXX", recordId, other));
 
     // get user to create a new folder in the group:
     logoutAndLoginAs(piUser);
@@ -542,7 +545,9 @@ public class RecordSharingTest extends SpringTransactionalTest {
     logoutAndLoginAs(other);
 
     // other user can't rename a folder created by group admin even though is shared with group.
-    assertAuthExceptionThrown(() -> recordMgr.renameRecord("XXX", subf.getId(), other));
+    Long subfolderId = subf.getId();
+    assertThrows(
+        AuthorizationException.class, () -> recordMgr.renameRecord("XXX", subfolderId, other));
   }
 
   @Test
@@ -638,6 +643,6 @@ public class RecordSharingTest extends SpringTransactionalTest {
     // now delete...
     CompositeRecordOperationResult result =
         recordDeletionMgr.deleteRecord(labFolder.getId(), toShare.getId(), labAdmin);
-    assertTrue(result.getRecords().contains(toShare));
+    assertThat(result.getRecords()).contains(toShare);
   }
 }

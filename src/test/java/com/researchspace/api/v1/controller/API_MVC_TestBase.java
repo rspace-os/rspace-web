@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.controller;
 
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
@@ -13,14 +13,12 @@ import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.preference.HierarchicalPermission;
-import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.util.zip.ZipInputStream;
-import org.junit.Assert;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.Assertions;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -32,8 +30,6 @@ public class API_MVC_TestBase extends MVCTestBase {
   protected static final String testOAuthAppClientSecret = "clientSecret1";
 
   protected API_ModelTestUtils apiModelTestUtils = new API_ModelTestUtils();
-
-  protected @Autowired SystemPropertyManager sysPropMgr;
 
   static final int MIN_KEY_LENGTH = 16;
 
@@ -164,7 +160,7 @@ public class API_MVC_TestBase extends MVCTestBase {
    * @throws Exception
    */
   protected <T> T getErrorFromJsonResponseBody(MvcResult result, Class<T> clazz) throws Exception {
-    Assert.assertNotNull(result.getResolvedException());
+    Assertions.assertNotNull(result.getResolvedException());
     String content = result.getResponse().getContentAsString();
     return (new ObjectMapper()).readValue(content, clazz);
   }
@@ -190,9 +186,9 @@ public class API_MVC_TestBase extends MVCTestBase {
             .anyMatch(e -> e.toLowerCase().contains(msgFragment.toLowerCase()));
     String concatenatedMsges = error.getErrors().stream().collect(joining(","));
     assertTrue(
+        errorMatch,
         String.format(
-            "Expected '%s' to be present in error messages - %s", msgFragment, concatenatedMsges),
-        errorMatch);
+            "Expected '%s' to be present in error messages - %s", msgFragment, concatenatedMsges));
   }
 
   /**

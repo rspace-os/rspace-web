@@ -11,6 +11,8 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -19,6 +21,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * TransactionSynchronizationManager} directly the way Spring's transaction manager would
  * (RSDEV-1319). No Spring context or database.
  */
+@ExtendWith(MockitoExtension.class)
 public class TransactionScopedVersionBumpGuardTest {
 
   private static final String BUMPED_IN_TX =
@@ -39,10 +42,16 @@ public class TransactionScopedVersionBumpGuardTest {
     TransactionSynchronizationManager.setActualTransactionActive(false);
   }
 
-  private InventoryRecord record(Long id, String globalId) {
+  private InventoryRecord persistedRecord(Long id, String globalId) {
     InventoryRecord record = mock(InventoryRecord.class);
     when(record.getId()).thenReturn(id);
     when(record.getGlobalIdentifier()).thenReturn(globalId);
+    return record;
+  }
+
+  private InventoryRecord transientRecord() {
+    InventoryRecord record = mock(InventoryRecord.class);
+    when(record.getId()).thenReturn(null);
     return record;
   }
 
@@ -57,7 +66,7 @@ public class TransactionScopedVersionBumpGuardTest {
 
   @Test
   public void sameRecordBumpsOncePerTransaction() {
-    InventoryRecord sample = record(5L, "SA5");
+    InventoryRecord sample = persistedRecord(5L, "SA5");
 
     increaseVersionOncePerTransaction(sample);
     increaseVersionOncePerTransaction(sample);
@@ -67,8 +76,8 @@ public class TransactionScopedVersionBumpGuardTest {
 
   @Test
   public void distinctRecordsEachBump() {
-    InventoryRecord sample = record(5L, "SA5");
-    InventoryRecord otherSample = record(6L, "SA6");
+    InventoryRecord sample = persistedRecord(5L, "SA5");
+    InventoryRecord otherSample = persistedRecord(6L, "SA6");
 
     increaseVersionOncePerTransaction(sample);
     increaseVersionOncePerTransaction(otherSample);
@@ -79,8 +88,8 @@ public class TransactionScopedVersionBumpGuardTest {
 
   @Test
   public void sameNumericIdDifferentTypeBothBump() {
-    InventoryRecord sample = record(5L, "SA5");
-    InventoryRecord subSample = record(5L, "SS5");
+    InventoryRecord sample = persistedRecord(5L, "SA5");
+    InventoryRecord subSample = persistedRecord(5L, "SS5");
 
     increaseVersionOncePerTransaction(sample);
     increaseVersionOncePerTransaction(subSample);
@@ -93,8 +102,8 @@ public class TransactionScopedVersionBumpGuardTest {
   public void transientRecordsWithNullIdAlwaysBump() {
     // an unsaved record has no id, so getGlobalIdentifier() is null and there is no revision to
     // deduplicate against; two distinct transient records must not suppress each other
-    InventoryRecord transientA = record(null, null);
-    InventoryRecord transientB = record(null, null);
+    InventoryRecord transientA = transientRecord();
+    InventoryRecord transientB = transientRecord();
 
     increaseVersionOncePerTransaction(transientA);
     increaseVersionOncePerTransaction(transientB);
@@ -107,7 +116,7 @@ public class TransactionScopedVersionBumpGuardTest {
   @Test
   public void outsideTransactionEveryCallBumps() {
     completeTransaction(TransactionSynchronization.STATUS_COMMITTED);
-    InventoryRecord sample = record(5L, "SA5");
+    InventoryRecord sample = mock(InventoryRecord.class);
 
     increaseVersionOncePerTransaction(sample);
     increaseVersionOncePerTransaction(sample);
@@ -117,7 +126,7 @@ public class TransactionScopedVersionBumpGuardTest {
 
   @Test
   public void guardResetsAfterCommit() {
-    InventoryRecord sample = record(5L, "SA5");
+    InventoryRecord sample = persistedRecord(5L, "SA5");
     increaseVersionOncePerTransaction(sample);
     completeTransaction(TransactionSynchronization.STATUS_COMMITTED);
 
@@ -132,7 +141,7 @@ public class TransactionScopedVersionBumpGuardTest {
   public void guardResetsAfterRollback() {
     // if afterCompletion only fired on commit, a rolled-back transaction would leave the set
     // bound to the pooled thread and suppress this record's bumps forever
-    InventoryRecord sample = record(5L, "SA5");
+    InventoryRecord sample = persistedRecord(5L, "SA5");
     increaseVersionOncePerTransaction(sample);
     completeTransaction(TransactionSynchronization.STATUS_ROLLED_BACK);
 
@@ -147,7 +156,7 @@ public class TransactionScopedVersionBumpGuardTest {
   public void suspendedTransactionDoesNotLeakGuardIntoInnerTransaction() {
     // REQUIRES_NEW: Spring suspends the outer transaction's synchronizations, runs the inner
     // transaction (its own Envers revision, so its own bump), then resumes the outer one
-    InventoryRecord sample = record(5L, "SA5");
+    InventoryRecord sample = persistedRecord(5L, "SA5");
     increaseVersionOncePerTransaction(sample);
 
     List<TransactionSynchronization> outerSyncs =

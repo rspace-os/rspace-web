@@ -11,6 +11,18 @@ test.describe("Gallery", { tag: tags.MOBILE }, () => {
     await pageGallery.waitForFile("anaphase.jpg");
   });
 
+  test("As a user, the first click on a file selects it", async ({ page, pageGallery }) => {
+    await pageGallery.openInSection("Images");
+    await pageGallery.openFolder("Examples");
+    await pageGallery.waitForFile("anaphase.jpg");
+    const urlBeforeClick = page.url();
+    const file = pageGallery.fileCell("anaphase.jpg");
+    await file.click();
+    await expect(file).toHaveAttribute("aria-selected", "true");
+    await pageGallery.infoPanel.waitUntilSelected("anaphase.jpg");
+    await expect(page).toHaveURL(urlBeforeClick);
+  });
+
   test("As a user, I can see a selected file's Global ID in the info panel", async ({ clientFiles, pageGallery }) => {
     const fileName = `${uniqueName("e2e-gallery-global-id")}.png`;
     const uploaded = await clientFiles.uploadFile({ name: fileName, mimeType: "image/png", buffer: TINY_PNG });

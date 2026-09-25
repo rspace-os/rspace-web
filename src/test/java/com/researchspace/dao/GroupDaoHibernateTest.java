@@ -1,9 +1,10 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
@@ -20,9 +21,8 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class GroupDaoHibernateTest extends SpringTransactionalTest {
@@ -30,13 +30,10 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
   @Autowired UserGroupDao ugDao;
   PaginationCriteria<Group> pgCrit;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     pgCrit = PaginationCriteria.createDefaultForClass(Group.class);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testFindGroupByUname() {
@@ -48,7 +45,7 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     g.addMember(u1, RoleInGroup.PI);
     grpDao.save(g);
     assertNotNull(grpdao.getByUniqueName(uniqueName));
-    assertEquals(1, ugDao.findByUserId(u1.getId()).size());
+    assertThat(ugDao.findByUserId(u1.getId())).hasSize(1);
   }
 
   @Test
@@ -67,6 +64,8 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
   public void testListByFilter() throws IllegalAddChildOperation, InterruptedException {
     GroupSearchCriteria filter = new GroupSearchCriteria();
     pgCrit.setSearchCriteria(filter);
+    // a blank sort key means the display-name default, so pin the direction for the assertions
+    pgCrit.setSortOrder(SortOrder.ASC);
     assertEquals(0, grpDao.list(pgCrit).getTotalHits().intValue());
     User u1 = createAndSaveUserIfNotExists("u1", Constants.PI_ROLE);
     User u2 = createAndSaveUserIfNotExists("u2", Constants.PI_ROLE);
@@ -99,9 +98,13 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     assertEquals(1, grpDao.list(pgCrit).getTotalHits().intValue());
     assertEquals(collabGroup, grpDao.list(pgCrit).getResults().get(0));
 
-    // reset, check order by owner's name
+    // reset, check order by owner's last name
     filter.reset();
-    pgCrit.setOrderBy("owner.username");
+    u1.setLastName("Adams");
+    u2.setLastName("Brown");
+    userDao.save(u1);
+    userDao.save(u2);
+    pgCrit.setOrderBy("owner");
     pgCrit.setSortOrder(SortOrder.DESC);
     assertEquals(u2, grpDao.list(pgCrit).getFirstResult().getOwner());
     pgCrit.setSortOrder(SortOrder.ASC);
@@ -118,7 +121,7 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     pgCrit.setResultsPerPage(10);
     ISearchResults<Group> grps = grpDao.list(pgCrit);
 
-    assertEquals(10, grps.getResults().size());
+    assertThat(grps.getResults()).hasSize(10);
 
     Group grpX = grpDao.getGroupWithCommunities(grp.getId());
     // tests query syntax; avoidance of lazyloading needs truemulti-transaction test
@@ -133,7 +136,7 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     Group grp = createGroup("group", u1);
     Group grp2 = createGroup("group2", u2);
     List<Group> results = grpDao.getGroups(Arrays.asList(new Long[] {grp2.getId(), grp.getId()}));
-    assertEquals(2, results.size());
+    assertThat(results).hasSize(2);
   }
 
   @Test
@@ -169,7 +172,7 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     // so cg has 2 members; u2 and u4 should be available to add
     // but not u5, who does not exist in a group
     List<UserView> users = grpDao.getCandidateMembersOfCollabGroup(cg1.getId());
-    assertEquals(2, users.size());
+    assertThat(users).hasSize(2);
     // these are the two lab group members that aren't currently in the CG.
     assertTrue(userViewHasUser(u2, users));
     assertTrue(userViewHasUser(u4, users));

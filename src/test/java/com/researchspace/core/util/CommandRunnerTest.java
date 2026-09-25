@@ -1,33 +1,34 @@
 package com.researchspace.core.util;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.lang3.SystemUtils;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 
 /** For non-win environments. */
 public class CommandRunnerTest {
 
   @Test
   public void testRunCommanLine() throws ExecuteException, IOException {
-    Assume.assumeFalse(isWin());
+    Assumptions.assumeFalse(isWin());
 
     String listing = new CommandLineRunner().runCommandReturningOutput("ls -l");
-    assertTrue(listing.length() > 0);
+    assertThat(listing).hasSizeGreaterThan(0);
 
     listing = new CommandLineRunner().runCommandReturningOutput("ls", "-l");
-    assertTrue(listing.length() > 0);
+    assertThat(listing).hasSizeGreaterThan(0);
   }
 
   @Test
   public void testRunCommandLineReturningCode() throws ExecuteException, IOException {
-    Assume.assumeFalse(isWin());
+    Assumptions.assumeFalse(isWin());
 
     int rc = new CommandLineRunner().runCommandReturningExitStatus("ls -l", 2000);
-    assertEquals("Expected return code 0 but was " + rc, 0, rc);
+    assertEquals(0, rc, "Expected return code 0 but was " + rc);
   }
 
   private boolean isWin() {

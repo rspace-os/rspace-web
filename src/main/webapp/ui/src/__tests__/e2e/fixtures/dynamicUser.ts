@@ -1,67 +1,22 @@
-import type { Browser, BrowserContext, BrowserContextOptions } from "@playwright/test";
-import type { SysadminClient } from "../api/clients/SysadminClient";
-import { LoginPage } from "../pageObjects/auth/LoginPage";
+import { createDynamicUser } from "../createDynamicUser";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
-import { alphaNumericUnique } from "../testData";
+import { DYNAMIC_USER_PASSWORD, uniqueName } from "../testData";
 import { test } from "./flows";
+import { loginInNewContext, performLogin } from "./flows/sessions/userSessions";
 
-const DYNAMIC_USER_PASSWORD = "Passw0rd!23";
-
-export type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
-
-export async function createDynamicUser(
-  clientSysadmin: SysadminClient,
-  role: CreatableRole,
-  namePrefix: string,
-): Promise<{ username: string; password: string; apiKey: string }> {
-  const username = alphaNumericUnique(namePrefix);
-  const apiKey = alphaNumericUnique(`${namePrefix}Key`).slice(0, 32);
-  await clientSysadmin.createUser({
-    username,
-    password: DYNAMIC_USER_PASSWORD,
-    email: `${username}@example.com`,
-    firstName: "E2E",
-    lastName: namePrefix,
-    role,
-    apiKey,
-  });
-  return { username, password: DYNAMIC_USER_PASSWORD, apiKey };
-}
-
-export async function loginInNewContext(
-  browser: Browser,
-  browserContextOptions: BrowserContextOptions,
-  { username, password }: { username: string; password: string },
-): Promise<{ ctx: BrowserContext; workspace: WorkspacePage; close: () => Promise<void> }> {
-  const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
-  const page = await ctx.newPage();
-  const loginPage = new LoginPage(page);
-  await loginPage.open();
-  await loginPage.login(username, password);
-  await page.waitForURL((url) => !url.pathname.includes("/login"));
-  return { ctx, workspace: new WorkspacePage(page), close: () => ctx.close() };
-}
+type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
 
 type DynamicUserFixtures = {
   flowCreateUser: (
     role: CreatableRole,
     namePrefix?: string,
   ) => Promise<{ username: string; apiKey: string; workspace: WorkspacePage }>;
+  flowFreshPiPermissions: (namePrefix?: string) => Promise<{ username: string; apiKey: string; groupName: string }>;
 };
 
 export const dynamicUserTest = test.extend<DynamicUserFixtures>({
   appUser: async ({ clientSysadmin }, use) => {
-    const username = alphaNumericUnique("e2eDynUser");
-    const apiKey = alphaNumericUnique("e2eDynUserKey").slice(0, 32);
-    await clientSysadmin.createUser({
-      username,
-      password: DYNAMIC_USER_PASSWORD,
-      email: `${username}@example.com`,
-      firstName: "E2E",
-      lastName: "DynamicUser",
-      role: "ROLE_PI",
-      apiKey,
-    });
+    const { username, apiKey } = await createDynamicUser(clientSysadmin, "ROLE_PI", "e2eDynUser", "DynamicUser");
     await use({ username, password: DYNAMIC_USER_PASSWORD, apiKey, roles: ["ROLE_PI", "ROLE_USER"] });
   },
   storageState: async ({ appUser, browser, browserContextOptions }, use) => {
@@ -69,10 +24,7 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
     try {
       const page = await ctx.newPage();
-      const loginPage = new LoginPage(page);
-      await loginPage.open();
-      await loginPage.login(appUser.username, appUser.password);
-      await page.waitForURL((url) => url.pathname === "/workspace");
+      await performLogin(page, appUser.username, appUser.password);
       const workspace = new WorkspacePage(page);
       if (!(await workspace.isLoaded())) {
         throw new Error(`Workspace did not load after authenticating dynamic user '${appUser.username}'.`);
@@ -87,10 +39,15 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     const closers: Array<() => Promise<void>> = [];
     try {
       await use(async (role, namePrefix = "e2eDynUser2") => {
-        const user = await createDynamicUser(clientSysadmin, role, namePrefix);
-        const { workspace, close } = await loginInNewContext(browser, browserContextOptions, user);
+        const { username, apiKey } = await createDynamicUser(clientSysadmin, role, namePrefix);
+        const { page, close } = await loginInNewContext(
+          browser,
+          browserContextOptions,
+          username,
+          DYNAMIC_USER_PASSWORD,
+        );
         closers.push(close);
-        return { username: user.username, apiKey: user.apiKey, workspace };
+        return { username, apiKey, workspace: new WorkspacePage(page) };
       });
     } finally {
       const results = await Promise.allSettled(closers.map((close) => close()));
@@ -100,5 +57,24 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
         }
       }
     }
+  },
+
+  flowFreshPiPermissions: async ({ appUser, clientSysadmin, flowCreateUser, page, pageWorkspace }, use) => {
+    await use(async (namePrefix = "e2ePublishMember") => {
+      const member = await flowCreateUser("ROLE_USER", namePrefix);
+      const groupName = uniqueName(`${namePrefix}-group`);
+      await clientSysadmin.createGroup({
+        displayName: groupName,
+        type: "LAB_GROUP",
+        users: [
+          { username: appUser.username, roleInGroup: "PI" },
+          { username: member.username, roleInGroup: "DEFAULT" },
+        ],
+      });
+      await pageWorkspace.open();
+      await pageWorkspace.header.logOut();
+      await performLogin(page, appUser.username, appUser.password);
+      return { ...member, groupName };
+    });
   },
 });

@@ -1,52 +1,53 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.io.File;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @WebAppConfiguration
-@RunWith(ConditionalTestRunner.class)
 public class ProtocolsIOControllerMVCIT extends MVCTestBase {
 
+  private @Autowired FieldParser fieldParser;
   private ObjectMapper objectMapper;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     objectMapper = new ObjectMapper();
     objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   // RSPAC-1882
   public void testStandardUploadWithImages() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
@@ -67,7 +68,7 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
             .andReturn();
     ProtocolsIOController.PIOResponse recordInformation =
         getFromJsonAjaxReturnObject(result, ProtocolsIOController.PIOResponse.class);
-    assertEquals(1, recordInformation.getResults().size());
+    assertThat(recordInformation.getResults()).hasSize(1);
     // check 2 images are imported - we don't import duplicates
     assertEquals(initialImageCount + 2, getCountOfEntityTable("EcatImage").intValue());
     String docContentString = getFieldData(anyUser, recordInformation);
@@ -127,6 +128,6 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
     assertEquals(parent.getId().intValue(), getJsonPathValue(result, "$.data.importFolderId"));
     String contentString =
         fieldMgr.getFieldsByRecordId(newDoc.getId(), anyUser).get(0).getFieldData();
-    assertTrue(contentString.contains("colorimetric"));
+    assertThat(contentString).contains("colorimetric");
   }
 }

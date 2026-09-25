@@ -1,7 +1,7 @@
 package com.researchspace.model.inventory.field;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -114,6 +114,6 @@ class InventoryLinkTest {
     link.preUpdate();
 
     assertEquals(createdAt, link.getCreatedAt());
-    assertFalse(link.getModifiedAt().before(firstModifiedAt));
+    assertThat(link.getModifiedAt()).isAfterOrEqualTo(firstModifiedAt);
   }
 }

@@ -1,17 +1,16 @@
 package com.researchspace.webapp.controller.cloud;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.CreateCloudGroup;
 import com.researchspace.model.dtos.CreateCloudGroupValidator;
 import com.researchspace.model.dtos.ValidationTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
@@ -21,13 +20,10 @@ public class CreateCloudGroupValidatorTest extends SpringTransactionalTest {
   private CreateCloudGroup createCloudGroup;
   private @Autowired CreateCloudGroupValidator createCloudGroupValidator;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     createCloudGroup = new CreateCloudGroup();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testValidate() {
@@ -123,6 +119,19 @@ public class CreateCloudGroupValidatorTest extends SpringTransactionalTest {
     errors = setUpErrorsObject();
     createCloudGroupValidator.validate(createCloudGroup, errors);
     assertFalse(errors.hasFieldErrors());
+  }
+
+  @Test
+  public void emailWithLineBreakIsInvalid() {
+    User loginUser = createAndSaveUserIfNotExists("testUser");
+    logoutAndLoginAs(loginUser);
+    createCloudGroup.setSessionUser(loginUser);
+    createCloudGroup.setGroupName("testGroup");
+    createCloudGroup.setPiEmail(loginUser.getEmail());
+    createCloudGroup.setEmails(new String[] {"victim@example.com\r\nBcc:attacker.test"});
+    Errors errors = setUpErrorsObject();
+    createCloudGroupValidator.validate(createCloudGroup, errors);
+    assertTrue(ValidationTestUtils.hasError("groups.creation.errors.memberEmailInvalid", errors));
   }
 
   private BeanPropertyBindingResult setUpErrorsObject() {

@@ -53,7 +53,6 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
     }) => {
       void flowPidinstB2instConfig;
       const instrumentName = uniqueName("e2e-pidinst-instrument");
-      const today = String(new Date().getDate());
 
       await pageInventory.open();
       await pageInventory.isLoaded();
@@ -69,23 +68,48 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       const createDialog = await pageInventory.detailsPanel.createIdentifier("PIDINST");
       await createDialog.confirm(identifiers);
 
-      await identifiers.addSubject({
-        subject: "TestSubject",
-        schema: "TestSchema",
-        schemaUri: "https://example.com/schema",
-        valueUri: "https://example.com/value",
-        code: "12345678",
-      });
-      await identifiers.addDescription("Abstract", "TestDescriptionAbstract");
-      await identifiers.addDateAndEventType(today, "Accepted");
+      /*
+       * B2INST manages its own community-specific metadata on its own side, so unlike DataCite
+       * PIDINSTs there are no Recommended Identifier Properties (Subjects/Descriptions/Dates) to
+       * fill in here - RSDEV-1359.
+       */
       await pageInventory.detailsPanel.saveEdit();
       await expect(componentToasts.byVariant("success", "updated successfully.")).toBeVisible();
 
       await identifiers.waitForState("Draft");
 
       await identifiers.clickPreview();
-      await expect(identifiers.subjects).toBeVisible();
+      await expect(page.getByRole("heading", { name: instrumentName })).toBeVisible();
       await page.getByRole("button", { name: "Close", exact: true }).click();
+    });
+
+    test(`As a user, I do not see Required/Recommended Identifier Properties for a B2INST PIDINST identifier`, async ({
+      pageInventory,
+      clientInventory,
+      flowPidinstB2instConfig,
+      page,
+    }) => {
+      void flowPidinstB2instConfig;
+      const instrumentName = uniqueName("e2e-pidinst-b2inst-properties-instrument");
+
+      const instrument = await test.step("Given a PIDINST identifier exists for an Instrument", async () => {
+        const created = await clientInventory.createInstrument({ name: instrumentName });
+        await clientInventory.registerIdentifier({ parentGlobalId: created.globalId });
+        return created;
+      });
+
+      const identifiers = pageInventory.detailsPanel.identifiers();
+      await page.goto(`/inventory/instrument/${instrument.id}`);
+      await pageInventory.detailsPanel.expandSection("Identifiers");
+      await identifiers.waitForState("Draft");
+
+      await expect(
+        identifiers.root.getByRole("heading", { name: "Required Identifier Properties", exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        identifiers.root.getByRole("heading", { name: "Recommended Identifier Properties", exact: true }),
+      ).toHaveCount(0);
+      await expect(identifiers.root.getByRole("heading", { name: "Inventory Fields", exact: true })).toBeVisible();
     });
 
     test(`As a user, I can delete a Draft PIDINST identifier`, async ({
@@ -201,6 +225,34 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
         componentToasts,
         page,
       });
+    });
+
+    test(`As a user, I still see Required/Recommended Identifier Properties for a DataCite PIDINST identifier`, async ({
+      pageInventory,
+      clientInventory,
+      flowPidinstDataciteConfig,
+      page,
+    }) => {
+      void flowPidinstDataciteConfig;
+      const instrumentName = uniqueName("e2e-pidinst-datacite-properties-instrument");
+
+      const instrument = await test.step("Given a PIDINST identifier exists for an Instrument", async () => {
+        const created = await clientInventory.createInstrument({ name: instrumentName });
+        await clientInventory.registerIdentifier({ parentGlobalId: created.globalId });
+        return created;
+      });
+
+      const identifiers = pageInventory.detailsPanel.identifiers();
+      await page.goto(`/inventory/instrument/${instrument.id}`);
+      await pageInventory.detailsPanel.expandSection("Identifiers");
+      await identifiers.waitForState("Draft");
+
+      await expect(
+        identifiers.root.getByRole("heading", { name: "Required Identifier Properties", exact: true }),
+      ).toBeVisible();
+      await expect(
+        identifiers.root.getByRole("heading", { name: "Recommended Identifier Properties", exact: true }),
+      ).toBeVisible();
     });
   });
 });

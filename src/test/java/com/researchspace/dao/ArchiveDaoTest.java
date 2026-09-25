@@ -1,24 +1,20 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ArchiveDaoTest extends SpringTransactionalTest {
 
   @Autowired private ArchiveDao dao;
 
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -37,9 +33,9 @@ public class ArchiveDaoTest extends SpringTransactionalTest {
     ArchivalCheckSum csum = TestFactory.createAnArchivalChecksum();
     dao.save(csum);
 
-    assertEquals(1, dao.getUnexpiredArchives().size());
+    assertThat(dao.getUnexpiredArchives()).hasSize(1);
     csum.setDownloadTimeExpired(true);
     dao.save(csum);
-    assertEquals(0, dao.getUnexpiredArchives().size());
+    assertThat(dao.getUnexpiredArchives()).isEmpty();
   }
 }

@@ -1,9 +1,9 @@
 package com.researchspace.files.service.egnyte;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.researchspace.core.testutil.CoreTestUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class EgnyteFileStoreAdapterTest {
 
@@ -16,8 +16,8 @@ public class EgnyteFileStoreAdapterTest {
     adapter = new EgnyteFileStoreAdapter("http://base.url/", "folder2/path/");
     assertEquals("folder2/path/", adapter.getFileStoreRoot());
 
-    CoreTestUtils.assertExceptionThrown(
-        () -> new EgnyteFileStoreAdapter("Not a url!", "folder2/path/"),
-        IllegalArgumentException.class);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new EgnyteFileStoreAdapter("Not a url!", "folder2/path/"));
   }
 }

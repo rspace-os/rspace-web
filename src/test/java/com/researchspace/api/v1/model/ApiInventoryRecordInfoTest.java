@@ -1,23 +1,24 @@
 package com.researchspace.api.v1.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.model.FileProperty;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.web.util.UriComponentsBuilder;
 
 public class ApiInventoryRecordInfoTest {
   private ApiInventoryRecordInfo testee;
   private ApiInventoryRecordInfo original;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testee =
         new ApiInventoryRecordInfo() {
@@ -37,18 +38,18 @@ public class ApiInventoryRecordInfoTest {
 
   @Test
   public void testCreateApiTagInfoList() {
-    assertTrue(testee.getTags().isEmpty());
+    assertThat(testee.getTags()).isEmpty();
     testee.setApiTagInfo("A local ontology Tag");
-    assertEquals(1, testee.getTags().size());
+    assertThat(testee.getTags()).hasSize(1);
     assertEquals("A local ontology Tag", testee.getTags().get(0).getValue());
     testee.setApiTagInfo("A local ontology Tag, another");
-    assertEquals(2, testee.getTags().size());
+    assertThat(testee.getTags()).hasSize(2);
     assertEquals("A local ontology Tag", testee.getTags().get(0).getValue());
     assertEquals("another", testee.getTags().get(1).getValue());
     testee.setApiTagInfo(
         "A local ontology Tag, another,"
             + " tag1__RSP_EXTONT_URL_DELIM__NONE__RSP_EXTONT_NAME_DELIM__MYONTOLOGY__RSP_EXTONT_VERSION_DELIM__1");
-    assertEquals(3, testee.getTags().size());
+    assertThat(testee.getTags()).hasSize(3);
     assertEquals("A local ontology Tag", testee.getTags().get(0).getValue());
     assertEquals("another", testee.getTags().get(1).getValue());
     ApiTagInfo tagWithMeta = testee.getTags().get(2);
@@ -61,7 +62,7 @@ public class ApiInventoryRecordInfoTest {
   @Test
   public void testGetDBStringFromTags() {
     String forDB = testee.getDBStringFromTags();
-    assertEquals("", forDB);
+    assertThat(forDB).isEmpty();
     String tagPlusMeta =
         "A local ontology"
             + " Tag,another,tag1__RSP_EXTONT_URL_DELIM__NONE__RSP_EXTONT_NAME_DELIM__MYONTOLOGY__RSP_EXTONT_VERSION_DELIM__1";
@@ -108,7 +109,7 @@ public class ApiInventoryRecordInfoTest {
     rec.setPermittedActions(List.of(ApiInventoryRecordPermittedAction.LIMITED_READ));
 
     rec.buildAndAddInventoryRecordLinks(BASE_URL);
-    assertTrue("links should be built before stripping", hasImageOrThumbnailLink(rec));
+    assertTrue(hasImageOrThumbnailLink(rec), "links should be built before stripping");
 
     rec.removeImageLinksForLimitedView();
 
@@ -136,7 +137,7 @@ public class ApiInventoryRecordInfoTest {
     ApiSubSample subSample = limitedReadSubSampleOfImagedSample();
 
     subSample.buildAndAddInventoryRecordLinks(BASE_URL);
-    assertTrue("subsample should get image links from parent", hasImageOrThumbnailLink(subSample));
+    assertTrue(hasImageOrThumbnailLink(subSample), "subsample should get image links from parent");
     assertTrue(hasImageOrThumbnailLink(subSample.getSampleInfo()));
 
     subSample.removeImageLinksForLimitedView();
@@ -190,7 +191,7 @@ public class ApiInventoryRecordInfoTest {
 
     subSample.buildAndAddInventoryRecordLinks(BASE_URL);
 
-    assertFalse(subSample.getSampleInfo().getLinks().isEmpty());
+    assertThat(subSample.getSampleInfo().getLinks()).isNotEmpty();
     assertTrue(hasImageOrThumbnailLink(subSample.getSampleInfo()));
   }
 

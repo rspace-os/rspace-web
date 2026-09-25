@@ -1,10 +1,8 @@
 package msgRecipientFac;
 
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationTarget;
@@ -19,9 +17,8 @@ import jakarta.mail.internet.MimeMessage;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MessageRecipientFactoryTest {
   MessageRecipientFactory fac = null;
@@ -29,13 +26,10 @@ public class MessageRecipientFactoryTest {
   User recip1 = TestFactory.createAnyUser("u2");
   User recip2 = TestFactory.createAnyUser("u3");
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fac = new MessageRecipientFactory();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testPopulateRecipientsForGlobalMsgSendsBCC()
@@ -51,11 +45,11 @@ public class MessageRecipientFactoryTest {
     fac.populateRecipients(recipients, message, global);
 
     String[] bccs = message.getHeader("Bcc");
-    assertEquals(1, bccs.length);
-    assertTrue(bccs[0].contains(recip1.getEmail()));
-    assertTrue(bccs[0].contains(recip2.getEmail()));
+    assertThat(bccs).hasSize(1);
+    assertThat(bccs[0]).contains(recip1.getEmail());
+    assertThat(bccs[0]).contains(recip2.getEmail());
     String[] to = message.getHeader("To");
-    assertTrue(to[0].contains(sender.getEmail()));
+    assertThat(to[0]).contains(sender.getEmail());
   }
 
   @Test
@@ -74,10 +68,10 @@ public class MessageRecipientFactoryTest {
     String[] bccs = message.getHeader("Bcc");
     assertNull(bccs);
     String[] to = message.getHeader("To");
-    assertTrue(to[0].contains(recip1.getEmail()));
-    assertTrue(to[0].contains(recip2.getEmail()));
+    assertThat(to[0]).contains(recip1.getEmail());
+    assertThat(to[0]).contains(recip2.getEmail());
 
-    assertFalse(to[0].contains(sender.getEmail()));
+    assertThat(to[0]).doesNotContain(sender.getEmail());
   }
 
   private MessageOrRequest setupMsgTo2People(MessageType type) {

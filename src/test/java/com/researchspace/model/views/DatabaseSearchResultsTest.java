@@ -1,7 +1,9 @@
 package com.researchspace.model.views;
 
 import static com.researchspace.model.PaginationCriteria.createDefaultForClass;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -9,19 +11,19 @@ import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.PaginationCriteria;
 import java.util.Collections;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DatabaseSearchResultsTest {
 
   ISearchResults<?> api;
   List<Object> ANYLIST = Collections.emptyList();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

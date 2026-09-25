@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.util.ISearchResults;
@@ -18,20 +18,17 @@ import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.ExtendedModelMap;
 
+@ExtendWith(MockitoExtension.class)
 public class FileTreeControllerTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock UserManager userMgr;
   @Mock FolderManager folderMgr;
   Folder root1, otherRoot, gallery1, gallery2;
@@ -39,7 +36,7 @@ public class FileTreeControllerTest {
 
   @InjectMocks FileTreeController fileTreeController;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     any = TestFactory.createAnyUser("anyuser");
     root1 = TestFactory.createASystemFolder("Home", any);
@@ -51,9 +48,6 @@ public class FileTreeControllerTest {
     otherRoot.setId(4L);
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
   @Test
   public void nonGalleryAreDisplayed() throws UnsupportedEncodingException {
     Principal mockPrincipal = Mockito.mock(Principal.class);
@@ -64,7 +58,7 @@ public class FileTreeControllerTest {
         .thenReturn(noGallery());
     ExtendedModelMap results = new ExtendedModelMap();
     fileTreeController.listFilesInModel("/", false, results, mockPrincipal);
-    assertEquals(1, getListFromModel(results, "records", TreeViewItem.class).size());
+    assertThat(getListFromModel(results, "records", TreeViewItem.class)).hasSize(1);
   }
 
   @Test
@@ -78,7 +72,7 @@ public class FileTreeControllerTest {
     ExtendedModelMap results = new ExtendedModelMap();
     fileTreeController.listFilesInModel("/", false, results, mockPrincipal);
     // gallery folder is removed
-    assertEquals(1, getListFromModel(results, "records", TreeViewItem.class).size());
+    assertThat(getListFromModel(results, "records", TreeViewItem.class)).hasSize(1);
 
     // check it's also removed for searching subfolders too -RSPAc-1494
 
@@ -88,7 +82,7 @@ public class FileTreeControllerTest {
         .thenReturn(galleryFolderPlusNormalItem());
     fileTreeController.listFilesInModel("-2", false, results, mockPrincipal);
     // gallery folder is removed as we
-    assertEquals(1, getListFromModel(results, "records", TreeViewItem.class).size());
+    assertThat(getListFromModel(results, "records", TreeViewItem.class)).hasSize(1);
   }
 
   private void standardSetup(Principal mockPRincipal) {

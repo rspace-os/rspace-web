@@ -1,27 +1,26 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
+@ExtendWith(MockitoExtension.class)
 public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidationTestBase {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   @Autowired private InstrumentTemplatePutValidator putValidator;
 
-  @Before
+  @BeforeEach
   public void setup() {
     validator = putValidator;
   }
@@ -66,7 +65,7 @@ public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidatio
     Errors e = new BeanPropertyBindingResult(put, "templatePut");
     putValidator.validate(put, e);
 
-    assertTrue(e.getErrorCount() >= 1);
+    assertThat(e.getErrorCount()).isGreaterThanOrEqualTo(1);
     assertEquals("errors.inventory.template.emptyFieldName", e.getFieldError().getCode());
   }
 
@@ -100,10 +99,9 @@ public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidatio
 
     // the field error is registered under a nested path (e.g. fields[0].allowedRelationTypes),
     // so match by error code rather than by top-level field name.
-    assertTrue(
-        e.getFieldErrors().stream()
-            .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode())),
-        "expected an invalid-relation-type error, got: " + e.getAllErrors());
+    assertThat(e.getFieldErrors())
+        .as("expected an invalid-relation-type error, got: " + e.getAllErrors())
+        .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode()));
   }
 
   @Test
@@ -118,10 +116,9 @@ public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidatio
     Errors e = new BeanPropertyBindingResult(put, "templatePut");
     putValidator.validate(put, e);
 
-    assertTrue(
-        e.getFieldErrors().stream()
-            .noneMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode())),
-        "unexpected invalid-relation-type error, got: " + e.getAllErrors());
+    assertThat(e.getFieldErrors())
+        .as("unexpected invalid-relation-type error, got: " + e.getAllErrors())
+        .noneMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode()));
   }
 
   @Test
@@ -139,9 +136,8 @@ public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidatio
     Errors e = new BeanPropertyBindingResult(put, "templatePut");
     putValidator.validate(put, e);
 
-    assertTrue(
-        e.getFieldErrors().stream()
-            .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode())),
-        "expected an invalid-relation-type error, got: " + e.getAllErrors());
+    assertThat(e.getFieldErrors())
+        .as("expected an invalid-relation-type error, got: " + e.getAllErrors())
+        .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode()));
   }
 }

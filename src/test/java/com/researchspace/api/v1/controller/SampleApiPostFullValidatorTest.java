@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
@@ -13,25 +14,23 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
+@ExtendWith(MockitoExtension.class)
 public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTestBase {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   @Autowired
   @Qualifier("sampleApiPostFullValidator")
   private SampleApiPostFullValidator samplePostFullValidator;
 
-  @Before
+  @BeforeEach
   public void setup() {
     validator = samplePostFullValidator;
   }
@@ -88,7 +87,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     assertEquals(2, e.getErrorCount());
     assertFieldNameIs(e, "fields");
     assertEquals("errors.inventory.field.mandatoryFieldEmpty", e.getFieldError().getCode());
-    assertEquals(2, e.getFieldErrors().size());
+    assertThat(e.getFieldErrors()).hasSize(2);
     assertEquals("errors.inventory.field.mandatoryFieldEmpty", e.getFieldErrors().get(0).getCode());
     assertEquals(
         "myText (mandatory - no default value)", e.getFieldErrors().get(0).getArguments()[0]);
@@ -104,7 +103,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     validator.validate(fullPost, e);
     assertEquals(4, e.getErrorCount());
     assertFieldNameIs(e, "fields");
-    assertEquals(4, e.getFieldErrors().size());
+    assertThat(e.getFieldErrors()).hasSize(4);
     assertEquals(
         "myText (mandatory - with default value)", e.getFieldErrors().get(0).getArguments()[0]);
     assertEquals(

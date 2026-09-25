@@ -1,8 +1,10 @@
 package com.researchspace.core.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -10,9 +12,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DateRangeTest {
 
@@ -21,7 +23,7 @@ public class DateRangeTest {
   List<DateRange> setup = new ArrayList<>();
   List<DateRange> allRanges = new ArrayList<>();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     allRanges = new ArrayList<>();
@@ -34,28 +36,28 @@ public class DateRangeTest {
     allRanges.addAll(setup);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
   public void testMergeAll() {
     List<DateRange> mergedAll = DateRange.mergeAll(allRanges);
-    assertEquals(1, mergedAll.size());
+    assertThat(mergedAll).hasSize(1);
     assertEquals(10, mergedAll.get(0).getFrom().intValue());
     assertEquals(35, mergedAll.get(0).getTo().intValue());
 
     allRanges.add(new DateRange(new Date(100), new Date(200)));
     List<DateRange> mergedAll2 = DateRange.mergeAll(allRanges);
-    assertEquals(2, mergedAll2.size());
+    assertThat(mergedAll2).hasSize(2);
   }
 
   SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testParse() throws ParseException {
     DateRange between = DateRange.parse("1900-01-23,2100-01-23");
-    assertTrue(between.getFromDate().after(sdf.parse("1900-01-22")));
-    assertTrue(between.getToDate().before(sdf.parse("2100-01-24")));
+    assertThat(between.getFromDate()).isAfter(sdf.parse("1900-01-22"));
+    assertThat(between.getToDate()).isBefore(sdf.parse("2100-01-24"));
 
     DateRange fromOnly = DateRange.parse("1900-01-23");
     assertTrue(fromOnly.getTo() == Long.MAX_VALUE);
@@ -63,7 +65,9 @@ public class DateRangeTest {
     DateRange toOnly = DateRange.parse(",1900-01-23");
     assertTrue(toOnly.getFrom() == 0L);
 
-    DateRange.parse(",1900/01/23"); // illegal format throws IAE
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> DateRange.parse(",1900/01/23")); // illegal format throws IAE
   }
 
   @Test

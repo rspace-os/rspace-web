@@ -1,12 +1,10 @@
 package com.researchspace.core.util;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,27 +13,26 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class FileOperatorTest {
 
   FileOperator fileOps;
 
-  @Rule public TemporaryFolder fileStoreRoot = new TemporaryFolder();
+  @TempDir public File fileStoreRoot;
   File anyFile;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     File fileSrc = new File("src/test/resources/exampleDoc.pdf");
     anyFile = File.createTempFile("testFile", ".pdf");
     FileUtils.copyFile(fileSrc, anyFile);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -52,65 +49,65 @@ public class FileOperatorTest {
             "a" + File.separator + "b" + File.separator + "c" + File.separator, anyFile, "xyz.pdf");
     String manualPath =
         (fileOps.getFoldOp().getBaseDir() + "/a/b/c/xyz.pdf").replaceAll("\\\\", "/");
-    assertThat(inserted.toString(), containsString(manualPath));
+    assertThat(inserted.toString()).as(inserted.toString()).contains(manualPath);
   }
 
   private void createFileOperator() {
     fileOps = new FileOperator();
-    fileOps.getFoldOp().setFileStoreRootDir(fileStoreRoot.getRoot());
+    fileOps.getFoldOp().setFileStoreRootDir(fileStoreRoot);
   }
 
   @Test
   public void testCopyFile() throws IOException {
     createFileOperator();
-    File outfile = fileStoreRoot.newFile("xxxx.pdf");
+    File outfile = newFile(fileStoreRoot, "xxxx.pdf");
     fileOps.copyFile(outfile, anyFile, false);
     assertEquals(outfile.length(), anyFile.length());
-    assertTrue(outfile.exists());
-    assertTrue(anyFile.exists());
+    assertThat(outfile).exists();
+    assertThat(anyFile).exists();
 
     // copy outfile into another file, removing the original
-    File outfile2 = fileStoreRoot.newFile("yyyy.pdf");
+    File outfile2 = newFile(fileStoreRoot, "yyyy.pdf");
     fileOps.copyFile(outfile2, outfile, true);
     assertEquals(outfile2.length(), anyFile.length());
-    assertTrue(outfile2.exists());
-    assertTrue(anyFile.exists());
-    assertFalse(outfile.exists());
+    assertThat(outfile2).exists();
+    assertThat(anyFile).exists();
+    assertThat(outfile).doesNotExist();
   }
 
   @Test
   public void testCopyStream() throws IOException {
     createFileOperator();
-    File outfile = fileStoreRoot.newFile();
+    File outfile = File.createTempFile("junit", null, fileStoreRoot);
     FileOutputStream outStream = new FileOutputStream(outfile);
     FileInputStream fis = new FileInputStream(anyFile);
     long expectedCopiedByteCount = fileOps.copyStream(outStream, fis, 0L);
     assertEquals(241366L, expectedCopiedByteCount);
     assertEquals(outfile.length(), anyFile.length());
-    assertTrue(outfile.exists());
-    assertTrue(anyFile.exists());
+    assertThat(outfile).exists();
+    assertThat(anyFile).exists();
     fis.close();
     outStream.close();
 
     // copy outfile into another file, removing the original
-    File outfile2 = fileStoreRoot.newFile("yyyy.pdf");
+    File outfile2 = newFile(fileStoreRoot, "yyyy.pdf");
     FileOutputStream outStream2 = new FileOutputStream(outfile2);
     FileInputStream fis2 = new FileInputStream(outfile);
     fileOps.copyStream(outStream2, fis2, 0L);
     assertEquals(outfile2.length(), anyFile.length());
-    assertTrue(outfile2.exists());
-    assertTrue(anyFile.exists());
+    assertThat(outfile2).exists();
+    assertThat(anyFile).exists();
   }
 
   @Test
   public void testRemoveFile() throws IOException {
     createFileOperator();
-    File outfile = fileStoreRoot.newFile();
-    assertTrue(outfile.exists());
+    File outfile = File.createTempFile("junit", null, fileStoreRoot);
+    assertThat(outfile).exists();
 
     // try delete
     fileOps.deleteFile(outfile);
-    assertFalse(outfile.exists());
+    assertThat(outfile).doesNotExist();
 
     // try delete same path again
     try {
@@ -121,7 +118,13 @@ public class FileOperatorTest {
           e instanceof FileNotFoundException
               || e.getMessage().startsWith("File does not exist")
               || e.getMessage().startsWith("Cannot delete file");
-      assertTrue("expected file not exists, but was:" + e.getMessage(), expectedMsg);
+      assertTrue(expectedMsg, "expected file not exists, but was:" + e.getMessage());
     }
+  }
+
+  private static File newFile(File parent, String child) throws IOException {
+    File result = new File(parent, child);
+    result.createNewFile();
+    return result;
   }
 }

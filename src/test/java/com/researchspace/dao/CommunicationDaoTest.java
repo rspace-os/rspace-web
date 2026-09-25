@@ -5,11 +5,13 @@ import static com.researchspace.testutils.CommsTestUtils.createAGroupRequest;
 import static com.researchspace.testutils.CommsTestUtils.createARequest;
 import static com.researchspace.testutils.CommsTestUtils.createAnyNotification;
 import static com.researchspace.testutils.CommsTestUtils.createRequestOfType;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.Constants;
 import com.researchspace.core.util.IPagination;
@@ -32,6 +34,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -40,9 +43,7 @@ import java.util.Set;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.hibernate.Session;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class CommunicationDaoTest extends BaseDaoTestCase {
@@ -51,19 +52,14 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
 
   private User originator;
 
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
-
-  @Test(expected = PersistenceException.class)
+  @Test
   public void testSOriginatorMustNotBeNull() {
     Notification message = createAnyNotification(originator);
     message.setOriginator(null);
     dao.save(message);
-    // needed to test FK constraints
-    sessionFactory.getCurrentSession().flush();
+    var session = sessionFactory.getCurrentSession();
+
+    assertThrows(PersistenceException.class, () -> session.flush());
   }
 
   @Test
@@ -74,31 +70,26 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     saveNMessages(2, sender, MessageType.SIMPLE_MESSAGE, target);
     // this won't be listed by default, it's not in the standard list
     saveNMessages(1, sender, MessageType.REQUEST_CREATE_LAB_GROUP, target);
-    assertEquals(
-        2, dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit()).getResults().size());
+    assertThat(dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit()).getResults())
+        .hasSize(2);
 
     // now we'llconfigure to get these messages
     MessageTypeFilter filter =
         new MessageTypeFilter(EnumSet.of(MessageType.REQUEST_CREATE_LAB_GROUP));
-    assertEquals(
-        1,
-        dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), filter)
-            .getResults()
-            .size());
+    assertThat(
+            dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), filter)
+                .getResults())
+        .hasSize(1);
 
     // check that null or empty filter is handled gracefully; if it is we
     // get all results
-    assertEquals(
-        3,
-        dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), null)
-            .getResults()
-            .size());
+    assertThat(
+            dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), null).getResults())
+        .hasSize(3);
     filter = new MessageTypeFilter(EnumSet.noneOf(MessageType.class));
-    assertEquals(
-        3,
-        dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), null)
-            .getResults()
-            .size());
+    assertThat(
+            dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), null).getResults())
+        .hasSize(3);
   }
 
   @Test
@@ -115,16 +106,16 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     saveNMessages(5, target, MessageType.SIMPLE_MESSAGE, sender, target2);
 
     // sanity check
-    assertEquals(5, dao.getActiveRequestsAndMessagesForUser(sender, pgcrit).getResults().size());
-    assertEquals(7, dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults().size());
-    pgcrit.setOrderBy("communication.creationTime");
+    assertThat(dao.getActiveRequestsAndMessagesForUser(sender, pgcrit).getResults()).hasSize(5);
+    assertThat(dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults()).hasSize(7);
+    pgcrit.setOrderBy("creationTime");
     pgcrit.setSortOrder(SortOrder.ASC);
     pgcrit.setGetAllResults();
     ISearchResults<MessageOrRequest> results =
         dao.getAllSentAndReceivedSimpleMessagesForUser(sender, pgcrit);
 
     // Paginated, but get all the results because pgcrit.setGetAllResults();
-    assertEquals(12, results.getResults().size());
+    assertThat(results.getResults()).hasSize(12);
     // Check the total hits (count) is 12;
     assertEquals(12, results.getTotalHits().intValue());
     assertSearchResultsAreDistinct(results);
@@ -151,16 +142,15 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
 
     PaginationCriteria<CommunicationTarget> pgcrit = getDefaultPgCrit();
     // sanity check
-    assertEquals(
-        IPagination.DEFAULT_RESULTS_PERPAGE,
-        dao.getActiveRequestsAndMessagesForUser(sender, pgcrit).getResults().size());
-    assertEquals(7, dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults().size());
+    assertThat(dao.getActiveRequestsAndMessagesForUser(sender, pgcrit).getResults())
+        .hasSize(IPagination.DEFAULT_RESULTS_PERPAGE);
+    assertThat(dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults()).hasSize(7);
 
-    pgcrit.setOrderBy("communication.creationTime");
+    pgcrit.setOrderBy("creationTime");
     pgcrit.setSortOrder(SortOrder.ASC);
     ISearchResults<MessageOrRequest> results =
         dao.getAllSentAndReceivedSimpleMessagesForUser(sender, pgcrit);
-    assertEquals(IPagination.DEFAULT_RESULTS_PERPAGE, results.getResults().size());
+    assertThat(results.getResults()).hasSize(IPagination.DEFAULT_RESULTS_PERPAGE);
     assertEquals(IPagination.DEFAULT_RESULTS_PERPAGE + 7, results.getTotalHits().intValue());
     assertSearchResultsAreDistinct(results);
 
@@ -193,10 +183,10 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
 
     Communication opened = dao.get(message.getId());
     assertNotNull(opened.getCreationTime());
-    assertEquals(1, opened.getRecipients().size());
+    assertThat(opened.getRecipients()).hasSize(1);
     assertEquals(CommunicationStatus.NEW, opened.getRecipients().iterator().next().getStatus());
-    assertEquals(
-        Notification.MAX_MESSAGE_LENGTH, ((Notification) opened).getNotificationMessage().length());
+    assertThat(((Notification) opened).getNotificationMessage())
+        .hasSize(Notification.MAX_MESSAGE_LENGTH);
   }
 
   @Test
@@ -209,7 +199,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     // Now listing new notifications. We are using the default pagination
     PaginationCriteria<CommunicationTarget> pgCrit =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
-    pgCrit.setOrderBy("communication.creationTime");
+    pgCrit.setOrderBy("creationTime");
     List<Notification> notifications = dao.getNewNotificationsForUser(target, pgCrit).getResults();
 
     Date lastNotificationDate =
@@ -284,13 +274,13 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     // recipient status change shouldn't trigger message status change
     MessageOrRequest globalMsgUpdated = (MessageOrRequest) dao.get(globalMsg.getId());
     assertEquals(
-        "communicationTarget status should be updated",
         CommunicationStatus.COMPLETED,
-        globalMsgUpdated.getRecipients().iterator().next().getStatus());
+        globalMsgUpdated.getRecipients().iterator().next().getStatus(),
+        "communicationTarget status should be updated");
     assertEquals(
-        "communication status shouldn't be updated for global message",
         CommunicationStatus.NEW,
-        globalMsgUpdated.getStatus());
+        globalMsgUpdated.getStatus(),
+        "communication status shouldn't be updated for global message");
   }
 
   @Test
@@ -330,21 +320,21 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
   public void testSortOrderForSearches() throws InterruptedException {
     // Test for search test
     PaginationCriteria<CommunicationTarget> pc = getDefaultPgCrit();
-    pc.setOrderBy("originator.username");
+    pc.setOrderBy("sender");
 
     originator = createAndSaveUserIfNotExists("source");
     User target = createAndSaveUserIfNotExists("recipient");
     saveNNotifications(2, originator, target);
 
     assertEquals(2, dao.getNewNotificationsForUser(target, pc).getTotalHits().intValue());
-    pc.setOrderBy("communication.creationTime");
+    pc.setOrderBy("creationTime");
     assertEquals(2, dao.getNewNotificationsForUser(target, pc).getTotalHits().intValue());
     // Test ordering of active requests
     saveNMessages(3, originator, MessageType.REQUEST_RECORD_REVIEW, target);
     assertEquals(3, dao.getActiveRequestsAndMessagesForUser(target, pc).getTotalHits().intValue());
-    pc.setOrderBy("originator.username");
+    pc.setOrderBy("sender");
     assertEquals(3, dao.getActiveRequestsAndMessagesForUser(target, pc).getTotalHits().intValue());
-    pc.setOrderBy("communication.requestedCompletionDate");
+    pc.setOrderBy("requestedCompletionDate");
     assertEquals(3, dao.getActiveRequestsAndMessagesForUser(target, pc).getTotalHits().intValue());
 
     // Test ordering of sent messages
@@ -352,7 +342,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
         PaginationCriteria.createDefaultForClass(MessageOrRequest.class);
     sentMsgesPC.setOrderBy("creationTime");
     assertEquals(3, dao.getSentRequests(originator, sentMsgesPC).getTotalHits().intValue());
-    sentMsgesPC.setOrderBy("originator.username");
+    sentMsgesPC.setOrderBy("sender");
     assertEquals(3, dao.getSentRequests(originator, sentMsgesPC).getTotalHits().intValue());
     sentMsgesPC.setOrderBy("requestedCompletionDate");
     assertEquals(3, dao.getSentRequests(originator, sentMsgesPC).getTotalHits().intValue());
@@ -383,7 +373,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     assertEquals(toTest.get(2), res.getResults().get(1));
     assertEquals(toTest.get(1), res.getResults().get(2));
     // Return all sent requests (even request with completion date null)
-    assertEquals(3, res.getResults().size());
+    assertThat(res.getResults()).hasSize(3);
 
     // Now Order ascending so => 1,2,0
     sentMsgesPC.setSortOrder(SortOrder.ASC);
@@ -392,7 +382,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     assertEquals(toTest.get(2), res.getResults().get(1));
     assertEquals(toTest.get(0), res.getResults().get(2));
     // Return all sent requests (even request with completion date null)
-    assertEquals(3, res.getResults().size());
+    assertThat(res.getResults()).hasSize(3);
   }
 
   @Test
@@ -411,7 +401,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
         IPagination.DEFAULT_RESULTS_PERPAGE,
         dao.getNewNotificationsForUser(target, pc).getHits().intValue());
 
-    pc.setOrderBy("originator.username");
+    pc.setOrderBy("sender");
     assertEquals(
         IPagination.DEFAULT_RESULTS_PERPAGE,
         dao.getNewNotificationsForUser(target, pc).getHits().intValue());
@@ -448,7 +438,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     dao.save(msg);
 
     Communication msg2 = dao.get(msg.getId());
-    assertEquals(1, msg2.getRecipients().size());
+    assertThat(msg2.getRecipients()).hasSize(1);
     assertEquals(CommunicationStatus.NEW, msg2.getRecipients().iterator().next().getStatus());
   }
 
@@ -464,7 +454,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
 
     Communication msg2 = dao.get(msg.getId());
     assertTrue(msg2 instanceof GroupMessageOrRequest);
-    assertEquals(1, msg2.getRecipients().size());
+    assertThat(msg2.getRecipients()).hasSize(1);
     assertEquals(CommunicationStatus.NEW, msg2.getRecipients().iterator().next().getStatus());
   }
 
@@ -629,6 +619,29 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     ISearchResults<MessageOrRequest> mor =
         dao.getActiveRequestsAndMessagesForUser(u, paginationCriteria);
     return mor.getTotalHits();
+  }
+
+  @Test
+  public void notificationPagingIsStableWhenCreationTimesTie() throws InterruptedException {
+    originator = createAndSaveUserIfNotExists("source");
+    User target = createAndSaveUserIfNotExists("recipient");
+    // creationTime is a second-granularity datetime, so these all tie
+    saveNNotifications(6, originator, target);
+
+    PaginationCriteria<CommunicationTarget> pc = getDefaultPgCrit();
+    pc.setResultsPerPage(2);
+    List<Long> paged = new ArrayList<>();
+    for (long page = 0; page < 3; page++) {
+      pc.setPageNumber(page);
+      dao.getNewNotificationsForUser(target, pc).getResults().stream()
+          .map(Notification::getId)
+          .forEach(paged::add);
+    }
+
+    assertEquals(6, new HashSet<>(paged).size(), "paging repeated or skipped a notification");
+    List<Long> descending = new ArrayList<>(paged);
+    descending.sort(Comparator.reverseOrder());
+    assertEquals(descending, paged, "tied creationTimes must fall back to descending id");
   }
 
   private PaginationCriteria<CommunicationTarget> getDefaultPgCrit() {

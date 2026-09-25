@@ -1,16 +1,17 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.Constants.SYSADMIN_ROLE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
 import com.researchspace.admin.service.SysAdminManager;
 import com.researchspace.admin.service.UsageListingDTO;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.model.Community;
@@ -35,19 +36,17 @@ import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class SysAdminControllerTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
   @Mock UserManager userManager;
   @Mock SysAdminManager sysMgr;
   @Mock private SystemPropertyPermissionManager systemPropertyPermissionManager;
@@ -60,12 +59,12 @@ public class SysAdminControllerTest {
   @InjectMocks SysAdminController ctrller;
   private User sysadmin;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     ctrller.messages = new MessageSourceUtils(new JsonMessageSource());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -77,7 +76,7 @@ public class SysAdminControllerTest {
     when(delMgr.isUserRemovable(2L, noRestriction(), sysadmin))
         .thenReturn(new ServiceOperationResult<User>(null, false, "failed"));
     ctrller.removeUserAccount(2L);
-    Mockito.verifyZeroInteractions(userExportHandler);
+    Mockito.verifyNoInteractions(userExportHandler);
     verify(delMgr, Mockito.never()).removeUser(2L, noRestriction(), sysadmin);
   }
 
@@ -85,10 +84,9 @@ public class SysAdminControllerTest {
   public void deleteUserRequiresSetDeploymentProperty() {
     sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
 
-    when(userManager.getAuthenticatedUserInSession()).thenReturn(sysadmin);
     when(properties.getDeleteUser()).thenReturn(Boolean.FALSE.toString());
-    CoreTestUtils.assertIllegalStateExceptionThrown(() -> ctrller.removeUserAccount(2L));
-    Mockito.verifyZeroInteractions(userExportHandler);
+    assertThrows(IllegalStateException.class, () -> ctrller.removeUserAccount(2L));
+    Mockito.verifyNoInteractions(userExportHandler);
     verify(delMgr, Mockito.never()).removeUser(2L, noRestriction(), sysadmin);
   }
 
@@ -100,13 +98,13 @@ public class SysAdminControllerTest {
     comm.addLabGroup(grpGroup);
     when(commService.getCommunityWithAdminsAndGroups(1L)).thenReturn(comm);
     AjaxReturnObject<List<GroupListResult>> resultAjaxReturnObject = ctrller.getLabGroups(1L);
-    assertEquals(1, resultAjaxReturnObject.getData().size());
+    assertThat(resultAjaxReturnObject.getData()).hasSize(1);
     assertNotNull(resultAjaxReturnObject.getData().get(0).getPiFullname());
 
     // handle group with no PI. e.g. an empty group
     assertTrue(grpGroup.removeMember(piUser));
     resultAjaxReturnObject = ctrller.getLabGroups(1L);
-    assertEquals(1, resultAjaxReturnObject.getData().size());
+    assertThat(resultAjaxReturnObject.getData()).hasSize(1);
     assertEquals("No PI set", resultAjaxReturnObject.getData().get(0).getPiAffiliation());
     assertEquals("No PI set", resultAjaxReturnObject.getData().get(0).getPiFullname());
   }
@@ -121,7 +119,6 @@ public class SysAdminControllerTest {
     Principal mockPrincipal = sysadmin::getUsername;
     PaginationCriteria<User> pgcrit = PaginationCriteria.createDefaultForClass(User.class);
     when(userManager.getUserByUsername(sysadmin.getUniqueName())).thenReturn(sysadmin);
-    when(userManager.getAuthenticatedUserInSession()).thenReturn(sysadmin);
     when(sysMgr.getUserUsageInfo(sysadmin, pgcrit))
         .thenReturn(new SearchResultsImpl<>(Collections.emptyList(), pgcrit, 0));
     final int totalEnabledusers = 4;

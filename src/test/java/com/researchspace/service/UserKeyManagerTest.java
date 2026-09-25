@@ -1,14 +1,14 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.User;
 import com.researchspace.model.UserKeyPair;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UserKeyManagerTest extends SpringTransactionalTest {
@@ -22,13 +22,13 @@ public class UserKeyManagerTest extends SpringTransactionalTest {
     assertNotNull(testUser);
 
     UserKeyPair keyOfNewUser = userKeyManager.getUserKeyPair(testUser);
-    assertNull("new user shouldn't have a key", keyOfNewUser);
+    assertNull(keyOfNewUser, "new user shouldn't have a key");
 
     UserKeyPair createdKey = userKeyManager.createNewUserKeyPair(testUser);
-    assertNotNull("created key shouldn't be null", createdKey);
+    assertNotNull(createdKey, "created key shouldn't be null");
 
     UserKeyPair retrievedKey = userKeyManager.getUserKeyPair(testUser);
-    assertNotNull("key retrieved after creating shouldn't be null", retrievedKey);
+    assertNotNull(retrievedKey, "key retrieved after creating shouldn't be null");
   }
 
   @Test
@@ -38,31 +38,31 @@ public class UserKeyManagerTest extends SpringTransactionalTest {
     assertNotNull(testUser);
 
     UserKeyPair createdKey = userKeyManager.createNewUserKeyPair(testUser);
-    assertNotNull("created key shouldn't be null", createdKey);
+    assertNotNull(createdKey, "created key shouldn't be null");
     Long createdId = createdKey.getId();
     String createdPrivKey = createdKey.getPrivateKey();
     String createdPubKey = createdKey.getPublicKey();
 
     UserKeyPair updatedKey = userKeyManager.createNewUserKeyPair(testUser);
-    assertNotNull("updated key shouldn't be null", updatedKey);
+    assertNotNull(updatedKey, "updated key shouldn't be null");
     Long updatedId = updatedKey.getId();
     String updatedPrivKey = updatedKey.getPrivateKey();
     String updatedPubKey = updatedKey.getPublicKey();
 
-    assertEquals("updated key should override first key", createdId, updatedId);
-    assertNotEquals("updated key private part should differ", createdPrivKey, updatedPrivKey);
-    assertNotEquals("updated key public part should differ", createdPubKey, updatedPubKey);
+    assertEquals(createdId, updatedId, "updated key should override first key");
+    assertNotEquals(createdPrivKey, updatedPrivKey, "updated key private part should differ");
+    assertNotEquals(createdPubKey, updatedPubKey, "updated key public part should differ");
 
     UserKeyPair retrievedKey = userKeyManager.getUserKeyPair(testUser);
-    assertNotNull("key retrieved after update shouldn't be null", retrievedKey);
-    assertEquals("retrieved key should have same id as updated", updatedId, retrievedKey.getId());
+    assertNotNull(retrievedKey, "key retrieved after update shouldn't be null");
+    assertEquals(updatedId, retrievedKey.getId(), "retrieved key should have same id as updated");
     assertEquals(
-        "retrieved key should have same priv key as updated",
         updatedPrivKey,
-        retrievedKey.getPrivateKey());
+        retrievedKey.getPrivateKey(),
+        "retrieved key should have same priv key as updated");
     assertEquals(
-        "retrieved key should have same pub key as updated",
         updatedPubKey,
-        retrievedKey.getPublicKey());
+        retrievedKey.getPublicKey(),
+        "retrieved key should have same pub key as updated");
   }
 }

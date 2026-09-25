@@ -1,5 +1,8 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -20,16 +23,18 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * Base class for Spring MVC tests, which are the most extensive integration tests, as they cover
@@ -49,7 +54,7 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
 
   protected MockMvc mockMvc;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
     super.setUp();
@@ -159,16 +164,6 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
   }
 
   /**
-   * Assert exception of a particular tupe is thrown
-   *
-   * @param result
-   * @param clazz
-   */
-  protected void assertException(MvcResult result, Class<? extends Exception> clazz) {
-    mvcUtils.assertException(result, clazz);
-  }
-
-  /**
    * Given a JSON MvcResult containing AjaxReturnObject, will attempt to parse its <code>data</code>
    * property into a Java object, using Jackson's default {@link ObjectMapper}
    *
@@ -258,5 +253,46 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
       body = JacksonUtil.toJson(toPost);
     }
     return body;
+  }
+
+  /**
+   * Typed replacements for the Hamcrest matcher overloads of Spring's MockMvc result matchers.
+   * Spring's model()/view()/header() matcher overloads are Hamcrest-typed, so these keep the fluent
+   * andExpect(..) style without using Hamcrest in test assertions.
+   */
+  protected static ResultMatcher viewNameContains(String expected) {
+    return result -> {
+      ModelAndView mav = result.getModelAndView();
+      String name = mav == null ? null : mav.getViewName();
+      assertTrue(name != null && name.contains(expected), "view name was " + name);
+    };
+  }
+
+  protected static ResultMatcher modelAttributeContains(String attribute, String expected) {
+    return result -> {
+      Object value = modelAttribute(result, attribute);
+      assertTrue(value != null && value.toString().contains(expected), attribute + " was " + value);
+    };
+  }
+
+  protected static ResultMatcher modelAttributeDoesNotContain(String attribute, String expected) {
+    return result -> {
+      Object value = modelAttribute(result, attribute);
+      assertFalse(
+          value != null && value.toString().contains(expected), attribute + " was " + value);
+    };
+  }
+
+  protected static ResultMatcher headerContains(String header, String expected) {
+    return result -> {
+      String value = result.getResponse().getHeader(header);
+      assertTrue(value != null && value.contains(expected), header + " was " + value);
+    };
+  }
+
+  private static Object modelAttribute(MvcResult result, String attribute) {
+    ModelAndView mav = result.getModelAndView();
+    assertNotNull(mav, "No ModelAndView found");
+    return mav.getModel().get(attribute);
   }
 }

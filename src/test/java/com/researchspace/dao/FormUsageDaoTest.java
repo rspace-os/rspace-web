@@ -1,15 +1,16 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormUsage;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class FormUsageDaoTest extends BaseDaoTestCase {
@@ -20,7 +21,7 @@ public class FormUsageDaoTest extends BaseDaoTestCase {
   private RSForm[] forms = null;
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     user = createAndSaveUserIfNotExists("formUsageUsr");
     setUpDBWith4Forms();
@@ -32,7 +33,7 @@ public class FormUsageDaoTest extends BaseDaoTestCase {
     FormUsage formUsage = new FormUsage(user, forms[0]);
     Thread.sleep(5);
     formUsageDao.save(formUsage);
-    assertEquals(b4 + 1, formUsageDao.getAll().size());
+    assertThat(formUsageDao.getAll()).hasSize(b4 + 1);
     FormUsage formUsage2 = formUsageDao.get(formUsage.getId());
     assertNotNull(formUsage2.getFormStableID());
     assertNotNull(formUsage2.getUser());

@@ -1,13 +1,14 @@
 package com.axiope.userimport;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dto.UserRegistrationInfo;
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class UserNameFromFirstLastNameStrategyTest {
 
@@ -17,7 +18,7 @@ public class UserNameFromFirstLastNameStrategyTest {
   public void testCreateUserNameFromCandidate() {
     UserRegistrationInfo u = new UserRegistrationInfo();
     assertTrue(strat.createUserName("anything", u, new HashSet<String>()));
-    assertTrue(u.getUsername().contains("anything"));
+    assertThat(u.getUsername()).contains("anything");
 
     // check can create even if there is a duplicate
     UserRegistrationInfo u2 = new UserRegistrationInfo();
@@ -31,7 +32,7 @@ public class UserNameFromFirstLastNameStrategyTest {
     UserRegistrationInfo userInfo = new UserRegistrationInfo();
     // too short uname
     assertTrue(strat.createUserName("bob", userInfo, new HashSet<String>()));
-    assertTrue(userInfo.getUsername().length() >= User.MIN_UNAME_LENGTH);
+    assertThat(userInfo.getUsername()).hasSizeGreaterThanOrEqualTo(User.MIN_UNAME_LENGTH);
   }
 
   @Test
@@ -41,7 +42,7 @@ public class UserNameFromFirstLastNameStrategyTest {
     userInfo.setLastName("Jones");
     // no candidate uname, but can generate from 1st and last names
     assertTrue(strat.createUserName("", userInfo, new HashSet<String>()));
-    assertTrue(userInfo.getUsername().contains("bjones"));
+    assertThat(userInfo.getUsername()).contains("bjones");
 
     // but can't work maginc; cannot create uname if no information supplied
     UserRegistrationInfo u2 = new UserRegistrationInfo();

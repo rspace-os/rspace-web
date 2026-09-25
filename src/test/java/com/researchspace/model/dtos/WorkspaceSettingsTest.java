@@ -1,7 +1,7 @@
 package com.researchspace.model.dtos;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.axiope.search.SearchConstants;
 import com.researchspace.core.util.JacksonUtil;
@@ -9,7 +9,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.record.BaseRecord;
 import java.net.URISyntaxException;
 import java.text.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.util.JsonPathExpectationsHelper;
 
 public class WorkspaceSettingsTest {
@@ -40,10 +40,10 @@ public class WorkspaceSettingsTest {
 
     filter.setName("any");
     WorkspaceListingConfig searchInput = new WorkspaceListingConfig(pgcrit, 1L, filter);
-    assertNotNull("valid search terms shouldn't produce null search input", searchInput);
+    assertNotNull(searchInput, "valid search terms shouldn't produce null search input");
     assertEquals(
-        "only search by name is possible just now",
         SearchConstants.NAME_SEARCH_OPTION,
-        searchInput.getSrchOptions()[0]);
+        searchInput.getSrchOptions()[0],
+        "only search by name is possible just now");
   }
 }

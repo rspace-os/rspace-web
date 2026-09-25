@@ -11,11 +11,13 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GroupSearchCriteria;
+import com.researchspace.model.sort.GroupSort;
 import com.researchspace.model.views.UserView;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.util.Collection;
@@ -221,36 +223,37 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
       CriteriaBuilder builder,
       Root<Group> root,
       CriteriaQuery<?> query) {
-    if (pgCrit.getOrderBy() == null) {
-      return;
+    GroupSort sort = GroupSort.fromRequest(pgCrit.getOrderBy());
+    Path<?> path;
+    switch (sort) {
+      case OWNER:
+        path = root.join("owner", JoinType.LEFT).get("lastName");
+        break;
+      case MEMBER_COUNT:
+        path = root.get("memberCount");
+        break;
+      case UNIQUE_NAME:
+        path = root.get("uniqueName");
+        break;
+      case CREATION_DATE:
+        path = root.get("creationDate");
+        break;
+      case GROUP_TYPE:
+        path = root.get("groupType");
+        break;
+      case ID:
+        path = root.get("id");
+        break;
+      case DISPLAY_NAME:
+      case USAGE: // usage is an aggregate handled by the sysadmin group manager, not a column
+      default:
+        path = root.get("displayName");
+        break;
     }
-    if ("piname".equals(pgCrit.getOrderBy())) {
-      Join<Group, ?> ownerJoin = root.join("owner", JoinType.LEFT);
-      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-        query.orderBy(builder.asc(ownerJoin.get("lastName")));
-      } else {
-        query.orderBy(builder.desc(ownerJoin.get("lastName")));
-      }
-    } else if ("owner.username".equals(pgCrit.getOrderBy())) {
-      Join<Group, ?> ownerJoin = root.join("owner", JoinType.LEFT);
-      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-        query.orderBy(builder.asc(ownerJoin.get("username")));
-      } else {
-        query.orderBy(builder.desc(ownerJoin.get("username")));
-      }
-    } else if ("owner.lastName".equals(pgCrit.getOrderBy())) {
-      Join<Group, ?> ownerJoin = root.join("owner", JoinType.LEFT);
-      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-        query.orderBy(builder.asc(ownerJoin.get("lastName")));
-      } else {
-        query.orderBy(builder.desc(ownerJoin.get("lastName")));
-      }
-    } else if (pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
-      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-        query.orderBy(builder.asc(root.get(pgCrit.getOrderBy())));
-      } else {
-        query.orderBy(builder.desc(root.get(pgCrit.getOrderBy())));
-      }
+    if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
+      query.orderBy(builder.asc(path));
+    } else {
+      query.orderBy(builder.desc(path));
     }
   }
 

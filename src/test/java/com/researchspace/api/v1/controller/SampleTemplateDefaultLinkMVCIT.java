@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
@@ -16,8 +16,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.SampleApiManager;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -38,7 +38,7 @@ public class SampleTemplateDefaultLinkMVCIT extends API_MVC_InventoryTestBase {
   private User anyUser;
   private String apiKey;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
@@ -167,10 +167,9 @@ public class SampleTemplateDefaultLinkMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(refs, ApiInventoryReferencingItems.class);
-    assertTrue(
-        body.getReferencingItems().stream()
-            .anyMatch(r -> savedTemplate.getGlobalId().equals(r.getSourceGlobalId())),
-        "the template holding the default link should be listed as a referencing item");
+    assertThat(body.getReferencingItems())
+        .as("the template holding the default link should be listed as a referencing item")
+        .anyMatch(r -> savedTemplate.getGlobalId().equals(r.getSourceGlobalId()));
   }
 
   @Test

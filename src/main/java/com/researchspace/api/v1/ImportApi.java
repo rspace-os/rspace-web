@@ -1,7 +1,6 @@
 package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.model.ApiDocumentInfo;
-import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.model.User;
 import java.io.IOException;
 import org.springframework.http.HttpStatus;
@@ -17,10 +16,5 @@ public interface ImportApi {
   @PostMapping("/word")
   @ResponseStatus(code = HttpStatus.CREATED)
   ApiDocumentInfo importWord(Long folderId, Long imageFolderId, MultipartFile file, User user)
-      throws IOException;
-
-  @PostMapping("/evernote")
-  @ResponseStatus(code = HttpStatus.CREATED)
-  ApiFolder importEvernote(Long folderId, Long imageFolderId, MultipartFile file, User user)
       throws IOException;
 }

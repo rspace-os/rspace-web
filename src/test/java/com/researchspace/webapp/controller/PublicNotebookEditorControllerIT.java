@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,10 +19,10 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -45,7 +45,7 @@ public class PublicNotebookEditorControllerIT extends RealTransactionSpringTestB
   private MockHttpServletResponse mockResponse;
   @Mock private SystemPropertyPermissionManager systemPropertyPermissionManagerMock;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     mockRequest = new MockHttpServletRequest();
@@ -62,7 +62,7 @@ public class PublicNotebookEditorControllerIT extends RealTransactionSpringTestB
         .thenReturn(true);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
     JdbcTestUtils.deleteFromTables(jdbcTemplate, "RecordGroupSharing");
@@ -158,9 +158,9 @@ public class PublicNotebookEditorControllerIT extends RealTransactionSpringTestB
     logoutCurrentUser();
     assertThrows(
         PublicLinkNotFoundException.class,
-        () -> {
-          controller.openNotebook("randomstuffnotalink", null, modelTss, mockRequest, mockResponse);
-        });
+        () ->
+            controller.openNotebook(
+                "randomstuffnotalink", null, modelTss, mockRequest, mockResponse));
   }
 
   @Test
@@ -174,9 +174,9 @@ public class PublicNotebookEditorControllerIT extends RealTransactionSpringTestB
         .thenReturn(false);
     assertThrows(
         PublicLinkNotFoundException.class,
-        () -> {
-          controller.openNotebook("randomstuffnotalink", null, modelTss, mockRequest, mockResponse);
-        });
+        () ->
+            controller.openNotebook(
+                "randomstuffnotalink", null, modelTss, mockRequest, mockResponse));
   }
 
   @Test

@@ -3,9 +3,10 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
 import static com.researchspace.model.dtos.AbstractFormFieldDTO.MAX_NAME_LENGTH;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.controller.FormTemplatesCommon.DateFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
@@ -28,17 +29,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class FormTemplatesCommonTest extends JakartaValidatorTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock FormManager formMgr;
   @Mock IPropertyHolder properties;
   @Mock IPermissionUtils perms;
@@ -57,7 +56,7 @@ public class FormTemplatesCommonTest extends JakartaValidatorTest {
     FormTemplatesCommon.FormPost regenerated =
         JacksonUtil.fromJson(jsonBody, FormTemplatesCommon.FormPost.class);
     assertEquals(formPost, regenerated);
-    assertTrue(regenerated.getFields().stream().allMatch(ff -> ff.getType() != null));
+    assertThat(regenerated.getFields()).allMatch(ff -> ff.getType() != null);
   }
 
   @Test
@@ -207,7 +206,7 @@ public class FormTemplatesCommonTest extends JakartaValidatorTest {
     RSForm newForm = createNewForm();
     ApiForm apiForm = new ApiForm(newForm);
     addLinks(newForm, apiForm);
-    assertEquals(EXPECTED_LINK_COUNT, apiForm.getLinks().size());
+    assertThat(apiForm.getLinks()).hasSize(EXPECTED_LINK_COUNT);
     assertTrue(isPublishLink(apiForm));
     assertTrue(isShareLink(apiForm));
     assertFalse(isUnPublishLink(apiForm));
@@ -220,7 +219,7 @@ public class FormTemplatesCommonTest extends JakartaValidatorTest {
     newForm.publish();
     ApiForm apiForm = new ApiForm(newForm);
     addLinks(newForm, apiForm);
-    assertEquals(EXPECTED_LINK_COUNT, apiForm.getLinks().size());
+    assertThat(apiForm.getLinks()).hasSize(EXPECTED_LINK_COUNT);
     assertFalse(isPublishLink(apiForm));
     assertTrue(isShareLink(apiForm));
     assertTrue(isUnPublishLink(apiForm));
@@ -234,7 +233,7 @@ public class FormTemplatesCommonTest extends JakartaValidatorTest {
     newForm.getAccessControl().setGroupPermissionType(PermissionType.READ);
     ApiForm apiForm = new ApiForm(newForm);
     addLinks(newForm, apiForm);
-    assertEquals(EXPECTED_LINK_COUNT, apiForm.getLinks().size());
+    assertThat(apiForm.getLinks()).hasSize(EXPECTED_LINK_COUNT);
     assertFalse(isPublishLink(apiForm));
     assertFalse(isShareLink(apiForm));
     assertTrue(isUnPublishLink(apiForm));

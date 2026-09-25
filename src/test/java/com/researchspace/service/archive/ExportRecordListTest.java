@@ -1,9 +1,10 @@
 package com.researchspace.service.archive;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchiveFolder;
 import com.researchspace.archive.ExportRecordList;
@@ -12,17 +13,9 @@ import com.researchspace.model.core.RecordType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ExportRecordListTest {
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void attachmentGlobalIdsIgnoreVersions() {
@@ -56,14 +49,14 @@ public class ExportRecordListTest {
     exported.getFolderTree().addAll(flders);
 
     List<ArchiveFolder> topLEvel = exported.getTopLevelFolders();
-    assertEquals(2, topLEvel.size());
-    assertTrue(topLEvel.contains(f1));
-    assertTrue(topLEvel.contains(f6));
+    assertThat(topLEvel).hasSize(2);
+    assertThat(topLEvel).contains(f1);
+    assertThat(topLEvel).contains(f6);
 
     // now test children
-    assertEquals(2, exported.getChildren(1L).size());
+    assertThat(exported.getChildren(1L)).hasSize(2);
     assertEquals(f5, exported.getChildren(3L).get(0));
-    assertTrue(exported.getChildren(6L).isEmpty());
+    assertThat(exported.getChildren(6L)).isEmpty();
 
     // now check isGallery item:
     assertFalse(exported.archiveParentFolderMatches(f1.getId(), isGallery())); // parent is null;

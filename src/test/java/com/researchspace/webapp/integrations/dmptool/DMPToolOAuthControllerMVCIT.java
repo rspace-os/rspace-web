@@ -1,10 +1,9 @@
 package com.researchspace.webapp.integrations.dmptool;
 
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,8 +16,6 @@ import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.rda.model.DmpId;
 import com.researchspace.rda.model.DmpId.DmpIdType;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.net.MalformedURLException;
@@ -27,9 +24,9 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -41,7 +38,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-@RunWith(ConditionalTestRunner.class)
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
 
   // this is created in dev@r.c. test-DMP account but could be any public DMP ID
@@ -176,7 +173,7 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
           + "  ]\n"
           + "}";
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     this.restTemplate = new RestTemplate();
@@ -220,21 +217,19 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void getToken() throws Exception {
     DMPToolOAuthController.AccessToken clientCredentialToken = getClientCredentialToken();
     assertNotNull(clientCredentialToken);
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void doListPlans() throws Exception {
     DMPToolOAuthController.AccessToken clientCredentialToken = getClientCredentialToken();
 
     // retrieve & deserialize plans owned by the user
     DMPToolList plansList =
         dmpToolProvider.listPlans(DMPPlanScope.MINE, clientCredentialToken.getAccessToken());
-    assertFalse(plansList.getItems().isEmpty());
+    assertThat(plansList.getItems()).isNotEmpty();
 
     // check details of test plan
     List<DMPToolDMP> matchingDmps =
@@ -242,7 +237,7 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
             .map(DMPTooItem::getDmp)
             .filter(p -> p.getId().equals(69563L))
             .collect(Collectors.toList());
-    assertEquals(1, matchingDmps.size());
+    assertThat(matchingDmps).hasSize(1);
     DMPToolDMP testDmp = matchingDmps.get(0);
     assertEquals("Testing DMP integration", testDmp.getTitle());
     assertNotNull(testDmp.getDescription());
@@ -250,7 +245,6 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void downloadPublicDMPPlan() throws Exception {
     DMPToolDMP dmp = mkDMP(PUBLIC_DMP_ID, PUBLIC_DMP_TITLE);
 
@@ -281,7 +275,6 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void getPlanById() throws Exception {
     DMPToolOAuthController.AccessToken clientCredentialToken = getClientCredentialToken();
     var planById =
@@ -290,25 +283,23 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testSanitizeDMPLinksFromDMPToolDMP() throws JsonProcessingException {
     ObjectMapper mapper = new ObjectMapper();
 
     // this also tests that the JSON deserialization works correctly
     DMPToolList dmpList = mapper.readValue(jsonDmpTool, DMPToolList.class);
     DMPToolDMP dmpPlan = dmpList.getItems().get(0).getDmp();
-    assertTrue(dmpPlan.getLinks().get("get").contains("https://https/api/v2/plans/"));
+    assertThat(dmpPlan.getLinks().get("get")).contains("https://https/api/v2/plans/");
     dmpPlan = ((DMPToolDMPProviderImpl) dmpToolProvider).sanitizeDMPLinks(dmpPlan);
-    assertFalse(dmpPlan.getLinks().get("get").contains("https://https/api/v2/plans/"));
-    assertTrue(dmpPlan.getLinks().get("get").contains(realBaseUrl.getHost()));
+    assertThat(dmpPlan.getLinks().get("get")).doesNotContain("https://https/api/v2/plans/");
+    assertThat(dmpPlan.getLinks().get("get")).contains(realBaseUrl.getHost());
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testSanitizeDMPLinksFromJson() {
-    assertTrue(jsonDmpTool.contains("https://https/api/v2/plans/"));
+    assertThat(jsonDmpTool).contains("https://https/api/v2/plans/");
     String sanitizedJson = ((DMPToolDMPProviderImpl) dmpToolProvider).sanitizeDMPLinks(jsonDmpTool);
-    assertFalse(sanitizedJson.contains("https://https/api/v2/plans/"));
-    assertTrue(sanitizedJson.contains(realBaseUrl.getHost()));
+    assertThat(sanitizedJson).doesNotContain("https://https/api/v2/plans/");
+    assertThat(sanitizedJson).contains(realBaseUrl.getHost());
   }
 }

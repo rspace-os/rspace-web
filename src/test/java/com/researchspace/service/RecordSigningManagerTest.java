@@ -1,9 +1,11 @@
 package com.researchspace.service;
 
 import static com.researchspace.model.comms.MessageType.REQUEST_RECORD_WITNESS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SecureStringUtils;
@@ -22,23 +24,26 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.SigningResult;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.shiro.authz.AuthorizationException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RecordSigningManagerTest extends SpringTransactionalTest {
 
   private @Autowired RecordSigningManager signingMgr;
   private @Autowired SignatureDao signingDao;
+  private @Autowired IMutablePropertyHolder propertyHolder;
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = createAndSaveUserIfNotExists("newUser");
     initialiseContentWithEmptyContent(user);
@@ -48,7 +53,7 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
     propertyHolder.setStandalone("true");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     RSpaceTestUtils.logout();
   }
@@ -66,9 +71,9 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
             sdoc.getId(), user, new String[] {witnessUser.getUsername()}, "statement");
 
     // ensure signature with content hash is immediately created
-    assertTrue(signResult.getSignature().isPresent());
+    assertThat(signResult.getSignature()).isPresent();
     Signature signature = signResult.getSignature().get();
-    assertEquals(1, signature.getHashes().size());
+    assertThat(signature.getHashes()).hasSize(1);
     SignatureHash signatureHash = signature.getHashes().iterator().next();
     String expectedHash = sdoc.getRecordContentHashForSigning().toHex();
     assertEquals(expectedHash, signatureHash.getHexValue());
@@ -159,7 +164,7 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
   public void testGetPotentialWitnesses() throws Exception {
     StructuredDocument sdoc = createBasicDocumentInRootFolderWithText(user, "any");
     // unless shared with a group
-    assertTrue(signingMgr.getPotentialWitnesses(sdoc, user).length == 0);
+    assertThat(signingMgr.getPotentialWitnesses(sdoc, user)).isEmpty();
   }
 
   @Test
@@ -170,20 +175,20 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
     Signature sig = signature.getSignature().get();
 
     final Long NOT_EXISTING_FP = -1l;
-    assertFalse(signingMgr.getSignedExport(sig.getId(), user, NOT_EXISTING_FP).isPresent());
+    assertThat(signingMgr.getSignedExport(sig.getId(), user, NOT_EXISTING_FP)).isNotPresent();
     FileProperty fp = createAndSaveAFileProperty();
     sig.addHash(SecureStringUtils.getHashForSigning("anystring"), SignatureHashType.PDF_EXPORT, fp);
     signingDao.save(sig);
 
-    assertTrue(signingMgr.getSignedExport(sig.getId(), user, fp.getId()).isPresent());
+    assertThat(signingMgr.getSignedExport(sig.getId(), user, fp.getId())).isPresent();
     User other = createAndSaveRandomUser();
 
     // unauthorised access for other user.
     logoutAndLoginAs(other);
-    assertAuthorisationExceptionThrown(
-        () ->
-            signingMgr.getSignedExport(
-                signature.getSignature().get().getId(), other, NOT_EXISTING_FP));
+    Long signatureId = sig.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> signingMgr.getSignedExport(signatureId, other, NOT_EXISTING_FP));
   }
 
   private FileProperty createAndSaveAFileProperty() throws IOException {

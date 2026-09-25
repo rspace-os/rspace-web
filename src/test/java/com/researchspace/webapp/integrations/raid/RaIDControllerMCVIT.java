@@ -2,9 +2,11 @@ package com.researchspace.webapp.integrations.raid;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,9 +41,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,7 +92,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   private CreateCloudGroup projectGroupCreationWithoutRaid;
   private Long newProjectGroupId;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     MockitoAnnotations.openMocks(this);
@@ -113,7 +115,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     projectGroupCreationWithoutRaid.setPiEmail(piUser.getEmail());
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
     grpMgr.removeGroup(newProjectGroupId, piUser);
   }
@@ -286,11 +288,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             .andReturn();
 
     // THEN no RAiD is returned
-    assertTrue(
-        result
-            .getResponse()
-            .getContentAsString()
-            .contains("Not able to get RAiD associated to the project group with folder ID"));
+    assertThat(result.getResponse().getContentAsString())
+        .contains("Not able to get RAiD associated to the project group with folder ID");
   }
 
   @Test
@@ -397,14 +396,13 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             .andReturn();
 
     // THEN
-    assertTrue(
-        extractErrorMessage(result)
-            .contains(
-                "Not able to associate RAiD to group: "
-                    + "The RAiD \""
-                    + IDENTIFIER_ASSOCIATED_2
-                    + "\" is not currently available "
-                    + "on the system to be associated"));
+    assertThat(extractErrorMessage(result))
+        .contains(
+            "Not able to associate RAiD to group: "
+                + "The RAiD \""
+                + IDENTIFIER_ASSOCIATED_2
+                + "\" is not currently available "
+                + "on the system to be associated");
     expectedProjectGroup = grpMgr.getGroup(newProjectGroupId);
     assertNull(expectedProjectGroup.getRaid());
   }
@@ -438,9 +436,10 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     // THEN
     expectedProjectGroup.setRaid(null);
     assertEquals(expectedProjectGroup, grpMgr.getGroup(newProjectGroupId));
-    assertExceptionThrown(
-        () -> raidServiceManager.getUserRaid(expectedCreatedUserRaid.getId()),
-        ObjectRetrievalFailureException.class);
+    var raidId = expectedCreatedUserRaid.getId();
+
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> raidServiceManager.getUserRaid(raidId));
   }
 
   @NotNull

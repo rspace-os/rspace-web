@@ -3,7 +3,9 @@ package com.researchspace.service.impl;
 import static com.researchspace.testutils.TestFactory.createAFolder;
 import static com.researchspace.testutils.TestFactory.createANotebookWithNEntries;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.dao.FolderDao;
 import com.researchspace.model.User;
@@ -11,22 +13,16 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.service.DeletionPlan;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class DeleteFolderFromSharedFolderPolicyTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @InjectMocks DeleteFolderFromSharedFolderPolicy deletionOrderPolicy;
 
   @Mock FolderDao folderDao;
@@ -35,7 +31,7 @@ public class DeleteFolderFromSharedFolderPolicyTest {
 
   Folder grpSharedFolder, topLevelSharedFolder;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     anyUser = createAnyUser("any");
     grpSharedFolder = createGroupSharedFolder();
@@ -50,9 +46,6 @@ public class DeleteFolderFromSharedFolderPolicyTest {
     return groupshare;
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
   @Test
   public void testCalculateDeletionOrderForSingleItem() {
     Mockito.when(folderDao.getUserSharedFolder(anyUser)).thenReturn(topLevelSharedFolder);
@@ -60,18 +53,21 @@ public class DeleteFolderFromSharedFolderPolicyTest {
     grpSharedFolder.addChild(toDelete, anyUser);
     DeletionPlan plan =
         deletionOrderPolicy.calculateDeletionOrder(toDelete, toDelete.getParent(), anyUser);
-    assertEquals(1, plan.size());
+    assertThat(plan).hasSize(1);
     assertEquals(toDelete, plan.getFinalElementToRemove());
     assertEquals(toDelete, plan.iterator().next());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void rejectFolderToDeleteThatIsNotInSharedFolderTree() {
     Mockito.when(folderDao.getUserSharedFolder(anyUser))
         .thenReturn(TestFactory.createAFolder("notInTree", anyUser));
     Folder toDelete = createAFolder("ToDelete", anyUser);
     grpSharedFolder.addChild(toDelete, anyUser);
-    deletionOrderPolicy.calculateDeletionOrder(toDelete, toDelete.getParent(), anyUser);
+    Folder parent = toDelete.getParent();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> deletionOrderPolicy.calculateDeletionOrder(toDelete, parent, anyUser));
   }
 
   @Test
@@ -83,7 +79,7 @@ public class DeleteFolderFromSharedFolderPolicyTest {
     toDelete.addChild(nb, anyUser);
     DeletionPlan plan =
         deletionOrderPolicy.calculateDeletionOrder(toDelete, toDelete.getParent(), anyUser);
-    assertEquals(2, plan.size()); // folder and nb but not entries
+    assertThat(plan).hasSize(2); // folder and nb but not entries
     assertEquals(toDelete, plan.getFinalElementToRemove());
     assertEquals(nb, plan.iterator().next());
   }

@@ -1,10 +1,11 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -14,8 +15,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.testutils.TestGroup;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -23,7 +24,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @WebAppConfiguration
 public class NotebookEditorControllerMVCIT extends MVCTestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -91,7 +92,7 @@ public class NotebookEditorControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertNull(result.getResolvedException());
     assertNotNull(result.getModelAndView());
-    assertEquals(nb.getId(), result.getModelAndView().getModel().get("selectedNotebookId"));
+    assertThat(result.getModelAndView().getModel()).containsEntry("selectedNotebookId", nb.getId());
     assertTrue(
         ((ActionPermissionsDTO) result.getModelAndView().getModel().get("permDTO"))
             .isCreateRecord());
@@ -107,7 +108,7 @@ public class NotebookEditorControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertNull(result.getResolvedException());
     assertNotNull(result.getModelAndView());
-    assertEquals(nb.getId(), result.getModelAndView().getModel().get("selectedNotebookId"));
+    assertThat(result.getModelAndView().getModel()).containsEntry("selectedNotebookId", nb.getId());
     assertFalse(
         ((ActionPermissionsDTO) result.getModelAndView().getModel().get("permDTO"))
             .isCreateRecord());

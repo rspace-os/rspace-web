@@ -4,15 +4,15 @@ import static com.axiope.search.SearchConstants.FULL_TEXT_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.OWNER_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.TAG_SEARCH_OPTION;
 import static com.researchspace.Constants.SYSADMIN_ROLE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
@@ -40,7 +40,7 @@ public class InventorySearchInputValidatorTest {
 
   User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
     input = new WorkspaceSearchConfig();
@@ -141,7 +141,7 @@ public class InventorySearchInputValidatorTest {
     cfg = createSearchConfig(sysadmin, new String[] {TAG_SEARCH_OPTION}, new String[] {"a234"});
     errors = reinitializeErrors();
     validator.validate(cfg, errors);
-    assertFalse("Tag option fails with small tag value", errors.hasGlobalErrors());
+    assertFalse(errors.hasGlobalErrors(), "Tag option fails with small tag value");
 
     // unless it's a user (owner) search, where short names are fine (as long as more than 1 char)
     cfg = createSearchConfig(sysadmin, new String[] {OWNER_SEARCH_OPTION}, new String[] {"dude"});

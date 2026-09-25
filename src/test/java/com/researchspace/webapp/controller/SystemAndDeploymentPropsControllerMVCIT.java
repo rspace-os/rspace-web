@@ -2,18 +2,18 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyName;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -22,12 +22,12 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
   @Value("${egnyte.client.id}")
   private String egnyteClientId;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     logout();
     super.tearDown();
@@ -39,7 +39,7 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
     MvcResult res = mockMvc.perform(get("/deploymentproperties/ajax/properties")).andReturn();
     Map<?, ?> data = getFromJsonResponseBody(res, Map.class);
     final int MIN_PROPERTY_COUNT = 7; // from rspac861
-    assertTrue(data.keySet().size() >= MIN_PROPERTY_COUNT);
+    assertThat(data.keySet().size()).isGreaterThanOrEqualTo(MIN_PROPERTY_COUNT);
     // assert properties are merged from DB...
     assertNotNull(data.get(SystemPropertyName.DROPBOX_AVAILABLE.getPropertyName()));
     // .. and property files

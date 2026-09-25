@@ -14,8 +14,8 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -26,7 +26,7 @@ public class WorkbenchApiControllerTest extends SpringTransactionalTest {
 
   private BindingResult mockBindingResult = mock(BindingResult.class);
 
-  @Before
+  @BeforeEach
   public void setUp() {
     when(mockBindingResult.hasErrors()).thenReturn(false);
   }
@@ -64,11 +64,12 @@ public class WorkbenchApiControllerTest extends SpringTransactionalTest {
     User user = createInitAndLoginAnyUser();
     ApiContainer container = createBasicContainerForUser(user);
     assertEquals("LIST", container.getCType());
+    Long containerId = container.getId();
 
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> workbenchApi.getWorkbenchById(container.getId(), true, user));
+            () -> workbenchApi.getWorkbenchById(containerId, true, user));
     assertEquals(
         "Container with id " + container.getId() + " is not a workbench", iae.getMessage());
   }

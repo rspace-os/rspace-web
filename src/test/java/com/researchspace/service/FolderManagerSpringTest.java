@@ -1,10 +1,11 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.licensews.LicenseExpiredException;
@@ -17,9 +18,10 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.controller.ServiceLoggerAspct;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.shiro.authz.AuthorizationException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class FolderManagerSpringTest extends SpringTransactionalTest {
@@ -27,17 +29,18 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
   User user;
 
   private @Autowired RecordManager recordManager;
+  private @Autowired LicenseService licenseService;
   private @Autowired ServiceLoggerAspct aspect;
   private @Autowired SharingHandler sharingHandler;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("fuser"));
     initialiseContentWithEmptyContent(user);
     assertTrue(user.isContentInitialized());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     aspect.setLicenseService(licenseService); // restore default
     super.tearDown();
@@ -75,7 +78,8 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
         folderMgr.createNewFolder(
             user.getRootFolder().getId(), getRandomAlphabeticString("F"), user);
     folderMgr.removeBaseRecordFromFolder(folder, folder.getParent().getId());
-    assertAuthorisationExceptionThrown(() -> folderMgr.getFolder(folder.getId(), user));
+    Long folderId = folder.getId();
+    assertThrows(AuthorizationException.class, () -> folderMgr.getFolder(folderId, user));
   }
 
   @Test
@@ -86,15 +90,16 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
 
     logoutAndLoginAs(u1);
     final Folder f1 = folderMgr.getRootRecordForUser(u1, u1);
-    assertAuthorisationExceptionThrown(() -> folderMgr.getRootRecordForUser(u1, u2));
+    assertThrows(AuthorizationException.class, () -> folderMgr.getRootRecordForUser(u1, u2));
 
     logoutAndLoginAs(u2);
     final Folder f2 = folderMgr.getRootRecordForUser(u2, u2);
-    assertAuthorisationExceptionThrown(() -> folderMgr.getRootRecordForUser(u1, u2));
+    assertThrows(AuthorizationException.class, () -> folderMgr.getRootRecordForUser(u1, u2));
 
     // now try getFolder method
     folderMgr.getFolder(f2.getId(), u2);
-    assertAuthorisationExceptionThrown(() -> folderMgr.getFolder(f1.getId(), u2));
+    Long folderId = f1.getId();
+    assertThrows(AuthorizationException.class, () -> folderMgr.getFolder(folderId, u2));
   }
 
   @Test
@@ -158,11 +163,10 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
             .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(grpSubFolder.getId(), null, user)
             .get());
     // a folder not a subfolder of group folder will return null.
-    assertFalse(
-        folderMgr
-            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-                userLabGroupFolder.getId(), null, user)
-            .isPresent());
+    assertThat(
+            folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+                userLabGroupFolder.getId(), null, user))
+        .isNotPresent();
 
     // now check the same type of assertion, but for individual shared folders
     Folder individSharedFolderRoot = folderDao.getIndividualSharedItemsFolderForUser(user);
@@ -179,19 +183,24 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
             .get());
   }
 
-  @Test(expected = LicenseExpiredException.class)
+  @Test
   public void folderCreationRequireActiveLicense() {
     aspect.setLicenseService(new InactiveLicenseTestService());
     logoutAndLoginAs(user);
-    folderMgr.createNewFolder(user.getRootFolder().getId(), "any", user);
+    Long rootFolderId = user.getRootFolder().getId();
+    assertThrows(
+        LicenseExpiredException.class, () -> folderMgr.createNewFolder(rootFolderId, "any", user));
   }
 
-  @Test(expected = LicenseExpiredException.class)
+  @Test
   public void notebookCreationRequireActiveLicense() {
     aspect.setLicenseService(new InactiveLicenseTestService());
     logoutAndLoginAs(user);
-    folderMgr.createNewNotebook(
-        user.getRootFolder().getId(), "any", new DefaultRecordContext(), user);
+    Long rootFolderId = user.getRootFolder().getId();
+    DefaultRecordContext context = new DefaultRecordContext();
+    assertThrows(
+        LicenseExpiredException.class,
+        () -> folderMgr.createNewNotebook(rootFolderId, "any", context, user));
   }
 
   @Test
@@ -203,15 +212,17 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
     // ok, has permission to create stuff in their own folder
     folderMgr.createNewFolder(userA.getRootFolder().getId(), "any", userA);
     // but can't create stuff in someone elses folder
-    assertAuthorisationExceptionThrown(
-        () -> folderMgr.createNewFolder(userB.getRootFolder().getId(), "any", userA));
+    Long otherRootFolderId = userB.getRootFolder().getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> folderMgr.createNewFolder(otherRootFolderId, "any", userA));
 
     // same for notebook
     folderMgr.createNewNotebook(
         userA.getRootFolder().getId(), "any", new DefaultRecordContext(), userA);
-    assertAuthorisationExceptionThrown(
-        () ->
-            folderMgr.createNewNotebook(
-                userB.getRootFolder().getId(), "any", new DefaultRecordContext(), userA));
+    DefaultRecordContext context = new DefaultRecordContext();
+    assertThrows(
+        AuthorizationException.class,
+        () -> folderMgr.createNewNotebook(otherRootFolderId, "any", context, userA));
   }
 }

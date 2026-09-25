@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.dao.RSChemElementDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.StoichiometryDao;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.ChemElementsFormat;
@@ -18,7 +19,7 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class StoichiometryInventoryLinkDaoHibernateTest extends SpringTransactionalTest {
@@ -26,6 +27,7 @@ public class StoichiometryInventoryLinkDaoHibernateTest extends SpringTransactio
   @Autowired private StoichiometryInventoryLinkDao dao;
   @Autowired private StoichiometryDao stoichDao;
   @Autowired private RSChemElementDao chemDao;
+  @Autowired private SampleTemplateDao sampleTemplateDao;
 
   @Test
   public void attemptToSaveSampleTemplateLinkTriggersPrePersist() {
@@ -33,11 +35,7 @@ public class StoichiometryInventoryLinkDaoHibernateTest extends SpringTransactio
     StoichiometryInventoryLink link = setupSampleTemplateAndStoichiometry(user);
 
     ConstraintViolationException ex =
-        assertThrows(
-            ConstraintViolationException.class,
-            () -> {
-              dao.save(link);
-            });
+        assertThrows(ConstraintViolationException.class, () -> dao.save(link));
 
     assertEquals("Cannot link stoichiometry to sample template", ex.getMessage());
   }

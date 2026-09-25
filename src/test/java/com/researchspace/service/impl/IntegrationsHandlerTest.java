@@ -27,11 +27,13 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIA
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_URL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -75,20 +77,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 public class IntegrationsHandlerTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock private UserManager userMgr;
   @Mock private SystemPropertyManager sysPropMgr;
@@ -102,11 +101,9 @@ public class IntegrationsHandlerTest {
 
   private User subject;
 
-  @Before
+  @BeforeEach
   public void setup() {
-    MockitoAnnotations.openMocks(this);
     subject = TestFactory.createAnyUser("any");
-    when(communityMgr.listCommunitiesForUser(eq(subject.getId()))).thenReturn(new ArrayList<>());
     handler.setUserConnectionManager(userConnectionManager);
     ReflectionTestUtils.setField(
         handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
@@ -133,7 +130,7 @@ public class IntegrationsHandlerTest {
     when(sysPropMgr.listSystemPropertyDefinitions()).thenReturn(parentAndChild);
     handler.init();
     parent2child = handler.getParent2ChildMap();
-    assertEquals(1, parent2child.get(parent).size());
+    assertThat(parent2child.get(parent)).hasSize(1);
     assertEquals(child, parent2child.get(parent).get(0));
     assertNull(parent2child.get(child));
   }
@@ -147,9 +144,9 @@ public class IntegrationsHandlerTest {
     assertFalse(handler.isValidIntegration("xyz")); // invalid preference handled gracefully
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void getForPropertyThrowsIAEIfUnknownProperty() {
-    handler.getIntegration(subject, "unknown");
+    assertThrows(IllegalArgumentException.class, () -> handler.getIntegration(subject, "unknown"));
   }
 
   private SystemPropertyValue createSystemPropertyForName(String prefName) {
@@ -160,7 +157,7 @@ public class IntegrationsHandlerTest {
     return rc;
   }
 
-  @Test()
+  @Test
   public void getForPropertyHappyCase() {
     String propName = "DROPBOX";
     SystemPropertyName systemPropertyName = DROPBOX_AVAILABLE;
@@ -178,7 +175,7 @@ public class IntegrationsHandlerTest {
     assertTrue(info.isEnabled());
     assertEquals(propName, info.getName());
     assertNotNull(info.getOptions());
-    assertEquals(0, info.getOptions().size());
+    assertThat(info.getOptions()).isEmpty();
 
     UserPreference dropboxDisabled = new UserPreference(Preference.DROPBOX, subject, "false");
     when(userMgr.getPreferenceForUser(subject, Preference.DROPBOX)).thenReturn(dropboxDisabled);
@@ -307,14 +304,15 @@ public class IntegrationsHandlerTest {
     assertTrue(updateInfo.isEnabled());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testUpdateUnknownIntegrationName() {
     IntegrationInfo infor = new IntegrationInfo();
     infor.setAvailable(true);
     infor.setEnabled(false);
     infor.setName("UNKNOWN");
 
-    handler.updateIntegrationInfo(subject, infor);
+    assertThrows(
+        IllegalArgumentException.class, () -> handler.updateIntegrationInfo(subject, infor));
     Mockito.verify(userMgr, never())
         .setPreference(Preference.DROPBOX, infor.isEnabled() + "", subject.getUsername());
   }
@@ -331,7 +329,7 @@ public class IntegrationsHandlerTest {
     when(userMgr.getPreferenceForUser(subject, Preference.BOX_LINK_TYPE))
         .thenReturn(boxLinkTypePref);
     IntegrationInfo info = handler.getIntegration(subject, Preference.BOX.name());
-    assertEquals("LIVE", info.getOptions().get(Preference.BOX_LINK_TYPE.name()));
+    assertThat(info.getOptions()).containsEntry(Preference.BOX_LINK_TYPE.name(), "LIVE");
   }
 
   @Test
@@ -342,7 +340,7 @@ public class IntegrationsHandlerTest {
     IntegrationInfo info = handler.getIntegration(subject, SLACK_APP_NAME);
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(0, options.size());
+    assertThat(options).isEmpty();
   }
 
   @Test
@@ -363,8 +361,8 @@ public class IntegrationsHandlerTest {
     assertEquals(DIGITAL_COMMONS_DATA_APP_NAME, info.getName());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(1, options.size());
-    assertEquals(MASKED_TOKEN, options.get(DIGITAL_COMMONS_DATA_USER_TOKEN));
+    assertThat(options).hasSize(1);
+    assertThat(options).containsEntry(DIGITAL_COMMONS_DATA_USER_TOKEN, MASKED_TOKEN);
   }
 
   @Test
@@ -384,9 +382,9 @@ public class IntegrationsHandlerTest {
     assertTrue(info.isOauthConnected());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(1, options.size());
+    assertThat(options).hasSize(1);
     // the real token must never be surfaced to the Apps page; only the masked sentinel
-    assertEquals(MASKED_TOKEN, options.get(ACCESS_TOKEN_SETTING));
+    assertThat(options).containsEntry(ACCESS_TOKEN_SETTING, MASKED_TOKEN);
   }
 
   /**
@@ -416,10 +414,10 @@ public class IntegrationsHandlerTest {
     assertEquals(OMERO_APP_NAME, info.getName());
     assertTrue(info.isOauthConnected());
     // the stored OMERO username/password must never reach the Apps page
-    assertEquals(MASKED_TOKEN, info.getOptions().get(ACCESS_TOKEN_SETTING));
-    assertFalse(
-        "the real OMERO credentials must not appear anywhere in the options",
-        info.getOptions().toString().contains("omeropassword"));
+    assertThat(info.getOptions()).containsEntry(ACCESS_TOKEN_SETTING, MASKED_TOKEN);
+    assertThat(info.getOptions().toString())
+        .as("the real OMERO credentials must not appear anywhere in the options")
+        .doesNotContain("omeropassword");
   }
 
   @Test
@@ -490,7 +488,7 @@ public class IntegrationsHandlerTest {
     assertEquals(PYRAT_APP_NAME, info.getName());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(2, options.size());
+    assertThat(options).hasSize(2);
     Collections.sort((List<ServerConfigurationDTO>) options.get(PYRAT_CONFIGURED_SERVERS));
     assertEquals(
         new ServerConfigurationDTO("alias1", "http://pyrat1.server.com/"),
@@ -501,10 +499,11 @@ public class IntegrationsHandlerTest {
 
     // here we do get("null") becasue since the AppCnfigSet is not saved into DB (as per mocks)
     // then it has not got a proper numerical ID
-    assertEquals("alias1", ((Map<String, String>) options.get("null")).get(PYRAT_ALIAS));
-    assertEquals(MASKED_TOKEN, ((Map<String, String>) options.get("null")).get(PYRAT_APIKEY));
-    assertEquals(
-        "http://pyrat1.server.com/", ((Map<String, String>) options.get("null")).get(PYRAT_URL));
+    assertThat(((Map<String, String>) options.get("null"))).containsEntry(PYRAT_ALIAS, "alias1");
+    assertThat(((Map<String, String>) options.get("null")))
+        .containsEntry(PYRAT_APIKEY, MASKED_TOKEN);
+    assertThat(((Map<String, String>) options.get("null")))
+        .containsEntry(PYRAT_URL, "http://pyrat1.server.com/");
   }
 
   @Test
@@ -537,11 +536,6 @@ public class IntegrationsHandlerTest {
         new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
     existingConnection.setExpireTime(0l);
     existingConnection.setAccessToken(origDswToken);
-
-    when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    when(userConnectionManager.findByUserNameProviderName(
-            subject.getUsername(), DSW_APP_NAME, origDswAlias))
-        .thenReturn(Optional.of(existingConnection));
 
     // The potentially updated options that are being passed in
     // from the UI.  Note that the API Key is set as the default
@@ -629,18 +623,7 @@ public class IntegrationsHandlerTest {
                 new PropertyDescriptor(DSW_APIKEY, SettingsType.STRING, null)),
             origDswToken));
 
-    UserConnection existingConnection = new UserConnection();
-    existingConnection.setDisplayName("DSW Display Name");
-    existingConnection.setRank(1);
-    existingConnection.setId(
-        new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
-    existingConnection.setExpireTime(0l);
-    existingConnection.setAccessToken(origDswToken);
-
     when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    when(userConnectionManager.findByUserNameProviderName(
-            subject.getUsername(), DSW_APP_NAME, origDswAlias))
-        .thenReturn(Optional.of(existingConnection));
 
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, origDswAlias);
@@ -650,6 +633,8 @@ public class IntegrationsHandlerTest {
     handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
     // There will be no interactions with the userConnectionManager methods since
     // the URL is not stored in the UserConnection table.
+    Mockito.verify(userConnectionManager, never())
+        .findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias);
     Mockito.verify(userConnectionManager, times(0))
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
     Mockito.verify(userConnectionManager, times(0)).save(any());

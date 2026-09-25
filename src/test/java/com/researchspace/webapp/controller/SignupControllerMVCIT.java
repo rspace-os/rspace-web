@@ -1,10 +1,11 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -17,16 +18,19 @@ import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.model.Role;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.filter.MockRemoteUserPolicy;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -42,8 +46,10 @@ public class SignupControllerMVCIT extends MVCTestBase {
   private @Autowired SignupController signupController;
   private @Autowired RemoteUserRetrievalPolicy remoteUserPolicy;
   private @Autowired UserEnablementUtils userEnablementUtils;
+  private @Autowired JdbcTemplate jdbcTemplate;
+  private @Autowired IMutablePropertyHolder propertyHolder;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
     userEnablementUtils.setLicenseService(new NoCheckLicenseService());
@@ -52,7 +58,7 @@ public class SignupControllerMVCIT extends MVCTestBase {
     propertyHolder.setPicreateGroupOnSignupEnabled(false);
   }
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     RSpaceTestUtils.logout(); // make sure any previously logged in user is logged out
@@ -64,6 +70,32 @@ public class SignupControllerMVCIT extends MVCTestBase {
         .perform(get(SignupController.SIGNUP_URL))
         .andExpect(status().isOk())
         .andExpect(model().attributeExists("user"));
+  }
+
+  @Test
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
+  public void groupCreatedWhenPiGroupCreationOnSignupEnabled() throws Exception {
+    // A self-signed-up user who opts in to being a PI is promoted and given their own group by
+    // DefaultPostUserCreate, gated on the picreateGroupOnSignup.enabled property. This is standard
+    // signup-flow behaviour (not tied to the production content initialiser), so it is exercised
+    // here on the dev profile.
+    propertyHolder.setPicreateGroupOnSignupEnabled(true);
+    String username = getRandomAlphabeticString("pi");
+    long initialGroupCount = countRowsInTable(jdbcTemplate, "rsGroup");
+
+    this.mockMvc
+        .perform(
+            post(SignupController.SIGNUP_URL)
+                .param("username", username)
+                .param("email", username + "@somewhere.com")
+                .param(PASSWORD_PARAM, VALID_PWD)
+                .param(CONFIRM_PASSWORD_PARAM, VALID_PWD)
+                .param("firstName", "first")
+                .param("lastName", "last")
+                .param("picreateGroupOnSignup", "true"))
+        .andExpect(status().is3xxRedirection());
+
+    assertEquals(initialGroupCount + 1, countRowsInTable(jdbcTemplate, "rsGroup"));
   }
 
   @Test

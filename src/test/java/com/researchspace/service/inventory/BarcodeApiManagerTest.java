@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.ApiBarcode;
@@ -10,8 +11,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class BarcodeApiManagerTest extends SpringTransactionalTest {
@@ -20,7 +21,7 @@ public class BarcodeApiManagerTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithExampleContent(testUser);
@@ -49,9 +50,9 @@ public class BarcodeApiManagerTest extends SpringTransactionalTest {
     apiContainer = containerApiMgr.updateApiContainer(containerUpdate, testUser);
 
     // confirm barcodes added
-    assertEquals(1, apiSubSample.getBarcodes().size());
+    assertThat(apiSubSample.getBarcodes()).hasSize(1);
     ;
-    assertEquals(1, apiContainer.getBarcodes().size());
+    assertThat(apiContainer.getBarcodes()).hasSize(1);
 
     // update container's barcodes: add url barcode, remove numeric one
     final String URL_BARCODE = "https://test.two/b";
@@ -62,16 +63,16 @@ public class BarcodeApiManagerTest extends SpringTransactionalTest {
     containerUpdate.getBarcodes().add(apiContainer.getBarcodes().get(0));
     containerUpdate.getBarcodes().get(1).setDeleteBarcodeRequest(true);
     apiContainer = containerApiMgr.updateApiContainer(containerUpdate, testUser);
-    assertEquals(1, apiContainer.getBarcodes().size());
+    assertThat(apiContainer.getBarcodes()).hasSize(1);
 
     // check items found for barcode search
     List<InventoryRecord> itemsByBarcodeData =
         barcodeApiMgr.findItemsByBarcodeData(NUMERIC_BARCODE);
-    assertEquals(1, itemsByBarcodeData.size());
+    assertThat(itemsByBarcodeData).hasSize(1);
     assertEquals(apiSubSample.getGlobalId(), itemsByBarcodeData.get(0).getOid().getIdString());
 
     itemsByBarcodeData = barcodeApiMgr.findItemsByBarcodeData(URL_BARCODE);
-    assertEquals(1, itemsByBarcodeData.size());
+    assertThat(itemsByBarcodeData).hasSize(1);
     assertEquals(apiContainer.getGlobalId(), itemsByBarcodeData.get(0).getOid().getIdString());
   }
 }

@@ -1,9 +1,8 @@
 package com.researchspace.files.service;
 
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -12,23 +11,21 @@ import com.researchspace.service.UserConnectionManager;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ExternalFileStoreLocatorImplTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock UserConnectionManager userConnectionMgr;
   @Mock ExternalFileStore extFileStore;
   ExternalFileStoreLocatorImpl extFileLocator;
   User user;
 
-  @Before
+  @BeforeEach
   public void setup() throws IOException {
     user = createAnyUser("user");
     extFileLocator =
@@ -42,7 +39,7 @@ public class ExternalFileStoreLocatorImplTest {
     setUpUserConnectionExists(userConnection);
     Optional<ExternalFileStoreWithCredentials> efs =
         extFileLocator.getExternalFileStoreForUser(user.getUsername());
-    assertTrue(efs.isPresent());
+    assertThat(efs).isPresent();
     assertEquals(userConnection, efs.get().getUserConnection());
     assertEquals(extFileStore, efs.get().getExtFileStore());
   }
@@ -53,7 +50,7 @@ public class ExternalFileStoreLocatorImplTest {
     setUpUserConnectionNotExists(uc);
     Optional<ExternalFileStoreWithCredentials> efs =
         extFileLocator.getExternalFileStoreForUser(user.getUsername());
-    assertFalse(efs.isPresent());
+    assertThat(efs).isNotPresent();
   }
 
   private UserConnection getUserConnectionForUser() {

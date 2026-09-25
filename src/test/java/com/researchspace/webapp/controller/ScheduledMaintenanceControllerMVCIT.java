@@ -1,11 +1,14 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.JacksonUtil.toJson;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -17,14 +20,19 @@ import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.User;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockServletContext;
@@ -34,6 +42,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 /** Integration tests covering scheduled maintenance. */
 public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
+
+  private static final String CLIENT_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm";
+
+  private static final Duration STOP_USER_LOGIN_MINUTES_BEFORE_START = Duration.ofMinutes(10);
 
   @Autowired MockServletContext servletContext;
 
@@ -49,7 +61,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
   private Date dateNext10mins;
   private Date dateNext20mins;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     initMaintenanceTestUsers();
     logoutAndLoginAs(sysUser);
@@ -66,7 +78,9 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
 
   private void initDates() {
     if (dateNextHour == null) {
+      // The suffix is literal, so format in UTC to match how the server parses it.
       dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.000-00:00");
+      dateFormat.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
 
       Calendar cal = Calendar.getInstance();
       cal.add(Calendar.MINUTE, 10);
@@ -91,7 +105,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(sysUserPrincipal))
             .andExpect(status().isOk())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.length()", Matchers.is(0)))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.length()").value(0))
             .andReturn();
     assertNull(result.getResolvedException());
 
@@ -103,7 +117,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .principal(sysUserPrincipal))
             .andReturn();
     String nextMaintenance = nextMaintenanceResult.getResponse().getContentAsString();
-    assertEquals("next maintenance should be empty", "", nextMaintenance);
+    assertThat(nextMaintenance).as("next maintenance should be empty").isEmpty();
   }
 
   @Test
@@ -124,7 +138,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
             .andReturn();
     String createResponse = createResult.getResponse().getContentAsString();
     assertNotNull(createResponse);
-    assertTrue("create maintenance response shouldn't be empty", createResponse.length() > 0);
+    assertTrue(createResponse.length() > 0, "create maintenance response shouldn't be empty");
     Long savedId = new Long(createResponse);
 
     ScheduledMaintenance createdMaintenance = maintenanceManager.getScheduledMaintenance(savedId);
@@ -149,9 +163,9 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
     ScheduledMaintenance updatedMaintenance = maintenanceManager.getScheduledMaintenance(savedId);
     assertNotNull(updatedMaintenance);
     assertEquals(
-        "maintenance message should be updated",
         testUpdatedMessage,
-        updatedMaintenance.getMessage());
+        updatedMaintenance.getMessage(),
+        "maintenance message should be updated");
 
     MvcResult deleteResult =
         mockMvc
@@ -164,15 +178,22 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
             .andReturn();
     String deleteResponse = deleteResult.getResponse().getContentAsString();
     assertNotNull(deleteResponse);
-    assertExceptionThrown(
-        () -> maintenanceManager.getScheduledMaintenance(savedId),
-        ObjectRetrievalFailureException.class);
+    assertThrows(
+        ObjectRetrievalFailureException.class,
+        () -> maintenanceManager.getScheduledMaintenance(savedId));
   }
 
   @Test
   public void testActiveMaintenanceCreateRetrieveFinishNow() throws Exception {
-    String oldDateString = "2015-01-01T00:00:01.000-00:00";
     String testMessage = "test maintenance message";
+    // The response uses the JVM timezone, so derive both expectations from the same instant.
+    Instant start = Instant.parse("2015-01-01T00:00:01Z");
+    String oldDateString = dateFormat.format(Date.from(start));
+    DateTimeFormatter clientFormat =
+        DateTimeFormatter.ofPattern(CLIENT_DATE_TIME_PATTERN).withZone(ZoneId.systemDefault());
+    String expectedStartDate = clientFormat.format(start);
+    String expectedStopUserLoginDate =
+        clientFormat.format(start.minus(STOP_USER_LOGIN_MINUTES_BEFORE_START));
     SMPost post = new SMPost(null, oldDateString, dateFormat.format(dateNextHour), testMessage);
     MvcResult createResult =
         mockMvc
@@ -193,13 +214,13 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(sysUserPrincipal))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()", Matchers.is(1))) // one maintenance scheduled
-            .andExpect(jsonPath("$.[0].id", Matchers.is(savedId.intValue())))
-            .andExpect(jsonPath("$.[0].activeNow", Matchers.is(Boolean.TRUE)))
-            .andExpect(jsonPath("$.[0].formattedStartDate", Matchers.is("2015-01-01 00:00")))
+            .andExpect(jsonPath("$.length()").value(1)) // one maintenance scheduled
+            .andExpect(jsonPath("$.[0].id").value(savedId.intValue()))
+            .andExpect(jsonPath("$.[0].activeNow").value(Boolean.TRUE))
+            .andExpect(jsonPath("$.[0].formattedStartDate").value(expectedStartDate))
             .andExpect(
-                jsonPath("$.[0].formattedStopUserLoginDate", Matchers.is("2014-12-31 23:50")))
-            .andExpect(jsonPath("$.[0].message", Matchers.is(testMessage)))
+                jsonPath("$.[0].formattedStopUserLoginDate").value(expectedStopUserLoginDate))
+            .andExpect(jsonPath("$.[0].message").value(testMessage))
             .andReturn();
     assertNull(retrieveResult.getResolvedException());
 
@@ -221,7 +242,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(sysUserPrincipal))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()", Matchers.is(0))) // no maintenance scheduled
+            .andExpect(jsonPath("$.length()").value(0)) // no maintenance scheduled
             .andReturn();
     assertNull(retrieveAgainResult.getResolvedException());
   }
@@ -255,9 +276,9 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
     ScheduledMaintenance createdMaintenance = maintenanceManager.getNextScheduledMaintenance();
     assertNotNull(createdMaintenance);
     assertEquals(
-        "created maintenance should be returned as next one", savedId, createdMaintenance.getId());
+        savedId, createdMaintenance.getId(), "created maintenance should be returned as next one");
     assertTrue(
-        "future maintenance should not stop user login", createdMaintenance.getCanUserLoginNow());
+        createdMaintenance.getCanUserLoginNow(), "future maintenance should not stop user login");
 
     // now add a new maintenance scheduled for earlier, and check this is returned as th
     // the next maintenance, i.e. that cache is evicted:
@@ -285,7 +306,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
     Thread.sleep(1000); // wait until next second
     ScheduledMaintenance updatedMaintenance = maintenanceManager.getNextScheduledMaintenance();
     assertNotNull(updatedMaintenance);
-    assertFalse("stop login request should be applied", updatedMaintenance.getCanUserLoginNow());
+    assertFalse(updatedMaintenance.getCanUserLoginNow(), "stop login request should be applied");
 
     maintenanceManager.removeScheduledMaintenance(savedId, sysUser);
     maintenanceManager.removeScheduledMaintenance(earlierId, sysUser);
@@ -307,12 +328,9 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .principal(sysUserPrincipal)
                     .content(toJson(post)))
             .andReturn();
-    assertException(createResult, IllegalArgumentException.class);
-    assertTrue(
-        createResult
-            .getResolvedException()
-            .getMessage()
-            .contains(String.valueOf(User.DEFAULT_MAXFIELD_LEN)));
+    assertInstanceOf(IllegalArgumentException.class, createResult.getResolvedException());
+    assertThat(createResult.getResolvedException().getMessage())
+        .contains(String.valueOf(User.DEFAULT_MAXFIELD_LEN));
   }
 
   private String tooLongMessage() {
@@ -326,7 +344,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                 get("/system/maintenance/ajax/nextMaintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(sysUserPrincipal))
-            .andExpect(jsonPath("$.id", Matchers.equalTo(maintenanceId.intValue())))
+            .andExpect(jsonPath("$.id").value(maintenanceId.intValue()))
             .andReturn();
   }
 }

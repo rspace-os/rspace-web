@@ -1,15 +1,14 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +29,8 @@ public class FieldManagerTest extends SpringTransactionalTest {
 
     file = mgr.addMediaFileLink(file.getId(), user, textField.getId(), false).get().getMediaFile();
     textField = mgr.get(textField.getId(), user).get();
-    assertEquals(1, textField.getLinkedMediaFiles().size());
-    assertEquals(1, file.getLinkedFields().size());
+    assertThat(textField.getLinkedMediaFiles()).hasSize(1);
+    assertThat(file.getLinkedFields()).hasSize(1);
 
     User otherUser = createInitAndLoginAnyUser();
     StructuredDocument otherDoc = createBasicDocumentInRootFolderWithText(otherUser, "any");
@@ -39,8 +38,8 @@ public class FieldManagerTest extends SpringTransactionalTest {
     Field othertextField = otherDoc.getFields().get(0);
     EcatMediaFile otherfile = addImageToFieldButNoFieldAttachment(othertextField, otherUser, null);
 
-    assertFalse(
-        mgr.addMediaFileLink(otherfile.getId(), user, textField.getId(), false).isPresent());
+    assertThat(mgr.addMediaFileLink(otherfile.getId(), user, textField.getId(), false))
+        .isNotPresent();
 
     logoutAndLoginAs(user);
 

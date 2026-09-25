@@ -1,10 +1,10 @@
 package com.researchspace.api.v1.model;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
@@ -14,7 +14,7 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.math.BigDecimal;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ApiSubSampleTest extends SpringTransactionalTest {
 
@@ -90,7 +90,8 @@ public class ApiSubSampleTest extends SpringTransactionalTest {
     // g are not compatible with ml
     ApiSubSample incoming = new ApiSubSample();
     incoming.setQuantity(ONE_GRAM());
-    assertIllegalArgumentException(() -> incoming.applyChangesToDatabaseSubSample(ss1, any));
+    assertThrows(
+        IllegalArgumentException.class, () -> incoming.applyChangesToDatabaseSubSample(ss1, any));
   }
 
   private ApiQuantityInfo ONE_GRAM() {

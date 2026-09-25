@@ -1,9 +1,8 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.webapp.controller.AuditTrailSearchResultCsvGenerator.ATTACHMENT_FILENAME_RSPACE_AUDIT_TRAIL_CSV;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -17,8 +16,8 @@ import com.researchspace.service.audit.search.IAuditFileSearch;
 import java.io.File;
 import java.security.Principal;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
@@ -29,7 +28,7 @@ public class AuditTrailControllerMVCIT extends MVCTestBase {
 
   @Autowired IAuditFileSearch srch;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     srch.setLogFilePrefix("RSLog");
     srch.setLogFolder(new File("src/test/resources/TestResources"));
@@ -59,7 +58,7 @@ public class AuditTrailControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     Map data = parseJSONObjectFromResponseStream(result);
-    assertTrue(data.keySet().contains("data"));
+    assertThat(data).containsKey("data");
   }
 
   @Test
@@ -83,7 +82,7 @@ public class AuditTrailControllerMVCIT extends MVCTestBase {
     String csv = result.getResponse().getContentAsString();
     String[] rows = csv.split("\\n");
     // 1 row per event, plus header plus comment line
-    assertEquals(TOTAL_HITS + 2, rows.length);
+    assertThat(rows).hasSize(TOTAL_HITS + 2);
   }
 
   @Test

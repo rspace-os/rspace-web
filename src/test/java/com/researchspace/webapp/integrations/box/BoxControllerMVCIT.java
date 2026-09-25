@@ -1,10 +1,11 @@
 package com.researchspace.webapp.integrations.box;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,27 +24,26 @@ import com.box.sdk.BoxFileVersion;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxSharedLink;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.OutputStream;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+@TestPropertySource(properties = {"box.client.id=test-client", "box.client.secret=test-secret"})
 public class BoxControllerMVCIT extends MVCTestBase {
 
   private @Autowired BoxController boxController;
-  private @Autowired MessageSourceUtils messages;
 
   private BoxConnector mockBoxConnector;
   private BoxAPIConnection mockConnection;
@@ -56,7 +56,7 @@ public class BoxControllerMVCIT extends MVCTestBase {
   private String mockBoxFolderId = "2345";
   private String mockBoxUnknownId = "1111";
 
-  @Before
+  @BeforeEach
   public void setUp() {
 
     mockBoxConnector = mock(BoxConnector.class);
@@ -68,13 +68,12 @@ public class BoxControllerMVCIT extends MVCTestBase {
     mockConnection = mock(BoxAPIConnection.class);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
 
   @Test
-  @Ignore // ignore for open-source, as requires valid box client id to run
   public void testAuthorizationFlow() throws Exception {
 
     when(mockBoxConnector.createBoxAPIConnection(anyString(), anyString(), anyString()))
@@ -162,11 +161,9 @@ public class BoxControllerMVCIT extends MVCTestBase {
             .andExpect(view().name("connect/authorizationError"))
             .andReturn();
 
-    assertTrue(getAuthError(otherErrorResult).getErrorMsg().contains(exceptionCode + ""));
-    assertTrue(
-        getAuthError(otherErrorResult)
-            .getErrorDetails()
-            .contains(messages.getMessage("apps.box.errors.authorization")));
+    assertThat(getAuthError(otherErrorResult).getErrorMsg()).contains(exceptionCode + "");
+    assertThat(getAuthError(otherErrorResult).getErrorDetails())
+        .contains(messages.getMessage("apps.box.errors.authorization"));
   }
 
   private OauthAuthorizationError getAuthError(MvcResult otherErrorResult) {
@@ -188,7 +185,7 @@ public class BoxControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     ErrorList errorList = getErrorListFromAjaxReturnObject(unauthorizedResult);
-    assertEquals(1, errorList.getErrorMessages().size());
+    assertThat(errorList.getErrorMessages()).hasSize(1);
     assertEquals(BoxController.USER_NOT_AUTHORIZED, errorList.getErrorMessages().get(0));
 
     setUserAsAuthorizedForBoxAPI();
@@ -239,7 +236,7 @@ public class BoxControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     errorList = getErrorListFromAjaxReturnObject(unknownResourceResult);
-    assertEquals(1, errorList.getErrorMessages().size());
+    assertThat(errorList.getErrorMessages()).hasSize(1);
     assertEquals(BoxController.API_OTHER_ERROR, errorList.getErrorMessages().get(0));
     assertNull(mockSession.getAttribute(BoxController.SESSION_BOX_API_CONNECTION));
   }

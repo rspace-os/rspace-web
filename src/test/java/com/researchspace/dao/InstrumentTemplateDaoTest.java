@@ -1,8 +1,8 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.core.util.ISearchResults;
@@ -10,22 +10,23 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InstrumentTemplateDaoTest extends SpringTransactionalTest {
 
   @Autowired private InstrumentTemplateDao instrumentTemplateDao;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     // the owner cache lives on the singleton DAO bean; clear it so tests don't leak into each other
     instrumentTemplateDao.resetDefaultTemplateOwner();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
     instrumentTemplateDao.resetDefaultTemplateOwner();
@@ -114,12 +115,38 @@ public class InstrumentTemplateDaoTest extends SpringTransactionalTest {
     ISearchResults<InstrumentTemplate> results =
         instrumentTemplateDao.getTemplatesForUser(pgCrit, null, null, null, observer);
 
-    assertTrue(
-        results.getResults().stream()
-            .anyMatch(t -> t.getOwner().getUsername().equals(finalDefaultOwner)),
-        "a non-owner must see the default owner's (locked) template");
-    assertTrue(
-        results.getResults().stream().noneMatch(t -> t.getId().equals(privateTemplate.getId())),
-        "a non-owner must not see a non-default-owner's private template");
+    assertThat(results.getResults())
+        .as("a non-owner must see the default owner's (locked) template")
+        .anyMatch(t -> t.getOwner().getUsername().equals(finalDefaultOwner));
+    assertThat(results.getResults())
+        .as("a non-owner must not see a non-default-owner's private template")
+        .noneMatch(t -> t.getId().equals(privateTemplate.getId()));
+  }
+
+  /**
+   * The instrument import resolves the default template by name AND lock (RSDEV-1326). Its own
+   * fixtures rather than the Liquibase-seeded row: {@code DatabaseCleaner.cleanUp} deletes every
+   * {@code InstrumentEntity} row after an integration-test class, and a changeset already recorded
+   * in DATABASECHANGELOG never runs again, so a test depending on that row passes or fails on the
+   * order the suite happened to run in.
+   */
+  @Test
+  public void findLockedTemplateByNameIgnoresEditableAndDifferentlyNamedTemplates() {
+    User owner = createInitAndLoginAnyUser();
+    String sharedName = "Instrument (PIDINST 1.0) junit";
+    // an editable template of the SAME name must not be mistaken for the locked default: only the
+    // seeder writes isEditable=false, so a user's same-named template is never the import target
+    persistEditableTemplateFor(owner, sharedName);
+    InstrumentTemplate locked = persistLockedTemplateFor(owner, sharedName);
+
+    Optional<InstrumentTemplate> found = instrumentTemplateDao.findLockedTemplateByName(sharedName);
+
+    assertThat(found)
+        .hasValueSatisfying(
+            template -> {
+              assertThat(template.getId()).isEqualTo(locked.getId());
+              assertThat(template.isEditable()).isFalse();
+            });
+    assertThat(instrumentTemplateDao.findLockedTemplateByName("no such template")).isEmpty();
   }
 }

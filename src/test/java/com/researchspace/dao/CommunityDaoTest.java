@@ -1,10 +1,11 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
@@ -16,22 +17,18 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class CommunityDaoTest extends SpringTransactionalTest {
 
   @Autowired CommunityDao communityDao;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testBasicSave() {
@@ -41,7 +38,7 @@ public class CommunityDaoTest extends SpringTransactionalTest {
 
     Community reloaded = communityDao.get(community.getId());
     assertEquals(reloaded, community);
-    assertTrue(reloaded.getAdmins().contains(admin));
+    assertThat(reloaded.getAdmins()).contains(admin);
   }
 
   @Test
@@ -59,8 +56,8 @@ public class CommunityDaoTest extends SpringTransactionalTest {
     createAndSaveCommunity(otheradmin, "id2");
 
     List<User> admins = communityDao.listAdminsForCommunity(community.getId());
-    assertEquals(2, admins.size());
-    assertFalse(admins.contains(otheradmin));
+    assertThat(admins).hasSize(2);
+    assertThat(admins).doesNotContain(otheradmin);
   }
 
   @Test
@@ -86,15 +83,15 @@ public class CommunityDaoTest extends SpringTransactionalTest {
 
     // check was persisted
     Community reloaded = communityDao.get(community.getId());
-    assertEquals(1, reloaded.getLabGroups().size());
-    assertTrue(reloaded.getLabGroups().contains(group));
+    assertThat(reloaded.getLabGroups()).hasSize(1);
+    assertThat(reloaded.getLabGroups()).contains(group);
     // also check that can get community fro m group
     assertEquals(community, communityDao.getCommunityForGroup(group.getId()));
     // now check was removed
     assertTrue(reloaded.removeLabGroup(group));
     communityDao.save(reloaded);
     Community reloaded2 = communityDao.get(community.getId());
-    assertEquals(0, reloaded2.getLabGroups().size());
+    assertThat(reloaded2.getLabGroups()).isEmpty();
 
     // test query for getWithLaodedGRoups (this doesn't test fetch strategy
     // as runs in single transaction
@@ -110,7 +107,7 @@ public class CommunityDaoTest extends SpringTransactionalTest {
     User admin = createAndSaveAdminUser();
     // if no acommunity, returns empty result
     List<Community> res = communityDao.listCommunitiesForAdmin(admin.getId());
-    assertTrue(res.isEmpty());
+    assertThat(res).isEmpty();
     logoutAndLoginAs(admin);
     Community comm = createAndSaveCommunity(admin, "id1");
     List<Community> res2 = communityDao.listCommunitiesForAdmin(admin.getId());
@@ -138,7 +135,7 @@ public class CommunityDaoTest extends SpringTransactionalTest {
     assertEquals(B4Count + numCommunitesToCreate, results.getHits().intValue());
     assertEquals(B4Count + numCommunitesToCreate, results.getTotalHits().intValue());
     // contains all results (default community + 13 created here)
-    assertTrue(results.getResults().containsAll(created));
+    assertThat(results.getResults()).containsAll(created);
   }
 
   List<Community> createNCommunities(User admin, int n) {

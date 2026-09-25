@@ -1,22 +1,23 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UserConnectionIT extends RealTransactionSpringTestBase {
 
   private @Autowired UserConnectionManager uConnMgr;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -46,8 +47,7 @@ public class UserConnectionIT extends RealTransactionSpringTestBase {
     differentId.setAccessToken("replacement-token-different-id");
     uConnMgr.replaceConnection(differentId);
 
-    assertEquals(
-        1, uConnMgr.findListByUserNameProviderName(aUser.getUsername(), providerId).size());
+    assertThat(uConnMgr.findListByUserNameProviderName(aUser.getUsername(), providerId)).hasSize(1);
     // single-row lookup still works and the surviving row decrypts to the latest token
     fetched = uConnMgr.findByUserNameProviderName(aUser.getUsername(), providerId).get();
     assertEquals("replacement-token-different-id", fetched.getAccessToken());

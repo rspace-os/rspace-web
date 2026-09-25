@@ -1,18 +1,20 @@
 package com.researchspace.linkedelements;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
 
   @Autowired private TextFieldDataSanitizer fieldDataSanitizer;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fieldDataSanitizer.setBaseURL("http://somewhere.com");
   }
@@ -21,13 +23,13 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
   public void jsoupFiltersRSPAC_592() {
     String scriptHtml = "<p>text</p><img src=\"/image/123\"><script>alert(1);</script>";
     String cleaned = fieldDataSanitizer.cleanData(scriptHtml);
-    assertFalse(cleaned.contains("<script>alert(1);</script>"));
-    assertTrue(cleaned.contains("<img src=\"/image/123\" />"));
+    assertThat(cleaned).doesNotContain("<script>alert(1);</script>");
+    assertThat(cleaned).contains("<img src=\"/image/123\" />");
 
     String imageHtml = "<p>text</p><img src=\"javascript:alert(1);\"><script>alert(1);</script>";
     cleaned = fieldDataSanitizer.cleanData(imageHtml);
-    assertFalse(cleaned.contains("<script>alert(1);</script>"));
-    assertFalse(cleaned.contains("javascript:alert(1);"));
+    assertThat(cleaned).doesNotContain("<script>alert(1);</script>");
+    assertThat(cleaned).doesNotContain("javascript:alert(1);");
 
     // check data-attributes OK
     String dataHtml =
@@ -74,15 +76,15 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
 
     String newHTml = "<img src=\"image.png\" onerror=\"alert('1');\">";
     newHTml = fieldDataSanitizer.cleanData(newHTml);
-    assertFalse(newHTml.contains("alert"));
+    assertThat(newHTml).doesNotContain("alert");
   }
 
   @Test
   public void HTMLTagFiltersRSPAC_1572() {
     String scriptHtml = "<p>text</p><img src=\"/image/123\"><script>alert(1);</script>";
     String cleaned = fieldDataSanitizer.textDataOnly(scriptHtml);
-    assertFalse(cleaned.contains("<script>"));
-    assertFalse(cleaned.contains("</script>"));
+    assertThat(cleaned).doesNotContain("<script>");
+    assertThat(cleaned).doesNotContain("</script>");
 
     String imageHtml = "<p>text</p><img src=\"javascript:alert(1);\"><script>alert(1);</script>";
     cleaned = fieldDataSanitizer.textDataOnly(imageHtml);
@@ -147,7 +149,7 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
             + " style=\"border: 0\" width=\"800\" height=\"600\" frameborder=\"0\""
             + " scrolling=\"no\"></iframe></div>";
     String cleaned = fieldDataSanitizer.cleanData(randomIframeHtml);
-    assertEquals("<p>text</p><img src=\"/image/123\" />", cleaned);
+    assertEquals("<p>text</p>\n<img src=\"/image/123\" />", cleaned);
 
     // embed iframe from youtube is allowed
     String youtubeEmbedHtml =
@@ -159,14 +161,14 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
             + " allowfullscreen>\n"
             + "</iframe></div>";
     cleaned = fieldDataSanitizer.cleanData(youtubeEmbedHtml);
-    assertTrue("was: " + cleaned, cleaned.contains("youtubeTest"));
+    assertThat(cleaned).as("was: " + cleaned).contains("youtubeTest");
     assertTrue(
-        "was: " + cleaned,
         cleaned.contains("iframe")
             && cleaned.contains("src=\"https://www.youtube.com/embed/YkRldqVfTJo\"")
             && cleaned.contains(
                 "allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope;"
-                    + " picture-in-picture\""));
+                    + " picture-in-picture\""),
+        "was: " + cleaned);
 
     // embed iframe from JoVE is allowed
     String joveEmbedHtml =
@@ -183,12 +185,12 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
             + "</p>\n"
             + "</iframe>";
     cleaned = fieldDataSanitizer.cleanData(joveEmbedHtml);
-    assertTrue("was: " + cleaned, cleaned.contains("joveTest"));
+    assertThat(cleaned).as("was: " + cleaned).contains("joveTest");
     assertTrue(
-        "was: " + cleaned,
         cleaned.contains("iframe")
             && cleaned.contains(
                 "src=\"https://www.jove.com/embed/player?id=54239&amp;t=1&amp;s=1&amp;fpv=1\"")
-            && cleaned.contains("allow=\"encrypted-media *\""));
+            && cleaned.contains("allow=\"encrypted-media *\""),
+        "was: " + cleaned);
   }
 }

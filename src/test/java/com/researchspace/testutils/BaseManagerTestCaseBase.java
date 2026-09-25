@@ -2,7 +2,7 @@ package com.researchspace.testutils;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.junit.Assert.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.axiope.search.IFileIndexer;
 import com.researchspace.Constants;
@@ -35,20 +35,11 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.auth.ShiroRealm;
 import com.researchspace.core.testutil.CoreTestUtils;
-import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.MediaUtils;
-import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.FolderDao;
-import com.researchspace.dao.FormDao;
-import com.researchspace.dao.ListOfMaterialsDao;
-import com.researchspace.dao.RecordDao;
-import com.researchspace.dao.SampleDao;
-import com.researchspace.dao.SampleTemplateDao;
-import com.researchspace.dao.UserDao;
 import com.researchspace.linkedelements.FieldLinksEntitiesSynchronizer;
-import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.Community;
@@ -86,7 +77,6 @@ import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
-import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -100,30 +90,22 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.properties.IMutablePropertyHolder;
-import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
-import com.researchspace.service.DocumentTagManager;
-import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.GroupManager;
-import com.researchspace.service.LicenseService;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RSChemElementManager;
-import com.researchspace.service.RSMathManager;
 import com.researchspace.service.RSpaceRequestManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
-import com.researchspace.service.StoichiometryManager;
-import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
@@ -136,14 +118,9 @@ import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryBulkOperationApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
-import com.researchspace.service.inventory.InventoryIdentifierApiManager;
-import com.researchspace.service.inventory.InventoryImportManager;
-import com.researchspace.service.inventory.InventoryPermissionUtils;
-import com.researchspace.service.inventory.InventoryTagApiManager;
 import com.researchspace.service.inventory.ListOfMaterialsApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
-import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import java.io.File;
@@ -174,23 +151,21 @@ import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.util.ThreadContext;
-import org.hibernate.LazyInitializationException;
 import org.hibernate.SessionFactory;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.env.Environment;
+import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 /**
  * It is really important that this is the single point at which the application context is
@@ -207,12 +182,15 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
  * instance of each bean is created.
  */
 @DefaultTestContext
-public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContextTests {
+@WithSpringContext
+public abstract class BaseManagerTestCaseBase {
+
+  @Autowired protected ApplicationContext applicationContext;
 
   protected static final Logger log = LoggerFactory.getLogger(BaseManagerTestCaseBase.class);
 
-  @BeforeClass
-  public static void BeforeClass() throws Exception {
+  @BeforeAll
+  public static void skipFastRuns() throws Exception {
     TestRunnerController.ignoreIfFastRun();
   }
 
@@ -250,13 +228,8 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected UserSessionTracker activeUsers = new UserSessionTracker();
 
   protected ResourceBundle rb;
-  @Autowired protected DocumentTagManager documentTagManager;
   protected @Autowired MessageSourceUtils messages;
-  protected @Autowired Environment env;
-  protected @Autowired IMutablePropertyHolder propertyHolder;
-  protected @Autowired LicenseService licenseService;
   protected @Autowired GroupManager grpMgr;
-  protected @Autowired FieldParser fieldParser;
   protected @Autowired FieldManager fieldMgr;
   protected @Autowired IRecordFactory recordFactory;
   protected @Autowired CommunicationManager communicationMgr;
@@ -265,45 +238,27 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected @Autowired IFileIndexer fileIndexer;
   protected @Autowired FolderDao folderDao;
   protected @Autowired FolderManager folderMgr;
-  protected @Autowired FormDao formDao;
-  protected @Autowired IPermissionUtils permissionUtils;
-  protected @Autowired RecordDao recordDao;
   protected @Autowired RecordManager recordMgr;
-  protected @Autowired BaseRecordManager baseRecordMgr;
   protected @Autowired SessionFactory sessionFactory;
-  protected @Autowired UserDao userDao;
   protected @Autowired UserManager userMgr;
   protected @Autowired FormManager formMgr;
   protected @Autowired RecordSharingManager sharingMgr;
   protected @Autowired MediaManager mediaMgr;
   protected @Autowired RSChemElementManager rsChemElementManager;
-  protected @Autowired EcatChemistryFileManager chemistryFileManager;
   protected @Autowired ChemistryProvider chemistryProvider;
   protected @Autowired RichTextUpdater richTextUpdater;
   protected @Autowired RSpaceRequestManager reqUpdateMgr;
   protected @Autowired MessageOrRequestCreatorManager reqCreateMgr;
-  protected @Autowired RSMathManager mathMgr;
   protected @Autowired FieldLinksEntitiesSynchronizer fieldSyncher;
   protected @Autowired NfsManager nfsMgr;
   protected @Autowired SampleApiManager sampleApiMgr;
   protected @Autowired InstrumentEntityApiManager instrumentApiMgr;
-  protected @Autowired SampleDao sampleDao;
-  protected @Autowired SampleTemplateDao sampleTemplateDao;
-  protected @Autowired ContainerDao containerDao;
   protected @Autowired SubSampleApiManager subSampleApiMgr;
-  protected @Autowired InventoryTagApiManager inventoryTagsApiManager;
   protected @Autowired ContainerApiManager containerApiMgr;
   protected @Autowired InventoryBulkOperationApiManager inventoryBulkOpApiMgr;
-  protected @Autowired InventoryImportManager importApiMgr;
-  protected @Autowired InventoryEditLockTracker invLockTracker;
   protected @Autowired ListOfMaterialsApiManager listOfMaterialsApiMgr;
-  protected @Autowired ListOfMaterialsDao listOfMaterialsDao;
   protected @Autowired InventoryFileApiManager inventoryFileApiMgr;
-  protected @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
   protected @Autowired BasketApiManager basketApiMgr;
-  protected @Autowired InventoryPermissionUtils invPermissionUtils;
-  protected @Autowired StoichiometryManager stoichiometryMgr;
-  protected @Autowired StoichiometryService stoichiometryService;
 
   // Stored so we can re-apply before each test method (see resetSecurityManager below).
   private SecurityManager securityManagerTestRef;
@@ -324,7 +279,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * would see the wrong security manager and fail with "UsernamePasswordToken could not be
    * authenticated".
    */
-  @Before
+  @BeforeEach
   public void resetSecurityManager() {
     if (securityManagerTestRef != null) {
       SecurityUtils.setSecurityManager(securityManagerTestRef);
@@ -334,6 +289,15 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
       // go through the wrong (contaminating) manager and reject UsernamePasswordToken.
       // We use unbindSubject() rather than remove() to avoid clearing unrelated thread-local state.
       ThreadContext.unbindSubject();
+    }
+  }
+
+  @AfterEach
+  public void closeFileIndexer() throws IOException {
+    // Different Spring test contexts can share the attachment index directory. Release the
+    // writer after every test so the next context cannot inherit a stale Lucene write lock.
+    if (fileIndexer != null && fileIndexer.isInitialised()) {
+      fileIndexer.close();
     }
   }
 
@@ -1126,39 +1090,6 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   }
 
   /**
-   * Asserts that a particular exception is thrown.
-   *
-   * @param invokable The code to be run that should throw an exception
-   * @param clazz The expected exception class
-   * @throws Exception
-   */
-  protected void assertExceptionThrown(Invokable invokable, Class<? extends Throwable> clazz)
-      throws Exception {
-    CoreTestUtils.assertExceptionThrown(invokable, clazz);
-  }
-
-  /**
-   * Convenience method to assert that an arbitrary piece of code throws an AuthorizationException
-   *
-   * @param invokable
-   * @throws Exception
-   */
-  protected void assertAuthorisationExceptionThrown(Invokable invokable) throws Exception {
-    assertExceptionThrown(invokable, AuthorizationException.class);
-  }
-
-  /**
-   * Convenience method to assert that an arbitrary piece of code throws an
-   * LazyInitializationException, useful for testing lazy-loading strategies.
-   *
-   * @param invokable
-   * @throws Exception
-   */
-  protected void assertLazyInitializationExceptionThrown(Invokable invokable) throws Exception {
-    assertExceptionThrown(invokable, LazyInitializationException.class);
-  }
-
-  /**
    * Will clear the Hibernate session and detach all objects, useful for testing lazy-loading
    * strategies. <br>
    * The session is still open after invoking this method and new queries can be issued.
@@ -1282,7 +1213,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @param msg A String that is the output of a Velocity template rendering.
    */
   protected void assertVelocityVariablesReplaced(String msg) {
-    assertFalse(msg.contains("$"));
+    assertThat(msg).doesNotContain("$");
   }
 
   /**
@@ -1597,7 +1528,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
 
   protected ISearchResults<MessageOrRequest> searchDBForRequests(User u) {
     PaginationCriteria<CommunicationTarget> pc = new PaginationCriteria<CommunicationTarget>();
-    pc.setOrderBy("communication.creationTime");
+    pc.setOrderBy("creationTime");
     ISearchResults<MessageOrRequest> mors =
         communicationMgr.getActiveMessagesAndRequestsForUserTarget(u.getUsername(), pc);
     return mors;

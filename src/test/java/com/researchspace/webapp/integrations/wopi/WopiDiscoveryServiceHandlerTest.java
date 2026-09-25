@@ -1,23 +1,19 @@
 package com.researchspace.webapp.integrations.wopi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.wopi.WopiDiscoveryServiceHandler.WopiAction;
 import com.researchspace.webapp.integrations.wopi.WopiDiscoveryServiceHandler.WopiApp;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.util.Map;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
-@RunWith(ConditionalTestRunner.class)
 // Need to be sure office online integration is enabled
 @TestPropertySource(
     properties = {
@@ -35,7 +31,7 @@ public class WopiDiscoveryServiceHandlerTest extends SpringTransactionalTest {
     WopiTestUtilities.setWopiDiscoveryFromExampleFile(
         discoveryServiceHandler, discoveryProcessor, WopiTestUtilities.MSOFFICE_DISCOVERY_XML_FILE);
     Map<String, WopiAction> docxActions = discoveryServiceHandler.getActionsForFileType("docx");
-    assertEquals(15, docxActions.size());
+    assertThat(docxActions).hasSize(15);
     assertEquals(
         "https://word-view.officeapps.live.com/wv/wordviewerframe.aspx?"
             + "<ui=UI_LLCC&><rs=DC_LLCC&><dchat=DISABLE_CHAT&><hid=HOST_SESSION_ID&>"
@@ -46,22 +42,22 @@ public class WopiDiscoveryServiceHandlerTest extends SpringTransactionalTest {
     assertEquals("Word", docxActions.get("edit").getApp().getName());
 
     Map<String, WopiAction> csvActions = discoveryServiceHandler.getActionsForFileType("csv");
-    assertEquals(4, csvActions.size());
+    assertThat(csvActions).hasSize(4);
     assertEquals("xlsx", csvActions.get("convert").getTargetext());
 
     Map<String, WopiApp> supportedExts = discoveryServiceHandler.getSupportedExtensions();
-    assertTrue(supportedExts.containsKey("docx"));
+    assertThat(supportedExts).containsKey("docx");
     // extension "wopitest" does not have a default app, which makes it special
-    assertTrue(supportedExts.containsKey("wopitest"));
+    assertThat(supportedExts).containsKey("wopitest");
     // RSPAC-2066: WordPdf app should be ignored
-    assertFalse(supportedExts.containsKey("pdf"));
+    assertThat(supportedExts).doesNotContainKey("pdf");
   }
 
   /**
    * If this test suddenly fails, it means that Microsoft have updated their discovery XML with some
    * sort of changes that break our WOPI integration :(
    */
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   @Test
   public void checkActualDiscoveryXmlProcessing() throws InterruptedException {
     discoveryProcessor.updateData();
@@ -73,8 +69,8 @@ public class WopiDiscoveryServiceHandlerTest extends SpringTransactionalTest {
       waitTime += 100L;
     }
     // Test basic properties that should hold true for the foreseeable future :P
-    assertTrue(discoveryServiceHandler.getSupportedExtensions().containsKey("docx"));
-    assertTrue(discoveryServiceHandler.getSupportedExtensions().containsKey("csv"));
+    assertThat(discoveryServiceHandler.getSupportedExtensions()).containsKey("docx");
+    assertThat(discoveryServiceHandler.getSupportedExtensions()).containsKey("csv");
     assertEquals(
         "Word",
         discoveryServiceHandler.getActionsForFileType("docx").get("view").getApp().getName());

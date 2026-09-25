@@ -4,8 +4,7 @@ import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTest
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.HISTORY_ID_1;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.INVOCATION_ID_1;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.archive.ArchiveExternalWorkFlow;
 import com.researchspace.archive.ArchiveExternalWorkFlowData;
@@ -47,14 +46,14 @@ public class ExternalWorkflowHtmlGeneratorTest {
 
     String html = generator.getHtmlForExternalWorkflowData(Set.of(data));
 
-    assertTrue(html.contains("Galaxy Workflow Data"));
-    assertTrue(html.contains("default-name"));
-    assertTrue(html.contains("http://localhost:8080/gallery/item/0"));
-    assertTrue(html.contains("Test History"));
-    assertTrue(html.contains("default-baseurl/histories/view?id=" + HISTORY_ID_1));
-    assertTrue(html.contains(WORKFLOWTHATWASUSED));
-    assertTrue(html.contains("default-baseurl/workflows/invocations/" + INVOCATION_ID_1));
-    assertTrue(html.contains(DEFAULT_INVOCATION_STATE));
+    assertThat(html).contains("Galaxy Workflow Data");
+    assertThat(html).contains("default-name");
+    assertThat(html).contains("http://localhost:8080/gallery/item/0");
+    assertThat(html).contains("Test History");
+    assertThat(html).contains("default-baseurl/histories/view?id=" + HISTORY_ID_1);
+    assertThat(html).contains(WORKFLOWTHATWASUSED);
+    assertThat(html).contains("default-baseurl/workflows/invocations/" + INVOCATION_ID_1);
+    assertThat(html).contains(DEFAULT_INVOCATION_STATE);
   }
 
   @Test
@@ -65,9 +64,9 @@ public class ExternalWorkflowHtmlGeneratorTest {
 
     String html = generator.getHtmlForExternalWorkflowData(Set.of(data));
 
-    assertTrue(html.contains("dataset &amp;lt;one&amp;gt;"));
-    assertTrue(html.contains("Test History"));
-    assertTrue(html.contains("<td>-</td>"));
+    assertThat(html).contains("dataset &amp;lt;one&amp;gt;");
+    assertThat(html).contains("Test History");
+    assertThat(html).contains("<td>-</td>");
   }
 
   @Test
@@ -82,12 +81,12 @@ public class ExternalWorkflowHtmlGeneratorTest {
     String html =
         generator.getHtmlForArchivedExternalWorkflowData(Set.of(data), Set.of(invocation));
 
-    assertTrue(html.contains("linkFile"));
-    assertTrue(html.contains("extContainerName"));
-    assertTrue(html.contains("baseUrl/histories/view?id=extContainerId"));
-    assertTrue(html.contains("Archived workflow"));
-    assertTrue(html.contains("baseUrl/workflows/invocations/extID"));
-    assertTrue(html.contains("RUNNING"));
-    assertFalse(html.contains("http://localhost:8080/gallery/item"));
+    assertThat(html).contains("linkFile");
+    assertThat(html).contains("extContainerName");
+    assertThat(html).contains("baseUrl/histories/view?id=extContainerId");
+    assertThat(html).contains("Archived workflow");
+    assertThat(html).contains("baseUrl/workflows/invocations/extID");
+    assertThat(html).contains("RUNNING");
+    assertThat(html).doesNotContain("http://localhost:8080/gallery/item");
   }
 }

@@ -4,7 +4,6 @@ import com.researchspace.core.util.DateRange;
 import com.researchspace.core.util.FilterCriteria;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
-import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.AuditDao;
 import com.researchspace.model.EcatCommentItem;
 import com.researchspace.model.EcatDocumentFile;
@@ -20,6 +19,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.sort.DeletedRecordSort;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,19 +69,7 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
       User user, String searchTerm, PaginationCriteria<AuditedRecord> pgCrit) {
 
     AuditReader auditReader = getAuditReader();
-    String orderBy;
-    if (!StringUtils.isEmpty(pgCrit.getOrderBy())) {
-      // Hibernate 6 requires fully-qualified HQL paths; map logical sort field names to HQL paths
-      Map<String, String> orderByFieldMap =
-          Map.of(
-              "name", "rtf.record.editInfo.name",
-              "creationDate", "rtf.record.editInfo.creationDate",
-              "modificationDate", "rtf.record.editInfo.modificationDate");
-      String orderByField = orderByFieldMap.getOrDefault(pgCrit.getOrderBy(), pgCrit.getOrderBy());
-      orderBy = " order by " + orderByField + " " + pgCrit.getSortOrder();
-    } else {
-      orderBy = " order by rtf.deletedDate " + SortOrder.DESC;
-    }
+    String orderBy = makeOrderBy(pgCrit);
 
     // Query for all user's deleted folders; we will then exclude their contents from the final
     // results as only 'top level' deleted items can be restored
@@ -140,6 +128,27 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
     List<RecordToFolder> deletedRecordToFolder = recordsQuery.list();
     List<AuditedRecord> deletedAudRecords = processRecordToFolderResults(deletedRecordToFolder);
     return new SearchResultsImpl<>(deletedAudRecords, pgCrit, count);
+  }
+
+  /** Builds the ORDER BY clause for the deleted-records listing. */
+  static String makeOrderBy(PaginationCriteria<AuditedRecord> pgCrit) {
+    String path;
+    switch (DeletedRecordSort.fromRequest(pgCrit.getOrderBy())) {
+      case NAME:
+        path = "rtf.record.editInfo.name";
+        break;
+      case CREATION_DATE:
+        path = "rtf.record.editInfo.creationDate";
+        break;
+      case MODIFICATION_DATE:
+        path = "rtf.record.editInfo.modificationDate";
+        break;
+      case DELETED_DATE:
+      default:
+        path = "rtf.deletedDate";
+        break;
+    }
+    return " order by " + path + " " + pgCrit.getSortOrder();
   }
 
   private List<Long> getContentsIDsFromDeletedFolders(List<Long> deletedFolderIds) {

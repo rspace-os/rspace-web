@@ -7,6 +7,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import java.util.List;
+import java.util.Optional;
 
 /** For DAO operations specific to Inventory {@link InstrumentTemplate} */
 public interface InstrumentTemplateDao extends InstrumentEntityDao<InstrumentTemplate> {
@@ -30,6 +31,13 @@ public interface InstrumentTemplateDao extends InstrumentEntityDao<InstrumentTem
    *     account.
    */
   String getDefaultTemplatesOwner();
+
+  /**
+   * The locked default template with this name (the seeded "Instrument (PIDINST 1.0)"), or empty
+   * before the seeder has run. Locked means {@code isEditable=false}, which only the seeder writes,
+   * so a same-named template a user created is never returned (ADR 0003).
+   */
+  Optional<InstrumentTemplate> findLockedTemplateByName(String name);
 
   /** Returns all instrument templates with the given name owned by the given user. */
   List<InstrumentTemplate> findInstrumentTemplatesByName(String name, User user);

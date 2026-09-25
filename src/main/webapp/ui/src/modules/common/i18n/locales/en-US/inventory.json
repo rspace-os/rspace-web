@@ -391,7 +391,9 @@
     }
   },
   "createNew": {
-    "csvImport": "CSV Import",
+    "csvImport": "Import",
+    "fromCsv": "From CSV",
+    "fromCsvDescription": "Samples, Subsamples, Containers and Instruments",
     "helpTitles": {
       "container": "Info on creating containers.",
       "instrument": "Info on creating instruments.",
@@ -399,6 +401,7 @@
       "sample": "Info on creating samples.",
       "template": "Info on creating templates."
     },
+    "importPidinst": "From PIDINST registry",
     "newContainer": "New Container",
     "newInstrument": "New Instrument",
     "newInstrumentTemplate": "New Instrument Template",
@@ -760,7 +763,6 @@
         "pidinstDocLink": "See PIDINST Documentation for details",
         "preview": "Preview",
         "publishAwaitingReview": "This instrument PID has been submitted to the B2INST community and is awaiting curator review.",
-        "publishPidinstPublished": "The community accepted this submission. The instrument PID is already published and cannot be published again.",
         "refresh": "Refresh",
         "rorError": "Could not get RoR data.",
         "show": "Show",
@@ -769,6 +771,7 @@
           "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
           "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
           "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+          "linkedPidinst": "This PIDINST was minted outside RSpace and is linked to this instrument. It resolves at its own registry, not on an RSpace page, and RSpace does not publish or update it.",
           "pidinstAccepted": "This PIDINST ID is Accepted. The PIDINST ID is a citable ePIC Handle that redirects to the <externalLink href=\"{link}\">registered landing page</externalLink>. The metadata is publicly available through that page and the instrument's B2INST record.",
           "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft. You can delete this identifier and register a new one.",
           "pidinstCreated": "The review request was created but has not been submitted to the community yet. Press Publish to submit it.",
@@ -794,6 +797,7 @@
         "tooltips": {
           "deleteClosedReview": "Delete this identifier so a new one can be registered",
           "deleteDraft": "Delete Draft",
+          "linkedReadOnly": "This PID was minted outside RSpace, so RSpace cannot publish, retract or refresh it. Removing the link is an API operation.",
           "missingData": "Some missing data",
           "notPublished": "Not published yet",
           "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
@@ -1010,7 +1014,8 @@
           "relation": "Relation"
         },
         "loading": "Loading...",
-        "none": "No Inventory items link to this {recordTypeName}.",
+        "none": "{recordType, select, document {No Inventory items link to this document.} notebook {No Inventory items link to this notebook.} galleryFile {No Inventory items link to this gallery file.} other {No Inventory items link to this record.}}",
+        "row": "<globalId>{globalId}</globalId>: {name}{relationKind, select, attachment { <relation>(Attachment)</relation>} relation { <relation>({relationType})</relation>} other {}}",
         "title": "Related inventory items"
       },
       "targetBrowser": {
@@ -1217,6 +1222,10 @@
   "identifierModel": {
     "alerts": {
       "doiRequired": "DOI must be known",
+      "externalUpdateFailed": "Instrument PID not updated ({doi})",
+      "externalUpdateFailedMany": "{count, plural, one {# instrument PID was not updated} other {# instrument PIDs were not updated}}",
+      "externalUpdateNotPossible": "Instrument PID left unchanged ({doi})",
+      "externalUpdateNotPossibleMany": "{count, plural, one {# instrument PID was left unchanged} other {# instrument PIDs were left unchanged}}",
       "published": "The identifier {doi} has been published.",
       "publishFailed": "The identifier could not be published.",
       "refreshed": "The identifier status is now \"{state}\".",
@@ -1418,6 +1427,7 @@
     "templateDetails": {
       "chooseExistingTemplate": "Choose existing template.",
       "createNewTemplate": "Create new template.",
+      "selectInstrumentTemplate": "Select a template from which these imported instruments will be created.",
       "selectTemplate": "Select a template from which these imported samples will be created."
     },
     "title": "IMPORT"
@@ -1466,7 +1476,7 @@
       "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
       "fetchError": "Could not fetch instrument template details.",
       "label": "Instrument Template",
-      "noTemplate": "No template",
+      "noTemplate": "No Template",
       "noTemplateTitle": "No Template",
       "unknownReason": "Unknown reason.",
       "version": "Version {version}"
@@ -1699,6 +1709,82 @@
     },
     "pending": {
       "exportData": "Exporting User Data..."
+    }
+  },
+  "pidinstImport": {
+    "appBarTitle": "PIDINST",
+    "closeConfirm": {
+      "cancel": "Continue importing",
+      "confirm": "Close anyway",
+      "message": "An import is in progress. Closing this dialog will not stop it, but you will not see the result here.",
+      "title": "Import in progress"
+    },
+    "columns": {
+      "commissioned": "Commissioned",
+      "instrumentTypes": "Instrument type",
+      "linkedTo": "Linked to",
+      "manufacturers": "Manufacturer",
+      "model": "Model",
+      "name": "Name",
+      "owners": "Owner",
+      "pid": "PID",
+      "state": "Registry state"
+    },
+    "description": "Search the PID registry enabled for this RSpace for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
+    "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
+    "helpTitle": "PIDINST help",
+    "importError": "Could not import the instrument.",
+    "importing": {
+      "message": "Importing \"{name}\" from the PID registry.",
+      "title": "Importing instrument"
+    },
+    "importSuccess": "Successfully imported the instrument.",
+    "linkedTo": {
+      "noAccess": "No access",
+      "noAccessDetail": "An instrument you cannot access"
+    },
+    "preview": {
+      "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
+      "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
+      "alternateIdentifier": "Alternate identifier",
+      "commissioned": "Commissioned",
+      "decommissioned": "Decommissioned",
+      "description": "Description",
+      "instrumentTypes": "Instrument types",
+      "landingPage": "Landing page",
+      "manufacturers": "Manufacturers",
+      "measuredVariables": "Measured variables",
+      "model": "Model",
+      "owners": "Owners",
+      "pid": "PID",
+      "providerRecord": "Registry record",
+      "title": "Selected record"
+    },
+    "providers": {
+      "b2inst": "B2INST",
+      "datacite": "DataCite"
+    },
+    "results": {
+      "none": "No published instrument records match this search.",
+      "prompt": "Search to list published instrument records.",
+      "summary": "{shown} of {total, plural, one {# record} other {# records}} found at {provider}.",
+      "truncated": "Only the first {shown, plural, one {# record is} other {# records are}} shown. Refine the search to find a specific instrument."
+    },
+    "search": {
+      "label": "Search the registry",
+      "placeholder": "Name, manufacturer, owner, DOI or Handle",
+      "searching": "Searching the PID registry…",
+      "validation": {
+        "tooShort": "Enter at least {min} characters to search."
+      }
+    },
+    "searchError": "Could not search the PID registry.",
+    "selectRadioLabel": "Select record: {name}",
+    "title": "Import Instrument from PIDINST",
+    "validation": {
+      "alreadyLinked": "This PID is already linked to instrument {globalId}.",
+      "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
+      "noSelection": "Select a record to import."
     }
   },
   "print": {

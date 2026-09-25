@@ -1,30 +1,27 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
-import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.apache.shiro.authz.AuthorizationException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
-@RunWith(ConditionalTestRunner.class)
 @Sql(
     statements = {
       "insert into App values (-5, 1, 'other.app', 'other.app')",
@@ -45,17 +42,14 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
   private @Autowired UserAppConfigManager mgr;
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     testUser = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(testUser);
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void sendExternalMessageToSlack() {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
     StructuredDocument doc2 = createBasicDocumentInRootFolderWithText(testUser, "any2");
@@ -73,7 +67,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void sendExternalMessageToMSTeams() {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
     StructuredDocument doc2 = createBasicDocumentInRootFolderWithText(testUser, "any2");
@@ -127,7 +121,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     assertFalse(response.isSucceeded());
   }
 
-  @Test()
+  @Test
   public void sendExternalMessagePermissions() throws Exception {
     Long cfgSetId = setUpAppConfigForUser(testUser, () -> getSlackDevDfg());
     logoutAndLoginAs(testUser);
@@ -135,8 +129,10 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     User u2 = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(u2);
     logoutAndLoginAs(u2);
-    RSpaceTestUtils.assertAuthExceptionThrown(
-        () -> handler.sendExternalMessage(EXPECTED_MESSAGE, cfgSetId, toList(-10L), u2));
+    var recordIds = toList(-10L);
+    assertThrows(
+        AuthorizationException.class,
+        () -> handler.sendExternalMessage(EXPECTED_MESSAGE, cfgSetId, recordIds, u2));
   }
 
   private Map<String, String> getSlackDevDfg() {

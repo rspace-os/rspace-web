@@ -1,21 +1,21 @@
 package com.researchspace.core.util.jsonserialisers;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ISO8601DateSerialiserTest {
 
   ISO8601DateSerialiser dateSerialiser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     dateSerialiser = new ISO8601DateSerialiser();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

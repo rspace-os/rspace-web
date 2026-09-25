@@ -1,10 +1,8 @@
 package com.researchspace.service;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -35,19 +33,16 @@ import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class RSChemElementMgrTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
 
   @Mock FieldManager mockFieldMgr;
   @Mock IPermissionUtils mockPermissionUtils;
@@ -60,7 +55,7 @@ public class RSChemElementMgrTest {
   String exampleContent;
   RSChemElementManagerImpl chemElementManager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
     exampleContent = RSpaceTestUtils.getExampleFieldContent();
@@ -74,9 +69,6 @@ public class RSChemElementMgrTest {
     chemElementManager.setChemistryProvider(chemistryProvider);
     chemElementManager.setFileStore(filestore);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testByIdChecksPermissions() throws Exception {
@@ -150,11 +142,11 @@ public class RSChemElementMgrTest {
     when(chemDao.getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(3, 4)))
         .thenReturn(List.of(chemElement4));
     List<ChemSearchedItem> searchHits = chemElementManager.search("", "", 10, user);
-    assertEquals(4, searchHits.size());
+    assertThat(searchHits).hasSize(4);
 
     // cutoff at 3 - manager will only return 3 elems
     searchHits = chemElementManager.search("", "", 3, user);
-    assertEquals(3, searchHits.size());
+    assertThat(searchHits).hasSize(3);
 
     /* reduce db query pagination to 1, with cutoff at 2 - the chemDao should only be called twice,
     i.e. paginated db queries should stop as soon as searchResultLimit is reached */
@@ -164,7 +156,7 @@ public class RSChemElementMgrTest {
         .thenReturn(List.of(chemElement2));
     chemElementManager.setChemSearchChemIdsPageSize(1);
     searchHits = chemElementManager.search("", "", 2, user);
-    assertEquals(2, searchHits.size());
+    assertThat(searchHits).hasSize(2);
     // verify no further calls after cutoff
     verify(chemDao, times(1))
         .getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(0, 1));
@@ -288,7 +280,7 @@ public class RSChemElementMgrTest {
 
     verify(chemDao, times(2)).save(chemElementCaptor.capture());
     RSChemElement savedElement = chemElementCaptor.getAllValues().get(0);
-    assertThat(savedElement.getSmilesString(), is(equalTo(expectedSmiles)));
+    assertEquals(expectedSmiles, savedElement.getSmilesString());
   }
 
   @Test

@@ -4,15 +4,15 @@ import com.researchspace.core.testutil.ModelTestUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class EcatImageAnnotationTest {
 
   private static final long FIELD_ID = 6L;
   EcatImageAnnotation ann;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     ann = new EcatImageAnnotation();
   }

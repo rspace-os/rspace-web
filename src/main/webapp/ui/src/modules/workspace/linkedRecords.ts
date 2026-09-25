@@ -23,6 +23,7 @@ function splitLinkedRecords(rows: ReadonlyArray<WorkspaceLinkedRecord>): LinkedR
   for (const row of rows) {
     if (row.id != null && row.oid) {
       readable.push({
+        id: row.id,
         globalId: row.oid.idString,
         name: row.name ?? "",
         ownerFullName: row.ownerFullName ?? null,

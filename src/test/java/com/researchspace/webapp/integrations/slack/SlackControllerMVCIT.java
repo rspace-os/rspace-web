@@ -1,10 +1,7 @@
 package com.researchspace.webapp.integrations.slack;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -12,8 +9,8 @@ import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -29,7 +26,7 @@ public class SlackControllerMVCIT extends MVCTestBase {
   @Autowired private SlackController slackController;
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
     user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
@@ -53,8 +50,8 @@ public class SlackControllerMVCIT extends MVCTestBase {
                 .principal(user::getUsername))
         .andExpect(status().isOk())
         .andExpect(view().name(CONNECTED_VIEW))
-        .andExpect(model().attribute("connectionError", containsString("access_denied")))
-        .andExpect(model().attribute("connectionError", not(containsString(STATE_MISMATCH))));
+        .andExpect(modelAttributeContains("connectionError", "access_denied"))
+        .andExpect(modelAttributeDoesNotContain("connectionError", STATE_MISMATCH));
   }
 
   @Test
@@ -70,7 +67,7 @@ public class SlackControllerMVCIT extends MVCTestBase {
                 .principal(user::getUsername))
         .andExpect(status().isOk())
         .andExpect(view().name(CONNECTED_VIEW))
-        .andExpect(model().attribute("connectionError", containsString(STATE_MISMATCH)));
+        .andExpect(modelAttributeContains("connectionError", STATE_MISMATCH));
   }
 
   @Test
@@ -79,6 +76,6 @@ public class SlackControllerMVCIT extends MVCTestBase {
         .perform(get(CALLBACK_URL).param("error", "access_denied").principal(user::getUsername))
         .andExpect(status().isOk())
         .andExpect(view().name(CONNECTED_VIEW))
-        .andExpect(model().attribute("connectionError", containsString(STATE_MISMATCH)));
+        .andExpect(modelAttributeContains("connectionError", STATE_MISMATCH));
   }
 }

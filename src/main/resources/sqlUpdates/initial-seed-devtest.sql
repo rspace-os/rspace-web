@@ -4,7 +4,7 @@
 SET FOREIGN_KEY_CHECKS=0;
 REPLACE INTO `DMPUser` (`id`, `user_id`, `timestamp`, `dmpId`, `title`, `dmpDownloadPdf_id`) VALUES (-2,-4,'2021-08-20 00:00:00','-12','My DMP number 2',NULL);
 REPLACE INTO `DMPUser` (`id`, `user_id`, `timestamp`, `dmpId`, `title`, `dmpDownloadPdf_id`) VALUES (-1,-4,'2021-09-20 00:00:00','-22','My DMP number 1',NULL);
--- RSDEV-416: FileStoreRoot is intentionally NOT seeded here - it is env-specific runtime state created at startup by FileStoreRootDetector (as on production/cloud). The pre-1.98.1 dev-test changesets froze ${user.home} paths + a vestigial RSPAC-964 test fixture (FileStoreRoot id=-1 / FileProperty id=-2); no current test depends on them and the migration that consumed them is gone, so they are dropped.
+-- RSDEV-416: FileStoreRoot is intentionally NOT seeded here - it is env-specific runtime state created at startup by FileStoreRootDetector (as on production/cloud). The pre-1.98.1 dev-test changesets froze absolute home-directory paths + a vestigial RSPAC-964 test fixture (FileStoreRoot id=-1 / FileProperty id=-2); no current test depends on them and the migration that consumed them is gone, so they are dropped.
 REPLACE INTO `OAuthApp` (`id`, `name`, `clientId`, `clientSecret`, `user_id`) VALUES (-3,'testApp3','testAppClientId3','353d2acadf762f4eea56c2668753fc11731b360a20b0b3347d23905337a6bab4',-3);
 REPLACE INTO `OAuthApp` (`id`, `name`, `clientId`, `clientSecret`, `user_id`) VALUES (-2,'testApp2','testAppClientId2','9b836d5b15e90b5994c131022d2015d6f677dd3792a421d489b6177f86f7de26',-2);
 REPLACE INTO `OAuthApp` (`id`, `name`, `clientId`, `clientSecret`, `user_id`) VALUES (-1,'testApp1','testAppClientId1','0e917cc5c0b95cafb3a47ded277dd7cb0da88def594c743af4adfafdc3648798',-1);

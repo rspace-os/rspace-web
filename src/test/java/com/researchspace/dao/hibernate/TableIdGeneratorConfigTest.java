@@ -1,8 +1,9 @@
 package com.researchspace.dao.hibernate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.BaseDaoTestCase;
 import com.researchspace.model.Group;
@@ -15,13 +16,11 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.RSForm;
 import java.util.ArrayList;
 import java.util.List;
-import org.hibernate.SessionFactory;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.generator.Generator;
 import org.hibernate.id.enhanced.TableGenerator;
 import org.hibernate.metamodel.MappingMetamodel;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.Test;
 
 /**
  * Guards the id-generation layout for TABLE-strategy entities: each entity allocates from its own
@@ -31,8 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  * instead, interleaving ids across unrelated tables.
  */
 public class TableIdGeneratorConfigTest extends BaseDaoTestCase {
-
-  @Autowired SessionFactory sessionFactory;
 
   @Test
   public void noTableStrategyEntityUsesTheSharedDefaultSegment() {
@@ -46,11 +43,12 @@ public class TableIdGeneratorConfigTest extends BaseDaoTestCase {
                 offenders.add(descriptor.getEntityName());
               }
             });
-    assertTrue(
-        "Entities allocating ids from the shared \"default\" segment (add a named @TableGenerator"
-            + " to each): "
-            + offenders,
-        offenders.isEmpty());
+    assertThat(offenders)
+        .as(
+            "Entities allocating ids from the shared \"default\" segment (add a named"
+                + " @TableGenerator to each): "
+                + offenders)
+        .isEmpty();
   }
 
   @Test
@@ -81,10 +79,10 @@ public class TableIdGeneratorConfigTest extends BaseDaoTestCase {
 
   private TableGenerator tableGeneratorOf(Class<?> entityClass) {
     Generator generator = mappingMetamodel().getEntityDescriptor(entityClass).getGenerator();
-    assertNotEquals(entityClass + " has no generator", null, generator);
+    assertNotEquals(null, generator, entityClass + " has no generator");
     assertTrue(
-        entityClass + " expected a TableGenerator but was " + generator.getClass(),
-        generator instanceof TableGenerator);
+        generator instanceof TableGenerator,
+        entityClass + " expected a TableGenerator but was " + generator.getClass());
     return (TableGenerator) generator;
   }
 

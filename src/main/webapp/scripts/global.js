@@ -2504,7 +2504,7 @@ RS.switchToJQueryUIButton = function () {
 RS.addPaginationTooltips = function (selector) {
   var paginationWrapper = $(selector);
   var title;
-  paginationWrapper.find("a").each(function (i) {
+  paginationWrapper.find("a, span").each(function (i) {
     if ($(this).hasClass("blank_space")) return;
 
     // First and Last page sometimes get textual labels rather than numbers.
@@ -2522,7 +2522,7 @@ RS.addPaginationTooltips = function (selector) {
     $(this).attr("title", title);
   });
   // hide pagination panel entirely (including any undesirable margins) iff it's empty
-  if (paginationWrapper.find("a").length) {
+  if (paginationWrapper.find("a, span").length) {
     paginationWrapper.show();
   } else {
     paginationWrapper.hide();

@@ -2,11 +2,13 @@ package com.researchspace.service;
 
 import static com.researchspace.service.FileDuplicateStrategy.AS_NEW;
 import static org.apache.commons.io.IOUtils.readLines;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
@@ -15,18 +17,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -37,8 +39,9 @@ public class FileStoreTest extends SpringTransactionalTest {
 
   final String testFilePath = "src/test/resources/TestResources/testTxt.txt";
   private @Autowired FileStoreMetaManager fileStoreMetaMgr;
+  @TempDir Path tempFolder;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
@@ -53,11 +56,12 @@ public class FileStoreTest extends SpringTransactionalTest {
     assertNotNull(urix);
 
     // retrieve meta data
-    Map<String, String> wheres = new HashMap<String, String>();
-    wheres.put("fileCategory", "Image");
-    wheres.put("fileGroup", "something");
-    wheres.put("fileUser", user.getUsername());
-    wheres.put("fileVersion", "v1");
+    Map<String, String> wheres =
+        Map.of(
+            "fileCategory", "Image",
+            "fileGroup", "something",
+            "fileUser", user.getUsername(),
+            "fileVersion", "v1");
     List<FileProperty> flst = fileStoreMetaMgr.findProperties(wheres);
     assertTrue(flst.size() >= 0);
 
@@ -81,80 +85,56 @@ public class FileStoreTest extends SpringTransactionalTest {
   }
 
   @Test
-  @Ignore
   public void testVersion() throws IOException {
     User user = createAndSaveRandomUser();
-    // a text file
-
     FileProperty fp = new FileProperty();
     fp.setFileCategory("Image");
-    fp.setFileGroup("any");
-    fp.setFileUser(user.getUsername() + "x");
+    fp.setFileGroup(RandomStringUtils.randomAlphanumeric(12));
+    fp.setFileUser(user.getUsername());
     fp.setFileVersion("v1");
-    File resource = new File(testFilePath);
-    FileInputStream fis = new FileInputStream(resource);
+    Path source = tempFolder.resolve("testText.txt");
+    Files.writeString(source, "first version");
+    URI uri = fileStore.save(fp, source.toFile(), AS_NEW);
+    assertNotNull(uri);
 
-    URI uri = fileStore.save(fp, fis, "testText.txt", AS_NEW);
-
-    fis.close();
-
-    // copy prserves id
     FileProperty fp2 = fp.copy();
-    File resource2 = new File(testFilePath);
-    FileInputStream fis2 = new FileInputStream(resource2);
-    // will return null as is duplicate
-
-    URI uri2 = fileStore.save(fp2, fis2, "testText.txt", FileDuplicateStrategy.ERROR);
-
-    fis2.close();
-    assertNull(uri2);
-
-    // causes a new file to be created as ID is now different.
     fp2.setFileVersion("v2");
-    // create a search map to retrieve version 2
-    Map<String, String> wheres = new HashMap<String, String>();
-    wheres.put("fileVersion", "v2");
-
-    FileInputStream fis3 = new FileInputStream(resource2);
-
-    assertEquals(0, fileStoreMetaMgr.findProperties(wheres).size());
-    URI uri3 = fileStore.save(fp2, fis3, "testText.txt", FileDuplicateStrategy.ERROR);
-    assertEquals(1, fileStoreMetaMgr.findProperties(wheres).size());
-
-    assertNotNull(uri3);
-    assertTrue(uri3.toString().contains("v2"));
-    fis3.close();
+    Map<String, String> wheres =
+        Map.of(
+            "fileCategory", fp2.getFileCategory(),
+            "fileGroup", fp2.getFileGroup(),
+            "fileUser", fp2.getFileUser(),
+            "fileVersion", "v2");
+    assertThat(fileStoreMetaMgr.findProperties(wheres)).isEmpty();
+    URI version2Uri = fileStore.save(fp2, source.toFile(), FileDuplicateStrategy.ERROR);
+    assertThat(fileStoreMetaMgr.findProperties(wheres)).hasSize(1);
+    assertNotNull(version2Uri);
+    assertThat(version2Uri.toString()).contains("v2");
 
     // update file content
-    String newContent = System.currentTimeMillis() + "";
-    FileUtils.writeStringToFile(resource2, newContent);
-
-    // and write, but forcing update
-    FileInputStream fis4 = new FileInputStream(resource2);
-
-    URI uri4 = fileStore.save(fp2, fis4, "testText.txt", FileDuplicateStrategy.REPLACE);
-
-    assertNotNull(uri4);
-    assertEquals(uri4, uri3); // uri is unchanged
-
-    // check that content has been updated in the repo
+    String newContent = "replacement content";
+    Files.writeString(source, newContent);
+    URI replacedUri = fileStore.save(fp2, source.toFile(), FileDuplicateStrategy.REPLACE);
+    assertEquals(version2Uri, replacedUri);
     assertEquals(newContent, getFileContentAsStringFromRepo(fp2));
+    assertEquals(1, fileStoreMetaMgr.findProperties(wheres).size());
 
-    // v2 file property should still be in DB?
-
-    // assertEquals(1, fileStore.find(wheres).size());
-    fis4.close();
-
-    FileProperty fp4 = fp2.copy();
-    // now we'll save, but forcing a new file to be saved
-    FileInputStream fis5 = new FileInputStream(resource2);
-    URI uri5 = fileStore.save(fp2, fis5, "testText.txt", AS_NEW); // this returned uri is not the
-    // modified one.
-    assertNotNull(uri5);
+    Files.writeString(source, "duplicate content");
+    try (var input = Files.newInputStream(source)) {
+      assertNull(fileStore.save(fp2.copy(), input, "testText.txt", FileDuplicateStrategy.ERROR));
+    }
     assertEquals(newContent, getFileContentAsStringFromRepo(fp2));
+    assertEquals(1, fileStoreMetaMgr.findProperties(wheres).size());
 
-    // assertFalse(uri5.equals(uri4));
-    fis5.close();
+    FileProperty duplicate = fp2.copy();
+    try (var input = Files.newInputStream(source)) {
+      URI duplicateUri = fileStore.save(duplicate, input, "testText.txt", AS_NEW);
+      assertNotNull(duplicateUri);
+      assertNotEquals(version2Uri, duplicateUri);
+    }
+    assertEquals("duplicate content", getFileContentAsStringFromRepo(duplicate));
+    assertEquals(newContent, getFileContentAsStringFromRepo(fp2));
+    assertEquals(2, fileStoreMetaMgr.findProperties(wheres).size());
   }
 
   String getFileContentAsStringFromRepo(FileProperty fp) throws IOException {
@@ -173,7 +153,7 @@ public class FileStoreTest extends SpringTransactionalTest {
     assertTrue(fileStore.exists(fp));
     File found = fileStore.findFile(fp);
 
-    assertEquals("found file isn't the same as original!", found.getName(), file.getName());
+    assertThat(file).as("found file isn't the same as original!").hasName(found.getName());
 
     // change properties so doesn't exist...
     fp.setFileCategory("pdf2");
@@ -218,12 +198,12 @@ public class FileStoreTest extends SpringTransactionalTest {
     List<File> filestoreFileAndFolder = Arrays.asList(found, parentFolder);
     Optional<Integer> folderOnListRemovedFilesCount =
         fileStore.removeUserFilestoreFiles(filestoreFileAndFolder);
-    assertFalse(folderOnListRemovedFilesCount.isPresent());
+    assertThat(folderOnListRemovedFilesCount).isNotPresent();
 
     // let's try with just a file on a list
     List<File> filestoreFile = Arrays.asList(found);
     Optional<Integer> removedFilesCount = fileStore.removeUserFilestoreFiles(filestoreFile);
-    assertTrue(removedFilesCount.isPresent());
+    assertThat(removedFilesCount).isPresent();
     assertEquals(1, removedFilesCount.get().intValue());
     assertFalse(fileStore.exists(fp));
     assertTrue(fileStore.exists(fp2));
@@ -231,7 +211,7 @@ public class FileStoreTest extends SpringTransactionalTest {
     // subsequent remove does nothing
     Optional<Integer> subsequentRemovedFilesCount =
         fileStore.removeUserFilestoreFiles(filestoreFile);
-    assertTrue(subsequentRemovedFilesCount.isPresent());
+    assertThat(subsequentRemovedFilesCount).isPresent();
     assertEquals(0, subsequentRemovedFilesCount.get().intValue());
   }
 }

@@ -30,6 +30,24 @@ not a tty. For example, when piping into less use `--color` and `-R`
 pnpm run test --color | less -R
 ```
 
+## Storybook composition examples
+
+For the complete Storybook workflow, including authoring, verification, and
+RSpace preview deployment, see [Storybook](../Storybook.md).
+
+Run `pnpm storybook` from the repository root. MUI compound examples are under
+each component family's **Composition** entry, with sources in
+`src/modules/common/ui/material-ui/components/*/*.compound.stories.tsx`
+relative to the frontend directory. Controls change the demonstrated props;
+the examples keep interactive state locally.
+
+Run `pnpm storybook:test .compound.stories.tsx` to check these examples in
+Chromium. Their `play` functions exercise interactions, and their
+`a11y.test: "error"` setting makes accessibility violations fail the tests.
+The separate open-dialog story checks portal content while it is visible.
+Keep compound components inside their MUI parent and supply accessible names
+and relationships when adding examples.
+
 ## Writing
 
 New tests should be written to a `__tests__` directory adjacent to the source

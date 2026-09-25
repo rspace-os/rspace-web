@@ -3,7 +3,9 @@ package com.axiope.search;
 import static com.axiope.search.SearchConstants.*;
 import static com.researchspace.Constants.SYSADMIN_ROLE;
 import static com.researchspace.testutils.SearchTestUtils.createAdvSearchCfg;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -11,9 +13,8 @@ import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.testutils.TestFactory;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
@@ -35,7 +36,7 @@ public class WorkspaceSearchInputValidatorTest {
   String[] TOO_WILDCARD = {"l: xxx:xxx OR aaa:*"};
   User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
     input = new WorkspaceListingConfig();
@@ -46,12 +47,32 @@ public class WorkspaceSearchInputValidatorTest {
     return new WorkspaceSearchInputValidator(user2);
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
   @Test
   public void testSupports() {
     assertTrue(validator.supports(WorkspaceListingConfig.class));
+  }
+
+  @Test
+  public void separatorsMayBeSurroundedByWhitespace() {
+    String[] options = {RECORDS_SEARCH_OPTION, NAME_SEARCH_OPTION};
+    String[] terms = {"SD1 , NB22 ;FL333", "name"};
+    Errors errors = reinitializeErrors();
+    input = new WorkspaceListingConfig(crit, options, terms, -1L, true);
+    validator.validate(input, errors);
+    assertFalse(errors.hasGlobalErrors());
+
+    String[] dateOptions = {CREATION_DATE_SEARCH_OPTION};
+    String[] dateTerms = {" 2020-01-10T00:00:00Z ; null "};
+    errors = reinitializeErrors();
+    input = new WorkspaceListingConfig(crit, dateOptions, dateTerms, -1L, true);
+    validator.validate(input, errors);
+    assertFalse(errors.hasGlobalErrors());
+
+    String[] badTerms = {"SD1 , X2", "name"};
+    errors = reinitializeErrors();
+    input = new WorkspaceListingConfig(crit, options, badTerms, -1L, true);
+    validator.validate(input, errors);
+    assertEquals("errors.termCannotParse", errors.getAllErrors().get(0).getCode());
   }
 
   @Test
@@ -155,7 +176,7 @@ public class WorkspaceSearchInputValidatorTest {
     cfg = createAdvSearchCfg(new String[] {TAG_SEARCH_OPTION}, new String[] {"a234"});
     errors = reinitializeErrors();
     validator.validate(cfg, errors);
-    assertFalse("Tag option fails with small tag value", errors.hasGlobalErrors());
+    assertFalse(errors.hasGlobalErrors(), "Tag option fails with small tag value");
 
     // unless it's a user (owner) search, where short names are fine (as long as more than 1 char)
     cfg = createAdvSearchCfg(new String[] {OWNER_SEARCH_OPTION}, new String[] {"dude"});

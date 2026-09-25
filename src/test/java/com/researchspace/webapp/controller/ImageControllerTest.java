@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,19 +21,18 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
+@ExtendWith(MockitoExtension.class)
 public class ImageControllerTest extends JakartaValidatorTest {
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock UserManager usrMgr;
   @Mock RecordManager recordMgr;
@@ -44,13 +43,13 @@ public class ImageControllerTest extends JakartaValidatorTest {
   @InjectMocks private ImageController imgController;
   User anyUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
     imgController.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -60,7 +59,7 @@ public class ImageControllerTest extends JakartaValidatorTest {
     byte[] fallback = new byte[] {1, 2, 3, 4};
     when(mediaFactory.getFileSuffixIcon(doc.getFileName())).thenReturn(fallback);
     ResponseEntity<byte[]> resp = imgController.getDocThumbnail(doc.getId(), null);
-    assertEquals(fallback.length, resp.getBody().length);
+    assertThat(resp.getBody()).hasSameSizeAs(fallback);
     verify(recordMgr, never()).save(doc, anyUser);
   }
 
@@ -88,7 +87,7 @@ public class ImageControllerTest extends JakartaValidatorTest {
 
     ResponseEntity<byte[]> resp = imgController.getDocThumbnail(doc.getId(), null);
     final int ATTACH_FILE_LENGTH = 506;
-    assertEquals(ATTACH_FILE_LENGTH, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(ATTACH_FILE_LENGTH);
     verify(recordMgr).save(doc, anyUser);
   }
 }

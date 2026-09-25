@@ -11,6 +11,7 @@ import com.researchspace.model.Community;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.sort.UserSort;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
@@ -47,7 +48,8 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
     }
 
     List<UserUsageInfo> uui = new ArrayList<>();
-    if (pgCrit.isOrderByAnInstanceProperty()) {
+    UserSort sort = UserSort.fromRequest(pgCrit.getOrderBy());
+    if (sort != UserSort.FILE_USAGE && sort != UserSort.RECORD_COUNT) {
       ISearchResults<User> userDBList;
       if (communityToLimitTo != null) {
         userDBList =
@@ -70,7 +72,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
       return createSearchResults(uui, userDBList);
     }
 
-    if (SysAdminManager.ORDER_BY_FILE_USAGE.equals(pgCrit.getOrderBy())) {
+    if (sort == UserSort.FILE_USAGE) {
       // we need to get ordered paginated list by fileusage, then get user information for each user
       Map<String, DatabaseUsageByUserGroupByResult> fileUsage;
       long totalUsersWithFiles;
@@ -103,37 +105,31 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
           uui, pgCrit.getPageNumber().intValue(), totalUsersWithFiles, pgCrit.getResultsPerPage());
     }
 
-    if (SysAdminManager.ORDER_BY_RECORD_COUNT.equals(pgCrit.getOrderBy())) {
-      Map<String, DatabaseUsageByUserGroupByResult> recordCount;
-      long totalUsersWithRecords;
-      if (communityToLimitTo != null) {
-        recordCount = recordDao.getTotalRecordsForUsers(commUsers.getResults(), pgCrit);
-        totalUsersWithRecords = commUsers.getTotalHits();
-      } else {
-        recordCount = recordDao.getTotalRecordsForUsers(pgCrit);
-        totalUsersWithRecords = recordDao.getCountOfUsersWithRecords();
-      }
-      Map<String, User> users = new HashMap<>();
-      for (String uname : recordCount.keySet()) {
-        users.put(uname, userDao.getUserByUsername(uname));
-      }
-      Map<String, DatabaseUsageByUserGroupByResult> fileUsage =
-          fileDao.getTotalFileUsageForUsers(users.values(), pgCrit);
-      for (String uname : recordCount.keySet()) {
-        User user = users.get(uname);
-        UserUsageInfo info =
-            setUserUsageInfoProperties(
-                user, fileUsage.get(user.getUsername()), recordCount.get(uname));
-        uui.add(info);
-      }
-      return new SearchResultsImpl<>(
-          uui,
-          pgCrit.getPageNumber().intValue(),
-          totalUsersWithRecords,
-          pgCrit.getResultsPerPage());
+    // sort == UserSort.RECORD_COUNT
+    Map<String, DatabaseUsageByUserGroupByResult> recordCount;
+    long totalUsersWithRecords;
+    if (communityToLimitTo != null) {
+      recordCount = recordDao.getTotalRecordsForUsers(commUsers.getResults(), pgCrit);
+      totalUsersWithRecords = commUsers.getTotalHits();
+    } else {
+      recordCount = recordDao.getTotalRecordsForUsers(pgCrit);
+      totalUsersWithRecords = recordDao.getCountOfUsersWithRecords();
     }
-
-    return null;
+    Map<String, User> users = new HashMap<>();
+    for (String uname : recordCount.keySet()) {
+      users.put(uname, userDao.getUserByUsername(uname));
+    }
+    Map<String, DatabaseUsageByUserGroupByResult> fileUsage =
+        fileDao.getTotalFileUsageForUsers(users.values(), pgCrit);
+    for (String uname : recordCount.keySet()) {
+      User user = users.get(uname);
+      UserUsageInfo info =
+          setUserUsageInfoProperties(
+              user, fileUsage.get(user.getUsername()), recordCount.get(uname));
+      uui.add(info);
+    }
+    return new SearchResultsImpl<>(
+        uui, pgCrit.getPageNumber().intValue(), totalUsersWithRecords, pgCrit.getResultsPerPage());
   }
 
   private ISearchResults<User> getAllUsersInCommunity(Community comm) {

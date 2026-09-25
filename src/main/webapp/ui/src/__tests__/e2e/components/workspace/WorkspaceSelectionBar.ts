@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { PublishDialogComponent } from "@/__tests__/e2e/components/myrspace/PublishDialogComponent";
 import { ShareDialog } from "@/__tests__/e2e/components/shared/ShareDialog";
 import { MoveDialog } from "./MoveDialog";
 import { WorkspaceRenameDialog } from "./WorkspaceRenameDialog";
@@ -96,5 +97,12 @@ export class WorkspaceSelectionBar {
 
   async addRemoveTags(): Promise<void> {
     await this.item("Add/Remove Tags").getByRole("link", { name: "Add/Remove Tags" }).click();
+  }
+
+  async publish(): Promise<PublishDialogComponent> {
+    await this.item("Publish").getByRole("link", { name: "Publish" }).click();
+    const dialog = new PublishDialogComponent(this.page);
+    await dialog.waitUntilVisible();
+    return dialog;
   }
 }

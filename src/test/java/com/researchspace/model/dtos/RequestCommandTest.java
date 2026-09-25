@@ -1,34 +1,33 @@
 package com.researchspace.model.dtos;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.comms.CommunicationTargetFinderPolicy.TargetFinderPolicy;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.EnumSet;
-import org.apache.commons.lang3.ArrayUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class RequestCommandTest extends SpringTransactionalTest {
 
-  @Before
-  public void setUp() throws Exception {}
+  private @Autowired IPermissionUtils permissionUtils;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSetTargetFinderPolicyThrowsIAEIfNotInEnum() {
     MsgOrReqstCreationCfg rc = new MsgOrReqstCreationCfg();
-    rc.setTargetFinderPolicy("XXX");
+    assertThrows(IllegalArgumentException.class, () -> rc.setTargetFinderPolicy("XXX"));
   }
 
   public void testSetTargetFinderPolicyHappyCase() {
@@ -46,7 +45,7 @@ public class RequestCommandTest extends SpringTransactionalTest {
     MsgOrReqstCreationCfg rc = new MsgOrReqstCreationCfg(u, permissionUtils);
     rc.setPermUtils(permissionUtils);
     // by default, won't have permissions to request ext share
-    assertFalse(ArrayUtils.contains(rc.getAllMessageTypes(), MessageType.REQUEST_EXTERNAL_SHARE));
-    assertTrue(ArrayUtils.contains(rc.getAllMessageTypes(), MessageType.SIMPLE_MESSAGE));
+    assertThat(rc.getAllMessageTypes()).doesNotContain(MessageType.REQUEST_EXTERNAL_SHARE);
+    assertThat(rc.getAllMessageTypes()).contains(MessageType.SIMPLE_MESSAGE);
   }
 }

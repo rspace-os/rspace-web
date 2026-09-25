@@ -2,9 +2,9 @@ package com.researchspace.webapp.integrations.protocolsio;
 
 import static com.researchspace.core.util.JacksonUtil.fromJson;
 import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,20 +42,19 @@ import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 @Slf4j
 public class ProtocolsIOConverterTest {
 
@@ -91,16 +90,14 @@ public class ProtocolsIOConverterTest {
   @Mock RecordManager recordMgr;
   @Mock ApplicationContext context;
   @Mock ApplicationEventPublisher publisher;
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
-  public @Rule TemporaryFolder tempFolder = new TemporaryFolder();
+  @TempDir public File tempFolder;
   @InjectMocks ProtocolsIOToDocumentConverterImplTSS impl;
   User any = TestFactory.createAnyUser("any");
   RecordFactory rf = new RecordFactory();
   Folder importFolder;
   StructuredDocument doc;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     vel = VelocityTestUtils.setupVelocity("src/main/resources/velocityTemplates/integrations");
     impl.setVelocity(vel);
@@ -112,9 +109,6 @@ public class ProtocolsIOConverterTest {
     doc = TestFactory.createAnySD();
     doc.setOwner(any);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGeneratePRotocol() throws IOException {
@@ -133,7 +127,7 @@ public class ProtocolsIOConverterTest {
     File testFile = RSpaceTestUtils.getResource("pio-with-images.html");
     String htmlString = FileUtils.readFileToString(testFile, UTF_8);
     Map<String, File> downloadedMap = impl.downloadImagesToTempFiles(impl.getImages(htmlString));
-    assertEquals(5, downloadedMap.size());
+    assertThat(downloadedMap).hasSize(5);
     assertEquals(5, impl.downloadCount);
   }
 
@@ -156,7 +150,7 @@ public class ProtocolsIOConverterTest {
         impl.getTempFileFromURL(
             new URL(
                 "https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bmzeh4hw.jpg"));
-    assertTrue(tempFile.getName().endsWith(".jpg"));
+    assertThat(tempFile.getName()).endsWith(".jpg");
   }
 
   private void setupmocks(Protocol protocol, RSForm aform) {
@@ -170,7 +164,6 @@ public class ProtocolsIOConverterTest {
             Mockito.any(DefaultRecordContext.class),
             Mockito.eq(false)))
         .thenReturn(doc);
-    when(recordMgr.save(doc, any)).thenReturn(doc);
   }
 
   @Test
@@ -185,9 +178,9 @@ public class ProtocolsIOConverterTest {
             .toString());
     String html = impl.generateHtml(protocol);
     log.info(html);
-    assertFalse(html.contains("$"));
-    FileUtils.write(new File(tempFolder.getRoot(), "pio.html"), html, UTF_8);
-    log.info("File written to {}", tempFolder.getRoot() + "/" + "pio.html");
+    assertThat(html).doesNotContain("$");
+    FileUtils.write(new File(tempFolder, "pio.html"), html, UTF_8);
+    log.info("File written to {}", tempFolder + "/" + "pio.html");
   }
 
   @Test
@@ -203,9 +196,9 @@ public class ProtocolsIOConverterTest {
             .toString());
     String html = impl.generateHtml(protocol);
     log.info(html);
-    assertFalse(html.contains("$"));
-    FileUtils.write(new File(tempFolder.getRoot(), "pio2.html"), html, UTF_8);
-    log.info("File written to {}", tempFolder.getRoot() + "/" + "pio2.html");
+    assertThat(html).doesNotContain("$");
+    FileUtils.write(new File(tempFolder, "pio2.html"), html, UTF_8);
+    log.info("File written to {}", tempFolder + "/" + "pio2.html");
   }
 
   @Test
@@ -221,10 +214,9 @@ public class ProtocolsIOConverterTest {
             .toString());
     String html = impl.generateHtml(protocol);
     log.info(html);
-    assertFalse(html.contains("$"));
-    FileUtils.write(
-        new File(tempFolder.getRoot(), "shakerStepComponentProtocol.html"), html, UTF_8);
-    log.info("File written to {}", tempFolder.getRoot() + "/" + "shakerStepComponentProtocol.html");
+    assertThat(html).doesNotContain("$");
+    FileUtils.write(new File(tempFolder, "shakerStepComponentProtocol.html"), html, UTF_8);
+    log.info("File written to {}", tempFolder + "/" + "shakerStepComponentProtocol.html");
   }
 
   private Protocol readJson(File testFile)

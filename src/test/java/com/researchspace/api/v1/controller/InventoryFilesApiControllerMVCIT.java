@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -11,7 +12,6 @@ import com.researchspace.api.v1.model.ApiInventoryFile;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.User;
-import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -19,10 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import javax.imageio.ImageIO;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -31,15 +30,10 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
-@RunWith(ConditionalTestRunner.class)
-@TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://your-chem-service:8090",
-      "chemistry.provider=indigo"
-    })
+@TestPropertySource(properties = "chemistry.provider=indigo")
 public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -50,7 +44,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
 
     // upload file as attachment to container
     MockMultipartFile originalFile = picture1();
@@ -74,7 +68,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertNull(result.getResolvedException());
     byte[] responseBytes = result.getResponse().getContentAsByteArray();
     assertNotNull(responseBytes);
-    assertEquals(47326, responseBytes.length);
+    assertThat(responseBytes).hasSize(47326);
 
     // check latest container lists the file
     MvcResult retrieveResult =
@@ -82,7 +76,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
             .perform(getContainerById(anyUser, apiKey, apiContainer.getId(), false))
             .andReturn();
     apiContainer = getFromJsonResponseBody(retrieveResult, ApiContainer.class);
-    assertEquals(1, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).hasSize(1);
 
     // delete the file
     result = doFileDelete(anyUser, apiKey, attachmentId);
@@ -94,19 +88,17 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
             .perform(getContainerById(anyUser, apiKey, apiContainer.getId(), false))
             .andReturn();
     apiContainer = getFromJsonResponseBody(retrieveResult, ApiContainer.class);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
   }
 
-  @Ignore(
-      "Requires chemistry service to run. See"
-          + " https://documentation.researchspace.com/article/1jbygguzoa")
+  @Tag("chemistry")
   @Test
   public void uploadRetrieveImageInventoryFileAttachment() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
 
     // upload file as attachment to container
     MockMultipartFile originalFile = getChemicalMockFile();

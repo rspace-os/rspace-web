@@ -1,10 +1,10 @@
 package com.researchspace.webapp.integrations.github;
 
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.service.IntegrationsHandler;
@@ -25,9 +26,9 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -35,7 +36,9 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @WebAppConfiguration
 public class GitHubControllerMVCIT extends MVCTestBase {
@@ -53,7 +56,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
 
   private MockRestServiceServer server;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
 
@@ -62,7 +65,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     gitHubController.setRestTemplate(restTemplate);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -80,9 +83,9 @@ public class GitHubControllerMVCIT extends MVCTestBase {
 
     server
         .expect(requestTo("https://github.com/login/oauth/access_token"))
-        .andExpect(jsonPath("$.code", is(authorizationCode)))
-        .andExpect(jsonPath("$.client_id", is(githubClientId)))
-        .andExpect(jsonPath("$.client_secret", is(githubSecret)))
+        .andExpect(jsonPath("$.code").value(authorizationCode))
+        .andExpect(jsonPath("$.client_id").value(githubClientId))
+        .andExpect(jsonPath("$.client_secret").value(githubSecret))
         .andRespond(
             withSuccess(
                 "{\"access_token\":\""
@@ -110,7 +113,8 @@ public class GitHubControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andExpect(view().name("connect/connected"))
             .andReturn();
-    assertThat(result.getModelAndView().getModel().get("connectionToken"), is(GITHUB_ACCESS_TOKEN));
+    assertThat(result.getModelAndView().getModel())
+        .containsEntry("connectionToken", GITHUB_ACCESS_TOKEN);
   }
 
   @Test
@@ -133,6 +137,34 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     assertNull(result.getModelAndView().getModel().get("connectionToken"));
     assertNotNull(result.getModelAndView().getModel().get("connectionError"));
     server.verify();
+  }
+
+  @Test
+  public void testOauthUrlOmitsRedirectUri() throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
+    initUsers(user);
+    logoutAndLoginAs(user);
+
+    MvcResult result =
+        this.mockMvc
+            .perform(get("/github/oauthUrl").principal(user::getUsername))
+            .andExpect(status().isOk())
+            .andReturn();
+    String url =
+        new ObjectMapper().readTree(result.getResponse().getContentAsString()).get("data").asText();
+    MultiValueMap<String, String> query =
+        UriComponentsBuilder.fromUriString(url).build().getQueryParams();
+
+    // GitHub validates redirect_uri only when it is sent and requires an exact match with the
+    // callback registered on the OAuth app, so the authorize URL must leave it out.
+    assertFalse(query.containsKey("redirect_uri"));
+    assertEquals(githubClientId, query.getFirst("client_id"));
+    assertEquals("repo,user", query.getFirst("scope"));
+    String state = query.getFirst("state");
+    assertNotNull(state);
+    assertFalse(state.isEmpty());
+    assertEquals(
+        state, SessionAttributeUtils.getSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE));
   }
 
   private void addExampleRepositories(User user) {
@@ -174,7 +206,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 
-    assertThat(nodes.size(), is(2));
+    assertThat(nodes).hasSize(2);
 
     // Initialize expected node 1
     TreeNode expectedNode1 = new TreeNode();
@@ -191,7 +223,9 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     expectedNode2.setSha("main");
     expectedNode2.setType("tree");
 
-    assertThat(nodes, hasItems(expectedNode1, expectedNode2));
+    assertThat(nodes).contains(expectedNode1);
+
+    assertThat(nodes).contains(expectedNode2);
   }
 
   @Test
@@ -228,7 +262,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 
-    assertThat(nodes.size(), is(1));
+    assertThat(nodes).hasSize(1);
 
     // Initialize expected node 1
     TreeNode expectedNode1 = new TreeNode();
@@ -238,6 +272,6 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     expectedNode1.setSha("3afd81aae1693c6782a2a4329516045bc6708592");
     expectedNode1.setType("blob");
 
-    assertThat(nodes, hasItems(expectedNode1));
+    assertThat(nodes).contains(expectedNode1);
   }
 }

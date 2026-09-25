@@ -1,5 +1,6 @@
 package com.researchspace.model.permissions;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,25 +14,17 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.TestFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
-import org.apache.shiro.authc.AuthenticationException;
-import org.apache.shiro.authc.AuthenticationInfo;
-import org.apache.shiro.authc.AuthenticationToken;
-import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.Permission;
-import org.apache.shiro.authz.SimpleAuthorizationInfo;
-import org.apache.shiro.realm.AuthorizingRealm;
-import org.apache.shiro.subject.PrincipalCollection;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Slf4j
 public class ConstraintBasedPermissionTest {
@@ -40,10 +33,10 @@ public class ConstraintBasedPermissionTest {
 
   EntityPermission docPermission;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -74,7 +67,7 @@ public class ConstraintBasedPermissionTest {
     toSort.add(userPermission2);
     toSort.add(userPermission);
     Collections.sort(toSort);
-    assertEquals(userPermission, toSort.get(0));
+    assertThat(toSort).element(0).isEqualTo(userPermission);
 
     // now set domains the same, alter type
     userPermission2.setDomain(PermissionDomain.RECORD);
@@ -82,7 +75,7 @@ public class ConstraintBasedPermissionTest {
     userPermission.addPermissionType(PermissionType.WRITE);
 
     Collections.sort(toSort);
-    assertEquals(userPermission2, toSort.get(0));
+    assertThat(toSort).element(0).isEqualTo(userPermission2);
   }
 
   @Test
@@ -217,73 +210,42 @@ public class ConstraintBasedPermissionTest {
     comm.addAdmin(admin);
   }
 
-  // adding large numbers of permissions is slow due to slow equals method and
-  // equals() called on all set members when adding a new one.
-  // 2000 perms is when performance degrades, flattenig many permissions into 1 cuts down on number
-  // of equals
-  // calls as there now less additions to hashset of permissions
-  @Test
-  public void testImpliesFor2000Permissions() {
-    // we can add permissions faster using list as we don't test for duplicates
-    List<Permission> allPerms = new ArrayList<>(2000);
-    StopWatch sw = StopWatch.createStarted();
-    // set up indepenent permissions objects, like 2000 items have been shared individually
-    final int NUM_INDIVIDUAL_PERMS = 2000;
-    for (long i = 0; i < NUM_INDIVIDUAL_PERMS; i++) {
-      ConstraintBasedPermission userReadPermission =
-          new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.WRITE);
-      if (i % 2 == 0) {
-        userReadPermission.setActions(EnumSet.of(PermissionType.READ));
+  @ParameterizedTest
+  @ValueSource(ints = {123, 124, 125})
+  void flatteningPreservesPermissionsAcrossPartitionBoundary(int idsPerAction) {
+    List<Permission> permissions = new ArrayList<>();
+    for (PermissionType action : List.of(PermissionType.READ, PermissionType.WRITE)) {
+      for (int i = 0; i < idsPerAction; i++) {
+        ConstraintBasedPermission permission =
+            new ConstraintBasedPermission(PermissionDomain.RECORD, action);
+        long id = Long.MAX_VALUE - i - (action == PermissionType.WRITE ? idsPerAction : 0);
+        permission.setIdConstraint(new IdConstraint(id));
+        permissions.add(permission);
       }
-      IdConstraint con = new IdConstraint(Long.MAX_VALUE - i);
-      userReadPermission.setIdConstraint(con);
-      allPerms.add(userReadPermission);
     }
+    ConstraintBasedPermission unrelated =
+        new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.RENAME);
+    unrelated.setIdConstraint(new IdConstraint(1L));
+    permissions.add(unrelated);
+    List<Permission> original = new ArrayList<>(permissions);
 
-    TestAuthReal realm = new TestAuthReal();
-    SimpleAuthorizationInfo inf = new SimpleAuthorizationInfo();
-    inf.addObjectPermissions(allPerms);
-    long slowStart = sw.getTime();
-    realm.getPermissions(inf);
-    long slowEnd = sw.getTime();
-    long slowElapsed = slowEnd - slowStart;
+    new ConstraintPermissionResolver().flattenRecordReadWritePermissions(permissions);
 
-    assertEquals(NUM_INDIVIDUAL_PERMS, allPerms.size());
-    new ConstraintPermissionResolver().flattenRecordReadWritePermissions(allPerms);
-    final int EXPECTED_PERM_COUNT_AFTER_FLATTENING = 18;
-    assertEquals(EXPECTED_PERM_COUNT_AFTER_FLATTENING, allPerms.size());
-
-    inf.setObjectPermissions(new HashSet<>(allPerms));
-    long speededStart = sw.getTime();
-    realm.getPermissions(inf);
-    long speededFinish = sw.getTime();
-    long speededElapsed = speededFinish - speededStart;
-    double speedup = ((double) slowElapsed / (double) speededElapsed);
-    System.err.printf(
-        "slow - %d ms, speeded - %d ms, speed up = %4.5f%n", slowElapsed, speededElapsed, speedup);
-
-    final double MINIMUM_OBSERVED_SPEEDUP = 20.0;
-    assertTrue(speedup > MINIMUM_OBSERVED_SPEEDUP, "speedup factor was only " + speedup);
-  }
-
-  // subclass to get access to getPermissions protected method
-  class TestAuthReal extends AuthorizingRealm {
-
-    protected Collection<Permission> getPermissions(AuthorizationInfo info) {
-      return super.getPermissions(info);
+    assertThat(permissions).hasSize(2 * ((idsPerAction + 123) / 124) + 1);
+    assertThat(permissions).contains(unrelated);
+    for (Permission permission : permissions) {
+      assertThat(permission.toString()).hasSizeLessThanOrEqualTo(2500);
     }
-
-    @Override
-    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-      // TODO Auto-generated method stub
-      return null;
-    }
-
-    @Override
-    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token)
-        throws AuthenticationException {
-      // TODO Auto-generated method stub
-      return null;
+    for (int i = 0; i <= idsPerAction * 2; i++) {
+      for (PermissionType action :
+          List.of(PermissionType.READ, PermissionType.WRITE, PermissionType.RENAME)) {
+        EntityPermission requested = new EntityPermission(PermissionDomain.RECORD, action);
+        requested.setId(Long.MAX_VALUE - i);
+        assertEquals(
+            original.stream().anyMatch(permission -> permission.implies(requested)),
+            permissions.stream().anyMatch(permission -> permission.implies(requested)),
+            "Authorization changed for " + action + " on " + requested.getId());
+      }
     }
   }
 

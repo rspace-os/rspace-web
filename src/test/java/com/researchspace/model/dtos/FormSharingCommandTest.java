@@ -1,25 +1,18 @@
 package com.researchspace.model.dtos;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.AccessControl;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class FormSharingCommandTest {
 
   RSForm form;
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testFormSharingCommandTemplate() {
@@ -28,8 +21,8 @@ public class FormSharingCommandTest {
     assertNotNull(form.getAccessControl());
     FormSharingCommand tsc = new FormSharingCommand(form);
     assertEquals(1L, tsc.getFormId().longValue());
-    assertEquals(PermissionType.NONE.toString(), tsc.getGroupOptions().get(0));
-    assertEquals(PermissionType.NONE.toString(), tsc.getWorldOptions().get(0));
+    assertThat(tsc.getGroupOptions()).element(0).isEqualTo(PermissionType.NONE.toString());
+    assertThat(tsc.getWorldOptions()).element(0).isEqualTo(PermissionType.NONE.toString());
   }
 
   @Test

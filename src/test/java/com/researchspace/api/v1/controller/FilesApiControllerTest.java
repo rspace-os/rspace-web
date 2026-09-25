@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
@@ -18,20 +18,18 @@ import com.researchspace.testutils.TestFactory;
 import jakarta.ws.rs.NotFoundException;
 import java.io.InputStream;
 import java.util.Optional;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
+@ExtendWith(MockitoExtension.class)
 public class FilesApiControllerTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   @Mock RecordManager recordMgr;
   @Mock IPermissionUtils permissions;
@@ -44,20 +42,19 @@ public class FilesApiControllerTest {
 
   @InjectMocks FilesApiController fileController;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     this.subject = TestFactory.createAnyUser("any");
     fileController.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     validDocFile = TestFactory.createEcatDocument(1L, subject);
     strucDoc = TestFactory.createAnySD();
-    mockBaseUrl();
   }
 
   private void mockBaseUrl() {
     Mockito.when(properties.getServerUrl()).thenReturn("http://somewhere.com");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -84,6 +81,7 @@ public class FilesApiControllerTest {
 
   @Test
   public void updateFileSuccess() throws Exception {
+    mockBaseUrl();
     MockMultipartFile mockFile = createAnyMultipartFile();
     when(recordMgr.getSafeNull(1L)).thenReturn(Optional.of(validDocFile));
     when(permissions.isPermitted(validDocFile, PermissionType.WRITE, subject)).thenReturn(true);
@@ -106,8 +104,7 @@ public class FilesApiControllerTest {
   }
 
   private void assertNotFoundExceptionThrown(MockMultipartFile mockFile) throws Exception {
-    CoreTestUtils.assertExceptionThrown(
-        () -> fileController.updateFile(1L, mockFile, subject), NotFoundException.class);
+    assertThrows(NotFoundException.class, () -> fileController.updateFile(1L, mockFile, subject));
     Mockito.verifyNoInteractions(mediaMgr);
   }
 }

@@ -10,24 +10,22 @@ import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class SystemConfigurationInitializorTest extends SpringTransactionalTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock private SystemPropertyManager mockSystemPropertyManager;
 
   private SystemConfigurationInitialisor systemConfigurationInitialisor;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
 
@@ -35,7 +33,7 @@ public class SystemConfigurationInitializorTest extends SpringTransactionalTest 
     systemConfigurationInitialisor.setSystemPropertyManager(mockSystemPropertyManager);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -69,11 +67,6 @@ public class SystemConfigurationInitializorTest extends SpringTransactionalTest 
     systemConfigurationInitialisor.setChemistryProvider("indigo");
     systemConfigurationInitialisor.setChemistryServiceUrl("http://indigoService:8090");
 
-    // system setting is 'ALLOWED' and properties are configured - do nothing
-    when(mockSystemPropertyManager.findByName(SystemPropertyName.CHEMISTRY_AVAILABLE))
-        .thenReturn(
-            new SystemPropertyValue(
-                new SystemProperty(null), HierarchicalPermission.ALLOWED.name()));
     systemConfigurationInitialisor.onAppStartup(null);
     verify(mockSystemPropertyManager, Mockito.times(1))
         .save(Mockito.any(), (HierarchicalPermission) Mockito.any(), Mockito.any());

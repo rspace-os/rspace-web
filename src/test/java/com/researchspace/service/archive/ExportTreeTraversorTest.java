@@ -1,7 +1,7 @@
 package com.researchspace.service.archive;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
@@ -14,10 +14,12 @@ import com.researchspace.service.archive.export.ExportArchiveTreeTraversor;
 import com.researchspace.testutils.FolderTestUtils;
 import com.researchspace.testutils.TestFactory;
 import org.apache.commons.lang3.RandomUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ExportTreeTraversorTest {
 
   ExportArchiveTreeTraversor traversor;
@@ -26,7 +28,7 @@ public class ExportTreeTraversorTest {
   UserFolderSetup setup;
   ArchiveExportConfig archiveCfg;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     owner = TestFactory.createAnyUser("any");
     setup = FolderTestUtils.createDefaultFolderStructure(owner);
@@ -38,9 +40,6 @@ public class ExportTreeTraversorTest {
     setup.getUserRoot().addChild(f2, owner);
     f2.addChild(f3, owner);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testProcessDoesntIncludeDeletedFolders() {
@@ -160,9 +159,8 @@ public class ExportTreeTraversorTest {
   @Test
   public void testProcessIncludesGallery() {
     setup.getUserRoot().process(traversor);
-    assertTrue(
-        traversor.getExportRecordList().getFolderTree().stream()
-            .anyMatch(af -> af.getName().equals("Gallery")));
+    assertThat(traversor.getExportRecordList().getFolderTree())
+        .anyMatch(af -> af.getName().equals("Gallery"));
   }
 
   private Folder createAFolder(String name) {

@@ -1,6 +1,7 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.model.EcatDocumentFile;
@@ -11,9 +12,10 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.awt.image.BufferedImage;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.hibernate.LazyInitializationException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class EcatDocumentThumbnailInitializationPolicyTest extends SpringTransactionalTest {
 
@@ -21,7 +23,7 @@ public class EcatDocumentThumbnailInitializationPolicyTest extends SpringTransac
   private User anyuser;
   BufferedImage thumbImage = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     policy = new EcatDocumentThumbnailInitializationPolicy();
@@ -31,7 +33,7 @@ public class EcatDocumentThumbnailInitializationPolicyTest extends SpringTransac
     logoutAndLoginAs(anyuser);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -48,7 +50,8 @@ public class EcatDocumentThumbnailInitializationPolicyTest extends SpringTransac
     final EcatDocumentFile doc2 = (EcatDocumentFile) recordDao.get(doc.getId());
     clearSessionAndEvictAll();
     doc2.getThumbNail().getId(); // ok to get id
-    assertLazyInitializationExceptionThrown(() -> doc2.getThumbNail().getData());
+    ImageBlob loadedThumbnail = doc2.getThumbNail();
+    assertThrows(LazyInitializationException.class, () -> loadedThumbnail.getData());
 
     clearSessionAndEvictAll();
     final EcatDocumentFile doc3 = (EcatDocumentFile) recordDao.get(doc.getId());

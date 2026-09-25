@@ -1,17 +1,17 @@
 package com.researchspace.model.netfiles;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.core.GlobalIdPrefix;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class NfsElementTest {
   NfsElement element1, element2 = null;
 
-  @Before
+  @BeforeEach
   public void before() {
     element1 = new NfsElement(26L, "/x/y/z/file.txt");
     element2 = new NfsElement(27L, "x/y/z/file.txt");

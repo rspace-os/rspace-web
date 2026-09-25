@@ -1,13 +1,12 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
@@ -23,7 +22,7 @@ import com.researchspace.testutils.MockAndStubUtils;
 import com.researchspace.testutils.TestGroup;
 import jakarta.servlet.ServletRequest;
 import java.time.LocalDate;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -77,7 +76,7 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     initialiseContentWithEmptyContent(owner, member);
     Group projectGroup = createProjectGroupForUsers(owner, "", "", owner, member);
     assertEquals(GroupType.PROJECT_GROUP, projectGroup.getGroupType());
-    assertTrue("project group should have >= 2 members", projectGroup.getMembers().size() >= 2);
+    assertTrue(projectGroup.getMembers().size() >= 2, "project group should have >= 2 members");
 
     logoutAndLoginAsSysAdmin();
     sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
@@ -93,7 +92,7 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     logoutAndLoginAs(tg2.getPi());
     Group collabGroup = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
     assertEquals(GroupType.COLLABORATION_GROUP, collabGroup.getGroupType());
-    assertTrue("collab group should have at least 2 members", collabGroup.getMembers().size() >= 2);
+    assertTrue(collabGroup.getMembers().size() >= 2, "collab group should have at least 2 members");
 
     logoutAndLoginAsSysAdmin();
     sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
@@ -113,9 +112,9 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     logoutAndLoginAs(sharer);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(sharer, "shared content");
     shareRecordWithGroup(sharer, labGroup, doc);
-    assertFalse(
-        "precondition: doc should be shared with group",
-        sharingMgr.getSharedRecordsForUserAndGroup(sharer, labGroup).isEmpty());
+    assertThat(sharingMgr.getSharedRecordsForUserAndGroup(sharer, labGroup))
+        .as("precondition: doc should be shared with group")
+        .isNotEmpty();
 
     logoutAndLoginAsSysAdmin();
     sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
@@ -243,14 +242,14 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
               + recentlyActive.getUsername()
               + " has lastLogin within the last year, but no exception was thrown");
     } catch (IllegalArgumentException expected) {
-      assertThat(expected.getMessage(), containsString("within the last year"));
-      assertFalse(
-          "response must not leak the offending member's username",
-          expected.getMessage().contains(recentlyActive.getUsername()));
+      assertThat(expected.getMessage()).as(expected.getMessage()).contains("within the last year");
+      assertThat(expected.getMessage())
+          .as("response must not leak the offending member's username")
+          .doesNotContain(recentlyActive.getUsername());
     }
     assertTrue(
-        "Group " + labGroup.getId() + " should NOT have been deleted",
-        grpdao.exists(labGroup.getId()));
+        grpdao.exists(labGroup.getId()),
+        "Group " + labGroup.getId() + " should NOT have been deleted");
   }
 
   @Test
@@ -277,12 +276,12 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
 
   private void assertGroupDeleted(Long groupId) {
     assertFalse(
-        "Group " + groupId + " should have been deleted but was still present",
-        grpdao.exists(groupId));
+        grpdao.exists(groupId),
+        "Group " + groupId + " should have been deleted but was still present");
   }
 
   private void assertHasAtLeastTwoMembersAndPi(Group group) {
-    assertTrue("group should have at least 2 members", group.getMembers().size() >= 2);
-    assertFalse("lab/collab group should have a PI", group.getPiusers().isEmpty());
+    assertTrue(group.getMembers().size() >= 2, "group should have at least 2 members");
+    assertThat(group.getPiusers()).as("lab/collab group should have a PI").isNotEmpty();
   }
 }

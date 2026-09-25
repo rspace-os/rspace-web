@@ -1,18 +1,17 @@
 package com.researchspace.service.aws.impl;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -25,23 +24,22 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class S3MultipartUploaderTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
 
   File largeS3Upload = RSpaceTestUtils.getResource("weather_data2.csv");
   @Mock S3Client client;
   S3MultipartChunkedUploader uploader;
 
-  @Before
+  @BeforeEach
   public void before() {
     uploader = new S3MultipartChunkedUploader(client, "MyBucket", "archivePath", 5);
   }
 
   @Test
   public void rejectChunkedUploadIfFileTooSmall() throws Exception {
-    assertIllegalArgumentException(
-        () -> uploader.apply(RSpaceTestUtils.getResource("adrenaline.smiles")));
+    File resource = RSpaceTestUtils.getResource("adrenaline.smiles");
+    assertThrows(IllegalArgumentException.class, () -> uploader.apply(resource));
   }
 
   @Test

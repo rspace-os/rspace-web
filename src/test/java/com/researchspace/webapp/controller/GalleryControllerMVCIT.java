@@ -4,23 +4,27 @@ import static com.researchspace.core.util.MediaUtils.CHEMISTRY_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.testutils.RSpaceTestUtils.getAnyPdf;
-import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.Constants;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
 import com.researchspace.model.field.Field;
@@ -33,24 +37,27 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
-import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.apache.http.entity.ContentType;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
@@ -58,32 +65,59 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.ui.ModelMap;
 
-@TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://your-chem-service:8090",
-      "chemistry.provider=indigo"
-    })
+@TestPropertySource(properties = "chemistry.provider=indigo")
 public class GalleryControllerMVCIT extends MVCTestBase {
 
   private @Autowired GalleryController galleryController;
+  private @Autowired BaseRecordManager baseRecordMgr;
+  private @Autowired EcatChemistryFileManager chemistryFileManager;
   private @Autowired RecordManager recordManager;
-  private @Autowired RSChemElementManager rsChemElementManager;
-  public @Rule TemporaryFolder tempIndexFolder = new TemporaryFolder();
+  @TempDir public File tempIndexFolder;
   @Autowired FileIndexSearcher searcher;
+
+  @Value("${publishing.anonymousGuest.password}")
+  private String anonymousPassword;
 
   private User owner;
   private PaginationCriteria<BaseRecord> pgcrit = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     owner = createInitAndLoginAnyUser();
     pgcrit = PaginationCriteria.createDefaultForClass(BaseRecord.class);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
+    // Unpublish only what this class published, so the publish-listing MVCITs running later
+    // against the same committed database see no leftover shares. Deliberately NOT a
+    // `deleteFromTables("RecordGroupSharing")` wipe: that ran after every test in the class,
+    // destroyed share rows other fixtures had created, and being raw SQL it removed the
+    // sharing row while leaving the corresponding group ACL on the BaseRecord behind.
+    // Unsharing through the manager takes the ACL with it.
+    unpublishRecordsPublishedByThisTest();
     super.tearDown();
+  }
+
+  private void unpublishRecordsPublishedByThisTest() {
+    for (PublishedRecord published : publishedRecords) {
+      for (RecordGroupSharing share : sharingMgr.getRecordSharingInfo(published.recordId)) {
+        sharingHandler.unshare(share.getId(), published.publisher);
+      }
+    }
+    publishedRecords.clear();
+  }
+
+  /** Records published by a test in this class, unpublished again in tearDown. */
+  private record PublishedRecord(Long recordId, User publisher) {}
+
+  private final List<PublishedRecord> publishedRecords = new ArrayList<>();
+
+  /** Publishes a document and registers it for teardown, so no share row outlives the test. */
+  private void publishAndRegisterForCleanup(User publisher, Long recordId) {
+    publishDocumentForUser(publisher, recordId);
+    publishedRecords.add(new PublishedRecord(recordId, publisher));
   }
 
   @Test
@@ -100,8 +134,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     ModelMap modelMap = result.getModelAndView().getModelMap();
-    assertEquals(audioFolderId, modelMap.get("currentFolderId"));
-    assertEquals(MediaUtils.AUDIO_MEDIA_FLDER_NAME, modelMap.get("mediaType"));
+    assertThat(modelMap).containsEntry("currentFolderId", audioFolderId);
+    assertThat(modelMap).containsEntry("mediaType", MediaUtils.AUDIO_MEDIA_FLDER_NAME);
     assertNull(result.getResolvedException());
   }
 
@@ -121,8 +155,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     ModelMap modelMap = result.getModelAndView().getModelMap();
-    assertEquals(imageFolderId, modelMap.get("currentFolderId"));
-    assertEquals(MediaUtils.IMAGES_MEDIA_FLDER_NAME, modelMap.get("mediaType"));
+    assertThat(modelMap).containsEntry("currentFolderId", imageFolderId);
+    assertThat(modelMap).containsEntry("mediaType", MediaUtils.IMAGES_MEDIA_FLDER_NAME);
     assertNull(result.getResolvedException());
   }
 
@@ -307,17 +341,19 @@ public class GalleryControllerMVCIT extends MVCTestBase {
      * parameters at the same time - which is not expected, as we either upload new version
      * of existing media/attachment, or attach completely new file to the field */
     final Long audioId = audioFileId;
-    assertExceptionThrown(
-        () -> galleryController.uploadFile(mfAudio, audioId, null, field.getId()),
-        IllegalArgumentException.class);
+    var fieldId = field.getId();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> galleryController.uploadFile(mfAudio, audioId, null, fieldId));
   }
 
   private void initialiseIndexFolder() throws IOException, Exception {
     fileIndexer = new FileIndexer();
-    fileIndexer.setIndexFolderDirectly(tempIndexFolder.getRoot());
+    fileIndexer.setIndexFolderDirectly(tempIndexFolder);
     fileIndexer.init(true);
     getTargetObject(searcher.getFileSearchStrategy(), LuceneSearchStrategy.class)
-        .setIndexFolderDirectly(tempIndexFolder.getRoot());
+        .setIndexFolderDirectly(tempIndexFolder);
   }
 
   private Long assertAudioFileAdded(AjaxReturnObject<GalleryData> res3) {
@@ -390,9 +426,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @Ignore(
-      "Requires chemistry service to run. See"
-          + " https://documentation.researchspace.com/article/1jbygguzoa")
+  @Tag("chemistry")
   public void testChemistryFileUploadNewVersion() throws Exception {
     User user = createInitAndLoginAnyUser();
     mockPrincipal = user::getUsername;
@@ -421,7 +455,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     List<RSChemElement> chemElements =
         rsChemElementManager.getRSChemElementsLinkedToFile(chemInfo.getId(), user);
-    assertEquals(1, chemElements.size());
+    assertThat(chemElements).hasSize(1);
 
     // upload second picture file, but for the same id
     MockMultipartFile mf2 =
@@ -446,7 +480,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     List<RSChemElement> chemsAfterNewVersion =
         rsChemElementManager.getRSChemElementsLinkedToFile(chemInfo.getId(), user);
-    assertEquals(1, chemsAfterNewVersion.size());
+    assertThat(chemsAfterNewVersion).hasSize(1);
 
     // check updated media file details
     assertEquals(chemInfo.getId(), updatedChemInfo.getId());
@@ -579,7 +613,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "any");
     EcatDocumentFile attachment =
         addAttachmentDocumentToField(getAnyPdf(), doc.getFields().get(0), user);
-    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(attachment.getId()).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user)).hasSize(1);
     Field updated = fieldMgr.getWithLoadedMediaLinks(doc.getFields().get(0).getId(), user).get();
 
     doInTransaction(
@@ -587,18 +621,19 @@ public class GalleryControllerMVCIT extends MVCTestBase {
           removeAttachmentFromField(attachment, updated, user);
         });
     // don't show linked docs once link deleted from field
-    assertEquals(0, mediaMgr.getIdsOfLinkedDocuments(attachment.getId()).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user)).isEmpty();
 
     EcatDocumentFile attachment2 =
         addAttachmentDocumentToField(
             RSpaceTestUtils.getAnyAttachment(), doc.getFields().get(0), user);
 
-    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(attachment2.getId()).size());
-    assertEquals(doc.getId(), mediaMgr.getIdsOfLinkedDocuments(attachment2.getId()).get(0).getId());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(attachment2.getId(), user)).hasSize(1);
+    assertEquals(
+        doc.getId(), mediaMgr.getIdsOfLinkedDocuments(attachment2.getId(), user).get(0).getId());
 
     // don't show deleted docs
     recordDeletionMgr.deleteRecord(doc.getParent().getId(), doc.getId(), user);
-    assertEquals(0, mediaMgr.getIdsOfLinkedDocuments(attachment.getId()).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user)).isEmpty();
   }
 
   @Test
@@ -649,7 +684,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
                     .param("id[]", attachment.getId() + "," + attachment2.getId())
                     .param("revision[]", ",,,,"))
             .andReturn();
-    assertException(res, IllegalArgumentException.class);
+    assertInstanceOf(IllegalArgumentException.class, res.getResolvedException());
 
     // non existent id + existing ID
     res =
@@ -667,9 +702,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   // Chemistry File Specific Tests
   // 1. Generic test, check file goes in correct "Chemistry" folder
   // 2. Check RsChemElement is generated with a chemId
-  @Ignore(
-      "Requires chemistry service to run. See"
-          + " https://documentation.researchspace.com/article/1jbygguzoa")
+  @Tag("chemistry")
   @Test
   public void testUploadingChemistryFile() throws IOException, URISyntaxException {
     Folder chemistryFolder =
@@ -690,9 +723,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     AjaxReturnObject<GalleryData> data =
         galleryController.getUploadedFiles(DOCUMENT_MEDIA_FLDER_NAME, 0, true, pgcrit, null);
     assertEquals(5, data.getData().getItems().getHits().intValue());
-    assertTrue(
-        data.getData().getItems().getResults().stream()
-            .allMatch(folderItem -> folderItem.getType().equals("Folder")));
+    assertThat(data.getData().getItems().getResults())
+        .allMatch(folderItem -> folderItem.getType().equals("Folder"));
   }
 
   @Test
@@ -778,9 +810,10 @@ public class GalleryControllerMVCIT extends MVCTestBase {
         .andExpect(jsonPath("$.data.revisions[0].record.name").value("Picture1.png"))
         .andExpect(jsonPath("$.data.revisions[0].record.description").doesNotExist())
         // and the rename and description edit are recorded as later revisions of the same version
-        .andExpect(jsonPath("$.data.revisions[*].record.name", hasItem("second-name.png")))
+        .andExpect(jsonPath("$.data.revisions[?(@.record.name == 'second-name.png')]").isNotEmpty())
         .andExpect(
-            jsonPath("$.data.revisions[*].record.description", hasItem("the second description")));
+            jsonPath("$.data.revisions[?(@.record.description == 'the second description')]")
+                .isNotEmpty());
   }
 
   @Test
@@ -819,5 +852,67 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
   private BufferedImage getImageFromBytes(byte[] fullImageBytes) throws IOException {
     return ImageIO.read(new ByteArrayInputStream(fullImageBytes));
+  }
+
+  @Test
+  public void getLinkedDocumentsRequiresReadPermissionOnMediaFile_RSDEV1329() throws Exception {
+    RecordInformation imageInfo = uploadImageToGallery();
+
+    // the endpoint resolves the subject from the Shiro session
+    // (userManager.getAuthenticatedUserInSession()), and MockMvc here runs without filters, so a
+    // request .principal(...) never reaches it: each leg logs the intended user in explicitly
+
+    // owner can list documents linked to their own media file
+    logoutAndLoginAs(owner);
+    mockMvc
+        .perform(get("/gallery/ajax/getLinkedDocuments/" + imageInfo.getId()))
+        .andExpect(status().isOk());
+
+    // a logged-in user without READ permission on the media file is refused
+    createInitAndLoginAnyUser();
+    MvcResult result =
+        mockMvc.perform(get("/gallery/ajax/getLinkedDocuments/" + imageInfo.getId())).andReturn();
+    assertAuthorizationException(result);
+
+    // the session-less /public/** route is refused via the manager's null-user branch
+    logoutCurrentUser();
+    MvcResult anonResult =
+        mockMvc
+            .perform(get("/public/publicView/gallery/ajax/getLinkedDocuments/" + imageInfo.getId()))
+            .andReturn();
+    assertAuthorizationException(anonResult);
+    // the isAnonymousGuestAccount() branch is covered by
+    // getLinkedDocumentsRefusesPublishedViewGuest_RSDEV1329, with the guest genuinely logged in
+  }
+
+  @Test
+  public void getLinkedDocumentsRefusesPublishedViewGuest_RSDEV1329() throws Exception {
+    // The route a real anonymous visitor takes: the published view logs in the anonymous guest
+    // account, and the guest gains READ on media embedded in the published document (via
+    // isPermittedViaMediaLinksToRecords). The linked-documents list must still be refused, and
+    // only the manager's isAnonymousGuestAccount() branch can do that here.
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, false, 1);
+    StructuredDocument doc =
+        createBasicDocumentInRootFolderWithText(setup.user, "published text with image");
+    EcatImage image = addImageToField(doc.getFields().get(0), setup.user);
+    publishAndRegisterForCleanup(setup.user, doc.getId());
+
+    logoutCurrentUser();
+    PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);
+
+    // sanity: the guest really can READ the media file through the published document, so the
+    // refusal below cannot be a plain missing-READ denial — deleting the guest guard from
+    // MediaManagerImpl.getIdsOfLinkedDocuments turns the assertion after this one red
+    mockMvc
+        .perform(get("/public/publicView/gallery/getViewerImage/" + image.getId()))
+        .andExpect(status().is2xxSuccessful());
+
+    MvcResult guestResult =
+        mockMvc
+            .perform(get("/public/publicView/gallery/ajax/getLinkedDocuments/" + image.getId()))
+            .andReturn();
+    assertAuthorizationException(guestResult);
   }
 }

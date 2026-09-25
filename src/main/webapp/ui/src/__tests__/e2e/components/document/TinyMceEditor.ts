@@ -1,4 +1,6 @@
+import { basename } from "node:path";
 import type { FrameLocator, Locator, Page } from "@playwright/test";
+import { ChemistryFieldContent } from "@/__tests__/e2e/components/document/ChemistryFieldContent";
 import { ImageQuickToolbar } from "@/__tests__/e2e/components/document/ImageQuickToolbar";
 
 export class TinyMceEditor {
@@ -6,6 +8,7 @@ export class TinyMceEditor {
   private readonly body: Locator;
   readonly container: Locator;
   private readonly menubar: Locator;
+  readonly chemistry: ChemistryFieldContent;
 
   constructor(
     private readonly page: Page,
@@ -16,6 +19,7 @@ export class TinyMceEditor {
     // TinyMCE exposes stable classes but no semantic editor-container or menubar roles.
     this.container = page.locator("div.tox-tinymce").filter({ has: page.locator(`iframe#${editorId}_ifr`) });
     this.menubar = this.container.locator(".tox-menubar");
+    this.chemistry = new ChemistryFieldContent(page, this.frame, this.container);
   }
 
   async waitForReady(): Promise<this> {
@@ -49,16 +53,23 @@ export class TinyMceEditor {
     await this.body.press("Control+a");
   }
 
-  async insertFileAttachment(file: string | { name: string; mimeType: string; buffer: Buffer }): Promise<void> {
+  async insertImageAttachment(image: string | { name: string; mimeType: string; buffer: Buffer }): Promise<void> {
+    const fileName = typeof image === "string" ? basename(image) : image.name;
     const uploadButton = this.container
       .getByRole("button", { name: "Insert file from computer" })
       .or(this.container.getByRole("button", { name: "Upload a file from your mobile device" }));
     const [chooser] = await Promise.all([this.page.waitForEvent("filechooser"), uploadButton.click()]);
-    await chooser.setFiles(file);
-  }
+    const [response] = await Promise.all([
+      this.page.waitForResponse(
+        (res) => res.request().method() === "POST" && new URL(res.url()).pathname === "/gallery/ajax/uploadFile/",
+      ),
+      chooser.setFiles(image),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`POST /gallery/ajax/uploadFile failed: ${response.status()} ${response.statusText()}`);
+    }
 
-  get chemElement(): Locator {
-    return this.frame.locator('img[src*="sourceType=CHEM"]');
+    await this.body.getByRole("img", { name: `image ${fileName}` }).waitFor({ state: "visible" });
   }
 
   get imageElement(): Locator {

@@ -1,6 +1,7 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.model.EcatImage;
@@ -10,9 +11,9 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.awt.image.BufferedImage;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.hibernate.LazyInitializationException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class EcatImageDaoTest extends SpringTransactionalTest {
@@ -22,15 +23,12 @@ public class EcatImageDaoTest extends SpringTransactionalTest {
   private BufferedImage workingImage = null;
   User user = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     thumbImage = RSpaceTestUtils.getImageFromTestResourcesFolder("commentIcon30px.gif");
     workingImage = RSpaceTestUtils.getImageFromTestResourcesFolder("Picture1.png");
     user = createAndSaveRandomUser();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGetThumbnailBlobIsLazilyLoaded() throws Exception {
@@ -48,8 +46,10 @@ public class EcatImageDaoTest extends SpringTransactionalTest {
     final EcatImage image2 = imageDao.get(image.getId());
     clearSessionAndEvictAll();
     // blobs are proxied
-    assertLazyInitializationExceptionThrown(() -> image2.getImageThumbnailed().getData());
-    assertLazyInitializationExceptionThrown(() -> image2.getWorkingImage().getData());
+    ImageBlob loadedThumbnail = image2.getImageThumbnailed();
+    ImageBlob loadedWorkingImage = image2.getWorkingImage();
+    assertThrows(LazyInitializationException.class, () -> loadedThumbnail.getData());
+    assertThrows(LazyInitializationException.class, () -> loadedWorkingImage.getData());
     clearSessionAndEvictAll();
 
     // now initialize blobs

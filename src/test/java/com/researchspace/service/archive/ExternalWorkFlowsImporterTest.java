@@ -1,12 +1,12 @@
 package com.researchspace.service.archive;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
@@ -31,13 +31,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 public class ExternalWorkFlowsImporterTest {
+
+  private AutoCloseable mocks;
 
   private static final String OLD_FIELD_NAME = "old field name";
   private static final String NEW_FIELD_NAME = "new field name";
@@ -59,9 +63,9 @@ public class ExternalWorkFlowsImporterTest {
   private ArchiveExternalWorkFlowInvocation umatchedDataInvocation;
   private ArchiveExternalWorkFlow archiveExternalWorkFlowOther;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
-    initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     listFields = List.of(oldField);
     oldIdToNewGalleryItem = new HashMap<>();
     importer = new ExternalWorkFlowsImporter();
@@ -98,7 +102,7 @@ public class ExternalWorkFlowsImporterTest {
     importer.importExternalWorkFlows(
         newDoc, ref, oldIdToNewGalleryItem, externalWorkFlowDataManager);
     ExternalWorkFlowData data = makeExternalWFDataAssertions();
-    assertEquals(0, data.getExternalWorkflowInvocations().size());
+    assertThat(data.getExternalWorkflowInvocations()).isEmpty();
   }
 
   @Test
@@ -144,7 +148,7 @@ public class ExternalWorkFlowsImporterTest {
     ExternalWorkFlowData data = externalWorkFlowDataArgumentCaptor.getAllValues().get(0);
     Set<ExternalWorkFlowInvocation> externalWorkFlowInvocations =
         data.getExternalWorkflowInvocations();
-    assertEquals(2, externalWorkFlowInvocations.size());
+    assertThat(externalWorkFlowInvocations).hasSize(2);
     List<ExternalWorkFlowInvocation> externalWorkFlowInvocationsWithWF =
         data.getExternalWorkflowInvocations().stream()
             .filter(
@@ -153,6 +157,11 @@ public class ExternalWorkFlowsImporterTest {
                         .getName()
                         .equals(ArchiveExternalWorkFlowTestMother.NAME))
             .collect(Collectors.toList());
-    assertEquals(1, externalWorkFlowInvocationsWithWF.size());
+    assertThat(externalWorkFlowInvocationsWithWF).hasSize(1);
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    mocks.close();
   }
 }

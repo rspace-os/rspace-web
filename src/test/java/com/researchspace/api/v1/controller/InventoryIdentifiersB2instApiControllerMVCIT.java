@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,16 +15,16 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
-import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -53,18 +54,40 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
   private final B2instConnectorDummy b2instDummy = new B2instConnectorDummy();
   private final BindingResult mockBindingResult = mock(BindingResult.class);
   private Object realB2instConnector;
+  private ApiInventorySystemSettings.IdentifierSettings originalB2instSettings;
+  private ApiInventorySystemSettings.IdentifierSettings originalPidinstDataCiteSettings;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     realB2instConnector = ReflectionTestUtils.getField(identifierApiManager, "b2instConnector");
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", b2instDummy);
     super.setUp();
+    // these are system properties in the shared dev database, so put them back afterwards
+    originalB2instSettings =
+        captureIdentifierSettings(settingsController, IdentifierType.PIDINST_B2INST);
+    // DataCite too: enabling one PIDINST provider disables the other, so turning B2INST on below
+    // switches the DataCite PIDINST provider off as a side effect and it has to be put back
+    originalPidinstDataCiteSettings =
+        captureIdentifierSettings(settingsController, IdentifierType.PIDINST_DATACITE);
     setB2instEnabled("true");
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
-    setB2instEnabled("false");
+    /*
+     * Both providers, and in this order. Enabling a PIDINST provider disables its sibling (see
+     * updateInventorySettings), so this test switched the DataCite PIDINST provider off on the way
+     * in and must switch it back. B2INST goes first because restoring it is what leaves the enabled
+     * flag free for DataCite to reclaim.
+     *
+     * Leaving DataCite off is not a harmless default: this is the shared dev database, and the
+     * developer who owns it would find their instrument PIDs quietly going to the wrong provider,
+     * or nowhere, with nothing in the diff to explain it.
+     */
+    restoreIdentifierSettings(
+        settingsController, IdentifierType.PIDINST_B2INST, originalB2instSettings);
+    restoreIdentifierSettings(
+        settingsController, IdentifierType.PIDINST_DATACITE, originalPidinstDataCiteSettings);
     // identifierApiManager is a singleton in a Spring context cached across test classes, so the
     // dummy has to be swapped back out or later MVC tests silently run against it.
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", realB2instConnector);
@@ -203,11 +226,11 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     assertEquals("Acme Instruments", sent.getManufacturer().get(0).getManufacturerName());
     assertEquals("AWS-42", sent.getModel().getModelName());
     assertEquals("Weather station", sent.getInstrumentType().get(0).getInstrumentTypeName());
-    assertEquals(1, sent.getDate().size());
+    assertThat(sent.getDate()).hasSize(1);
     assertEquals("2024-02-21", sent.getDate().get(0).getDate());
     assertEquals("Commissioned", sent.getDate().get(0).getDateType());
     // "Last calibrated" is not mapped; MeasuredVariable carries the measured quantity verbatim
-    assertEquals(List.of("Air temperature"), sent.getMeasuredVariable());
+    assertThat(sent.getMeasuredVariable()).containsExactly("Air temperature");
     /*
      * The one template field that deliberately does NOT copy across: a landing page names exactly
      * one physical instrument, so a landing page inherited from the template must never be
@@ -226,12 +249,13 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
      * pass while the registered address 404s forever.
      */
     assertNotNull(registeredDoi.getRsPublicId(), "the identifier must expose its public link");
-    assertTrue(
-        sent.getLandingPage().endsWith("/public/inventory/" + registeredDoi.getRsPublicId()),
-        "the address registered with B2INST must name the page RSpace will serve; registered: "
-            + sent.getLandingPage()
-            + ", identifier publicLink: "
-            + registeredDoi.getRsPublicId());
+    assertThat(sent.getLandingPage())
+        .as(
+            "the address registered with B2INST must name the page RSpace will serve; registered: "
+                + sent.getLandingPage()
+                + ", identifier publicLink: "
+                + registeredDoi.getRsPublicId())
+        .endsWith("/public/inventory/" + registeredDoi.getRsPublicId());
     assertEquals("Other", sent.getAlternateIdentifier().get(0).getAlternateIdentifierType());
     assertEquals(
         "INV-2025-0042", sent.getAlternateIdentifier().get(0).getAlternateIdentifierValue());

@@ -1,8 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -13,14 +12,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.User;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -29,7 +26,6 @@ import org.springframework.test.web.servlet.MvcResult;
 @WebAppConfiguration
 @TestPropertySource(properties = "ror.api.url=https://api.ror.org/v2/organizations")
 // tests marked as NIGHLTY are contacting the REAL ROR API
-@RunWith(ConditionalTestRunner.class)
 public class RoRSysAdminControllerMVCIT extends MVCTestBase {
 
   private static final String rorSysadminUrl = "/system/ror/";
@@ -45,13 +41,13 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
   public static final String ROR_NAME = "Research Space (United Kingdom)";
   @Autowired private SystemPropertyManager systemPropertyManager;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     systemPropertyManager.save(SystemPropertyName.RSPACE_ROR, "", getSysAdminUser());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -63,7 +59,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorSysadminUrl + "existingGlobalRoRID"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
@@ -73,7 +69,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorPublicUrl + "existingGlobalRoRID"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
@@ -83,7 +79,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorPublicUrl + "existingGlobalRoRName"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
@@ -93,28 +89,28 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorSysadminUrl + "existingGlobalRoRName"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testSearchForValidRor() throws Exception {
     // There are 3 versions of a valid ROR ID
     mockMvc
         .perform(get(rorSysadminUrl + "rorForID/" + validRorOne))
         .andExpect(status().is2xxSuccessful())
-        .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
+        .andExpect(jsonPath("$.id").value(ROR_FULL_ID))
         .andReturn();
     mockMvc
         .perform(get(rorSysadminUrl + "rorForID/" + validRorTwo))
         .andExpect(status().is2xxSuccessful())
-        .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
+        .andExpect(jsonPath("$.id").value(ROR_FULL_ID))
         .andReturn();
     MvcResult result =
         mockMvc
             .perform(get(rorSysadminUrl + "rorForID/" + validRorThree))
             .andExpect(status().is2xxSuccessful())
-            .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
+            .andExpect(jsonPath("$.id").value(ROR_FULL_ID))
             .andReturn();
 
     JsonNode rorDetails = getFromJsonResponseBody(result, JsonNode.class);
@@ -133,19 +129,18 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorSysadminUrl + "rorForID/" + validRorOne + 1))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals(
-        "https://ror.org/038xqyz771 is not a valid ROR",
-        result.getModelAndView().getModel().get("exceptionMessage"));
+    assertThat(result.getModelAndView().getModel())
+        .containsEntry("exceptionMessage", "https://ror.org/038xqyz771 is not a valid ROR");
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testUpdateRorAsSysadmin() throws Exception {
     logoutAndLoginAsSysAdmin();
     mockMvc
         .perform(post(rorSysadminUrl + "rorForID/" + validRorOne))
         .andExpect(status().is2xxSuccessful())
-        .andExpect(jsonPath("$.data", is(true)));
+        .andExpect(jsonPath("$.data").value(true));
     MvcResult result =
         mockMvc
             .perform(get(rorSysadminUrl + "existingGlobalRoRID"))
@@ -169,11 +164,8 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(post(rorSysadminUrl + "rorForID/" + validRorOne))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains("Unauthorized role manipulation attempt"));
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Unauthorized role manipulation attempt");
   }
 
   @Test
@@ -182,13 +174,13 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
     mockMvc
         .perform(delete(rorSysadminUrl + "rorForID"))
         .andExpect(status().is2xxSuccessful())
-        .andExpect(jsonPath("$.data", is(true)));
+        .andExpect(jsonPath("$.data").value(true));
     MvcResult result =
         mockMvc
             .perform(get(rorSysadminUrl + "existingGlobalRoRID"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
@@ -200,42 +192,39 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(delete(rorSysadminUrl + "rorForID"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains("Unauthorized role manipulation attempt"));
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Unauthorized role manipulation attempt");
   }
 
   private void checkV2Country(JsonNode rorDetails) {
-    assertTrue(
-        rorDetails.get("locations").findValues("country_name", new ArrayList<>()).stream()
-            .map(n -> n.toString())
-            .collect(Collectors.toList())
-            .contains("\"United Kingdom\""));
+    assertThat(
+            rorDetails.get("locations").findValues("country_name", new ArrayList<>()).stream()
+                .map(n -> n.toString())
+                .collect(Collectors.toList()))
+        .contains("\"United Kingdom\"");
   }
 
   private void checkV2City(JsonNode rorDetails) {
-    assertTrue(
-        rorDetails.get("locations").findValues("name", new ArrayList<>()).stream()
-            .map(n -> n.toString())
-            .collect(Collectors.toList())
-            .contains("\"Edinburgh\""));
+    assertThat(
+            rorDetails.get("locations").findValues("name", new ArrayList<>()).stream()
+                .map(n -> n.toString())
+                .collect(Collectors.toList()))
+        .contains("\"Edinburgh\"");
   }
 
   private void checkV2Names(JsonNode rorDetails) {
-    assertTrue(
-        rorDetails.get("names").findValues("value", new ArrayList<>()).stream()
-            .map(n -> n.toString())
-            .collect(Collectors.toList())
-            .contains("\"Research Space\""));
+    assertThat(
+            rorDetails.get("names").findValues("value", new ArrayList<>()).stream()
+                .map(n -> n.toString())
+                .collect(Collectors.toList()))
+        .contains("\"Research Space\"");
   }
 
   private void checkV2Links(JsonNode rorDetails) {
-    assertTrue(
-        rorDetails.get("links").findValues("value", new ArrayList<>()).stream()
-            .map(n -> n.toString())
-            .collect(Collectors.toList())
-            .contains("\"https://www.researchspace.com\""));
+    assertThat(
+            rorDetails.get("links").findValues("value", new ArrayList<>()).stream()
+                .map(n -> n.toString())
+                .collect(Collectors.toList()))
+        .contains("\"https://www.researchspace.com\"");
   }
 }

@@ -1,27 +1,28 @@
 package com.researchspace.dao.customliquibaseupdates.v41;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.Constants;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class CreateMissingUserFoldersForLabAdminsAndPIsIT extends RealTransactionSpringTestBase {
 
   private CreateMissingUserFoldersForLabAdminsAndPIs userFoldersCreator;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     userFoldersCreator = new CreateMissingUserFoldersForLabAdminsAndPIs();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -52,8 +53,8 @@ public class CreateMissingUserFoldersForLabAdminsAndPIsIT extends RealTransactio
           folderMgr.removeBaseRecordFromFolder(member1Root, labAdminLabGroupsFolderId);
 
           // assert the folders are removed
-          assertEquals(3, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
-          assertEquals(2, folderDao.getLabGroupFolderForUser(labAdmin).getChildren().size());
+          assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(3);
+          assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildren()).hasSize(2);
         });
 
     // run update
@@ -72,8 +73,8 @@ public class CreateMissingUserFoldersForLabAdminsAndPIsIT extends RealTransactio
     // assert the folders are there
     doInTransaction(
         () -> {
-          assertEquals(4, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
-          assertEquals(3, folderDao.getLabGroupFolderForUser(labAdmin).getChildren().size());
+          assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(4);
+          assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildren()).hasSize(3);
         });
   }
 
@@ -93,10 +94,10 @@ public class CreateMissingUserFoldersForLabAdminsAndPIsIT extends RealTransactio
     doInTransaction(
         () -> {
           Folder piLabGroupsFolder = folderDao.getLabGroupFolderForUser(pi);
-          assertEquals(3, folderDao.getFolderChildrenIds(piLabGroupsFolder).size());
+          assertThat(folderDao.getFolderChildrenIds(piLabGroupsFolder)).hasSize(3);
           Folder userRoot = folderDao.getRootRecordForUser(member);
           folderMgr.removeBaseRecordFromFolder(userRoot, piLabGroupsFolder.getId());
-          assertEquals(2, folderDao.getFolderChildrenIds(piLabGroupsFolder).size());
+          assertThat(folderDao.getFolderChildrenIds(piLabGroupsFolder)).hasSize(2);
         });
     /* assert only group folders visible by PI */
 
@@ -115,7 +116,7 @@ public class CreateMissingUserFoldersForLabAdminsAndPIsIT extends RealTransactio
     // assert a single folder created
     doInTransaction(
         () -> {
-          assertEquals(3, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
+          assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(3);
         });
   }
 }

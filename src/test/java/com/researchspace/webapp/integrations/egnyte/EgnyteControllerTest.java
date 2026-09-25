@@ -1,7 +1,7 @@
 package com.researchspace.webapp.integrations.egnyte;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -15,9 +15,9 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
@@ -31,13 +31,13 @@ public class EgnyteControllerTest extends SpringTransactionalTest {
   @Autowired private EgnyteAuthConnector autowiredConnector;
   private EgnyteAuthConnector mockConnector;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     mockConnector = Mockito.mock(EgnyteAuthConnectorImpl.class);
     controller.setEgnyteConnector(mockConnector);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     controller.setEgnyteConnector(autowiredConnector);
   }
@@ -51,7 +51,7 @@ public class EgnyteControllerTest extends SpringTransactionalTest {
     Optional<UserConnection> noConnection =
         userConnectionManager.findByUserNameProviderName(
             user.getUsername(), IntegrationsHandler.EGNYTE_APP_NAME);
-    assertFalse(noConnection.isPresent(), "no egnyte connection expected initially");
+    assertThat(noConnection).as("no egnyte connection expected initially").isNotPresent();
 
     // mock connector responses
     Map<String, Object> accessTokenMockResponse = new HashMap<>();
@@ -76,7 +76,7 @@ public class EgnyteControllerTest extends SpringTransactionalTest {
     Optional<UserConnection> savedConnectionOpt =
         userConnectionManager.findByUserNameProviderName(
             user.getUsername(), IntegrationsHandler.EGNYTE_APP_NAME);
-    assertTrue(savedConnectionOpt.isPresent());
+    assertThat(savedConnectionOpt).isPresent();
     assertEquals("dummyToken", savedConnectionOpt.get().getAccessToken());
 
     // now disconnect and confirm the user connection is removed
@@ -87,6 +87,6 @@ public class EgnyteControllerTest extends SpringTransactionalTest {
     Optional<UserConnection> removedConnectionOpt =
         userConnectionManager.findByUserNameProviderName(
             user.getUsername(), IntegrationsHandler.EGNYTE_APP_NAME);
-    assertFalse(removedConnectionOpt.isPresent());
+    assertThat(removedConnectionOpt).isNotPresent();
   }
 }

@@ -1,22 +1,23 @@
 package com.researchspace.model.record;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SnippetTest {
 
   private Snippet snippet;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     snippet = new Snippet();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGetSetNameCantBeEmptyName() {
-    snippet.setName(" ");
+    assertThrows(IllegalArgumentException.class, () -> snippet.setName(" "));
   }
 
   @Test

@@ -1,59 +1,47 @@
 package com.researchspace.webapp.integrations.argos;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.argos.model.ArgosDMP;
 import com.researchspace.argos.model.ArgosDMPListing;
 import com.researchspace.argos.model.DataTableData;
-import com.researchspace.properties.PropertyHolder;
-import com.researchspace.service.impl.ConditionalTestRunnerNotSpring;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.web.client.RestTemplate;
 
-@RunWith(ConditionalTestRunnerNotSpring.class)
+// The following tests run nightly and assert that the Argos API has not
+// changed in such a way that our integration no longer works correctly
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class ArgosApiRealConnectionTest {
 
   private RestTemplate restTemplate;
 
-  @Mock private PropertyHolder propertyHolder;
+  private ArgosDMPProvider argosClient;
 
-  @InjectMocks private ArgosDMPProvider argosClient;
-
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
-    openMocks(this);
-
     restTemplate = new RestTemplate();
 
     this.argosClient = new ArgosDMPProvider(new URL("https://devel.opendmp.eu/srv/api/public"));
     this.argosClient.setRestTemplate(restTemplate);
   }
 
-  // The following tests run nightly and assert that the Argos API has not
-  // changed in such a way that our integration no longer works correctly
-  @RunIfSystemPropertyDefined("nightly")
   @Test
   public void listPlansTest() {
     try {
       DataTableData<ArgosDMPListing> list = argosClient.listPlans(10, 0, null, null, null, null);
-      assertTrue(list.getData().size() >= 0);
+      assertThat(list.getData().size()).isGreaterThanOrEqualTo(0);
     } catch (MalformedURLException | URISyntaxException e) {
       fail("argosClient.listPlans threw an exception.");
     }
   }
 
-  @RunIfSystemPropertyDefined("nightly")
   @Test
   public void getPlanByIdTest() {
     try {

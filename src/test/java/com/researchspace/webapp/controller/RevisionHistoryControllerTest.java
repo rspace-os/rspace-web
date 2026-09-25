@@ -1,8 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.EditStatus;
@@ -31,19 +32,17 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockServletContext;
 
+@ExtendWith(MockitoExtension.class)
 public class RevisionHistoryControllerTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   @Mock private UserManager userMgr;
   @Mock private RecordManager recordMgr;
@@ -59,7 +58,7 @@ public class RevisionHistoryControllerTest {
   private User user;
   private MockServletContext context;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     revisionHistoryCtrller = new RevisionHistoryController();
     revisionHistoryCtrller.setUserManager(userMgr);
@@ -75,7 +74,7 @@ public class RevisionHistoryControllerTest {
     mockPrincipal = user::getUsername;
   }
 
-  @After
+  @AfterEach
   public void tearDown() {}
 
   @Test
@@ -197,7 +196,7 @@ public class RevisionHistoryControllerTest {
         revisionHistoryCtrller.getRevisionsJson(sd2.getId(), mockPrincipal);
     assertNotNull(revisionsResponse);
     List<RecordInformation> revisions = revisionsResponse.getData();
-    assertEquals(2, revisions.size());
+    assertThat(revisions).hasSize(2);
     assertEquals(Long.valueOf(11), revisions.get(0).getRevision());
   }
 

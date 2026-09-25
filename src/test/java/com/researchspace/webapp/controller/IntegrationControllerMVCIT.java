@@ -12,7 +12,6 @@ import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GALAXY_APP_NAME;
@@ -32,11 +31,12 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIA
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_URL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,24 +47,20 @@ import com.researchspace.model.preference.BoxLinkType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserConnectionManager;
-import com.researchspace.service.impl.ConditionalTestRunner;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 
-@RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
     properties = {
       "pyrat.server.config={\"mice server\": {\"url\": \"https://pyrat1.server.com\", \"token\":"
@@ -78,19 +74,19 @@ import org.springframework.test.web.servlet.MvcResult;
     })
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 29;
+  final int TOTAL_INTEGRATIONS = 28;
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     mockPrincipal = piUser::getUsername;
     logoutAndLoginAs(piUser);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -106,7 +102,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     Map<String, Map<String, Object>> infos = getFromJsonAjaxReturnObject(resultAll, Map.class);
-    assertEquals(TOTAL_INTEGRATIONS, infos.size());
+    assertThat(infos).hasSize(TOTAL_INTEGRATIONS);
 
     // check options
     Map<String, String[]> expectedOptions = new TreeMap<>();
@@ -122,7 +118,6 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(FIGSHARE_APP_NAME, new String[] {});
     expectedOptions.put(OWNCLOUD_APP_NAME, new String[] {});
     expectedOptions.put(NEXTCLOUD_APP_NAME, new String[] {});
-    expectedOptions.put(EVERNOTE_APP_NAME, new String[] {});
     expectedOptions.put(EGNYTE_APP_NAME, new String[] {});
     expectedOptions.put(MSTEAMS_APP_NAME, new String[] {});
     expectedOptions.put(PROTOCOLS_IO_APP_NAME, new String[] {}); // no token if not authenticated
@@ -144,12 +139,13 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     for (var info : infos.values()) {
       String integrationName = (String) info.get("name");
       Map options = (Map) info.get("options");
-      assertEquals(
-          "For " + integrationName, expectedOptions.get(integrationName).length, options.size());
+      assertThat(options)
+          .as("For " + integrationName)
+          .hasSameSizeAs(expectedOptions.get(integrationName));
       for (String expectedOption : expectedOptions.get(integrationName)) {
-        assertTrue(
-            integrationName + " should contain " + expectedOption,
-            options.containsKey(expectedOption));
+        assertThat(options)
+            .as(integrationName + " should contain " + expectedOption)
+            .containsKey(expectedOption);
       }
     }
   }
@@ -195,8 +191,8 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     IntegrationInfo info = getIntegrationInfoFromServer(mock, integrationName);
     assertEquals(integrationName, info.getName());
     assertFalse(info.isEnabled());
-    assertEquals(
-        BoxLinkType.LIVE.toString(), info.getOptions().get(Preference.BOX_LINK_TYPE.toString()));
+    assertThat(info.getOptions())
+        .containsEntry(Preference.BOX_LINK_TYPE.toString(), BoxLinkType.LIVE.toString());
 
     // set enabled
     info.setEnabled(true);
@@ -234,9 +230,8 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     info = getFromJsonAjaxReturnObject(updateResult, IntegrationInfo.class);
     assertEquals(integrationName, info.getName());
     assertTrue(info.isEnabled());
-    assertEquals(
-        BoxLinkType.VERSIONED.toString(),
-        info.getOptions().get(Preference.BOX_LINK_TYPE.toString()));
+    assertThat(info.getOptions())
+        .containsEntry(Preference.BOX_LINK_TYPE.toString(), BoxLinkType.VERSIONED.toString());
   }
 
   @Test
@@ -321,12 +316,11 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     // verify that slack channel is created
     IntegrationInfo info = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> savedOptions = info.getOptions();
-    assertEquals(1, savedOptions.size()); // the channel was added
+    assertThat(savedOptions).hasSize(1); // the channel was added
     String setId = savedOptions.keySet().iterator().next();
-    assertTrue(StringUtils.isNotEmpty(setId));
-    assertEquals(
-        INITIAL_LABEL,
-        ((Map<String, String>) savedOptions.values().iterator().next()).get("SLACK_CHANNEL_LABEL"));
+    assertThat(setId).isNotEmpty();
+    assertThat(((Map<String, String>) savedOptions.values().iterator().next()))
+        .containsEntry("SLACK_CHANNEL_LABEL", INITIAL_LABEL);
 
     // now try saving the same slack channel with different label
     channelOptions.put("SLACK_CHANNEL_LABEL", EDITED_LABEL);
@@ -347,11 +341,9 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     // verify that label was updated
     IntegrationInfo updatedInfo = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> updatedOptions = updatedInfo.getOptions();
-    assertEquals(1, updatedOptions.size()); // still just one channel
-    assertEquals(
-        EDITED_LABEL,
-        ((Map<String, String>) updatedOptions.values().iterator().next())
-            .get("SLACK_CHANNEL_LABEL"));
+    assertThat(updatedOptions).hasSize(1); // still just one channel
+    assertThat(((Map<String, String>) updatedOptions.values().iterator().next()))
+        .containsEntry("SLACK_CHANNEL_LABEL", EDITED_LABEL);
 
     // now delete
     result =
@@ -368,7 +360,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     // verify the channel is no longer there
     IntegrationInfo deletedChannelInfo = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> deletedOptions = deletedChannelInfo.getOptions();
-    assertEquals(0, deletedOptions.size());
+    assertThat(deletedOptions).isEmpty();
   }
 
   @Test
@@ -398,15 +390,17 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     // verify options are returned correctly
     IntegrationInfo info = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> savedOptions = info.getOptions();
-    assertEquals(2, savedOptions.size());
+    assertThat(savedOptions).hasSize(2);
     List configuredServers = (List) savedOptions.get(PYRAT_CONFIGURED_SERVERS);
-    assertEquals(2, configuredServers.size());
-    assertEquals("mice server", ((Map<String, String>) configuredServers.get(0)).get("alias"));
-    assertEquals(
-        "https://pyrat1.server.com", ((Map<String, String>) configuredServers.get(0)).get("url"));
-    assertEquals("frogs server", ((Map<String, String>) configuredServers.get(1)).get("alias"));
-    assertEquals(
-        "https://pyrat2.server.com", ((Map<String, String>) configuredServers.get(1)).get("url"));
+    assertThat(configuredServers).hasSize(2);
+    assertThat(((Map<String, String>) configuredServers.get(0)))
+        .containsEntry("alias", "mice server");
+    assertThat(((Map<String, String>) configuredServers.get(0)))
+        .containsEntry("url", "https://pyrat1.server.com");
+    assertThat(((Map<String, String>) configuredServers.get(1)))
+        .containsEntry("alias", "frogs server");
+    assertThat(((Map<String, String>) configuredServers.get(1)))
+        .containsEntry("url", "https://pyrat2.server.com");
 
     String optionsSetId = "";
     for (String key : savedOptions.keySet()) {
@@ -414,19 +408,19 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
         optionsSetId = key;
       }
     }
-    assertTrue(StringUtils.isNotEmpty(optionsSetId));
+    assertThat(optionsSetId).isNotEmpty();
 
     Map<String, String> uiOptions = (Map<String, String>) savedOptions.get(optionsSetId);
-    assertEquals("mice server", uiOptions.get(PYRAT_ALIAS));
+    assertThat(uiOptions).containsEntry(PYRAT_ALIAS, "mice server");
     // verify the apikey is returned as empty in the ui options since it is not saved in clear
-    assertEquals(Strings.EMPTY, uiOptions.get(PYRAT_APIKEY));
+    assertThat(uiOptions).containsEntry(PYRAT_APIKEY, Strings.EMPTY);
     // verify the api-key is not saved into UserConnection table (cause it is saved into the
     // AppConfig)
-    assertTrue(
-        userConnectionManager
-            .findByUserNameProviderName(piUser.getUsername(), PYRAT_APP_NAME, "mice server")
-            .isEmpty());
-    assertEquals("http://pyrat1.server.com", uiOptions.get(PYRAT_URL));
+    assertThat(
+            userConnectionManager.findByUserNameProviderName(
+                piUser.getUsername(), PYRAT_APP_NAME, "mice server"))
+        .isEmpty();
+    assertThat(uiOptions).containsEntry(PYRAT_URL, "http://pyrat1.server.com");
 
     // add a server api-key to the configuration
     channelOptions = new HashMap<>();
@@ -449,14 +443,14 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertNull(result.getResolvedException());
 
     uiOptions = (Map<String, String>) savedOptions.get(optionsSetId);
-    assertEquals("mice server", uiOptions.get(PYRAT_ALIAS));
+    assertThat(uiOptions).containsEntry(PYRAT_ALIAS, "mice server");
     // make sure the apikey is returned as empty since it is not saved in clear
-    assertEquals(Strings.EMPTY, uiOptions.get(PYRAT_APIKEY));
-    assertTrue(
-        userConnectionManager
-            .findByUserNameProviderName(piUser.getUsername(), PYRAT_APP_NAME, "mice server")
-            .isPresent());
-    assertEquals("http://pyrat1.server.com", uiOptions.get(PYRAT_URL));
+    assertThat(uiOptions).containsEntry(PYRAT_APIKEY, Strings.EMPTY);
+    assertThat(
+            userConnectionManager.findByUserNameProviderName(
+                piUser.getUsername(), PYRAT_APP_NAME, "mice server"))
+        .isPresent();
+    assertThat(uiOptions).containsEntry(PYRAT_URL, "http://pyrat1.server.com");
 
     // delete the user configuration
     result =
@@ -473,12 +467,12 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     // verify the ui options and the api-key are not anymore there
     IntegrationInfo deletedChannelInfo = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> deletedOptions = deletedChannelInfo.getOptions();
-    assertEquals(1, deletedOptions.size());
-    assertTrue(deletedOptions.containsKey(PYRAT_CONFIGURED_SERVERS));
-    assertTrue(
-        userConnectionManager
-            .findByUserNameProviderName(piUser.getUsername(), PYRAT_APP_NAME, "mice server")
-            .isEmpty());
+    assertThat(deletedOptions).hasSize(1);
+    assertThat(deletedOptions).containsKey(PYRAT_CONFIGURED_SERVERS);
+    assertThat(
+            userConnectionManager.findByUserNameProviderName(
+                piUser.getUsername(), PYRAT_APP_NAME, "mice server"))
+        .isEmpty();
   }
 
   @Test
@@ -517,7 +511,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     List elements = getFromJsonAjaxReturnObject(result, List.class);
-    assertEquals(2, elements.size());
+    assertThat(elements).hasSize(2);
   }
 
   private IntegrationInfo getIntegrationInfoFromServer(Principal mock, String integrationName)

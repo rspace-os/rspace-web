@@ -1,9 +1,11 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.User;
@@ -18,9 +20,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpSession;
 
 public class RecordEditorTrackerTest {
@@ -38,7 +39,7 @@ public class RecordEditorTrackerTest {
   private boolean failedDueToUserRemoved = false;
   private boolean tooManyViewers = false;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     // test fixture = 3 records and 3 users, each record created by a
     // different user.
@@ -64,9 +65,6 @@ public class RecordEditorTrackerTest {
     activeusers.addUser(u3.getUsername(), new MockHttpSession());
     // u3 is not an active user
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void isSomeoneElseEditing() {
@@ -126,7 +124,7 @@ public class RecordEditorTrackerTest {
     // another user can't unlock a record owned by a user
     tracker.unlockRecord(r1, u1, sessionIDPRovider);
     assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, attemptEdit(r1.getId(), u1, activeusers));
-    assertEquals(u2.getUsername(), tracker.isEditing(r1).get());
+    assertThat(tracker.isEditing(r1)).contains(u2.getUsername());
   }
 
   @Test
@@ -181,7 +179,7 @@ public class RecordEditorTrackerTest {
           EditStatus es = attemptEdit(r.getId(), user, activeusers);
           if (es.equals(EditStatus.EDIT_MODE)) {
             synchronized (reporter) {
-              assertTrue(reporter.get(r) == null || reporter.get(r).equals(username));
+              assertThat(reporter.get(r)).isIn(null, username);
               reporter.put(r.getId(), user.getUsername());
             }
           } else {
@@ -216,31 +214,31 @@ public class RecordEditorTrackerTest {
     }
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void testGetViewersForRecord() {
     Set<String> viewers = tracker.getViewersForRecord(r1.getId());
     assertNotNull(viewers); // should not return null
-    assertTrue(viewers.isEmpty());
-    viewers.add("new user"); // fails! cannnot modify this directly
+    assertThat(viewers).isEmpty();
+    assertThrows(UnsupportedOperationException.class, () -> viewers.add("new user"));
   }
 
   @Test
   public void testAddRemoveViewersForRecord() {
     tracker.addViewerToRecord(r1, u1.getUsername());
-    assertEquals(1, tracker.getViewersForRecord(r1.getId()).size());
+    assertThat(tracker.getViewersForRecord(r1.getId())).hasSize(1);
     assertEquals(u1.getUsername(), tracker.getViewersForRecord(r1.getId()).iterator().next());
 
     // add again - should ignore duplicates
     tracker.addViewerToRecord(r1, u1.getUsername());
-    assertEquals(1, tracker.getViewersForRecord(r1.getId()).size());
+    assertThat(tracker.getViewersForRecord(r1.getId())).hasSize(1);
 
     // should be no viewers now
     tracker.removeViewerFromRecord(r1, u1.getUsername());
-    assertEquals(0, tracker.getViewersForRecord(r1.getId()).size());
+    assertThat(tracker.getViewersForRecord(r1.getId())).isEmpty();
   }
 
   @Test
   public void testNoNPEIfRemovingLoggedOutUser() {
-    assertEquals("", tracker.unlockRecord(r1, null, sessionIDPRovider));
+    assertThat(tracker.unlockRecord(r1, null, sessionIDPRovider)).isEmpty();
   }
 }

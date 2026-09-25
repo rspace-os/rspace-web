@@ -1,30 +1,34 @@
 package com.researchspace.model.record;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class BreadcrumbGeneratorTest {
 
   private DefaultBreadcrumbGenerator bGen;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     bGen = new DefaultBreadcrumbGenerator();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGenerateBreadcrumbNoNull1stArg() {
-    bGen.generateBreadcrumb(null, TestFactory.createAFolder("any", createAUser()));
+    Folder folder = TestFactory.createAFolder("any", createAUser());
+    assertThrows(IllegalArgumentException.class, () -> bGen.generateBreadcrumb(null, folder));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGenerateBreadcrumbNoNull2ndArg() {
-    bGen.generateBreadcrumb(TestFactory.createAFolder("any", createAUser()), null);
+    Folder folder = TestFactory.createAFolder("any", createAUser());
+    assertThrows(IllegalArgumentException.class, () -> bGen.generateBreadcrumb(folder, null));
   }
 
   private User createAUser() {
@@ -39,7 +43,7 @@ public class BreadcrumbGeneratorTest {
 
     Breadcrumb bcrumb = bGen.generateBreadcrumb(single, single);
     assertTrue(bcrumb.isContainLinks());
-    assertEquals(1, bcrumb.getElements().size());
+    assertThat(bcrumb.getElements()).hasSize(1);
     assertEquals(single.getName(), bcrumb.getElements().get(0).getDisplayname());
   }
 
@@ -58,14 +62,14 @@ public class BreadcrumbGeneratorTest {
 
     Breadcrumb bcrumb = bGen.generateBreadcrumb(child, parent);
     assertTrue(bcrumb.isContainLinks());
-    assertEquals(2, bcrumb.getElements().size());
+    assertThat(bcrumb.getElements()).hasSize(2);
 
     Folder gchild = TestFactory.createAFolder("gchild", u1);
     gchild.setId(3L);
     child.addChild(gchild, u1, true);
 
     Breadcrumb bCrumb2 = bGen.generateBreadcrumb(gchild, parent);
-    assertEquals(3, bCrumb2.getElements().size());
+    assertThat(bCrumb2.getElements()).hasSize(3);
 
     Folder bothChildAndGChild = TestFactory.createAFolder("bothChildAndGChild", u1);
     bothChildAndGChild.setId(4L);
@@ -73,7 +77,7 @@ public class BreadcrumbGeneratorTest {
     child.addChild(bothChildAndGChild, u1, true);
 
     Breadcrumb bCrumb3 = bGen.generateBreadcrumb(bothChildAndGChild, parent);
-    assertEquals(2, bCrumb3.getElements().size());
+    assertThat(bCrumb3.getElements()).hasSize(2);
   }
 
   @Test
@@ -93,7 +97,7 @@ public class BreadcrumbGeneratorTest {
 
     Breadcrumb bcrumb = bGen.generateBreadcrumbToHome(child, parent, null);
     assertTrue(bcrumb.isContainLinks());
-    assertEquals(2, bcrumb.getElements().size());
+    assertThat(bcrumb.getElements()).hasSize(2);
     assertEquals(
         BreadcrumbGenerator.HOME_FOLDER_DISPLAY_NAME, bcrumb.getElements().get(0).getDisplayname());
   }

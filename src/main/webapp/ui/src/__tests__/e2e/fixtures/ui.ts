@@ -23,8 +23,13 @@ import { IdentifiersPage } from "../pageObjects/inventory/IdentifiersPage";
 import { InventoryImportPage } from "../pageObjects/inventory/InventoryImportPage";
 import { InventoryPage } from "../pageObjects/inventory/InventoryPage";
 import { AuditTrailPage } from "../pageObjects/myrspace/AuditTrailPage";
+import { CreateFormPage } from "../pageObjects/myrspace/CreateFormPage";
 import { DeletedItemsPage } from "../pageObjects/myrspace/DeletedItemsPage";
+import { DirectoryPage } from "../pageObjects/myrspace/DirectoryPage";
+import { ExportImportPage } from "../pageObjects/myrspace/ExportImportPage";
+import { ManageFormsPage } from "../pageObjects/myrspace/ManageFormsPage";
 import { MyRSpacePage } from "../pageObjects/myrspace/MyRSpacePage";
+import { UserProfilePage } from "../pageObjects/myrspace/UserProfilePage";
 import { NotebookPage } from "../pageObjects/notebook/NotebookPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
 import { type AppUser, USERS } from "../users";
@@ -50,6 +55,11 @@ type UiFixtures = {
   pageMyRSpace: MyRSpacePage;
   pageAuditTrail: AuditTrailPage;
   pageDeletedItems: DeletedItemsPage;
+  pageCreateForm: CreateFormPage;
+  pageManageForms: ManageFormsPage;
+  pageDirectory: DirectoryPage;
+  pageExportImport: ExportImportPage;
+  pageUserProfile: UserProfilePage;
   pageNotebook: NotebookPage;
   pageGitHubAppsCard: GitHubAppsCardComponent;
   pageOrcidProfile: OrcidProfilePage;
@@ -104,6 +114,11 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageMyRSpace: pageFixture(MyRSpacePage),
   pageAuditTrail: pageFixture(AuditTrailPage),
   pageDeletedItems: pageFixture(DeletedItemsPage),
+  pageCreateForm: pageFixture(CreateFormPage),
+  pageManageForms: pageFixture(ManageFormsPage),
+  pageDirectory: pageFixture(DirectoryPage),
+  pageExportImport: pageFixture(ExportImportPage),
+  pageUserProfile: pageFixture(UserProfilePage),
   pageNotebook: pageFixture(NotebookPage),
   pageGitHubAppsCard: pageFixture(GitHubAppsCardComponent),
   pageOrcidProfile: pageFixture(OrcidProfilePage),

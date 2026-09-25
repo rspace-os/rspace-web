@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
@@ -17,8 +18,8 @@ import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.util.List;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -42,7 +43,7 @@ public class RaIDServiceManagerTest {
   private Group projectGroup;
   private UserRaid userRaid;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
     piUser = TestFactory.createAnyUserWithRole("pi", Constants.PI_ROLE);
@@ -65,7 +66,7 @@ public class RaIDServiceManagerTest {
 
     // THEN
     assertNotNull(actualResult);
-    assertEquals(1, actualResult.size());
+    assertThat(actualResult).hasSize(1);
     RaidGroupAssociationDTO actualReferenceDTO = actualResult.iterator().next();
     assertEquals(USER_RAID_ID, actualReferenceDTO.getRaid().getId());
     assertEquals(SERVER_ALIAS, actualReferenceDTO.getRaid().getRaidServerAlias());
@@ -80,7 +81,7 @@ public class RaIDServiceManagerTest {
 
     // THEN
     assertNotNull(actualResult);
-    assertEquals(1, actualResult.size());
+    assertThat(actualResult).hasSize(1);
     RaidGroupAssociationDTO actualReferenceDTO = actualResult.iterator().next();
     assertEquals(USER_RAID_ID, actualReferenceDTO.getRaid().getId());
     assertEquals(SERVER_ALIAS, actualReferenceDTO.getRaid().getRaidServerAlias());

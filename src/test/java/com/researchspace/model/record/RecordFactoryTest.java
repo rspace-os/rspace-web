@@ -1,10 +1,12 @@
 package com.researchspace.model.record;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
@@ -20,23 +22,23 @@ import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.units.RSUnitDef;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RecordFactoryTest {
 
   IRecordFactory factoryAPI;
   private User user, otherUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     factoryAPI = new RecordFactory();
     user = TestFactory.createAnyUser("user");
     otherUser = TestFactory.createAnyUser("otherUser");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -46,9 +48,9 @@ public class RecordFactoryTest {
     assertEquals(FieldType.LINK, field.getType());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testCreateRichTextDocumentFailsIfARgsNull() {
-    factoryAPI.createFolder(null, user);
+    assertThrows(IllegalArgumentException.class, () -> factoryAPI.createFolder(null, user));
   }
 
   @Test
@@ -59,7 +61,7 @@ public class RecordFactoryTest {
         factoryAPI.createStructuredDocument("\n notroot\n  \n", user, form);
     assertFalse(structuredDoc.hasType(RecordType.ROOT));
     assertNotNull(structuredDoc.getForm());
-    assertEquals(form.getNumAllFields(), structuredDoc.getFields().size());
+    assertThat(structuredDoc.getFields()).hasSize(form.getNumAllFields());
     assertCoreDataNotNull(structuredDoc);
     // control chars and newlines are stripped.
     assertEquals("notroot", structuredDoc.getName());
@@ -79,7 +81,7 @@ public class RecordFactoryTest {
   public void testCreateSsytemCreatedFolder() {
     Folder folder = factoryAPI.createSystemCreatedFolder("notroot", user);
     assertTrue(folder.isSystemFolder());
-    assertEquals(0, folder.getChildren().size());
+    assertThat(folder.getChildren()).isEmpty();
     assertCoreDataNotNull(folder);
   }
 
@@ -87,7 +89,7 @@ public class RecordFactoryTest {
   public void testCreateFolder() {
     Folder folder = factoryAPI.createFolder("notroot", user);
     assertFalse(folder.hasType(RecordType.ROOT));
-    assertEquals(0, folder.getChildren().size());
+    assertThat(folder.getChildren()).isEmpty();
     assertCoreDataNotNull(folder);
   }
 
@@ -103,7 +105,7 @@ public class RecordFactoryTest {
     assertTrue(folder.hasType(RecordType.ROOT));
     assertTrue(folder.isRootFolder());
     assertTrue(folder.isRootFolderForUser(user));
-    assertEquals(0, folder.getChildren().size());
+    assertThat(folder.getChildren()).isEmpty();
     assertCoreDataNotNull(folder);
   }
 
@@ -119,9 +121,9 @@ public class RecordFactoryTest {
   public void testCreateNewSample() {
     Sample sample = factoryAPI.createSample("test sample", user);
     assertNotNull(sample.getCreationDate());
-    assertEquals(1, sample.getSubSamples().size());
-    assertEquals(1, sample.getActiveSubSamples().size());
-    assertEquals(0, sample.getActiveFields().size());
+    assertThat(sample.getSubSamples()).hasSize(1);
+    assertThat(sample.getActiveSubSamples()).hasSize(1);
+    assertThat(sample.getActiveFields()).isEmpty();
   }
 
   @Test
@@ -134,7 +136,7 @@ public class RecordFactoryTest {
     assertEquals(user.getUsername(), instrument.getModifiedBy());
     assertNull(instrument.getInstrumentTemplate());
     assertNull(instrument.getTemplateLinkedVersion());
-    assertEquals(0, instrument.getActiveFields().size());
+    assertThat(instrument.getActiveFields()).isEmpty();
   }
 
   @Test
@@ -162,7 +164,7 @@ public class RecordFactoryTest {
     // default subsample alias is ALIQUOT
     assertEquals(SubSampleName.ALIQUOT.getDisplayName(), template.getSubSampleAlias());
     // one default subsample
-    assertEquals(1, template.getSubSamples().size());
+    assertThat(template.getSubSamples()).hasSize(1);
     assertEquals(1, template.getActiveSubSamplesCount());
     // default unit is MILLI_LITRE
     assertEquals(RSUnitDef.MILLI_LITRE.getId(), template.getDefaultUnitId());
@@ -187,9 +189,9 @@ public class RecordFactoryTest {
     assertEquals(otherUser.getUsername(), sample.getModifiedBy());
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testCreateSampleFromTemplateRejectsNullTemplate() {
-    factoryAPI.createSample("fail", user, null);
+    assertThrows(NullPointerException.class, () -> factoryAPI.createSample("fail", user, null));
   }
 
   @Test
