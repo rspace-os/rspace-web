@@ -36,6 +36,13 @@ export function temperatureBelowMin(input: OperationInput, value: OperationQuant
   return value.numericValue < input.minCelsius;
 }
 
+/** Storage temperatures are whole degrees, as the sample form's storage temperature takes them. */
+export function temperatureNotWhole(input: OperationInput, value: OperationQuantity | undefined): boolean {
+  if (input.type !== "temperature") return false;
+  if (!value || !Number.isFinite(value.numericValue)) return false;
+  return !Number.isInteger(value.numericValue);
+}
+
 export function temperatureNotStorable(input: OperationInput, value: OperationQuantity | undefined): boolean {
   if (input.type !== "temperature") return false;
   if (!value || !Number.isFinite(value.numericValue)) return false;
@@ -68,6 +75,7 @@ export function detailsValid(
       if (temperatureExceedsMax(input, q)) return false;
       if (temperatureBelowMin(input, q)) return false;
       if (temperatureNotStorable(input, q)) return false;
+      if (temperatureNotWhole(input, q)) return false;
       if (input.type === "quantity") {
         if (!Number.isFinite(q.unitId) || q.unitId <= 0) return false;
         if (q.numericValue < 0) return false;

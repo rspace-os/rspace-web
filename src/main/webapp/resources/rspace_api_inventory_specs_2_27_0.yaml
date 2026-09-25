@@ -2713,9 +2713,10 @@ paths:
         temperature, linked to the origin with an `IsDerivedFrom` field.
 
 
-        `storageTemp` is required and must be at or below -18 degrees Celsius. It is stored as
-        both the storage temperature bounds of the new sample. Send it in any temperature unit;
-        the limit is compared on the temperature it denotes, not on its number.
+        `storageTemp` is required and must be at or below -18 degrees Celsius, in whole degrees
+        of the unit sent. It is stored as both the storage temperature bounds of the new sample.
+        Send it in any temperature unit; the limit is compared on the temperature it denotes,
+        not on its number.
 
 
         `cryomedium` is optional and is stored as a Cryomedium field on the new sample. Omitting
@@ -2735,8 +2736,9 @@ paths:
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName`, `eachAmount`, `storageTemp` or
-            the origin's `amountTaken` is missing; `storageTemp` is above -18 degrees Celsius or
-            does not use a temperature unit; `count` is below 1 or above 100; the amount taken is
+            the origin's `amountTaken` is missing; `storageTemp` is above -18 degrees Celsius, is
+            not whole degrees or does not use a temperature unit; `count` is below 1 or above 100;
+            the amount taken is
             not positive, does not use a unit of the origin's measurement category, or is more
             than the origin currently holds; the origin is empty; or `templateId` names a
             template the created sample does not conform to. Each error names the field that was
@@ -2760,7 +2762,7 @@ paths:
 
 
         `storageTemp` is optional: omit it and the new sample is stored at 4 degrees Celsius.
-        When sent, it must be between 4 and 120 degrees Celsius.
+        When sent, it must be between 4 and 120 degrees Celsius, in whole degrees of the unit sent.
       tags:
         - Operations
       requestBody:
@@ -2776,8 +2778,9 @@ paths:
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName`, `eachAmount` or the origin's
-            `amountTaken` is missing; `storageTemp` is outside 4 to 120 degrees Celsius or does
-            not use a temperature unit; `count` is below 1 or above 100; the amount taken is not
+            `amountTaken` is missing; `storageTemp` is outside 4 to 120 degrees Celsius, is not
+            whole degrees or does not use a temperature unit; `count` is below 1 or above 100;
+            the amount taken is not
             positive, does not use a unit of the origin's measurement category, or is more than
             the origin currently holds; the origin is empty; or `templateId` names a template the
             created sample does not conform to. Each error names the field that was sent.
