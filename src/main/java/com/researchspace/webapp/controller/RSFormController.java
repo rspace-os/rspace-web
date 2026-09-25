@@ -58,6 +58,7 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
@@ -116,6 +117,7 @@ public class RSFormController extends BaseController {
     model.addAttribute("fieldKeys", FIELD_KEYS);
     model.addAttribute("editStatus", form.getEditStatus());
     model.addAttribute("templateOperation", FormOperation.CREATE);
+    model.addAttribute("copiedTemporaryFieldIds", Set.of());
     model.addAttribute(
         "publish_allowed",
         systemPropertyPermissionManager.isPropertyAllowed(subject, "public_sharing"));
@@ -332,8 +334,8 @@ public class RSFormController extends BaseController {
     }
     model.addAttribute("field", field);
     model.addAttribute("template", form);
-    model.addAttribute(
-        "templateOperation", form.isNewState() ? FormOperation.CREATE : FormOperation.EDIT);
+    model.addAttribute("templateOperation", formOperation(form));
+    model.addAttribute("copiedTemporaryFieldIds", copiedTemporaryFieldIds(form));
     return new ModelAndView("workspace/editor/include/fieldFormRow");
   }
 
@@ -432,6 +434,18 @@ public class RSFormController extends BaseController {
     model.addAttribute("fieldKeys", FIELD_KEYS);
     model.addAttribute("editStatus", form.getEditStatus());
     model.addAttribute("templateOperation", FormOperation.EDIT);
+    model.addAttribute("copiedTemporaryFieldIds", copiedTemporaryFieldIds(form));
+  }
+
+  private Set<Long> copiedTemporaryFieldIds(AbstractForm form) {
+    if (form instanceof RSForm rsForm) {
+      return formManager.getCopiedTemporaryFieldIds(rsForm);
+    }
+    return Set.of();
+  }
+
+  private FormOperation formOperation(AbstractForm form) {
+    return form.isNewState() && !form.isTemporary() ? FormOperation.CREATE : FormOperation.EDIT;
   }
 
   @GetMapping("list")

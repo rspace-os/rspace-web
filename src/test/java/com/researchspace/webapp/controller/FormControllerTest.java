@@ -18,6 +18,7 @@ import com.researchspace.model.record.FormOperation;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -137,6 +138,7 @@ public class FormControllerTest extends SpringTransactionalTest {
     assertEquals(
         form.isNewState() ? FormOperation.CREATE : FormOperation.EDIT,
         rowModel.asMap().get("templateOperation"));
+    assertThat(rowModel.asMap().get("copiedTemporaryFieldIds")).isEqualTo(Set.of());
   }
 
   @Test

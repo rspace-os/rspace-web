@@ -1,9 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
-<%-- code for handling the appearance or otherwise of edit/delete buttons
-Because delete of a field leads to a loss of referential integrity
- this is currently disabled for template editing --%>
+<%-- Delete is hidden for copied fields on an edited existing form, but allowed for fields added to
+that draft. --%>
 <button class="editButton btn btn-default" onclick="editField(${field.id})"><spring:message code="common:actions.edit"/></button>
 
-<c:if test="${templateOperation eq 'CREATE' or template.publishingState eq 'NEW'}">
+<c:if test="${templateOperation eq 'CREATE' or not copiedTemporaryFieldIds.contains(field.id)}">
 	<button class="deleteButton btn btn-default" onclick="deleteField(${field.id})"><spring:message code="common:actions.delete"/></button>
 </c:if>
