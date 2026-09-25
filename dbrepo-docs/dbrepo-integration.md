@@ -17,18 +17,24 @@ You can access the editor plugin from the Insert menu, the editor toolbar, or th
 
 The editor plugin will present you a dialog, listing the DBRepo databases you have access to.
 Expanding one of them reveals its tables, views and subsets.
+
 ![dbrepo dialog](dbrepo-dialog.png)
+
 After you have made your selection, click Insert link and a link will be inserted into your document.
-<!-- TODO: add link screenshot here -->
+
+![dbrepo link](link.png)
 
 Clicking a link opens an info panel with information about the resource: its name, type and DBRepo instance of origin. Tables, view and subsets let you download their content in csv.
-<!-- TODO: info panel screenshot-->
+
+![dbrepo link info card](info-card.png)
 
 ### Insert rows from DBRepo
 
 If you select a table or view in the dialog, you can click the Insert rows button.
 It will open a paginated list of its rows.
+
 ![dbrepo row picker dialog](dbrepo-row-picker.png)
+
 Select the rows you would like to include in your document, then click Insert rows. A table containing the rows, and a link to their source in the header will be inserted into your document.
 
-<!-- TODO: table screenshot -->
+![dbrepo rows](table.png)
