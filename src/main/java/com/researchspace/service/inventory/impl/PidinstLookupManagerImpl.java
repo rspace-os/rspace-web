@@ -107,6 +107,15 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private static final Pattern DATACITE_OPERATOR = Pattern.compile("\\b(AND|OR|NOT)\\b");
 
+  /**
+   * The query-string syntax B2INST (InvenioRDM, Elasticsearch) would parse inside a wildcard term,
+   * escaped by {@link #containsForB2inst(String)}. Unlike DataCite's set it includes {@code /},
+   * which B2INST answers 400 for unescaped and accepts escaped; it leaves out {@code *} and {@code
+   * ?}, which stay wildcards. A quote only lands here when the query is nothing but quotes.
+   */
+  private static final Pattern B2INST_RESERVED =
+      Pattern.compile("([\\\\+\\-=&|><!(){}\\[\\]^~:/\"])");
+
   /** A Handle under an ePIC prefix (B2INST mints 21.xxx), bare or behind hdl.handle.net. */
   static final Pattern HANDLE_QUERY =
       Pattern.compile(
@@ -257,9 +266,20 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * which B2INST then ORs.
    *
    * <p>One leading wildcard however many words the query holds, so it stays fast: 0.2-0.4s.
+   *
+   * <p>The user's query syntax is neutralised first, because the wildcards turn it into operators:
+   * {@code *"Instr1\ prova_COPY"*} is {@code *} OR a phrase OR {@code *} and matched all 810
+   * records on b2inst-test.gwdg.de where the quoted phrase alone matched 1, and {@code (}, {@code
+   * ~} and {@code ^} did the same (2026-09-25). Quotes are dropped, since the whole query is
+   * already one phrase and {@code *Instr1\ prova_COPY*} answers that same 1; the rest of {@link
+   * #B2INST_RESERVED} is escaped to a literal, which also turns the 400 on a pasted partial Handle
+   * such as {@code T11975/97g70-tsv60} into its one record. {@code *} and {@code ?} stay live.
    */
   private static String containsForB2inst(String query) {
-    return "*" + query.replaceAll("\\s+", "\\\\ ") + "*";
+    String unquoted = query.replace('"', ' ').trim();
+    String literal =
+        B2INST_RESERVED.matcher(unquoted.isEmpty() ? query : unquoted).replaceAll("\\\\$1");
+    return "*" + literal.replaceAll("\\s+", "\\\\ ") + "*";
   }
 
   /**

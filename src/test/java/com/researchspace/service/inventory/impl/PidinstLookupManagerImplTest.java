@@ -223,6 +223,36 @@ class PidinstLookupManagerImplTest {
     verify(b2instConnector).searchRecords("*electro\\ micro\\ stub*", 50);
   }
 
+  static Stream<Arguments> b2instQueriesCarryingQuerySyntax() {
+    return Stream.of(
+        arguments("\"Instr1 prova_COPY\"", "*Instr1\\ prova_COPY*"),
+        arguments("\"Instr1", "*Instr1*"),
+        arguments("(Instr1)", "*\\(Instr1\\)*"),
+        arguments("Instr1~2", "*Instr1\\~2*"),
+        arguments("Instr1^2", "*Instr1\\^2*"),
+        arguments("Name:Instr1", "*Name\\:Instr1*"),
+        arguments("T11975/97g70-tsv60", "*T11975\\/97g70\\-tsv60*"),
+        arguments("Ins*1", "*Ins*1*"));
+  }
+
+  /**
+   * The wildcards turn unescaped syntax into operators around them: {@code *"a\ b"*} is {@code *}
+   * OR a phrase OR {@code *}, and matched all 810 records on b2inst-test.gwdg.de where the quoted
+   * phrase alone matched 1 (2026-09-25). So quotes are dropped, the whole query already being one
+   * phrase ({@code *Instr1\ prova_COPY*} answers that same 1), the other syntax is escaped to a
+   * literal, and {@code *}/{@code ?} stay live. This also ends the 400 on a pasted partial Handle.
+   */
+  @ParameterizedTest
+  @MethodSource("b2instQueriesCarryingQuerySyntax")
+  void b2instQuerySyntaxIsNeutralisedBeforeTheWildcardsGoOn(String typed, String sent) {
+    when(b2instConnector.searchRecords(anyString(), eq(50)))
+        .thenReturn(searchResultOf(publishedRecord(), 1));
+
+    manager.search(typed, user);
+
+    verify(b2instConnector).searchRecords(sent, 50);
+  }
+
   @Test
   void freeTextSearchGoesToTheEnabledProviderAndFlagsAlreadyLinkedPids() {
     when(b2instConnector.searchRecords("*microscope*", 50))

@@ -177,9 +177,17 @@ and API field names were ported instead.
    not change which records match. The `doi:*<query>*` retry of decision 7 is load-bearing again,
    since plain free text cannot match the DOI keyword: verified 2026-09-24, `82316/qvtb\-aw74` and
    `qvtb\-aw74` both answer 0 as free text while `doi:*82316/qvtb-aw74*` and `doi:*qvtb-aw74*`
-   answer 1. The 4-character minimum of decision 6 is unchanged. B2INST receives its query with no
-   escaping at all, which is its own defect (RSDEV-1524) and unchanged here; the wrap neither
-   causes nor worsens it.
+   answer 1. The 4-character minimum of decision 6 is unchanged.
+
+   **B2INST query syntax is neutralised before the wrap**, because the wildcards turn it into
+   operators. Measured 2026-09-25 on b2inst-test.gwdg.de: `"Instr1 prova_COPY"` answers 1, but
+   wrapped as `*"Instr1\ prova_COPY"*` it is `*` OR a phrase OR `*` and answers all **810**
+   records; `(Instr1)`, `Instr1~2` and `Instr1^2` did the same, and `"Instr1` and `Name:Instr1`
+   answered 400. Quotes are dropped, the whole query already being one phrase
+   (`*Instr1\ prova_COPY*` answers that same 1); `\ + - = & | > < ! ( ) { } [ ] ^ ~ : /` are
+   escaped to literals, so a pasted partial Handle such as `T11975/97g70-tsv60` now finds its
+   record instead of answering 400; `*` and `?` stay live wildcards. This covers the 400s filed as
+   RSDEV-1524 for free-text B2INST searches.
 
 ## Considered options
 
