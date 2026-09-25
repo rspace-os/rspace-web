@@ -195,6 +195,11 @@ and API field names were ported instead.
    are removed and typed `*`/`?` are discounted: `<<<a` would otherwise go out as `*a*`, which
    matched all 810 records. A query below it there finds nothing, without asking B2INST.
 
+   "Spaces" means every character Lucene's classic query parser splits on, which includes U+3000
+   (ideographic space) although Java's `\s` does not: left raw it split the query back into
+   clauses, and `*Instr1<U+3000>OR<U+3000>**` matched all 810 records. For the same reason the
+   minimum strips Unicode whitespace rather than trimming ASCII only, so padding cannot pass it.
+
 ## Considered options
 
 - **Fields only** (Alternate Identifier and Landing page, no identifier row): no link

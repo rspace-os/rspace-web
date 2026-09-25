@@ -122,6 +122,14 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private static final Pattern B2INST_REMOVED = Pattern.compile("[\"<>]");
 
+  /**
+   * What Lucene's classic query parser, and so B2INST, splits a query on. Java's {@code \s} misses
+   * U+3000, which the parser lists as whitespace (QueryParser.jj {@code _WHITESPACE}), so an
+   * unescaped one split the query back into clauses: {@code *Instr1<U+3000>OR<U+3000>**} matched
+   * all 810 records on b2inst-test.gwdg.de (2026-09-25).
+   */
+  private static final Pattern LUCENE_WHITESPACE = Pattern.compile("[\\s\\u3000]+");
+
   /** A Handle under an ePIC prefix (B2INST mints 21.xxx), bare or behind hdl.handle.net. */
   static final Pattern HANDLE_QUERY =
       Pattern.compile(
@@ -138,7 +146,8 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
 
   @Override
   public ApiPidinstSearchResult search(String query, User user) {
-    String q = StringUtils.trimToEmpty(query);
+    // strip, not trim: trim leaves U+3000 and other Unicode spaces, so padding passed the minimum
+    String q = StringUtils.stripToEmpty(query);
     if (q.length() < MIN_QUERY_LENGTH) {
       throw new ApiRuntimeException(
           "errors.inventory.identifier.pidinstQueryTooShort", MIN_QUERY_LENGTH);
@@ -226,7 +235,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private void searchB2inst(String query, ApiPidinstSearchResult result) {
     // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
-    String searchable = B2INST_REMOVED.matcher(query).replaceAll("").trim();
+    String searchable = B2INST_REMOVED.matcher(query).replaceAll("").strip();
     // the minimum again, on what is left to match: <<<a would otherwise go out as *a*, which
     // matched all 810 records on b2inst-test.gwdg.de, and typed wildcards match nothing specific
     if (searchable.replaceAll("[*?]", "").length() < MIN_QUERY_LENGTH) {
@@ -293,7 +302,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private static String containsForB2inst(String searchable) {
     String literal = B2INST_RESERVED.matcher(searchable).replaceAll("\\\\$1");
-    return "*" + literal.replaceAll("\\s+", "\\\\ ") + "*";
+    return "*" + LUCENE_WHITESPACE.matcher(literal).replaceAll("\\\\ ") + "*";
   }
 
   /**

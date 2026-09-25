@@ -235,7 +235,11 @@ class PidinstLookupManagerImplTest {
         arguments("Instr1^2", "*Instr1\\^2*"),
         arguments("Name:Instr1", "*Name\\:Instr1*"),
         arguments("T11975/97g70-tsv60", "*T11975\\/97g70\\-tsv60*"),
-        arguments("Ins*1", "*Ins*1*"));
+        arguments("Ins*1", "*Ins*1*"),
+        // U+3000 is whitespace to Lucene's query parser but not to Java's \s, and left raw it split
+        // the query back into clauses: *Instr1<U+3000>OR<U+3000>** matched all 810 records
+        arguments("abcd\u3000OR\u3000*", "*abcd\\ OR\\ **"),
+        arguments("Instr1\u3000prova_COPY", "*Instr1\\ prova_COPY*"));
   }
 
   /**
@@ -602,9 +606,10 @@ class PidinstLookupManagerImplTest {
     verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
   }
 
-  @Test
-  void searchCountsTheTrimmedQueryTowardsTheMinimum() {
-    assertThrows(ApiRuntimeException.class, () -> manager.search("  ab  ", user));
+  @ParameterizedTest
+  @ValueSource(strings = {"  ab  ", "\u3000\u3000ab\u3000"})
+  void searchCountsTheTrimmedQueryTowardsTheMinimum(String padded) {
+    assertThrows(ApiRuntimeException.class, () -> manager.search(padded, user));
   }
 
   @Test
