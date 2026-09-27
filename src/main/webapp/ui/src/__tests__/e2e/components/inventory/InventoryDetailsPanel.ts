@@ -11,6 +11,7 @@ import { MoreActionsMenu } from "./MoreActionsMenu";
 import { MoveDialogComponent } from "./MoveDialogComponent";
 import { NotesEditor } from "./NotesEditor";
 import { PrintOptionsDialogComponent } from "./PrintOptionsDialogComponent";
+import { RequestMaterialSection } from "./RequestMaterialSection";
 import { TransferDialogComponent } from "./TransferDialogComponent";
 
 export type InventoryDetailAction = "Edit" | "Create" | "Duplicate" | "Move" | "Transfer";
@@ -141,6 +142,21 @@ export class InventoryDetailsPanel {
 
   notes(): NotesEditor {
     return new NotesEditor(this.section("Notes"));
+  }
+
+  /** Owner-only: whether the sample can be requested by other users. */
+  requestableSwitch(): Locator {
+    return this.section("Overview").getByRole("checkbox", { name: "Requestable", exact: true });
+  }
+
+  /** Non-owners only: the "Request this sample" box. */
+  requestMaterial(): RequestMaterialSection {
+    return new RequestMaterialSection(this.page, this.section("Overview"));
+  }
+
+  /** One of the Overview section's labelled fields (e.g. "Owner", "Name"), heading included. */
+  overviewField(label: string): Locator {
+    return this.section("Overview").getByRole("group", { name: label, exact: true });
   }
 
   identifierCreateButton(identifierType: InventoryIdentifierType): Locator {
