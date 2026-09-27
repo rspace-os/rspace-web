@@ -103,6 +103,7 @@
         "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
         "mintingUnsupportedType": "unsupported type for minting: {0}",
         "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
+        "pidinstAlreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "pidinstImportPidRequired": "A PID is required to import an instrument.",
         "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
         "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
@@ -142,8 +143,7 @@
         "descriptionTooLong": "Description cannot be longer than 255 chars",
         "elnFieldIdRequired": "elnFieldId cannot be null",
         "nameRequired": "name cannot be empty",
-        "nameTooLong": "Name cannot be longer than 255 chars",
-        "tooManyMaterials": "A list of materials accepts at most {max} materials."
+        "nameTooLong": "Name cannot be longer than 255 chars"
       },
       "location": {
         "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
@@ -185,6 +185,7 @@
         "originIdRequired": "Each origin must identify a subsample by id.",
         "originsRequired": "At least one origin subsample must be provided for the operation.",
         "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
+        "storageTempNotWhole": "The storage temperature must be whole degrees.",
         "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
         "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
         "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
@@ -265,7 +266,8 @@
         "invalidUnit": "Unit id is not a valid temperature unit.",
         "minGreaterThanMax": "Min temperature is greater than max temperature.",
         "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
-        "unitsNotComparable": "Temperature units are not mutually comparable."
+        "unitsNotComparable": "Temperature units are not mutually comparable.",
+        "valueRequired": "A temperature needs a numeric value."
       },
       "validation": {
         "failed": "Validation failed for provided record"

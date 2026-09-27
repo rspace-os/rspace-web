@@ -61,9 +61,10 @@ unknown property is ignored exactly as on every other endpoint.
 
 ### D3 Seven typed endpoints are the public API
 
-`POST /api/inventory/v1/operations/<key>`, one per operation, JSON only
-(`consumes = application/json`: the app registers a global YAML converter whose laxer
-parsing would bypass the JSON contract, so YAML bodies get 415). A singular `origin` for
+`POST /api/inventory/v1/operations/<key>`, one per operation, accepting the same media
+types as the rest of the Inventory API. An earlier JSON-only `consumes` guard was removed:
+a content-type mismatch was raised before a handler was chosen, so the API's error advice
+never ran and clients got the container's HTML 415 page. A singular `origin` for
 the six single-origin operations and `origins` for Pool, input fields named after the
 definition's input keys, numeric `templateId`, `documentedByGlobalId`, and one response
 envelope of the created sample plus each origin's remaining state. The generic endpoint is
@@ -92,6 +93,20 @@ rejected, not rounded, because the stored decrement would differ from the valida
 zero amount is rejected everywhere: an operation that takes an amount needs more than
 zero, and one that does not (Passage) rejects the field whatever its value. Created
 amounts are independent of the amount taken.
+
+On the UI side the wizard's amount and temperature fields hold the raw text the user typed
+(a controlled number input re-rendered from its parsed value drops every "0" typed after the
+point, so 1.05 became 1.5). An amount field refuses a fourth decimal at the keystroke, so the
+3dp rule cannot be tripped from the wizard and Next is never disabled for a reason the field
+does not show. A temperature field stores whole degrees only, the kind of temperature the sample
+form's storage temperature takes, but it does not refuse the point at the keystroke: that let the
+digit typed after a refused point join the integer, so -18.5 became -185 and was stored. A typed
+decimal stays on screen exactly as typed, the field says "Enter whole degrees only." and Next is
+disabled until the fraction is removed. What the user sees is always what would be stored. The
+operations endpoints enforce the same rule (`OperationQuantityRules.temperature`, whole degrees
+in the unit sent), deliberately stricter than `POST /samples`, which stores 3 decimal places: a
+sample created by an operation from any client must survive the sample form, which shows and
+saves whole degrees only.
 
 Pool's take-all is `takeAll: true` on the body, not a per-origin mode. The server reads
 each origin's live quantity at processing time, as Destroy does, so the client never states
@@ -173,8 +188,10 @@ choice, documentation link, amounts) as a single bundle, saved only on a success
 Perform. Ticking it only marks the current form for saving. It must not reload the stored
 bundle, because the supported flow is untick, edit, re-tick to save the edited values; an
 earlier implementation reloaded the old bundle at re-tick and lost the edits. The bundle is
-loaded once when the process name changes to a name that has one, and unticking resets the
-form to defaults without deleting what was saved. A bundle is keyed by operation and
+loaded once when the process name changes to a name that has one. Unticking changes nothing
+on the form and deletes nothing that was saved: it only switches the save off, so a user
+can review a remembered run, adjust it for this one time, and perform it without keeping
+the adjustments. A bundle is keyed by operation and
 process name only, so one saved on a volume origin is offered on a mass one; a restored
 amount whose category no longer fits is repaired before it reaches the form.
 

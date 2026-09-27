@@ -49,6 +49,7 @@ class ExternalUpdateMessageKeysTest {
         // RSDEV-1326: the linked-PID lookup and import path
         "errors.inventory.identifier.linkedReadOnly",
         "errors.inventory.identifier.pidinstAlreadyLinked",
+        "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess",
         "errors.inventory.identifier.pidinstMandatoryMissing",
         "errors.inventory.identifier.pidinstNotFound",
         "errors.inventory.identifier.pidinstImportPidRequired",

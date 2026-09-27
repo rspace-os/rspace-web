@@ -4007,6 +4007,7 @@ export default interface Resources {
         "amountModeAllHelp": "Every selected subsample will be emptied (reduced to 0).",
         "amountModePerSubsample": "Per subsample",
         "amountModeSame": "Same amount",
+        "amountRequired": "Enter an amount greater than zero.",
         "amountTaken": "Amount taken from original",
         "amountTakenEach": "Amount taken from each",
         "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
@@ -4021,12 +4022,16 @@ export default interface Resources {
         "processNameRequired": "Enter a process name first.",
         "rememberProcessValues": "Remember values for this process: {name}",
         "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
+        "required": "This field is required.",
         "sampleName": "New sample name",
         "storageTemp": "Storage temperature",
         "storageTempInvalid": "Enter a temperature at or above -273.15°C, with at most 3 decimal places.",
         "storageTempMax": "Storage temperature must be at most {max}°C.",
         "storageTempMin": "Storage temperature must be at least {min}°C.",
-        "temperatureUnit": "°C"
+        "storageTempRequired": "Enter a storage temperature.",
+        "storageTempWhole": "Enter whole degrees only.",
+        "temperatureUnit": "°C",
+        "unitRequired": "Choose a unit."
       },
       "passage": {
         "description": "Create the next passage as a new sample, numbering it from the parent's passage number.",
@@ -4144,8 +4149,13 @@ export default interface Resources {
         "message": "Importing \"{name}\" from the PID registry.",
         "title": "Importing instrument"
       },
+      "linkedTo": {
+        "noAccess": "No access",
+        "noAccessDetail": "An instrument you cannot access"
+      },
       "preview": {
         "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "alternateIdentifier": "Alternate identifier",
         "commissioned": "Commissioned",
         "decommissioned": "Decommissioned",
@@ -4183,6 +4193,7 @@ export default interface Resources {
       "title": "Import Instrument from PIDINST",
       "validation": {
         "alreadyLinked": "This PID is already linked to instrument {globalId}.",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "noSelection": "Select a record to import."
       }
     },
@@ -7183,6 +7194,7 @@ export default interface Resources {
           "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
+          "pidinstAlreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
           "pidinstImportPidRequired": "A PID is required to import an instrument.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
           "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
@@ -7222,8 +7234,7 @@ export default interface Resources {
           "descriptionTooLong": "Description cannot be longer than 255 chars",
           "elnFieldIdRequired": "elnFieldId cannot be null",
           "nameRequired": "name cannot be empty",
-          "nameTooLong": "Name cannot be longer than 255 chars",
-          "tooManyMaterials": "A list of materials accepts at most {max} materials."
+          "nameTooLong": "Name cannot be longer than 255 chars"
         },
         "location": {
           "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
@@ -7271,6 +7282,7 @@ export default interface Resources {
           "originsRequired": "At least one origin subsample must be provided for the operation.",
           "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
           "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
+          "storageTempNotWhole": "The storage temperature must be whole degrees.",
           "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
           "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
           "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples."
@@ -7350,7 +7362,8 @@ export default interface Resources {
           "invalidUnit": "Unit id is not a valid temperature unit.",
           "minGreaterThanMax": "Min temperature is greater than max temperature.",
           "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
-          "unitsNotComparable": "Temperature units are not mutually comparable."
+          "unitsNotComparable": "Temperature units are not mutually comparable.",
+          "valueRequired": "A temperature needs a numeric value."
         },
         "template": {
           "deleted": "Sample template {0} is in the trash and cannot be used to create a sample. Restore it, or choose another template.",

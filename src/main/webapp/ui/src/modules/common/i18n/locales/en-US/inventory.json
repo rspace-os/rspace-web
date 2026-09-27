@@ -1748,6 +1748,7 @@
       "amountModeAllHelp": "Every selected subsample will be emptied (reduced to 0).",
       "amountModePerSubsample": "Per subsample",
       "amountModeSame": "Same amount",
+      "amountRequired": "Enter an amount greater than zero.",
       "amountTaken": "Amount taken from original",
       "amountTakenEach": "Amount taken from each",
       "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
@@ -1762,12 +1763,16 @@
       "processNameRequired": "Enter a process name first.",
       "rememberProcessValues": "Remember values for this process: {name}",
       "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
+      "required": "This field is required.",
       "sampleName": "New sample name",
       "storageTemp": "Storage temperature",
       "storageTempInvalid": "Enter a temperature at or above -273.15°C, with at most 3 decimal places.",
       "storageTempMax": "Storage temperature must be at most {max}°C.",
       "storageTempMin": "Storage temperature must be at least {min}°C.",
-      "temperatureUnit": "°C"
+      "storageTempRequired": "Enter a storage temperature.",
+      "storageTempWhole": "Enter whole degrees only.",
+      "temperatureUnit": "°C",
+      "unitRequired": "Choose a unit."
     },
     "passage": {
       "description": "Create the next passage as a new sample, numbering it from the parent's passage number.",
@@ -1885,8 +1890,13 @@
       "title": "Importing instrument"
     },
     "importSuccess": "Successfully imported the instrument.",
+    "linkedTo": {
+      "noAccess": "No access",
+      "noAccessDetail": "An instrument you cannot access"
+    },
     "preview": {
       "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
+      "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
       "alternateIdentifier": "Alternate identifier",
       "commissioned": "Commissioned",
       "decommissioned": "Decommissioned",
@@ -1924,6 +1934,7 @@
     "title": "Import Instrument from PIDINST",
     "validation": {
       "alreadyLinked": "This PID is already linked to instrument {globalId}.",
+      "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
       "noSelection": "Select a record to import."
     }
   },

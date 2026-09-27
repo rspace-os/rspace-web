@@ -12,7 +12,7 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import TemperatureField from "@/components/Inputs/TemperatureField";
+import NumericTextField from "@/components/Inputs/NumericTextField";
 import UnitSelect from "@/components/Inputs/UnitSelect";
 import { CELSIUS, categoryOfUnit } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
@@ -31,6 +31,7 @@ import {
   temperatureBelowMin,
   temperatureExceedsMax,
   temperatureNotStorable,
+  temperatureNotWhole,
   validSubSampleCount,
 } from "./operationValidation";
 import { filterProcessNames } from "./processNames";
@@ -47,46 +48,56 @@ const clamp = (n: number) => Math.min(MAX_QUANTITY, Math.max(0, n));
 // Number("") and Number("-") are 0 and NaN respectively; both mean "not a temperature yet".
 const parseTemperature = (raw: string): number => (/\d/.test(raw) ? Number(raw) : NaN);
 
-/** The shared raw-string temperature field, adapted to the numeric value the wizard stores. */
-function NumericTemperatureField({
+// An amount with no digit yet is 0, which the fields already treat as "nothing entered".
+const parseAmount = (raw: string): number => clamp(/\d/.test(raw) ? Number(raw) : 0);
+
+/**
+ * A numeric field that keeps what the user typed as text and parses it only for the caller. A
+ * controlled number input fed the parsed value back loses every "0" typed after the decimal point
+ * ("1.0" parses to 1 and is re-rendered as "1" before the next digit lands), so 1.05 became 1.5.
+ */
+function RawNumericField({
   value,
   onChange,
+  parse,
   label,
   error,
   helperText,
-  unitLabel,
+  endAdornment,
+  allowNegative,
 }: {
   value: number | undefined;
   onChange: (value: number) => void;
+  parse: (raw: string) => number;
   label: string;
   error: boolean;
   helperText: string | undefined;
-  unitLabel: string;
+  endAdornment: React.ReactNode;
+  allowNegative: boolean;
 }): React.ReactNode {
-  const [raw, setRaw] = React.useState(value === undefined || Number.isNaN(value) ? "" : String(value));
+  const asText = (n: number | undefined) => (n === undefined || Number.isNaN(n) ? "" : String(n));
+  const [raw, setRaw] = React.useState(asText(value));
 
   // The wizard can replace the value from outside this field (a restored "remember" bundle, a reset
-  // between runs). Adopt such a change, but leave the string alone when it is this field's own edit
-  // arriving back as a prop, which is what keeps a partial "-" on screen.
+  // between runs, a clamp). Adopt such a change, but leave the string alone when it is this field's
+  // own edit arriving back as a prop, which is what keeps a partial "-" or "1.0" on screen.
   React.useEffect(() => {
-    if (!Object.is(parseTemperature(raw), value ?? Number.NaN))
-      setRaw(value === undefined || Number.isNaN(value) ? "" : String(value));
+    if (!Object.is(parse(raw), value ?? Number.NaN)) setRaw(asText(value));
   }, [value]);
 
   return (
-    <TemperatureField
+    <NumericTextField
       label={label}
       value={raw}
+      allowNegative={allowNegative}
       margin="dense"
       error={error}
       helperText={helperText}
       onChange={(next) => {
         setRaw(next);
-        onChange(parseTemperature(next));
+        onChange(parse(next));
       }}
-      slotProps={{
-        input: { endAdornment: <InputAdornment position="end">{unitLabel}</InputAdornment> },
-      }}
+      slotProps={{ input: { endAdornment }, htmlInput: { inputMode: "decimal" } }}
     />
   );
 }
@@ -142,6 +153,8 @@ function OperationDetailsStep({
 
   const renderInput = (input: OperationInput): React.ReactNode => {
     if (input.type === "text") {
+      const blank = Boolean(input.required) && !String(values[input.key] ?? "").trim();
+      const requiredHint = blank ? label("operations.fields.required") : undefined;
       if (input.key === operation.effect.processNameFrom) {
         return (
           <Autocomplete
@@ -157,7 +170,15 @@ function OperationDetailsStep({
               if (reason === "input") set(input.key, value);
             }}
             renderInput={(params) => (
-              <TextField {...params} label={label(input.labelKey)} required={input.required} margin="dense" fullWidth />
+              <TextField
+                {...params}
+                label={label(input.labelKey)}
+                required={input.required}
+                error={blank}
+                helperText={requiredHint}
+                margin="dense"
+                fullWidth
+              />
             )}
           />
         );
@@ -170,7 +191,8 @@ function OperationDetailsStep({
             value={String(values[input.key] ?? "")}
             required={input.required}
             disabled={sampleNameDisabled}
-            helperText={sampleNameDisabled ? label("operations.fields.processNameRequired") : undefined}
+            error={!sampleNameDisabled && blank}
+            helperText={sampleNameDisabled ? label("operations.fields.processNameRequired") : requiredHint}
             fullWidth
             margin="dense"
             onChange={(e) => set(input.key, e.target.value)}
@@ -183,6 +205,8 @@ function OperationDetailsStep({
           label={label(input.labelKey)}
           value={String(values[input.key] ?? "")}
           required={input.required}
+          error={blank}
+          helperText={requiredHint}
           fullWidth
           margin="dense"
           onChange={(e) => set(input.key, e.target.value)}
@@ -231,51 +255,63 @@ function OperationDetailsStep({
     const overMaxTemp = temperatureExceedsMax(input, quantity);
     const underMinTemp = temperatureBelowMin(input, quantity);
     const unstorableTemp = temperatureNotStorable(input, quantity);
+    const fractionalTemp = temperatureNotWhole(input, quantity);
+    const temperatureMissing = isTemperature && !Number.isFinite(quantity?.numericValue);
     if (isTemperature)
       return (
-        <NumericTemperatureField
+        <RawNumericField
           key={input.key}
           value={quantity?.numericValue}
           onChange={(numericValue) => set(input.key, { numericValue, unitId: currentUnitId })}
+          parse={parseTemperature}
+          allowNegative
           label={label(input.labelKey)}
-          error={overMaxTemp || underMinTemp || unstorableTemp}
+          error={overMaxTemp || underMinTemp || unstorableTemp || fractionalTemp || temperatureMissing}
           helperText={
             unstorableTemp
               ? label("operations.fields.storageTempInvalid")
-              : overMaxTemp
-                ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
-                : underMinTemp
-                  ? label("operations.fields.storageTempMin", { min: input.minCelsius })
-                  : undefined
+              : fractionalTemp
+                ? label("operations.fields.storageTempWhole")
+                : overMaxTemp
+                  ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
+                  : underMinTemp
+                    ? label("operations.fields.storageTempMin", { min: input.minCelsius })
+                    : temperatureMissing
+                      ? label("operations.fields.storageTempRequired")
+                      : undefined
           }
-          unitLabel={label("operations.fields.temperatureUnit")}
+          endAdornment={<InputAdornment position="end">{label("operations.fields.temperatureUnit")}</InputAdornment>}
         />
       );
+    const amountMissing = !(quantity && quantity.numericValue > 0);
+    const unitMissing = !isTemperature && !(currentUnitId > 0);
     return (
-      <TextField
+      <RawNumericField
         key={input.key}
-        type="number"
+        value={quantity?.numericValue}
+        onChange={(numericValue) => set(input.key, { numericValue, unitId: currentUnitId })}
+        parse={parseAmount}
+        allowNegative={false}
         label={label(input.labelKey)}
-        value={quantity ? String(quantity.numericValue) : ""}
-        fullWidth
-        margin="dense"
-        error={overRemoval}
-        helperText={overRemoval ? label("operations.fields.amountTakenExceedsOrigin") : undefined}
-        onChange={(e) => set(input.key, { numericValue: clamp(Number(e.target.value)), unitId: currentUnitId })}
-        slotProps={{
-          htmlInput: { min: 0, max: MAX_QUANTITY },
-          input: {
-            endAdornment: (
-              <UnitSelect
-                categories={categoriesForInput}
-                value={currentUnitId}
-                handleChange={(e) =>
-                  set(input.key, { numericValue: quantity?.numericValue ?? 0, unitId: Number(e.target.value) })
-                }
-              />
-            ),
-          },
-        }}
+        error={overRemoval || amountMissing || unitMissing}
+        helperText={
+          overRemoval
+            ? label("operations.fields.amountTakenExceedsOrigin")
+            : amountMissing
+              ? label("operations.fields.amountRequired")
+              : unitMissing
+                ? label("operations.fields.unitRequired")
+                : undefined
+        }
+        endAdornment={
+          <UnitSelect
+            categories={categoriesForInput}
+            value={currentUnitId}
+            handleChange={(e) =>
+              set(input.key, { numericValue: quantity?.numericValue ?? 0, unitId: Number(e.target.value) })
+            }
+          />
+        }
       />
     );
   };
@@ -291,28 +327,22 @@ function OperationDetailsStep({
     const setAmount = (numericValue: number, unitId: number) =>
       onPerSubsampleAmountsChange?.({ ...perSubsampleAmounts, [globalId]: { numericValue, unitId } });
     return (
-      <TextField
+      <RawNumericField
         key={globalId}
-        type="number"
+        value={current?.numericValue}
+        onChange={(numericValue) => setAmount(numericValue, currentUnitId)}
+        parse={parseAmount}
+        allowNegative={false}
         label={sub.name ?? globalId}
-        value={current ? String(current.numericValue) : ""}
-        fullWidth
-        margin="dense"
         error={over}
         helperText={over ? label("operations.fields.amountTakenExceedsOrigin") : undefined}
-        onChange={(e) => setAmount(clamp(Number(e.target.value)), currentUnitId)}
-        slotProps={{
-          htmlInput: { min: 0, max: MAX_QUANTITY },
-          input: {
-            endAdornment: (
-              <UnitSelect
-                categories={categoriesOfSubSample(sub)}
-                value={currentUnitId}
-                handleChange={(e) => setAmount(current?.numericValue ?? 0, Number(e.target.value))}
-              />
-            ),
-          },
-        }}
+        endAdornment={
+          <UnitSelect
+            categories={categoriesOfSubSample(sub)}
+            value={currentUnitId}
+            handleChange={(e) => setAmount(current?.numericValue ?? 0, Number(e.target.value))}
+          />
+        }
       />
     );
   };

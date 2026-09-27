@@ -2861,9 +2861,10 @@ paths:
         temperature, linked to the origin with an `IsDerivedFrom` field.
 
 
-        `storageTemp` is required and must be at or below -18 degrees Celsius. It is stored as
-        both the storage temperature bounds of the new sample. Send it in any temperature unit;
-        the limit is compared on the temperature it denotes, not on its number.
+        `storageTemp` is required and must be at or below -18 degrees Celsius, in whole degrees
+        of the unit sent. It is stored as both the storage temperature bounds of the new sample.
+        Send it in any temperature unit; the limit is compared on the temperature it denotes,
+        not on its number.
 
 
         `cryomedium` is optional and is stored as a Cryomedium field on the new sample. Omitting
@@ -2883,8 +2884,9 @@ paths:
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName`, `eachAmount`, `storageTemp` or
-            the origin's `amountTaken` is missing; `storageTemp` is above -18 degrees Celsius or
-            does not use a temperature unit; `count` is below 1 or above 100; the amount taken is
+            the origin's `amountTaken` is missing; `storageTemp` is above -18 degrees Celsius, is
+            not whole degrees or does not use a temperature unit; `count` is below 1 or above 100;
+            the amount taken is
             not positive, does not use a unit of the origin's measurement category, or is more
             than the origin currently holds; the origin is empty; or `templateId` names a
             template the created sample does not conform to. Each error names the field that was
@@ -2908,7 +2910,7 @@ paths:
 
 
         `storageTemp` is optional: omit it and the new sample is stored at 4 degrees Celsius.
-        When sent, it must be between 4 and 120 degrees Celsius.
+        When sent, it must be between 4 and 120 degrees Celsius, in whole degrees of the unit sent.
       tags:
         - Operations
       requestBody:
@@ -2924,8 +2926,9 @@ paths:
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName`, `eachAmount` or the origin's
-            `amountTaken` is missing; `storageTemp` is outside 4 to 120 degrees Celsius or does
-            not use a temperature unit; `count` is below 1 or above 100; the amount taken is not
+            `amountTaken` is missing; `storageTemp` is outside 4 to 120 degrees Celsius, is not
+            whole degrees or does not use a temperature unit; `count` is below 1 or above 100;
+            the amount taken is not
             positive, does not use a unit of the origin's measurement category, or is more than
             the origin currently holds; the origin is empty; or `templateId` names a template the
             created sample does not conform to. Each error names the field that was sent.
@@ -3501,8 +3504,10 @@ paths:
         not returned, and pasting such a PID yields no hit.
 
 
-        Each hit carries `linkedInstrumentGlobalId` when an Instrument in this deployment already
-        links that PID, so a client can disable importing it before the `409`.
+        Each hit carries `alreadyLinked`, true when an Instrument in this deployment already links
+        that PID, so a client can refuse importing it before the `409`; and
+        `linkedInstrumentGlobalId` only when the caller may read that Instrument (read or limited
+        read). An Instrument the caller may not read is never named.
 
 
         Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
@@ -4394,7 +4399,8 @@ components:
     PidAlreadyLinked:
       description: >
         An Instrument in this deployment already carries a linked identifier for this PID. The
-        message names that Instrument's global id.
+        message names that Instrument's global id when the caller may read it, and otherwise says
+        only that an instrument they cannot access holds the PID.
       content:
         application/json:
           schema:
@@ -4973,11 +4979,19 @@ components:
         updated:
           type: string
           description: Last-update timestamp as the provider reports it.
+        alreadyLinked:
+          type: boolean
+          description: >
+            Whether an Instrument in this deployment already links this PID. Always present.
+            Importing such a PID answers `409`.
+          example: true
         linkedInstrumentGlobalId:
           type: string
           description: >
-            Global id of the Instrument in this deployment that already links this PID, absent when
-            none does. Importing a PID that is already linked answers `409`.
+            Global id of the Instrument that already links this PID, present only when the caller
+            may read that Instrument (read or limited read). Absent when nothing links the PID and
+            when the caller may not read the linking Instrument, so an Instrument they would not be
+            shown is never named.
           example: IN2
     PidinstSearchResult:
       description: One page of PID lookup hits from the enabled provider.

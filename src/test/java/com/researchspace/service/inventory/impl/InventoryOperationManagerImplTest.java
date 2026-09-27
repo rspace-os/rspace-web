@@ -49,6 +49,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
 
 @ExtendWith(MockitoExtension.class)
 class InventoryOperationManagerImplTest {
@@ -68,6 +69,7 @@ class InventoryOperationManagerImplTest {
   private static ApiInventoryOperationOriginUpdate origin(Long id, ApiQuantityInfo amountTaken) {
     ApiInventoryOperationOriginUpdate origin = new ApiInventoryOperationOriginUpdate();
     origin.setId(id);
+    origin.setGlobalId("SS" + id);
     origin.setAmountTaken(amountTaken);
     return origin;
   }
@@ -286,9 +288,9 @@ class InventoryOperationManagerImplTest {
       originHolds(100L, empty);
 
       BindException rejection = performExpectingRejection(request);
-      assertEquals(
-          "errors.inventory.operation.originEmpty",
-          rejection.getFieldErrors("origins[0].id").get(0).getCode());
+      FieldError error = rejection.getFieldErrors("origins[0].globalId").get(0);
+      assertEquals("errors.inventory.operation.originEmpty", error.getCode());
+      assertEquals("SS100", error.getRejectedValue());
     }
   }
 
@@ -381,7 +383,7 @@ class InventoryOperationManagerImplTest {
     BindException rejection = performExpectingRejection(request);
     assertEquals(
         "errors.inventory.operation.originCategoryMismatch",
-        rejection.getFieldErrors("origins[1].id").get(0).getCode());
+        rejection.getFieldErrors("origins[1].globalId").get(0).getCode());
   }
 
   @Test
@@ -698,7 +700,7 @@ class InventoryOperationManagerImplTest {
     BindException rejection = performExpectingRejection(request);
     assertEquals(
         "errors.inventory.operation.originEmpty",
-        rejection.getFieldErrors("origins[0].id").get(0).getCode());
+        rejection.getFieldErrors("origins[0].globalId").get(0).getCode());
   }
 
   @Test

@@ -166,7 +166,7 @@ describe("OperationDetailsStep", () => {
     expect(countInput.max).toBeGreaterThan(0);
   });
 
-  it("does not allow a negative amount (clamps it to zero)", () => {
+  it("does not accept a minus sign on an amount: the field keeps its value and reports nothing", async () => {
     const onChange = vi.fn();
     render(
       <OperationDetailsStep
@@ -177,8 +177,10 @@ describe("OperationDetailsStep", () => {
         section="amounts"
       />,
     );
-    fireEvent.change(screen.getAllByRole("spinbutton")[0], { target: { value: "-5" } });
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ eachAmount: { numericValue: 0, unitId: 3 } }));
+    const field = screen.getAllByRole("textbox")[0];
+    await userEvent.setup().type(field, "-");
+    expect(field).toHaveValue("5");
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("caps the amount at the maximum so it cannot overflow", () => {
@@ -192,8 +194,48 @@ describe("OperationDetailsStep", () => {
         section="amounts"
       />,
     );
-    fireEvent.change(screen.getAllByRole("spinbutton")[0], { target: { value: "999999999999999999999" } });
+    fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: "999999999999999999999" } });
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ eachAmount: { numericValue: 1e9, unitId: 3 } }));
+  });
+
+  it("keeps a zero typed after the decimal point, so 1.05 is reported as 1.05 and not 1.5", async () => {
+    // A stateful parent is essential: the defect only shows when the parsed number comes back as the
+    // value prop and is re-rendered into the field between keystrokes.
+    const seen: Array<number> = [];
+    const Parent = () => {
+      const [state, setState] = React.useState<OperationInputs>(values);
+      return (
+        <OperationDetailsStep
+          operation={operation}
+          origin={origin}
+          values={state}
+          onChange={(next) => {
+            seen.push((next.eachAmount as { numericValue: number }).numericValue);
+            setState(next);
+          }}
+          section="amounts"
+        />
+      );
+    };
+    render(<Parent />);
+    const user = userEvent.setup();
+    const field = screen.getByLabelText(/fields\.eachAmount/i);
+    await user.clear(field);
+    await user.type(field, "1.05");
+    expect(field).toHaveValue("1.05");
+    expect(seen.at(-1)).toBe(1.05);
+
+    await user.clear(field);
+    await user.type(field, "0.001");
+    expect(field).toHaveValue("0.001");
+    expect(seen.at(-1)).toBe(0.001);
+
+    // Amounts are stored at 3 decimal places and the server rejects finer ones (ADR 0011 D5), so a
+    // fourth decimal is not typed rather than accepted and then silently blocking Next.
+    await user.clear(field);
+    await user.type(field, "1.0005");
+    expect(field).toHaveValue("1.000");
+    expect(seen.at(-1)).toBe(1);
   });
 
   it("stores the chosen unit on that input without touching its numeric value", async () => {
@@ -306,6 +348,40 @@ describe("OperationDetailsStep", () => {
     expect(screen.queryByText(/storageTempMin/)).not.toBeInTheDocument();
   });
 
+  it("marks a required text field that is blank or whitespace, and clears the mark once typed", () => {
+    const { rerender } = render(
+      <OperationDetailsStep
+        operation={nameOperation}
+        origin={origin}
+        values={{ ...values, processName: "   ", sampleName: "  " }}
+        onChange={() => undefined}
+      />,
+    );
+    // process name blank, sample name blank: both flagged (the sample name is enabled since a
+    // whitespace process name still counts as no process name -> its own hint wins there)
+    expect(screen.getAllByText(/fields\.required/)).toHaveLength(1);
+    expect(screen.getByRole("combobox", { name: /fields\.processName/i })).toBeInvalid();
+    rerender(
+      <OperationDetailsStep
+        operation={nameOperation}
+        origin={origin}
+        values={{ ...values, processName: "dna", sampleName: "  " }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.getAllByText(/fields\.required/)).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: /fields\.sampleName/i })).toBeInvalid();
+    rerender(
+      <OperationDetailsStep
+        operation={nameOperation}
+        origin={origin}
+        values={{ ...values, processName: "dna", sampleName: "A sample dna" }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.queryByText(/fields\.required/)).not.toBeInTheDocument();
+  });
+
   it("disables the derived sample-name field with a hint until a process name is entered", () => {
     const { rerender } = render(
       <OperationDetailsStep
@@ -383,8 +459,8 @@ describe("OperationDetailsStep (amount modes)", () => {
 
   it("shows one amount field per origin in 'per subsample' mode", () => {
     renderPool({ amountMode: "perSubsample" });
-    expect(screen.getByRole("spinbutton", { name: /Vial A/ })).toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: /Vial B/ })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /Vial A/ })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /Vial B/ })).toBeInTheDocument();
   });
 
   it("flags a per-origin amount that exceeds THAT origin, naming only the offending field", async () => {
@@ -393,10 +469,10 @@ describe("OperationDetailsStep (amount modes)", () => {
       // Vial A holds 5, Vial B holds 8: only A is over-drawn.
       perSubsampleAmounts: { SS1: { numericValue: 9, unitId: 3 }, SS2: { numericValue: 1, unitId: 3 } },
     });
-    const overDrawn = screen.getByRole("spinbutton", { name: /Vial A/ });
+    const overDrawn = screen.getByRole("textbox", { name: /Vial A/ });
     expect(overDrawn).toBeInvalid();
     expect(screen.getByText(/amountTakenExceedsOrigin/)).toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: /Vial B/ })).toBeValid();
+    expect(screen.getByRole("textbox", { name: /Vial B/ })).toBeValid();
   });
 
   it("reports a typed per-origin amount through onPerSubsampleAmountsChange, keeping the others", async () => {
@@ -406,7 +482,7 @@ describe("OperationDetailsStep (amount modes)", () => {
       perSubsampleAmounts: { SS2: { numericValue: 1, unitId: 3 } },
       onPerSubsampleAmountsChange: onPerSubsample,
     });
-    fireEvent.change(screen.getByRole("spinbutton", { name: /Vial A/ }), { target: { value: "2" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /Vial A/ }), { target: { value: "2" } });
     expect(onPerSubsample).toHaveBeenCalledWith({
       SS1: { numericValue: 2, unitId: 3 },
       SS2: { numericValue: 1, unitId: 3 },
@@ -420,8 +496,8 @@ describe("OperationDetailsStep (amount modes)", () => {
       origins: [poolOrigins[0], unset],
       perSubsampleAmounts: { SS1: { numericValue: 1, unitId: 3 }, SS9: { numericValue: 1, unitId: 3 } },
     });
-    expect(screen.getByRole("spinbutton", { name: /Vial Z/ })).toBeInvalid();
-    expect(screen.getByRole("spinbutton", { name: /Vial A/ })).toBeValid();
+    expect(screen.getByRole("textbox", { name: /Vial Z/ })).toBeInvalid();
+    expect(screen.getByRole("textbox", { name: /Vial A/ })).toBeValid();
     expect(screen.getByText(/amountTakenExceedsOrigin/)).toBeInTheDocument();
   });
 });
@@ -502,13 +578,42 @@ describe("OperationDetailsStep inline field errors", () => {
 
   it("flags an amount taken that exceeds what the origin holds, on that field", () => {
     renderWith({ values: { ...values, amountTaken: { numericValue: 11, unitId: 3 } } });
-    expect(screen.getByRole("spinbutton", { name: /fields\.amountTaken/i })).toBeInvalid();
+    expect(screen.getByRole("textbox", { name: /fields\.amountTaken/i })).toBeInvalid();
     expect(screen.getByText(/amountTakenExceedsOrigin/)).toBeInTheDocument();
+  });
+
+  it("tells the user an amount is needed when the field is empty or zero", () => {
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={{ eachAmount: { numericValue: 0, unitId: 3 }, amountTaken: { numericValue: 2, unitId: 3 } }}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
+    expect(screen.getAllByText(/fields\.amountRequired/)).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: /fields\.eachAmount/i })).toBeInvalid();
+  });
+
+  it("asks for a unit when a restored amount lost its unit", () => {
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={{ eachAmount: { numericValue: 1.25, unitId: 0 }, amountTaken: { numericValue: 2, unitId: 3 } }}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
+    expect(screen.getAllByText(/fields\.unitRequired/)).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: /fields\.eachAmount/i })).toBeInvalid();
+    expect(screen.queryByText(/fields\.amountRequired/)).not.toBeInTheDocument();
   });
 
   it("leaves the amount-taken field clean when it is within the origin", () => {
     renderWith({});
-    expect(screen.getByRole("spinbutton", { name: /fields\.amountTaken/i })).toBeValid();
+    expect(screen.getByRole("textbox", { name: /fields\.amountTaken/i })).toBeValid();
     expect(screen.queryByText(/amountTakenExceedsOrigin/)).not.toBeInTheDocument();
   });
 
@@ -552,6 +657,21 @@ describe("OperationDetailsStep sub-zero temperature entry", () => {
 
   const tempField = () => screen.getByRole("textbox", { name: /fields\.storageTemp/i });
 
+  it("keeps a typed decimal on screen and refuses it as not whole degrees", async () => {
+    const user = userEvent.setup();
+    const seen: Array<number> = [];
+    render(<Stateful onChange={(v) => seen.push((v.storageTemp as { numericValue: number }).numericValue)} />);
+    await user.clear(tempField());
+    await user.type(tempField(), "-18.5");
+    expect(tempField()).toHaveValue("-18.5");
+    expect(seen.at(-1)).toBe(-18.5);
+    expect(tempField()).toBeInvalid();
+    expect(screen.getByText(/fields\.storageTempWhole/)).toBeInTheDocument();
+    await user.type(tempField(), "{Backspace}{Backspace}");
+    expect(tempField()).toHaveValue("-18");
+    expect(screen.queryByText(/fields\.storageTempWhole/)).not.toBeInTheDocument();
+  });
+
   it("keeps the minus sign when every digit is deleted", async () => {
     const user = userEvent.setup();
     render(<Stateful onChange={() => undefined} />);
@@ -569,6 +689,16 @@ describe("OperationDetailsStep sub-zero temperature entry", () => {
     expect(onChange).toHaveBeenLastCalledWith({
       storageTemp: { numericValue: Number.NaN, unitId: CELSIUS_UNIT },
     });
+  });
+
+  it("asks for a temperature once the field is stripped back to its sign", async () => {
+    const user = userEvent.setup();
+    render(<Stateful onChange={() => undefined} />);
+    expect(screen.queryByText(/fields\.storageTempRequired/)).not.toBeInTheDocument();
+    await user.click(tempField());
+    await user.keyboard("{End}{Backspace}{Backspace}");
+    expect(screen.getByText(/fields\.storageTempRequired/)).toBeInTheDocument();
+    expect(tempField()).toBeInvalid();
   });
 
   it("accepts a temperature typed minus sign first", async () => {

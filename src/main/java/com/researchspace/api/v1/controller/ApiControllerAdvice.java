@@ -96,7 +96,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   protected ResponseEntity<Object> handlePidinstAlreadyLinkedException(
       final PidinstAlreadyLinkedException ex, final WebRequest request) {
     logException(ex);
-    return conflict(ex.getLocalizedMessage());
+    return conflict(messages.getMessage(ex.getMessageKey(), ex.getArgs()));
   }
 
   @ResponseStatus(HttpStatus.CONFLICT)

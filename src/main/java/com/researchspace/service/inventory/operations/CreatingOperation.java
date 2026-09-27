@@ -72,6 +72,7 @@ public abstract class CreatingOperation<R extends ApiInventoryOperationRequests.
     for (int i = 0; i < origins.size(); i++) {
       ApiInventoryOperationOriginUpdate update = new ApiInventoryOperationOriginUpdate();
       update.setId(origins.get(i).id());
+      update.setGlobalId(origins.get(i).globalId());
       update.setAmountTaken(amountTakenFrom(request, origins.get(i), i));
       built.getOrigins().add(update);
     }
