@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookingOpeningException;
 import com.researchspace.model.collection.ResourceRequest;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,8 @@ public interface BookingCatalogueManager {
       long slotGranularityMinutes,
       String openingStart,
       String openingEnd,
+      List<Integer> openDays,
+      List<BookingOpeningException> openingExceptions,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
       long maxBookingDurationMinutes,

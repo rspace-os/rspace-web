@@ -16,6 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingOpeningException;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Container;
@@ -62,6 +63,23 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       new BookingSchedulingSettings.Patch(null, "08:00", "17:00", null, null, null, null);
   private static final BookingSchedulingSettings.Patch ALERT_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(15L, "08:00", "17:00", null, null, 60L, false);
+
+  /**
+   * The restricted-location plate reader is view-only for {@code user1a}: as PI of the owner's
+   * group it reads the owner-only item but can neither book it nor edit its configuration. Closed
+   * on Wednesdays with shorter Thursday hours, so the Calendar shades closures on a read-only row.
+   */
+  static final BookingSchedulingSettings.Patch VIEW_ONLY_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(
+          null,
+          "08:00",
+          "17:00",
+          List.of(1, 2, 4, 5, 6, 7),
+          List.of(new BookingOpeningException(4, "10:00", "14:00")),
+          null,
+          null,
+          null,
+          null);
 
   @Value("${default.user.password}")
   private String devUserPassword;
@@ -270,7 +288,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               ensureConfiguration(instruments.get(5), "Europe/Berlin", sysadmin),
               ensureConfiguration(
                   instruments.get(6), "Europe/Berlin", ALERT_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(instruments.get(7), "Europe/Berlin", sysadmin));
+              ensureConfiguration(
+                  instruments.get(7), "Europe/Berlin", VIEW_ONLY_FIXTURE_SETTINGS, sysadmin));
 
       ensureConfigurationState(
           bookingCardInstruments.get(1), true, BookingConfigurationState.ACTIVE, sysadmin);
@@ -631,7 +650,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       log.info("Skipping past booking fixture {}", purpose);
       return;
     }
-    if (!bookingDao.overlaps(configuration.getId(), start, end, null)) {
+    if (bookingDao.findFirstOverlap(configuration.getId(), start, end, null).isEmpty()) {
       bookingManager.createBooking(
           new TimeSlotBookingManager.Create(target(instrument), start, end, purpose), owner, owner);
     }

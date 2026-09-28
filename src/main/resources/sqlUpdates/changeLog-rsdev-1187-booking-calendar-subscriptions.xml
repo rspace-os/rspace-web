@@ -20,6 +20,10 @@
       <column name="tokenHash" type="VARCHAR(64)">
         <constraints nullable="false"/>
       </column>
+      <!-- Kept so the owner can always retrieve their link. -->
+      <column name="rawToken" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
       <column name="updatedAt" type="DATETIME(6)">
         <constraints nullable="false"/>
       </column>

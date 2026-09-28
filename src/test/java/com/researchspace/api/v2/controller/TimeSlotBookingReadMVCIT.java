@@ -217,8 +217,7 @@ class TimeSlotBookingReadMVCIT {
         .andExpect(status().isForbidden());
 
     var calendar = context.getBean(com.researchspace.booking.service.BookingCalendarManager.class);
-    var created =
-        calendar.createOrRotate(configurationId, fixture.user(), fixture.user(), "\"inactive\"");
+    var created = calendar.create(configurationId, fixture.user(), fixture.user());
     String token =
         java.net.URI.create(created.subscriptionUrl()).getRawQuery().substring("token=".length());
     var instruments =

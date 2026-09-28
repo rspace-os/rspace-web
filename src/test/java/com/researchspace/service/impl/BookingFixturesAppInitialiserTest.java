@@ -1,9 +1,13 @@
 package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.model.booking.BookingSchedulingSettings;
+import java.time.DayOfWeek;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +57,38 @@ class BookingFixturesAppInitialiserTest {
     initialiser.onAppStartup(context("run", "prod"));
     initialiser.onAppStartup(context("run", "prod-test"));
     assertEquals(0, TransactionSynchronizationManager.getSynchronizations().size());
+  }
+
+  @Test
+  void viewOnlyFixtureClosesWednesdaysAndShortensThursdays() {
+    BookingSchedulingSettings.Patch patch =
+        BookingFixturesAppInitialiser.VIEW_ONLY_FIXTURE_SETTINGS;
+    BookingSchedulingSettings settings =
+        patch.merge(
+            new BookingSchedulingSettings(
+                BookingSchedulingSettings.DEFAULT_SLOT_GRANULARITY_MINUTES,
+                BookingSchedulingSettings.DEFAULT_OPENING_START,
+                BookingSchedulingSettings.DEFAULT_OPENING_END,
+                BookingSchedulingSettings.DEFAULT_OPEN_DAYS,
+                BookingSchedulingSettings.DEFAULT_OPENING_EXCEPTIONS,
+                BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES,
+                BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES,
+                BookingSchedulingSettings.DEFAULT_MAX_BOOKING_DURATION_MINUTES,
+                BookingSchedulingSettings.DEFAULT_ALLOW_DOUBLE_BOOKING));
+
+    // Configuration creation rejects these, which would abort the whole fixture stage.
+    assertTrue(BookingSchedulingSettings.areOpenDaysValid(settings.openDays()));
+    assertTrue(BookingSchedulingSettings.areOpeningExceptionsValid(settings.openingExceptions()));
+    assertTrue(
+        BookingSchedulingSettings.areOpeningExceptionsOnOpenDays(
+            settings.openingExceptions(), settings.openDays()));
+    assertEquals(Optional.empty(), settings.effectiveHours(DayOfWeek.WEDNESDAY.getValue()));
+    assertEquals(
+        Optional.of(new BookingSchedulingSettings.DailyHours("10:00", "14:00")),
+        settings.effectiveHours(DayOfWeek.THURSDAY.getValue()));
+    assertEquals(
+        Optional.of(new BookingSchedulingSettings.DailyHours("08:00", "17:00")),
+        settings.effectiveHours(DayOfWeek.MONDAY.getValue()));
   }
 
   private ApplicationContext context(String... profiles) {

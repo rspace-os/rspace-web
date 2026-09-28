@@ -20,9 +20,13 @@ public class BookingConfigurationTargetController {
     this.manager = manager;
   }
 
+  /**
+   * Lists eligible targets by name. Without a query, or with a blank one, it browses the first
+   * {@code limit} targets; a non-blank query must have at least two characters.
+   */
   @GetMapping("/api/v2/booking-configuration-targets")
   public List<BookingConfigurationTarget> search(
-      @RequestParam String query,
+      @RequestParam(required = false) String query,
       @RequestParam(defaultValue = "20") int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
@@ -30,9 +34,9 @@ public class BookingConfigurationTargetController {
       throw new ApiV2AuthenticationException();
     }
     String trimmed = query == null ? "" : query.trim();
-    if (trimmed.length() < 2 || limit < 1 || limit > 50) {
+    if ((!trimmed.isEmpty() && trimmed.length() < 2) || limit < 1 || limit > 50) {
       throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
     }
-    return manager.search(trimmed, limit, caller.subject());
+    return manager.search(trimmed.isEmpty() ? null : trimmed, limit, caller.subject());
   }
 }

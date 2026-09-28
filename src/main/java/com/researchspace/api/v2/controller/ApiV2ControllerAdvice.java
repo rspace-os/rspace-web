@@ -186,7 +186,18 @@ public class ApiV2ControllerAdvice {
 
   @ExceptionHandler(BookingPolicyException.class)
   public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
-    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+    String code = ex.reason().errorCode();
+    if (ex.maximumDurationMinutes().isEmpty()) {
+      return problem(HttpStatus.BAD_REQUEST, code);
+    }
+    long maximumMinutes = ex.maximumDurationMinutes().getAsLong();
+    String detail = messages.getMessage(code, new Object[] {maximumMinutes});
+    return ApiV2Problem.response(
+        HttpStatus.BAD_REQUEST,
+        detail,
+        code,
+        detail,
+        ApiV2Problem.Extensions.maximumDuration(maximumMinutes));
   }
 
   @ExceptionHandler(BookingConfigurationLifecycleException.class)
@@ -202,7 +213,7 @@ public class ApiV2ControllerAdvice {
   @ExceptionHandler(ApiV2ResourceException.class)
   public ResponseEntity<ApiV2Problem> handleResourceException(ApiV2ResourceException ex) {
     String detail = messages.getMessage(ex.errorCode(), ex.arguments());
-    return ApiV2Problem.response(ex.status(), detail, ex.errorCode(), detail);
+    return ApiV2Problem.response(ex.status(), detail, ex.errorCode(), detail, ex.extensions());
   }
 
   @ExceptionHandler(ResourceAccessException.class)

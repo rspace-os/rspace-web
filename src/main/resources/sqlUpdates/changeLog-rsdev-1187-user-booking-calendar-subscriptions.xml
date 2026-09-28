@@ -23,6 +23,9 @@
       <column name="updatedAt" type="DATETIME(6)">
         <constraints nullable="false"/>
       </column>
+      <column name="version" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
     </createTable>
     <addUniqueConstraint
         tableName="UserBookingCalendarSubscription"

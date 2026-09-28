@@ -52,7 +52,7 @@ public class BookableItemCalendarSubscription implements Serializable {
   @JsonIgnore
   private String tokenHash;
 
-  @Column(length = 255)
+  @Column(nullable = false, length = 255)
   @Size(max = 255)
   @JsonIgnore
   private String rawToken;

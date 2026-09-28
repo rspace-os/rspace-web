@@ -16,6 +16,9 @@ public interface BookingCalendarSubscriptionDao
   Optional<BookableItemCalendarSubscription> findByUserIdAndConfigurationId(
       Long userId, Long configurationId);
 
+  /** Finds all of one user's item subscriptions with their configurations loaded. */
+  List<BookableItemCalendarSubscription> findByUserId(Long userId);
+
   /** Finds a subscription by its one-way token hash. */
   Optional<BookableItemCalendarSubscription> findByTokenHash(String tokenHash);
 

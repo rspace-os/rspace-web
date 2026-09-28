@@ -310,10 +310,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     }
     BookingSchedulingPolicy.ConflictInterval conflict =
         validateScheduling(configuration, create.kind(), create.start(), create.end());
-    requireNoOverlap(
-        configuration.getId(),
-        conflict.start(),
-        conflict.end(),
+    requireNoConflict(
+        configuration,
+        create.start(),
+        create.end(),
+        conflict,
         null,
         conflictingKinds(configuration, create.kind()));
 
@@ -400,10 +401,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                 }
                 BookingSchedulingPolicy.ConflictInterval conflict =
                     validateScheduling(configuration, booking.getKind(), start, end);
-                requireNoOverlap(
-                    configuration.getId(),
-                    conflict.start(),
-                    conflict.end(),
+                requireNoConflict(
+                    configuration,
+                    start,
+                    end,
+                    conflict,
                     booking.getId(),
                     conflictingKinds(configuration, booking.getKind()));
               }
@@ -504,15 +506,44 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     }
   }
 
-  private void requireNoOverlap(
-      Long configurationId,
+  /**
+   * Rejects the requested interval when it overlaps another event, and otherwise when its
+   * buffer-expanded conflict interval does. Checking the requested interval first tells the caller
+   * whether moving the booking slightly would be enough.
+   */
+  private void requireNoConflict(
+      BookingConfiguration configuration,
       Date start,
       Date end,
+      BookingSchedulingPolicy.ConflictInterval buffered,
       Long excludedId,
       Set<BookingEventKind> includedKinds) {
-    if (currentSchedule(
-        () -> bookingDao.overlaps(configurationId, start, end, excludedId, includedKinds))) {
-      throw new BookingOverlapException();
+    Optional<TimeSlotBooking> overlap =
+        currentSchedule(
+            () ->
+                bookingDao.findFirstOverlap(
+                    configuration.getId(), start, end, excludedId, includedKinds));
+    if (overlap.isPresent()) {
+      throw new BookingOverlapException(ConflictingEvent.of(overlap.get()));
+    }
+    if (buffered.start().getTime() == start.getTime()
+        && buffered.end().getTime() == end.getTime()) {
+      return;
+    }
+    Optional<TimeSlotBooking> bufferConflict =
+        currentSchedule(
+            () ->
+                bookingDao.findFirstOverlap(
+                    configuration.getId(),
+                    buffered.start(),
+                    buffered.end(),
+                    excludedId,
+                    includedKinds));
+    if (bufferConflict.isPresent()) {
+      throw new BookingBufferConflictException(
+          ConflictingEvent.of(bufferConflict.get()),
+          configuration.getBufferBeforeMinutes(),
+          configuration.getBufferAfterMinutes());
     }
   }
 

@@ -72,9 +72,7 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-time-slot-booking-kind.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-settings.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscriptions.xml"/>
-    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscription-links.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-user-booking-calendar-subscriptions.xml"/>
-    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-user-booking-calendar-subscription-version.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-display-preferences.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-configuration-soft-delete.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-resource-access.xml"/>
@@ -85,6 +83,7 @@
     <include relativeToChangelogFile="true" file="changeLog-extra-field-index.xml"/>
 
     <include relativeToChangelogFile="true" file="changeLog-booking-inherited-access.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-booking-opening-weekdays.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed.xml"/>
 
   <!-- These two run last: recurring-changeLog.xml (runAlways diagnostics / batch re-init) then

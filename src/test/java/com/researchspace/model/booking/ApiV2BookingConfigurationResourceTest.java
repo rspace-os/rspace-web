@@ -59,6 +59,8 @@ class ApiV2BookingConfigurationResourceTest {
             "slotGranularityMinutes",
             "openingStart",
             "openingEnd",
+            "openDays",
+            "openingExceptions",
             "bufferBeforeMinutes",
             "bufferAfterMinutes",
             "maxBookingDurationMinutes",
@@ -81,6 +83,8 @@ class ApiV2BookingConfigurationResourceTest {
             "slotGranularityMinutes",
             "openingStart",
             "openingEnd",
+            "openDays",
+            "openingExceptions",
             "bufferBeforeMinutes",
             "bufferAfterMinutes",
             "maxBookingDurationMinutes",
@@ -234,6 +238,8 @@ class ApiV2BookingConfigurationResourceTest {
             "slotGranularityMinutes",
             "openingStart",
             "openingEnd",
+            "openDays",
+            "openingExceptions",
             "bufferBeforeMinutes",
             "bufferAfterMinutes",
             "maxBookingDurationMinutes",
@@ -266,6 +272,116 @@ class ApiV2BookingConfigurationResourceTest {
         document.values().get("target"));
     assertEquals(15L, document.values().get("slotGranularityMinutes"));
     assertEquals(120L, document.values().get("maxBookingDurationMinutes"));
+  }
+
+  @Test
+  void parsesOpenDaysAndExceptionsAsWholeStructuredValues() throws Exception {
+    ParsedDocument document =
+        parseUpdate(
+            """
+            {
+              "openingStart": "09:00",
+              "openDays": [6, 1, 3],
+              "openingExceptions": [
+                {"end": "16:00", "dayOfWeek": 6, "start": "10:00"},
+                {"dayOfWeek": 1, "start": "00:00", "end": "24:00"}
+              ]
+            }
+            """);
+
+    assertEquals("09:00", document.values().get("openingStart"));
+    assertEquals(List.of(1, 3, 6), document.values().get("openDays"));
+    assertEquals(
+        List.of(
+            new BookingOpeningException(1, "00:00", "24:00"),
+            new BookingOpeningException(6, "10:00", "16:00")),
+        document.values().get("openingExceptions"));
+    assertEquals(
+        List.of(), parseUpdate("{\"openingExceptions\": []}").values().get("openingExceptions"));
+  }
+
+  @Test
+  void keepsKindChecksAndRejectsInvalidStructuredValues() {
+    assertEquals(
+        DocumentValidationException.Reason.WRONG_TYPE, updateViolation("{\"openDays\": \"1,2\"}"));
+    assertEquals(
+        DocumentValidationException.Reason.WRONG_TYPE, updateViolation("{\"openDays\": 1}"));
+    assertEquals(
+        DocumentValidationException.Reason.WRONG_TYPE,
+        updateViolation("{\"openingExceptions\": {\"dayOfWeek\": 1}}"));
+    assertEquals(
+        DocumentValidationException.Reason.NULL_NOT_ALLOWED,
+        updateViolation("{\"openDays\": null}"));
+    assertEquals(
+        DocumentValidationException.Reason.NULL_NOT_ALLOWED,
+        updateViolation("{\"openingExceptions\": null}"));
+    for (String invalid :
+        List.of(
+            "{\"openDays\": []}",
+            "{\"openDays\": [1, 1]}",
+            "{\"openDays\": [\"1\"]}",
+            "{\"openDays\": [1.5]}",
+            "{\"openDays\": [true]}",
+            "{\"openDays\": [null]}",
+            "{\"openDays\": [0]}",
+            "{\"openDays\": [1, 2, 3, 4, 5, 6, 7, 1]}",
+            "{\"openingExceptions\": [null]}",
+            "{\"openingExceptions\": [{\"dayOfWeek\": 1, \"start\": \"09:00\"}]}",
+            "{\"openingExceptions\": [{\"dayOfWeek\": 1, \"start\": \"09:00\","
+                + " \"end\": \"17:00\", \"x\": 1}]}",
+            "{\"openingExceptions\": [{\"dayOfWeek\": 1, \"start\": \"17:00\","
+                + " \"end\": \"09:00\"}]}")) {
+      assertEquals(
+          DocumentValidationException.Reason.INVALID_VALUE, updateViolation(invalid), invalid);
+    }
+  }
+
+  @Test
+  void rendersAndPublishesTheNestedSchemaOfStructuredFields() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setTimeZone("UTC");
+    configuration.setOpenDays(List.of(5, 1));
+    configuration.setOpeningExceptions(List.of(new BookingOpeningException(5, "10:00", "12:00")));
+
+    Map<String, Object> rendered =
+        ApiV2BookingConfigurationResource.DESCRIPTION.toDocument(configuration);
+
+    assertEquals(List.of(1, 5), rendered.get("openDays"));
+    assertEquals(
+        List.of(Map.of("dayOfWeek", 5, "start", "10:00", "end", "12:00")),
+        rendered.get("openingExceptions"));
+    var openDays =
+        ApiV2BookingConfigurationResource.DESCRIPTION.findField("openDays").orElseThrow();
+    assertEquals("array", openDays.type().schema().jsonType());
+    assertEquals(
+        Map.of("type", "integer", "minimum", 1, "maximum", 7),
+        openDays.type().schema().structure().get("items"));
+    assertTrue(openDays.operators().isEmpty());
+    assertFalse(openDays.sortable());
+    assertTrue(
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .findField("openingExceptions")
+            .orElseThrow()
+            .type()
+            .schema()
+            .structure()
+            .containsKey("items"));
+  }
+
+  private ParsedDocument parseUpdate(String json) throws Exception {
+    return ApiV2DocumentParser.parse(
+        mapper.readTree(json),
+        ApiV2BookingConfigurationResource.DESCRIPTION,
+        WriteOperation.UPDATE,
+        "errors.api.v2.bookingConfiguration.patch",
+        new AccessContext(null, Operation.UPDATE, "booking-configurations"));
+  }
+
+  private DocumentValidationException.Reason updateViolation(String json) {
+    DocumentValidationException failure =
+        assertThrows(DocumentValidationException.class, () -> parseUpdate(json));
+    assertEquals(1, failure.getViolations().size());
+    return failure.getViolations().get(0).reason();
   }
 
   @Test

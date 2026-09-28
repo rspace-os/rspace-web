@@ -13,6 +13,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingOpeningException;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Instrument;
@@ -159,8 +160,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
             Date.from(start.plus(1, ChronoUnit.HOURS)),
             null);
     var booking = bookingManager.createBooking(create, booker, booker);
-    var link =
-        calendarManager.createOrRotate(setup.configurationId(), booker, booker, "\"inactive\"");
+    var link = calendarManager.create(setup.configurationId(), booker, booker);
     String token =
         java.net.URI.create(link.subscriptionUrl()).getRawQuery().substring("token=".length());
     var competing = new TransactionTemplate(getTxMger());
@@ -408,6 +408,99 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void closingTheWeekdayUnderTheConfigurationLockRejectsAConcurrentCreate()
+      throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Open days concurrency scope");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
+    // 2030-01-07 is a Monday in the configuration's UTC scheduling zone.
+    var command =
+        new TimeSlotBookingManager.Create(
+            new ResolvedBookableTarget(setup.target(), setup.instrument()),
+            Date.from(Instant.parse("2030-01-07T10:00:00Z")),
+            Date.from(Instant.parse("2030-01-07T11:00:00Z")),
+            "Concurrent open days test");
+
+    Throwable result =
+        writeWhileSettingsChangeHoldsTheLock(
+            setup,
+            owner,
+            new BookingSchedulingSettings.Patch(
+                null, null, null, List.of(2, 3, 4, 5, 6, 7), null, null, null, null, null),
+            () -> bookingManager.createBooking(command, owner, owner));
+
+    assertTrue(
+        result instanceof BookingPolicyException policy
+            && policy.reason() == BookingPolicyException.Reason.OPENING_HOURS,
+        () -> "Unexpected create result: " + result);
+    assertEquals(
+        Integer.valueOf(0),
+        jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ? AND deleted ="
+                + " 0",
+            Integer.class,
+            setup.configurationId()));
+  }
+
+  @Test
+  public void addingAnExclusiveExceptionUnderTheConfigurationLockRejectsAConcurrentTimeEdit()
+      throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Exception concurrency scope");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
+    ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
+    Instant start = Instant.parse("2030-01-07T10:00:00Z");
+    var existing =
+        bookingManager.createBooking(
+            new TimeSlotBookingManager.Create(
+                target, Date.from(start), Date.from(start.plus(1, ChronoUnit.HOURS)), null),
+            owner,
+            owner);
+    // Moves the booking to Tuesday 10:00-11:00, which the Tuesday exception excludes.
+    var moveToTuesday =
+        new TimeSlotBookingManager.Patch(
+            Date.from(start.plus(1, ChronoUnit.DAYS)),
+            Date.from(start.plus(1, ChronoUnit.DAYS).plus(1, ChronoUnit.HOURS)),
+            false,
+            null,
+            null);
+
+    Throwable result =
+        writeWhileSettingsChangeHoldsTheLock(
+            setup,
+            owner,
+            new BookingSchedulingSettings.Patch(
+                null,
+                null,
+                null,
+                null,
+                List.of(new BookingOpeningException(2, "12:00", "13:00")),
+                null,
+                null,
+                null,
+                null),
+            () -> bookingManager.updateBooking(existing.getId(), moveToTuesday, owner, owner));
+
+    assertTrue(
+        (result instanceof BookingPolicyException policy
+                && policy.reason() == BookingPolicyException.Reason.OPENING_HOURS)
+            || result instanceof BookingConcurrentModificationException,
+        () -> "Unexpected edit result: " + result);
+    assertEquals(
+        start,
+        bookingManager
+            .getBooking(existing.getId(), owner)
+            .orElseThrow()
+            .getStartTime()
+            .toInstant());
+    BookingPolicyException retry =
+        assertThrows(
+            BookingPolicyException.class,
+            () -> bookingManager.updateBooking(existing.getId(), moveToTuesday, owner, owner));
+    assertEquals(BookingPolicyException.Reason.OPENING_HOURS, retry.reason());
+  }
+
+  @Test
   public void asymmetricBuffersRejectCandidatesOnTheCorrectSidesAndKeepExactBoundariesOpen() {
     User owner = createInitAndLoginAnyUser();
     ApiInstrument created = createBasicInstrumentForUser(owner, "Buffer boundary scope");
@@ -417,10 +510,10 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     create(target, owner, "2026-10-17T10:00:00Z", "2026-10-17T11:00:00Z");
 
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, "2026-10-17T11:15:00Z", "2026-10-17T12:00:00Z"));
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, "2026-10-17T09:00:00Z", "2026-10-17T09:55:00Z"));
     create(target, owner, "2026-10-17T11:20:00Z", "2026-10-17T12:00:00Z");
     create(target, owner, "2026-10-17T09:00:00Z", "2026-10-17T09:50:00Z");
@@ -519,6 +612,56 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     } finally {
       releaseHolder.countDown();
       startContenders.countDown();
+      pool.shutdownNow();
+      assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS));
+    }
+  }
+
+  /**
+   * Holds the configuration lock in one transaction, starts {@code write} in another, then commits
+   * {@code settings} and returns the write's exception, or null when it succeeded.
+   */
+  private Throwable writeWhileSettingsChangeHoldsTheLock(
+      Setup setup, User owner, BookingSchedulingSettings.Patch settings, Runnable write)
+      throws Exception {
+    CountDownLatch settingsLocked = new CountDownLatch(1);
+    CountDownLatch writeStarted = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    try {
+      Future<?> settingsChange =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          ignored -> {
+                            configurationDao.lockById(setup.configurationId()).orElseThrow();
+                            settingsLocked.countDown();
+                            await(writeStarted);
+                            configurationManager
+                                .updateConfiguration(
+                                    setup.configurationId(),
+                                    new BookingConfigurationManager.Patch(null, null, settings),
+                                    owner,
+                                    owner)
+                                .orElseThrow();
+                          }));
+      assertTrue(settingsLocked.await(10, TimeUnit.SECONDS));
+      Future<Throwable> writeResult =
+          pool.submit(
+              () -> {
+                writeStarted.countDown();
+                try {
+                  write.run();
+                  return null;
+                } catch (RuntimeException exception) {
+                  return exception;
+                }
+              });
+
+      settingsChange.get(20, TimeUnit.SECONDS);
+      return writeResult.get(20, TimeUnit.SECONDS);
+    } finally {
+      writeStarted.countDown();
       pool.shutdownNow();
       assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS));
     }

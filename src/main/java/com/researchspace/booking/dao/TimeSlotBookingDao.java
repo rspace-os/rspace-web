@@ -32,19 +32,21 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
   Optional<TimeSlotBooking> findReadableById(Long id, RelationshipReadAccess targetAccess);
 
   /**
-   * Tests a half-open interval against current confirmed, non-deleted rows using a locking read,
-   * not an earlier transaction snapshot. Callers must hold the configuration lock first.
+   * Returns the earliest current confirmed, non-deleted row that overlaps a half-open interval,
+   * using a locking read, not an earlier transaction snapshot. Callers must hold the configuration
+   * lock first.
    */
-  boolean overlaps(
+  Optional<TimeSlotBooking> findFirstOverlap(
       Long configurationId,
       Date start,
       Date end,
       Long excludedBookingId,
       Set<BookingEventKind> includedKinds);
 
-  /** Tests an interval against both persisted event kinds. */
-  default boolean overlaps(Long configurationId, Date start, Date end, Long excludedBookingId) {
-    return overlaps(
+  /** Finds the earliest overlapping row of either persisted event kind. */
+  default Optional<TimeSlotBooking> findFirstOverlap(
+      Long configurationId, Date start, Date end, Long excludedBookingId) {
+    return findFirstOverlap(
         configurationId,
         start,
         end,

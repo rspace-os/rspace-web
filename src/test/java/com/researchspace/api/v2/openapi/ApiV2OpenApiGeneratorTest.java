@@ -211,6 +211,16 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "#/components/schemas/ResourceRoleSource",
         objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
+    Map<String, Object> openDays = objectMap(readProperties.get("openDays"));
+    assertEquals("array", openDays.get("type"));
+    assertEquals("integer", objectMap(openDays.get("items")).get("type"));
+    assertEquals(true, openDays.get("uniqueItems"));
+    Map<String, Object> updateProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
+    Map<String, Object> exceptionItem =
+        objectMap(objectMap(updateProperties.get("openingExceptions")).get("items"));
+    assertEquals(false, exceptionItem.get("additionalProperties"));
+    assertTrue(objectMap(exceptionItem.get("properties")).containsKey("dayOfWeek"));
   }
 
   @Test
@@ -256,8 +266,26 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "getBookingCalendarSubscription", objectMap(management.get("get")).get("operationId"));
     assertEquals(
-        "createOrReplaceBookingCalendarSubscription",
-        objectMap(management.get("post")).get("operationId"));
+        "createBookingCalendarSubscription", objectMap(management.get("post")).get("operationId"));
+    assertEquals(
+        Set.of("200", "201", "401", "403", "404", "406", "409", "429", "500"),
+        objectMap(objectMap(management.get("post")).get("responses")).keySet());
+    Map<String, Object> rotate =
+        objectMap(
+            objectMap(
+                    paths.get(
+                        "/api/v2/booking-configurations/{configurationId}/calendar-subscription/rotate"))
+                .get("post"));
+    assertEquals("rotateBookingCalendarSubscription", rotate.get("operationId"));
+    assertTrue(
+        objectMapList(rotate.get("parameters")).stream()
+            .anyMatch(
+                parameter ->
+                    parameter.get("name").equals("If-Match")
+                        && Boolean.TRUE.equals(parameter.get("required"))));
+    assertEquals(
+        Set.of("200", "400", "401", "403", "404", "406", "409", "428", "429", "500"),
+        objectMap(rotate.get("responses")).keySet());
     assertEquals(
         "revokeBookingCalendarSubscription",
         objectMap(management.get("delete")).get("operationId"));
@@ -558,6 +586,26 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(first, second);
     assertTrue(objectMap(where.get("x-rspace-filter")).containsKey("maximumComparisons"));
     assertTrue(objectMap(where.get("x-rspace-relationship-fields")).containsKey("target.name"));
+  }
+
+  @Test
+  void problemSchemaDocumentsTheBookingExtensionMembersAsOptional() {
+    Map<String, Object> schemas = schemas(document());
+    Map<String, Object> problem = objectMap(schemas.get("ApiV2Problem"));
+    Map<String, Object> properties = objectMap(problem.get("properties"));
+
+    for (String member :
+        List.of(
+            "conflict", "bufferBeforeMinutes", "bufferAfterMinutes", "maximumDurationMinutes")) {
+      assertTrue(properties.containsKey(member), member);
+      assertFalse(((List<?>) problem.get("required")).contains(member), member);
+    }
+    Map<String, Object> conflict = objectMap(schemas.get("BookingConflict"));
+    assertEquals(
+        List.of("end", "id", "kind", "start"),
+        ((List<?>) conflict.get("required")).stream().map(Object::toString).sorted().toList());
+    assertEquals(
+        "date-time", objectMap(objectMap(conflict.get("properties")).get("start")).get("format"));
   }
 
   @Test

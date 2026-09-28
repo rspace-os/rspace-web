@@ -199,10 +199,13 @@ $(document).ready(function() {
 });
 
 function unescapeMessageContent(){
-	$('.notificationList .msgContent.bookingNotificationMessage:not([data-booking-message-unescaped])').each(function (){
+	// The page's EL escaping shows a booking message's server-built HTML as text. Its user-controlled
+	// values were escaped when the message was formatted, so parsing that text once turns the links
+	// into elements while a "<" in an instrument name stays literal text.
+	$('#notificationListContents .msgContent.bookingNotificationMessage:not([data-booking-message-rendered])').each(function (){
 		var message$ = $(this);
-		message$.text(RS.unescape(message$.text()));
-		message$.attr('data-booking-message-unescaped', 'true');
+		message$.html(message$.text().trim());
+		message$.attr('data-booking-message-rendered', 'true');
 	});
 	$('#notificationListContents').find('.msgContent:not(.bookingNotificationMessage)').each(function (index){
 		var currHTml = $(this).html();

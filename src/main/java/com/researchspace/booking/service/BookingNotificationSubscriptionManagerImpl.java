@@ -65,17 +65,37 @@ public class BookingNotificationSubscriptionManagerImpl
   @Transactional(readOnly = true)
   public Preferences getPreferences(User subject, User actor) {
     requireAccess(subject, actor);
-    return new Preferences(autoSubscribe(subject));
+    return preferences(subject);
   }
 
   @Override
-  public Preferences replacePreferences(boolean autoSubscribeOwnedItems, User subject, User actor) {
+  public Preferences replacePreferences(PreferenceChanges changes, User subject, User actor) {
     requireAccess(subject, actor);
-    userManager.setPreference(
+    java.util.Objects.requireNonNull(changes, "Booking notification preference changes");
+    setPreference(
+        subject,
         Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS,
-        Boolean.toString(autoSubscribeOwnedItems),
-        subject.getUsername());
-    return new Preferences(autoSubscribeOwnedItems);
+        changes.autoSubscribeOwnedItems());
+    setPreference(subject, Preference.NOTIFICATION_BOOKING_CREATED_PREF, changes.notifyOnCreated());
+    setPreference(
+        subject, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, changes.notifyOnCancelled());
+    return new Preferences(
+        changes.autoSubscribeOwnedItems(),
+        changes.notifyOnCreated(),
+        changes.notifyOnCancelled(),
+        preferenceEnabled(subject, Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL));
+  }
+
+  private Preferences preferences(User subject) {
+    return new Preferences(
+        autoSubscribe(subject),
+        preferenceEnabled(subject, Preference.NOTIFICATION_BOOKING_CREATED_PREF),
+        preferenceEnabled(subject, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF),
+        preferenceEnabled(subject, Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL));
+  }
+
+  private void setPreference(User subject, Preference preference, boolean value) {
+    userManager.setPreference(preference, Boolean.toString(value), subject.getUsername());
   }
 
   @Override

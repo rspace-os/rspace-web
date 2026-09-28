@@ -41,6 +41,18 @@ public class BookingCalendarSubscriptionDaoHibernate
   }
 
   @Override
+  public List<BookableItemCalendarSubscription> findByUserId(Long userId) {
+    return getSession()
+        .createQuery(
+            "from BookableItemCalendarSubscription subscription"
+                + " join fetch subscription.bookingConfiguration"
+                + " where subscription.user.id = :userId",
+            BookableItemCalendarSubscription.class)
+        .setParameter("userId", userId)
+        .list();
+  }
+
+  @Override
   public Optional<BookableItemCalendarSubscription> findByTokenHash(String tokenHash) {
     return getSession()
         .createQuery(
