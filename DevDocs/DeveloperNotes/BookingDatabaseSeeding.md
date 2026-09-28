@@ -51,7 +51,11 @@ objects through inventory managers, creates or updates booking configurations
 through `BookingConfigurationManager`, and creates bookings through
 `TimeSlotBookingManager`. Booking dates are calculated relative to the current
 date at first deployment. Docker documentation describes the
-behavior and the 500-instrument / 1,003-event development dataset.
+behavior and the 500-instrument / 1,003-event development dataset. The
+restricted-location plate reader is the view-only fixture: `user2b` owns it with
+owner-only sharing, so `user1a` reads it only as PI of `user2b`'s group and gets
+the Booking viewer role. Its configuration closes Wednesdays and has a Thursday
+exception.
 
 Sources: [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L119-L220),
 [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L237-L440),

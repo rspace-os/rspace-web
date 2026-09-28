@@ -117,7 +117,12 @@ bookable-item examples, plus 500 instruments and 1,003 events spread across the
 next full Monday-to-Sunday week. Three events have distinctive names—Aurora,
 Beacon, and Comet—to make Calendar event-name search easy to test. The six
 smaller booking examples use the following calendar date, so all new bookings
-start in the future even when the stack starts late in the day. The startup
+start in the future even when the stack starts late in the day. The
+Restricted-location plate reader, which `user2b` owns and shares with nobody, is
+view-only for `user1a`: as PI of `user2b`'s group, `user1a` sees it in the
+Calendar but can neither book it nor edit its configuration. It is closed on
+Wednesdays and opens only 10:00 to 14:00 (Europe/Berlin) on Thursdays, so the
+closure shading on a read-only row is visible. The startup
 seed runs only on the first deployment and defaults to disabled. Set the property
 in `deployment.properties` to opt in; it also works with the `prod` profile on AWS
 feature-branch instances. Restarts preserve existing fixtures and do not log in

@@ -18,7 +18,10 @@ through the last retained Envers revision while the target Inventory item is
 still available. Former owners cannot use this route to recover deleted data,
 and ordinary configuration reads continue to return 404. Audit results retain
 the existing completed-day snapshot boundary, so today's changes appear after
-the next UTC day boundary.
+the next UTC day boundary. Booking and configuration audits both include events
+by people outside the viewer's user directory: the Booking audit capability has
+already authorized the viewer, and people who book an item often share no group
+with its managers.
 
 The generic REST API v2 access routes and editable component remain in place.
 Booking access documents report `inherited: true`, derived caller capabilities

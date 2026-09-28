@@ -34,6 +34,15 @@ booking events. Cancellation, archive, and permanent deletion keep their stored
 audit actions; the audit page and CSV export show more specific labels from the
 recorded state and permanent-deletion marker.
 
+The Description column of a booking event starts with the recorded snapshot as
+`Label: value` pairs, using the item audit history's labels (open days as
+weekday names, a closing midnight as `00:00`, booking start and end as UTC
+instants), followed by any logged description such as `subject=<username>`.
+`BookingAuditDetails` formats it on the server: the page receives it as
+`event.details` in the request locale, and the CSV always uses en-US. The
+logged `description` itself is not changed, so the permanent-deletion marker is
+still matched against the original text.
+
 ### Incoming requests
 
 These are logged using the interceptor `LoggingInterceptor.java` and

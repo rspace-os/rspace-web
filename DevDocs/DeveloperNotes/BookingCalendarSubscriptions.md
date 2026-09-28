@@ -1,16 +1,34 @@
 # Booking calendar subscriptions
 
-Item subscriptions (`/api/v2/booking-configurations/{id}/calendar-subscription`)
-and user subscriptions (`/api/v2/users/me/booking-calendar-subscription`) return
-an `ETag` on GET and POST. Clients must send the last received ETag as `If-Match`
-when creating or rotating a subscription. Missing preconditions return 428;
-stale preconditions return 409. On conflict, reload the status before retrying
-or using its current URL. This prevents duplicate requests from invalidating a
-URL that another request just returned successfully.
+A calendar link is created once and kept until its owner rotates or disconnects
+it. The owner can always read it again: every subscription row stores its raw
+token (`rawToken` is `NOT NULL`), and GET returns the current URL.
 
+Item subscriptions (`/api/v2/booking-configurations/{id}/calendar-subscription`)
+and user subscriptions (`/api/v2/users/me/booking-calendar-subscription`) share
+one contract:
+
+- `GET` returns the status, the current URL and an `ETag`.
+- `POST` only creates. It needs no precondition and is safe to repeat: it returns
+  `201` with a new URL when none exists, or `200` with the existing URL
+  unchanged. Duplicate or concurrent creates therefore cannot fail or invalidate
+  a URL another request just returned.
+- `POST …/rotate` is the only way to replace a URL. It requires the last
+  received ETag as `If-Match`: missing preconditions return 428, and a stale
+  ETag or a missing subscription returns 409. On conflict, reload the status and
+  show its current URL.
+- `DELETE` revokes the link.
+
+`GET /api/v2/users/me/bookable-item-calendar-subscriptions` lists the caller's
+item links, with URLs, for active items they can still read. The Booking
+preferences page shows them next to the user-wide link.
+
+Create and rotate run in `BookingCalendarCreationTransaction` (`READ_COMMITTED`).
 Item writes compare the credential fingerprint while holding the configuration
-lock; user writes compare the version while holding the user lock. Token storage
-and explicit revocation behavior are unchanged.
+lock; user writes compare the version while holding the user lock. Because the
+isolation level is `READ_COMMITTED`, a create that waited on either lock sees the
+link the first request committed and returns it instead of inserting a second
+row.
 
 Calendar feed responses use `Cache-Control: private, no-store`,
 `Referrer-Policy: no-referrer`, and `X-Content-Type-Options: nosniff`, including

@@ -472,6 +472,11 @@ The table also stores filters, sorting, and visible fields in
 `rspace.tableList.<tableId>.view`. The browser profile owns this storage. Pagination and column
 widths are not stored.
 
+A customised column selection also records the configured `defaultColumns` it was saved against.
+When a later release adds a default column, loading the view inserts it after the default that
+precedes it instead of hiding it behind the old selection. A default the user removed after seeing
+it stays hidden. Views saved before this record existed gain every missing default once.
+
 The collection slug is the default `tableId`. Set a stable, unique ID when independent views use
 the same collection configuration.
 

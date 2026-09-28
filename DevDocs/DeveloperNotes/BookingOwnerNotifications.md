@@ -23,6 +23,12 @@ because email delivery has no browser session. The time offset appears with the 
 local times at a DST transition remain distinct. Email delivery also respects
 `BROADCAST_NOTIFICATIONS_BY_EMAIL`.
 
+The dashboard writes these times in the app language with the 12- or 24-hour clock of the
+browser's region, as the Booking pages do. It takes the region from the primary `Accept-Language`
+locale, because `LocaleFilter` replaces the request locale with the app language, and formats with
+ICU, because java.time ignores the Unicode `hc` keyword. Email has no browser, so the stored
+message keeps the app language's own clock.
+
 Older notification rows have no structured data. The dashboard reformats their final ISO interval
 only when both trailing values match the booking message shape. Existing rows remain readable and
 need no migration.
