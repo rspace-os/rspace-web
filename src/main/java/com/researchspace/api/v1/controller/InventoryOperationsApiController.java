@@ -174,27 +174,24 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     // meet this request's still-held parent-sample lock, or (same user) pass it and run on after
     // this request's release had stripped the locks from under it.
     InventoryOperationManager.OperationOutcome outcome;
-    InventoryOperationInFlightOrigins.Claim claim = inFlightOrigins.claim(originGlobalIds);
-    try {
-      for (String globalId : toLock) {
-        ApiInventoryEditLock lock = tracker.attemptToLockForEdit(globalId, user);
-        if (ApiInventoryEditLockStatus.CANNOT_LOCK.equals(lock.getStatus())) {
-          throw new InventoryEditLockHeldException(globalId, lock.getOwner());
-        }
-        if (ApiInventoryEditLockStatus.LOCKED_OK.equals(lock.getStatus())) {
-          taken.add(globalId);
-        }
-      }
-      outcome = inventoryOperationManager.performOperation(operation, request, originIds, user);
-    } catch (BindException coreRejection) {
-      throw new BindException(facadeFieldNames(coreRejection.getBindingResult(), singleOrigin));
-    } finally {
+    try (var claim = inFlightOrigins.claim(originGlobalIds)) {
       try {
+        for (String globalId : toLock) {
+          ApiInventoryEditLock lock = tracker.attemptToLockForEdit(globalId, user);
+          if (ApiInventoryEditLockStatus.CANNOT_LOCK.equals(lock.getStatus())) {
+            throw new InventoryEditLockHeldException(globalId, lock.getOwner());
+          }
+          if (ApiInventoryEditLockStatus.LOCKED_OK.equals(lock.getStatus())) {
+            taken.add(globalId);
+          }
+        }
+        outcome = inventoryOperationManager.performOperation(operation, request, originIds, user);
+      } catch (BindException coreRejection) {
+        throw new BindException(facadeFieldNames(coreRejection.getBindingResult(), singleOrigin));
+      } finally {
         for (int i = taken.size() - 1; i >= 0; i--) {
           tracker.attemptToUnlock(taken.get(i), user);
         }
-      } finally {
-        claim.close();
       }
     }
 
