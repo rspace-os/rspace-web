@@ -9,10 +9,7 @@ import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
   calendarApplicationUrls,
   createUserCalendarSubscription,
-  fetchItemCalendarLinks,
   fetchUserCalendarSubscriptionStatus,
-  type ItemCalendarLink,
-  itemCalendarLinksQueryKey,
   revokeUserCalendarSubscription,
   rotateUserCalendarSubscription,
   userCalendarSubscriptionQueryKey,
@@ -222,15 +219,14 @@ export function UserCalendarSubscription({ token }: { token: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <ItemCalendarLinks token={token} />
     </section>
   );
 }
 
-function CalendarApplicationLinks({ subscriptionUrl, size }: { subscriptionUrl: string; size?: "sm" }) {
+function CalendarApplicationLinks({ subscriptionUrl }: { subscriptionUrl: string }) {
   const { t } = useTranslation("booking");
   const apps = calendarApplicationUrls(subscriptionUrl);
-  const className = buttonVariants({ variant: "outline", size });
+  const className = buttonVariants({ variant: "outline" });
   return (
     <div className="flex flex-wrap gap-2">
       <a className={className} href={apps.apple}>
@@ -246,105 +242,5 @@ function CalendarApplicationLinks({ subscriptionUrl, size }: { subscriptionUrl: 
         {t("preferences.calendarSubscription.other")}
       </a>
     </div>
-  );
-}
-
-/** The caller's per-item calendar links, so they can be found and copied again from one place. */
-function ItemCalendarLinks({ token }: { token: string }) {
-  const { t } = useTranslation("booking");
-  const links = useQuery({
-    queryKey: itemCalendarLinksQueryKey,
-    queryFn: ({ signal }) => fetchItemCalendarLinks(token, signal),
-    retry: false,
-  });
-
-  return (
-    <section className="space-y-3 border-t pt-4" aria-labelledby="item-calendar-links-heading">
-      <div className="space-y-1">
-        <h3 id="item-calendar-links-heading" className="text-base font-semibold">
-          {t("preferences.calendarSubscription.itemLinks.title")}
-        </h3>
-        <p className="text-sm text-muted-foreground">{t("preferences.calendarSubscription.itemLinks.description")}</p>
-      </div>
-      {links.isPending ? <Skeleton aria-hidden="true" className="h-9 w-full" /> : null}
-      {links.isError ? (
-        <div className="space-y-2">
-          <p role="alert" className="text-sm text-destructive">
-            {t("preferences.calendarSubscription.itemLinks.error")}
-          </p>
-          <Button type="button" variant="outline" size="sm" onClick={() => void links.refetch()}>
-            {t("preferences.calendarSubscription.retry")}
-          </Button>
-        </div>
-      ) : null}
-      {links.isSuccess && links.data.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("preferences.calendarSubscription.itemLinks.empty")}</p>
-      ) : null}
-      {links.isSuccess && links.data.length > 0 ? (
-        <ul className="space-y-4">
-          {links.data.map((link) => (
-            <ItemCalendarLinkRow key={link.configurationId} link={link} />
-          ))}
-        </ul>
-      ) : null}
-    </section>
-  );
-}
-
-function ItemCalendarLinkRow({ link }: { link: ItemCalendarLink }) {
-  const { t } = useTranslation("booking");
-  const [copied, setCopied] = useState(false);
-  const [clipboardError, setClipboardError] = useState(false);
-  const fieldId = `item-calendar-link-${link.configurationId}`;
-
-  const copyLink = async () => {
-    setCopied(false);
-    setClipboardError(false);
-    try {
-      await navigator.clipboard.writeText(link.subscriptionUrl);
-      setCopied(true);
-    } catch {
-      setClipboardError(true);
-    }
-  };
-
-  return (
-    <li className="space-y-2">
-      <a
-        href={`/booking/bookable-items/${encodeURIComponent(link.itemGlobalId)}`}
-        className="font-medium underline-offset-4 hover:underline"
-      >
-        {link.itemName}
-      </a>
-      <CalendarApplicationLinks subscriptionUrl={link.subscriptionUrl} size="sm" />
-      <InputGroup>
-        <InputGroupInput
-          id={fieldId}
-          readOnly
-          value={link.subscriptionUrl}
-          aria-label={t("preferences.calendarSubscription.itemLinks.linkLabel", {
-            itemName: link.itemName,
-          })}
-          className="font-mono text-xs"
-        />
-        <InputGroupAddon align="inline-end">
-          <InputGroupButton
-            size="icon-xs"
-            aria-label={t("preferences.calendarSubscription.itemLinks.copy", {
-              itemName: link.itemName,
-            })}
-            onClick={() => void copyLink()}
-          >
-            {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
-          </InputGroupButton>
-        </InputGroupAddon>
-      </InputGroup>
-      {copied ? <p role="status">{t("preferences.calendarSubscription.copied")}</p> : null}
-      {clipboardError ? (
-        <p role="alert" className="text-sm text-destructive">
-          {t("preferences.calendarSubscription.copyError")}
-        </p>
-      ) : null}
-    </li>
   );
 }

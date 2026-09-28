@@ -306,7 +306,7 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.datePicker).toBeVisible();
     await expect
       .element(pageObj.filtersPanel.getByRole("combobox", { name: "Value for filter 1" }))
-      .toHaveValue("Busy now, free later");
+      .toHaveValue("Free later");
     await pageObj.filtersPanel.getByRole("button", { name: "Remove filter 1" }).click();
     await pageObj.filtersPanel.getByRole("button", { name: "Apply filters" }).click();
     await expect.poll(() => new URLSearchParams(history.location.search).get("where")).toBeNull();

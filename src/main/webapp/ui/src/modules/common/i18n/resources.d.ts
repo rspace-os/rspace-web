@@ -808,7 +808,7 @@ export default interface Resources {
         "availableNow": "Available now",
         "availableNowDescription": "Free at this moment",
         "error": "Could not find available items.",
-        "freeLaterToday": "Busy now, free later",
+        "freeLaterToday": "Free later",
         "freeLaterTodayDescription": "Busy now, free again later today",
         "legend": "Quick filters",
         "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
@@ -1779,7 +1779,6 @@ export default interface Resources {
         "existingSubscriptions": {
           "description": "Unsubscribe from every instrument. Your notification settings above stay as they are."
         },
-        "manageSubscriptions": "Manage subscriptions in All bookable items",
         "save": "Save",
         "saveError": "Your notification preference could not be saved. The last saved choice has been restored.",
         "saved": "Notification preference saved.",
@@ -1814,14 +1813,6 @@ export default interface Resources {
         "createError": "The calendar subscription could not be created. Try again.",
         "description": "Subscribe to your confirmed RSpace bookings across all bookable items. The private link updates automatically in your calendar app.",
         "google": "Google Calendar",
-        "itemLinks": {
-          "copy": "Copy {itemName} calendar link",
-          "description": "Links you added with Add to calendar on a bookable item. Replace or disconnect one from its item page.",
-          "empty": "You haven't added any bookable item to your calendar.",
-          "error": "Your bookable item calendar links could not be loaded.",
-          "linkLabel": "{itemName} calendar link",
-          "title": "Bookable item calendars"
-        },
         "loading": "Loading calendar subscription.",
         "other": "Other",
         "replace": "Replace private link",

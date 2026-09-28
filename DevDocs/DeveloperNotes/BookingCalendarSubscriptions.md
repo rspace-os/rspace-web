@@ -21,7 +21,8 @@ one contract:
 
 `GET /api/v2/users/me/bookable-item-calendar-subscriptions` lists the caller's
 item links, with URLs, for active items they can still read. The Booking
-preferences page shows them next to the user-wide link.
+preferences page shows only the user-wide link; item links are managed from
+each bookable item's page.
 
 Create and rotate run in `BookingCalendarCreationTransaction` (`READ_COMMITTED`).
 Item writes compare the credential fingerprint while holding the configuration

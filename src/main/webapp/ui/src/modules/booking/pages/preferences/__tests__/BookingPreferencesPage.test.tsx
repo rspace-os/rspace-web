@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -46,7 +46,6 @@ describe("BookingPreferencesPage", () => {
           { headers: { ETag: '"inactive"' } },
         ),
       ),
-      http.get("/api/v2/users/me/bookable-item-calendar-subscriptions", () => HttpResponse.json([])),
     );
   });
 
@@ -321,38 +320,19 @@ describe("BookingPreferencesPage", () => {
     expect(rotations).toEqual(['"subscription-0"']);
   });
 
-  it("lists bookable item calendar links next to the user-wide link", async () => {
+  it("shows only the user-wide calendar link on preferences", async () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
-      http.get("/api/v2/users/me/bookable-item-calendar-subscriptions", () =>
-        HttpResponse.json([
-          {
-            configurationId: 7,
-            itemGlobalId: "IN12",
-            itemName: "Confocal microscope",
-            updatedAt: "2026-08-30T12:00:00.000Z",
-            subscriptionUrl: "https://example.test/public/booking/calendars/feed.ics?token=item",
-          },
-        ]),
-      ),
     );
     renderPage();
 
-    const items = await screen.findByRole("region", {
-      name: "booking:preferences.calendarSubscription.itemLinks.title",
-    });
-    expect(await within(items).findByRole("link", { name: "Confocal microscope" })).toHaveAttribute(
-      "href",
-      "/booking/bookable-items/IN12",
-    );
     expect(
-      within(items).getByRole("textbox", { name: "booking:preferences.calendarSubscription.itemLinks.linkLabel" }),
-    ).toHaveValue("https://example.test/public/booking/calendars/feed.ics?token=item");
-    expect(
-      within(items).getByRole("button", { name: "booking:preferences.calendarSubscription.itemLinks.copy" }),
+      await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" }),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "booking:preferences.calendarSubscription.create" })).toBeVisible();
+    expect(
+      screen.queryByRole("region", { name: "booking:preferences.calendarSubscription.itemLinks.title" }),
+    ).not.toBeInTheDocument();
   });
 
   it("saves the owner auto-subscribe default and unsubscribes from existing instruments", async () => {
@@ -388,8 +368,8 @@ describe("BookingPreferencesPage", () => {
     expect(deleted).toBe(1);
     expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
     expect(
-      screen.getByRole("link", { name: "booking:notificationSubscriptions.preferences.manageSubscriptions" }),
-    ).toHaveAttribute("href", "/booking/all-items");
+      screen.queryByRole("link", { name: "booking:notificationSubscriptions.preferences.manageSubscriptions" }),
+    ).not.toBeInTheDocument();
   });
   it("saves the booking event toggles with the complete preference body and shows email delivery read-only", async () => {
     const user = userEvent.setup();

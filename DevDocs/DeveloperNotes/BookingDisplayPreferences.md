@@ -49,7 +49,7 @@ Keep new synchronized timeline callers on the shared scroll hook, not a per-scro
 React state update. Hour labels and day bounds are cached by date and timezone.
 
 Availability quick-filter counts load even when no filter is selected. They use today's preferred
-display interval: before it starts, an item with a free segment is “Busy now, free later”; at or after
+display interval: before it starts, an item with a free segment is “Free later”; at or after
 its end, it matches neither filter. Loading these counts does not block the unfiltered catalogue.
 Candidate discovery uses the catalogue's Search, type and item-property predicates before applying
 the 1,000-item availability limit. Local availability comparisons become logical true when deriving

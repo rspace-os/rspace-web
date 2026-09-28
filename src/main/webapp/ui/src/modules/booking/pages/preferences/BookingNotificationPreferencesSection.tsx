@@ -225,11 +225,6 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
         >
           {t("notificationSubscriptions.preferences.unsubscribeAll")}
         </Button>
-        <p className="text-sm text-muted-foreground">
-          <a className="underline underline-offset-4" href="/booking/all-items">
-            {t("notificationSubscriptions.preferences.manageSubscriptions")}
-          </a>
-        </p>
       </div>
     </section>
   );

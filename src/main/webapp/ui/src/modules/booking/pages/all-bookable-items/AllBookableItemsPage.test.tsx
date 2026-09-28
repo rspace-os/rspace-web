@@ -459,14 +459,14 @@ describe("AllBookableItemsPage", () => {
     );
     await renderPage("/booking/all-items?date=2026-08-20");
     const available = await screen.findByRole("button", { name: /^Available now/ });
-    const later = screen.getByRole("button", { name: /^Busy now, free later/ });
+    const later = screen.getByRole("button", { name: /^Free later/ });
     // The categories are mutually exclusive, so each chip carries what it counts.
     expect(available).toHaveAccessibleName("Available now");
     expect(available).toHaveAccessibleDescription("Free at this moment");
-    expect(later).toHaveAccessibleName("Busy now, free later");
+    expect(later).toHaveAccessibleName("Free later");
     expect(later).toHaveAccessibleDescription("Busy now, free again later today");
     await waitFor(() => expect(available).toHaveTextContent("Available now1"));
-    expect(later).toHaveTextContent("Busy now, free later1");
+    expect(later).toHaveTextContent("Free later1");
     for (const link of screen.getAllByRole("link", { name: "Book" })) {
       expect(link.getAttribute("href")).toContain("date=2026-08-20");
     }
@@ -474,7 +474,7 @@ describe("AllBookableItemsPage", () => {
     await userEvent.click(available);
     await waitFor(() => expect(available).toHaveAttribute("aria-pressed", "false"));
     expect(available).toHaveTextContent("Available now1");
-    expect(later).toHaveTextContent("Busy now, free later1");
+    expect(later).toHaveTextContent("Free later1");
   });
 
   it.each([false, true])(
