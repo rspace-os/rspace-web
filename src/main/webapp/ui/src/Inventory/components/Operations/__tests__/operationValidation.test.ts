@@ -1,6 +1,7 @@
 import { omit } from "es-toolkit";
 import { describe, expect, it } from "vitest";
 import type { InventoryOperation } from "../operations";
+import { operations } from "../operations";
 import {
   amountIsStorable,
   amountTakenExceedsOrigin,
@@ -10,7 +11,6 @@ import {
 } from "../operationValidation";
 import type { OperationInputs } from "../types";
 import { UNSET_UNIT } from "../types";
-import { operations } from "./testOperations";
 
 function real(key: string): InventoryOperation {
   const operation = operations.find((o) => o.key === key);

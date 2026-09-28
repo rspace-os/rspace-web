@@ -4,8 +4,7 @@ import type React from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import OperationPicker from "../OperationPicker";
-import { MAX_ORIGINS } from "../operations";
-import { operations } from "./testOperations";
+import { MAX_ORIGINS, operations } from "../operations";
 
 const renderPicker = (props: Partial<React.ComponentProps<typeof OperationPicker>> = {}) =>
   render(

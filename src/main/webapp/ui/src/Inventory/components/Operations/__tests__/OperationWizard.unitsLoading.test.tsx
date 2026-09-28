@@ -8,7 +8,7 @@ import { InEnglish } from "@/__tests__/realI18n";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationDetailsStep from "../OperationDetailsStep";
 import OperationWizard from "../OperationWizard";
-import { operations } from "./testOperations";
+import { operations } from "../operations";
 
 /*
  * The store is mocked as a fresh profile - getUnit answering undefined for every id - which is the

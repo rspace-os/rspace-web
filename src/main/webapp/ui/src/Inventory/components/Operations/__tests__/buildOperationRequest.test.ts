@@ -2,8 +2,8 @@ import sharedCases from "@testresources/inventory/fieldNameUniquenessCases.json"
 import { describe, expect, it } from "vitest";
 import { buildFacadeRequest, withUniqueFieldNames } from "../buildOperationRequest";
 import type { InventoryOperation } from "../operations";
+import { operations } from "../operations";
 import type { OperationExtraField, OperationInputs, OperationOrigin } from "../types";
-import { operations } from "./testOperations";
 
 function operationNamed(key: string): InventoryOperation {
   const operation = operations.find((o) => o.key === key);

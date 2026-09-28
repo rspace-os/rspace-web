@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { InventoryOperation } from "../operations";
+import { operations } from "../operations";
 import { describeOperationError, performOperation, sampleNameAvailable } from "../operationsApi";
-import { operations } from "./testOperations";
 
 function operationNamed(key: string): InventoryOperation {
   const operation = operations.find((o) => o.key === key);
