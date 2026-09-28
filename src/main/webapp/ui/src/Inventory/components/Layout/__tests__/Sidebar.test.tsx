@@ -5,6 +5,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
 import NavigateContext from "../../../../stores/contexts/Navigate";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
@@ -18,11 +20,56 @@ vi.mock("../../../../hooks/api/integrationHelpers", () => ({
     value: false,
   }),
 }));
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: vi.fn(),
+}));
 
 const mockAxios = new MockAdapter(axios);
 describe("Sidebar", () => {
   beforeEach(() => {
     mockAxios.reset();
+    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(true);
+  });
+
+  test("Booking System links to Booking when enabled", () => {
+    const rootStore = makeMockRootStore({
+      uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
+      searchStore: { search: { benchSearch: true } },
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LandmarksProvider>
+          <storesContext.Provider value={rootStore}>
+            <Sidebar id="foo" />
+          </storesContext.Provider>
+        </LandmarksProvider>
+      </ThemeProvider>,
+    );
+
+    expect(useIsFeatureFlagEnabled).toHaveBeenCalledWith(FEATURE_FLAGS.bookingEnabled);
+    expect(screen.getByRole("link", { name: "inventory:layout.sidebar.bookingSystem" })).toHaveAttribute(
+      "href",
+      "/booking",
+    );
+  });
+
+  test("Booking System is hidden when the feature is disabled", () => {
+    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(false);
+    const rootStore = makeMockRootStore({
+      uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
+      searchStore: { search: { benchSearch: true } },
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LandmarksProvider>
+          <storesContext.Provider value={rootStore}>
+            <Sidebar id="foo" />
+          </storesContext.Provider>
+        </LandmarksProvider>
+      </ThemeProvider>,
+    );
+
+    expect(screen.queryByRole("link", { name: "inventory:layout.sidebar.bookingSystem" })).not.toBeInTheDocument();
   });
 
   test("Should have no axe violations.", async () => {
