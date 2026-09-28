@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import type { Field, FieldLink } from "../../../../stores/definitions/Field";
 import { DATACITE_RELATION_TYPES } from "../../../components/Fields/Link/dataciteRelationTypes";
-import { isInventoryGlobalId, supportsVersionPin } from "../../../components/Fields/Link/iconForGlobalId";
+import { supportsVersionPin } from "../../../components/Fields/Link/iconForGlobalId";
 import LinkEditor from "../../../components/Fields/Link/LinkEditor";
 import LinkField from "../../../components/Fields/Link/LinkField";
 import { validateTarget } from "../../../components/Fields/Link/linkTarget";
@@ -71,14 +71,12 @@ function LinkFieldValue({
   const [stagedTargetGlobalId, setStagedTargetGlobalId] = useState<string>(committedTargetGlobalId);
   const [stagedVersionPin, setStagedVersionPin] = useState<number | null>(committedVersionPin);
 
-  // A no-access committed target (an unshared ELN item) cannot be
-  // version-pinned, so the clock stays greyed while editing it. Keyed on the
-  // committed target and only fetched while editing, so it clears after a
-  // successful Apply commits a different, readable target and is reimposed on
-  // the next edit after Discard. Inventory targets keep a limited-read view, so
-  // they are never "no access".
+  // A no-access committed target cannot be version-pinned, so the clock stays
+  // greyed while editing it. Keyed on the committed target and only fetched
+  // while editing, so it clears after a successful Apply commits a different,
+  // readable target and is reimposed on the next edit after Discard.
   const committedSummary = useLinkTargetSummary(editing ? committedTargetGlobalId : "");
-  const committedNoAccess = committedSummary?.readable === false && !isInventoryGlobalId(committedTargetGlobalId);
+  const committedNoAccess = committedSummary?.readable === false;
 
   const setStagedTarget = (targetGlobalId: string): void => {
     setTargetExistenceError(null);
