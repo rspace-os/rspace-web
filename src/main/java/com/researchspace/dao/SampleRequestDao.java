@@ -36,7 +36,9 @@ public interface SampleRequestDao extends GenericDao<SampleRequest, Long> {
 
   /**
    * Every PENDING or APPROVED request against one sample, regardless of who raised or currently
-   * owns it. Used to cascade-close outstanding requests when a sample's ownership changes.
+   * owns it. Used to cascade-close outstanding requests when a sample's ownership changes. Rows are
+   * locked as for {@link #getForUpdate}, so a transition committed meanwhile is seen, not
+   * overwritten.
    */
   List<SampleRequest> getActiveRequestsForSample(Long sampleId);
 }

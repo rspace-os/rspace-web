@@ -119,6 +119,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
         .setParameter("sampleId", sampleId)
         .setParameterList(
             "statuses", List.of(SampleRequestStatus.PENDING, SampleRequestStatus.APPROVED))
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .list();
   }
 
