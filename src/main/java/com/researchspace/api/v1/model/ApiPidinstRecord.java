@@ -105,4 +105,14 @@ public class ApiPidinstRecord {
    * as well as the PID so a locally minted PID is still recognised. Internal, never serialized.
    */
   @JsonIgnore private String providerRecordId;
+
+  /**
+   * The record's related identifiers as label and value, in registry order: B2INST's
+   * relatedIdentifierName / relatedIdentifierValue, DataCite's relationTypeInformation /
+   * relatedIdentifier. Read by the import to fill the two link fields (RSDEV-1528). Internal, never
+   * serialized, so the search response is unchanged. A label may be null; a value never is.
+   */
+  @JsonIgnore private List<RelatedIdentifier> relatedIdentifiers = new ArrayList<>();
+
+  public record RelatedIdentifier(String label, String value) {}
 }

@@ -79,10 +79,22 @@ type PidinstSearchResult = {
   hits: ReadonlyArray<PidinstRecord>;
 };
 
+type SkippedRelatedIdentifier = {
+  field: string;
+  reason: string;
+  address: string;
+  host?: string;
+};
+
 type ImportedInstrumentResponse = {
   id: number;
   globalId: string;
   name: string;
+  /**
+   * Present only when the record carried a Measurement Technique or Calibration entry that could
+   * not be linked (RSDEV-1528). The server sends the reason as a code; the words are this dialog's.
+   */
+  skippedRelatedIdentifiers?: ReadonlyArray<SkippedRelatedIdentifier>;
 };
 
 const joined = (values: ReadonlyArray<string>): string => values.join("; ");
@@ -151,6 +163,10 @@ function ExternalLink({ href }: { href: string }) {
     </Link>
   );
 }
+
+/** A registry value that is not an absolute http(s) address, e.g. a bare DOI, is no href. */
+const isWebAddress = (value: string): boolean =>
+  URL.canParse(value) && ["http:", "https:"].includes(new URL(value).protocol);
 
 function RecordPreview({ record }: { record: PidinstRecord }) {
   const { t } = useTranslation("inventory");
@@ -285,6 +301,16 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
     return provider;
   };
 
+  const skippedReason = (entry: SkippedRelatedIdentifier): string => {
+    if (entry.reason === "NOT_AVAILABLE") return t("pidinstImport.skipped.reasons.notAvailable");
+    if (entry.reason === "OTHER_SERVER")
+      return entry.host
+        ? t("pidinstImport.skipped.reasons.otherServer", { host: entry.host })
+        : t("pidinstImport.skipped.reasons.notAnAddressHere");
+    // a reason this dialog has no words for: the code itself beats a wrong sentence (as providerLabel)
+    return entry.reason;
+  };
+
   async function runSearch() {
     const trimmed = query.trim();
     if (trimmed.length < MIN_QUERY_LENGTH) return;
@@ -352,6 +378,28 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
           ],
         }),
       );
+      const skipped = data.skippedRelatedIdentifiers ?? [];
+      if (skipped.length > 0) {
+        addAlert(
+          mkAlert({
+            variant: "warning",
+            // stays until dismissed: the user has to learn which entries the new instrument lacks
+            isInfinite: true,
+            title: t("pidinstImport.skipped.title"),
+            message: t("pidinstImport.skipped.message", { count: skipped.length }),
+            details: skipped.map((entry) => ({
+              variant: "warning",
+              title: entry.field,
+              help: (
+                <>
+                  {skippedReason(entry)}{" "}
+                  {isWebAddress(entry.address) ? <ExternalLink href={entry.address} /> : entry.address}
+                </>
+              ),
+            })),
+          }),
+        );
+      }
       // closing mid-import promises only that the result will not be shown here; moving the user
       // to the new instrument anyway would be the opposite of what they chose. The toast above
       // still links to it, so the import is not lost. Reporting failure to the caller is what stops

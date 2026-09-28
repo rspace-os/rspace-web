@@ -5,11 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -21,14 +23,18 @@ import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.api.v1.model.ApiPidinstRecord;
 import com.researchspace.api.v1.model.ApiPidinstSearchResult;
+import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier;
+import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier.Reason;
 import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.b2inst.model.metadata.B2instIdentifier;
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.metadata.B2instManufacturer;
 import com.researchspace.b2inst.model.metadata.B2instOwner;
+import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRecordLinks;
 import com.researchspace.b2inst.model.response.B2instSearchResult;
@@ -45,10 +51,13 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryStringField;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
+import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
@@ -82,7 +91,15 @@ class PidinstLookupManagerImplTest {
   @Mock private InventoryIdentifierApiManager identifierMgr;
   @Mock private InventoryPermissionUtils invPermissions;
   @Mock private MessageSourceUtils messages;
+  @Mock private InventoryLinkManager inventoryLinkManager;
+  @Mock private IPropertyHolder properties;
   @InjectMocks private PidinstLookupManagerImpl manager;
+
+  private static final String SERVER = "https://rspace.example.com";
+  private static final String OTHER_SERVER =
+      "https://rsdev-1253-map-clibration-and-measurement-f50c365a-11.researchspace.com";
+  private static final String OTHER_HOST =
+      "rsdev-1253-map-clibration-and-measurement-f50c365a-11.researchspace.com";
 
   private final User user = new User("jane");
 
@@ -103,6 +120,7 @@ class PidinstLookupManagerImplTest {
             invPermissions.canUserReadOrLimitedReadInventoryRecord(
                 any(InventoryRecord.class), eq(user)))
         .thenReturn(true);
+    lenient().when(properties.getServerUrl()).thenReturn(SERVER);
   }
 
   private static B2instDraftRecord publishedRecord() {
@@ -138,8 +156,53 @@ class PidinstLookupManagerImplTest {
       field.setColumnIndex(template.getFields().size() + 1);
       template.getFields().add(field);
     }
+    // the two link fields the import fills, so they sit at payload indices 2 and 3
+    for (String name : List.of("Measurement technique", "Calibration")) {
+      InventoryLinkField field = new InventoryLinkField();
+      field.setName(name);
+      field.setInventoryRecord(template);
+      field.setColumnIndex(template.getFields().size() + 1);
+      template.getFields().add(field);
+    }
     template.refreshActiveFieldsAndColumnIndex();
     return template;
+  }
+
+  private static B2instRelatedIdentifier entry(String label, String address) {
+    return new B2instRelatedIdentifier("URL", address, "IsDescribedBy", label);
+  }
+
+  private static B2instDraftRecord publishedRecordWith(B2instRelatedIdentifier... related) {
+    B2instDraftRecord record = publishedRecord();
+    record.getMetadata().setRelatedIdentifier(List.of(related));
+    return record;
+  }
+
+  /**
+   * Every collaborator an import needs past the fetch: the template, create, link. Nothing is
+   * linked: Mockito answers Optional.empty() for the unstubbed already-linked lookups. Returns the
+   * instrument the link step answers with, which is what importInstrument returns.
+   */
+  private ApiInstrument stubImportCollaborators() {
+    when(instrumentTemplateDao.findLockedTemplateByName("Instrument (PIDINST 1.0)"))
+        .thenReturn(Optional.of(lockedTemplate()));
+    ApiInstrument created = new ApiInstrument();
+    created.setId(5L);
+    created.setGlobalId("IN5");
+    when(instrumentApiMgr.createNewApiInstrument(any(ApiInstrument.class), eq(user)))
+        .thenReturn(created);
+    ApiInstrument linked = new ApiInstrument();
+    linked.setId(5L);
+    when(identifierMgr.linkExternalIdentifier(
+            eq(new GlobalIdentifier("IN5")), any(ApiInventoryDOI.class), eq(user)))
+        .thenReturn(linked);
+    return linked;
+  }
+
+  private ApiInstrument capturedCreatePayload() {
+    ArgumentCaptor<ApiInstrument> toCreate = ArgumentCaptor.forClass(ApiInstrument.class);
+    verify(instrumentApiMgr).createNewApiInstrument(toCreate.capture(), eq(user));
+    return toCreate.getValue();
   }
 
   /**
@@ -546,6 +609,204 @@ class PidinstLookupManagerImplTest {
         toCreate.getValue().getParentContainer().getId(),
         "the container is translated the way a plain instrument POST translates it");
     assertEquals(location, toCreate.getValue().getParentLocation());
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // RSDEV-1528: the record's Measurement Technique and Calibration related identifiers
+  // ---------------------------------------------------------------------------------------------
+
+  @Test
+  void entriesNamingThisServersItemsBecomeLinksWithTheFieldsRelationAndThePinKept() {
+    when(b2instConnector.getRecordByHandle(HANDLE))
+        .thenReturn(
+            Optional.of(
+                publishedRecordWith(
+                    entry("Measurement Technique", SERVER + "/globalId/SD12"),
+                    entry("Calibration", SERVER + "/globalId/SA32768v3"))));
+    ApiInstrument linked = stubImportCollaborators();
+    when(inventoryLinkManager.canCreateLink(any(ApiInventoryLink.class), eq(user)))
+        .thenReturn(true);
+
+    ApiInstrument result = manager.importInstrument(HANDLE, null, user);
+
+    ApiInstrument payload = capturedCreatePayload();
+    ApiInventoryLink technique = payload.getFields().get(2).getLink();
+    assertEquals(
+        "IsDocumentedBy",
+        technique.getRelationType(),
+        "the field's own relation, not the registry's constant IsDescribedBy");
+    assertEquals("SD12", technique.getTargetGlobalId());
+    ApiInventoryLink calibration = payload.getFields().get(3).getLink();
+    assertEquals("IsCalibratedBy", calibration.getRelationType());
+    assertEquals(
+        "SA32768v3",
+        calibration.getTargetGlobalId(),
+        "the version suffix is passed through, so the link pins the version the address named");
+    assertSame(linked, result);
+    assertTrue(result.getSkippedRelatedIdentifiers().isEmpty(), "nothing to warn about");
+  }
+
+  @Test
+  void entriesNamingAnotherServerAreSkippedWithItsHostAndNeverCheckedForReadability() {
+    when(b2instConnector.getRecordByHandle(HANDLE))
+        .thenReturn(
+            Optional.of(
+                publishedRecordWith(
+                    entry("Measurement Technique", OTHER_SERVER + "/globalId/IC65536"),
+                    entry("Calibration", OTHER_SERVER + "/globalId/SA32768"))));
+    stubImportCollaborators();
+
+    ApiInstrument result = manager.importInstrument(HANDLE, null, user);
+
+    ApiInstrument payload = capturedCreatePayload();
+    assertNull(payload.getFields().get(2).getLink());
+    assertNull(payload.getFields().get(3).getLink());
+    assertEquals(
+        List.of(
+            new ApiPidinstSkippedRelatedIdentifier(
+                "Measurement technique",
+                Reason.OTHER_SERVER,
+                OTHER_SERVER + "/globalId/IC65536",
+                OTHER_HOST),
+            new ApiPidinstSkippedRelatedIdentifier(
+                "Calibration",
+                Reason.OTHER_SERVER,
+                OTHER_SERVER + "/globalId/SA32768",
+                OTHER_HOST)),
+        result.getSkippedRelatedIdentifiers());
+    verify(inventoryLinkManager, never()).canCreateLink(any(), any());
+  }
+
+  /**
+   * ADR 0002: unreadable, missing and unsupported all read the same, so the import never confirms
+   * that an item exists. The write path's own check decides, with the link as it would be created.
+   */
+  @Test
+  void anEntryOfThisServerTheUserCannotLinkIsSkippedAsNotAvailableWithoutSayingWhy() {
+    when(b2instConnector.getRecordByHandle(HANDLE))
+        .thenReturn(
+            Optional.of(publishedRecordWith(entry("Calibration", SERVER + "/globalId/SA999"))));
+    stubImportCollaborators();
+    when(inventoryLinkManager.canCreateLink(any(ApiInventoryLink.class), eq(user)))
+        .thenReturn(false);
+
+    ApiInstrument result = manager.importInstrument(HANDLE, null, user);
+
+    assertNull(capturedCreatePayload().getFields().get(3).getLink());
+    assertEquals(
+        List.of(
+            new ApiPidinstSkippedRelatedIdentifier(
+                "Calibration", Reason.NOT_AVAILABLE, SERVER + "/globalId/SA999", null)),
+        result.getSkippedRelatedIdentifiers());
+    ArgumentCaptor<ApiInventoryLink> asked = ArgumentCaptor.forClass(ApiInventoryLink.class);
+    verify(inventoryLinkManager).canCreateLink(asked.capture(), eq(user));
+    assertEquals("SA999", asked.getValue().getTargetGlobalId());
+    assertEquals("IsCalibratedBy", asked.getValue().getRelationType());
+  }
+
+  @Test
+  void anEntryThatIsNotAnAddressInThisRSpaceIsSkippedWithoutAHost() {
+    when(b2instConnector.getRecordByHandle(HANDLE))
+        .thenReturn(Optional.of(publishedRecordWith(entry("Calibration", "10.1000/manual"))));
+    stubImportCollaborators();
+
+    ApiInstrument result = manager.importInstrument(HANDLE, null, user);
+
+    assertEquals(
+        List.of(
+            new ApiPidinstSkippedRelatedIdentifier(
+                "Calibration", Reason.OTHER_SERVER, "10.1000/manual", null)),
+        result.getSkippedRelatedIdentifiers());
+  }
+
+  @Test
+  void aRecordWithoutTheTwoEntriesImportsAsTodayAndOtherLabelsAreIgnoredQuietly() {
+    when(b2instConnector.getRecordByHandle(HANDLE))
+        .thenReturn(
+            Optional.of(
+                publishedRecordWith(
+                    entry("Manual", OTHER_SERVER + "/globalId/GL1"),
+                    entry(null, SERVER + "/globalId/SA1"))));
+    stubImportCollaborators();
+
+    ApiInstrument result = manager.importInstrument(HANDLE, null, user);
+
+    assertTrue(result.getSkippedRelatedIdentifiers().isEmpty());
+    ApiInstrument payload = capturedCreatePayload();
+    assertNull(payload.getFields().get(2).getLink());
+    assertNull(payload.getFields().get(3).getLink());
+    verify(inventoryLinkManager, never()).canCreateLink(any(), any());
+  }
+
+  @Test
+  void withSeveralEntriesForOneFieldTheFirstThatLinksWinsAndOtherwiseEachIsReported() {
+    when(b2instConnector.getRecordByHandle(HANDLE))
+        .thenReturn(
+            Optional.of(
+                publishedRecordWith(
+                    entry("Calibration", OTHER_SERVER + "/globalId/SA1"),
+                    entry("Calibration", SERVER + "/globalId/SA2"),
+                    entry("Calibration", SERVER + "/globalId/SA3"),
+                    entry("Measurement Technique", OTHER_SERVER + "/globalId/SD1"),
+                    entry("Measurement Technique", SERVER + "/globalId/SD2"))));
+    stubImportCollaborators();
+    when(inventoryLinkManager.canCreateLink(any(ApiInventoryLink.class), eq(user)))
+        .thenAnswer(
+            invocation ->
+                "SA2"
+                    .equals(invocation.getArgument(0, ApiInventoryLink.class).getTargetGlobalId()));
+
+    ApiInstrument result = manager.importInstrument(HANDLE, null, user);
+
+    ApiInstrument payload = capturedCreatePayload();
+    assertEquals(
+        "SA2",
+        payload.getFields().get(3).getLink().getTargetGlobalId(),
+        "the first Calibration entry that links wins");
+    assertNull(payload.getFields().get(2).getLink());
+    assertEquals(
+        List.of(
+            new ApiPidinstSkippedRelatedIdentifier(
+                "Measurement technique",
+                Reason.OTHER_SERVER,
+                OTHER_SERVER + "/globalId/SD1",
+                OTHER_HOST),
+            new ApiPidinstSkippedRelatedIdentifier(
+                "Measurement technique", Reason.NOT_AVAILABLE, SERVER + "/globalId/SD2", null)),
+        result.getSkippedRelatedIdentifiers(),
+        "no Measurement Technique entry linked, so both are reported; the losing Calibration"
+            + " entries are not");
+    verify(inventoryLinkManager, never())
+        .canCreateLink(
+            argThat((ApiInventoryLink link) -> "SA3".equals(link.getTargetGlobalId())), any());
+  }
+
+  /** The DataCite half of the same rule: relationTypeInformation is the label (ADR 0007). */
+  @Test
+  void aDataCiteRecordsEntriesAreResolvedTheSameWay() {
+    onADataCiteDeployment();
+    DataCiteDoi doi = dataCiteInstrument(DOI, "findable", "Instrument");
+    // the locked template's mandatory Owner and Manufacturer: publisher fallback and a creator
+    doi.getAttributes().setPublisher("ESRF");
+    DataCiteDoiAttributes.Creator creator = new DataCiteDoiAttributes.Creator();
+    creator.setName("ESRF");
+    doi.getAttributes().setCreators(List.of(creator));
+    doi.getAttributes()
+        .setRelatedIdentifiers(
+            List.of(
+                new DataCiteDoiAttributes.RelatedIdentifier(
+                    "IsDescribedBy", SERVER + "/globalId/SA7", "URL", "Calibration")));
+    when(dataCiteConnector.findDoi(DOI, InventorySettingType.PIDINST)).thenReturn(Optional.of(doi));
+    stubImportCollaborators();
+    when(inventoryLinkManager.canCreateLink(any(ApiInventoryLink.class), eq(user)))
+        .thenReturn(true);
+
+    ApiInstrument result = manager.importInstrument(DOI, null, user);
+
+    ApiInventoryLink calibration = capturedCreatePayload().getFields().get(3).getLink();
+    assertEquals("SA7", calibration.getTargetGlobalId());
+    assertEquals("IsCalibratedBy", calibration.getRelationType());
+    assertTrue(result.getSkippedRelatedIdentifiers().isEmpty());
   }
 
   // ---------------------------------------------------------------------------------------------

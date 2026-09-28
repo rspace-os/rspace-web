@@ -17,6 +17,8 @@ class InventoryUrlsTest {
 
   private static final String SERVER = "https://rspace.example.com";
   private static final String SUFFIX = "abc123XYZ_-456789";
+  private static final String OTHER_SERVER =
+      "https://rsdev-1253-map-clibration-and-measurement-f50c365a-11.researchspace.com";
 
   @Test
   void publicLandingPageUrlBuiltFromServerUrlAndSuffix() {
@@ -64,6 +66,75 @@ class InventoryUrlsTest {
     assertThat(InventoryUrls.globalIdPageUrl("  ", "IN114")).as("no server URL").isEmpty();
     assertThat(InventoryUrls.globalIdPageUrl(SERVER, "  ")).as("blank global id").isEmpty();
     assertThat(InventoryUrls.globalIdPageUrl(SERVER, null)).as("null global id").isEmpty();
+  }
+
+  /** RSDEV-1528: an RSpace link can only name an item in this deployment. */
+  @Test
+  void globalIdOfOwnPageRecognisesTheDeploymentsOwnAddresses() {
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536", SERVER));
+    assertEquals(
+        Optional.of("SA32768v3"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/SA32768v3", SERVER),
+        "a version suffix is kept: the new link must pin the version the address named");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage("http://rspace.example.com/globalId/IC65536", SERVER),
+        "http against an https server URL is the same server");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage("https://RSPACE.Example.com/globalId/IC65536", SERVER),
+        "host names are case-insensitive");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536/", SERVER + "/"),
+        "trailing slashes on either side are ignored");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536?from=registry", SERVER),
+        "a query string does not change which page is named");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/rspace/globalId/IC65536", SERVER + "/rspace"),
+        "a deployment under a context path recognises its own addresses");
+  }
+
+  @Test
+  void globalIdOfOwnPageIsEmptyForAnyOtherAddress() {
+    assertThat(InventoryUrls.globalIdOfOwnPage(OTHER_SERVER + "/globalId/IC65536", SERVER))
+        .as("another host")
+        .isEmpty();
+    assertThat(
+            InventoryUrls.globalIdOfOwnPage(
+                "https://rspace.example.com:8443/globalId/IC65536", SERVER))
+        .as("another port")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/other/globalId/IC65536", SERVER))
+        .as("another path before the segment")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536", SERVER + "/rspace"))
+        .as("the server URL has a context path the address lacks")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/public/inventory/" + SUFFIX, SERVER))
+        .as("this server, but not a globalId page")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536/extra", SERVER))
+        .as("more path after the global id")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/", SERVER))
+        .as("no global id at all")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage("10.1000/manual", SERVER))
+        .as("a bare DOI")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage("http://[broken", SERVER))
+        .as("unparseable")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536", " "))
+        .as("no server URL configured: nothing can be recognised as ours")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(null, SERVER)).as("null address").isEmpty();
   }
 
   @Test

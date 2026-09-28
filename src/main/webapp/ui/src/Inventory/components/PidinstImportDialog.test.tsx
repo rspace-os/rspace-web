@@ -12,7 +12,13 @@ import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
+import { mkAlert } from "@/stores/contexts/Alert";
 import { PidinstImportDialogStory } from "./PidinstImportDialog.story";
+
+vi.mock("@/stores/contexts/Alert", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/stores/contexts/Alert")>();
+  return { ...actual, mkAlert: vi.fn(actual.mkAlert) };
+});
 
 const mockAxios = new MockAdapter(axios);
 
@@ -61,6 +67,20 @@ const CREATED_INSTRUMENT = {
   name: "Confocal Microscope",
   identifiers: [],
 };
+
+const SKIPPED = [
+  {
+    field: "Measurement technique",
+    reason: "OTHER_SERVER",
+    address: "https://other.researchspace.com/globalId/IC65536",
+    host: "other.researchspace.com",
+  },
+  {
+    field: "Calibration",
+    reason: "NOT_AVAILABLE",
+    address: "https://this.researchspace.com/globalId/SA32768",
+  },
+];
 
 function stubEndpoints({
   searchReply = [200, SEARCH_RESULT] as [number, unknown],
@@ -565,5 +585,104 @@ describe("PidinstImportDialog", () => {
       expect(screen.getByRole("status")).toHaveTextContent("");
     });
     finishSearch?.([200, SEARCH_RESULT]);
+  });
+
+  test("lists the registry entries that were not imported in a second warning that stays until dismissed", async () => {
+    const user = userEvent.setup();
+    const onImported = vi.fn();
+    stubEndpoints({ importReply: [201, { ...CREATED_INSTRUMENT, skippedRelatedIdentifiers: SKIPPED }] });
+    await renderOpenDialog(<PidinstImportDialogStory onImported={onImported} />);
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    // the import still succeeds, still reports the new instrument and still shows the success toast
+    expect(await screen.findByText("inventory:pidinstImport.importSuccess")).toBeVisible();
+    expect(onImported).toHaveBeenCalledWith({ id: 77, globalId: "IN77" });
+
+    const warning = (await screen.findByText("inventory:pidinstImport.skipped.title")).closest(
+      '[role="group"]',
+    ) as HTMLElement;
+    await user.click(within(warning).getByRole("button", { name: /detailsToggleLabel/ }));
+    expect(within(warning).getByText("Measurement technique")).toBeVisible();
+    expect(within(warning).getByText(/pidinstImport\.skipped\.reasons\.otherServer/)).toBeVisible();
+    expect(within(warning).getByRole("link", { name: SKIPPED[0].address })).toHaveAttribute("href", SKIPPED[0].address);
+    expect(within(warning).getByText("Calibration")).toBeVisible();
+    expect(within(warning).getByText(/pidinstImport\.skipped\.reasons\.notAvailable/)).toBeVisible();
+    expect(within(warning).getByRole("link", { name: SKIPPED[1].address })).toHaveAttribute("href", SKIPPED[1].address);
+
+    // persistence is a property of the alert, not of the DOM: the store keeps an infinite alert
+    // until it is dismissed, so it is pinned on what the dialog asked for
+    const mkAlertMock = vi.mocked(mkAlert);
+    expect(mkAlertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: "warning", isInfinite: true, title: "inventory:pidinstImport.skipped.title" }),
+    );
+  });
+
+  test("shows no warning when nothing was skipped", async () => {
+    const user = userEvent.setup();
+    await renderOpenDialog();
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    expect(await screen.findByText("inventory:pidinstImport.importSuccess")).toBeVisible();
+    expect(screen.queryByText("inventory:pidinstImport.skipped.title")).toBeNull();
+    const mkAlertMock = vi.mocked(mkAlert);
+    expect(mkAlertMock).not.toHaveBeenCalledWith(expect.objectContaining({ variant: "warning" }));
+  });
+
+  test("names the other server in the reason", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({ importReply: [201, { ...CREATED_INSTRUMENT, skippedRelatedIdentifiers: [SKIPPED[0]] }] });
+    await renderOpenDialog(
+      await wrapWithRealI18n(<PidinstImportDialogStory />, {
+        resources: { common: commonEn, inventory: inventoryEn },
+        defaultNS: "inventory",
+      }),
+    );
+    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await waitFor(() => {
+      expect(screen.getByRole("gridcell", { name: HITS[0].name })).toBeInTheDocument();
+    });
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "Import" }));
+
+    const warning = (await screen.findByText("Some registry entries were not imported")).closest(
+      '[role="group"]',
+    ) as HTMLElement;
+    await user.click(within(warning).getByRole("button", { name: /sub-message/ }));
+    // the argument has to reach the sentence: a dropped placeholder ships "another server ()"
+    expect(within(warning).getByText(/It points at another server \(other\.researchspace\.com\)\./)).toBeVisible();
+  });
+
+  test("shows an address that is not a web address as text, not as a link", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({
+      importReply: [
+        201,
+        {
+          ...CREATED_INSTRUMENT,
+          skippedRelatedIdentifiers: [
+            { field: "Calibration", reason: "OTHER_SERVER", address: "10.1000/manual" },
+            { field: "Measurement technique", reason: "OTHER_SERVER", address: "javascript:alert(1)" },
+          ],
+        },
+      ],
+    });
+    await renderOpenDialog();
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    const warning = (await screen.findByText("inventory:pidinstImport.skipped.title")).closest(
+      '[role="group"]',
+    ) as HTMLElement;
+    await user.click(within(warning).getByRole("button", { name: /detailsToggleLabel/ }));
+    // a bare DOI as an href would open a page of this RSpace that does not exist
+    expect(within(warning).getByText(/10\.1000\/manual/)).toBeVisible();
+    expect(within(warning).getByText(/javascript:alert\(1\)/)).toBeVisible();
+    expect(within(warning).queryByRole("link")).toBeNull();
   });
 });

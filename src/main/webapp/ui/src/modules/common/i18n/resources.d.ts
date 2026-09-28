@@ -4035,6 +4035,15 @@ export default interface Resources {
       },
       "searchError": "Could not search the PID registry.",
       "selectRadioLabel": "Select record: {name}",
+      "skipped": {
+        "message": "{count, plural, one {# entry} other {# entries}} of the registry record could not be linked from the new instrument. Each is listed here with the reason.",
+        "reasons": {
+          "notAnAddressHere": "It is not an address in this RSpace.",
+          "notAvailable": "The item it points at is not available to you.",
+          "otherServer": "It points at another server ({host})."
+        },
+        "title": "Some registry entries were not imported"
+      },
       "title": "Import Instrument from PIDINST",
       "validation": {
         "alreadyLinked": "This PID is already linked to instrument {globalId}.",

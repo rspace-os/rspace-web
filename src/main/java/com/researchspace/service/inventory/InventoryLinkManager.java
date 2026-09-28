@@ -19,6 +19,15 @@ public interface InventoryLinkManager {
    */
   InventoryLink createLink(ApiInventoryLink apiLink, User actor);
 
+  /**
+   * Whether {@link #createLink} would succeed for this payload and actor: a parseable target of an
+   * allowed kind, a valid relation type, and a target that exists and the actor can READ. The same
+   * checks, so a caller that must not fail as a whole on one bad link (the PIDINST import,
+   * RSDEV-1528) can drop that link beforehand and can never disagree with the write path about it.
+   * False for every failure alike, saying nothing about which.
+   */
+  boolean canCreateLink(ApiInventoryLink apiLink, User actor);
+
   /** Updates an existing InventoryLink row in place, preserving its created_at timestamp. */
   InventoryLink updateLink(InventoryLink existing, ApiInventoryLink apiLink, User actor);
 

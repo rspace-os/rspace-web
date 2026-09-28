@@ -40,6 +40,17 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   }
 
   @Override
+  public boolean canCreateLink(ApiInventoryLink apiLink, User actor) {
+    try {
+      validateForWrite(apiLink);
+      assertTargetAcceptable(apiLink, actor);
+      return true;
+    } catch (ApiRuntimeException rejected) {
+      return false;
+    }
+  }
+
+  @Override
   public InventoryLink updateLink(InventoryLink existing, ApiInventoryLink apiLink, User actor) {
     validateForWrite(apiLink);
     assertTargetAcceptable(apiLink, actor);

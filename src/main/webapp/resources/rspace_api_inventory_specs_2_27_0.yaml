@@ -138,6 +138,14 @@ paths:
         identifier in RSpace removes the link and is allowed in every state.
 
 
+        The record's *Measurement Technique* and *Calibration* related identifiers, which RSpace
+        itself registers for an instrument's two link fields, fill those fields when their address
+        is this RSpace's own `/globalId/` page for an item the caller can link: the link gets the
+        field's own relation (`IsDocumentedBy`, `IsCalibratedBy`) and keeps any version suffix the
+        address carries. Every other such entry is returned in `skippedRelatedIdentifiers` on the
+        created Instrument, with the reason; the field stays empty and the import still succeeds.
+
+
         `pid` may be a bare DOI or Handle, or a `doi.org` / `hdl.handle.net` address. It must be
         PUBLIC at the provider - B2INST `accepted`, DataCite `findable` - because RSpace links only
         publicly resolvable PIDs. A PID of the registry that is *not* enabled on this deployment
@@ -3998,6 +4006,15 @@ components:
               $ref: "#/components/schemas/InventoryEntityFieldList"
             extraFields:
               $ref: "#/components/schemas/ExtraFieldList"
+            skippedRelatedIdentifiers:
+              type: array
+              readOnly: true
+              description: >
+                Present only in the response of `POST /instruments/importPidinst`, and only when the
+                record carried a Measurement Technique or Calibration related identifier that could
+                not be turned into a link. Ignored in requests; nothing about these entries is stored.
+              items:
+                $ref: "#/components/schemas/PidinstSkippedRelatedIdentifier"
     InstrumentTemplateInfo:
       description: Summary information about an Instrument Template.
       allOf:
@@ -4351,6 +4368,38 @@ components:
               example: 12
             location:
               $ref: "#/components/schemas/ContainerLocationInfo"
+    PidinstSkippedRelatedIdentifier:
+      description: >
+        A Measurement Technique or Calibration related identifier of an imported PID record that the
+        import could not turn into a link. An RSpace link can only name an item in this same RSpace,
+        so an entry links only when its address is this server's own `/globalId/` page for an item
+        the importing user can link; every other entry is listed here instead.
+      required:
+        - field
+        - reason
+        - address
+      properties:
+        field:
+          type: string
+          description: The template field the entry was for.
+          example: Calibration
+        reason:
+          type: string
+          enum: [OTHER_SERVER, NOT_AVAILABLE]
+          description: >
+            `OTHER_SERVER`: the address is not this deployment's own item page (another RSpace, or
+            not an RSpace at all). `NOT_AVAILABLE`: the address is this deployment's, but the item
+            cannot be linked by the importing user. That one reason covers an item they cannot see,
+            an item that does not exist and a kind of item links cannot target alike, so an import
+            never reveals whether an item exists.
+        address:
+          type: string
+          description: The entry's address as the registry holds it.
+          example: https://other.researchspace.com/globalId/SA32768
+        host:
+          type: string
+          description: The address's host, for `OTHER_SERVER` only; absent when the address has none.
+          example: other.researchspace.com
     PidinstRecord:
       description: >
         One instrument record as a PID registry describes it, normalised across providers.

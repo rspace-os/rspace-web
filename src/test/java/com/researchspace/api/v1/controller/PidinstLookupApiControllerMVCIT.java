@@ -17,17 +17,22 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
 import com.researchspace.api.v1.model.ApiPidinstImportPost;
 import com.researchspace.api.v1.model.ApiPidinstSearchResult;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.customliquibaseupdates.CreateDefaultInstrumentTemplate_RSDEV1219;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
+import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.PidinstLookupManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import java.io.InputStream;
+import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,6 +89,7 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Autowired private SystemSettingsApiController settingsController;
   @Autowired private InstrumentEntityApiManager instrumentApiMgr;
   @Autowired private InstrumentTemplateDao instrumentTemplateDao;
+  @Autowired private IPropertyHolder properties;
 
   private final B2instConnectorDummy b2instDummy = new B2instConnectorDummy();
   private final BindingResult mockBindingResult = mock(BindingResult.class);
@@ -206,6 +212,22 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
         .andReturn();
   }
 
+  private static B2instRelatedIdentifier related(String label, String address) {
+    return new B2instRelatedIdentifier("URL", address, "IsDescribedBy", label);
+  }
+
+  /**
+   * The address RSpace itself would have registered for this item, exactly as the writer builds it.
+   */
+  private String ownPageOf(String globalId) {
+    return InventoryUrls.globalIdPageUrl(properties.getServerUrl(), globalId).orElseThrow();
+  }
+
+  private static void assertNoLink(JsonNode linkField) {
+    // the link key is NON_NULL, so an empty link field has no key at all
+    assertFalse(linkField.has("link"), linkField.toString());
+  }
+
   @Test
   public void searchReturnsTheRecordAndFlagsItOnceImported() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
@@ -286,6 +308,9 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(
         "https://b2inst-test.example.org/records/" + recordId,
         identifier.get("providerUrl").asText());
+    assertFalse(
+        json(result).has("skippedRelatedIdentifiers"),
+        "absent, not empty, when the record carried nothing to skip");
   }
 
   @Test
@@ -327,6 +352,114 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     String refusal = json(importPid(outsider, outsiderApiKey, handle, 409)).get("message").asText();
     assertFalse(refusal.contains(created.getGlobalId()), refusal);
     assertTrue(refusal.contains("cannot access"), refusal);
+  }
+
+  /**
+   * RSDEV-1528. The positive path needs a target in this deployment: the sample created here. The
+   * Calibration entry names another server.
+   */
+  @Test
+  public void importLinksAnEntryOfThisServerAndReportsAnEntryOfAnotherServer() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(anyUser);
+    String otherServersEntry = "https://other-rspace.example.org/globalId/SA1";
+    b2instDummy
+        .getPublishedRecord(recordId)
+        .orElseThrow()
+        .getMetadata()
+        .setRelatedIdentifier(
+            List.of(
+                related("Measurement Technique", ownPageOf(target.getGlobalId() + "v1")),
+                related("Calibration", otherServersEntry)));
+
+    JsonNode created = json(importPid(anyUser, apiKey, handle, 201));
+
+    JsonNode technique = created.get("fields").get(6);
+    assertEquals("Measurement technique", technique.get("name").asText());
+    assertEquals(target.getGlobalId(), technique.get("link").get("targetGlobalId").asText());
+    assertEquals("IsDocumentedBy", technique.get("link").get("relationType").asText());
+    assertEquals(
+        1,
+        technique.get("link").get("versionPin").asLong(),
+        "pinned to the version the address named");
+    assertNoLink(created.get("fields").get(8));
+    JsonNode skipped = created.get("skippedRelatedIdentifiers");
+    assertEquals(1, skipped.size(), skipped.toString());
+    assertEquals("Calibration", skipped.get(0).get("field").asText());
+    assertEquals("OTHER_SERVER", skipped.get(0).get("reason").asText());
+    assertEquals(otherServersEntry, skipped.get(0).get("address").asText());
+    assertEquals("other-rspace.example.org", skipped.get(0).get("host").asText());
+  }
+
+  /**
+   * ADR 0002 at the wire: an item the importer cannot see is reported exactly like one that does
+   * not exist, with no host, and neither stops the import.
+   */
+  @Test
+  public void anEntryTheImporterCannotLinkIsReportedLikeAMissingOneWithoutAHost() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples hidden = createBasicSampleForUser(owner);
+    User importer = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(importer);
+    String unreadable = ownPageOf(hidden.getGlobalId());
+    String missing = ownPageOf("SA999999999");
+    b2instDummy
+        .getPublishedRecord(recordId)
+        .orElseThrow()
+        .getMetadata()
+        .setRelatedIdentifier(
+            List.of(related("Measurement Technique", unreadable), related("Calibration", missing)));
+
+    JsonNode created = json(importPid(importer, apiKey, handle, 201));
+
+    JsonNode skipped = created.get("skippedRelatedIdentifiers");
+    assertEquals(2, skipped.size(), skipped.toString());
+    for (JsonNode entry : skipped) {
+      assertEquals("NOT_AVAILABLE", entry.get("reason").asText(), entry.toString());
+      assertFalse(entry.has("host"), entry.toString());
+    }
+    assertEquals(unreadable, skipped.get(0).get("address").asText());
+    assertEquals(missing, skipped.get(1).get("address").asText());
+    assertNoLink(created.get("fields").get(6));
+    assertNoLink(created.get("fields").get(8));
+  }
+
+  /**
+   * A trashed item the importer can still see is linked and shows as deleted, exactly as a link
+   * made by hand would be: the write path's own check decides, and it does not exclude the trash.
+   * On its own so that a surprise here cannot hide the plain positive path above.
+   */
+  @Test
+  public void aTrashedItemTheImporterCanStillSeeIsLinked() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(anyUser);
+    MvcResult trashed =
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders.delete(
+                        createInventoryUrl(API_VERSION.ONE, "/samples/" + target.getId()))
+                    .principal(createPrincipal(anyUser))
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+    // deleting answers 200 without trashing when a subsample sits in a container, which would leave
+    // this test proving the plain positive path again
+    assertTrue(
+        json(trashed).get("deleted").asBoolean(), "precondition: the target is in the trash");
+    b2instDummy
+        .getPublishedRecord(recordId)
+        .orElseThrow()
+        .getMetadata()
+        .setRelatedIdentifier(List.of(related("Calibration", ownPageOf(target.getGlobalId()))));
+
+    JsonNode created = json(importPid(anyUser, apiKey, handle, 201));
+
+    assertEquals(
+        target.getGlobalId(),
+        created.get("fields").get(8).get("link").get("targetGlobalId").asText());
+    assertFalse(created.has("skippedRelatedIdentifiers"), created.toString());
   }
 
   @Test

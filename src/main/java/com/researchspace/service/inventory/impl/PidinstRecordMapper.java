@@ -7,6 +7,7 @@ import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiPidinstRecord;
 import com.researchspace.b2inst.model.metadata.B2instAlternateIdentifier;
 import com.researchspace.b2inst.model.metadata.B2instDate;
@@ -14,6 +15,7 @@ import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.metadata.B2instInstrumentType;
 import com.researchspace.b2inst.model.metadata.B2instManufacturer;
 import com.researchspace.b2inst.model.metadata.B2instOwner;
+import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.datacite.model.DataCiteDoiAttributes;
@@ -29,6 +31,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -109,6 +113,11 @@ final class PidinstRecordMapper {
             names(
                 md.getAlternateIdentifier(),
                 B2instAlternateIdentifier::getAlternateIdentifierValue)));
+    result.setRelatedIdentifiers(
+        relatedIdentifiers(
+            md.getRelatedIdentifier(),
+            B2instRelatedIdentifier::getRelatedIdentifierName,
+            B2instRelatedIdentifier::getRelatedIdentifierValue));
     result.setCreated(record.getCreated());
     result.setUpdated(record.getUpdated());
     return result;
@@ -156,6 +165,11 @@ final class PidinstRecordMapper {
     result.setLandingPage(resolvableUrl(attr.getUrl()));
     result.setAlternateIdentifier(
         first(names(attr.getIdentifiers(), DataCiteDoiAttributes.Identifier::getIdentifier)));
+    result.setRelatedIdentifiers(
+        relatedIdentifiers(
+            attr.getRelatedIdentifiers(),
+            DataCiteDoiAttributes.RelatedIdentifier::getRelationTypeInformation,
+            DataCiteDoiAttributes.RelatedIdentifier::getRelatedIdentifier));
     result.setCreated(attr.getCreated() == null ? null : attr.getCreated().toInstant().toString());
     result.setUpdated(attr.getUpdated() == null ? null : attr.getUpdated().toInstant().toString());
     return result;
@@ -165,12 +179,15 @@ final class PidinstRecordMapper {
    * The creation payload for {@code InstrumentEntityApiManager.createNewApiInstrument}: one field
    * per active template field, in template order (the create path matches by position), filled from
    * the record by the template field's canonical name and type. Fields the record cannot fill are
-   * blank; the link fields say nothing about their link, so the template's defaults survive.
+   * blank. A link field gets the link resolved for it, if any (keyed by canonical name, matched as
+   * {@link PidinstFields} matches); otherwise it says nothing about its link, so the template's
+   * default survives.
    *
    * @throws ApiRuntimeException {@code errors.inventory.identifier.pidinstMandatoryMissing} when
    *     the record has no value for a mandatory template field
    */
-  static ApiInstrument toApiInstrument(ApiPidinstRecord record, InstrumentTemplate template) {
+  static ApiInstrument toApiInstrument(
+      ApiPidinstRecord record, InstrumentTemplate template, Map<String, ApiInventoryLink> links) {
     ApiInstrument instrument = new ApiInstrument();
     instrument.setTemplateId(template.getId());
     instrument.setName(
@@ -191,9 +208,21 @@ final class PidinstRecordMapper {
       }
       ApiInventoryEntityField apiField = new ApiInventoryEntityField();
       apiField.setContent(value == null ? "" : value);
+      if (templateField.getType() == FieldType.LINK) {
+        linkFor(templateField, links).ifPresent(apiField::setLink);
+      }
       instrument.getFields().add(apiField);
     }
     return instrument;
+  }
+
+  private static Optional<ApiInventoryLink> linkFor(
+      InventoryEntityField field, Map<String, ApiInventoryLink> links) {
+    String name = field.getName() == null ? "" : field.getName().trim();
+    return links.entrySet().stream()
+        .filter(entry -> entry.getKey().equalsIgnoreCase(name))
+        .map(Map.Entry::getValue)
+        .findFirst();
   }
 
   /**
@@ -266,6 +295,26 @@ final class PidinstRecordMapper {
       String value = StringUtils.trimToNull(name.apply(item));
       if (value != null && !result.contains(value)) {
         result.add(value);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Label and value of every entry that has a value, in registry order; the label may be absent.
+   */
+  private static <T> List<ApiPidinstRecord.RelatedIdentifier> relatedIdentifiers(
+      Collection<T> items, Function<T, String> label, Function<T, String> value) {
+    List<ApiPidinstRecord.RelatedIdentifier> result = new ArrayList<>();
+    if (items == null) {
+      return result;
+    }
+    for (T item : items) {
+      String address = item == null ? null : StringUtils.trimToNull(value.apply(item));
+      if (address != null) {
+        result.add(
+            new ApiPidinstRecord.RelatedIdentifier(
+                StringUtils.trimToNull(label.apply(item)), address));
       }
     }
     return result;

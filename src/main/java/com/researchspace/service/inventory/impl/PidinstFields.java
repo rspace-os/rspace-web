@@ -6,6 +6,7 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.service.inventory.InventoryUrls;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,30 @@ final class PidinstFields {
   static final String MEASURED_QUANTITY = "Measured quantity";
   static final String CALIBRATION = "Calibration";
   static final String ALTERNATE_IDENTIFIER = "Alternate Identifier";
+
+  /**
+   * The labels RSpace gives the two link fields as PIDINST related identifiers, on B2INST's
+   * relatedIdentifierName and DataCite's relationTypeInformation (ADR 0007): the ticket's spelling,
+   * capital T, not the field name's. Shared by the registration that writes them and the import
+   * that reads them back (RSDEV-1528), so the two cannot drift.
+   */
+  static final String RELATED_ID_NAME_MEASUREMENT_TECHNIQUE = "Measurement Technique";
+
+  static final String RELATED_ID_NAME_CALIBRATION = "Calibration";
+
+  /**
+   * A link field the import fills from a related identifier. The registry's own relation is always
+   * IsDescribedBy (ADR 0007) and says nothing, so each field's relation is fixed here; both must
+   * stay in the locked template's whitelist, which the create path enforces with a 422.
+   */
+  record ImportedLink(String registryLabel, String fieldName, String relationType) {}
+
+  /** Measurement Technique first, Calibration second: the registration order. */
+  static final List<ImportedLink> IMPORTED_LINKS =
+      List.of(
+          new ImportedLink(
+              RELATED_ID_NAME_MEASUREMENT_TECHNIQUE, MEASUREMENT_TECHNIQUE, "IsDocumentedBy"),
+          new ImportedLink(RELATED_ID_NAME_CALIBRATION, CALIBRATION, "IsCalibratedBy"));
 
   private PidinstFields() {}
 
