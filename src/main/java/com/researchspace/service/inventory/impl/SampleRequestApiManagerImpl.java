@@ -59,9 +59,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
       SampleRequestStatus to, SampleRequestStatus from, Actor actor, boolean reasonRequired) {}
 
   /**
-   * The whole state machine. PENDING is absent: it is written only when a request is raised.
-   * FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a separate
-   * approval step), or after already approving the request.
+   * Every transition a user can make. PENDING is absent: it is written only when a request is
+   * raised. FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a
+   * separate approval step), or after already approving the request. A sample transfer also rejects
+   * PENDING and APPROVED requests outside this table, see
+   * autoRejectActiveRequestsForTransferredSample.
    */
   private static final List<Transition> TRANSITIONS =
       List.of(
