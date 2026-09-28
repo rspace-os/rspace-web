@@ -63,7 +63,7 @@ class AliquotOperationTest {
   void linksTheCreatedSampleBackToItsOrigin() {
     ApiExtraField link = build(request()).getExtraFields().get(0);
 
-    assertEquals("operations.aliquot.linkFieldName", link.getOperationFieldKey());
+    assertEquals("inventory:operations.aliquot.linkFieldName", link.getOperationFieldKey());
     assertEquals(ApiExtraField.ExtraFieldTypeEnum.LINK, link.getType());
     assertEquals("IsPartOf", link.getLink().getRelationType());
     assertEquals("SS100", link.getLink().getTargetGlobalId());
@@ -80,7 +80,7 @@ class AliquotOperationTest {
     assertEquals(42L, sample.getTemplateId());
     ApiExtraField documentation =
         OperationTestFixtures.fieldNamed(
-            sample.getExtraFields(), "operations.documentation.fieldName");
+            sample.getExtraFields(), "inventory:operations.documentation.fieldName");
     assertEquals("IsDocumentedBy", documentation.getLink().getRelationType());
     assertEquals("SD7", documentation.getLink().getTargetGlobalId());
   }

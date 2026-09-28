@@ -233,7 +233,7 @@ class InventoryOperationManagerImplTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"operations.destroy.disposedField, Disposed", ", disposed"})
+  @CsvSource({"inventory:operations.destroy.disposedField, Disposed", ", disposed"})
   void aRepeatDestroyUpdatesTheOriginsExistingDisposedField(String existingKey, String existingName)
       throws Exception {
     ExtraField existing = new ExtraTextField();
@@ -247,7 +247,7 @@ class InventoryOperationManagerImplTest {
     origin.setExtraFields(
         List.of(
             OperationFieldNames.text(
-                "Disposed", "operations.destroy.disposedField", "2026-09-25")));
+                "Disposed", "inventory:operations.destroy.disposedField", "2026-09-25")));
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setEmptiesOrigin(true);
     request.setOrigins(List.of(origin));

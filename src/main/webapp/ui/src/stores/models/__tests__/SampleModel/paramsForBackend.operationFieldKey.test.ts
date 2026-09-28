@@ -25,13 +25,13 @@ describe("paramsForBackend and operationFieldKey", () => {
     parentGlobalId: null,
     editing: false,
     initial: false,
-    operationFieldKey: "operations.passage.numberField",
+    operationFieldKey: "inventory:operations.passage.numberField",
   };
 
   test("reads the key in from the API response", () => {
     const sample = makeMockSample();
     sample.addExtraField(operationCreatedField);
-    expect(sample.extraFields[0].operationFieldKey).toEqual("operations.passage.numberField");
+    expect(sample.extraFields[0].operationFieldKey).toEqual("inventory:operations.passage.numberField");
   });
 
   test("never sends it back", () => {

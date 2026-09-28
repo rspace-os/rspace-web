@@ -48,7 +48,7 @@ class DestroyOperationTest {
     List<ApiExtraField> originFields = built().getOrigins().get(0).getExtraFields();
     assertEquals(1, originFields.size());
     ApiExtraField disposed = originFields.get(0);
-    assertEquals("operations.destroy.disposedField", disposed.getOperationFieldKey());
+    assertEquals("inventory:operations.destroy.disposedField", disposed.getOperationFieldKey());
     assertEquals("2026-08-20", disposed.getContent());
     assertEquals(ApiExtraField.ExtraFieldTypeEnum.TEXT, disposed.getType());
     assertTrue(disposed.isNewFieldRequest());

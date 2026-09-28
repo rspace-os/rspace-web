@@ -19,7 +19,7 @@ class DeriveOperationTest {
   private static final LabelResolver CATALOG =
       (key, args) -> {
         String pattern =
-            "operations.derive.linkFieldName".equals(key)
+            "inventory:operations.derive.linkFieldName".equals(key)
                 ? "Is Derived From using process: {processName}"
                 : key;
         for (var arg : args.entrySet()) {

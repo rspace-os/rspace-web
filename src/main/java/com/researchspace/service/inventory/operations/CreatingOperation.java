@@ -22,7 +22,7 @@ import org.springframework.validation.Errors;
 public abstract class CreatingOperation<R extends ApiInventoryOperationRequests.Creating>
     implements InventoryOperation<R> {
 
-  static final String DOCUMENTATION_FIELD_KEY = "operations.documentation.fieldName";
+  static final String DOCUMENTATION_FIELD_KEY = "inventory:operations.documentation.fieldName";
 
   /** The relation the created sample carries back to each origin, e.g. {@code IsPartOf}. */
   protected abstract String linkRelation();

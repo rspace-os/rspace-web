@@ -19,6 +19,6 @@ public class AliquotOperation extends CreatingOperation<ApiInventoryOperationReq
 
   @Override
   protected String linkFieldNameKey() {
-    return "operations.aliquot.linkFieldName";
+    return "inventory:operations.aliquot.linkFieldName";
   }
 }

@@ -49,8 +49,8 @@ class OperationFieldKeyPersistenceTest {
     generated.setName("Passage number");
     generated.setContent("4");
     generated.setNewFieldRequest(true);
-    generated.setOperationFieldKey("operations.passage.numberField");
-    assertEquals("operations.passage.numberField", persistedKeyFor(generated));
+    generated.setOperationFieldKey("inventory:operations.passage.numberField");
+    assertEquals("inventory:operations.passage.numberField", persistedKeyFor(generated));
   }
 
   @Test
@@ -69,7 +69,7 @@ class OperationFieldKeyPersistenceTest {
       ApiExtraField bound =
           mapper.readValue(
               "{\"type\":\"text\",\"name\":\"X\",\"content\":\"1\",\"newFieldRequest\":true,"
-                  + "\"operationFieldKey\":\"operations.passage.numberField\"}",
+                  + "\"operationFieldKey\":\"inventory:operations.passage.numberField\"}",
               ApiExtraField.class);
       assertNull(bound.getOperationFieldKey(), "a request must not be able to set the key");
       assertNull(persistedKeyFor(bound));

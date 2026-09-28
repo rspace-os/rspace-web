@@ -21,7 +21,7 @@ public interface LabelResolver {
    */
   static LabelResolver fromMessageSource(MessageSource messages, Locale locale) {
     return (key, args) -> {
-      String pattern = messages.getMessage("inventory:" + key, null, "inventory:" + key, locale);
+      String pattern = messages.getMessage(key, null, key, locale);
       if (args == null || args.isEmpty()) {
         return pattern;
       }

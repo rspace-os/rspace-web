@@ -13,7 +13,7 @@ import org.springframework.validation.Errors;
 public class CryopreserveOperation
     extends CreatingOperation<ApiInventoryOperationRequests.Cryopreserve> {
 
-  static final String CRYOMEDIUM_FIELD_KEY = "operations.cryopreserve.cryomediumField";
+  static final String CRYOMEDIUM_FIELD_KEY = "inventory:operations.cryopreserve.cryomediumField";
 
   private static final BigDecimal MAX_CELSIUS = new BigDecimal("-18");
 
@@ -29,7 +29,7 @@ public class CryopreserveOperation
 
   @Override
   protected String linkFieldNameKey() {
-    return "operations.cryopreserve.linkFieldName";
+    return "inventory:operations.cryopreserve.linkFieldName";
   }
 
   @Override

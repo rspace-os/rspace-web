@@ -16,9 +16,10 @@ class OperationFieldNamesTest {
     String atTheLimit = "x".repeat(BaseRecord.DEFAULT_VARCHAR_LENGTH);
     List<ApiExtraField> colliding =
         List.of(
-            OperationFieldNames.link(atTheLimit, "operations.pool.linkFieldName", "HasPart", "SS1"),
             OperationFieldNames.link(
-                atTheLimit, "operations.pool.linkFieldName", "HasPart", "SS2"));
+                atTheLimit, "inventory:operations.pool.linkFieldName", "HasPart", "SS1"),
+            OperationFieldNames.link(
+                atTheLimit, "inventory:operations.pool.linkFieldName", "HasPart", "SS2"));
 
     List<ApiExtraField> unique = OperationFieldNames.withUniqueFieldNames(colliding);
 
