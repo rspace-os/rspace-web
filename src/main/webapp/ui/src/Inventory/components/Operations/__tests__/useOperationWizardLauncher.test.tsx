@@ -9,34 +9,46 @@ import { useOperationWizardLauncher } from "../useOperationWizardLauncher";
 import { fakeServerLocks } from "./fakeServerLocks";
 
 const created: OperationResult = { id: 9, globalId: "SA9", name: "New" };
+const wizardMounted = vi.fn();
 vi.mock("../OperationWizard", () => ({
-  default: ({
-    open,
-    onClose,
-    onPerformed,
-    origins,
-    pendingRenewals,
-  }: {
+  default: (props: {
     open: boolean;
     onClose: () => void;
     onPerformed?: (sample: OperationResult | null) => void;
     origins: Array<SubSampleModel>;
     pendingRenewals?: { current: Promise<unknown> };
-  }) =>
-    open ? (
-      <div data-testid="wizard">
-        <button type="button" aria-label="perform" onClick={() => onPerformed?.(created)} />
-        <button
-          type="button"
-          aria-label="next step"
-          onClick={() => {
-            if (pendingRenewals) pendingRenewals.current = Promise.all(origins.map((o) => o.acquireEditLock()));
-          }}
-        />
-        <button type="button" aria-label="close wizard" onClick={onClose} />
-      </div>
-    ) : null,
+  }) => {
+    wizardMounted();
+    return <MockWizard {...props} />;
+  },
 }));
+function MockWizard({
+  open,
+  onClose,
+  onPerformed,
+  origins,
+  pendingRenewals,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onPerformed?: (sample: OperationResult | null) => void;
+  origins: Array<SubSampleModel>;
+  pendingRenewals?: { current: Promise<unknown> };
+}) {
+  return open ? (
+    <div data-testid="wizard">
+      <button type="button" aria-label="perform" onClick={() => onPerformed?.(created)} />
+      <button
+        type="button"
+        aria-label="next step"
+        onClick={() => {
+          if (pendingRenewals) pendingRenewals.current = Promise.all(origins.map((o) => o.acquireEditLock()));
+        }}
+      />
+      <button type="button" aria-label="close wizard" onClick={onClose} />
+    </div>
+  ) : null;
+}
 const gate = { available: true };
 vi.mock("../../ContextMenu/useProcessAvailable", () => ({ useProcessAvailable: () => gate.available }));
 const addAlert = vi.fn();
@@ -74,9 +86,20 @@ function lockedOrigin(overrides: Parameters<typeof makeMockSubSample>[0] = {}) {
 beforeEach(() => {
   gate.available = true;
   addAlert.mockClear();
+  wizardMounted.mockClear();
 });
 
 describe("useOperationWizardLauncher", () => {
+  it("mounts no wizard until launched, so a closed wizard makes no requests", async () => {
+    const user = userEvent.setup();
+    const { origin } = lockedOrigin();
+    render(<Workflow origin={origin} onLaunched={() => {}} />);
+    expect(wizardMounted).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "launch" }));
+    expect(await screen.findByTestId("wizard")).toBeInTheDocument();
+  });
+
   it("hands the created sample over, then reports a performed close once the lock is released", async () => {
     const user = userEvent.setup();
     const { origin, release } = lockedOrigin();
