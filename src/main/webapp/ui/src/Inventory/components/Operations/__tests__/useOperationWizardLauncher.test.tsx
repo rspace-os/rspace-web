@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Activity } from "react";
+import { Activity, StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
@@ -98,6 +98,27 @@ describe("useOperationWizardLauncher", () => {
 
     await user.click(screen.getByRole("button", { name: "launch" }));
     expect(await screen.findByTestId("wizard")).toBeInTheDocument();
+  });
+
+  it("takes and gives back each lock once under StrictMode, whose extra effect run comes before any lock", async () => {
+    const user = userEvent.setup();
+    const { origin, acquire, release } = lockedOrigin();
+    const onPerformed = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <StrictMode>
+        <Workflow origin={origin} onPerformed={onPerformed} onClose={onClose} onLaunched={() => {}} />
+      </StrictMode>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "launch" }));
+    await user.click(await screen.findByRole("button", { name: "perform" }));
+    await user.click(screen.getByRole("button", { name: "close wizard" }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledWith(true));
+    expect(onPerformed).toHaveBeenCalledWith(created);
+    expect(acquire).toHaveBeenCalledTimes(1);
+    expect(release).toHaveBeenCalledTimes(1);
   });
 
   it("hands the created sample over, then reports a performed close once the lock is released", async () => {
