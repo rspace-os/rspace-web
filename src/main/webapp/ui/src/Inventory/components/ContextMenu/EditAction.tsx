@@ -13,7 +13,7 @@ import RsSet from "../../../util/set";
 import type { AllSettled } from "../../../util/types";
 import { match, partitionAllSettled } from "../../../util/Util";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
-import { displayErrorIfAllLocksCouldNotBeAcquired } from "./lockAlerts";
+import { useLockAlert } from "./lockAlerts";
 
 type EditActionArgs = {
   as: ContextMenuRenderOptions;
@@ -29,13 +29,11 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
     const { searchStore, uiStore } = useStores();
     const isBatchSelection = selectedResults.length > 1;
 
+    const lockAlert = useLockAlert();
     const showLockedAlert = (error: Error): boolean =>
-      displayErrorIfAllLocksCouldNotBeAcquired({
-        error,
+      lockAlert(error, {
         title: isBatchSelection ? t("contextMenu.edit.cannotEditSome") : t("contextMenu.edit.cannotEditThis"),
         message: isBatchSelection ? t("contextMenu.edit.someoneEditingThem") : t("contextMenu.edit.someoneEditingIt"),
-        beingEditedBy: (name) => t("contextMenu.edit.beingEditedBy", { name }),
-        addAlert: uiStore.addAlert.bind(uiStore),
       });
 
     const removeAllExistingLocks = async () => {
