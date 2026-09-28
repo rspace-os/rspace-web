@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import lombok.extern.slf4j.Slf4j;
@@ -15,19 +16,19 @@ public class DocumentTagManagerImplTest {
   @Test
   public void testGetTagOntologyUriFromMeta() {
     assertEquals("NONE", DocumentTagManagerImpl.getTagOntologyUriFromMeta(ontologyString));
-    assertEquals("", DocumentTagManagerImpl.getTagOntologyUriFromMeta("local"));
+    assertThat(DocumentTagManagerImpl.getTagOntologyUriFromMeta("local")).isEmpty();
   }
 
   @Test
   public void testGetTagOntologyNameFromMeta() {
     assertEquals("MYONTOLOGY", DocumentTagManagerImpl.getTagOntologyNameFromMeta(ontologyString));
-    assertEquals("", DocumentTagManagerImpl.getTagOntologyNameFromMeta("local"));
+    assertThat(DocumentTagManagerImpl.getTagOntologyNameFromMeta("local")).isEmpty();
   }
 
   @Test
   public void testGTagOntologyVersionFromMeta() {
     assertEquals("1", DocumentTagManagerImpl.getTagOntologyVersionFromMeta(ontologyString));
-    assertEquals("", DocumentTagManagerImpl.getTagOntologyVersionFromMeta("local"));
+    assertThat(DocumentTagManagerImpl.getTagOntologyVersionFromMeta("local")).isEmpty();
   }
 
   @Test

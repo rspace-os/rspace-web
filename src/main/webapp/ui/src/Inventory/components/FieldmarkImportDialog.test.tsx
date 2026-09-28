@@ -193,6 +193,18 @@ describe("FieldmarkImportDialog", () => {
     });
   });
 
+  describe("columns", () => {
+    test("should offer the hidden columns through the Columns toolbar button", async () => {
+      await renderAndWaitForNotebooks();
+
+      expect(screen.getByRole("button", { name: "Select columns" })).toBeVisible();
+      // `description` is hidden by default, so reaching it at all proves the toolbar renders
+      expect(
+        screen.getByRole("checkbox", { name: "inventory:fieldmarkImport.columns.description" }),
+      ).toBeInTheDocument();
+    });
+  });
+
   describe("notebook import", () => {
     test("should make an import request when a notebook is selected and imported", async () => {
       const user = userEvent.setup();

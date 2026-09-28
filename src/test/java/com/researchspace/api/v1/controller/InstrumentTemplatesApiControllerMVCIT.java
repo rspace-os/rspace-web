@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -56,8 +57,8 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
     assertEquals("mvc-template", created.getName());
     assertEquals(GlobalIdPrefix.NT.name(), created.getGlobalId().substring(0, 2));
     assertEquals(1L, (long) created.getVersion());
-    assertEquals(1, created.getFields().size());
-    assertTrue(created.getLinkOfType(ApiLinkItem.SELF_REL).isPresent());
+    assertThat(created.getFields()).hasSize(1);
+    assertThat(created.getLinkOfType(ApiLinkItem.SELF_REL)).isPresent();
 
     // GET (list)
     assertEquals(initialCount + 1, listAllInstrumentTemplates().getTotalHits().intValue());
@@ -65,7 +66,7 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
     // GET (by id)
     ApiInstrumentTemplate fetched = retrieveInstrumentTemplate(created.getId());
     assertEquals(created.getId(), fetched.getId());
-    assertEquals(1, fetched.getFields().size());
+    assertThat(fetched.getFields()).hasSize(1);
 
     // DELETE
     mockMvc
@@ -110,7 +111,7 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
     ApiInstrumentTemplate updated = getFromJsonResponseBody(result, ApiInstrumentTemplate.class);
     assertEquals("renamed-template", updated.getName());
     assertEquals(initialVersion + 1, (long) updated.getVersion());
-    assertEquals(2, updated.getFields().size());
+    assertThat(updated.getFields()).hasSize(2);
   }
 
   @Test
@@ -162,7 +163,7 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertTrue(error.getErrors().stream().anyMatch(e -> e.contains("name")));
+    assertThat(error.getErrors()).anyMatch(e -> e.contains("name"));
 
     // duplicate field names
     ApiInstrumentTemplatePost dupFields = createValidPostWithOneField();
@@ -175,9 +176,9 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
             .andExpect(status().is4xxClientError())
             .andReturn();
     error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertTrue(
-        error.getErrors().stream().anyMatch(e -> e.contains("fields[1].name")),
-        "expected duplicate-name error, got: " + error.getErrors());
+    assertThat(error.getErrors())
+        .as("expected duplicate-name error, got: " + error.getErrors())
+        .anyMatch(e -> e.contains("fields[1].name"));
   }
 
   @Test
@@ -221,7 +222,7 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
     ApiInstrumentEntityInfo withIcon =
         getFromJsonResponseBody(result, ApiInstrumentEntityInfo.class);
     assertNotNull(withIcon.getIconId());
-    assertTrue(withIcon.getIconId() > 0);
+    assertThat(withIcon.getIconId()).isGreaterThan(0);
 
     MvcResult iconResp =
         mockMvc
@@ -235,7 +236,7 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
                     withIcon.getIconId()))
             .andExpect(status().isOk())
             .andReturn();
-    assertTrue(iconResp.getResponse().getContentAsByteArray().length > 0);
+    assertThat(iconResp.getResponse().getContentAsByteArray().length).isGreaterThan(0);
   }
 
   @Test
@@ -338,10 +339,10 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
             .andExpect(status().isOk())
             .andReturn();
     ApiInstrument resynced = getFromJsonResponseBody(retrieved, ApiInstrument.class);
-    assertTrue(resynced.getTemplateVersion() > instrument.getTemplateVersion());
-    assertTrue(
-        resynced.getFields().stream().anyMatch(f -> "addedLater".equals(f.getName())),
-        "expected the new template field to be propagated to the instrument");
+    assertThat(resynced.getTemplateVersion()).isGreaterThan(instrument.getTemplateVersion());
+    assertThat(resynced.getFields())
+        .as("expected the new template field to be propagated to the instrument")
+        .anyMatch(f -> "addedLater".equals(f.getName()));
   }
 
   @Test
@@ -386,7 +387,7 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
     ApiInstrument created = getFromJsonResponseBody(result, ApiInstrument.class);
     assertEquals(template.getId(), created.getTemplateId());
     assertEquals(template.getVersion(), created.getTemplateVersion());
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     assertEquals("F1", created.getFields().get(0).getName());
     assertNull(result.getResolvedException());
   }
@@ -412,12 +413,12 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
     assertNotNull(created);
     assertNotNull(created.getId());
     assertEquals("image-template", created.getName());
-    assertTrue(
-        created.getLinkOfType(ApiLinkItem.IMAGE_REL).isPresent(),
-        "expected IMAGE_REL link on a template created with newBase64Image");
-    assertTrue(
-        created.getLinkOfType(ApiLinkItem.THUMBNAIL_REL).isPresent(),
-        "expected THUMBNAIL_REL link on a template created with newBase64Image");
+    assertThat(created.getLinkOfType(ApiLinkItem.IMAGE_REL))
+        .as("expected IMAGE_REL link on a template created with newBase64Image")
+        .isPresent();
+    assertThat(created.getLinkOfType(ApiLinkItem.THUMBNAIL_REL))
+        .as("expected THUMBNAIL_REL link on a template created with newBase64Image")
+        .isPresent();
   }
 
   @Test
@@ -437,12 +438,12 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
 
     ApiInstrumentTemplate updated =
         getFromJsonResponseBody(updateResult, ApiInstrumentTemplate.class);
-    assertTrue(
-        updated.getLinkOfType(ApiLinkItem.IMAGE_REL).isPresent(),
-        "expected IMAGE_REL link on a template after updating with newBase64Image");
-    assertTrue(
-        updated.getLinkOfType(ApiLinkItem.THUMBNAIL_REL).isPresent(),
-        "expected THUMBNAIL_REL link on a template after updating with newBase64Image");
+    assertThat(updated.getLinkOfType(ApiLinkItem.IMAGE_REL))
+        .as("expected IMAGE_REL link on a template after updating with newBase64Image")
+        .isPresent();
+    assertThat(updated.getLinkOfType(ApiLinkItem.THUMBNAIL_REL))
+        .as("expected THUMBNAIL_REL link on a template after updating with newBase64Image")
+        .isPresent();
   }
 
   @Test
@@ -475,9 +476,9 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
     assertTrue(imageBytes.length > 0, "image response body should be non-empty");
     String imageContentType = imageResult.getResponse().getContentType();
     assertNotNull(imageContentType);
-    assertTrue(
-        imageContentType.toLowerCase().startsWith("image/"),
-        "image content-type should start with image/, got: " + imageContentType);
+    assertThat(imageContentType.toLowerCase())
+        .as("image content-type should start with image/, got: " + imageContentType)
+        .startsWith("image/");
 
     // GET thumbnail
     MvcResult thumbResult =
@@ -501,9 +502,9 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
             + thumbBytes.length);
     String thumbContentType = thumbResult.getResponse().getContentType();
     assertNotNull(thumbContentType);
-    assertTrue(
-        thumbContentType.toLowerCase().startsWith("image/"),
-        "thumbnail content-type should start with image/, got: " + thumbContentType);
+    assertThat(thumbContentType.toLowerCase())
+        .as("thumbnail content-type should start with image/, got: " + thumbContentType)
+        .startsWith("image/");
   }
 
   private ApiInstrumentTemplate postValidInstrumentTemplate(ApiInstrumentTemplatePost post)

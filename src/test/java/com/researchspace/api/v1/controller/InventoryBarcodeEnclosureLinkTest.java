@@ -1,8 +1,7 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -57,8 +56,10 @@ public class InventoryBarcodeEnclosureLinkTest {
         SERVER_URL
             + "/api/inventory/v1/barcodes?content=https%3A%2F%2Fwww.wikipedia.org%2F&barcodeType=QR",
         link);
-    assertFalse(link.contains("%3F"), "the '?' must not be encoded into the path: " + link);
-    assertFalse(link.contains("%25"), "the barcode data must not be double-encoded: " + link);
+    assertThat(link).as("the '?' must not be encoded into the path: " + link).doesNotContain("%3F");
+    assertThat(link)
+        .as("the barcode data must not be double-encoded: " + link)
+        .doesNotContain("%25");
   }
 
   @Test
@@ -77,7 +78,7 @@ public class InventoryBarcodeEnclosureLinkTest {
     String data = "MIX&barcodeType=EAN13 x";
     UriComponents parsed = UriComponentsBuilder.fromUriString(enclosureLinkFor(data)).build();
 
-    assertEquals(List.of("QR"), parsed.getQueryParams().get("barcodeType"));
+    assertThat(parsed.getQueryParams()).containsEntry("barcodeType", List.of("QR"));
     assertEquals(
         data, UriUtils.decode(parsed.getQueryParams().getFirst("content"), StandardCharsets.UTF_8));
   }
@@ -89,6 +90,6 @@ public class InventoryBarcodeEnclosureLinkTest {
     sample.setBarcodes(List.of(barcode));
     controller.addFileAndBarcodeLinks(sample);
 
-    assertTrue(barcode.getLinkOfType(ApiLinkItem.ENCLOSURE_REL).isEmpty());
+    assertThat(barcode.getLinkOfType(ApiLinkItem.ENCLOSURE_REL)).isEmpty();
   }
 }

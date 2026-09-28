@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,7 +22,7 @@ public class DigitalObjectIdentifierTest {
     assertEquals(0, IdentifierType.IGSN_DATACITE.ordinal());
     assertEquals(1, IdentifierType.PIDINST_DATACITE.ordinal());
     assertEquals(2, IdentifierType.PIDINST_B2INST.ordinal());
-    assertEquals(3, IdentifierType.values().length);
+    assertThat(IdentifierType.values()).hasSize(3);
   }
 
   @Test
@@ -105,6 +106,6 @@ public class DigitalObjectIdentifierTest {
     assertNotNull(withBlank.getPublicLink());
     assertNotNull(twoArg.getPublicLink());
     // 16 random bytes, base64url-encoded without padding: pins the entropy, not the char count
-    assertEquals(22, twoArg.getPublicLink().length());
+    assertThat(twoArg.getPublicLink()).hasSize(22);
   }
 }

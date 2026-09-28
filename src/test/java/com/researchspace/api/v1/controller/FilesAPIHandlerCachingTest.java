@@ -1,8 +1,7 @@
 package com.researchspace.api.v1.controller;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.researchspace.api.v1.model.ApiFile;
 import com.researchspace.model.EcatImage;
@@ -42,7 +41,7 @@ public class FilesAPIHandlerCachingTest extends SpringTransactionalTest
 
     ApiFile file = handler.getFile(galleryImage.getId(), anyUser);
     ApiFile cached = handler.getFile(galleryImage.getId(), anyUser);
-    assertThat(cached, sameInstance(file));
+    assertSame(file, cached);
     // force transaction commit so that transactional event listener is enabled
     TestTransaction.flagForCommit();
     recordMgr.renameRecord("newname", galleryImage.getId(), anyUser);
@@ -51,6 +50,6 @@ public class FilesAPIHandlerCachingTest extends SpringTransactionalTest
     TestTransaction.start();
     TestTransaction.flagForRollback();
     ApiFile reloaded = handler.getFile(galleryImage.getId(), anyUser);
-    assertThat(reloaded, not(sameInstance(file)));
+    assertNotSame(file, reloaded);
   }
 }

@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.dtos.UserSearchCriteria;
@@ -19,7 +20,7 @@ public class DirectoryControllerTest {
     UserSearchCriteria crit = new UserSearchCriteria();
     crit.setAllFields("%%%");
     controller.cleanSearchTerm(crit);
-    assertEquals("", crit.getAllFields());
+    assertThat(crit.getAllFields()).isEmpty();
 
     crit.setAllFields("%A%");
     controller.cleanSearchTerm(crit);

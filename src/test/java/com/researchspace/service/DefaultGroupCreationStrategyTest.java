@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
@@ -21,6 +21,6 @@ public class DefaultGroupCreationStrategyTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(pi, grpMember);
     logoutAndLoginAs(pi);
     Group grp = strategy.createAndSaveGroup(pi, pi, GroupType.LAB_GROUP, grpMember, pi);
-    assertEquals(2, grpMgr.getGroupEventsForGroup(pi, grp).size());
+    assertThat(grpMgr.getGroupEventsForGroup(pi, grp)).hasSize(2);
   }
 }

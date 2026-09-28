@@ -1,5 +1,7 @@
 package com.researchspace.core.util.progress;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,17 +26,17 @@ public class ProgressMonitorTest {
   @Test
   public void testIncrementProgress() {
     progress = createProgressMonitor();
-    assertEquals(0, progress.getPercentComplete(), 0.001);
+    assertThat(progress.getPercentComplete()).isCloseTo(0, within(0.001));
     assertNotNull(progress.worked(10)); // 5%
-    assertEquals(5, progress.getPercentComplete(), 0.001);
+    assertThat(progress.getPercentComplete()).isCloseTo(5, within(0.001));
     progress.worked(190); // complete
-    assertEquals(100, progress.getPercentComplete(), 0.001);
+    assertThat(progress.getPercentComplete()).isCloseTo(100, within(0.001));
     assertTrue(progress.isDone());
     assertEquals("any", progress.getDescription());
 
     // incrmenting more has no effect
     progress.worked(200);
-    assertEquals(100, progress.getPercentComplete(), 0.001);
+    assertThat(progress.getPercentComplete()).isCloseTo(100, within(0.001));
   }
 
   private ProgressMonitorImpl createProgressMonitor() {

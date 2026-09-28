@@ -1,6 +1,6 @@
 package com.researchspace.model;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -52,22 +52,22 @@ public class CommunityTest {
     assertEquals("profile", copy.getProfileText());
     assertEquals("display", copy.getDisplayName());
     // collections not copied
-    assertEquals(1, community.getLabGroups().size());
-    assertEquals(0, copy.getLabGroups().size());
+    assertThat(community.getLabGroups()).hasSize(1);
+    assertThat(copy.getLabGroups()).isEmpty();
   }
 
   @Test
   public void testCommunityThrowsIAEIfIdEmptyString() {
     community = new Community();
     community.setUniqueName("");
-    assertIllegalArgumentException(() -> new Community(admin1, community));
+    assertThrows(IllegalArgumentException.class, () -> new Community(admin1, community));
   }
 
   @Test
   public void testCommunityThrowsIAEIfAdminNotAnAdmin() {
     community = new Community();
     community.setUniqueName("id");
-    assertIllegalArgumentException(() -> new Community(normalUser, community));
+    assertThrows(IllegalArgumentException.class, () -> new Community(normalUser, community));
   }
 
   @Test
@@ -75,7 +75,7 @@ public class CommunityTest {
     String TOO_LONG = RandomStringUtils.randomAlphanumeric(Community.MAX_DESC_LENGTH + 1);
     community = new Community();
     community.setDisplayName(TOO_LONG);
-    assertEquals(Community.MAX_DESC_LENGTH, community.getDisplayName().length());
+    assertThat(community.getDisplayName()).hasSize(Community.MAX_DESC_LENGTH);
   }
 
   @Test
@@ -91,7 +91,7 @@ public class CommunityTest {
   @Test
   public void testAddAdminMustBeAnAdminRole() {
     community = new Community();
-    assertIllegalArgumentException(() -> community.addAdmin(normalUser));
+    assertThrows(IllegalArgumentException.class, () -> community.addAdmin(normalUser));
   }
 
   @Test
@@ -110,7 +110,7 @@ public class CommunityTest {
     assertFalse(community.removeAdmin(admin1));
     // add another
     community.addAdmin(admin2);
-    assertEquals(2, community.getAdmins().size());
+    assertThat(community.getAdmins()).hasSize(2);
     // now can remove admin1
     assertTrue(community.removeAdmin(admin1));
   }
@@ -123,23 +123,23 @@ public class CommunityTest {
     community2.setUniqueName("id2");
 
     Group g = TestFactory.createAnyGroup(pi, null);
-    assertEquals(0, community.getLabGroups().size());
+    assertThat(community.getLabGroups()).isEmpty();
 
     // can't add collaboration group
     g.setGroupType(GroupType.COLLABORATION_GROUP);
     assertFalse(community.addLabGroup(g));
-    assertEquals(0, community.getLabGroups().size());
+    assertThat(community.getLabGroups()).isEmpty();
     // trying to remove group not in collection is OK
     assertFalse(community.removeLabGroup(g));
     // now try with a LabGroup
     g.setGroupType(GroupType.LAB_GROUP);
     assertTrue(community.addLabGroup(g));
-    assertEquals(1, community.getLabGroups().size());
+    assertThat(community.getLabGroups()).hasSize(1);
     // can't add > 1
     assertThrows(IllegalArgumentException.class, () -> community2.addLabGroup(g));
 
     assertTrue(community.removeLabGroup(g));
-    assertEquals(0, community.getLabGroups().size());
+    assertThat(community.getLabGroups()).isEmpty();
   }
 
   @Test

@@ -1,5 +1,6 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -44,7 +45,7 @@ class EscapeReplacementTest {
 
     String escaped = EscapeReplacement.replaceChars(unicodeWithNBSPs);
     assertEquals("A_B_C_D", escaped);
-    assertEquals(7, escaped.getBytes(StandardCharsets.UTF_8).length);
+    assertThat(escaped.getBytes(StandardCharsets.UTF_8)).hasSize(7);
   }
 
   @Test

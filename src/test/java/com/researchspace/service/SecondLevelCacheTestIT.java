@@ -49,7 +49,6 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
   private static final String ICON_REGION = "com.researchspace.model.record.IconEntity";
 
   private @Autowired DocumentHTMLPreviewHandler previewer;
-  private @Autowired RecordManager recordMgr;
 
   private SessionFactory l2SessionFactory;
 

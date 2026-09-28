@@ -1,6 +1,6 @@
 package com.researchspace.model.permissions;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,29 +45,25 @@ public class DefaultPermissionFactoryTest {
 
     f1.addType(RecordType.SHARED_GROUP_FOLDER_ROOT);
     fac.setUpACLForGroupSharedRootFolder(grp, f1);
-    assertTrue(f1.getSharingACL().getNumPermissions() > 0);
+    assertThat(f1.getSharingACL().getNumPermissions()).isGreaterThan(0);
     // check user can create a folder.
     assertTrue(f1.getSharingACL().isPermitted(u2, PermissionType.CREATE_FOLDER));
   }
 
   @Test
   public void setUpACLForApiInboxFolderThrowsIAEIfNotAPiInboxFolder() {
+    Folder folder = TestFactory.createAFolder("any", u2);
+
     assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          Folder folder = TestFactory.createAFolder("any", u2);
-          fac.setUpAclForIndividualInboxFolder(folder, u2);
-        });
+        IllegalArgumentException.class, () -> fac.setUpAclForIndividualInboxFolder(folder, u2));
   }
 
   @Test
   public void setUpACLForApiInboxFolderThrowsAuthExceptionIfSubjectNotOwner() {
+    Folder folder = TestFactory.createAnAPiInboxFolder(u2);
+
     assertThrows(
-        AuthorizationException.class,
-        () -> {
-          Folder folder = TestFactory.createAnAPiInboxFolder(u2);
-          fac.setUpAclForIndividualInboxFolder(folder, pi);
-        });
+        AuthorizationException.class, () -> fac.setUpAclForIndividualInboxFolder(folder, pi));
   }
 
   @Test
@@ -79,12 +75,11 @@ public class DefaultPermissionFactoryTest {
 
   @Test
   public void communityEditPermsCannotBeAddedtoANonAdminUser() {
+    User u = TestFactory.createAnyUserWithRole("any", Constants.USER_ROLE);
+    Community community = new Community();
+
     assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          User u = TestFactory.createAnyUserWithRole("any", Constants.USER_ROLE);
-          fac.createCommunityPermissionsForAdmin(u, new Community());
-        });
+        IllegalArgumentException.class, () -> fac.createCommunityPermissionsForAdmin(u, community));
   }
 
   @Test
@@ -94,12 +89,12 @@ public class DefaultPermissionFactoryTest {
     comm.setId(-1L);
     Set<ConstraintBasedPermission> cbps = fac.createCommunityPermissionsForAdmin(u, comm);
 
-    assertTrue(cbps.stream().anyMatch(cbp -> u.isPermitted(cbp, true)));
+    assertThat(cbps.stream()).anyMatch(cbp -> u.isPermitted(cbp, true));
 
     ConstraintBasedPermission test =
         new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.READ);
     test.setCommunityConstraint(new CommunityConstraint(-1L));
-    assertTrue(cbps.contains(test));
+    assertThat(cbps).contains(test);
   }
 
   @Test
@@ -113,11 +108,11 @@ public class DefaultPermissionFactoryTest {
         parser.resolvePermission(
             String.format(
                 "COMMS:READ:property_name=REQUESTJOINLABGROUP&group=%s", grp.getUniqueName()));
-    assertTrue(perms.contains(cbp));
+    assertThat(perms).contains(cbp);
     Set<ConstraintBasedPermission> perms2 = fac.createDefaultPermissionsForGroupAdmin(grp);
-    assertTrue(perms2.contains(cbp));
+    assertThat(perms2).contains(cbp);
     // regular user can't invite new members
-    assertFalse(defaultperms.contains(cbp));
+    assertThat(defaultperms).doesNotContain(cbp);
   }
 
   @Test
@@ -131,13 +126,13 @@ public class DefaultPermissionFactoryTest {
     String expectedGroupPermission = "GROUP:READ,WRITE:group=" + grp.getUniqueName();
     ConstraintBasedPermission cbp = parser.resolvePermission(expectedGroupPermission);
 
-    assertTrue(perms.contains(cbp), "permissions don't allow group read");
+    assertThat(perms).as("permissions don't allow group read").contains(cbp);
 
     Set<ConstraintBasedPermission> perms2 = fac.createDefaultPermissionsForCollabGroupAdmin(grp);
-    assertTrue(perms2.contains(cbp));
+    assertThat(perms2).contains(cbp);
 
     // regular user can't invite new members
-    assertFalse(defaultperms.contains(cbp));
+    assertThat(defaultperms).doesNotContain(cbp);
   }
 
   @Test
@@ -152,12 +147,12 @@ public class DefaultPermissionFactoryTest {
 
     ConstraintBasedPermission expectedGroupPermissions =
         parser.resolvePermission("GROUP:READ,WRITE:group=" + group.getUniqueName());
-    assertTrue(groupOwnerPerms.contains(expectedGroupPermissions));
+    assertThat(groupOwnerPerms).contains(expectedGroupPermissions);
 
     ConstraintBasedPermission expectedMessagePermissions =
         parser.resolvePermission(
             "COMMS:READ:property_name=REQUESTJOINPROJECTGROUP&group=" + group.getUniqueName());
-    assertTrue(groupOwnerPerms.contains(expectedMessagePermissions));
+    assertThat(groupOwnerPerms).contains(expectedMessagePermissions);
   }
 
   private static Group createProjectGroup(User groupOwner, User... users) {

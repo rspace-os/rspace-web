@@ -3175,8 +3175,10 @@ paths:
         not returned, and pasting such a PID yields no hit.
 
 
-        Each hit carries `linkedInstrumentGlobalId` when an Instrument in this deployment already
-        links that PID, so a client can disable importing it before the `409`.
+        Each hit carries `alreadyLinked`, true when an Instrument in this deployment already links
+        that PID, so a client can refuse importing it before the `409`; and
+        `linkedInstrumentGlobalId` only when the caller may read that Instrument (read or limited
+        read). An Instrument the caller may not read is never named.
 
 
         Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
@@ -3186,9 +3188,13 @@ paths:
         - in: query
           name: query
           required: true
-          description: Free text, or a DOI or Handle for a direct lookup.
+          description: >
+            Free text, or a DOI or Handle for a direct lookup. At least 4 characters after
+            trimming; shorter, blank or whitespace-only queries are refused with a 422 and never
+            reach the registry.
           schema:
             type: string
+            minLength: 4
       responses:
         "200":
           description: One page of hits from the enabled provider.
@@ -3198,6 +3204,12 @@ paths:
                 $ref: "#/components/schemas/PidinstSearchResult"
         "404":
           description: No PIDINST provider is enabled on this deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: The query is shorter than 4 characters after trimming.
           content:
             application/json:
               schema:
@@ -4037,7 +4049,8 @@ components:
     PidAlreadyLinked:
       description: >
         An Instrument in this deployment already carries a linked identifier for this PID. The
-        message names that Instrument's global id.
+        message names that Instrument's global id when the caller may read it, and otherwise says
+        only that an instrument they cannot access holds the PID.
       content:
         application/json:
           schema:
@@ -4616,11 +4629,19 @@ components:
         updated:
           type: string
           description: Last-update timestamp as the provider reports it.
+        alreadyLinked:
+          type: boolean
+          description: >
+            Whether an Instrument in this deployment already links this PID. Always present.
+            Importing such a PID answers `409`.
+          example: true
         linkedInstrumentGlobalId:
           type: string
           description: >
-            Global id of the Instrument in this deployment that already links this PID, absent when
-            none does. Importing a PID that is already linked answers `409`.
+            Global id of the Instrument that already links this PID, present only when the caller
+            may read that Instrument (read or limited read). Absent when nothing links the PID and
+            when the caller may not read the linking Instrument, so an Instrument they would not be
+            shown is never named.
           example: IN2
     PidinstSearchResult:
       description: One page of PID lookup hits from the enabled provider.

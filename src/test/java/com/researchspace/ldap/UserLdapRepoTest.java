@@ -1,7 +1,6 @@
 package com.researchspace.ldap;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -49,18 +48,15 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
 
     properties.setLdapEnabled("false");
 
-    assertThat(
-        assertThrows(IllegalStateException.class, () -> userLdapRepo.findUserByUsername("user"))
-            .getMessage(),
-        containsString("LDAP not configured"));
-    assertThat(
-        assertThrows(IllegalStateException.class, () -> userLdapRepo.authenticate("user", "pass"))
-            .getMessage(),
-        containsString("LDAP not configured"));
-    assertThat(
-        assertThrows(IllegalStateException.class, () -> userLdapRepo.signupLdapUser(null))
-            .getMessage(),
-        containsString("LDAP not configured"));
+    var exception1 =
+        assertThrows(IllegalStateException.class, () -> userLdapRepo.findUserByUsername("user"));
+    assertThat(exception1.getMessage()).contains("LDAP not configured");
+    var exception2 =
+        assertThrows(IllegalStateException.class, () -> userLdapRepo.authenticate("user", "pass"));
+    assertThat(exception2.getMessage()).contains("LDAP not configured");
+    var exception3 =
+        assertThrows(IllegalStateException.class, () -> userLdapRepo.signupLdapUser(null));
+    assertThat(exception3.getMessage()).contains("LDAP not configured");
   }
 
   @Test
@@ -137,23 +133,23 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
         .findUserByUsername(testUser3.getUsername());
 
     // run sid retrieval for non-ldap user
-    assertThat(
+    String testUsername = testUser.getUsername();
+    var exception4 =
         assertThrows(
-                IllegalArgumentException.class,
-                () -> spyUserLdapRepo.retrieveSidForLdapUser(testUser.getUsername()))
-            .getMessage(),
-        containsString("non-ldap"));
+            IllegalArgumentException.class,
+            () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername));
+    assertThat(exception4.getMessage()).contains("non-ldap");
 
     // run for ldap user without sid
     String retrievedSID = spyUserLdapRepo.retrieveSidForLdapUser(testUser2.getUsername());
     assertEquals(testLdapUser2.getSid(), retrievedSID);
 
     // run for ldap user with sid
-    assertThat(
+    String testUsername3 = testUser3.getUsername();
+    var exception5 =
         assertThrows(
-                IllegalArgumentException.class,
-                () -> spyUserLdapRepo.retrieveSidForLdapUser(testUser3.getUsername()))
-            .getMessage(),
-        containsString("user with SID"));
+            IllegalArgumentException.class,
+            () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername3));
+    assertThat(exception5.getMessage()).contains("user with SID");
   }
 }

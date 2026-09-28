@@ -2,17 +2,18 @@ package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -128,8 +129,10 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     User u2 = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(u2);
     logoutAndLoginAs(u2);
-    RSpaceTestUtils.assertAuthExceptionThrown(
-        () -> handler.sendExternalMessage(EXPECTED_MESSAGE, cfgSetId, toList(-10L), u2));
+    var recordIds = toList(-10L);
+    assertThrows(
+        AuthorizationException.class,
+        () -> handler.sendExternalMessage(EXPECTED_MESSAGE, cfgSetId, recordIds, u2));
   }
 
   private Map<String, String> getSlackDevDfg() {

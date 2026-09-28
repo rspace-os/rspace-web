@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -48,8 +49,8 @@ public class CommunityServiceManagerIT extends RealTransactionSpringTestBase {
 
     Community comm =
         communityMgr.getCommunityWithAdminsAndGroups(testcommunity.getCommunity().getId());
-    assertTrue(comm.getAdmins().contains(admin));
-    assertTrue(comm.getLabGroups().contains(testGroup.getGroup()));
+    assertThat(comm.getAdmins()).contains(admin);
+    assertThat(comm.getLabGroups()).contains(testGroup.getGroup());
     // missed object return null
     assertNull(communityMgr.getCommunityWithAdminsAndGroups(-200L)); // unknown ID
   }
@@ -68,13 +69,13 @@ public class CommunityServiceManagerIT extends RealTransactionSpringTestBase {
 
     Community community = createAndSaveCommunity(admin, "toRemove1");
     assertEquals(initialTotal + 1, getCommunityCount(pgcrit, admin));
-    assertFalse(userMgr.getAvailableAdminUsers().contains(admin));
+    assertThat(userMgr.getAvailableAdminUsers()).doesNotContain(admin);
     setASystemPropertyForCommunity(community, admin);
     // now remove this community, should remove admins as well
     communityMgr.removeCommunity(community.getId());
     assertEquals(initialTotal, getCommunityCount(pgcrit, admin));
     // admin should be available again
-    assertTrue(userMgr.getAvailableAdminUsers().contains(admin));
+    assertThat(userMgr.getAvailableAdminUsers()).contains(admin);
   }
 
   private void setASystemPropertyForCommunity(Community community, User subject) {
@@ -104,15 +105,15 @@ public class CommunityServiceManagerIT extends RealTransactionSpringTestBase {
     Community community1 = createAndSaveCommunity(admin, "id2");
     User sysadmin = logoutAndLoginAsSysAdmin();
     community1 = communityMgr.addGroupToCommunity(grp.getId(), community1.getId(), sysadmin);
-    assertTrue(community1.getLabGroups().contains(grp));
+    assertThat(community1.getLabGroups()).contains(grp);
 
     Community community2 = createAndSaveCommunity(admin, "id3");
     community2 = communityMgr.addGroupToCommunity(grp.getId(), community2.getId(), sysadmin);
-    assertTrue(community2.getLabGroups().contains(grp));
+    assertThat(community2.getLabGroups()).contains(grp);
 
     // community1 has no groups
     community1 = communityMgr.getCommunityWithAdminsAndGroups(community1.getId());
-    assertEquals(0, community1.getLabGroups().size());
+    assertThat(community1.getLabGroups()).isEmpty();
   }
 
   @Test
@@ -229,19 +230,19 @@ public class CommunityServiceManagerIT extends RealTransactionSpringTestBase {
     // can't add otheradmin, since they already belong to a community
     Community altered =
         communityMgr.addAdminsToCommunity(new Long[] {otheradmin.getId()}, community1.getId());
-    assertEquals(1, altered.getAdmins().size());
+    assertThat(altered.getAdmins()).hasSize(1);
     // so we create a 3rd admin
     User otheradmin3 = createAndSaveUser(getRandomAlphabeticString("admin3"), Constants.ADMIN_ROLE);
     altered =
         communityMgr.addAdminsToCommunity(new Long[] {otheradmin3.getId()}, community1.getId());
 
-    assertEquals(2, altered.getAdmins().size());
+    assertThat(altered.getAdmins()).hasSize(2);
     // now we can remove the original admin, since there are now 2.
-    assertFalse(userMgr.getAvailableAdminUsers().contains(admin));
+    assertThat(userMgr.getAvailableAdminUsers()).doesNotContain(admin);
     assertTrue(
         communityMgr.removeAdminFromCommunity(admin.getId(), community1.getId()).isSucceeded());
 
     // admin should be available again
-    assertTrue(userMgr.getAvailableAdminUsers().contains(admin));
+    assertThat(userMgr.getAvailableAdminUsers()).contains(admin);
   }
 }

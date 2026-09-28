@@ -1,5 +1,6 @@
 package com.researchspace.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -90,7 +91,7 @@ public class VersionTest {
 
   @Test
   public void testToString() {
-    assertTrue(v1.toString().length() > 0);
+    assertThat(v1.toString()).hasSizeGreaterThan(0);
   }
 
   @Test

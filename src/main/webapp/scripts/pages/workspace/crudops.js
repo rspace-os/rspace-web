@@ -197,7 +197,7 @@ function calculateOptionDisplay(chbox$) {
   $('#viewRevisions').toggle(!isAtLeastOneFolder);
   $('#shareRecord').toggle(!cantShare);
   $('#publishRecord').toggle(!cantPublish);
-  $('#moveRecords').toggle(!cantMove);
+  $('#moveRecords').toggle(!cantMove && !workspaceSettings.sharedFilter);
   $('#copyRecords').toggle(!cantCopy);
   $('#deleteRecords').toggle(!cantDelete);
   $('#renameRecords').toggle(!cantRename);

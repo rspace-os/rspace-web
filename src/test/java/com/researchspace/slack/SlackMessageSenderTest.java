@@ -26,13 +26,9 @@ public class SlackMessageSenderTest {
     App unsupported = new App("any", "label", false);
     assertFalse(slackSender.supportsApp(unsupported));
     User anyUser = TestFactory.createAnyUser("any");
-    assertThrows(IllegalArgumentException.class, () -> createAppConfigSet(unsupported, anyUser));
-  }
-
-  private AppConfigElementSet createAppConfigSet(App unsupported, User anyUser) {
     AppConfigElementSet set = new AppConfigElementSet();
     UserAppConfig cfg = new UserAppConfig(anyUser, unsupported, true);
-    cfg.addConfigSet(set);
-    return set;
+
+    assertThrows(IllegalArgumentException.class, () -> cfg.addConfigSet(set));
   }
 }

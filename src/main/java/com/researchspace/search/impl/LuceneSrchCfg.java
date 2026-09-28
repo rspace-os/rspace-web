@@ -164,7 +164,8 @@ public class LuceneSrchCfg {
       String currOption = options[i];
       String currTerm = terms[i];
       if (currOption.equals(SearchConstants.RECORDS_SEARCH_OPTION)) {
-        Arrays.stream(currTerm.split("\\s*[,;]\\s*"))
+        Arrays.stream(currTerm.split("[,;]"))
+            .map(String::trim)
             .map(recordId -> recordId.substring(2)) // Get rid of record type prefix
             .map(Long::parseLong)
             .forEach(selectedRecordIds::add);

@@ -1,5 +1,6 @@
 package com.researchspace.model.field;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,7 +28,7 @@ public class DateFieldFormTest {
   @Test
   public void testCreateFieldSetsDEfaults() {
     DateField nf = (DateField) dft.createNewFieldFromForm();
-    assertTrue(nf.getFieldData().contains("1970"));
+    assertThat(nf.getFieldData()).contains("1970");
 
     dft.setDefaultDate(0);
     DateField nf2 = (DateField) dft.createNewFieldFromForm();

@@ -1,5 +1,6 @@
 package com.researchspace.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.core.testutil.JakartaValidatorTest;
@@ -23,11 +24,11 @@ public class SignatureTest extends JakartaValidatorTest {
     sig.setRecordSigned(r);
     sig.setSigner(u);
     sig.addWitnesses(Arrays.asList(new Witness[] {witness}));
-    assertEquals(1, sig.getWitnesses().size());
+    assertThat(sig.getWitnesses()).hasSize(1);
     assertEquals(sig, witness.getSignature());
 
     sig.generateRecordContentHash();
-    assertEquals(1, sig.getHashes().size());
+    assertThat(sig.getHashes()).hasSize(1);
     assertEquals(
         r.getRecordContentHashForSigning().toHex(),
         ((SignatureHash) sig.getHashes().toArray()[0]).getHexValue());

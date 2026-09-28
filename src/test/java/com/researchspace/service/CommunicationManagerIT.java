@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toSet;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,6 +16,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.CollaborationGroupTrackerDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RoleInGroup;
@@ -54,6 +56,7 @@ import org.springframework.transaction.UnexpectedRollbackException;
 
 public class CommunicationManagerIT extends RealTransactionSpringTestBase {
 
+  @Autowired private UserDao userDao;
   @Autowired private IMessageAndNotificationTracker tracker;
   @Autowired private CollaborationGroupTrackerDao collabGrpTrackerDao;
 
@@ -85,9 +88,11 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
         reqCreateMgr.createRequest(config, piUser.getUsername(), createUserSet(other), null, null);
 
     // rspac-2264, unauthorised user can't cancel
+    String otherUsername = other.getUsername();
+    Long requestId = mor.getId();
     assertThrows(
         AuthorizationException.class,
-        () -> communicationMgr.cancelRequest(other.getUsername(), mor.getId(), false));
+        () -> communicationMgr.cancelRequest(otherUsername, requestId, false));
     communicationMgr.cancelRequest(piUser.getUsername(), mor.getId(), false);
     // assert is notified that request was cancelled
     assertEquals(1, getNewNotificationCountForUser(other));
@@ -203,8 +208,8 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
 
     User p1updated = userMgr.get(pi1.getId());
     User p2updated = userMgr.get(pi2.getId());
-    assertEquals(2, p1updated.getGroups().size());
-    assertEquals(2, p2updated.getGroups().size());
+    assertThat(p1updated.getGroups()).hasSize(2);
+    assertThat(p2updated.getGroups()).hasSize(2);
 
     // check that PIs are PIs in their collab groups as well
     Set<Group> allGroups = p1updated.getGroups();
@@ -226,8 +231,8 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     grpMgr.removeGroup(collabGrpId, sysadmin);
     User p1updated1 = userMgr.get(pi1.getId());
     User p2updated1 = userMgr.get(pi2.getId());
-    assertEquals(1, p1updated1.getGroups().size());
-    assertEquals(1, p2updated1.getGroups().size());
+    assertThat(p1updated1.getGroups()).hasSize(1);
+    assertThat(p2updated1.getGroups()).hasSize(1);
   }
 
   @Test
@@ -333,7 +338,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     logoutAndLoginAs(other);
     PaginationCriteria<CommunicationTarget> pg =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
-    pg.setOrderBy("communication.creationTime");
+    pg.setOrderBy("creationTime");
     pg.setSortOrder(SortOrder.ASC);
     ISearchResults<MessageOrRequest> mors =
         communicationMgr.getActiveMessagesAndRequestsForUserTarget(other.getUsername(), pg);
@@ -365,13 +370,13 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     // other now replies to User; this creates a new message
     reqUpdateMgr.replyToMessage(other.getUsername(), comm.getId(), "A reply form other");
     // rspac2264:
+    String maliciousUsername = maliciousMike.getUsername();
+    Long communicationId = comm.getId();
     assertThrows(
         AuthorizationException.class,
         () ->
             reqUpdateMgr.replyToMessage(
-                maliciousMike.getUsername(),
-                comm.getId(),
-                "Reply from malicious Mike not allowed"));
+                maliciousUsername, communicationId, "Reply from malicious Mike not allowed"));
 
     Thread.sleep(1000);
 
@@ -422,14 +427,13 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     // other dismisses the message
     try {
       openTransaction();
+      String maliciousUsername = maliciousMike.getUsername();
+      Long communicationId = comm.getId();
       assertThrows(
           AuthorizationException.class,
           () ->
               reqUpdateMgr.updateStatus(
-                  maliciousMike.getUsername(),
-                  CommunicationStatus.COMPLETED,
-                  comm.getId(),
-                  "updated"));
+                  maliciousUsername, CommunicationStatus.COMPLETED, communicationId, "updated"));
       commitTransaction();
     } catch (UnexpectedRollbackException e) {
       // expected
@@ -566,7 +570,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
             piUser.getUsername(),
             null,
             (CommunicationTargetFinderPolicy) applicationContext.getBean("allUserPolicy"));
-    assertEquals(expectedUsersCount, recips.size());
+    assertThat(recips).hasSize(expectedUsersCount);
 
     createRootFolderForUsers(other, other2);
     Group grp1 = createGroupForUsersWithDefaultPi(piUser, other);
@@ -583,7 +587,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
 
     // we can send message about this record to other groups menbers of the
     // record's owner + the owner themselves
-    assertEquals(2, recips.size());
+    assertThat(recips).hasSize(2);
 
     // now let's change group permission on record to read only - now none
     // else in the group can actually make changes to a record, so shouldn't
@@ -598,14 +602,14 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
         communicationMgr.getPotentialRecipientsOfRequest(
             record, MessageType.REQUEST_RECORD_REVIEW, piUser.getUsername(), null, null);
 
-    assertEquals(1, recips3.size());
+    assertThat(recips3).hasSize(1);
 
     // this is a general message, we can send it to anyone in any of our groups.
     Set<User> recips2 =
         communicationMgr.getPotentialRecipientsOfRequest(
             null, MessageType.SIMPLE_MESSAGE, piUser.getUsername(), null, null);
 
-    assertEquals(2, recips2.size());
+    assertThat(recips2).hasSize(2);
   }
 
   @Test
@@ -616,11 +620,11 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     communicationMgr.systemNotify(
         NotificationType.PROCESS_FAILED, "msg", sender.getUsername(), false);
     StringAppenderForTestLogging log = configureTestLogger(DevBroadCaster.getLogger());
-    assertTrue(log.logContents.isEmpty());
+    assertThat(log.logContents).isEmpty();
 
     communicationMgr.systemNotify(
         NotificationType.PROCESS_FAILED, "msg", sender.getUsername(), true);
-    assertFalse(log.logContents.isEmpty());
+    assertThat(log.logContents).isNotEmpty();
   }
 
   @Test
@@ -862,7 +866,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     logoutAndLoginAs(source);
     PaginationCriteria<CommunicationTarget> pg =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
-    pg.setOrderBy("communication.creationTime");
+    pg.setOrderBy("creationTime");
     pg.setSortOrder(SortOrder.ASC);
     ISearchResults<Notification> notifications =
         communicationMgr.getNewNotificationsForUser(source.getUsername(), pg);
@@ -958,7 +962,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
 
     PaginationCriteria<CommunicationTarget> pg =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
-    pg.setOrderBy("communication.creationTime");
+    pg.setOrderBy("creationTime");
     pg.setSortOrder(SortOrder.ASC);
     ISearchResults<MessageOrRequest> sentRequests =
         communicationMgr.getAllSentAndReceivedSimpleMessagesForUser(source.getUsername(), pg);

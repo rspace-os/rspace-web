@@ -1,5 +1,7 @@
 package com.researchspace.service.audit.search;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.researchspace.core.util.DateRange;
 import java.io.File;
 import java.io.IOException;
@@ -42,22 +44,22 @@ public class LogFileTrackerTest {
     AuditTrailSearchElement element = new AuditTrailSearchElement();
     // no restriction, can't exclude any files
     element.setDateRange(new DateRange(null, Long.MAX_VALUE));
-    Assertions.assertEquals(TOTAL_LOG_FILES, tracker.filter(logs, element).size());
+    assertThat(tracker.filter(logs, element)).hasSize(TOTAL_LOG_FILES);
 
     // now lets set a range before 2010
     Date start = sdf.parse("21/12/1975");
     Date end = sdf.parse("21/12/1976");
     element.setDateRange(new DateRange(start, end));
     // will always look at current log file
-    Assertions.assertEquals(1, tracker.filter(logs, element).size());
+    assertThat(tracker.filter(logs, element)).hasSize(1);
 
     start = sdf.parse("12/05/2016");
     end = sdf.parse("12/05/2017");
     // current + .1
     element.setDateRange(new DateRange(start, end));
     Collection<File> filtered = tracker.filter(logs, element);
-    Assertions.assertEquals(2, filtered.size());
-    Assertions.assertTrue(filtered.stream().anyMatch(f -> f.getName().equals("RSLogs.txt.1")));
+    assertThat(filtered).hasSize(2);
+    assertThat(filtered).anyMatch(f -> f.getName().equals("RSLogs.txt.1"));
 
     // now lets set a range that is totally within an old log file
     start = sdf.parse("13/05/2014");
@@ -65,8 +67,8 @@ public class LogFileTrackerTest {
     element.setDateRange(new DateRange(start, end));
     filtered = tracker.filter(logs, element);
     // will always look at current log file + RSLOgs2
-    Assertions.assertEquals(2, filtered.size());
-    Assertions.assertTrue(filtered.stream().anyMatch(f -> f.getName().equals("RSLogs.txt.2")));
+    assertThat(filtered).hasSize(2);
+    assertThat(filtered).anyMatch(f -> f.getName().equals("RSLogs.txt.2"));
 
     // set a range too far in the future....
     start = sdf.parse("01/01/2021");
@@ -74,13 +76,13 @@ public class LogFileTrackerTest {
     // current file only
     element.setDateRange(new DateRange(start, end));
     filtered = tracker.filter(logs, element);
-    Assertions.assertEquals(1, filtered.size());
+    assertThat(filtered).hasSize(1);
     Set<String> fileNames = filtered.stream().map(File::getName).collect(Collectors.toSet());
-    Assertions.assertTrue(fileNames.contains("RSLogs.txt"));
+    assertThat(fileNames).contains("RSLogs.txt");
 
     // now try completely unconstrained search should return all files
     element.clear();
-    Assertions.assertEquals(TOTAL_LOG_FILES, tracker.filter(logs, element).size());
+    assertThat(tracker.filter(logs, element)).hasSize(TOTAL_LOG_FILES);
   }
 
   private Set<String> searchBetween2Dates(Collection<File> logs) throws ParseException {
@@ -94,7 +96,7 @@ public class LogFileTrackerTest {
     // current + 2 file
     element.setDateRange(new DateRange(start, end));
     filtered = tracker.filter(logs, element);
-    Assertions.assertEquals(3, tracker.filter(logs, element).size());
+    assertThat(tracker.filter(logs, element)).hasSize(3);
     return filtered.stream().map(File::getName).collect(Collectors.toSet());
   }
 
@@ -102,17 +104,17 @@ public class LogFileTrackerTest {
   public void testFileRolloverDetected() throws ParseException, IOException {
     File tempDir = folder;
     FileUtils.copyDirectory(logFolder, tempDir, null);
-    Assertions.assertEquals(5, getAllFilesInFolder(tempDir).size());
+    assertThat(getAllFilesInFolder(tempDir)).hasSize(5);
     Set<String> fileNames = searchBetween2Dates(getAllFilesInFolder(tempDir));
 
-    Assertions.assertTrue(fileNames.contains("RSLogs.txt.3"));
-    Assertions.assertTrue(fileNames.contains("RSLogs.txt.2"));
-    Assertions.assertTrue(fileNames.contains("RSLogs.txt"));
+    assertThat(fileNames).contains("RSLogs.txt.3");
+    assertThat(fileNames).contains("RSLogs.txt.2");
+    assertThat(fileNames).contains("RSLogs.txt");
     rolloverLogFiles(tempDir);
     fileNames = searchBetween2Dates(getAllFilesInFolder(tempDir));
-    Assertions.assertTrue(fileNames.contains("RSLogs.txt.4"));
-    Assertions.assertTrue(fileNames.contains("RSLogs.txt.3"));
-    Assertions.assertTrue(fileNames.contains("RSLogs.txt"));
+    assertThat(fileNames).contains("RSLogs.txt.4");
+    assertThat(fileNames).contains("RSLogs.txt.3");
+    assertThat(fileNames).contains("RSLogs.txt");
   }
 
   private Collection<File> getAllFilesInFolder(File tempDir) {
@@ -135,6 +137,6 @@ public class LogFileTrackerTest {
         "12 May 2018 16:10:06,627 - [/app/workspace/7141] from 127.0.0.1 with args: [] made by:"
             + " [user2b]",
         "UTF-8");
-    Assertions.assertEquals(6, getAllFilesInFolder(tempDir).size());
+    assertThat(getAllFilesInFolder(tempDir)).hasSize(6);
   }
 }

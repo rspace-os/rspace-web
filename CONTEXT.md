@@ -225,12 +225,28 @@ resolved during design. This file is a glossary only — no implementation detai
 - **PID lookup** — searching a PID registry for instrument records, by free text or by a
   PID, in order to import one. A lookup always goes to the deployment's enabled PIDINST
   provider, with that provider's configured server and credentials; while no PIDINST
-  provider is enabled there is no lookup, and there is never a choice of registry. Only
+  provider is enabled there is no lookup, and there is never a choice of registry. A lookup needs
+  at least four characters, so a query shorter than that is refused rather than answered with most
+  of the registry. How free text matches depends on the provider: a B2INST lookup matches a
+  *substring*, so part of a name finds the record that carries it, while a DataCite lookup matches
+  whole indexed words, exactly as a search in DataCite's own portal does. Only
   *public* records are found: a PID whose registration is still in progress, or has been
   declined, is not a lookup result and cannot be imported, because it has no resolvable
   landing page to link to.
   _Avoid_: federated search (there is one registry per deployment), PIDINST search, DOI
   search
+
+- **Already-linked marker** — the note on a PID lookup hit saying that an Instrument in this
+  RSpace already links its PID. Every user sees it, so refusing to import the hit always has
+  a stated reason; but it names that Instrument, and leads to it, only for a user who may
+  read it, by the same rule that decides whether an Instrument's own page shows its details
+  or only its no-access state. Anyone else reads that an instrument they cannot access holds
+  the PID, echoing the *No access* link-target state (DevDocs/CONTEXT.md) without sharing its
+  rule: that state is stricter, so a viewer with only limited read is named the Instrument
+  here and would not be there. An import they attempt is refused in the same terms. The
+  link's existence is disclosed; the Instrument's identity is not (RSDEV-1505; ADR 0002's
+  principle, recorded for this case as an amendment to ADR 0009).
+  _Avoid_: linked-to chip (the chip is only one of the marker's two forms), duplicate warning
 
 - **Instrument import** — creating an Instrument from a PID record found in a public PID
   registry: RSpace fetches the record itself, fills the default PIDINST template's fields

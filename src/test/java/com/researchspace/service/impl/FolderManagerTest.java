@@ -1,9 +1,7 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -23,7 +21,6 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,7 +48,8 @@ public class FolderManagerTest {
 
   @Test
   public void testCreateGallerySubfolderThrowsIAEIfInvalid() {
-    assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> folderManagerImpl.createGallerySubfolder("any", "unknown", anyUser));
   }
 
@@ -65,11 +63,12 @@ public class FolderManagerTest {
     when(folderDao.get(child.getId())).thenReturn(child);
 
     // this should trigger IACO
+    Long childId = child.getId();
     assertThrows(
         IllegalAddChildOperation.class,
         () ->
             folderManagerImpl.addChild(
-                child.getId(), parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, false));
+                childId, parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, false));
 
     assertChildNotAddedtoParent(parent);
 
@@ -77,7 +76,7 @@ public class FolderManagerTest {
     ServiceOperationResult<Folder> result =
         folderManagerImpl.addChild(
             child.getId(), parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, true);
-    assertThat(result.isSucceeded(), Matchers.is(Boolean.FALSE));
+    assertEquals(Boolean.FALSE, result.isSucceeded());
     assertEquals(child, result.getEntity()); // returns the intended parent
     assertChildNotAddedtoParent(parent);
   }
@@ -137,7 +136,7 @@ public class FolderManagerTest {
   }
 
   private void assertResultSucceeded(ServiceOperationResult<Folder> result) {
-    assertThat(result.isSucceeded(), Matchers.is(Boolean.TRUE));
+    assertEquals(Boolean.TRUE, result.isSucceeded());
   }
 
   private ServiceOperationResult<Folder> addChildToParent(boolean suppressException) {
@@ -148,6 +147,6 @@ public class FolderManagerTest {
   }
 
   private void assertChildNotAddedtoParent(Folder intendedChild) {
-    assertThat(intendedChild.getParent(), nullValue());
+    assertNull(intendedChild.getParent());
   }
 }

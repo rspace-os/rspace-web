@@ -1,7 +1,7 @@
 package com.researchspace.netfiles;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.time.Instant;
 import java.util.Map;
@@ -21,7 +21,7 @@ class WriteAttributionTest {
     assertEquals("2026-06-18T10:00:00Z", m.get("rspace-created-at"));
     assertEquals("123", m.get("rspace-record-id"));
     assertEquals("My Image", m.get("rspace-record-name"));
-    assertEquals(4, m.size());
+    assertThat(m).hasSize(4);
   }
 
   @Test
@@ -33,8 +33,8 @@ class WriteAttributionTest {
     assertEquals("alice", m.get("rspace-created-by"));
     assertEquals("2026-06-18T10:00:00Z", m.get("rspace-created-at"));
     assertEquals("123", m.get("rspace-record-id"));
-    assertFalse(m.containsKey("rspace-record-name"));
-    assertEquals(3, m.size());
+    assertThat(m).doesNotContainKey("rspace-record-name");
+    assertThat(m).hasSize(3);
   }
 
   @Test
@@ -45,8 +45,8 @@ class WriteAttributionTest {
 
     assertEquals("alice", m.get("rspace-created-by"));
     assertEquals("2026-06-18T10:00:00Z", m.get("rspace-created-at"));
-    assertFalse(m.containsKey("rspace-record-id"));
-    assertFalse(m.containsKey("rspace-record-name"));
-    assertEquals(2, m.size());
+    assertThat(m).doesNotContainKey("rspace-record-id");
+    assertThat(m).doesNotContainKey("rspace-record-name");
+    assertThat(m).hasSize(2);
   }
 }

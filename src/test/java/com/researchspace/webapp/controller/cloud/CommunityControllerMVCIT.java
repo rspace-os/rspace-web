@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller.cloud;
 
 import static com.researchspace.core.util.JacksonUtil.toJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -31,6 +32,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.cloud.impl.CommunityPostSignupVerification;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -56,6 +58,7 @@ import org.springframework.test.web.servlet.MvcResult;
 public class CommunityControllerMVCIT extends MVCTestBase {
 
   private @Autowired RSCommunityController rsCommunityController;
+  private @Autowired IPropertyHolder propertyHolder;
   private HttpServletRequest mockRequest;
 
   @Mock CommunityPostSignupVerification postSignupVerification;
@@ -118,7 +121,7 @@ public class CommunityControllerMVCIT extends MVCTestBase {
             .perform(get("/cloud/ajax/searchPublicUserInfoList").param("term", "t1"))
             .andReturn();
     Map data = parseJSONObjectFromResponseStream(res);
-    assertTrue(data.containsKey("errorMsg"));
+    assertThat(data).containsKey("errorMsg");
   }
 
   @Test
@@ -524,7 +527,7 @@ public class CommunityControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertTrue(getFromJsonAjaxReturnObject(result, Boolean.class));
     Group grp = grpMgr.getGroup(tg.getGroup().getId());
-    assertFalse(grp.getMembers().contains(tg.u1()));
+    assertThat(grp.getMembers()).doesNotContain(tg.u1());
 
     // now set group profile to be private:
     logoutAndLoginAs(tg.getPi());

@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -17,6 +18,7 @@ import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +87,7 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     api.setRelationType("References");
     api.setTargetGlobalId(target1.getGlobalId());
     InventoryLink saved = linkManager.createLink(api, user);
-    java.util.Date originalCreated = saved.getCreatedAt();
+    Date originalCreated = saved.getCreatedAt();
 
     Thread.sleep(5);
     ApiInventoryLink update = new ApiInventoryLink();
@@ -123,7 +125,7 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     List<ApiInventoryReferencingItem> rows =
         linkManager.findReferencingItems(target.getGlobalId(), user);
 
-    assertEquals(0, rows.size());
+    assertThat(rows).isEmpty();
   }
 
   @Test
@@ -131,11 +133,12 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     User owner = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples target = createBasicSampleForUser(owner);
     User stranger = createInitAndLoginAnyUser();
+    String targetGlobalId = target.getGlobalId();
 
     // same error as a missing record, so the response does not confirm the target exists
     assertThrows(
         ApiRuntimeException.class,
-        () -> linkManager.findReferencingItems(target.getGlobalId(), stranger));
+        () -> linkManager.findReferencingItems(targetGlobalId, stranger));
   }
 
   @Test

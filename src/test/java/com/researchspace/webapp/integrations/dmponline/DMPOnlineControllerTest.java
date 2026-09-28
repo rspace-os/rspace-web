@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.dmponline;
 
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -94,7 +95,7 @@ public class DMPOnlineControllerTest extends SpringTransactionalTest {
     RedirectView result = dmpOnlineController.connect();
 
     UserConnection actualConnection = getUserConnection(testUser);
-    assertTrue(result.getUrl().contains("dmponline.dmptest.dcc.ac.uk/oauth/authorize"));
+    assertThat(result.getUrl()).contains("dmponline.dmptest.dcc.ac.uk/oauth/authorize");
     assertNull(actualConnection);
   }
 
@@ -134,7 +135,7 @@ public class DMPOnlineControllerTest extends SpringTransactionalTest {
     String result = dmpOnlineController.callback(params, new BindingAwareModelMap(), principal);
     actualConnection = getUserConnection(testUser);
 
-    assertTrue(result.contains("connected"));
+    assertThat(result).contains("connected");
     assertEquals("DMPonline access token", actualConnection.getDisplayName());
     assertNotNull(actualConnection.getExpireTime());
     assertEquals("NEW_ACCESS_TOKEN", actualConnection.getAccessToken());
@@ -173,7 +174,7 @@ public class DMPOnlineControllerTest extends SpringTransactionalTest {
     String result = dmpOnlineController.refreshToken(new BindingAwareModelMap(), principal);
     UserConnection actualConnection = getUserConnection(testUser);
 
-    assertTrue(result.contains("connected"));
+    assertThat(result).contains("connected");
     assertEquals("DMPonline refreshed access token", actualConnection.getDisplayName());
     assertNotNull(actualConnection.getExpireTime());
     assertEquals("NEW_ACCESS_TOKEN", actualConnection.getAccessToken());
@@ -250,7 +251,7 @@ public class DMPOnlineControllerTest extends SpringTransactionalTest {
     assertNotNull(actualConnection);
     assertEquals("ACCESS_TOKEN", actualConnection.getAccessToken());
     assertEquals("REFRESH_TOKEN", actualConnection.getRefreshToken());
-    assertEquals("299", actualConnection.getExpireTime().toString());
+    assertThat(actualConnection.getExpireTime()).hasToString("299");
     assertEquals("DMPonline access token", actualConnection.getDisplayName());
   }
 

@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller.repositories;
 
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,7 +55,7 @@ class DigitalCommonsDataUIConnectionConfigTest {
   void getRepositoryURLSucceed() throws MalformedURLException {
     String VALID_URL = "https://valid.url";
     when(propertyHolder.getDigitalCommonsDataBaseUrl()).thenReturn(VALID_URL);
-    assertEquals(new URL(VALID_URL), underTest.getRepositoryURL().get());
+    assertThat(underTest.getRepositoryURL()).contains(new URL(VALID_URL));
   }
 
   @Test

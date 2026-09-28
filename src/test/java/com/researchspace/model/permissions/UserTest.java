@@ -1,6 +1,6 @@
 package com.researchspace.model.permissions;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,11 +85,11 @@ public class UserTest {
     u1.addPermission(p3);
     gp1.addMember(u1, RoleInGroup.DEFAULT);
     // get all, inherited
-    assertEquals(3, u1.getAllPermissions(true, true).size());
+    assertThat(u1.getAllPermissions(true, true)).hasSize(3);
     // don't inherit
-    assertEquals(1, u1.getAllPermissions(true, false).size());
+    assertThat(u1.getAllPermissions(true, false)).hasSize(1);
     p1.setEnabled(false);
     // disable permission from group
-    assertEquals(2, u1.getAllPermissions(false, true).size());
+    assertThat(u1.getAllPermissions(false, true)).hasSize(2);
   }
 }

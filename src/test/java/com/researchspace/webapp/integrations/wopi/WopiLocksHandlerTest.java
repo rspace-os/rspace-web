@@ -1,5 +1,6 @@
 package com.researchspace.webapp.integrations.wopi;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.service.MediaFileLockHandler;
@@ -18,7 +19,7 @@ public class WopiLocksHandlerTest {
     String lockId2 = "lock2";
 
     // assert no lock
-    assertEquals("", lockHandler.getLock(fileId));
+    assertThat(lockHandler.getLock(fileId)).isEmpty();
 
     // requesting lock for user/resource returns this lock id
     String returnedLockMismatchedValue = lockHandler.lock(fileId, lockId);
@@ -38,7 +39,7 @@ public class WopiLocksHandlerTest {
     // unlocking
     returnedLockMismatchedValue = lockHandler.unlock(fileId, lockId2);
     assertEquals(null, returnedLockMismatchedValue);
-    assertEquals("", lockHandler.getLock(fileId));
+    assertThat(lockHandler.getLock(fileId)).isEmpty();
   }
 
   @Test
@@ -66,12 +67,12 @@ public class WopiLocksHandlerTest {
 
     // wait 500ms, lock on first resource should expire by now
     Thread.sleep(500);
-    assertEquals("", lockHandler.getLock(fileId));
+    assertThat(lockHandler.getLock(fileId)).isEmpty();
     assertEquals(lockId2, lockHandler.getLock(fileId2));
 
     // wait 500ms, lock on both resources should be expired by now
     Thread.sleep(500);
-    assertEquals("", lockHandler.getLock(fileId));
-    assertEquals("", lockHandler.getLock(fileId2));
+    assertThat(lockHandler.getLock(fileId)).isEmpty();
+    assertThat(lockHandler.getLock(fileId2)).isEmpty();
   }
 }

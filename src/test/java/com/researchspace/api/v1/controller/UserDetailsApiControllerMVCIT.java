@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -97,7 +98,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
 
     List<ApiUser> foundUsers =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<List<ApiUser>>() {});
-    assertEquals(3, foundUsers.size());
+    assertThat(foundUsers).hasSize(3);
     ApiUser foundPiUser =
         foundUsers.stream().filter(u -> u.getUsername().equals(pi.getUsername())).findFirst().get();
     assertEquals(pi.getUsername(), foundPiUser.getUsername());
@@ -132,7 +133,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
 
     List<ApiUser> foundUsers =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<List<ApiUser>>() {});
-    assertEquals(0, foundUsers.size());
+    assertThat(foundUsers).isEmpty();
 
     result =
         mockMvc
@@ -143,7 +144,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     foundUsers =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<List<ApiUser>>() {});
-    assertEquals(1, foundUsers.size());
+    assertThat(foundUsers).hasSize(1);
     ApiUser foundUser = foundUsers.get(0);
     assertEquals(sysAdminUser.getUsername(), foundUser.getUsername());
     assertEquals(sysAdminUser.getFirstName(), foundUser.getFirstName());
@@ -165,7 +166,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     foundUsers =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<List<ApiUser>>() {});
-    assertEquals(1, foundUsers.size());
+    assertThat(foundUsers).hasSize(1);
     foundUser = foundUsers.get(0);
     assertEquals(anyUser.getUsername(), foundUser.getUsername());
     assertEquals(anyUser.getEmail(), foundUser.getEmail());
@@ -184,7 +185,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     foundUsers =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<List<ApiUser>>() {});
-    assertEquals(1, foundUsers.size());
+    assertThat(foundUsers).hasSize(1);
     foundUser = foundUsers.get(0);
     assertEquals(anyUser.getUsername(), foundUser.getUsername());
     assertEquals(anyUser.getEmail(), foundUser.getEmail());
@@ -220,7 +221,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
     assertFalse(visibleTabs.isSystem());
 
     List<ApiUiNavigationExtraHelpLink> extraHelpLinks = retrievedData.getExtraHelpLinks();
-    assertEquals(2, extraHelpLinks.size());
+    assertThat(extraHelpLinks).hasSize(2);
     assertEquals("linkName1", extraHelpLinks.get(0).getLabel());
     assertEquals("http://www.url.com/example1", extraHelpLinks.get(0).getUrl());
 

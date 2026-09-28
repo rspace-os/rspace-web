@@ -183,6 +183,16 @@ public class B2instConnectorImpl implements B2instConnector {
             "B2INST review did not return a submit action for record " + rid,
             messages.getMessage("errors.inventory.identifier.b2instNoSubmitAction"));
       }
+      if (!isOnConfiguredServer(submitUrl)) {
+        throw new B2instConnectionException(
+            "B2INST submit action for record "
+                + rid
+                + " points away from "
+                + serverUrl
+                + ": "
+                + submitUrl,
+            messages.getMessage("errors.inventory.identifier.b2instSubmitActionOtherHost"));
+      }
       return restTemplate.postForObject(submitUrl, emptyJsonBody(), B2instRequestResponse.class);
     } catch (RestClientException e) {
       String reason = describeFailure(e);
@@ -430,6 +440,21 @@ public class B2instConnectorImpl implements B2instConnector {
       return null;
     }
     return created.getLinks().getActions().getSubmit();
+  }
+
+  /**
+   * The bearer token goes on every request this client makes, so a link taken from a B2INST
+   * response is only followed when its scheme and authority (user info, host, port) are the
+   * configured server's. A plain prefix check would accept {@code
+   * https://<server>.attacker.example}.
+   */
+  private boolean isOnConfiguredServer(String url) {
+    try {
+      return URI.create(url).resolve("/").equals(URI.create(serverUrl).resolve("/"));
+    } catch (IllegalArgumentException e) {
+      log.warn("B2INST submit action is not a usable URL: {}", url, e);
+      return false;
+    }
   }
 
   private String apiBase() {

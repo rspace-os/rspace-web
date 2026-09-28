@@ -1,5 +1,6 @@
 package com.researchspace.model.audit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,7 +56,7 @@ public class AuditedRecordTest {
     set.add(ar1);
     set.add(ar2);
     set.add(ar3);
-    assertEquals(2, set.size());
+    assertThat(set).hasSize(2);
 
     AuditedRecord ar4 = new AuditedRecord(r1, 2);
     assertFalse(ar4.equals(ar1));

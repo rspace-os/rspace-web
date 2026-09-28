@@ -1,8 +1,8 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -70,27 +70,27 @@ public class NfsExportManagerTest extends SpringTransactionalTest {
 
     NfsExportPlan exportPlan = nfsExportManager.generateQuickExportPlan(docsToExport);
     assertNotNull(exportPlan);
-    assertEquals(1, exportPlan.getFoundFileSystems().size());
+    assertThat(exportPlan.getFoundFileSystems()).hasSize(1);
     assertEquals(testFileSystemId, exportPlan.getFoundFileSystems().get(0).getId());
-    assertEquals(1, exportPlan.getFoundFileStoresByIdMap().size());
+    assertThat(exportPlan.getFoundFileStoresByIdMap()).hasSize(1);
     assertEquals(
         testFileStoreId, exportPlan.getFoundFileStoresByIdMap().get(testFileStoreId).getId());
-    assertEquals(2, exportPlan.getFoundNfsLinks().size());
-    assertEquals(2, exportPlan.getFoundFileSystems().get(0).getFoundNfsLinks().size());
+    assertThat(exportPlan.getFoundNfsLinks()).hasSize(2);
+    assertThat(exportPlan.getFoundFileSystems().get(0).getFoundNfsLinks()).hasSize(2);
     Iterator<NfsElement> foundLinksIterator = exportPlan.getFoundNfsLinks().values().iterator();
     assertEquals(testNfsFilePath, foundLinksIterator.next().getPath());
     assertEquals(testNfsFolderPath, foundLinksIterator.next().getPath());
     assertEquals(1, exportPlan.countFileSystemsRequiringLogin());
-    assertEquals(0, exportPlan.getCheckedNfsLinks().size());
-    assertEquals(0, exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinks().size());
+    assertThat(exportPlan.getCheckedNfsLinks()).isEmpty();
+    assertThat(exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinks()).isEmpty();
 
     // empty nfsClients map - user not yet logged anywhere
     Map<Long, NfsClient> nfsClients = new HashMap<>();
     nfsExportManager.checkLoggedAsStatusForFileSystemsInExportPlan(exportPlan, nfsClients, user);
-    assertEquals(1, exportPlan.getFoundFileSystems().size());
+    assertThat(exportPlan.getFoundFileSystems()).hasSize(1);
     assertEquals(1, exportPlan.countFileSystemsRequiringLogin());
-    assertEquals(0, exportPlan.getCheckedNfsLinks().size());
-    assertEquals(0, exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinks().size());
+    assertThat(exportPlan.getCheckedNfsLinks()).isEmpty();
+    assertThat(exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinks()).isEmpty();
 
     // nfsClients map with mock client that is logged in and recognises path to test file
     NfsClient mockNfsClient = mock(NfsClient.class);
@@ -99,10 +99,10 @@ public class NfsExportManagerTest extends SpringTransactionalTest {
 
     // should update plan so user appears logged in
     nfsExportManager.checkLoggedAsStatusForFileSystemsInExportPlan(exportPlan, nfsClients, user);
-    assertEquals(1, exportPlan.getFoundFileSystems().size());
+    assertThat(exportPlan.getFoundFileSystems()).hasSize(1);
     assertEquals(0, exportPlan.countFileSystemsRequiringLogin());
-    assertEquals(0, exportPlan.getCheckedNfsLinks().size());
-    assertEquals(0, exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinks().size());
+    assertThat(exportPlan.getCheckedNfsLinks()).isEmpty();
+    assertThat(exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinks()).isEmpty();
   }
 
   @Test
@@ -139,15 +139,15 @@ public class NfsExportManagerTest extends SpringTransactionalTest {
 
     // scan should check the files, find both but second with connected 'not available' msg
     nfsExportManager.scanFileSystemsForFoundNfsLinks(exportPlan, nfsClients, null);
-    assertEquals(2, exportPlan.getCheckedNfsLinks().size());
-    assertEquals(2, exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinks().size());
+    assertThat(exportPlan.getCheckedNfsLinks()).hasSize(2);
+    assertThat(exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinks()).hasSize(2);
     Map<String, String> messages = exportPlan.getCheckedNfsLinkMessages();
-    assertEquals(1, messages.size());
+    assertThat(messages).hasSize(1);
     assertEquals(
         messageSource.getMessage(NfsExportManagerImpl.RESOURCE_NOT_ACCESSIBLE_MSG_KEY),
         messages.values().iterator().next());
-    assertTrue(messages.keySet().iterator().next().endsWith("test_moved.txt"));
-    assertEquals(1, exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinkMessages().size());
+    assertThat(messages.keySet().iterator().next()).endsWith("test_moved.txt");
+    assertThat(exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinkMessages()).hasSize(1);
 
     // verify the archive size limit properties are set
     assertEquals(diskSpaceChecker.getMaxArchiveSizeMB(), exportPlan.getMaxArchiveSizeMBProp());

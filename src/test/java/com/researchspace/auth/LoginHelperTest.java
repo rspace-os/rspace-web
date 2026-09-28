@@ -136,7 +136,9 @@ public class LoginHelperTest {
   public void testLoginThrowsISEIfAccountDisabled() {
     User any = createAnyUser("any");
     any.setEnabled(false);
-    assertThrows(IllegalStateException.class, () -> loginHelper.login(any, any.getPassword(), req));
+    String password = any.getPassword();
+
+    assertThrows(IllegalStateException.class, () -> loginHelper.login(any, password, req));
   }
 
   private void assertPostLoginAssertions(

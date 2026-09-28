@@ -1,5 +1,6 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
@@ -45,32 +46,31 @@ public class ZipUtilsTest {
   @Test
   public void testFileFilter() throws IOException {
     // get 2 files
-    assertEquals(2, FileUtils.listFiles(ROOTFOLDER_FILE, TrueFileFilter.TRUE, null).size());
+    assertThat(FileUtils.listFiles(ROOTFOLDER_FILE, TrueFileFilter.TRUE, null)).hasSize(2);
     Collection dirs =
         FileUtils.listFilesAndDirs(
             ROOTFOLDER_FILE, FalseFileFilter.FALSE, new WildcardFileFilter("*evel1"));
     // this includes the original direcotry
-    assertEquals(2, dirs.size());
+    assertThat(dirs).hasSize(2);
   }
 
   @Test
   public void test2() throws IOException {
     String path = "src/test/resources/chem-data-sheets.zip";
     ZipUtils.extractZip(path, PREFIX + "extracted");
-    assertEquals(1, EXTRACTED_FOLDER.listFiles().length);
+    assertThat(EXTRACTED_FOLDER.listFiles()).hasSize(1);
   }
 
   @Test
   public void test() throws IOException {
     ZipUtils.createZip(PREFIX + "archive.zip", new File(ROOTFOLDER));
     ZipUtils.extractZip(PREFIX + "archive.zip", PREFIX + "extracted");
-    assertEquals(1, EXTRACTED_FOLDER.listFiles().length);
+    assertThat(EXTRACTED_FOLDER.listFiles()).hasSize(1);
     File zipRoot = new File(EXTRACTED + "rootFolder");
     // 2 files
-    assertEquals(
-        2,
-        FileUtils.listFiles(zipRoot, FileFilterUtils.makeSVNAware(TrueFileFilter.TRUE), null)
-            .size());
+    assertThat(
+            FileUtils.listFiles(zipRoot, FileFilterUtils.makeSVNAware(TrueFileFilter.TRUE), null))
+        .hasSize(2);
     String contents = FileUtils.readFileToString(new File(zipRoot, "a.txt"));
     assertEquals(EXPECTED_CONTENTS, contents);
   }

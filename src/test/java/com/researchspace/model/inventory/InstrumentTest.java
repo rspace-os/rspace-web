@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,16 +46,16 @@ public class InstrumentTest {
   @Test
   @DisplayName("Use OID to distinguish instruments from instrument templates")
   public void globalId() {
-    assertTrue(instrument.getGlobalIdentifier().startsWith("IN"));
+    assertThat(instrument.getGlobalIdentifier()).startsWith("IN");
     assertEquals(GlobalIdPrefix.IN, instrument.getOid().getPrefix());
 
     InstrumentTemplate template = (InstrumentTemplate) instrument.copyToTemplate(anyUser);
     template.setId(6L);
 
-    assertTrue(template.getGlobalIdentifier().startsWith("NT"));
+    assertThat(template.getGlobalIdentifier()).startsWith("NT");
     assertEquals(GlobalIdPrefix.NT, template.getOid().getPrefix());
-    assertFalse(template.getOid().toString().endsWith("v1"));
-    assertTrue(template.getOidWithVersion().toString().endsWith("v1"));
+    assertThat(template.getOid().toString()).doesNotEndWith("v1");
+    assertThat(template.getOidWithVersion().toString()).endsWith("v1");
   }
 
   @Test
@@ -63,7 +64,7 @@ public class InstrumentTest {
     assertFalse(copied.isTemplate());
     assertNull(copied.getGlobalIdentifier());
     assertEquals(instrument.getName() + "_COPY", copied.getName());
-    assertEquals(0, copied.getActiveFields().size());
+    assertThat(copied.getActiveFields()).isEmpty();
     assertNull(copied.getInstrumentTemplate());
     assertNull(copied.getTemplateLinkedVersion());
   }

@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.model;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
@@ -53,12 +53,14 @@ public class ApiFieldToModelFieldFactoryTest {
     ApiInventoryEntityField anyApiField = new ApiInventoryEntityField();
     anyApiField.setType(ApiFieldType.CHOICE);
     // no definition
-    assertIllegalArgumentException(() -> factory.apiInventoryFieldToModelField(anyApiField));
+    assertThrows(
+        IllegalArgumentException.class, () -> factory.apiInventoryFieldToModelField(anyApiField));
 
     // no options
     ApiInventoryFieldDef def = new ApiInventoryFieldDef();
     anyApiField.setDefinition(def);
-    assertIllegalArgumentException(() -> factory.apiInventoryFieldToModelField(anyApiField));
+    assertThrows(
+        IllegalArgumentException.class, () -> factory.apiInventoryFieldToModelField(anyApiField));
 
     // valid options, no content (i.e no default preselected options)
     def.setOptions(Arrays.asList("a=b", "a=c"));
@@ -71,12 +73,14 @@ public class ApiFieldToModelFieldFactoryTest {
     ApiInventoryEntityField anyApiField = new ApiInventoryEntityField();
     anyApiField.setType(ApiFieldType.RADIO);
     // no definition
-    assertIllegalArgumentException(() -> factory.apiInventoryFieldToModelField(anyApiField));
+    assertThrows(
+        IllegalArgumentException.class, () -> factory.apiInventoryFieldToModelField(anyApiField));
 
     // no options
     ApiInventoryFieldDef def = new ApiInventoryFieldDef();
     anyApiField.setDefinition(def);
-    assertIllegalArgumentException(() -> factory.apiInventoryFieldToModelField(anyApiField));
+    assertThrows(
+        IllegalArgumentException.class, () -> factory.apiInventoryFieldToModelField(anyApiField));
 
     // valid options, no content (i.e no default preselected options)
     def.setOptions(Arrays.asList("a=b", "a=c"));
@@ -121,7 +125,7 @@ public class ApiFieldToModelFieldFactoryTest {
     any.setContent(invalid);
     any.setType(type);
     any.setName("afield");
-    assertIllegalArgumentException(() -> factory.apiInventoryFieldToModelField(any));
+    assertThrows(IllegalArgumentException.class, () -> factory.apiInventoryFieldToModelField(any));
     any.setContent(valid);
     assertNotNull(factory.apiInventoryFieldToModelField(any));
   }

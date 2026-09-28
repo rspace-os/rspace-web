@@ -67,9 +67,10 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
           errors.reject("errors.recordFilterMustIncludeTerm");
           return;
         }
-        String[] recordList = terms[i].split("\\s*[,;]\\s*");
+        String[] recordList = terms[i].split("[,;]");
         try {
-          for (String recordId : recordList) {
+          for (String rawRecordId : recordList) {
+            String recordId = rawRecordId.trim();
             // examples of valid recordIds: FL420, NB1337, SD80085
             if (recordId.length() <= 2) {
               errors.reject("errors.termCannotParse", new String[] {terms[i]}, null);
@@ -93,17 +94,19 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
         // validate dates – they should be separated by a semicolon ;
         // and be either empty, or equal "null", or in ISO-8601 format.
         String[] toAndFrom =
-            terms[i].split("\\s*[,;]\\s*", -1); // -1 makes sure we also catch empty strings
+            terms[i].split("[,;]", -1); // -1 makes sure we also catch empty strings
         if (toAndFrom.length != 2) {
           errors.reject("errors.termCannotParse", new String[] {terms[i]}, null);
           return;
         }
         try {
-          if (shouldParseDate(toAndFrom[0])) {
-            OffsetDateTime.parse(toAndFrom[0]);
+          String from = toAndFrom[0].trim();
+          String to = toAndFrom[1].trim();
+          if (shouldParseDate(from)) {
+            OffsetDateTime.parse(from);
           }
-          if (shouldParseDate(toAndFrom[1])) {
-            OffsetDateTime.parse(toAndFrom[1]);
+          if (shouldParseDate(to)) {
+            OffsetDateTime.parse(to);
           }
         } catch (DateTimeParseException e) {
           errors.reject("errors.termCannotParse", new String[] {terms[i]}, null);

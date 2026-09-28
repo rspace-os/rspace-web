@@ -1,6 +1,6 @@
 package com.researchspace.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,9 +24,9 @@ public class OAuthAppDaoTest extends SpringTransactionalTest {
     appDao.save(createOAuthApp(user2, "app1"));
     appDao.save(createOAuthApp(user2, "app3"));
 
-    assertEquals(2, appDao.getApps(user1.getId()).size());
-    assertEquals(2, appDao.getApps(user2.getId()).size());
-    assertEquals(0, appDao.getApps(-100L).size()); // Non existing user id
+    assertThat(appDao.getApps(user1.getId())).hasSize(2);
+    assertThat(appDao.getApps(user2.getId())).hasSize(2);
+    assertThat(appDao.getApps(-100L)).isEmpty(); // Non existing user id
   }
 
   @Test
@@ -37,12 +37,12 @@ public class OAuthAppDaoTest extends SpringTransactionalTest {
 
     appDao.save(app);
 
-    assertTrue(appDao.getApp(user.getId(), app.getClientId()).isPresent());
+    assertThat(appDao.getApp(user.getId(), app.getClientId())).isPresent();
 
     boolean isAppRemoved = appDao.removeApp(user.getId(), app.getClientId());
 
     assertTrue(isAppRemoved);
-    assertFalse(appDao.getApp(user.getId(), app.getClientId()).isPresent());
+    assertThat(appDao.getApp(user.getId(), app.getClientId())).isNotPresent();
 
     isAppRemoved = appDao.removeApp(user.getId(), app.getClientId());
     assertFalse(isAppRemoved);

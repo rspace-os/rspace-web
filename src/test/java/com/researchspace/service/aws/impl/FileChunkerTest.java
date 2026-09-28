@@ -1,5 +1,6 @@
 package com.researchspace.service.aws.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -10,7 +11,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -45,7 +45,7 @@ public class FileChunkerTest {
       }
     }
 
-    Assertions.assertArrayEquals(fromFile, FileUtils.readFileToByteArray(assembled));
+    assertThat(FileUtils.readFileToByteArray(assembled)).containsExactly(fromFile);
   }
 
   @Test
@@ -70,6 +70,6 @@ public class FileChunkerTest {
     }
     // assert bytes are equal in original and rebuilt-from-chunks
     byte[] fromChunked = FileUtils.readFileToByteArray(assembledFromChunksTmp);
-    Assertions.assertArrayEquals(fromFile, fromChunked);
+    assertThat(fromChunked).containsExactly(fromFile);
   }
 }

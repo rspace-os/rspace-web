@@ -1,5 +1,6 @@
 package com.researchspace.service.cloud;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,7 +69,7 @@ public class CloudServiceManagerIT extends RealTransactionSpringTestBase {
     // i.e., user1 shares with user2 is the end result
     logoutAndLoginAs(user2);
     shareRecordWithUser(user1, docD1, user2);
-    assertEquals(2, userMgr.getViewableUserSet(user2).size());
+    assertThat(userMgr.getViewableUserSet(user2)).hasSize(2);
   }
 
   @Test
@@ -243,6 +244,6 @@ public class CloudServiceManagerIT extends RealTransactionSpringTestBase {
     assertTrue(userManager.userExists(signupUsername));
 
     Group refreshedGroup = grpMgr.getGroup(group.getId());
-    assertFalse(refreshedGroup.getDisplayName().contains("<"));
+    assertThat(refreshedGroup.getDisplayName()).doesNotContain("<");
   }
 }

@@ -1,7 +1,6 @@
 package com.researchspace.export.stoichiometry;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -67,13 +66,14 @@ public class StoichiometryHtmlGeneratorTest {
 
     String result = generator.addStoichiometryLinks(html, exporter);
 
-    assertTrue(
-        result.contains("Stoichiometry Information for" + REACTIONLESS_HEADER),
-        () -> "expected reaction-less header but got:\n" + result);
-    assertFalse(
-        result.contains(DEFAULT_REACTION_HEADER),
-        "default reaction-linked header must not appear when"
-            + " data-stoichiometry-table-only=\"true\"");
+    assertThat(result)
+        .withFailMessage(() -> "expected reaction-less header but got:\n" + result)
+        .contains("Stoichiometry Information for" + REACTIONLESS_HEADER);
+    assertThat(result)
+        .as(
+            "default reaction-linked header must not appear when"
+                + " data-stoichiometry-table-only=\"true\"")
+        .doesNotContain(DEFAULT_REACTION_HEADER);
   }
 
   @Test
@@ -89,12 +89,12 @@ public class StoichiometryHtmlGeneratorTest {
 
     String result = generator.addStoichiometryLinks(html, exporter);
 
-    assertTrue(
-        result.contains("Stoichiometry Information for" + alt),
-        () -> "expected alt-derived header but got:\n" + result);
-    assertFalse(
-        result.contains(REACTIONLESS_HEADER),
-        "reaction-less header must not appear when data-stoichiometry-table-only is absent");
+    assertThat(result)
+        .withFailMessage(() -> "expected alt-derived header but got:\n" + result)
+        .contains("Stoichiometry Information for" + alt);
+    assertThat(result)
+        .as("reaction-less header must not appear when data-stoichiometry-table-only is absent")
+        .doesNotContain(REACTIONLESS_HEADER);
   }
 
   @Test
@@ -106,12 +106,12 @@ public class StoichiometryHtmlGeneratorTest {
 
     String result = generator.addStoichiometryLinks(html, exporter);
 
-    assertTrue(
-        result.contains("Stoichiometry Information for" + DEFAULT_REACTION_HEADER),
-        () -> "expected default reaction-linked header but got:\n" + result);
-    assertFalse(
-        result.contains(REACTIONLESS_HEADER),
-        "reaction-less header must not appear when data-stoichiometry-table-only is absent");
+    assertThat(result)
+        .withFailMessage(() -> "expected default reaction-linked header but got:\n" + result)
+        .contains("Stoichiometry Information for" + DEFAULT_REACTION_HEADER);
+    assertThat(result)
+        .as("reaction-less header must not appear when data-stoichiometry-table-only is absent")
+        .doesNotContain(REACTIONLESS_HEADER);
   }
 
   private StoichiometryDTO stoichiometryDtoWithMolecule() {

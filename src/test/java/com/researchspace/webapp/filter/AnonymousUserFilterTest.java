@@ -1,6 +1,6 @@
 package com.researchspace.webapp.filter;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -177,7 +177,7 @@ public class AnonymousUserFilterTest {
     testee.doFilterInternal(request, response, chain);
     verify(chain, never()).doFilter(eq(request), eq(response));
     verify(response).encodeRedirectURL(redirectUrlCaptor.capture());
-    assertTrue(redirectUrlCaptor.getValue().contains("/login"));
+    assertThat(redirectUrlCaptor.getValue()).contains("/login");
   }
 
   private void doFilterAndMakeNoRedirectAssertions() throws ServletException, IOException {

@@ -1,8 +1,7 @@
 package com.researchspace.linkedelements;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,9 +32,12 @@ class RichTextUpdaterStoichiometryTest {
 
     String attrValue =
         Jsoup.parse(result).select("img.chem").first().attr("data-stoichiometry-table");
-    assertTrue(attrValue.contains("\"id\":200"), "id should be updated to 200, got: " + attrValue);
-    assertFalse(
-        attrValue.contains("revision"), "revision should be removed from copy, got: " + attrValue);
+    assertThat(attrValue)
+        .as("id should be updated to 200, got: " + attrValue)
+        .contains("\"id\":200");
+    assertThat(attrValue)
+        .as("revision should be removed from copy, got: " + attrValue)
+        .doesNotContain("revision");
   }
 
   @Test
@@ -53,9 +55,12 @@ class RichTextUpdaterStoichiometryTest {
             .select("div[data-stoichiometry-table-only=true]")
             .first()
             .attr("data-stoichiometry-table");
-    assertTrue(attrValue.contains("\"id\":400"), "id should be updated to 400, got: " + attrValue);
-    assertFalse(
-        attrValue.contains("revision"), "revision should be removed from copy, got: " + attrValue);
+    assertThat(attrValue)
+        .as("id should be updated to 400, got: " + attrValue)
+        .contains("\"id\":400");
+    assertThat(attrValue)
+        .as("revision should be removed from copy, got: " + attrValue)
+        .doesNotContain("revision");
   }
 
   @Test
@@ -77,9 +82,9 @@ class RichTextUpdaterStoichiometryTest {
 
     List<Long> ids = updater.findStandaloneStoichiometryIds(html);
 
-    assertEquals(2, ids.size());
-    assertTrue(ids.contains(42L));
-    assertTrue(ids.contains(99L));
+    assertThat(ids).hasSize(2);
+    assertThat(ids).contains(42L);
+    assertThat(ids).contains(99L);
   }
 
   @Test
@@ -90,6 +95,6 @@ class RichTextUpdaterStoichiometryTest {
 
     List<Long> ids = updater.findStandaloneStoichiometryIds(html);
 
-    assertTrue(ids.isEmpty());
+    assertThat(ids).isEmpty();
   }
 }

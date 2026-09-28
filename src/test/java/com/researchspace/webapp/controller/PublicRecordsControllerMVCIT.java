@@ -170,4 +170,30 @@ public class PublicRecordsControllerMVCIT extends MVCTestBase {
     json = parseJSONObjectFromResponseStream(result);
     assertFalse((Boolean) json.get("data"));
   }
+
+  /**
+   * The rejected key is echoed in the error message. MockMvc does not render JSPs, so this pins the
+   * anonymous route to the error view and the presence of the raw key in the model; the escaping
+   * itself is done by EscapeXmlELResolver when error.jsp resolves the message.
+   */
+  @Test
+  public void anonymousUnknownSortKeyIsRejected() throws Exception {
+    when(systemPropertyManagerMock.getAllSysadminPropertiesAsMap())
+        .thenReturn(Collections.singletonMap("public_sharing", allowed));
+    String payload = "<script>alert(1)</script>";
+    MvcResult result =
+        mockMvc
+            .perform(get("/public/publishedView/publishedDocuments").param("orderBy", payload))
+            .andReturn();
+    assertEquals(
+        ControllerExceptionHandler.NON_AJAX_ERROR_VIEW_NAME,
+        result.getModelAndView().getViewName());
+    String message =
+        (String)
+            result
+                .getModelAndView()
+                .getModel()
+                .get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME);
+    assertTrue(message.contains(payload));
+  }
 }

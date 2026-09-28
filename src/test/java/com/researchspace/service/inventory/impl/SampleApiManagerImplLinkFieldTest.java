@@ -410,11 +410,12 @@ class SampleApiManagerImplLinkFieldTest {
     // an unchanged default is a no-op on the per-link path, so a whitelist-only edit would
     // otherwise leave the template holding a default its own field forbids
     dbField.setAllowedRelationTypes("IsPartOf");
+    List<InventoryEntityField> fields = List.of(dbField);
 
     ApiRuntimeException ex =
         assertThrows(
             ApiRuntimeException.class,
-            () -> InventoryApiManagerImpl.assertDefaultLinksMatchWhitelists(List.of(dbField)));
+            () -> InventoryApiManagerImpl.assertDefaultLinksMatchWhitelists(fields));
     assertEquals("errors.inventory.field.link.defaultRelationTypeNotPermitted", ex.getErrorCode());
   }
 

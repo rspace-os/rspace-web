@@ -70,14 +70,12 @@ public class UserRoleHandlerImplTest {
 
   @Test
   public void grantPiRoleRequiresAuth() {
+    User toPromote = TestFactory.createAnyUser("user");
+    setUpThrowAuthException(toPromote);
+
     assertThrows(
-        AuthorizationException.class,
-        () -> {
-          User toPromote = TestFactory.createAnyUser("user");
-          setUpThrowAuthException(toPromote);
-          roleHandler.grantGlobalPiRoleToUser(admin, toPromote);
-          verify(userManager, never()).save(toPromote);
-        });
+        AuthorizationException.class, () -> roleHandler.grantGlobalPiRoleToUser(admin, toPromote));
+    verify(userManager, never()).save(toPromote);
   }
 
   private void setUpThrowAuthException(User target) {
@@ -110,27 +108,24 @@ public class UserRoleHandlerImplTest {
 
   @Test
   public void revokePiRoleFailsIfPiIsPiOfGroup() {
+    User toDemote = createAPi();
+    createAnyGroup(toDemote, (User[]) null);
+
     assertThrows(
-        IllegalStateException.class,
-        () -> {
-          User toDemote = createAPi();
-          createAnyGroup(toDemote, (User[]) null);
-          roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote);
-        });
+        IllegalStateException.class, () -> roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote));
   }
 
   @Test
   public void revokePiRoleRequiresAuth() {
+    User toDemote = createAPi();
+    toDemote.addRole(Role.USER_ROLE); // pi's always have user role too
+    setUpThrowAuthException(toDemote);
+
     assertThrows(
         AuthorizationException.class,
-        () -> {
-          User toDemote = createAPi();
-          toDemote.addRole(Role.USER_ROLE); // pi's always have user role too
-          setUpThrowAuthException(toDemote);
-          toDemote = roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote);
-          verify(userManager, never()).save(toDemote);
-          assertTrue(toDemote.hasRole(Role.PI_ROLE));
-        });
+        () -> roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote));
+    verify(userManager, never()).save(toDemote);
+    assertTrue(toDemote.hasRole(Role.PI_ROLE));
   }
 
   private void stubPiRole() {

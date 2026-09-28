@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.license.InactiveLicenseTestService;
@@ -34,9 +34,8 @@ public class ServiceLoggerAspectTest extends SpringTransactionalTest {
     ServiceLoggerAspct sla = new ServiceLoggerAspct();
     sla.getTruncatedArgumentString(5, null);
     sla.getTruncatedArgumentString(5, new Object[] {null});
-    assertTrue(
-        sla.getTruncatedArgumentString(5, new Object[] {"LongerThanLimit"}).length()
-            < "LongerThanLimit".length());
+    assertThat(sla.getTruncatedArgumentString(5, new Object[] {"LongerThanLimit"}).length())
+        .isLessThan("LongerThanLimit".length());
   }
 
   @Test
