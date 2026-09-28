@@ -144,7 +144,7 @@ function OperationDetailsStep({
   operation: InventoryOperation;
   origin: SubSampleModel;
   values: OperationInputs;
-  onChange: (values: OperationInputs) => void;
+  onChange: (values: OperationInputs, source?: { picked: boolean }) => void;
   section?: "details" | "amounts";
   unitCategories?: Array<string>;
   processNameOptions?: Array<string>;
@@ -182,7 +182,9 @@ function OperationDetailsStep({
             options={processNameOptions}
             filterOptions={(options, state) => filterProcessNames(options, state.inputValue)}
             value={String(values[input.key] ?? "")}
-            onChange={(_event, value) => set(input.key, value ?? "")}
+            onChange={(_event, value, reason) =>
+              onChange({ ...values, [input.key]: value ?? "" }, { picked: reason === "selectOption" })
+            }
             inputValue={String(values[input.key] ?? "")}
             onInputChange={(_event, value, reason) => {
               if (reason === "input") set(input.key, value);

@@ -73,9 +73,14 @@ vi.mock("../OperationDetailsStep", () => ({
     onChange,
   }: {
     values: Record<string, unknown>;
-    onChange: (v: Record<string, unknown>) => void;
+    onChange: (v: Record<string, unknown>, source?: { picked: boolean }) => void;
   }) => (
     <div>
+      <button
+        type="button"
+        data-testid="pick-mill"
+        onClick={() => onChange({ ...values, processName: "Mill" }, { picked: true })}
+      />
       <input
         data-testid="proc"
         value={String(values.processName ?? "")}
@@ -288,6 +293,44 @@ describe("OperationWizard with the real preference hook", () => {
     expect(screen.getByText(/documentation\.trashed/)).toBeInTheDocument();
     await user.click(screen.getByTestId("doc-choose-other"));
     await waitFor(() => expect(screen.queryByText(/documentation\.trashed/)).not.toBeInTheDocument());
+  });
+
+  it("offers Perform at once when a remembered process that is not the default is picked from the list", async () => {
+    stored = {
+      INVENTORY_OPERATIONS: {
+        value: {
+          values: {
+            "derive Mill": {
+              values: {
+                count: 1,
+                eachAmount: { numericValue: 5, unitId: 3 },
+                amountTaken: { numericValue: 1, unitId: 3 },
+              },
+              template: { mode: "pick", templateId: 5, templateName: "T5" },
+              documentation: { globalId: "SD1", name: "D1" },
+            },
+          },
+          names: { derive: ["Mill"] },
+          defaults: {},
+        },
+        time: 0,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <UiPreferences>
+          <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+        </UiPreferences>
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.click(screen.getByTestId("pick-mill"));
+    await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled());
   });
 
   it("stays on Details while a new process name that starts with a remembered one is typed", async () => {
