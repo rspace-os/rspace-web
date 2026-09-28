@@ -7,10 +7,10 @@ import { InEnglish } from "@/__tests__/realI18n";
 import appTheme from "@/theme";
 import OperationConfirmation from "../OperationConfirmation";
 import type { InventoryOperation } from "../operations";
+import { operations } from "../operations";
 import type { OriginBlockedReason } from "../operationValidation";
 import type { TemplateSelection } from "../TemplateStep";
 import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "../types";
-import { operations } from "./testOperations";
 
 // i18n runs in cimode in tests, so t(key, params) renders the namespaced key with no interpolation;
 // assertions match on the key, which still tells us which branch rendered. Values not passed through

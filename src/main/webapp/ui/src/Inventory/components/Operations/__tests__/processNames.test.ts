@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { InventoryOperation } from "../operations";
+import { operations } from "../operations";
 import { addProcessName, filterProcessNames, processNameDefaultAfterPerform, rememberKey } from "../processNames";
-import { operations } from "./testOperations";
 
 const DERIVE_DNA = ["derive", "dna extraction"].join(" ");
 const DERIVE_BOIL = ["derive", "boil"].join(" ");

@@ -6,8 +6,8 @@ import { InEnglish } from "@/__tests__/realI18n";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import OperationDetailsStep from "../OperationDetailsStep";
 import type { InventoryOperation } from "../operations";
+import { operations } from "../operations";
 import type { OperationInputs } from "../types";
-import { operations } from "./testOperations";
 
 vi.mock("@/components/Inputs/UnitSelect", () => ({
   default: ({
