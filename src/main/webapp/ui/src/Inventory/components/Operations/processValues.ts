@@ -1,4 +1,4 @@
-import axios from "@/common/axios";
+import { fetchPreferences } from "@/hooks/api/useUiPreference";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 import type { DocumentationSelection } from "./DocumentationStep";
 import type { TemplateDefault, TemplateMode } from "./templateResolution";
@@ -104,7 +104,8 @@ export function normalizeOperationPreferences(stored: unknown): OperationPrefere
  * so saving from that would overwrite what another tab saved since.
  */
 export async function fetchLatestOperationPreferences(): Promise<OperationPreferences> {
-  const { data } = await axios.get<unknown>("/userform/ajax/preference?preference=UI_JSON_SETTINGS");
-  const stored = asRecord<{ value?: unknown } | undefined>(data)[Symbol.keyFor(OPERATION_PREFERENCES) ?? ""];
+  const stored = asRecord<{ value?: unknown } | undefined>(await fetchPreferences())[
+    Symbol.keyFor(OPERATION_PREFERENCES) ?? ""
+  ];
   return normalizeOperationPreferences(stored?.value);
 }
