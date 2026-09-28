@@ -1,13 +1,15 @@
 import { omit } from "es-toolkit";
 import { describe, expect, it } from "vitest";
-import type { InventoryOperation } from "../operations";
+import type { InventoryOperation, OperationInput } from "../operations";
 import { operations } from "../operations";
 import {
   amountIsStorable,
+  amountProblem,
   amountTakenExceedsOrigin,
   detailsValid,
   quantityExceedsOrigin,
   reconcileRestoredQuantities,
+  temperatureProblem,
 } from "../operationValidation";
 import type { OperationInputs } from "../types";
 import { UNSET_UNIT } from "../types";
@@ -470,5 +472,46 @@ describe("detailsValid temperature unit", () => {
   it("rejects a temperature whose unit is unset or is not Celsius", () => {
     expect(detailsValid(cryopreserve, { ...cryoValues, storageTemp: { numericValue: -80, unitId: 0 } })).toBe(false);
     expect(detailsValid(cryopreserve, { ...cryoValues, storageTemp: { numericValue: -80, unitId: 9 } })).toBe(false);
+  });
+});
+
+describe("temperatureProblem", () => {
+  const input: OperationInput = {
+    key: "storageTemp",
+    type: "temperature",
+    labelKey: "operations.fields.storageTemp",
+    minCelsius: -90,
+    maxCelsius: -18,
+  };
+  const at = (numericValue: number) => ({ numericValue, unitId: 8 });
+
+  it("is null for a whole temperature within the bounds", () => {
+    expect(temperatureProblem(input, at(-80))).toBeNull();
+  });
+
+  it("reports the first failing rule, in the order the field shows them", () => {
+    expect(temperatureProblem(input, at(-300))?.key).toBe("operations.fields.storageTempInvalid");
+    expect(temperatureProblem(input, at(-18.5))?.key).toBe("operations.fields.storageTempWhole");
+    expect(temperatureProblem(input, at(-10))).toEqual({ key: "operations.fields.storageTempMax", args: { max: -18 } });
+    expect(temperatureProblem(input, at(-100))).toEqual({
+      key: "operations.fields.storageTempMin",
+      args: { min: -90 },
+    });
+    expect(temperatureProblem(input, undefined)?.key).toBe("operations.fields.storageTempRequired");
+  });
+});
+
+describe("amountProblem", () => {
+  const ml = (numericValue: number) => ({ numericValue, unitId: 3 });
+
+  it("is null for a positive amount with a unit", () => {
+    expect(amountProblem(ml(5), false)).toBeNull();
+  });
+
+  it("reports the first failing rule, in the order the field shows them", () => {
+    expect(amountProblem(ml(2e9), true)).toEqual({ key: "operations.fields.amountTooLarge", args: { max: 1e9 } });
+    expect(amountProblem(ml(5), true)?.key).toBe("operations.fields.amountTakenExceedsOrigin");
+    expect(amountProblem(ml(0), false)?.key).toBe("operations.fields.amountRequired");
+    expect(amountProblem({ numericValue: 5, unitId: UNSET_UNIT }, false)?.key).toBe("operations.fields.unitRequired");
   });
 });

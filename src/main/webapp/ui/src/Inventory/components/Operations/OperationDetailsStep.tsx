@@ -26,15 +26,11 @@ import {
   usesAmountModes,
 } from "./operations";
 import {
+  amountProblem,
   amountTakenExceedsOrigin,
-  amountTooLarge,
-  MAX_QUANTITY,
   originBlockedReason,
   quantityExceedsOrigin,
-  temperatureBelowMin,
-  temperatureExceedsMax,
-  temperatureNotStorable,
-  temperatureNotWhole,
+  temperatureProblem,
   textTooLong,
   validSubSampleCount,
 } from "./operationValidation";
@@ -273,11 +269,7 @@ function OperationDetailsStep({
         values,
         origin.quantity ? { numericValue: getValue(origin.quantity), unitId: getUnitId(origin.quantity) } : null,
       );
-    const overMaxTemp = temperatureExceedsMax(input, quantity);
-    const underMinTemp = temperatureBelowMin(input, quantity);
-    const unstorableTemp = temperatureNotStorable(input, quantity);
-    const fractionalTemp = temperatureNotWhole(input, quantity);
-    const temperatureMissing = isTemperature && !Number.isFinite(quantity?.numericValue);
+    const temperatureError = temperatureProblem(input, quantity);
     if (isTemperature)
       return (
         <RawNumericField
@@ -287,27 +279,13 @@ function OperationDetailsStep({
           parse={parseTypedNumber}
           allowNegative
           label={label(input.labelKey)}
-          error={overMaxTemp || underMinTemp || unstorableTemp || fractionalTemp || temperatureMissing}
-          helperText={
-            unstorableTemp
-              ? label("operations.fields.storageTempInvalid")
-              : fractionalTemp
-                ? label("operations.fields.storageTempWhole")
-                : overMaxTemp
-                  ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
-                  : underMinTemp
-                    ? label("operations.fields.storageTempMin", { min: input.minCelsius })
-                    : temperatureMissing
-                      ? label("operations.fields.storageTempRequired")
-                      : undefined
-          }
+          error={temperatureError !== null}
+          helperText={temperatureError ? label(temperatureError.key, temperatureError.args) : undefined}
           endAdornment={null}
           unitDescription={label("operations.fields.temperatureUnit")}
         />
       );
-    const amountMissing = !(quantity && quantity.numericValue > 0);
-    const tooLarge = amountTooLarge(quantity?.numericValue ?? 0);
-    const unitMissing = !isTemperature && !(currentUnitId > 0);
+    const amountError = amountProblem(quantity && { ...quantity, unitId: currentUnitId }, overRemoval);
     return (
       <RawNumericField
         key={input.key}
@@ -316,18 +294,8 @@ function OperationDetailsStep({
         parse={parseAmount}
         allowNegative={false}
         label={label(input.labelKey)}
-        error={overRemoval || tooLarge || amountMissing || unitMissing}
-        helperText={
-          tooLarge
-            ? label("operations.fields.amountTooLarge", { max: MAX_QUANTITY })
-            : overRemoval
-              ? label("operations.fields.amountTakenExceedsOrigin")
-              : amountMissing
-                ? label("operations.fields.amountRequired")
-                : unitMissing
-                  ? label("operations.fields.unitRequired")
-                  : undefined
-        }
+        error={amountError !== null}
+        helperText={amountError ? label(amountError.key, amountError.args) : undefined}
         endAdornment={
           <UnitSelect
             categories={categoriesForInput}
@@ -349,9 +317,10 @@ function OperationDetailsStep({
     const originQuantity = sub.quantity
       ? { numericValue: getValue(sub.quantity), unitId: getUnitId(sub.quantity) }
       : null;
-    const over = quantityExceedsOrigin(current, originQuantity);
-    const missing = !current || !(current.numericValue > 0);
-    const tooLarge = amountTooLarge(current?.numericValue ?? 0);
+    const amountError = amountProblem(
+      current && { ...current, unitId: currentUnitId },
+      quantityExceedsOrigin(current, originQuantity),
+    );
     const setAmount = (numericValue: number, unitId: number) =>
       onPerSubsampleAmountsChange?.({ ...perSubsampleAmounts, [globalId]: { numericValue, unitId } });
     return (
@@ -362,16 +331,8 @@ function OperationDetailsStep({
         parse={parseAmount}
         allowNegative={false}
         label={sub.name ?? globalId}
-        error={over || tooLarge || missing}
-        helperText={
-          tooLarge
-            ? label("operations.fields.amountTooLarge", { max: MAX_QUANTITY })
-            : over
-              ? label("operations.fields.amountTakenExceedsOrigin")
-              : missing
-                ? label("operations.fields.amountRequired")
-                : undefined
-        }
+        error={amountError !== null}
+        helperText={amountError ? label(amountError.key, amountError.args) : undefined}
         endAdornment={
           <UnitSelect
             categories={categoriesOfSubSample(sub)}
