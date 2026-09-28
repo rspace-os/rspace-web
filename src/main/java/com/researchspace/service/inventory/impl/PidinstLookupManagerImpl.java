@@ -107,6 +107,29 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private static final Pattern DATACITE_OPERATOR = Pattern.compile("\\b(AND|OR|NOT)\\b");
 
+  /**
+   * The query-string syntax B2INST (InvenioRDM, Elasticsearch) would parse inside a wildcard term,
+   * escaped by {@link #containsForB2inst(String)}. Unlike DataCite's set it includes {@code /},
+   * which B2INST answers 400 for unescaped and accepts escaped; it leaves out {@code *} and {@code
+   * ?}, which stay wildcards, and {@link #B2INST_REMOVED}.
+   */
+  private static final Pattern B2INST_RESERVED = Pattern.compile("([\\\\+\\-=&|!(){}\\[\\]^~:/])");
+
+  /**
+   * Removed from a B2INST query rather than escaped: a quote because the whole query is already one
+   * phrase, and {@code <} and {@code >} because Elasticsearch cannot escape them at all
+   * (https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-query-string-query#reserved-characters).
+   */
+  private static final Pattern B2INST_REMOVED = Pattern.compile("[\"<>]");
+
+  /**
+   * What Lucene's classic query parser, and so B2INST, splits a query on. Java's {@code \s} misses
+   * U+3000, which the parser lists as whitespace (QueryParser.jj {@code _WHITESPACE}), so an
+   * unescaped one split the query back into clauses: {@code *Instr1<U+3000>OR<U+3000>**} matched
+   * all 810 records on b2inst-test.gwdg.de (2026-09-25).
+   */
+  private static final Pattern LUCENE_WHITESPACE = Pattern.compile("[\\s\\u3000]+");
+
   /** A Handle under an ePIC prefix (B2INST mints 21.xxx), bare or behind hdl.handle.net. */
   static final Pattern HANDLE_QUERY =
       Pattern.compile(
@@ -123,7 +146,8 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
 
   @Override
   public ApiPidinstSearchResult search(String query, User user) {
-    String q = StringUtils.trimToEmpty(query);
+    // strip, not trim: trim leaves U+3000 and other Unicode spaces, so padding passed the minimum
+    String q = StringUtils.stripToEmpty(query);
     if (q.length() < MIN_QUERY_LENGTH) {
       throw new ApiRuntimeException(
           "errors.inventory.identifier.pidinstQueryTooShort", MIN_QUERY_LENGTH);
@@ -210,7 +234,16 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * {@code total} stays the provider's own.
    */
   private void searchB2inst(String query, ApiPidinstSearchResult result) {
-    B2instSearchResult page = b2instConnector.searchRecords(query, MAX_HITS);
+    // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
+    String searchable = B2INST_REMOVED.matcher(query).replaceAll("").strip();
+    // the minimum again, on what is left to match: <<<a would otherwise go out as *a*, which
+    // matched all 810 records on b2inst-test.gwdg.de, and typed wildcards match nothing specific
+    if (searchable.replaceAll("[*?]", "").length() < MIN_QUERY_LENGTH) {
+      result.setTotal(0);
+      return;
+    }
+    B2instSearchResult page =
+        b2instConnector.searchRecords(containsForB2inst(searchable), MAX_HITS);
     page.getHits().getHits().stream()
         .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
         .map(PidinstRecordMapper::fromB2inst)
@@ -221,13 +254,16 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one, and
-   * a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an empty
-   * first page is retried that way (ADR 0009 decision 7).
+   * The query reaches DataCite as the user typed it, escaped but not wildcarded, so a search here
+   * returns what the same words return in DataCite's own portal (RSDEV-1522, ADR 0009 decision 8).
+   * The escape only keeps query-string syntax from reaching the parser, which would answer 400
+   * rather than an empty page; it does not change which records match.
    *
-   * <p>The free-text call carries the query escaped and the retry does not: the retry's clause is
-   * composed here from what the user typed, and {@link #DOI_FRAGMENT} already limits that to
-   * characters which cannot close it. Both gates read the raw query, so escaping cannot change
+   * <p>DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one
+   * and a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an
+   * empty first page is retried that way (ADR 0009 decision 7). The retry carries the raw query
+   * rather than the escaped one, because it composes its own clause and {@link #DOI_FRAGMENT}
+   * already limits what may go in it; its gate reads the raw query too, so escaping cannot change
    * which searches retry.
    */
   private DataCiteDoiSearchResult searchDataCite(String query) {
@@ -239,6 +275,34 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     }
     return dataCiteConnector.searchInstrumentDois(
         "doi:*" + query + "*", MAX_HITS, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * The B2INST query: the whole of what the user typed as one wildcard term, with its spaces
+   * escaped so Elasticsearch does not split it (RSDEV-1522).
+   *
+   * <p>This is a real "contains", spaces included. Verified 2026-09-22 against b2inst-test.gwdg.de,
+   * where {@code *nstr1\ prova_CO*} finds {@code Instr1 prova_COPY} - both words cut at both ends
+   * and the match spanning the space - while {@code *Instr1\ prova_COPY*} finds only that record
+   * where the unescaped {@code *Instr1 prova_COPY*} also returned {@code Instr1 prova 123}. Without
+   * the escape Elasticsearch parses the query before the wildcards apply and splits it on
+   * whitespace itself, leaving {@code *Instr1} (ends-with) and {@code prova_COPY*} (starts-with),
+   * which B2INST then ORs.
+   *
+   * <p>One leading wildcard however many words the query holds, so it stays fast: 0.2-0.4s.
+   *
+   * <p>The user's query syntax is neutralised first, because the wildcards turn it into operators:
+   * {@code *"Instr1\ prova_COPY"*} is {@code *} OR a phrase OR {@code *} and matched all 810
+   * records on b2inst-test.gwdg.de where the quoted phrase alone matched 1, and {@code (}, {@code
+   * ~} and {@code ^} did the same (2026-09-25). Quotes are dropped, since the whole query is
+   * already one phrase and {@code *Instr1\ prova_COPY*} answers that same 1, and so are {@code <}
+   * and {@code >}, which cannot be escaped; the rest of {@link #B2INST_RESERVED} is escaped to a
+   * literal, which also turns the 400 on a pasted partial Handle such as {@code T11975/97g70-tsv60}
+   * into its one record. {@code *} and {@code ?} stay live.
+   */
+  private static String containsForB2inst(String searchable) {
+    String literal = B2INST_RESERVED.matcher(searchable).replaceAll("\\\\$1");
+    return "*" + LUCENE_WHITESPACE.matcher(literal).replaceAll("\\\\ ") + "*";
   }
 
   /**

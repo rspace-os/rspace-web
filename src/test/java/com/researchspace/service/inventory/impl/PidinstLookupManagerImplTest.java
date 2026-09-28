@@ -142,9 +142,127 @@ class PidinstLookupManagerImplTest {
     return template;
   }
 
+  /**
+   * RSDEV-1522 follow-up. Unescaped, the query does not reach the registry as one term:
+   * Elasticsearch parses it before the wildcards apply and splits it on whitespace itself, leaving
+   * {@code *Instr1} and {@code prova_COPY*}, which B2INST joins with OR - so a record named {@code
+   * Instr1 prova 123} came back on its {@code instr1} token alone. Escaping the space keeps it one
+   * term, and a real substring match.
+   */
+  @Test
+  void aMultiWordQueryDoesNotMatchARecordHoldingOnlyOneOfTheWords() {
+    B2instDraftRecord wanted = publishedRecord();
+    wanted.getMetadata().setName("Instr1 prova_COPY");
+    when(b2instConnector.searchRecords("*Instr1\\ prova_COPY*", 50))
+        .thenReturn(searchResultOf(wanted, 1));
+
+    ApiPidinstSearchResult result = manager.search("Instr1 prova_COPY", user);
+
+    assertEquals(1, result.getHits().size());
+    verify(b2instConnector).searchRecords("*Instr1\\ prova_COPY*", 50);
+  }
+
+  /**
+   * The providers get different queries for the same input, because they disagree about the escaped
+   * space. On B2INST {@code *a\ b*} stays one term and matches the whole string including the
+   * space; on DataCite the same query answers 0 for a record that plainly holds it, so there the
+   * words are ANDed instead. Measured 2026-09-22 (ADR 0009 decision 8).
+   */
+  @Test
+  void theTwoProvidersGetDifferentlyShapedMultiWordQueries() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search("Instr1 prova_COPY", user);
+
+    verify(dataCiteConnector)
+        .searchInstrumentDois("Instr1 prova_COPY", 50, InventorySettingType.PIDINST);
+  }
+
+  /** RSDEV-1522: both registries match whole analysed tokens, so a bare substring found nothing. */
+  @Test
+  void freeTextSearchWrapsTheQueryInWildcardsSoASubstringOfATokenMatches() {
+    when(b2instConnector.searchRecords("*microscope*", 50))
+        .thenReturn(searchResultOf(publishedRecord(), 3));
+
+    ApiPidinstSearchResult result = manager.search("  microscope ", user);
+
+    assertEquals(1, result.getHits().size());
+    verify(b2instConnector).searchRecords("*microscope*", 50);
+  }
+
+  /**
+   * DataCite gets the query as typed, escaped but not wildcarded, so a search here returns what the
+   * same words return in DataCite's own portal (ADR 0009 decision 8).
+   */
+  @Test
+  void dataCiteFreeTextSearchSendsTheQueryAsTyped() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search("microscope", user);
+
+    verify(dataCiteConnector).searchInstrumentDois("microscope", 50, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * One pair of wildcards around the whole query, its spaces escaped so it stays a single term and
+   * matches a substring of the whole name. Leaving the spaces raw lets B2INST's OR return records
+   * holding only one of the words (ADR 0009 decision 8). B2INST only: DataCite gets the query
+   * unwildcarded.
+   */
+  @Test
+  void aMultiWordB2instQueryIsOneTermWithItsSpacesEscaped() {
+    when(b2instConnector.searchRecords("*electro\\ micro\\ stub*", 50))
+        .thenReturn(searchResultOf(publishedRecord(), 1));
+
+    manager.search("electro micro stub", user);
+
+    verify(b2instConnector).searchRecords("*electro\\ micro\\ stub*", 50);
+  }
+
+  static Stream<Arguments> b2instQueriesCarryingQuerySyntax() {
+    return Stream.of(
+        arguments("\"Instr1 prova_COPY\"", "*Instr1\\ prova_COPY*"),
+        arguments("\"Instr1", "*Instr1*"),
+        arguments("Instr\"1", "*Instr1*"),
+        arguments("Instr1 > 2", "*Instr1\\ 2*"),
+        arguments("Instr1<=2", "*Instr1\\=2*"),
+        arguments("(Instr1)", "*\\(Instr1\\)*"),
+        arguments("Instr1~2", "*Instr1\\~2*"),
+        arguments("Instr1^2", "*Instr1\\^2*"),
+        arguments("Name:Instr1", "*Name\\:Instr1*"),
+        arguments("T11975/97g70-tsv60", "*T11975\\/97g70\\-tsv60*"),
+        arguments("Ins*1", "*Ins*1*"),
+        // U+3000 is whitespace to Lucene's query parser but not to Java's \s, and left raw it split
+        // the query back into clauses: *Instr1<U+3000>OR<U+3000>** matched all 810 records
+        arguments("abcd\u3000OR\u3000*", "*abcd\\ OR\\ **"),
+        arguments("Instr1\u3000prova_COPY", "*Instr1\\ prova_COPY*"));
+  }
+
+  /**
+   * The wildcards turn unescaped syntax into operators around them: {@code *"a\ b"*} is {@code *}
+   * OR a phrase OR {@code *}, and matched all 810 records on b2inst-test.gwdg.de where the quoted
+   * phrase alone matched 1 (2026-09-25). So quotes are dropped, the whole query already being one
+   * phrase ({@code *Instr1\ prova_COPY*} answers that same 1), the other syntax is escaped to a
+   * literal, and {@code *}/{@code ?} stay live. This also ends the 400 on a pasted partial Handle.
+   */
+  @ParameterizedTest
+  @MethodSource("b2instQueriesCarryingQuerySyntax")
+  void b2instQuerySyntaxIsNeutralisedBeforeTheWildcardsGoOn(String typed, String sent) {
+    when(b2instConnector.searchRecords(anyString(), eq(50)))
+        .thenReturn(searchResultOf(publishedRecord(), 1));
+
+    manager.search(typed, user);
+
+    verify(b2instConnector).searchRecords(sent, 50);
+  }
+
   @Test
   void freeTextSearchGoesToTheEnabledProviderAndFlagsAlreadyLinkedPids() {
-    when(b2instConnector.searchRecords("microscope", 50))
+    when(b2instConnector.searchRecords("*microscope*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 3));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
@@ -179,7 +297,7 @@ class PidinstLookupManagerImplTest {
     ApiPidinstSearchResult foreign = manager.search("10.15151/esrf-instr-gco8", user);
     assertTrue(foreign.getHits().isEmpty());
     assertEquals(0, foreign.getTotal());
-    verify(b2instConnector, never()).searchRecords(eq("10.15151/esrf-instr-gco8"), eq(50));
+    verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
   }
 
   @Test
@@ -293,7 +411,7 @@ class PidinstLookupManagerImplTest {
   /** The same gap on the search path: the hit must come back already flagged as linked. */
   @Test
   void searchFlagsAHitWhosePidThisDeploymentMintedItself() {
-    when(b2instConnector.searchRecords("microscope", 50))
+    when(b2instConnector.searchRecords("*microscope*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier("abcde-12345", "Test microscope", "suffix1234567890");
@@ -312,7 +430,7 @@ class PidinstLookupManagerImplTest {
   /** RSDEV-1505: defensive, but it decides a disclosure, so it is pinned rather than asserted. */
   @Test
   void aLinkedRowHoldingNoInstrumentIsHiddenRatherThanUnlinked() {
-    when(b2instConnector.searchRecords("microscope", 50))
+    when(b2instConnector.searchRecords("*microscope*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier orphan =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
@@ -330,7 +448,7 @@ class PidinstLookupManagerImplTest {
   /** RSDEV-1505: the registry record is public, so the PID is; the RSpace instrument is not. */
   @Test
   void searchMarksAHitLinkedWithoutNamingAnInstrumentTheCallerCannotOpen() {
-    when(b2instConnector.searchRecords("microscope", 50))
+    when(b2instConnector.searchRecords("*microscope*", 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
@@ -390,7 +508,7 @@ class PidinstLookupManagerImplTest {
         .setIdentifier(new B2instIdentifier("Handle", "21.T11975/anaf6-fk223"));
     B2instSearchResult page = searchResultOf(publishedRecord(), 3);
     page.getHits().getHits().add(unpublished);
-    when(b2instConnector.searchRecords("microscope", 50)).thenReturn(page);
+    when(b2instConnector.searchRecords("*microscope*", 50)).thenReturn(page);
 
     ApiPidinstSearchResult result = manager.search("microscope", user);
 
@@ -473,9 +591,25 @@ class PidinstLookupManagerImplTest {
     verify(dataCiteConnector, never()).searchInstrumentDois(anyString(), eq(50), any());
   }
 
-  @Test
-  void searchCountsTheTrimmedQueryTowardsTheMinimum() {
-    assertThrows(ApiRuntimeException.class, () -> manager.search("  ab  ", user));
+  /**
+   * The minimum is checked again on what B2INST would actually search: removing syntax could shrink
+   * an accepted query to one wildcarded letter, and {@code <<<a} sent as {@code *a*} matched all
+   * 810 records on b2inst-test.gwdg.de (2026-09-25). Wildcards the user typed do not count either.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"<<<a", "\"\"\"\"", "a\"<>", "***a", "?a?b"})
+  void aB2instQueryBelowTheMinimumOnceItsSyntaxIsGoneFindsNothing(String typed) {
+    ApiPidinstSearchResult result = manager.search(typed, user);
+
+    assertTrue(result.getHits().isEmpty());
+    assertEquals(0, result.getTotal());
+    verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"  ab  ", "\u3000\u3000ab\u3000"})
+  void searchCountsTheTrimmedQueryTowardsTheMinimum(String padded) {
+    assertThrows(ApiRuntimeException.class, () -> manager.search(padded, user));
   }
 
   @Test
@@ -505,15 +639,12 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteRetriesADoiWildcardWhenFreeTextFindsNothing() {
     onADataCiteDeployment();
-    // the free-text call carries the hyphen escaped; the retry's clause is composed from the raw
-    // query, so only the first of these two is
-    when(dataCiteConnector.searchInstrumentDois("qvtb\\-aw74", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("qvtb", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
-    when(dataCiteConnector.searchInstrumentDois(
-            "doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
+    when(dataCiteConnector.searchInstrumentDois("doi:*qvtb*", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
 
-    ApiPidinstSearchResult result = manager.search("qvtb-aw74", user);
+    ApiPidinstSearchResult result = manager.search("qvtb", user);
 
     assertEquals(1, result.getHits().size(), "the wildcard retry's hit is returned");
     assertEquals(DOI, result.getHits().get(0).getPid());
@@ -552,22 +683,35 @@ class PidinstLookupManagerImplTest {
         arguments("(Zeiss", "\\(Zeiss"),
         arguments("Zeiss!", "Zeiss\\!"),
         arguments("Zeiss^2", "Zeiss\\^2"),
+        arguments("((((", "\\(\\(\\(\\("),
         arguments("Zeiss &&", "Zeiss \\&\\&"),
+        arguments("&&&&", "\\&\\&\\&\\&"),
+        arguments("X-ray microscope", "X\\-ray microscope"),
+        arguments("-Zeiss", "\\-Zeiss"),
+        arguments("test/instrument", "test/instrument"),
+        arguments("TEM:STEM", "TEM\\:STEM"),
+        arguments("\u4e2d\u56fd\u663e\u5fae\u955c", "\u4e2d\u56fd\u663e\u5fae\u955c"),
+        arguments("station 14.1", "station 14.1"),
+        arguments("Zeiss>4", "Zeiss>4"),
+        arguments("82316/qvtb", "82316/qvtb"),
+        arguments("Zeiss. Bruker", "Zeiss. Bruker"),
         arguments("Zeiss OR", "Zeiss \\OR"),
         arguments("NOT Zeiss", "\\NOT Zeiss"),
         arguments("Zeiss AND Bruker", "Zeiss \\AND Bruker"));
   }
 
   /**
-   * DataCite's {@code query} is Elasticsearch query-string syntax, so user text reaches it escaped:
-   * unbalanced syntax answers 400 rather than no hits, which the dialog can only show as an error.
-   * Verified 2026-09-18 against api.datacite.org, where {@code foo"bar}, {@code foo[bar}, {@code
-   * (foo}, {@code foo!}, {@code foo^}, {@code zeiss &&} and a dangling {@code abc OR} all answer
-   * 400 while every escaped form answers 200.
+   * DataCite's {@code query} is Elasticsearch query-string syntax, so user syntax must not reach
+   * it: unbalanced syntax answers 400 rather than no hits, which the dialog can only show as an
+   * error. The escape covers the reserved characters and the bare operators, and is transparent
+   * otherwise, so what the user typed is what DataCite matches on. Verified 2026-09-18 against
+   * api.datacite.org, where {@code foo"bar}, {@code foo[bar}, {@code (foo}, {@code foo!}, {@code
+   * foo^}, {@code zeiss &&} and a dangling {@code abc OR} all answer 400 while every escaped form
+   * answers 200.
    */
   @ParameterizedTest
   @MethodSource("queriesCarryingQueryStringSyntax")
-  void dataCiteFreeTextSearchEscapesQueryStringSyntax(String typed, String sent) {
+  void dataCiteFreeTextSearchEscapesQueryStringSyntaxOnly(String typed, String sent) {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
         .thenReturn(dataCitePage(0));
@@ -575,59 +719,6 @@ class PidinstLookupManagerImplTest {
     manager.search(typed, user);
 
     verify(dataCiteConnector).searchInstrumentDois(sent, 50, InventorySettingType.PIDINST);
-  }
-
-  /**
-   * The range operators are left alone on purpose, and a reviewer has already asked for them once.
-   * A backslash before one is ignored, so they cannot be escaped, and they need no handling: a
-   * range exists only against a field, and the {@code :} that builds one is escaped above. Measured
-   * 2026-09-18 against api.datacite.org: {@code publicationYear:>2020} answers 95,411,191 while
-   * {@code publicationYear\:>2020}, which is what this sends, answers 15, the same as the plain
-   * {@code publicationYear 2020}. Loose, {@code Zeiss>4} answers 6,539, exactly what {@code Zeiss
-   * 4} and every other separator answer, so it is inert rather than parsed.
-   */
-  @ParameterizedTest
-  @ValueSource(strings = {"Zeiss>4", "Zeiss<4", "Zeiss=4"})
-  void dataCiteFreeTextSearchLeavesRangeOperatorsAlone(String query) {
-    onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
-        .thenReturn(dataCitePage(0));
-
-    manager.search(query, user);
-
-    verify(dataCiteConnector).searchInstrumentDois(query, 50, InventorySettingType.PIDINST);
-  }
-
-  /**
-   * The slash is reserved in query-string syntax, but DataCite answers 400 for {@code
-   * 10.5281\/zenodo} and 200 for {@code 10.5281/zenodo} (verified 2026-09-18), so escaping it would
-   * break the DOI fragments this search exists to match.
-   */
-  @Test
-  void dataCiteFreeTextSearchLeavesTheSlashAlone() {
-    onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
-        .thenReturn(dataCitePage(0));
-
-    manager.search("82316/qvtb", user);
-
-    verify(dataCiteConnector).searchInstrumentDois("82316/qvtb", 50, InventorySettingType.PIDINST);
-  }
-
-  /**
-   * Escaping is the free-text call's business; the retry composes its own clause from the raw
-   * query, so the allow-listed fragment must reach {@code doi:*...*} unescaped.
-   */
-  @Test
-  void dataCiteWildcardRetryUsesTheUnescapedQuery() {
-    onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
-        .thenReturn(dataCitePage(0));
-
-    manager.search("qvtb-aw74", user);
-
-    verify(dataCiteConnector)
-        .searchInstrumentDois("doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST);
   }
 
   /**
@@ -657,7 +748,7 @@ class PidinstLookupManagerImplTest {
    * because the syntax alone argues for removing it, which would silently drop that case.
    */
   @Test
-  void dataCiteRetriesAPastedPrefixAndSuffixPair() {
+  void dataCiteFindsAPastedPrefixAndSuffixPair() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(
             "82316/qvtb\\-aw74", 50, InventorySettingType.PIDINST))
@@ -767,7 +858,7 @@ class PidinstLookupManagerImplTest {
     second.getMetadata().setIdentifier(new B2instIdentifier("Handle", "21.T11975/fghij-67890"));
     B2instSearchResult page = searchResultOf(publishedRecord(), 2);
     page.getHits().getHits().add(second);
-    when(b2instConnector.searchRecords("microscope", 50)).thenReturn(page);
+    when(b2instConnector.searchRecords("*microscope*", 50)).thenReturn(page);
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier("21.T11975/fghij-67890", "Another microscope", "suffix123456");
     Instrument owner = new Instrument();
