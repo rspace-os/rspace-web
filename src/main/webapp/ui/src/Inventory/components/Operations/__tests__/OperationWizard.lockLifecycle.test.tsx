@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render as renderWithoutQueryClient, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
@@ -37,19 +37,26 @@ function render(ui: React.ReactElement) {
   return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
+const RENEWAL_INTERVAL = 61_000;
+const afterRenewalInterval = () => vi.setSystemTime(Date.now() + RENEWAL_INTERVAL);
+
 describe("OperationWizard lock renewal and close ordering", () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
     // The dedup effect fires this once a process name exists; answer it so nothing is unhandled.
     server.use(
       http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
     );
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   /**
    * Drives the wizard to the step after details, where the first lock renewal has been started.
    * `finish` collects one resolver per renewal, in the order the wizard started them.
    */
-  async function wizardAtStepTwo() {
+  async function wizardAtStepTwo({ renewOnNext = true } = {}) {
     const origin = makeMockSubSample({});
     const finish: Array<(status: "LOCKED_OK") => void> = [];
     vi.spyOn(origin, "acquireEditLock").mockImplementation(
@@ -64,6 +71,7 @@ describe("OperationWizard lock renewal and close ordering", () => {
 
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
+    if (renewOnNext) afterRenewalInterval();
     await user.click(screen.getByRole("button", { name: /actions\.next/i }));
     return { finish, onClose, user };
   }
@@ -86,6 +94,7 @@ describe("OperationWizard lock renewal and close ordering", () => {
     // from the chain, so a close after B settles releases the locks while A's POST is still in
     // flight, and A then recreates a five-minute lock on a wizard that is gone.
     const { finish, onClose, user } = await wizardAtStepTwo();
+    afterRenewalInterval();
     await user.click(screen.getByRole("button", { name: /actions\.back/i }));
     expect(finish).toHaveLength(2);
 
@@ -97,6 +106,19 @@ describe("OperationWizard lock renewal and close ordering", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
+  it("renews the locks at most once a minute however often the user steps", async () => {
+    // A lock lasts five minutes, and each renewal of a large Pool is a hundred POSTs, so renewing
+    // on every step made the wizard crawl.
+    const { finish, user } = await wizardAtStepTwo({ renewOnNext: false });
+    await user.click(screen.getByRole("button", { name: /actions\.back/i }));
+    expect(finish).toHaveLength(0);
+
+    afterRenewalInterval();
+    await user.click(screen.getByRole("button", { name: /actions\.next/i }));
+    await user.click(screen.getByRole("button", { name: /actions\.back/i }));
+    expect(finish).toHaveLength(1);
+  });
+
   it("starts no further renewal once close has begun", async () => {
     // Close captures the renewals outstanding at that instant, so a batch started afterwards would
     // not be waited for and could land behind the caller's release. Nothing may start one: a wizard
@@ -105,6 +127,7 @@ describe("OperationWizard lock renewal and close ordering", () => {
     expect(finish).toHaveLength(1);
 
     await user.click(screen.getByRole("button", { name: /actions\.cancel/i }));
+    afterRenewalInterval();
     await user.click(screen.getByRole("button", { name: /actions\.back/i }));
     expect(finish).toHaveLength(1);
 

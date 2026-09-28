@@ -9,7 +9,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
-import type React from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import DescriptionList from "@/components/DescriptionList";
 import useStores from "@/stores/use-stores";
@@ -51,6 +51,7 @@ function OperationConfirmation({
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const theme = useTheme();
+  const rememberHelpId = React.useId();
   const { unitStore } = useStores();
   const resolveLabel = resolveLabelFrom(t);
   const { effect } = operation;
@@ -135,6 +136,10 @@ function OperationConfirmation({
             value: t("operations.confirm.values.storageTemp", { temp: storageTemp.numericValue }),
           }
         : null,
+    cryomedium: () => {
+      const cryomedium = String(values.cryomedium ?? "").trim();
+      return cryomedium ? { label: t("operations.fields.cryomedium"), value: cryomedium } : null;
+    },
     linkBack: () => {
       if (operation.requiresMultiple && origins.length && effect.links.length) {
         const { fieldNameKey, relationType } = effect.links[0];
@@ -182,11 +187,9 @@ function OperationConfirmation({
       {infoText ? <Alert severity="info">{infoText}</Alert> : null}
       {originEmptyBlocked ? (
         <Alert severity="error">
-          {t(
-            originBlocked === "unsupportedCategory"
-              ? "operations.fields.originCategoryUnsupported"
-              : "operations.fields.originAmountZero",
-          )}
+          {originBlocked === "unsupportedCategory"
+            ? t("operations.fields.originCategoryUnsupported")
+            : t("operations.fields.originAmountZero", { count: 1, names: originName })}
         </Alert>
       ) : null}
       <Card variant="outlined">
@@ -208,12 +211,18 @@ function OperationConfirmation({
       {onRememberChange ? (
         <FormControl>
           <FormControlLabel
-            control={<Checkbox checked={remember} onChange={(e) => onRememberChange(e.target.checked)} />}
+            control={
+              <Checkbox
+                checked={remember}
+                onChange={(e) => onRememberChange(e.target.checked)}
+                slotProps={{ input: { "aria-describedby": rememberHelpId } }}
+              />
+            }
             label={resolveLabel("operations.fields.rememberProcessValues", {
               name: resolveProcessName(operation, values),
             })}
           />
-          <FormHelperText sx={{ mt: 0, ml: "34px" }}>
+          <FormHelperText id={rememberHelpId} sx={{ mt: 0, ml: "34px" }}>
             {resolveLabel("operations.fields.rememberProcessValuesHelp")}
           </FormHelperText>
         </FormControl>

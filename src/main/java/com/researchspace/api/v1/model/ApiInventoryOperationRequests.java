@@ -73,6 +73,11 @@ public final class ApiInventoryOperationRequests {
     @JsonProperty("count")
     private BigDecimal count;
 
+    /** Whole by value, not by scale: "1.0" is one, "1.9" still fails {@code @Digits}. */
+    public void setCount(BigDecimal count) {
+      this.count = count == null ? null : count.stripTrailingZeros();
+    }
+
     @NotNull(message = "{errors.inventory.operation.inputRequired}")
     @JsonProperty("eachAmount")
     private ApiQuantityInfo eachAmount;

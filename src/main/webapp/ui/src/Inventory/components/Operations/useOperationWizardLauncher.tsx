@@ -4,6 +4,7 @@ import { mkAlert } from "@/stores/contexts/Alert";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import SubSampleModel from "@/stores/models/SubSampleModel";
 import getRootStore from "@/stores/stores/getRootStore";
+import { getErrorMessage } from "@/util/error";
 import { displayErrorIfAllLocksCouldNotBeAcquired } from "../ContextMenu/lockAlerts";
 import { useProcessAvailable } from "../ContextMenu/useProcessAvailable";
 import OperationWizard from "./OperationWizard";
@@ -92,7 +93,14 @@ export function useOperationWizardLauncher(
           beingEditedBy: (name) => t("contextMenu.edit.beingEditedBy", { name }),
           addAlert: getRootStore().uiStore.addAlert,
         });
-        if (!shown) console.error("Could not lock the operation origins", failure.reason);
+        if (!shown)
+          getRootStore().uiStore.addAlert(
+            mkAlert({
+              title: t("operations.wizard.originsLocked"),
+              message: getErrorMessage(failure.reason, t("operations.wizard.failed")),
+              variant: "error",
+            }),
+          );
         return false;
       }
       if (newlyLocked.length < origins.length) {

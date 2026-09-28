@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { InEnglish } from "@/__tests__/realI18n";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationDetailsStep from "../OperationDetailsStep";
 import OperationWizard from "../OperationWizard";
@@ -109,5 +110,24 @@ describe("OperationWizard for an origin whose unit has no atomic unit", () => {
     await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
     expect(screen.getByRole("button", { name: /actions\.next/i })).toBeDisabled();
     expect(screen.getByRole("alert")).not.toBeEmptyDOMElement();
+  });
+});
+
+describe("OperationWizard's details step for a Pool", () => {
+  it("names every empty origin, not just the representative one", async () => {
+    const user = userEvent.setup();
+    const empty = (id: number, name: string) =>
+      makeMockSubSample({ id, globalId: `SS${id}`, name, quantity: { numericValue: 0, unitId: 3 } });
+    render(
+      <InEnglish>
+        <OperationWizard
+          open
+          onClose={vi.fn()}
+          origins={[empty(1, "Vial A"), empty(2, "Vial B"), makeMockSubSample({ id: 3, globalId: "SS3" })]}
+        />
+      </InEnglish>,
+    );
+    await user.click(await screen.findByRole("button", { name: /^Pool/ }));
+    expect(screen.getByText("Subsamples Vial A and Vial B have an amount of 0.")).toBeInTheDocument();
   });
 });

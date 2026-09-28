@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { InEnglish } from "@/__tests__/realI18n";
 import TemplateStep, { type TemplateSelection } from "../TemplateStep";
 
@@ -79,11 +80,55 @@ describe("TemplateStep", () => {
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
-  it("disables 'use parent template' and shows a hint when the parent has no template", () => {
-    render(<TemplateStep value={base} onChange={() => undefined} originSampleName="S1" parentHasTemplate={false} />);
-    // "use parent" is first
-    expect(screen.getAllByRole("radio")[0]).toBeDisabled();
+  it("hides 'use parent template' and shows a hint when the parent has no template", async () => {
+    const user = userEvent.setup();
+    render(
+      <TemplateStep
+        value={{ mode: "unselected", templateId: null, remember: false }}
+        onChange={() => undefined}
+        originSampleName="S1"
+        parentHasTemplate={false}
+      />,
+    );
+    expect(screen.getAllByRole("radio")).toHaveLength(2);
     expect(screen.getByText(/template\.parentHasNoTemplate/)).toBeInTheDocument();
+    await user.tab();
+    expect(screen.getByRole("radio", { name: /template\.pick/ })).toHaveFocus();
+  });
+
+  it("explains a Pool's missing parent-template option by its several parents", () => {
+    render(
+      <TemplateStep
+        value={{ mode: "unselected", templateId: null, remember: false }}
+        onChange={() => undefined}
+        originSampleName="S1"
+        parentHasTemplate={false}
+        multipleParents
+      />,
+    );
+    expect(screen.getByText(/template\.poolHasNoParentTemplate/)).toBeInTheDocument();
+    expect(screen.queryByText(/template\.parentHasNoTemplate/)).not.toBeInTheDocument();
+  });
+
+  it("names its radio group by the step's description and is accessible", async () => {
+    const { baseElement } = render(<TemplateStep value={base} onChange={() => undefined} originSampleName="S1" />);
+    expect(screen.getByRole("radiogroup", { name: /template\.description/ })).toBeInTheDocument();
+    await expectAccessible(baseElement);
+  });
+
+  it("starts 'choose an existing template' empty when switching from the parent's template", async () => {
+    const onChange = vi.fn();
+    render(
+      <TemplateStep
+        value={{ mode: "fromSample", templateId: 19, quantityCategory: "volume", remember: false }}
+        onChange={onChange}
+        originSampleName="S1"
+      />,
+    );
+    await userEvent.setup().click(screen.getByRole("radio", { name: /template\.pick/ }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: "pick", templateId: null, quantityCategory: undefined }),
+    );
   });
 
   it("passes a referentially stable setTemplate to the picker across re-renders", () => {

@@ -61,7 +61,8 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   /**
    * {@link UnsupportedOperationException} is what {@code ApiControllerAdvice} already maps to a 404
    * with errorCode CONFIGURED_UNAVAILABLE, so a disabled feature is indistinguishable from one this
-   * build does not have.
+   * build does not have, except for a request whose body cannot be read: Spring rejects that (400
+   * or 415) before this check runs.
    */
   private void assertOperationsAvailable(User user) {
     if (!systemPropertyManager.isPropertyAllowed(

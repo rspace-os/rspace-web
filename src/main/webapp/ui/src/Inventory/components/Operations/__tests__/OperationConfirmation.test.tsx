@@ -94,6 +94,15 @@ describe("OperationConfirmation", () => {
     expect(onRememberChange).toHaveBeenCalledWith(true);
   });
 
+  it("describes the remember checkbox with its helper text", () => {
+    renderConf({
+      values: { ...values, processName: "dna" },
+      templateSelection: { mode: "none", templateId: null, remember: false },
+      onRememberChange: vi.fn(),
+    });
+    expect(screen.getByRole("checkbox")).toHaveAccessibleDescription(/rememberProcessValuesHelp/);
+  });
+
   it("omits the remember checkbox when no handler is provided (terminal operations)", () => {
     renderConf({ templateSelection: { mode: "none", templateId: null, remember: false } });
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
@@ -163,6 +172,29 @@ describe("OperationConfirmation", () => {
       templateSelection: { mode: "none", templateId: null, remember: false },
     });
     expect(screen.getByText(/confirm\.labels\.storageTemp/)).toBeInTheDocument();
+  });
+
+  it("shows the typed cryomedium for cryopreserve, and no row when it is left empty", async () => {
+    const cryopreserve = operations.find((o) => o.key === "cryopreserve");
+    if (!cryopreserve) throw new Error("the config must declare cryopreserve");
+    const { unmount } = renderConf({
+      op: cryopreserve,
+      values: { ...values, cryomedium: "10% DMSO", storageTemp: { numericValue: -80, unitId: 8 } },
+      templateSelection: { mode: "none", templateId: null, remember: false },
+      english: true,
+    });
+    expect(await screen.findByText("Cryomedium")).toBeInTheDocument();
+    expect(screen.getByText("10% DMSO")).toBeInTheDocument();
+    unmount();
+
+    renderConf({
+      op: cryopreserve,
+      values: { ...values, cryomedium: "  ", storageTemp: { numericValue: -80, unitId: 8 } },
+      templateSelection: { mode: "none", templateId: null, remember: false },
+      english: true,
+    });
+    expect(await screen.findByText("Storage temperature")).toBeInTheDocument();
+    expect(screen.queryByText("Cryomedium")).not.toBeInTheDocument();
   });
 
   it("shows only the fields listed in the operation's confirmSummary", () => {
@@ -265,6 +297,17 @@ describe("OperationConfirmation", () => {
       templateSelection: { mode: "none", templateId: null, remember: false },
     });
     expect(screen.getByText(/fields\.originAmountZero/)).toBeInTheDocument();
+  });
+
+  it("names the empty origin that blocks a terminal operation, in English", async () => {
+    renderConf({
+      op: destroyOp,
+      values: {},
+      originBlocked: "empty",
+      templateSelection: { mode: "none", templateId: null, remember: false },
+      english: true,
+    });
+    expect(await screen.findByText("Subsample S1.01 has an amount of 0.")).toBeInTheDocument();
   });
 });
 

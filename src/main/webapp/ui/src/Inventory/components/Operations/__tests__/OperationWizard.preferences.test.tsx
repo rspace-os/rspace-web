@@ -34,6 +34,9 @@ beforeEach(() => {
       HttpResponse.json({ sample: { id: 1, globalId: "SS9", name: "New" } }, { status: 201 }),
     ),
     http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
+    http.get("/api/inventory/v1/linkTargets/:globalId/summary", ({ params }) =>
+      HttpResponse.json({ globalId: params.globalId, name: "D1", type: "DOCUMENT", deleted: false, readable: true }),
+    ),
   );
 });
 
@@ -104,7 +107,10 @@ vi.mock("../TemplateStep", () => ({
 }));
 vi.mock("../DocumentationStep", () => ({
   default: ({ onChange }: { onChange: (v: unknown) => void }) => (
-    <button type="button" data-testid="doc-choose" onClick={() => onChange({ globalId: "SD1", name: "D1" })} />
+    <>
+      <button type="button" data-testid="doc-choose" onClick={() => onChange({ globalId: "SD1", name: "D1" })} />
+      <button type="button" data-testid="doc-choose-other" onClick={() => onChange({ globalId: "SD2", name: "D2" })} />
+    </>
   ),
 }));
 vi.mock("../OperationConfirmation", () => ({
@@ -226,5 +232,100 @@ describe("OperationWizard with the real preference hook", () => {
     // step in.
     await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
     expect(screen.getByTestId("proc")).toHaveValue("dna extraction");
+  });
+
+  it("warns on the summary that the remembered document is in the trash, and still offers Perform", async () => {
+    server.use(
+      http.get("/api/inventory/v1/linkTargets/:globalId/summary", ({ params }) =>
+        HttpResponse.json({
+          globalId: params.globalId,
+          type: "DOCUMENT",
+          deleted: params.globalId === "SD1",
+          readable: true,
+        }),
+      ),
+    );
+    stored = {
+      INVENTORY_OPERATIONS: {
+        value: {
+          values: {
+            "derive dna extraction": {
+              values: {
+                count: 1,
+                eachAmount: { numericValue: 5, unitId: 3 },
+                amountTaken: { numericValue: 1, unitId: 3 },
+              },
+              template: { mode: "pick", templateId: 5, templateName: "T5" },
+              documentation: { globalId: "SD1", name: "D1" },
+            },
+          },
+          names: {},
+          defaults: { derive: "dna extraction" },
+        },
+        time: 0,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <UiPreferences>
+          <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+        </UiPreferences>
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    expect(await screen.findByText(/documentation\.trashed/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
+    await user.click(nextButton()); // details -> template
+    await user.click(nextButton()); // template -> amounts
+    await user.click(nextButton()); // amounts -> documentation
+    expect(screen.getByText(/documentation\.trashed/)).toBeInTheDocument();
+    await user.click(screen.getByTestId("doc-choose-other"));
+    await waitFor(() => expect(screen.queryByText(/documentation\.trashed/)).not.toBeInTheDocument());
+  });
+
+  it("stays on Details while a new process name that starts with a remembered one is typed", async () => {
+    stored = {
+      INVENTORY_OPERATIONS: {
+        value: {
+          values: {
+            "derive Mill": {
+              values: {
+                count: 1,
+                eachAmount: { numericValue: 5, unitId: 3 },
+                amountTaken: { numericValue: 1, unitId: 3 },
+              },
+              template: { mode: "pick", templateId: 5, templateName: "T5" },
+              documentation: { globalId: "SD1", name: "D1" },
+            },
+          },
+          names: { derive: ["Mill"] },
+          defaults: {},
+        },
+        time: 0,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <UiPreferences>
+          <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+        </UiPreferences>
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "Miller");
+    expect(screen.getByTestId("proc")).toHaveValue("Miller");
+    expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
   });
 });

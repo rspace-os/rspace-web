@@ -30,7 +30,9 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
             onClick={() => void launch()}
             icon={<FontAwesomeIcon icon={faCodeBranch} size="lg" />}
             label={t("operations.action.process")}
-            disabledHelp={disabled}
+            disabledHelp={
+              disabled || (selectedResults.every((r) => r.canEdit) ? "" : t("contextMenu.edit.noPermission"))
+            }
             as={as}
             ref={ref}
           >

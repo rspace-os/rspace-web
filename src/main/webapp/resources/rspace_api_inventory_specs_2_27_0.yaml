@@ -23,9 +23,11 @@ tags:
       Configured Inventory operations. Every endpoint under `/operations` answers `404` with
       errorCode `CONFIGURED_UNAVAILABLE` while the system property
       `inventory.operations.available` is `DENIED`, which is how it is seeded; a sysadmin turns it
-      on at System > Configuration.
-      An operation accepts only the inputs its own definition declares: a field name the operation
-      does not declare is rejected with `400`, naming the field as sent, rather than ignored.
+      on at System > Configuration. A request whose body cannot be read (malformed JSON, or a
+      content type other than JSON) is rejected with `400` or `415` before that check, so those
+      answers can come back while the property is `DENIED`.
+      The server builds the new sample from the inputs an operation declares; a property the
+      operation does not declare is ignored, as on every other endpoint.
 
 paths:
   /workbenches:

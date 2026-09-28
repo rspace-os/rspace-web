@@ -368,12 +368,12 @@ describe("OperationWizard step flow", () => {
     // The gate is evaluated for every step but only the active step renders, so a check owned by
     // TemplateStep never ran on step one, which is exactly where the fast path lives.
     rememberDerive({ mode: "fromSample", templateId: null });
+    ops().defaults = { derive: "dna" }; // opens straight on the summary
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     origin.sample.templateId = 9;
     render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    await user.type(screen.getByTestId("proc"), "dna");
 
     await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeInTheDocument());
     expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything());
@@ -437,11 +437,11 @@ describe("OperationWizard step flow", () => {
     // The template name is display-only; only the id travels, so a rename must show through.
     getTemplate.mockResolvedValue(template({ name: "Cell line v2" }));
     rememberDerive({ mode: "pick", templateId: 9, templateName: "Cell line" });
+    ops().defaults = { derive: "dna" }; // opens straight on the summary
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    await user.type(screen.getByTestId("proc"), "dna");
 
     await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeInTheDocument());
     // Step into the wizard (the fast path replaces Next with review/Perform) to read the banner.
@@ -633,6 +633,19 @@ describe("OperationWizard step flow", () => {
     expect(nextButton()).toBeEnabled();
   });
 
+  it("starts Pool's template step with nothing chosen even when the parents have a template", async () => {
+    const user = userEvent.setup();
+    const origins = [makeMockSubSample({}), makeMockSubSample({})];
+    for (const o of origins) o.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={origins} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
+    await user.click(nextButton()); // details -> template
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
+    expect(nextButton()).toBeDisabled();
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    expect(nextButton()).toBeEnabled();
+  });
+
   it("enables Perform for a terminal operation (Destroy) on a non-empty origin", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
@@ -651,6 +664,20 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
+    // The toast sits outside the modal, where assistive technology cannot reach it.
+    expect(screen.getByRole("alert")).toHaveTextContent(/backend rejected the request/);
+    await user.click(screen.getByRole("button", { name: /actions\.back/i }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("marks the current step for assistive technology", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[mockOrigin()]} />);
+    await fillDerive(user, "dna");
+    expect(document.querySelectorAll('[aria-current="step"]')).toHaveLength(1);
+    expect(document.querySelector('[aria-current="step"]')).toHaveTextContent(/step\.details/);
+    await user.click(nextButton());
+    expect(document.querySelector('[aria-current="step"]')).toHaveTextContent(/step\.template/);
   });
 
   // --- the edit-session lock the wizard holds on its origins ---
@@ -673,16 +700,6 @@ describe("OperationWizard step flow", () => {
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
     expect(release).not.toHaveBeenCalled();
     await waitFor(() => expect(origin.fetchAdditionalInfo).toHaveBeenCalled());
-  });
-
-  it("pushes the lock expiry out on each step, so a slow run does not lose its origins", async () => {
-    const user = userEvent.setup();
-    const origin = makeMockSubSample({});
-    const extend = vi.spyOn(origin, "acquireEditLock").mockResolvedValue("WAS_ALREADY_LOCKED");
-    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
-    await reachConfirm(user, "slow");
-
-    expect(extend.mock.calls.length).toBeGreaterThan(0);
   });
 
   it("refuses Perform once the lock has lapsed rather than sending a request the server will refuse", async () => {
@@ -1191,11 +1208,11 @@ describe("OperationWizard remember bundle", () => {
         amountTaken: { numericValue: 1, unitId: 3 },
       },
     );
+    ops().defaults = { derive: "dna" }; // opens straight on the summary
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks the saved bundle
     await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
     await user.click(screen.getByTestId("toggle-remember")); // untick: only the save is off
     expect(screen.getByTestId("count")).toHaveTextContent("4");
@@ -1222,12 +1239,12 @@ describe("OperationWizard remember bundle", () => {
         amountTaken: { numericValue: 1, unitId: 3 },
       },
     );
+    ops().defaults = { derive: "dna" }; // opens straight on the summary
     const user = userEvent.setup();
     const onClose = vi.fn();
     const origin = mockOrigin();
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks the saved bundle
     await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
     await user.click(screen.getByTestId("toggle-remember")); // untick: the loaded values stay
     await user.click(screen.getByTestId("fill-taken-1")); // new data: eachAmount 5
