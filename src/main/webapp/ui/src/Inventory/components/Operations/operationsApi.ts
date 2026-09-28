@@ -1,5 +1,5 @@
 import ApiService from "@/common/InvApiService";
-import { getApiErrorDetail } from "@/util/error";
+import { getApiErrorDetails } from "@/util/error";
 import type { FacadeRequest } from "./buildOperationRequest";
 import type { InventoryOperation } from "./operations";
 import type { ResolveLabel } from "./types";
@@ -29,7 +29,7 @@ const BARE_KEY_PREFIX = /^([A-Za-z_]\w*):\s*/;
  * An error against one of the operation's own fields comes back keyed by that bare field name
  * ("sampleName: Required by this operation."), so the key is swapped for the input's label as the
  * wizard shows it. Anything else (an origin error under "origins[0].amountTaken", a 409, a bare
- * message) is left to getApiErrorDetail.
+ * message) is left to getApiErrorDetails. Several errors come back one per line.
  */
 export function describeOperationError(
   error: unknown,
@@ -39,20 +39,21 @@ export function describeOperationError(
 ): string {
   // The "which origin" marker is worded from the catalog: welding " (origin 3)" onto a reason the
   // server already localized shipped half an English sentence to a non-English user.
-  const detail = getApiErrorDetail(error, fallback, (reason, index) =>
+  return getApiErrorDetails(error, fallback, (reason, index) =>
     resolveLabel("operations.wizard.originIndex", { reason, index }),
-  );
-  const match = BARE_KEY_PREFIX.exec(detail);
-  const input = match ? operation.inputs.find((i) => i.key === match[1]) : undefined;
-  // The "<label>: <reason>" join goes through the catalog: not every locale separates with a
-  // colon-space.
-  if (input && match) {
-    return resolveLabel("operations.wizard.fieldReason", {
-      label: resolveLabel(input.labelKey),
-      reason: detail.slice(match[0].length),
-    });
-  }
-  return detail;
+  )
+    .map((detail) => {
+      const match = BARE_KEY_PREFIX.exec(detail);
+      const input = match ? operation.inputs.find((i) => i.key === match[1]) : undefined;
+      // The "<label>: <reason>" join goes through the catalog: not every locale separates with a
+      // colon-space.
+      if (!input || !match) return detail;
+      return resolveLabel("operations.wizard.fieldReason", {
+        label: resolveLabel(input.labelKey),
+        reason: detail.slice(match[0].length),
+      });
+    })
+    .join("\n");
 }
 
 /**

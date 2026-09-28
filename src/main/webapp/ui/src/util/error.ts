@@ -77,37 +77,38 @@ export function getErrorMessage(error: unknown, fallback: string): string {
 const FIELD_PATH_PREFIX = /^[A-Za-z_]\w*(?:\[\d+\]|\.\w+)+:\s*/;
 
 /**
- * The reason an API call was rejected, for showing to the user.
+ * The reasons an API call was rejected, for showing to the user.
  *
  * A field-scoped 400 from the Inventory API carries "Errors detected: N" in `message` and the
  * actual reasons in `errors`, each prefixed by the request path it applies to
  * ("origins[0].amountTaken: Cannot take more..."). `getErrorMessage` shows only `message`, which
- * tells the user nothing they can act on. Only the first error is returned: the user fixes one
- * thing at a time, and the API already orders them by request index.
+ * tells the user nothing they can act on. Every reason is returned, in the API's order.
  *
  * Every other API response also carries an `errors` array, holding a single empty string, because
- * `ApiError` wraps its fourth constructor argument in a singleton list. A blank entry (or one that
- * is nothing but a path) therefore has to fall through to `message`, or a 409, 404 or 403 would
- * show a titled alert with no message in it.
+ * `ApiError` wraps its fourth constructor argument in a singleton list. Blank entries (or ones that
+ * are nothing but a path) are skipped, and when none is left the result is `message`, or a 409, 404
+ * or 403 would show a titled alert with no message in it.
  *
- * @arg error     Anything; the detail is extracted if it is an Axios error carrying one.
- * @arg fallback  Passed through to {@link getErrorMessage} when there is no detail.
+ * @arg error     Anything; the details are extracted if it is an Axios error carrying them.
+ * @arg fallback  Passed through to {@link getErrorMessage} when there are no details.
  * @arg formatOriginIndex  Renders "which origin", given the reason and a 1-based index.
  *   See {@link ORIGIN_INDEX}.
  */
-export function getApiErrorDetail(
+export function getApiErrorDetails(
   error: unknown,
   fallback: string,
   formatOriginIndex: (reason: string, index: number) => string,
-): string {
-  return Parsers.objectPath(["response", "data", "errors"], error)
+): Array<string> {
+  const details = Parsers.objectPath(["response", "data", "errors"], error)
     .flatMap(Parsers.isArray)
-    .flatMap(([first]) => (typeof first === "undefined" ? Result.Error<unknown>([]) : Result.Ok(first)))
-    .flatMap(Parsers.isString)
-    .map((detail) => withOriginIndex(detail, formatOriginIndex))
-    .flatMap((detail) => (detail.length > 0 ? Result.Ok(detail) : Result.Error<string>([])))
-    .orElseTry(() => Result.Ok(getErrorMessage(error, fallback)))
-    .orElse(fallback);
+    .map((errors) =>
+      errors
+        .filter((e): e is string => typeof e === "string")
+        .map((detail) => withOriginIndex(detail, formatOriginIndex))
+        .filter((detail) => detail.length > 0),
+    )
+    .orElse([]);
+  return details.length > 0 ? details : [getErrorMessage(error, fallback)];
 }
 
 /** An `origins[N]` path, whose index is the one part of the path the user needs. */

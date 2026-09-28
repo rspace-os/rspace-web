@@ -135,6 +135,20 @@ describe("describeOperationError", () => {
     );
   });
 
+  it("shows every rejection, one per line, each worded for its own field or origin", () => {
+    const twoErrors = {
+      response: {
+        data: {
+          message: "Errors detected: 2",
+          errors: ["origins[0].amountTaken: Too much", "sampleName: Required by this operation."],
+        },
+      },
+    };
+    expect(describeOperationError(twoErrors, operation, resolveLabel, "failed")).toBe(
+      "Too much [ORIGIN 1]\nSample name: Required by this operation.",
+    );
+  });
+
   it("reports a network failure (no response at all) by the error's own message", () => {
     expect(describeOperationError(new Error("Network Error"), operation, resolveLabel, "failed")).toBe("Network Error");
   });
