@@ -5,7 +5,7 @@ import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import SubSampleModel from "@/stores/models/SubSampleModel";
 import getRootStore from "@/stores/stores/getRootStore";
 import { getErrorMessage } from "@/util/error";
-import { displayErrorIfAllLocksCouldNotBeAcquired } from "../ContextMenu/lockAlerts";
+import { useLockAlert } from "../ContextMenu/lockAlerts";
 import { useProcessAvailable } from "../ContextMenu/useProcessAvailable";
 import OperationWizard from "./OperationWizard";
 import type { OperationResult } from "./operationsApi";
@@ -28,6 +28,7 @@ export function useOperationWizardLauncher(
 ): { launch: () => Promise<boolean>; wizard: React.ReactNode } {
   const { t } = useTranslation("inventory");
   const available = useProcessAvailable();
+  const lockAlert = useLockAlert();
   const [open, setOpen] = React.useState(false);
 
   // A fulfilled acquisition may be WAS_ALREADY_LOCKED (another tab or an edit form holds it);
@@ -86,13 +87,10 @@ export function useOperationWizardLauncher(
       const failure = results.find((r) => r.status === "rejected");
       if (failure) {
         await releaseAll(newlyLocked);
-        const shown = displayErrorIfAllLocksCouldNotBeAcquired({
-          error: new AggregateError(results.filter((r) => r.status === "rejected").map((r) => r.reason)),
-          title: t("operations.wizard.originsLocked"),
-          message: t("contextMenu.edit.someoneEditingThem"),
-          beingEditedBy: (name) => t("contextMenu.edit.beingEditedBy", { name }),
-          addAlert: getRootStore().uiStore.addAlert,
-        });
+        const shown = lockAlert(
+          new AggregateError(results.filter((r) => r.status === "rejected").map((r) => r.reason)),
+          { title: t("operations.wizard.originsLocked"), message: t("contextMenu.edit.someoneEditingThem") },
+        );
         if (!shown)
           getRootStore().uiStore.addAlert(
             mkAlert({
