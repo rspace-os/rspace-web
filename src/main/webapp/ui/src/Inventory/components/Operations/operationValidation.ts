@@ -2,7 +2,7 @@ import type { Quantity } from "@/stores/definitions/HasQuantity";
 import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
-import type { InventoryOperation, OperationInput } from "./operations";
+import type { InventoryKey, InventoryOperation, OperationInput } from "./operations";
 import type { OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
 import { UNSET_UNIT } from "./types";
 
@@ -24,29 +24,23 @@ export function validSubSampleCount(count: unknown, min = 1, max?: number): bool
   return Number.isInteger(n) && n >= min && (max === undefined || n <= max);
 }
 
-export function temperatureExceedsMax(input: OperationInput, value: OperationQuantity | undefined): boolean {
-  if (input.type !== "temperature" || input.maxCelsius === undefined) return false;
-  if (!value || !Number.isFinite(value.numericValue)) return false;
-  return value.numericValue > input.maxCelsius;
-}
+/** The first rule a field's value breaks, as the message key (and arguments) the field shows. */
+export type FieldProblem = { key: InventoryKey; args?: Record<string, unknown> };
 
-export function temperatureBelowMin(input: OperationInput, value: OperationQuantity | undefined): boolean {
-  if (input.type !== "temperature" || input.minCelsius === undefined) return false;
-  if (!value || !Number.isFinite(value.numericValue)) return false;
-  return value.numericValue < input.minCelsius;
-}
-
-/** Storage temperatures are whole degrees, as the sample form's storage temperature takes them. */
-export function temperatureNotWhole(input: OperationInput, value: OperationQuantity | undefined): boolean {
-  if (input.type !== "temperature") return false;
-  if (!value || !Number.isFinite(value.numericValue)) return false;
-  return !Number.isInteger(value.numericValue);
-}
-
-export function temperatureNotStorable(input: OperationInput, value: OperationQuantity | undefined): boolean {
-  if (input.type !== "temperature") return false;
-  if (!value || !Number.isFinite(value.numericValue)) return false;
-  return value.numericValue < -273.15 || !amountIsStorable(value.numericValue);
+/**
+ * Storage temperatures are whole degrees Celsius, as the sample form's storage temperature takes
+ * them, within the input's bounds and above absolute zero.
+ */
+export function temperatureProblem(input: OperationInput, value: OperationQuantity | undefined): FieldProblem | null {
+  if (!value || !Number.isFinite(value.numericValue)) return { key: "operations.fields.storageTempRequired" };
+  const t = value.numericValue;
+  if (t < -273.15 || !amountIsStorable(t)) return { key: "operations.fields.storageTempInvalid" };
+  if (!Number.isInteger(t)) return { key: "operations.fields.storageTempWhole" };
+  if (input.maxCelsius !== undefined && t > input.maxCelsius)
+    return { key: "operations.fields.storageTempMax", args: { max: input.maxCelsius } };
+  if (input.minCelsius !== undefined && t < input.minCelsius)
+    return { key: "operations.fields.storageTempMin", args: { min: input.minCelsius } };
+  return null;
 }
 
 export function textTooLong(input: OperationInput, value: unknown): boolean {
@@ -59,6 +53,16 @@ export const MAX_QUANTITY = 1e9;
 
 export function amountTooLarge(value: number): boolean {
   return value > MAX_QUANTITY;
+}
+
+/** What an amount field shows: a positive amount with a unit, no more than the origin holds. */
+export function amountProblem(value: OperationQuantity | undefined, exceedsOrigin: boolean): FieldProblem | null {
+  if (amountTooLarge(value?.numericValue ?? 0))
+    return { key: "operations.fields.amountTooLarge", args: { max: MAX_QUANTITY } };
+  if (exceedsOrigin) return { key: "operations.fields.amountTakenExceedsOrigin" };
+  if (!(value && value.numericValue > 0)) return { key: "operations.fields.amountRequired" };
+  if (!(value.unitId > 0)) return { key: "operations.fields.unitRequired" };
+  return null;
 }
 
 /**
@@ -84,11 +88,7 @@ export function detailsValid(
       // Every bound below (the configured ceiling and floor, absolute zero) compares numericValue AS
       // Celsius, so a value carrying any other unit - an unset 0 from a cleared control, or a Kelvin
       // id restored from a stored bundle - would be judged against the wrong scale.
-      if (input.type === "temperature" && q.unitId !== CELSIUS) return false;
-      if (temperatureExceedsMax(input, q)) return false;
-      if (temperatureBelowMin(input, q)) return false;
-      if (temperatureNotStorable(input, q)) return false;
-      if (temperatureNotWhole(input, q)) return false;
+      if (input.type === "temperature" && (q.unitId !== CELSIUS || temperatureProblem(input, q))) return false;
       if (input.type === "quantity") {
         if (!Number.isFinite(q.unitId) || q.unitId <= 0) return false;
         if (q.numericValue < 0) return false;
