@@ -135,20 +135,19 @@ export function useOperationWizardLauncher(
     });
   };
 
-  const wizard =
-    open || origins.length > 0 ? (
-      <OperationWizard
-        key={open ? 1 : 0}
-        open={open}
-        onClose={close}
-        onPerformed={(sample) => {
-          performed.current = true;
-          onPerformed?.(sample);
-        }}
-        origins={open ? lockedOrigins : origins}
-        pendingRenewals={renewals}
-      />
-    ) : null;
+  // Mounted only while open, so each launch starts a fresh wizard and a closed one makes no requests.
+  const wizard = open ? (
+    <OperationWizard
+      open
+      onClose={close}
+      onPerformed={(sample) => {
+        performed.current = true;
+        onPerformed?.(sample);
+      }}
+      origins={lockedOrigins}
+      pendingRenewals={renewals}
+    />
+  ) : null;
 
   return { launch, wizard };
 }
