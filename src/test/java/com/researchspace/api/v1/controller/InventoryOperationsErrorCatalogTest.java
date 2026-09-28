@@ -112,6 +112,42 @@ class InventoryOperationsErrorCatalogTest {
   }
 
   /**
+   * The inventory validators this feature added codes to outside the operation endpoint. Their
+   * rejections carry no English default, so a code missing from the catalog has no message at all.
+   */
+  private static final List<Path> SHARED_INVENTORY_VALIDATION_SOURCES =
+      List.of(
+          CONTROLLER_DIR.resolve("SampleApiValidator.java"),
+          Path.of(
+              "src/main/java/com/researchspace/service/inventory/OperationTemplateConformanceValidator.java"),
+          Path.of(
+              "src/main/java/com/researchspace/service/inventory/SampleApiPostFullValidator.java"),
+          Path.of("src/main/java/com/researchspace/service/inventory/ApiExtraFieldsHelper.java"),
+          Path.of(
+              "src/main/java/com/researchspace/service/inventory/impl/SampleApiManagerImpl.java"),
+          Path.of(
+              "src/main/java/com/researchspace/model/units/TemperatureConstraintValidator.java"),
+          Path.of("src/main/java/com/researchspace/api/v1/model/ApiSampleWithFullSubSamples.java"));
+
+  @Test
+  void everyCodeRaisedBySharedInventoryValidationHasACatalogEntry() throws IOException {
+    Set<String> raised = new java.util.TreeSet<>();
+    for (Path source : SHARED_INVENTORY_VALIDATION_SOURCES) {
+      Matcher matcher = RAISED_CODE.matcher(Files.readString(source));
+      while (matcher.find()) {
+        raised.add(matcher.group(1));
+      }
+    }
+    assertTrue(raised.size() >= 15, () -> "only " + raised.size() + " codes scanned: " + raised);
+
+    Set<String> missing = new java.util.TreeSet<>(raised);
+    missing.removeAll(loadServerCatalogs());
+    assertTrue(
+        missing.isEmpty(),
+        "error codes raised in Java with no entry under " + CATALOG_DIR + ": " + missing);
+  }
+
+  /**
    * The names an operation gives the fields it generates. Unlike an error code, a key that misses
    * the catalog is not a bad message on screen: {@link
    * com.researchspace.service.inventory.operations.LabelResolver} falls back to the key itself, and
