@@ -636,9 +636,7 @@ class InventoryOperationsApiControllerTest {
     ApiInventoryOperationPost built = new ApiInventoryOperationPost();
     BeanPropertyBindingResult coreErrors = new BeanPropertyBindingResult(built, "request");
     coreErrors.rejectValue(
-        "origins[0].amountTaken",
-        "errors.inventory.operation.amountTakenExceedsOrigin",
-        "Cannot take more from an origin than it currently holds.");
+        "origins[0].amountTaken", "errors.inventory.operation.amountTakenExceedsOrigin");
     when(operationManager.performOperation(any(), any(), any(), eq(user)))
         .thenThrow(new BindException(coreErrors));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
@@ -651,8 +649,6 @@ class InventoryOperationsApiControllerTest {
     FieldError renamed = rejection.getFieldErrors().get(0);
     assertEquals("origin.amountTaken", renamed.getField());
     assertEquals("errors.inventory.operation.amountTakenExceedsOrigin", renamed.getCode());
-    assertEquals(
-        "Cannot take more from an origin than it currently holds.", renamed.getDefaultMessage());
     assertTrue(rejection.getFieldErrors("origins[0].amountTaken").isEmpty());
   }
 

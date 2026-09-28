@@ -38,20 +38,14 @@ public final class OperationOriginRules {
       String field = originField(singleOrigin, i);
       ApiInventoryOperationRequests.Origin origin = origins.get(i);
       if (origin == null) {
-        errors.rejectValue(
-            field,
-            "errors.inventory.operation.originIdRequired",
-            "Each origin must identify a subsample by id.");
+        errors.rejectValue(field, "errors.inventory.operation.originIdRequired");
         continue;
       }
       if (origin.getGlobalId() != null && !seen.add(canonical(origin.getGlobalId()))) {
         // Each origin's amount is checked against that origin's original quantity, but the
         // decrements are applied in order, so the same id listed twice would be checked twice
         // against the full quantity yet decremented twice.
-        errors.rejectValue(
-            field + ".globalId",
-            "errors.inventory.operation.duplicateOrigin",
-            "An origin subsample may appear at most once in an operation.");
+        errors.rejectValue(field + ".globalId", "errors.inventory.operation.duplicateOrigin");
       }
       validateAmountTaken(origin, field, takesAmount, operation.amountNotApplicableCode(), errors);
     }
@@ -79,10 +73,7 @@ public final class OperationOriginRules {
       Errors errors) {
     if (!takesAmount) {
       if (origin.getAmountTaken() != null) {
-        errors.rejectValue(
-            field + ".amountTaken",
-            notApplicableCode,
-            "This operation decides what it takes from each origin, so no amount may be sent.");
+        errors.rejectValue(field + ".amountTaken", notApplicableCode);
       }
       return;
     }
@@ -90,10 +81,7 @@ public final class OperationOriginRules {
     // No error means the amount is present and well-formed, so the value read below is safe.
     if (errors.getFieldErrorCount(field + ".amountTaken") == 0
         && origin.getAmountTaken().getNumericValue().signum() <= 0) {
-      errors.rejectValue(
-          field + ".amountTaken",
-          "errors.inventory.operation.amountTakenPositive",
-          "This operation takes from each origin, so the amount taken must be greater than zero.");
+      errors.rejectValue(field + ".amountTaken", "errors.inventory.operation.amountTakenPositive");
     }
   }
 
@@ -112,9 +100,7 @@ public final class OperationOriginRules {
     }
     if (!documentable) {
       errors.rejectValue(
-          "documentedByGlobalId",
-          "errors.inventory.operation.documentationLinkTargetInvalid",
-          "A documentation link must target an ELN document, notebook or Gallery file.");
+          "documentedByGlobalId", "errors.inventory.operation.documentationLinkTargetInvalid");
     }
   }
 
@@ -130,10 +116,7 @@ public final class OperationOriginRules {
       }
     }
     errors.rejectValue(
-        field,
-        "errors.inventory.operation.originGlobalIdInvalid",
-        new Object[] {globalId},
-        "Each origin must be identified by a subsample global id.");
+        field, "errors.inventory.operation.originGlobalIdInvalid", new Object[] {globalId}, null);
     return null;
   }
 }
