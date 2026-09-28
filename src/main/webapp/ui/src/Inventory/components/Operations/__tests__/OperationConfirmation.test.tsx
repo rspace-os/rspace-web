@@ -2,8 +2,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { omit } from "es-toolkit";
-import { describe, expect, it, vi } from "vitest";
-import { InEnglish } from "@/__tests__/realI18n";
+import type React from "react";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import common from "@/modules/common/i18n/locales/en-US/common.json";
+import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 import appTheme from "@/theme";
 import OperationConfirmation from "../OperationConfirmation";
 import type { InventoryOperation } from "../operations";
@@ -11,6 +14,11 @@ import { operations } from "../operations";
 import type { OriginBlockedReason } from "../operationValidation";
 import type { TemplateSelection } from "../TemplateStep";
 import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "../types";
+
+let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
+beforeAll(async () => {
+  InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
+});
 
 // i18n runs in cimode in tests, so t(key, params) renders the namespaced key with no interpolation;
 // assertions match on the key, which still tells us which branch rendered. Values not passed through

@@ -1,13 +1,20 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
-import { InEnglish } from "@/__tests__/realI18n";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import common from "@/modules/common/i18n/locales/en-US/common.json";
+import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import OperationDetailsStep from "../OperationDetailsStep";
 import type { InventoryOperation } from "../operations";
 import { operations } from "../operations";
 import type { OperationInputs } from "../types";
+
+let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
+beforeAll(async () => {
+  InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
+});
 
 vi.mock("@/components/Inputs/UnitSelect", () => ({
   default: ({

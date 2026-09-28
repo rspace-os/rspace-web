@@ -1,9 +1,17 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import type React from "react";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { InEnglish } from "@/__tests__/realI18n";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import common from "@/modules/common/i18n/locales/en-US/common.json";
+import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 import TemplateStep, { type TemplateSelection } from "../TemplateStep";
+
+let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
+beforeAll(async () => {
+  InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
+});
 
 type FakeField = {
   name: string;
