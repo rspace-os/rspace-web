@@ -8,13 +8,13 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import FormHelperText from "@mui/material/FormHelperText";
 import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
+import { format } from "date-fns";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import DescriptionList from "@/components/DescriptionList";
 import useStores from "@/stores/use-stores";
 import { withUniqueFieldNames } from "./buildOperationRequest";
-import { applyComputedValues } from "./computedValues";
 import type { DocumentationSelection } from "./DocumentationStep";
 import { type ConfirmSummaryField, type InventoryOperation, resolveProcessName, usesAmountModes } from "./operations";
 import type { OriginBlockedReason } from "./operationValidation";
@@ -66,12 +66,8 @@ function OperationConfirmation({
   // The link field name may interpolate {originName}, which is not in `values` - it is injected per
   // origin at build time - and ICU throws on the missing argument, so supply the origin's name.
   const linkName = effect.links.length ? resolveLabel(effect.links[0].fieldNameKey, { ...values, originName }) : "";
-  // Computed with no parent fields, which is exact only because the sole computed value this card
-  // surfaces is an origin field needing none. An origin field sourced from a parent-dependent
-  // computed value would need the origin's parent fields loaded here.
-  const displayValues = operation.effect.computed?.length
-    ? applyComputedValues(operation, { parentFields: [], values, resolveFieldName: resolveLabel })
-    : values;
+  // "today" previews the date the server stamps on an origin field (Destroy's disposed date).
+  const displayValues: OperationInputs = { ...values, today: format(new Date(), "yyyy-MM-dd") };
   const templateValue =
     templateSelection.mode === "none"
       ? t("operations.template.valueNone")

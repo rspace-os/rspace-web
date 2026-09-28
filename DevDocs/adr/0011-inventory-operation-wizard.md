@@ -49,8 +49,8 @@ The request carries the origins with the amount taken from each, the typed input
 template and the documentation target. The server builds the sample and every generated
 field itself, resolving names in the request's locale from the same catalogs the frontend
 uses (`JsonMessageSource`, `inventory:` namespace, ICU formatting matching `i18next-icu`).
-Computed values are computed server-side: Passage's `increment` reads the parent's fields
-by key, then by localized name; Destroy's disposal `today` resolves in the session's
+Computed values are computed server-side: Passage's next passage number reads the parent's
+fields by key, then by localized name; Destroy's disposal date resolves in the session's
 timezone, which the login flow records from the browser.
 
 Why: about 1,100 lines of interpretive validation, an unknown-property capture and a

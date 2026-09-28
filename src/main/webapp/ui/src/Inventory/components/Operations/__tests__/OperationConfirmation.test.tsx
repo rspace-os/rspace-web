@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { format } from "date-fns";
 import { omit } from "es-toolkit";
 import type React from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -279,9 +280,8 @@ describe("OperationConfirmation", () => {
     noOutput: true,
     effect: {
       emptiesOrigin: true,
-      computed: [{ fn: "today", into: "disposedDate", args: {} }],
       links: [],
-      originFields: [{ nameKey: "operations.destroy.disposedField", contentFrom: "disposedDate" }],
+      originFields: [{ nameKey: "operations.destroy.disposedField", contentFrom: "today" }],
     },
     confirmSummary: ["originEmptied", "originFields"],
   } as unknown as InventoryOperation;
@@ -294,7 +294,7 @@ describe("OperationConfirmation", () => {
     expect(screen.getByText(/operations\.destroy\.description/)).toBeInTheDocument();
     expect(screen.getByText(/confirm\.labels\.originEmptied/)).toBeInTheDocument();
     expect(screen.getByText(/operations\.destroy\.disposedField/)).toBeInTheDocument();
-    expect(screen.getByText(/^\d{4}-\d{2}-\d{2}$/)).toBeInTheDocument();
+    expect(screen.getByText(format(new Date(), "yyyy-MM-dd"))).toBeInTheDocument();
   });
 
   it("blocks a terminal operation on an empty origin, showing why (the details-step guard moved here)", () => {

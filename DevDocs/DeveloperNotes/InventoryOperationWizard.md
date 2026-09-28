@@ -91,8 +91,6 @@ Files:
     the confirmation preview; it is the same rule as `OperationFieldNames`, pinned to
     it by `FieldNameUniquenessParityTest` over the shared cases in
     `src/test/resources/inventory/fieldNameUniquenessCases.json`.
-  - `computedValues.ts`, `operationFunctions.ts` — the preview's model of the values
-    the server computes. They render the confirmation card; they never build a request.
   - `types.ts` — the wizard's own types, mirroring the request bodies.
   - the wizard components (`OperationWizard`, `OperationPicker`,
     `OperationDetailsStep`, `DocumentationStep`, `OperationConfirmation`,
@@ -156,47 +154,9 @@ Files:
 
 Two operations record a value the user never types: Passage's passage number and
 Destroy's disposal date. **The server computes both** (`PassageOperation`,
-`DestroyOperation`), because the value that matters is the one that gets stored.
-
-The wizard keeps its own model of those computations so the confirmation card can show
-the user what the operation will record before they commit. `operationFunctions.ts` is
-a small registry of named pure functions, `computedValues.ts` applies them, and an
-operation's `effect.computed[]` entry says which function, where each argument comes
-from, and which slot the result lands in:
-
-```ts
-// operationFunctions.ts — the computation, in code
-increment: {
-  params: ["current", "start"],
-  fn: ({ current, start }) => {
-    const n = Number(current);
-    return Number.isFinite(n) ? n + 1 : Number(start);
-  },
-},
-```
-
-```ts
-// operations.ts — which function, how to source its args, where the result goes
-effect: {
-  computed: [{
-    fn: "increment",
-    into: "passageNumber",
-    args: {
-      current: { parentSampleField: "operations.passage.numberField" },
-      start: { constant: 1 },
-    },
-  }],
-  textFields: [{ nameKey: "operations.passage.numberField", contentFrom: "passageNumber" }],
-}
-```
-
-The registry also has `today` (no arguments): the user's local date as an ISO calendar
-date, which is what Destroy's preview shows for the disposed field.
-
-This is a preview, not a request: nothing computed here is ever posted. If the preview
-and the server disagree, the server wins and the user sees a value they were not shown,
-so a change to `PassageOperation`'s counter or `DestroyOperation`'s date belongs on both
-sides.
+`DestroyOperation`), because the value that matters is the one that gets stored. The
+confirmation card previews only Destroy's date, as the user's local today
+(`OperationConfirmation`); a change to `DestroyOperation`'s date belongs on both sides.
 
 ## What the backend does
 

@@ -8,7 +8,6 @@ import { faFlask } from "@fortawesome/free-solid-svg-icons/faFlask";
 import { faSnowflake } from "@fortawesome/free-solid-svg-icons/faSnowflake";
 import { faTrash } from "@fortawesome/free-solid-svg-icons/faTrash";
 import type { ParseKeys } from "i18next";
-import type { OperationFunctionName } from "./operationFunctions";
 import type { AmountMode } from "./types";
 
 export type InventoryKey = ParseKeys<"inventory">;
@@ -27,8 +26,6 @@ export type OperationInput = {
   default?: string | number;
 };
 
-export type ComputedArgSource = { parentSampleField: InventoryKey } | { constant: string | number };
-
 export type ConfirmSummaryField =
   | "process"
   | "template"
@@ -44,12 +41,6 @@ export type ConfirmSummaryField =
 type LinkSpec = { relationType: string; fieldNameKey: InventoryKey };
 type OriginFieldSpec = { nameKey: InventoryKey; contentFrom: string };
 
-type Computed = {
-  fn: OperationFunctionName;
-  into: string;
-  args: Record<string, ComputedArgSource>;
-};
-
 type Effect = {
   nameFrom?: string;
   countFrom?: string;
@@ -59,7 +50,6 @@ type Effect = {
   originFields?: ReadonlyArray<OriginFieldSpec>;
   processNameFrom?: string;
   storageTempFrom?: string;
-  computed?: ReadonlyArray<Computed>;
   links: ReadonlyArray<LinkSpec>;
 };
 
@@ -144,16 +134,6 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       nameFrom: "sampleName",
       countFrom: "count",
       eachAmountFrom: "eachAmount",
-      computed: [
-        {
-          fn: "increment",
-          into: "passageNumber",
-          args: {
-            current: { parentSampleField: "operations.passage.numberField" },
-            start: { constant: 1 },
-          },
-        },
-      ],
       links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.passage.linkFieldName" }],
     },
     confirmSummary: ["template", "subsamples", "linkBack", "documentation"],
@@ -271,9 +251,8 @@ export const operations: ReadonlyArray<InventoryOperation> = [
     inputs: [],
     effect: {
       emptiesOrigin: true,
-      computed: [{ fn: "today", into: "disposedDate", args: {} }],
       links: [],
-      originFields: [{ nameKey: "operations.destroy.disposedField", contentFrom: "disposedDate" }],
+      originFields: [{ nameKey: "operations.destroy.disposedField", contentFrom: "today" }],
     },
     confirmSummary: ["originEmptied", "originFields"],
   },
