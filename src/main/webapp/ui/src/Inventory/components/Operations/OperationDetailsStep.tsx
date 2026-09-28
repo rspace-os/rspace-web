@@ -269,43 +269,38 @@ function OperationDetailsStep({
         values,
         origin.quantity ? { numericValue: getValue(origin.quantity), unitId: getUnitId(origin.quantity) } : null,
       );
-    const temperatureError = temperatureProblem(input, quantity);
-    if (isTemperature)
-      return (
-        <RawNumericField
-          key={input.key}
-          value={quantity?.numericValue}
-          onChange={(numericValue) => set(input.key, { numericValue, unitId: currentUnitId })}
-          parse={parseTypedNumber}
-          allowNegative
-          label={label(input.labelKey)}
-          error={temperatureError !== null}
-          helperText={temperatureError ? label(temperatureError.key, temperatureError.args) : undefined}
-          endAdornment={null}
-          unitDescription={label("operations.fields.temperatureUnit")}
-        />
-      );
-    const amountError = amountProblem(quantity && { ...quantity, unitId: currentUnitId }, overRemoval);
+    const problem = isTemperature
+      ? temperatureProblem(input, quantity)
+      : amountProblem(quantity && { ...quantity, unitId: currentUnitId }, overRemoval);
     return (
       <RawNumericField
         key={input.key}
         value={quantity?.numericValue}
         onChange={(numericValue) => set(input.key, { numericValue, unitId: currentUnitId })}
-        parse={parseAmount}
-        allowNegative={false}
         label={label(input.labelKey)}
-        error={amountError !== null}
-        helperText={amountError ? label(amountError.key, amountError.args) : undefined}
-        endAdornment={
-          <UnitSelect
-            categories={categoriesForInput}
-            value={currentUnitId}
-            ariaLabel={label("operations.fields.unitFor", { field: label(input.labelKey) })}
-            handleChange={(e) =>
-              set(input.key, { numericValue: quantity?.numericValue ?? 0, unitId: Number(e.target.value) })
+        error={problem !== null}
+        helperText={problem ? label(problem.key, problem.args) : undefined}
+        {...(isTemperature
+          ? {
+              parse: parseTypedNumber,
+              allowNegative: true,
+              endAdornment: null,
+              unitDescription: label("operations.fields.temperatureUnit"),
             }
-          />
-        }
+          : {
+              parse: parseAmount,
+              allowNegative: false,
+              endAdornment: (
+                <UnitSelect
+                  categories={categoriesForInput}
+                  value={currentUnitId}
+                  ariaLabel={label("operations.fields.unitFor", { field: label(input.labelKey) })}
+                  handleChange={(e) =>
+                    set(input.key, { numericValue: quantity?.numericValue ?? 0, unitId: Number(e.target.value) })
+                  }
+                />
+              ),
+            })}
       />
     );
   };
