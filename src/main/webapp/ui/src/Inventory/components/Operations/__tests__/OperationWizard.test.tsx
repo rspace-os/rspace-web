@@ -3,12 +3,20 @@ import { act, render as renderWithoutQueryClient, screen, waitFor } from "@testi
 import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type React from "react";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
-import { InEnglish } from "@/__tests__/realI18n";
+import common from "@/modules/common/i18n/locales/en-US/common.json";
+import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
+
+let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
+beforeAll(async () => {
+  InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
+});
 
 function render(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

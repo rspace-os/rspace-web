@@ -2,13 +2,21 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render as renderWithoutQueryClient, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import type React from "react";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
-import { InEnglish } from "@/__tests__/realI18n";
+import common from "@/modules/common/i18n/locales/en-US/common.json";
+import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationDetailsStep from "../OperationDetailsStep";
 import OperationWizard from "../OperationWizard";
 import { operations } from "../operations";
+
+let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
+beforeAll(async () => {
+  InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
+});
 
 /*
  * The store is mocked as a fresh profile - getUnit answering undefined for every id - which is the
