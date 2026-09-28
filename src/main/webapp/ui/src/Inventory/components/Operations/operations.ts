@@ -63,8 +63,10 @@ type Effect = {
   links: ReadonlyArray<LinkSpec>;
 };
 
+export type OperationKey = "aliquot" | "passage" | "pool" | "derive" | "cryopreserve" | "revive" | "destroy";
+
 export type InventoryOperation = {
-  key: string;
+  key: OperationKey;
   labelKey: InventoryKey;
   descriptionKey?: InventoryKey;
   icon: IconDefinition;
