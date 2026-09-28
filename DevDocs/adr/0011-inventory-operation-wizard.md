@@ -173,7 +173,9 @@ and read-only on the DTO, so no request on any endpoint can set it. The next run
 operation matches the previous generation by key first, then by localized name. Matching on
 the name alone forked a lineage into one counter per locale. The name fallback is kept
 permanently because it is how a user's own hand-created "Passage number" is picked up on
-the first Passage of an existing culture.
+the first Passage of an existing culture. When the key misses and the name finds an origin
+field of another type (a number or link "Disposed"), Destroy is refused with
+`originFieldNameClash` before anything is written, rather than writing text onto it.
 
 Scope: where the created sample inherits a template field of the same name,
 `mergeOperationFieldsIntoInheritedTemplateFields` folds the generated content into that

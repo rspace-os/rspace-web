@@ -183,6 +183,7 @@
         "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
         "originCountMinimum": "This operation requires at least two origin subsamples.",
         "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+        "originFieldNameClash": "The origin subsample already has a field named {0} of a different type. Rename or remove that field, then try again.",
         "originGlobalIdInvalid": "Each origin must be identified by a subsample global id (SS followed by a number), was [{0}].",
         "originIdRequired": "Each origin must identify a subsample by id.",
         "originsRequired": "At least one origin subsample must be provided for the operation.",

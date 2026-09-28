@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,6 +32,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.ExtraTextField;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -261,6 +263,31 @@ class InventoryOperationManagerImplTest {
     assertEquals(Long.valueOf(55L), sent.getId());
     assertFalse(sent.isNewFieldRequest());
     assertEquals("2026-09-25", sent.getContent());
+  }
+
+  @Test
+  void destroyIsRefusedWhenTheOriginHasAFieldOfAnotherTypeWithTheDisposedFieldsName() {
+    ExtraField clashing = new ExtraLinkField();
+    clashing.setId(55L);
+    clashing.setName("Disposed");
+    SubSample live = subSampleHolding("2", 3, 1L);
+    when(live.getActiveExtraFields()).thenReturn(List.of(clashing));
+    ApiInventoryOperationOriginUpdate origin =
+        origin(100L, new ApiQuantityInfo(new BigDecimal("2"), 3));
+    origin.setExtraFields(
+        List.of(
+            OperationFieldNames.text(
+                "Disposed", "inventory:operations.destroy.disposedField", "2026-09-25")));
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setEmptiesOrigin(true);
+    request.setOrigins(List.of(origin));
+    originHolds(100L, live);
+
+    BindException rejection = performExpectingRejection(request);
+
+    FieldError error = rejection.getFieldErrors("origins[0].extraFields").get(0);
+    assertEquals("errors.inventory.operation.originFieldNameClash", error.getCode());
+    assertArrayEquals(new Object[] {"Disposed"}, error.getArguments());
   }
 
   @Test

@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -172,20 +173,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       List<ApiExtraField> generated, SubSample live) {
     List<ExtraField> existing = live.getActiveExtraFields();
     for (ApiExtraField field : generated) {
-      existing.stream()
-          .filter(
-              e ->
-                  field.getOperationFieldKey() != null
-                      && field.getOperationFieldKey().equals(e.getOperationFieldKey()))
-          .findFirst()
-          .or(
-              () ->
-                  existing.stream()
-                      .filter(
-                          e ->
-                              OperationFieldNames.comparable(e.getName())
-                                  .equals(OperationFieldNames.comparable(field.getName())))
-                      .findFirst())
+      byKey(field, existing)
+          .or(() -> byName(field, existing))
           .ifPresent(
               match -> {
                 field.setId(match.getId());
@@ -193,6 +182,48 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               });
     }
     return generated;
+  }
+
+  private static Optional<ExtraField> byKey(ApiExtraField field, List<ExtraField> existing) {
+    return existing.stream()
+        .filter(
+            e ->
+                field.getOperationFieldKey() != null
+                    && field.getOperationFieldKey().equals(e.getOperationFieldKey()))
+        .findFirst();
+  }
+
+  private static Optional<ExtraField> byName(ApiExtraField field, List<ExtraField> existing) {
+    return existing.stream()
+        .filter(
+            e ->
+                OperationFieldNames.comparable(e.getName())
+                    .equals(OperationFieldNames.comparable(field.getName())))
+        .findFirst();
+  }
+
+  /**
+   * A generated field whose name the origin already uses for a field of another type would be
+   * written onto that field; the operation is refused instead.
+   */
+  private static void rejectOriginFieldNameClash(
+      ApiInventoryOperationOriginUpdate origin, SubSample live, BeanPropertyBindingResult errors) {
+    if (CollectionUtils.isEmpty(origin.getExtraFields())) {
+      return;
+    }
+    List<ExtraField> existing = live.getActiveExtraFields();
+    for (ApiExtraField field : origin.getExtraFields()) {
+      if (byKey(field, existing).isEmpty()
+          && byName(field, existing)
+              .filter(match -> match.getType() != field.getTypeAsFieldType())
+              .isPresent()) {
+        errors.rejectValue(
+            "extraFields",
+            "errors.inventory.operation.originFieldNameClash",
+            new Object[] {field.getName()},
+            null);
+      }
+    }
   }
 
   /**
@@ -221,7 +252,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
       errors.pushNestedPath(String.format("origins[%d]", requestIndex.get(origin.getId())));
       try {
-        QuantityInfo currentQuantity = subSampleApiMgr.getIfExists(origin.getId()).getQuantity();
+        SubSample live = subSampleApiMgr.getIfExists(origin.getId());
+        QuantityInfo currentQuantity = live.getQuantity();
         if (originHoldsNothing(currentQuantity)) {
           errors.rejectValue("globalId", "errors.inventory.operation.originEmpty");
         } else if (firstOriginQuantity != null
@@ -242,6 +274,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
         } else {
           firstOriginQuantity = firstOriginQuantity == null ? currentQuantity : firstOriginQuantity;
         }
+        rejectOriginFieldNameClash(origin, live, errors);
       } finally {
         errors.popNestedPath();
       }
