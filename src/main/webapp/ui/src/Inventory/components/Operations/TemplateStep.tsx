@@ -103,12 +103,8 @@ function TemplateStep({
   };
 
   // The Picker fires onAddition from an effect keyed on the callback's identity, so an unstable
-  // callback plus a state update is an infinite render loop on selection: the callback below must
-  // stay referentially stable, and its empty dependency array is required, not incidental.
+  // callback is an infinite render loop on selection; this ref keeps it stable.
   const onPickTemplateRef = React.useRef(onPickTemplate);
-  // Written in a layout effect, not the render body: React 19 may discard a render pass, and a
-  // body assignment would leave the ref holding that render's closure over a stale `value`. Layout
-  // rather than passive, so the ref is current before any child effect can call it.
   React.useLayoutEffect(() => {
     onPickTemplateRef.current = onPickTemplate;
   });
