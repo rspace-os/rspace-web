@@ -58,7 +58,7 @@ function TemplateStep({
     });
   };
 
-  const onPickTemplate = (template: TemplateModel | null) => {
+  const onPickTemplate = async (template: TemplateModel | null) => {
     if (template === null) {
       latestPickRef.current = null;
       setBlockError(null);
@@ -72,34 +72,32 @@ function TemplateStep({
     setBlockError(null);
     setChecking(true);
     onChange({ ...value, templateId: null, templateName: template.name });
-    void (async () => {
-      try {
-        // The picker's search results are partial, so the fields the check reads are fetched here.
-        await template.fetchAdditionalInfo();
-        if (latestPickRef.current !== pickId) return;
-        const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
-        if (reason.blocked) {
-          setBlockError(
-            t("operations.template.mandatoryFieldsError", {
-              count: reason.count,
-              fields: reason.fields,
-            }),
-          );
-          return;
-        }
-        onChange((previous) => ({
-          ...previous,
-          templateId: Number(template.id),
-          templateName: template.name,
-          quantityCategory: template.quantityCategory,
-        }));
-      } catch {
-        if (latestPickRef.current !== pickId) return;
-        setBlockError(t("operations.template.lookupFailed"));
-      } finally {
-        if (latestPickRef.current === pickId) setChecking(false);
+    try {
+      // The picker's search results are partial, so the fields the check reads are fetched here.
+      await template.fetchAdditionalInfo();
+      if (latestPickRef.current !== pickId) return;
+      const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
+      if (reason.blocked) {
+        setBlockError(
+          t("operations.template.mandatoryFieldsError", {
+            count: reason.count,
+            fields: reason.fields,
+          }),
+        );
+        return;
       }
-    })();
+      onChange((previous) => ({
+        ...previous,
+        templateId: Number(template.id),
+        templateName: template.name,
+        quantityCategory: template.quantityCategory,
+      }));
+    } catch {
+      if (latestPickRef.current !== pickId) return;
+      setBlockError(t("operations.template.lookupFailed"));
+    } finally {
+      if (latestPickRef.current === pickId) setChecking(false);
+    }
   };
 
   // The Picker fires onAddition from an effect keyed on the callback's identity, so an unstable
@@ -109,7 +107,7 @@ function TemplateStep({
     onPickTemplateRef.current = onPickTemplate;
   });
   const handlePickTemplate = React.useCallback(
-    (template: TemplateModel | null) => onPickTemplateRef.current(template),
+    (template: TemplateModel | null) => void onPickTemplateRef.current(template),
     [],
   );
 
