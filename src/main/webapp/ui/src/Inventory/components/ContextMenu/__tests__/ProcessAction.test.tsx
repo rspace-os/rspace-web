@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import { RecordLockedError } from "@/stores/models/InventoryBaseRecord";
+import type SubSampleModel from "@/stores/models/SubSampleModel";
 import materialTheme from "@/theme";
 import { isProcessableSelection } from "../../Operations/useOperationWizardLauncher";
 import { lockOwnerName } from "../lockAlerts";
@@ -88,7 +89,7 @@ describe("ProcessAction permission", () => {
 
 const holder = { firstName: "Carol", lastName: "Holder", username: "carol" };
 
-function renderAction(records: Array<InventoryRecord>) {
+function renderAction(records: Array<SubSampleModel>) {
   return render(
     <ThemeProvider theme={materialTheme}>
       <ProcessAction as="button" disabled="" selectedResults={records} closeMenu={() => {}} />

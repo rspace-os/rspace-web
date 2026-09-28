@@ -4,15 +4,14 @@ import type MenuItem from "@mui/material/MenuItem";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
-import SubSampleModel from "@/stores/models/SubSampleModel";
-import { isProcessableSelection, useOperationWizardLauncher } from "../Operations/useOperationWizardLauncher";
+import type SubSampleModel from "@/stores/models/SubSampleModel";
+import { useOperationWizardLauncher } from "../Operations/useOperationWizardLauncher";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
 
 type ProcessActionArgs = {
   as: ContextMenuRenderOptions;
   disabled: string;
-  selectedResults: Array<InventoryRecord>;
+  selectedResults: Array<SubSampleModel>;
   closeMenu: () => void;
 };
 
@@ -24,8 +23,7 @@ export default function ProcessAction({
   ref,
 }: ProcessActionArgs & { ref?: React.Ref<React.ElementRef<typeof MenuItem>> }): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const origins = selectedResults.filter((r): r is SubSampleModel => r instanceof SubSampleModel);
-  const { launch, wizard } = useOperationWizardLauncher(origins, { onClose: closeMenu });
+  const { launch, wizard } = useOperationWizardLauncher(selectedResults, { onClose: closeMenu });
 
   return (
     <Observer>
@@ -38,7 +36,7 @@ export default function ProcessAction({
           as={as}
           ref={ref}
         >
-          {isProcessableSelection(selectedResults) ? wizard : null}
+          {wizard}
         </ContextMenuAction>
       )}
     </Observer>

@@ -10,7 +10,7 @@ import { useProcessAvailable } from "../ContextMenu/useProcessAvailable";
 import OperationWizard from "./OperationWizard";
 import type { OperationResult } from "./operationsApi";
 
-export function isProcessableSelection(records: ReadonlyArray<InventoryRecord>): boolean {
+export function isProcessableSelection(records: ReadonlyArray<InventoryRecord>): records is Array<SubSampleModel> {
   return records.length >= 1 && records.every((r) => r instanceof SubSampleModel);
 }
 
