@@ -5,6 +5,7 @@ import static com.researchspace.service.inventory.operations.OperationTestFixtur
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.requestOrigin;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
@@ -13,6 +14,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
 
 class PassageOperationTest {
 
@@ -80,30 +83,43 @@ class PassageOperationTest {
                 List.of(new OriginState.ParentField("Passage number", "n/a", NUMBER_FIELD)))));
   }
 
+  private static OriginState parentAtPassage(String number) {
+    return originWithParentFields(
+        List.of(new OriginState.ParentField("Passage number", number, NUMBER_FIELD)));
+  }
+
+  private static BeanPropertyBindingResult originErrors(OriginState origin) {
+    ApiInventoryOperationRequests.Passage request = request();
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(request, "request");
+    PASSAGE.validateOrigins(request, List.of(origin), KEYS, errors);
+    return errors;
+  }
+
   @Test
-  void restartsAtOneRatherThanCarryForwardANumberItCannotIncrementSafely() {
-    // A negative is not a passage count, and one at the JS safe-integer ceiling could not survive
-    // the round trip through the wizard.
-    assertEquals(
-        "1",
-        passageNumber(
-            originWithParentFields(
-                List.of(new OriginState.ParentField("Passage number", "-1", NUMBER_FIELD)))));
-    assertEquals(
-        "1",
-        passageNumber(
-            originWithParentFields(
-                List.of(
-                    new OriginState.ParentField(
-                        "Passage number", "9007199254740991", NUMBER_FIELD)))));
-    assertEquals(
-        "9007199254740990",
-        passageNumber(
-            originWithParentFields(
-                List.of(
-                    new OriginState.ParentField(
-                        "Passage number", "9007199254740989", NUMBER_FIELD)))),
-        "just below the ceiling still increments");
+  void restartsAtOneFromANegativeNumber() {
+    assertEquals("1", passageNumber(parentAtPassage("-1")));
+  }
+
+  @Test
+  void aParentOneBelowThePassageLimitIsPassagedToTheLimit() {
+    assertFalse(originErrors(parentAtPassage("9998")).hasErrors());
+    assertEquals("9999", passageNumber(parentAtPassage("9998")));
+  }
+
+  @Test
+  void refusesToPassageAParentAtOrAboveThePassageLimit() {
+    for (String number : List.of("9999", "10000")) {
+      FieldError refusal = originErrors(parentAtPassage(number)).getFieldError("origin.globalId");
+      assertNotNull(refusal, number);
+      assertEquals("errors.inventory.operation.passageLimitReached", refusal.getCode());
+    }
+  }
+
+  @Test
+  void aParentWithNoUsableNumberIsNotRefused() {
+    assertFalse(originErrors(parentAtPassage("abc")).hasErrors());
+    assertFalse(originErrors(parentAtPassage("-1")).hasErrors());
+    assertFalse(originErrors(originWithParentFields(List.of())).hasErrors());
   }
 
   @Test
