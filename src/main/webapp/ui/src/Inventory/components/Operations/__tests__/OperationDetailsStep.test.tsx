@@ -266,6 +266,23 @@ describe("OperationDetailsStep", () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ processName: "x" }));
   });
 
+  it("marks a process name picked from the list as picked", async () => {
+    const onChange = vi.fn();
+    render(
+      <OperationDetailsStep
+        operation={processOperation}
+        origin={origin}
+        values={values}
+        onChange={onChange}
+        processNameOptions={["Mill"]}
+      />,
+    );
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("combobox", { name: /fields\.processName/i }));
+    await user.click(await screen.findByRole("option", { name: "Mill" }));
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ processName: "Mill" }), { picked: true });
+  });
+
   it("renders no remember checkbox: it lives on the summary and confirm step", () => {
     render(
       <OperationDetailsStep

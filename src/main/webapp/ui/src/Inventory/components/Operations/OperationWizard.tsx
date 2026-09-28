@@ -428,7 +428,7 @@ function OperationWizard({
     setActiveStep(0);
   };
 
-  const onDetailsChange = (next: OperationInputs) => {
+  const onDetailsChange = (next: OperationInputs, source?: { picked: boolean }) => {
     if (!operation) {
       setValues(next);
       return;
@@ -446,8 +446,9 @@ function OperationWizard({
       setRemember(s.remember);
       setAmountMode(s.amountMode);
       setPerSubsampleAmounts(s.perSubsampleAmounts);
-      // A bundle matching a prefix of the name being typed must not swap Details for the summary.
-      setReviewing(true);
+      // A bundle matching a prefix of the name being typed must not swap Details for the summary;
+      // a remembered name picked from the list may.
+      setReviewing(!source?.picked);
       return;
     }
     if (nameFrom && next[nameFrom] !== values[nameFrom]) setSampleNameEdited(true);
