@@ -794,7 +794,7 @@ function OperationWizard({
     return (
       <>
         {performError ? (
-          <Alert severity="error" sx={{ mb: 1 }}>
+          <Alert severity="error" sx={{ mb: 1, whiteSpace: "pre-line" }}>
             {performError}
           </Alert>
         ) : null}
