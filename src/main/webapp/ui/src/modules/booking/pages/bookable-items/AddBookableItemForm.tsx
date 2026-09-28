@@ -1,7 +1,7 @@
 import { Form, isDirty, useField, useForm } from "@formisch/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { type BookingSettings, SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
@@ -55,8 +55,13 @@ const BookingTargetSchema = v.object({
   deleted: v.literal(false),
 });
 
+const MINIMUM_TARGET_QUERY_LENGTH = 2;
+
+/** Searches eligible instruments; a blank query lists the first eligible instruments by name. */
 export async function searchBookingTargets(query: string, token: string | undefined, signal?: AbortSignal) {
-  const parameters = new URLSearchParams({ query, limit: "20" });
+  const parameters = new URLSearchParams({ limit: "20" });
+  // The API rejects a non-blank query shorter than two characters.
+  if (query.trim().length >= MINIMUM_TARGET_QUERY_LENGTH) parameters.set("query", query.trim());
   const response = await fetch(`/api/v2/booking-configuration-targets?${parameters}`, {
     headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     signal,
@@ -69,7 +74,9 @@ const bookingConfigurationTargetSource: RelationshipSource = {
   id: "booking-configuration-targets",
   globalIdPrefix: "IN",
   search: (term, token, signal) =>
-    term.trim().length < 2 ? Promise.resolve([]) : searchBookingTargets(term.trim(), token, signal),
+    term.trim().length > 0 && term.trim().length < MINIMUM_TARGET_QUERY_LENGTH
+      ? Promise.resolve([])
+      : searchBookingTargets(term, token, signal),
   resolve: async (value, token, signal) => {
     const targets = await searchBookingTargets(value, token, signal);
     return targets.find((target) => target.globalId.toUpperCase() === value.toUpperCase()) ?? null;
@@ -139,6 +146,8 @@ export function AddBookableItemForm({
       slotGranularityMinutes: defaults.slotGranularityMinutes,
       openingStart: defaults.openingStart,
       openingEnd: defaults.openingEnd,
+      openDays: defaults.openDays,
+      openingExceptions: defaults.openingExceptions,
       bufferBeforeMinutes: defaults.bufferBeforeMinutes,
       bufferAfterMinutes: defaults.bufferAfterMinutes,
       maxBookingDurationMinutes: defaults.maxBookingDurationMinutes,
@@ -147,6 +156,7 @@ export function AddBookableItemForm({
   });
   const fields = useMemo(() => withInstitutionTimeZone(defaults.institutionTimezone), [defaults.institutionTimezone]);
   const targetField = useField(form, { path: ["target"] });
+  const [scheduleSaveBlocked, setScheduleSaveBlocked] = useState(false);
   const target = targetSelection(targetField.input);
   const selectedTargetId = target.type === "instrument" ? target.id : undefined;
   const createMutation = useMutation({
@@ -180,7 +190,11 @@ export function AddBookableItemForm({
         {t("bookableItems.addTitle")}
       </Heading>
       <Separator className="mb-8 h-px bg-gray-300" />
-      <Form of={form} className="max-w-2xl space-y-8" onSubmit={(input) => createMutation.mutateAsync(input)}>
+      <Form
+        of={form}
+        className="max-w-2xl space-y-8"
+        onSubmit={(input) => (scheduleSaveBlocked ? undefined : createMutation.mutateAsync(input))}
+      >
         <div className="space-y-3">
           <label htmlFor="booking-configuration-target-search" className="font-medium">
             {t("bookableItems.targetSearch.label")}
@@ -202,6 +216,9 @@ export function AddBookableItemForm({
             required
             ariaLabel={t("bookableItems.targetSearch.label")}
             className="w-full rounded-sm"
+            browseWhenEmpty
+            browseEmptyMessage={t("bookableItems.targetSearch.noEligible")}
+            minimumSearchLength={MINIMUM_TARGET_QUERY_LENGTH}
           />
         </div>
         {target.type === "unsupported" ? (
@@ -223,7 +240,11 @@ export function AddBookableItemForm({
         {canComplete ? (
           <>
             <RenderFields fields={fields} form={form} disabled={createMutation.isPending} />
-            <SchedulingSettingsFields form={form} disabled={createMutation.isPending} />
+            <SchedulingSettingsFields
+              form={form}
+              disabled={createMutation.isPending}
+              onSaveBlockedChange={setScheduleSaveBlocked}
+            />
             {createFailed ? (
               <p role="alert" className="text-sm text-destructive">
                 {t("bookableItems.addError")}
@@ -232,7 +253,7 @@ export function AddBookableItemForm({
             <Button
               type="submit"
               className="rounded-sm"
-              disabled={createMutation.isPending}
+              disabled={createMutation.isPending || scheduleSaveBlocked}
               aria-busy={createMutation.isPending}
             >
               {t("bookableItems.actions.submit")}

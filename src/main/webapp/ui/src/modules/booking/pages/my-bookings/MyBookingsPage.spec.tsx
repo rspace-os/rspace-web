@@ -50,7 +50,7 @@ describe("the My Bookings page", () => {
     await expect.element(pageObj.roleLossNotice).toBeVisible();
     await expect.element(pageObj.confocalItemCalendar).not.toBeInTheDocument();
     await expect.element(pageObj.confocalEdit).not.toBeInTheDocument();
-    await expect.element(pageObj.confocalCancel).not.toBeInTheDocument();
+    await expect.element(pageObj.confocalMoreActions).not.toBeInTheDocument();
     await expect.element(pageObj.confocalDetails).toBeVisible();
   });
 
@@ -86,8 +86,7 @@ describe("the My Bookings page", () => {
       [pageObj.confocalDetails, "View details"],
       [pageObj.confocalItemCalendar, "View item calendar"],
       [pageObj.confocalEdit, "Edit"],
-      [pageObj.confocalCalendarFile, ".ics file"],
-      [pageObj.confocalCancel, "Cancel booking"],
+      [pageObj.confocalMoreActions, "More actions"],
     ] as const;
 
     for (const [control, label] of controls) {
@@ -142,8 +141,7 @@ describe("the My Bookings page", () => {
       pageObj.confocalDetails,
       pageObj.confocalItemCalendar,
       pageObj.confocalEdit,
-      pageObj.confocalCalendarFile,
-      pageObj.confocalCancel,
+      pageObj.confocalMoreActions,
     ];
     await expect.element(controls[0]).toBeVisible();
     const styles = controls.map((control) => {
@@ -160,6 +158,69 @@ describe("the My Bookings page", () => {
     });
 
     expect(styles).toEqual(controls.map(() => styles[0]));
+  });
+
+  test("keeps the calendar file and cancel behind More actions with text labels", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    await pageObj.confocalMoreActions.click();
+    await expect.element(pageObj.calendarFileMenuItem).toBeVisible();
+    await expect.element(pageObj.cancelMenuItem).toBeVisible();
+
+    await pageObj.cancelMenuItem.click();
+    await expect.element(pageObj.cancelDialog).toBeVisible();
+    await pageObj.keepBooking.click();
+    await expect.element(pageObj.cancelDialog).not.toBeInTheDocument();
+    await expect.element(pageObj.confocalMoreActions).toHaveFocus();
+  });
+
+  test("moves focus to the next booking and announces a cancellation once its row is gone", async () => {
+    const electron = {
+      ...upcomingBooking,
+      id: 42,
+      target: {
+        ...upcomingBooking.target,
+        globalId: "IN124",
+        value: { ...upcomingBooking.target.value, id: 124, name: "Electron microscope" },
+      },
+    };
+    const docs: Array<Record<string, unknown>> = [{ ...upcomingBooking }, electron];
+    worker.use(
+      ...bookingHandlers(undefined, undefined, docs),
+      http.patch("/api/v2/bookings/41", () => {
+        docs[0] = { ...upcomingBooking, state: "CANCELLED", version: 1 };
+        return HttpResponse.json(docs[0]);
+      }),
+    );
+    render(<MyBookingsPageStory history={history} />);
+
+    await pageObj.confocalMoreActions.click();
+    await pageObj.cancelMenuItem.click();
+    await pageObj.cancelDialog.getByRole("button", { name: "Cancel booking" }).click();
+
+    await expect.element(page.getByText("Confocal microscope", { exact: true })).not.toBeInTheDocument();
+    await expect
+      .poll(() =>
+        document.activeElement?.closest("[data-booking-row-actions]")?.getAttribute("data-booking-row-actions"),
+      )
+      .toBe("42");
+    await expect
+      .element(page.getByRole("status").filter({ hasText: "Cancelled the Confocal microscope booking" }))
+      .toBeInTheDocument();
+  });
+
+  test("keeps the booking actions on one line", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    await expect.element(pageObj.confocalMoreActions).toBeVisible();
+    const controls = [
+      pageObj.confocalItemCalendar,
+      pageObj.confocalDetails,
+      pageObj.confocalEdit,
+      pageObj.confocalMoreActions,
+    ];
+    const tops = controls.map((control) => control.element().getBoundingClientRect().top);
+    expect(tops).toEqual(controls.map(() => tops[0]));
   });
 
   test("shows the upcoming count inside its period button", async () => {

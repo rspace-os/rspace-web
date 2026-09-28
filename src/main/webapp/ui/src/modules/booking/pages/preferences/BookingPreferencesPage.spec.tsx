@@ -30,6 +30,14 @@ function registerHandlers() {
       stored = inheritedBrowserBookingPreferences;
       return new HttpResponse(null, { status: 204 });
     }),
+    http.get("/api/v2/users/me/booking-notification-preferences", () =>
+      HttpResponse.json({
+        autoSubscribeOwnedItems: true,
+        notifyOnCreated: true,
+        notifyOnCancelled: true,
+        emailDelivery: false,
+      }),
+    ),
   );
 }
 
@@ -55,7 +63,7 @@ describe("Booking display preferences", () => {
     await expect.element(preferences.save).toBeDisabled();
     await preferences.end.fill("00:00");
     await expect.element(preferences.end).toHaveAttribute("aria-invalid", "false");
-    await expect.element(preferences.end).toHaveAccessibleDescription("00:00 means midnight at the end of the day.");
+    await expect.element(preferences.end).toHaveAccessibleDescription("12:00 AM means midnight at the end of the day.");
     await expect.element(preferences.save).toBeEnabled();
     await preferences.start.fill("");
     await expect.element(preferences.start).toHaveAttribute("aria-invalid", "true");

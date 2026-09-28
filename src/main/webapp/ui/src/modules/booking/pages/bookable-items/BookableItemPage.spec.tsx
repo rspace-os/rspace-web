@@ -462,7 +462,15 @@ describe("BookableItemPage", () => {
       .all()
       .find((candidate) => candidate.element().getClientRects().length > 0);
     expect(visibleActor?.element().closest('[data-slot="user-badge"]')).not.toBeNull();
-    await expect.element(page.getByText("Results through Aug 25, 2026 (UTC)", { exact: true }).first()).toBeVisible();
+    await expect
+      .element(
+        page
+          .getByText("Updated daily. Showing events through Aug 25, 2026 (UTC); today's changes appear tomorrow.", {
+            exact: true,
+          })
+          .first(),
+      )
+      .toBeVisible();
     await expect.poll(() => auditRequests).toBe(1);
     await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123/audit");
 
@@ -691,6 +699,69 @@ describe("BookableItemPage", () => {
       await expect.element(pageObj.refreshAudit).toBeVisible();
       await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
       await expectNoAxeViolations();
+    } finally {
+      await page.viewport(originalViewport.width, originalViewport.height);
+    }
+  });
+
+  test("keeps equal day rows and no page overflow while editing hours by day at 320 CSS pixels", async () => {
+    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
+    await page.viewport(320, 900);
+
+    try {
+      render(<BookableItemPageStory history={history} />);
+      await expect.element(pageObj.heading).toBeVisible();
+      await pageObj.openEditor();
+      await pageObj.setDifferentHours.click();
+      await expect.element(pageObj.hoursByDay).toBeVisible();
+
+      const sharedHeight = pageObj.dayRow("Tuesday").element().getBoundingClientRect().height;
+      await pageObj.editDayHours("Monday").click();
+      // The first icon button stays mounted, so keyboard focus moves from pencil to tick.
+      await expect.element(pageObj.confirmDayHours("Monday")).toHaveFocus();
+      await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
+      await expect.element(pageObj.save).toBeDisabled();
+
+      await pageObj.confirmDayHours("Monday").click();
+      await expect.element(pageObj.editDayHours("Monday")).toHaveFocus();
+      await expect.element(pageObj.save).toBeEnabled();
+      expect(pageObj.dayRow("Monday").element().getBoundingClientRect().height).toBe(sharedHeight);
+      await expectNoAxeViolations();
+    } finally {
+      await page.viewport(originalViewport.width, originalViewport.height);
+    }
+  });
+
+  test("keeps each day row's icons on one line at 390 CSS pixels so only a draft row grows", async () => {
+    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
+    await page.viewport(390, 900);
+    const height = (day: string) => pageObj.dayRow(day).element().getBoundingClientRect().height;
+    const noOverflow = () => expect.poll(() => document.documentElement.scrollWidth).toBe(390);
+
+    try {
+      render(<BookableItemPageStory history={history} />);
+      await expect.element(pageObj.heading).toBeVisible();
+      await pageObj.openEditor();
+      await pageObj.setDifferentHours.click();
+      await expect.element(pageObj.hoursByDay).toBeVisible();
+      await noOverflow();
+      const sharedHeight = height("Tuesday");
+      expect(sharedHeight).toBe(53);
+
+      await pageObj.editDayHours("Monday").click();
+      await noOverflow();
+      // Only a draft row grows, because its inputs wrap under the day name.
+      expect(height("Monday")).toBeGreaterThan(sharedHeight);
+      await pageObj.dayRow("Monday").getByLabelText("Opening start").fill("10:00");
+      await pageObj.confirmDayHours("Monday").click();
+
+      const revert = pageObj.dayRow("Monday").getByRole("button", { name: "Use shared hours on Monday" });
+      await expect.element(revert).toBeVisible();
+      expect(height("Monday")).toBe(sharedHeight);
+      expect(revert.element().getBoundingClientRect().top).toBe(
+        pageObj.editDayHours("Monday").element().getBoundingClientRect().top,
+      );
+      await noOverflow();
     } finally {
       await page.viewport(originalViewport.width, originalViewport.height);
     }

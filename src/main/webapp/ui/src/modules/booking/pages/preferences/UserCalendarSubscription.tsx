@@ -8,11 +8,25 @@ import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
   calendarApplicationUrls,
-  createOrReplaceUserCalendarSubscription,
+  createUserCalendarSubscription,
+  fetchItemCalendarLinks,
   fetchUserCalendarSubscriptionStatus,
+  type ItemCalendarLink,
+  itemCalendarLinksQueryKey,
   revokeUserCalendarSubscription,
+  rotateUserCalendarSubscription,
   userCalendarSubscriptionQueryKey,
 } from "@/modules/booking/pages/bookable-items/bookableItemCalendarSubscription";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/modules/common/ui/alert-dialog";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/modules/common/ui/input-group";
 import { Skeleton } from "@/modules/common/ui/skeleton";
@@ -22,44 +36,57 @@ export function UserCalendarSubscription({ token }: { token: string }) {
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
   const [clipboardError, setClipboardError] = useState(false);
+  const [confirmingReplace, setConfirmingReplace] = useState(false);
   const status = useQuery({
     queryKey: userCalendarSubscriptionQueryKey,
     queryFn: ({ signal }) => fetchUserCalendarSubscriptionStatus(token, signal),
     retry: false,
   });
+  const resetCopy = () => {
+    setCopied(false);
+    setClipboardError(false);
+  };
   const create = useMutation({
-    mutationFn: () => {
-      if (status.data === undefined) throw new Error("Calendar subscription status is unavailable");
-      return createOrReplaceUserCalendarSubscription(token, status.data.etag);
-    },
+    mutationFn: () => createUserCalendarSubscription(token),
     retry: false,
     onMutate: () => {
-      setCopied(false);
-      setClipboardError(false);
+      resetCopy();
+      // A fresh link supersedes any earlier replace conflict.
+      rotate.reset();
     },
     onSuccess: (created) => queryClient.setQueryData(userCalendarSubscriptionQueryKey, created),
+  });
+  const rotate = useMutation({
+    mutationFn: () => {
+      if (status.data === undefined) throw new Error("Calendar subscription status is unavailable");
+      return rotateUserCalendarSubscription(token, status.data.etag);
+    },
+    retry: false,
+    onMutate: resetCopy,
+    onSuccess: (rotated) => queryClient.setQueryData(userCalendarSubscriptionQueryKey, rotated),
     onError: (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 409) {
         void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
       }
     },
+    onSettled: () => setConfirmingReplace(false),
   });
   const revoke = useMutation({
     mutationFn: () => revokeUserCalendarSubscription(token),
     retry: false,
     onSuccess: () => {
-      setCopied(false);
-      setClipboardError(false);
+      resetCopy();
+      rotate.reset();
       void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
     },
   });
   const subscriptionUrl = status.data?.subscriptionUrl ?? null;
-  const pending = create.isPending || revoke.isPending;
+  const pending = create.isPending || rotate.isPending || revoke.isPending;
+  const rotateConflict = rotate.error instanceof ApiV2ProblemError && rotate.error.status === 409;
 
   const copyLink = async () => {
     if (subscriptionUrl === null) return;
-    setCopied(false);
-    setClipboardError(false);
+    resetCopy();
     try {
       await navigator.clipboard.writeText(subscriptionUrl);
       setCopied(true);
@@ -101,28 +128,7 @@ export function UserCalendarSubscription({ token }: { token: string }) {
       ) : null}
       {subscriptionUrl !== null ? (
         <div className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {(
-              [
-                ["apple", faApple, t("preferences.calendarSubscription.apple")],
-                ["google", faGoogle, t("preferences.calendarSubscription.google")],
-              ] as const
-            ).map(([application, icon, label]) => (
-              <a
-                key={application}
-                className={buttonVariants({ variant: "outline" })}
-                href={calendarApplicationUrls(subscriptionUrl)[application]}
-                {...(application === "google" ? { target: "_blank", rel: "noreferrer" } : {})}
-              >
-                <FontAwesomeIcon icon={icon} className="size-4" />
-                {label}
-              </a>
-            ))}
-            <a className={buttonVariants({ variant: "outline" })} href={calendarApplicationUrls(subscriptionUrl).other}>
-              <CalendarIcon aria-hidden="true" />
-              {t("preferences.calendarSubscription.other")}
-            </a>
-          </div>
+          <CalendarApplicationLinks subscriptionUrl={subscriptionUrl} />
           <div className="space-y-2">
             <label htmlFor="user-booking-calendar-url" className="text-sm font-medium">
               {t("preferences.calendarSubscription.copyPrompt")}
@@ -151,7 +157,11 @@ export function UserCalendarSubscription({ token }: { token: string }) {
               </p>
             ) : null}
           </div>
-          {create.isError || revoke.isError ? (
+          {rotateConflict ? (
+            <p role="alert" className="text-sm">
+              {t("preferences.calendarSubscription.replaceConflict")}
+            </p>
+          ) : rotate.isError || revoke.isError ? (
             <p role="alert" className="text-sm text-destructive">
               {t("preferences.calendarSubscription.changeError")}
             </p>
@@ -161,8 +171,11 @@ export function UserCalendarSubscription({ token }: { token: string }) {
               type="button"
               variant="outline"
               disabled={pending}
-              aria-busy={create.isPending}
-              onClick={() => create.mutate()}
+              aria-busy={rotate.isPending}
+              onClick={() => {
+                rotate.reset();
+                setConfirmingReplace(true);
+              }}
             >
               {t("preferences.calendarSubscription.replace")}
             </Button>
@@ -178,11 +191,160 @@ export function UserCalendarSubscription({ token }: { token: string }) {
           </div>
         </div>
       ) : null}
-      {create.isError && subscriptionUrl === null ? (
+      {create.isError ? (
         <p role="alert" className="text-sm text-destructive">
-          {t("preferences.calendarSubscription.changeError")}
+          {t("preferences.calendarSubscription.createError")}
         </p>
       ) : null}
+      <AlertDialog
+        open={confirmingReplace}
+        onOpenChange={(open) => !open && !rotate.isPending && setConfirmingReplace(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("preferences.calendarSubscription.replaceDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("preferences.calendarSubscription.replaceDialog.description")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={rotate.isPending}>
+              {t("preferences.calendarSubscription.replaceDialog.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={rotate.isPending}
+              aria-busy={rotate.isPending}
+              onClick={() => rotate.mutate()}
+            >
+              {t("preferences.calendarSubscription.replaceDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <ItemCalendarLinks token={token} />
     </section>
+  );
+}
+
+function CalendarApplicationLinks({ subscriptionUrl, size }: { subscriptionUrl: string; size?: "sm" }) {
+  const { t } = useTranslation("booking");
+  const apps = calendarApplicationUrls(subscriptionUrl);
+  const className = buttonVariants({ variant: "outline", size });
+  return (
+    <div className="flex flex-wrap gap-2">
+      <a className={className} href={apps.apple}>
+        <FontAwesomeIcon icon={faApple} className="size-4" />
+        {t("preferences.calendarSubscription.apple")}
+      </a>
+      <a className={className} href={apps.google} target="_blank" rel="noreferrer">
+        <FontAwesomeIcon icon={faGoogle} className="size-4" />
+        {t("preferences.calendarSubscription.google")}
+      </a>
+      <a className={className} href={apps.other}>
+        <CalendarIcon aria-hidden="true" />
+        {t("preferences.calendarSubscription.other")}
+      </a>
+    </div>
+  );
+}
+
+/** The caller's per-item calendar links, so they can be found and copied again from one place. */
+function ItemCalendarLinks({ token }: { token: string }) {
+  const { t } = useTranslation("booking");
+  const links = useQuery({
+    queryKey: itemCalendarLinksQueryKey,
+    queryFn: ({ signal }) => fetchItemCalendarLinks(token, signal),
+    retry: false,
+  });
+
+  return (
+    <section className="space-y-3 border-t pt-4" aria-labelledby="item-calendar-links-heading">
+      <div className="space-y-1">
+        <h3 id="item-calendar-links-heading" className="text-base font-semibold">
+          {t("preferences.calendarSubscription.itemLinks.title")}
+        </h3>
+        <p className="text-sm text-muted-foreground">{t("preferences.calendarSubscription.itemLinks.description")}</p>
+      </div>
+      {links.isPending ? <Skeleton aria-hidden="true" className="h-9 w-full" /> : null}
+      {links.isError ? (
+        <div className="space-y-2">
+          <p role="alert" className="text-sm text-destructive">
+            {t("preferences.calendarSubscription.itemLinks.error")}
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={() => void links.refetch()}>
+            {t("preferences.calendarSubscription.retry")}
+          </Button>
+        </div>
+      ) : null}
+      {links.isSuccess && links.data.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("preferences.calendarSubscription.itemLinks.empty")}</p>
+      ) : null}
+      {links.isSuccess && links.data.length > 0 ? (
+        <ul className="space-y-4">
+          {links.data.map((link) => (
+            <ItemCalendarLinkRow key={link.configurationId} link={link} />
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
+function ItemCalendarLinkRow({ link }: { link: ItemCalendarLink }) {
+  const { t } = useTranslation("booking");
+  const [copied, setCopied] = useState(false);
+  const [clipboardError, setClipboardError] = useState(false);
+  const fieldId = `item-calendar-link-${link.configurationId}`;
+
+  const copyLink = async () => {
+    setCopied(false);
+    setClipboardError(false);
+    try {
+      await navigator.clipboard.writeText(link.subscriptionUrl);
+      setCopied(true);
+    } catch {
+      setClipboardError(true);
+    }
+  };
+
+  return (
+    <li className="space-y-2">
+      <a
+        href={`/booking/bookable-items/${encodeURIComponent(link.itemGlobalId)}`}
+        className="font-medium underline-offset-4 hover:underline"
+      >
+        {link.itemName}
+      </a>
+      <CalendarApplicationLinks subscriptionUrl={link.subscriptionUrl} size="sm" />
+      <InputGroup>
+        <InputGroupInput
+          id={fieldId}
+          readOnly
+          value={link.subscriptionUrl}
+          aria-label={t("preferences.calendarSubscription.itemLinks.linkLabel", {
+            itemName: link.itemName,
+          })}
+          className="font-mono text-xs"
+        />
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            size="icon-xs"
+            aria-label={t("preferences.calendarSubscription.itemLinks.copy", {
+              itemName: link.itemName,
+            })}
+            onClick={() => void copyLink()}
+          >
+            {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
+      {copied ? <p role="status">{t("preferences.calendarSubscription.copied")}</p> : null}
+      {clipboardError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t("preferences.calendarSubscription.copyError")}
+        </p>
+      ) : null}
+    </li>
   );
 }

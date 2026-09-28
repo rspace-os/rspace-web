@@ -8,7 +8,7 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -23,6 +23,8 @@ const settings = {
   slotGranularityMinutes: 5,
   openingStart: "00:00",
   openingEnd: "24:00",
+  openDays: [1, 2, 3, 4, 5, 6, 7],
+  openingExceptions: [],
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -76,8 +78,8 @@ function ExistingConfigurationPage() {
   return <h1>{t("bookableItemDetails.title")}</h1>;
 }
 
-function renderPage(path = "/booking/bookable-items/add") {
-  server.use(http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)));
+function renderPage(path = "/booking/bookable-items/add", defaults: object = settings) {
+  server.use(http.get("/api/v2/booking-settings", () => HttpResponse.json(defaults)));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({
@@ -152,6 +154,44 @@ describe("AddBookableItemPage", () => {
     expect(await screen.findByRole("option", { name: /Confocal microscope/ })).toBeVisible();
   });
 
+  it("lists eligible instruments on open and only sends a query of at least two characters", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler((url) => requests.push(url)),
+    );
+    renderPage();
+
+    const picker = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.openOptions" }));
+    expect(await screen.findByRole("option", { name: /Confocal microscope/ })).toBeVisible();
+    expect(screen.queryByText("common:relationshipPicker.enterSearchTerm")).not.toBeInTheDocument();
+    expect(requests[0]?.searchParams.has("query")).toBe(false);
+    expect(requests[0]?.searchParams.get("limit")).toBe("20");
+
+    await user.type(picker, "C");
+    // One character is not searched, so the list asks for another rather than reporting no matches.
+    expect(await screen.findByText("common:relationshipPicker.searchTooShort")).toBeVisible();
+    expect(screen.queryByText("common:relationshipPicker.empty")).not.toBeInTheDocument();
+    await user.type(picker, "o");
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("query")).toBe("Co"));
+    expect(requests.some((url) => url.searchParams.get("query") === "C")).toBe(false);
+  });
+
+  it("explains how to make an instrument eligible when none can be configured", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler(undefined, []),
+    );
+    renderPage();
+
+    await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.openOptions" }));
+    expect(await screen.findByText("booking:bookableItems.targetSearch.noEligible")).toBeVisible();
+  });
+
   it("treats a blank relationship control as an empty selection", async () => {
     const user = userEvent.setup();
     server.use(
@@ -208,10 +248,60 @@ describe("AddBookableItemPage", () => {
       slotGranularityMinutes: 5,
       openingStart: "00:00",
       openingEnd: "24:00",
+      openDays: [1, 2, 3, 4, 5, 6, 7],
+      openingExceptions: [],
       bufferBeforeMinutes: 0,
       bufferAfterMinutes: 0,
       maxBookingDurationMinutes: 0,
       allowDoubleBooking: false,
+    });
+  });
+
+  it("copies default weekday exceptions and blocks submission while a day edit is pending", async () => {
+    const user = userEvent.setup();
+    const requestBodies: unknown[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler(),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBodies.push(await request.json());
+        return HttpResponse.json({ id: 7 }, { status: 201 });
+      }),
+    );
+    renderPage(undefined, {
+      ...settings,
+      openingStart: "09:00",
+      openingEnd: "17:00",
+      openingExceptions: [
+        { dayOfWeek: 5, start: "09:00", end: "14:00" },
+        { dayOfWeek: 6, start: "10:00", end: "16:00" },
+      ],
+    });
+    await completeForm(user);
+
+    const list = screen.getByRole("list", { name: "booking:settings.openingHours.hoursByDay" });
+    const row = (day: string) =>
+      within(list)
+        .getAllByRole("listitem")
+        .find((item) => within(item).queryByText(day, { exact: true })) as HTMLElement;
+    expect(within(row("Saturday")).getByText("10:00\u201316:00")).toHaveClass("font-bold");
+    const submit = screen.getByRole("button", { name: "booking:bookableItems.actions.submit" });
+
+    await user.click(within(row("Monday")).getByRole("button", { name: "booking:settings.openingHours.editDay" }));
+    expect(submit).toBeDisabled();
+    await user.click(within(row("Monday")).getByRole("button", { name: "booking:settings.openingHours.discardDay" }));
+    expect(submit).toBeEnabled();
+
+    await user.click(screen.getByRole("checkbox", { name: "Friday" }));
+    await user.click(submit);
+
+    await waitFor(() => expect(requestBodies).toHaveLength(1));
+    expect(requestBodies[0]).toMatchObject({
+      openingStart: "09:00",
+      openingEnd: "17:00",
+      openDays: [1, 2, 3, 4, 6, 7],
+      openingExceptions: [{ dayOfWeek: 6, start: "10:00", end: "16:00" }],
     });
   });
 

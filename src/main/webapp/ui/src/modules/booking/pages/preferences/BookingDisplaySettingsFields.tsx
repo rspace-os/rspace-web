@@ -7,6 +7,7 @@ import {
   type BookingTimezoneMode,
   bookingTimeZoneOptions,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 
@@ -70,7 +71,7 @@ export function BookingDisplaySettingsFields({
               }
             />
             <p id={endTimeDescriptionId} className="text-sm text-muted-foreground">
-              {t("preferences.availabilityWindow.endOfDay")}
+              {t("preferences.availabilityWindow.endOfDay", { midnight: formatWallClockTime("00:00") })}
             </p>
           </div>
         </div>

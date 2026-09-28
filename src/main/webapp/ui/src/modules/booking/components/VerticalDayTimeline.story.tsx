@@ -1,4 +1,5 @@
 import * as React from "react";
+import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import { type BookingWindowDraft, instantToDayMinute } from "@/modules/booking/domain/bookingTime";
 import type { DayTimelineEvent } from "./DayTimelineEvent";
 import { VerticalDayTimeline } from "./VerticalDayTimeline";
@@ -87,7 +88,13 @@ export function VerticalDayTimelineStory({
       itemName="Confocal microscope"
       events={VERTICAL_DAY_TIMELINE_EVENTS}
       schedule={{ status: "success" }}
-      scheduleWindow={{ timezone: TIMEZONE, openingStart: "08:00", openingEnd: "18:00" }}
+      scheduleWindow={{
+        timezone: TIMEZONE,
+        openingStart: "08:00",
+        openingEnd: "18:00",
+        openDays: ALL_ISO_WEEKDAYS,
+        openingExceptions: [],
+      }}
       editing={{
         draft,
         schedulingTimeZone: TIMEZONE,

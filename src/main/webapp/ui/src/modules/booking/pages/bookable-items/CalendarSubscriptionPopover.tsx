@@ -20,8 +20,11 @@ import { Skeleton } from "@/modules/common/ui/skeleton";
 import {
   calendarApplicationUrls,
   calendarSubscriptionQueryKey,
-  createOrReplaceCalendarSubscription,
+  createCalendarSubscription,
   fetchCalendarSubscriptionStatus,
+  itemCalendarLinksQueryKey,
+  revokeCalendarSubscription,
+  rotateCalendarSubscription,
 } from "./bookableItemCalendarSubscription";
 
 export function CalendarSubscriptionPopover({
@@ -33,12 +36,14 @@ export function CalendarSubscriptionPopover({
   token: string;
   archived?: boolean;
 }) {
-  const { t } = useTranslation("booking");
+  const { t } = useTranslation(["booking", "common"]);
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [clipboardError, setClipboardError] = useState(false);
   const [focusGoogle, setFocusGoogle] = useState(false);
+  // Both break calendars that use the current link, so each is confirmed first.
+  const [confirming, setConfirming] = useState<"replace" | "disconnect" | null>(null);
   const popupId = `calendar-subscription-${useId()}`;
   const headingId = `${popupId}-heading`;
   const descriptionId = `${popupId}-description`;
@@ -55,26 +60,56 @@ export function CalendarSubscriptionPopover({
     retry: false,
   });
 
+  const resetCopy = () => {
+    setCopied(false);
+    setClipboardError(false);
+  };
+  const linksChanged = () => void queryClient.invalidateQueries({ queryKey: itemCalendarLinksQueryKey });
+
   const createMutation = useMutation({
-    mutationFn: (etag: string) => createOrReplaceCalendarSubscription(configurationId, token, etag),
+    mutationFn: () => createCalendarSubscription(configurationId, token),
     retry: false,
     onMutate: () => {
-      setCopied(false);
-      setClipboardError(false);
+      resetCopy();
+      // A fresh link supersedes any earlier replace conflict.
+      rotateMutation.reset();
     },
     onSuccess: (created) => {
       queryClient.setQueryData(queryKey, created);
+      linksChanged();
       setFocusGoogle(true);
     },
+  });
+  const rotateMutation = useMutation({
+    mutationFn: (etag: string) => rotateCalendarSubscription(configurationId, token, etag),
+    retry: false,
+    onMutate: resetCopy,
+    onSuccess: (rotated) => {
+      queryClient.setQueryData(queryKey, rotated);
+      linksChanged();
+      setConfirming(null);
+    },
     onError: async (error) => {
+      setConfirming(null);
       if (error instanceof ApiV2ProblemError && error.status === 409) await status.refetch();
     },
   });
+  const revokeMutation = useMutation({
+    mutationFn: () => revokeCalendarSubscription(configurationId, token),
+    retry: false,
+    onMutate: resetCopy,
+    onSuccess: async () => {
+      setConfirming(null);
+      linksChanged();
+      await status.refetch();
+    },
+    onError: () => setConfirming(null),
+  });
+  const changing = createMutation.isPending || rotateMutation.isPending || revokeMutation.isPending;
 
   const subscriptionUrl = status.data?.subscriptionUrl ?? null;
   const createSubscription = useCallback(() => {
-    const currentStatus = status.data;
-    if (currentStatus?.subscriptionUrl === null) createMutation.mutate(currentStatus.etag);
+    if (status.data?.subscriptionUrl === null) createMutation.mutate();
   }, [createMutation, status.data]);
 
   useEffect(() => {
@@ -96,8 +131,10 @@ export function CalendarSubscriptionPopover({
     autoGenerateOnOpenRef.current = false;
     setOpen(false);
     setFocusGoogle(false);
-    setCopied(false);
-    setClipboardError(false);
+    setConfirming(null);
+    resetCopy();
+    rotateMutation.reset();
+    revokeMutation.reset();
   };
 
   const copyLink = async () => {
@@ -167,6 +204,85 @@ export function CalendarSubscriptionPopover({
             </p>
           ) : null}
         </div>
+        {manageLink()}
+      </div>
+    );
+  };
+
+  const manageLink = () => {
+    const rotateConflict = rotateMutation.error instanceof ApiV2ProblemError && rotateMutation.error.status === 409;
+    return (
+      <div className="space-y-2 border-t pt-4">
+        {confirming ? (
+          <div className="space-y-2">
+            <p className="text-sm">
+              {t(
+                confirming === "replace"
+                  ? "bookableItemDetails.calendarSubscription.replaceWarning"
+                  : "bookableItemDetails.calendarSubscription.disconnectWarning",
+              )}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={changing || status.data === undefined}
+                aria-busy={rotateMutation.isPending || revokeMutation.isPending}
+                onClick={() =>
+                  confirming === "replace"
+                    ? status.data && rotateMutation.mutate(status.data.etag)
+                    : revokeMutation.mutate()
+                }
+              >
+                {t(
+                  confirming === "replace"
+                    ? "bookableItemDetails.calendarSubscription.replaceConfirm"
+                    : "bookableItemDetails.calendarSubscription.disconnectConfirm",
+                )}
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(null)}>
+                {t("common:actions.cancel")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={changing}
+              onClick={() => {
+                rotateMutation.reset();
+                setConfirming("replace");
+              }}
+            >
+              {t("bookableItemDetails.calendarSubscription.replace")}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={changing}
+              onClick={() => {
+                revokeMutation.reset();
+                setConfirming("disconnect");
+              }}
+            >
+              {t("bookableItemDetails.calendarSubscription.disconnect")}
+            </Button>
+          </div>
+        )}
+        {rotateConflict ? (
+          <p role="alert" className="text-sm">
+            {t("bookableItemDetails.calendarSubscription.replaceConflict")}
+          </p>
+        ) : rotateMutation.isError || revokeMutation.isError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {t("bookableItemDetails.calendarSubscription.changeError")}
+          </p>
+        ) : null}
       </div>
     );
   };
@@ -201,17 +317,25 @@ export function CalendarSubscriptionPopover({
         </p>
       );
     }
-    if (createMutation.isError || (status.isFetching && status.data?.subscriptionUrl === null)) {
+    if (createMutation.isError) {
       return (
         <div className="space-y-3">
           <p role="alert">{t("bookableItemDetails.calendarSubscription.generateError")}</p>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={createMutation.isPending || status.isFetching}
-            onClick={createSubscription}
-          >
+          <Button type="button" variant="outline" disabled={changing} onClick={createSubscription}>
             {t("bookableItemDetails.calendarSubscription.retry")}
+          </Button>
+        </div>
+      );
+    }
+    // No link after a disconnect, or after a replace found it removed elsewhere: offer to add it again.
+    if ((revokeMutation.isSuccess || rotateMutation.isError) && !createMutation.isPending) {
+      return (
+        <div className="space-y-3">
+          <p role="status" className="text-muted-foreground">
+            {t("bookableItemDetails.calendarSubscription.disconnected")}
+          </p>
+          <Button type="button" variant="outline" disabled={changing} onClick={createSubscription}>
+            {t("bookableItemDetails.calendarSubscription.trigger")}
           </Button>
         </div>
       );

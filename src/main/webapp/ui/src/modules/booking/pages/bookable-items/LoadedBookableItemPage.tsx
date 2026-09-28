@@ -158,6 +158,7 @@ export function LoadedBookableItemPage({
   const [cutoff] = useState(() => new Date().toISOString());
   const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
   const [staleEdit, setStaleEdit] = useState(false);
+  const [rulesSaveBlocked, setRulesSaveBlocked] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
   const [permanentDeleteConfirmation, setPermanentDeleteConfirmation] = useState("");
@@ -427,7 +428,7 @@ export function LoadedBookableItemPage({
                               type="submit"
                               size="sm"
                               form={formId}
-                              disabled={updateMutation.isPending}
+                              disabled={updateMutation.isPending || rulesSaveBlocked}
                               aria-busy={updateMutation.isPending}
                             >
                               {t("bookableItems.actions.save")}
@@ -468,6 +469,7 @@ export function LoadedBookableItemPage({
                         staleEdit={staleEdit}
                         failed={updateMutation.isError}
                         onSubmit={(input, version) => updateMutation.mutateAsync({ input, version })}
+                        onSaveBlockedChange={setRulesSaveBlocked}
                       />
                     ) : (
                       <BookableItemRulesReadOut configuration={configuration} />

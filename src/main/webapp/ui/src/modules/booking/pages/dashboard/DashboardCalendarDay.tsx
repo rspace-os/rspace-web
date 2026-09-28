@@ -134,7 +134,7 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
           {visibleBookings.map((booking) =>
             (() => {
               const itemName = booking.target?.value.name ?? t("calendar.feed.unknownItem");
-              const period = formatAgendaPeriod(booking.start, booking.end, timeZone, locale);
+              const period = formatAgendaPeriod(booking.start, booking.end, timeZone);
               const periodContent = (
                 <BookingInstrumentTimeTooltip
                   start={booking.start}

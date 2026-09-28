@@ -261,8 +261,8 @@ describe("Booking dashboard", () => {
 
     const day99 = dashboard.calendarDay("Friday, August 21, 2026");
     const day100 = dashboard.calendarDay("Saturday, August 22, 2026");
-    await expect.element(day99).toHaveAccessibleName("Friday, August 21, 2026: 99 bookings");
-    await expect.element(day100).toHaveAccessibleName("Saturday, August 22, 2026: 100 bookings");
+    await expect.element(day99).toHaveAccessibleName("Friday, August 21, 2026: you have 99 confirmed bookings");
+    await expect.element(day100).toHaveAccessibleName("Saturday, August 22, 2026: you have 100 confirmed bookings");
     await expect.element(day99.getByText("99", { exact: true })).toBeVisible();
     await expect.element(day100.getByText("99+", { exact: true })).toBeVisible();
   });

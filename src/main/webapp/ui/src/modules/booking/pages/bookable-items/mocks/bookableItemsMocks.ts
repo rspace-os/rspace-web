@@ -526,6 +526,8 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
           slotGranularityMinutes: fixture.slotGranularityMinutes,
           openingStart: fixture.openingStart,
           openingEnd: fixture.openingEnd,
+          openDays: fixture.openDays,
+          openingExceptions: fixture.openingExceptions,
           bufferBeforeMinutes: fixture.bufferBeforeMinutes,
           bufferAfterMinutes: fixture.bufferAfterMinutes,
           maxBookingDurationMinutes: fixture.maxBookingDurationMinutes,
@@ -622,6 +624,16 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
     },
   });
   return [
+    http.get("/api/v2/booking-configurations/:id/notification-subscription", ({ params }) =>
+      HttpResponse.json({
+        configurationId: Number(params.id),
+        enabled: false,
+        version: -1,
+        createdEnabled: true,
+        cancelledEnabled: true,
+        emailEnabled: false,
+      }),
+    ),
     http.get("/api/inventory/v1/instruments/123", () =>
       HttpResponse.json({
         sharingMode: "WHITELIST",

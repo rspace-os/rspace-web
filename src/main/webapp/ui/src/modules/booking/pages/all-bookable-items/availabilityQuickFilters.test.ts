@@ -31,6 +31,8 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
   slotGranularityMinutes: 5,
   openingStart: "00:00",
   openingEnd: "24:00",
+  openDays: [1, 2, 3, 4, 5, 6, 7],
+  openingExceptions: [],
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -269,6 +271,8 @@ describe("availability quick filters", () => {
       ...candidate(1, "IN1", "UTC"),
       openingStart: "08:00",
       openingEnd: "18:00",
+      openDays: [1, 2, 3, 4, 5, 6, 7],
+      openingExceptions: [],
     };
 
     for (const [time, expected] of [
@@ -287,6 +291,33 @@ describe("availability quick filters", () => {
       );
       expect(result.get("IN1")?.category).toBe(expected);
     }
+  });
+
+  it("treats an item closed on the instrument's weekday as unavailable and follows its exception", async () => {
+    server.use(
+      http.get("/api/v2/bookings", () =>
+        HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false }),
+      ),
+    );
+    // 2026-08-17 is a Monday.
+    const closedMonday = { ...candidate(1, "IN1", "UTC"), openDays: [2, 3, 4, 5, 6, 7] };
+    const lateMonday = {
+      ...candidate(2, "IN2", "UTC"),
+      openingExceptions: [{ dayOfWeek: 1, start: "12:00", end: "18:00" }],
+    };
+
+    const result = await loadAvailabilityQuickIndex(
+      [closedMonday, lateMonday],
+      new Date("2026-08-17T09:00:00Z"),
+      "UTC",
+      "00:00",
+      "24:00",
+      "token",
+      new AbortController().signal,
+    );
+
+    expect(result.get("IN1")?.category).toBe("unavailable-today");
+    expect(result.get("IN2")?.category).toBe("free-later-today");
   });
 
   it("does not request data without a token and loads counts once authenticated", async () => {

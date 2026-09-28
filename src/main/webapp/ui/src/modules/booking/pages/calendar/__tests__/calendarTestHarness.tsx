@@ -120,6 +120,9 @@ export function collectionResponse(
 }
 
 export async function renderCalendar(initialEntry = "/booking/calendar?date=2026-08-17") {
+  // The react nuqs adapter reads the real URL, so each render starts from its own entry rather than whatever query
+  // (view, layout, filters) the previous test left behind.
+  window.history.replaceState(null, "", initialEntry);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   const root = createRootRoute({ component: Outlet });

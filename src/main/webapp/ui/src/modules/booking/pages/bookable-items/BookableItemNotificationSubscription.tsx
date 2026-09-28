@@ -73,6 +73,17 @@ function ItemNotificationEditor({
   const dirty = isDirty(form);
   const saved = feedback === "saved" && !dirty;
   const pending = mutation.isPending;
+  // Describes the saved subscription where the radio alone does not; createdEnabled/cancelledEnabled mirror the Booking
+  // preferences toggles, so a fully on subscription needs no line.
+  const effectiveState = !subscription.enabled
+    ? t("notificationSubscriptions.item.offSummary")
+    : subscription.createdEnabled && subscription.cancelledEnabled
+      ? null
+      : subscription.createdEnabled
+        ? t("notificationSubscriptions.item.effective.created")
+        : subscription.cancelledEnabled
+          ? t("notificationSubscriptions.item.effective.cancelled")
+          : t("notificationSubscriptions.item.effective.paused");
 
   return (
     <Card size="sm" aria-labelledby="item-notification-subscription-heading">
@@ -85,8 +96,9 @@ function ItemNotificationEditor({
       <CardContent className="space-y-4">
         <div className="space-y-1 text-sm text-muted-foreground">
           <p>{t("notificationSubscriptions.item.description")}</p>
-          <a href="/userform#prefContainer" className="text-primary underline underline-offset-4">
-            {t("notificationSubscriptions.item.profileLink")}
+          {effectiveState ? <p>{effectiveState}</p> : null}
+          <a href="/booking/preferences" className="text-primary underline underline-offset-4">
+            {t("notificationSubscriptions.item.preferencesLink")}
           </a>
         </div>
         <Form

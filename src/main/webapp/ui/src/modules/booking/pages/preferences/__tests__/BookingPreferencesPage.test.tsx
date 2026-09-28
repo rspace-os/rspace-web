@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -29,10 +29,15 @@ describe("BookingPreferencesPage", () => {
     server.use(
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/users/me/booking-notification-preferences", () =>
-        HttpResponse.json({ autoSubscribeOwnedItems: false }),
+        HttpResponse.json({
+          autoSubscribeOwnedItems: false,
+          notifyOnCreated: true,
+          notifyOnCancelled: true,
+          emailDelivery: false,
+        }),
       ),
       http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) =>
-        HttpResponse.json(await request.json()),
+        HttpResponse.json({ ...((await request.json()) as object), emailDelivery: false }),
       ),
       http.delete("/api/v2/users/me/booking-notification-subscriptions", () => HttpResponse.json({ updatedCount: 0 })),
       http.get("/api/v2/users/me/booking-calendar-subscription", () =>
@@ -41,6 +46,7 @@ describe("BookingPreferencesPage", () => {
           { headers: { ETag: '"inactive"' } },
         ),
       ),
+      http.get("/api/v2/users/me/bookable-item-calendar-subscriptions", () => HttpResponse.json([])),
     );
   });
 
@@ -213,14 +219,14 @@ describe("BookingPreferencesPage", () => {
       http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.post("/api/v2/users/me/booking-calendar-subscription", ({ request }) => {
         creates += 1;
-        expect(request.headers.get("If-Match")).toBe('"inactive"');
+        expect(request.headers.get("If-Match")).toBeNull();
         return HttpResponse.json(
           {
             active: true,
             updatedAt: "2026-08-30T12:00:00.000Z",
             subscriptionUrl: "https://example.test/public/booking/calendars/feed.ics?token=user",
           },
-          { headers: { ETag: '"subscription-0"' } },
+          { status: 201, headers: { ETag: '"subscription-0"' } },
         );
       }),
     );
@@ -236,6 +242,119 @@ describe("BookingPreferencesPage", () => {
     expect(screen.getByRole("link", { name: "booking:preferences.calendarSubscription.google" })).toBeVisible();
   });
 
+  it("shows the existing link without an error when Create finds one already made elsewhere", async () => {
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      // The page loaded before another tab created the link; the create returns that link unchanged.
+      http.post("/api/v2/users/me/booking-calendar-subscription", () =>
+        HttpResponse.json(
+          {
+            active: true,
+            updatedAt: "2026-08-30T12:00:00.000Z",
+            subscriptionUrl: "https://example.test/public/booking/calendars/feed.ics?token=existing",
+          },
+          { status: 200, headers: { ETag: '"subscription-0"' } },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" }));
+
+    expect(await screen.findByLabelText("booking:preferences.calendarSubscription.copyPrompt")).toHaveValue(
+      "https://example.test/public/booking/calendars/feed.ics?token=existing",
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("replaces the private link only after the user confirms", async () => {
+    const rotations: (string | null)[] = [];
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      http.get("/api/v2/users/me/booking-calendar-subscription", () =>
+        HttpResponse.json(
+          {
+            active: true,
+            updatedAt: "2026-08-30T12:00:00.000Z",
+            subscriptionUrl: "https://example.test/public/booking/calendars/feed.ics?token=first",
+          },
+          { headers: { ETag: '"subscription-0"' } },
+        ),
+      ),
+      http.post("/api/v2/users/me/booking-calendar-subscription/rotate", ({ request }) => {
+        rotations.push(request.headers.get("If-Match"));
+        return HttpResponse.json(
+          {
+            active: true,
+            updatedAt: "2026-08-30T13:00:00.000Z",
+            subscriptionUrl: "https://example.test/public/booking/calendars/feed.ics?token=second",
+          },
+          { headers: { ETag: '"subscription-1"' } },
+        );
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.replace" }));
+    await user.click(
+      await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.replaceDialog.cancel" }),
+    );
+    expect(rotations).toEqual([]);
+    expect(screen.getByLabelText("booking:preferences.calendarSubscription.copyPrompt")).toHaveValue(
+      "https://example.test/public/booking/calendars/feed.ics?token=first",
+    );
+
+    await user.click(screen.getByRole("button", { name: "booking:preferences.calendarSubscription.replace" }));
+    await user.click(
+      await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.replaceDialog.confirm" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("booking:preferences.calendarSubscription.copyPrompt")).toHaveValue(
+        "https://example.test/public/booking/calendars/feed.ics?token=second",
+      ),
+    );
+    expect(rotations).toEqual(['"subscription-0"']);
+  });
+
+  it("lists bookable item calendar links next to the user-wide link", async () => {
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      http.get("/api/v2/users/me/bookable-item-calendar-subscriptions", () =>
+        HttpResponse.json([
+          {
+            configurationId: 7,
+            itemGlobalId: "IN12",
+            itemName: "Confocal microscope",
+            updatedAt: "2026-08-30T12:00:00.000Z",
+            subscriptionUrl: "https://example.test/public/booking/calendars/feed.ics?token=item",
+          },
+        ]),
+      ),
+    );
+    renderPage();
+
+    const items = await screen.findByRole("region", {
+      name: "booking:preferences.calendarSubscription.itemLinks.title",
+    });
+    expect(await within(items).findByRole("link", { name: "Confocal microscope" })).toHaveAttribute(
+      "href",
+      "/booking/bookable-items/IN12",
+    );
+    expect(
+      within(items).getByRole("textbox", { name: "booking:preferences.calendarSubscription.itemLinks.linkLabel" }),
+    ).toHaveValue("https://example.test/public/booking/calendars/feed.ics?token=item");
+    expect(
+      within(items).getByRole("button", { name: "booking:preferences.calendarSubscription.itemLinks.copy" }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "booking:preferences.calendarSubscription.create" })).toBeVisible();
+  });
+
   it("saves the owner auto-subscribe default and unsubscribes from existing instruments", async () => {
     const user = userEvent.setup();
     let saved: unknown;
@@ -245,7 +364,7 @@ describe("BookingPreferencesPage", () => {
       http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
         saved = await request.json();
-        return HttpResponse.json(saved as { autoSubscribeOwnedItems: boolean });
+        return HttpResponse.json({ ...(saved as object), emailDelivery: false });
       }),
       http.delete("/api/v2/users/me/booking-notification-subscriptions", () => {
         deleted += 1;
@@ -256,8 +375,11 @@ describe("BookingPreferencesPage", () => {
 
     await user.click(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" }));
     await user.click(screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:notificationSubscriptions.preferences.saved");
-    expect(saved).toEqual({ autoSubscribeOwnedItems: true });
+    const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
+    expect(savedButton).toHaveClass("bg-emerald-600");
+    expect(savedButton).toBeDisabled();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(saved).toEqual({ autoSubscribeOwnedItems: true, notifyOnCreated: true, notifyOnCancelled: true });
 
     await user.click(
       screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.unsubscribeAll" }),
@@ -268,5 +390,41 @@ describe("BookingPreferencesPage", () => {
     expect(
       screen.getByRole("link", { name: "booking:notificationSubscriptions.preferences.manageSubscriptions" }),
     ).toHaveAttribute("href", "/booking/all-items");
+  });
+  it("saves the booking event toggles with the complete preference body and shows email delivery read-only", async () => {
+    const user = userEvent.setup();
+    let saved: unknown;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
+        saved = await request.json();
+        return HttpResponse.json({ ...(saved as object), emailDelivery: false });
+      }),
+    );
+    const { container } = renderPage();
+
+    const created = await screen.findByRole("checkbox", {
+      name: "booking:notificationSubscriptions.preferences.events.created",
+    });
+    const cancelled = screen.getByRole("checkbox", {
+      name: "booking:notificationSubscriptions.preferences.events.cancelled",
+    });
+    expect(created).toBeChecked();
+    expect(cancelled).toBeChecked();
+    expect(screen.getByText(/booking:notificationSubscriptions\.preferences\.emailDelivery\.off/)).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: "booking:notificationSubscriptions.preferences.emailDelivery.change" }),
+    ).toHaveAttribute("href", "/userform#prefContainer");
+    expect(screen.queryByRole("checkbox", { name: /emailDelivery/ })).not.toBeInTheDocument();
+
+    await user.click(cancelled);
+    expect(cancelled).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" }));
+
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    expect(saved).toEqual({ autoSubscribeOwnedItems: false, notifyOnCreated: true, notifyOnCancelled: false });
+    expect(cancelled).not.toBeChecked();
+    await expectAccessible(container);
   });
 });
