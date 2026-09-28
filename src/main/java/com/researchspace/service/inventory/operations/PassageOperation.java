@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PassageOperation extends CreatingOperation<ApiInventoryOperationRequests.Passage> {
 
-  static final String NUMBER_FIELD_KEY = "operations.passage.numberField";
+  static final String NUMBER_FIELD_KEY = "inventory:operations.passage.numberField";
 
   /** JS's Number.MAX_SAFE_INTEGER: the ceiling above which the counter restarts. */
   private static final long MAX_SAFE_INTEGER = 9007199254740991L;
@@ -38,7 +38,7 @@ public class PassageOperation extends CreatingOperation<ApiInventoryOperationReq
 
   @Override
   protected String linkFieldNameKey() {
-    return "operations.passage.linkFieldName";
+    return "inventory:operations.passage.linkFieldName";
   }
 
   @Override

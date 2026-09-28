@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.researchspace.service.inventory.operations.OperationFieldNames;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,7 +80,7 @@ class InventoryOperationsErrorCatalogTest {
       Pattern.compile("\"\\{?((?:errors|api)\\.[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)+)\\}?\"");
 
   private static final Pattern LABEL_KEY =
-      Pattern.compile("\"(operations\\.[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)*)\"");
+      Pattern.compile("\"inventory:(operations\\.[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)*)\"");
 
   /** As above: a DROP means a file stopped being scanned, not that labels were removed. */
   private static final int MINIMUM_LABELS_REFERENCED = 10;
@@ -117,7 +116,7 @@ class InventoryOperationsErrorCatalogTest {
    * the catalog is not a bad message on screen: {@link
    * com.researchspace.service.inventory.operations.LabelResolver} falls back to the key itself, and
    * {@code CreatingOperation} stores that as the created sample's extra-field name, so the string
-   * {@code operations.passage.numberField} is persisted and outlives the typo.
+   * {@code inventory:operations.passage.numberField} is persisted and outlives the typo.
    */
   @Test
   void everyOperationFieldLabelHasACatalogEntry() throws IOException {
@@ -130,9 +129,6 @@ class InventoryOperationsErrorCatalogTest {
         }
       }
     }
-    // Not a label: it is only ever an operationFieldKey, the stable identifier a later operation
-    // matches on. The documentation link's visible name is operations.documentation.fieldName.
-    referenced.remove(OperationFieldNames.DOCUMENTATION_LINK_KEY);
     assertTrue(
         referenced.size() >= MINIMUM_LABELS_REFERENCED,
         () -> "only " + referenced.size() + " label keys scanned under " + OPERATIONS_DIR);

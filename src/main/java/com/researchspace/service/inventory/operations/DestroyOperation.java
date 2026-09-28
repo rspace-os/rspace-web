@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DestroyOperation implements InventoryOperation<ApiInventoryOperationRequests.Destroy> {
 
-  static final String DISPOSED_FIELD_KEY = "operations.destroy.disposedField";
+  static final String DISPOSED_FIELD_KEY = "inventory:operations.destroy.disposedField";
 
   @Override
   public String key() {

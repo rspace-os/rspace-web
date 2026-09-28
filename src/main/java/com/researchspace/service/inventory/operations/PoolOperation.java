@@ -40,7 +40,7 @@ public class PoolOperation extends CreatingOperation<ApiInventoryOperationReques
 
   @Override
   protected String linkFieldNameKey() {
-    return "operations.pool.linkFieldName";
+    return "inventory:operations.pool.linkFieldName";
   }
 
   @Override

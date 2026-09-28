@@ -55,7 +55,8 @@ class CryopreserveOperationTest {
     assertEquals(
         "10% DMSO",
         OperationTestFixtures.fieldNamed(
-                build(request).getExtraFields(), "operations.cryopreserve.cryomediumField")
+                build(request).getExtraFields(),
+                "inventory:operations.cryopreserve.cryomediumField")
             .getContent());
   }
 
@@ -63,7 +64,10 @@ class CryopreserveOperationTest {
   void addsNoCryomediumFieldWhenNoneWasGiven() {
     assertNull(
         build(request()).getExtraFields().stream()
-            .filter(f -> "operations.cryopreserve.cryomediumField".equals(f.getOperationFieldKey()))
+            .filter(
+                f ->
+                    "inventory:operations.cryopreserve.cryomediumField"
+                        .equals(f.getOperationFieldKey()))
             .findFirst()
             .orElse(null));
   }

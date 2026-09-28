@@ -29,7 +29,7 @@ public class ReviveOperation extends CreatingOperation<ApiInventoryOperationRequ
 
   @Override
   protected String linkFieldNameKey() {
-    return "operations.revive.linkFieldName";
+    return "inventory:operations.revive.linkFieldName";
   }
 
   @Override

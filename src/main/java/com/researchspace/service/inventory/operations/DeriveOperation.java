@@ -20,7 +20,7 @@ public class DeriveOperation extends CreatingOperation<ApiInventoryOperationRequ
 
   @Override
   protected String linkFieldNameKey() {
-    return "operations.derive.linkFieldName";
+    return "inventory:operations.derive.linkFieldName";
   }
 
   @Override

@@ -34,7 +34,7 @@ class SampleApiManagerImplTemplateFieldMergeTest {
     field.setNewFieldRequest(true);
     // The key is what distinguishes a generated field from a user's own, and only the server's
     // request builder can set one (the DTO property is READ_ONLY).
-    field.setOperationFieldKey("operations.passage.numberField");
+    field.setOperationFieldKey("inventory:operations.passage.numberField");
     return field;
   }
 
@@ -145,7 +145,7 @@ class SampleApiManagerImplTemplateFieldMergeTest {
     ApiExtraField generatedLink = new ApiExtraField(ExtraFieldTypeEnum.LINK);
     generatedLink.setName("Passaged from");
     generatedLink.setNewFieldRequest(true);
-    generatedLink.setOperationFieldKey("operations.passage.linkFieldName");
+    generatedLink.setOperationFieldKey("inventory:operations.passage.linkFieldName");
     ApiSampleWithFullSubSamples sample = sampleWith(generatedLink);
     List<InventoryEntityField> templateFields = inherited("Passaged from");
 

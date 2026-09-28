@@ -16,11 +16,12 @@ class ApiExtraFieldOperationFieldKeyTest {
   void isSerialisedInAResponseSoALaterRunCanMatchOnIt() throws Exception {
     ApiExtraField field = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT);
     field.setName("Cryomedium");
-    field.setOperationFieldKey("operations.cryopreserve.cryomediumField");
+    field.setOperationFieldKey("inventory:operations.cryopreserve.cryomediumField");
     assertTrue(
         mapper
             .writeValueAsString(field)
-            .contains("\"operationFieldKey\":\"operations.cryopreserve.cryomediumField\""));
+            .contains(
+                "\"operationFieldKey\":\"inventory:operations.cryopreserve.cryomediumField\""));
   }
 
   @Test
@@ -30,10 +31,11 @@ class ApiExtraFieldOperationFieldKeyTest {
     entity.setId(1L);
     entity.setName("Passage number");
     entity.setData("4");
-    entity.setOperationFieldKey("operations.passage.numberField");
+    entity.setOperationFieldKey("inventory:operations.passage.numberField");
 
     assertEquals(
-        "operations.passage.numberField", new ApiExtraField(entity).getOperationFieldKey());
+        "inventory:operations.passage.numberField",
+        new ApiExtraField(entity).getOperationFieldKey());
   }
 
   @Test
@@ -52,9 +54,10 @@ class ApiExtraFieldOperationFieldKeyTest {
     original.setId(3L);
     original.setName("Passage number");
     original.setData("4");
-    original.setOperationFieldKey("operations.passage.numberField");
+    original.setOperationFieldKey("inventory:operations.passage.numberField");
 
-    assertEquals("operations.passage.numberField", original.shallowCopy().getOperationFieldKey());
+    assertEquals(
+        "inventory:operations.passage.numberField", original.shallowCopy().getOperationFieldKey());
   }
 
   @Test

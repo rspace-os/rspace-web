@@ -18,7 +18,7 @@ class PassageOperationTest {
 
   private static final PassageOperation PASSAGE = new PassageOperation();
   private static final LocalDate TODAY = LocalDate.parse("2026-08-20");
-  private static final String NUMBER_FIELD = "operations.passage.numberField";
+  private static final String NUMBER_FIELD = "inventory:operations.passage.numberField";
 
   private static ApiInventoryOperationRequests.Passage request() {
     ApiInventoryOperationRequests.Passage request = new ApiInventoryOperationRequests.Passage();
@@ -116,6 +116,6 @@ class PassageOperationTest {
             .get(0);
 
     assertEquals("IsDerivedFrom", link.getLink().getRelationType());
-    assertEquals("operations.passage.linkFieldName", link.getOperationFieldKey());
+    assertEquals("inventory:operations.passage.linkFieldName", link.getOperationFieldKey());
   }
 }
