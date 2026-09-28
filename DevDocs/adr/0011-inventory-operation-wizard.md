@@ -8,8 +8,7 @@ Date: 2026-09-18. Replaces the branch-local ADR `0007-operation-wizard-decisions
 which recorded three months of decisions as a config-driven design plus the amendments
 that overturned it. Only the reasoning that still describes the shipped system is kept
 here. The mechanics live in the code and its tests; this ADR records the WHY and the
-traps. The developer notes are `DevDocs/DeveloperNotes/InventoryOperationWizard.md` and
-`InventoryOperationWizardRequirements.md`.
+traps. The developer notes are `DevDocs/DeveloperNotes/InventoryOperationWizard.md`.
 
 ## Context
 
