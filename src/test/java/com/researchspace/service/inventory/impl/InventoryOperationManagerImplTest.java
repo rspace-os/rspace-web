@@ -959,6 +959,42 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
+  void aPassageFromAParentAtThePassageLimitIsRefusedAndWritesNothing() {
+    ExtraField passageNumber = new ExtraTextField();
+    passageNumber.setName("Passage number");
+    passageNumber.setOperationFieldKey("inventory:operations.passage.numberField");
+    passageNumber.setData("9999");
+    SubSample subSample = subSampleHolding("5", ML);
+    QuantityInfo quantity = subSample.getQuantity();
+    SampleEntity parent = subSample.getSample();
+    when(subSample.getQuantityInfo()).thenReturn(quantity);
+    when(subSample.getGlobalIdentifier()).thenReturn("SS100");
+    when(subSample.getName()).thenReturn("Flask");
+    when(parent.getActiveFields()).thenReturn(List.of());
+    when(parent.getActiveExtraFields()).thenReturn(List.of(passageNumber));
+    originHolds(100L, subSample);
+
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () ->
+                manager.performOperation(
+                    new PassageOperation(),
+                    creating(
+                        new ApiInventoryOperationRequests.Passage(),
+                        facadeOrigin(100L, null),
+                        "HeLa p10000",
+                        1),
+                    List.of(100L),
+                    user));
+
+    assertEquals(
+        "errors.inventory.operation.passageLimitReached",
+        rejection.getFieldErrors("origin.globalId").get(0).getCode());
+    verifyNoMutation();
+  }
+
+  @Test
   void anUnreadableDocumentationTargetIsRejectedOnTheFieldTheCallerSentIt() {
     serverBuiltOriginHolds(100L, "5");
     ApiInventoryOperationRequests.Aliquot request =

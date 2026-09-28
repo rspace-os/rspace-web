@@ -453,6 +453,46 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   }
 
   @Test
+  public void aPassageFromAParentAlreadyAtThePassageLimitIsRefusedAndCreatesNothing()
+      throws Exception {
+    int unitId = RSUnitDef.MILLI_LITRE.getId();
+    String parentJson =
+        "{\"name\":\"HeLa p9999\",\"extraFields\":[{\"name\":\"Passage number\","
+            + "\"type\":\"text\",\"content\":\"9999\",\"newFieldRequest\":true}],"
+            + "\"subSamples\":[{\"quantity\":"
+            + quantityJson("5", unitId)
+            + "}]}";
+    MvcResult parent =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/samples", anyUser, parentJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSubSample origin =
+        getFromJsonResponseBody(parent, ApiSampleWithFullSubSamples.class).getSubSamples().get(0);
+    Long samplesBefore = sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits();
+
+    MvcResult result =
+        post(
+                "passage",
+                singleOriginBody(
+                    originJson(origin, null),
+                    creatingFields("HeLa p10000", 1, quantityJson("1", unitId)),
+                    ""))
+            .andExpect(status().isBadRequest())
+            .andReturn();
+
+    List<String> errors = getErrorFromJsonResponseBody(result, ApiError.class).getErrors();
+    assertTrue(
+        errors.stream()
+            .anyMatch(
+                message -> message.startsWith("origin.globalId:") && message.contains("9999")),
+        () -> "expected the passage limit on origin.globalId, got " + errors);
+    assertEquals(
+        samplesBefore, sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits());
+    assertQuantityUnchanged(origin);
+  }
+
+  @Test
   public void rejectsPoolingAVolumeOriginWithAMassOrigin() throws Exception {
     ApiSubSample volumeOrigin =
         createSampleHolding("F4a volume", "5", RSUnitDef.MILLI_LITRE.getId())

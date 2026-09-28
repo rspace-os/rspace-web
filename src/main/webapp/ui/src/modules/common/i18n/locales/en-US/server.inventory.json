@@ -186,6 +186,7 @@
         "originGlobalIdInvalid": "Each origin must be identified by a subsample global id (SS followed by a number), was [{0}].",
         "originIdRequired": "Each origin must identify a subsample by id.",
         "originsRequired": "At least one origin subsample must be provided for the operation.",
+        "passageLimitReached": "The parent sample is already at passage {0}, the highest supported, so it cannot be passaged again.",
         "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
         "storageTempNotWhole": "The storage temperature must be whole degrees.",
         "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",

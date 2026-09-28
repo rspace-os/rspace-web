@@ -29,6 +29,10 @@ public interface InventoryOperation<R extends ApiInventoryOperationRequests.Requ
 
   default void validate(R request, Errors errors) {}
 
+  /** The rules that need what the origins hold now; run after {@link #validate}. */
+  default void validateOrigins(
+      R request, List<OriginState> origins, LabelResolver labels, Errors errors) {}
+
   /**
    * The request the transactional core executes: one update per origin in the order given, and the
    * sample to create (null for a terminal operation).

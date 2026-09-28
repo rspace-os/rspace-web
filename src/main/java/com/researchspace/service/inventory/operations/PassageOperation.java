@@ -5,7 +5,9 @@ import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import java.util.List;
 import java.util.Locale;
+import java.util.OptionalLong;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.Errors;
 
 /**
  * Passage: carries a culture forward a generation. It creates a new sample derived from the origin
@@ -16,8 +18,8 @@ public class PassageOperation extends CreatingOperation<ApiInventoryOperationReq
 
   static final String NUMBER_FIELD_KEY = "inventory:operations.passage.numberField";
 
-  /** JS's Number.MAX_SAFE_INTEGER: the ceiling above which the counter restarts. */
-  private static final long MAX_SAFE_INTEGER = 9007199254740991L;
+  /** The highest passage number; a parent already at it cannot be passaged again. */
+  static final long MAX_PASSAGE_NUMBER = 9999;
 
   private static final String FIRST_PASSAGE = "1";
 
@@ -59,7 +61,29 @@ public class PassageOperation extends CreatingOperation<ApiInventoryOperationReq
             nextPassageNumber(origins.get(0), labels)));
   }
 
+  @Override
+  public void validateOrigins(
+      ApiInventoryOperationRequests.Passage request,
+      List<OriginState> origins,
+      LabelResolver labels,
+      Errors errors) {
+    OptionalLong current = currentPassageNumber(origins.get(0), labels);
+    if (current.isPresent() && current.getAsLong() >= MAX_PASSAGE_NUMBER) {
+      errors.rejectValue(
+          "origin.globalId",
+          "errors.inventory.operation.passageLimitReached",
+          new Object[] {String.valueOf(MAX_PASSAGE_NUMBER)},
+          null);
+    }
+  }
+
   private static String nextPassageNumber(OriginState origin, LabelResolver labels) {
+    OptionalLong current = currentPassageNumber(origin, labels);
+    return current.isPresent() ? String.valueOf(current.getAsLong() + 1) : FIRST_PASSAGE;
+  }
+
+  /** Empty when the parent has no passage number this could count on from, e.g. "abc" or -1. */
+  private static OptionalLong currentPassageNumber(OriginState origin, LabelResolver labels) {
     String wanted = labels.resolve(NUMBER_FIELD_KEY).trim().toLowerCase(Locale.ROOT);
     String current =
         origin.parentSampleFields().stream()
@@ -79,11 +103,9 @@ public class PassageOperation extends CreatingOperation<ApiInventoryOperationReq
     // ("1e3", "0x10", "") restart from 1 instead. A passage number is never written that way.
     try {
       long parsed = Long.parseLong(String.valueOf(current).trim());
-      return (parsed >= 0 && parsed < MAX_SAFE_INTEGER)
-          ? String.valueOf(parsed + 1)
-          : FIRST_PASSAGE;
+      return parsed >= 0 ? OptionalLong.of(parsed) : OptionalLong.empty();
     } catch (NumberFormatException notACount) {
-      return FIRST_PASSAGE;
+      return OptionalLong.empty();
     }
   }
 }

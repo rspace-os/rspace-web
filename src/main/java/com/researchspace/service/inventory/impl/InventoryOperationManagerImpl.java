@@ -76,9 +76,12 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               parentFields(subSample.getSample())));
     }
 
+    LabelResolver labels =
+        LabelResolver.fromMessageSource(messageSource, LocaleContextHolder.getLocale());
     BeanPropertyBindingResult valueErrors =
         new BeanPropertyBindingResult(request, "apiInventoryOperationPost");
     operation.validate(request, valueErrors);
+    operation.validateOrigins(request, origins, labels, valueErrors);
     rejectUnreadableDocumentationTarget(request.getDocumentedByGlobalId(), user, valueErrors);
     if (valueErrors.hasErrors()) {
       throw new BindException(valueErrors);
@@ -88,7 +91,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
         operation.build(
             request,
             origins,
-            LabelResolver.fromMessageSource(messageSource, LocaleContextHolder.getLocale()),
+            labels,
             // The session's recorded browser timezone gives the user's local date; an API-key
             // session has none, so this falls back to the server's.
             LocalDate.parse(new SessionTimeZoneUtils().formatDateForClient(new Date())));
