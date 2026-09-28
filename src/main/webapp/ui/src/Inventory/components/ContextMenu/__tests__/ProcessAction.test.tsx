@@ -1,3 +1,4 @@
+import MenuList from "@mui/material/MenuList";
 import { ThemeProvider } from "@mui/material/styles";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -63,6 +64,25 @@ describe("ProcessAction", () => {
     );
     const button = screen.getByRole("button", { name: /operations\.action\.process/i });
     expect(button.querySelector('svg[data-icon="code-branch"]')).toBeInTheDocument();
+  });
+});
+
+describe("ProcessAction permission", () => {
+  it("is disabled, with Edit's reason, when the user cannot edit a selected subsample", async () => {
+    const readOnly = makeMockSubSample({ permittedActions: ["READ"] });
+    const acquire = vi.spyOn(readOnly, "acquireEditLock");
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <MenuList>
+          <ProcessAction as="menuitem" disabled="" selectedResults={[readOnly]} closeMenu={() => {}} />
+        </MenuList>
+      </ThemeProvider>,
+    );
+    const item = screen.getByRole("menuitem", { name: /operations\.action\.process/i });
+    expect(item).toHaveAttribute("aria-disabled", "true");
+    expect(item).toHaveTextContent(/contextMenu\.edit\.noPermission/);
+    await userEvent.click(item).catch(() => undefined);
+    expect(acquire).not.toHaveBeenCalled();
   });
 });
 

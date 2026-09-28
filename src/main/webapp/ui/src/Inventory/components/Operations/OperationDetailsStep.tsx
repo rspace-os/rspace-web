@@ -14,6 +14,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import NumericTextField from "@/components/Inputs/NumericTextField";
 import UnitSelect from "@/components/Inputs/UnitSelect";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { CELSIUS, categoryOfUnit } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
@@ -26,30 +27,26 @@ import {
 } from "./operations";
 import {
   amountTakenExceedsOrigin,
+  amountTooLarge,
+  MAX_QUANTITY,
   originBlockedReason,
   quantityExceedsOrigin,
   temperatureBelowMin,
   temperatureExceedsMax,
   temperatureNotStorable,
   temperatureNotWhole,
+  textTooLong,
   validSubSampleCount,
 } from "./operationValidation";
 import { filterProcessNames } from "./processNames";
 import type { AmountMode, OperationInputs, OperationInputValue, OperationQuantity, PerSubsampleAmounts } from "./types";
 import { resolveLabelFrom } from "./types";
 
-// Practical ceiling for an amount: far beyond any real inventory quantity, yet comfortably inside
-// both the decimal(19,3) DB column and JS's safe-integer range, so entering huge values can neither
-// overflow the number input (which silently resets to zero) nor lose precision.
-const MAX_QUANTITY = 1e9;
-
-const clamp = (n: number) => Math.min(MAX_QUANTITY, Math.max(0, n));
-
-// Number("") and Number("-") are 0 and NaN respectively; both mean "not a temperature yet".
-const parseTemperature = (raw: string): number => (/\d/.test(raw) ? Number(raw) : NaN);
+// Number("") and Number("-") are 0 and NaN respectively; both mean "not a number yet".
+const parseTypedNumber = (raw: string): number => (/\d/.test(raw) ? Number(raw) : NaN);
 
 // An amount with no digit yet is 0, which the fields already treat as "nothing entered".
-const parseAmount = (raw: string): number => clamp(/\d/.test(raw) ? Number(raw) : 0);
+const parseAmount = (raw: string): number => (/\d/.test(raw) ? Number(raw) : 0);
 
 /**
  * A numeric field that keeps what the user typed as text and parses it only for the caller. A
@@ -65,6 +62,7 @@ function RawNumericField({
   helperText,
   endAdornment,
   allowNegative,
+  unitDescription,
 }: {
   value: number | undefined;
   onChange: (value: number) => void;
@@ -74,7 +72,13 @@ function RawNumericField({
   helperText: string | undefined;
   endAdornment: React.ReactNode;
   allowNegative: boolean;
+  /** A fixed unit shown as the adornment, announced as part of the field's description. */
+  unitDescription?: string;
 }): React.ReactNode {
+  const id = React.useId();
+  const describedBy = [unitDescription ? `${id}-unit` : null, helperText ? `${id}-helper-text` : null]
+    .filter(Boolean)
+    .join(" ");
   const asText = (n: number | undefined) => (n === undefined || Number.isNaN(n) ? "" : String(n));
   const [raw, setRaw] = React.useState(asText(value));
 
@@ -87,6 +91,7 @@ function RawNumericField({
 
   return (
     <NumericTextField
+      id={id}
       label={label}
       value={raw}
       allowNegative={allowNegative}
@@ -97,7 +102,18 @@ function RawNumericField({
         setRaw(next);
         onChange(parse(next));
       }}
-      slotProps={{ input: { endAdornment }, htmlInput: { inputMode: "decimal" } }}
+      slotProps={{
+        input: {
+          endAdornment: unitDescription ? (
+            <InputAdornment position="end" id={`${id}-unit`}>
+              {unitDescription}
+            </InputAdornment>
+          ) : (
+            endAdornment
+          ),
+        },
+        htmlInput: { inputMode: "decimal", ...(describedBy ? { "aria-describedby": describedBy } : {}) },
+      }}
     />
   );
 }
@@ -142,7 +158,8 @@ function OperationDetailsStep({
   perSubsampleAmounts?: PerSubsampleAmounts;
   onPerSubsampleAmountsChange?: (amounts: PerSubsampleAmounts) => void;
 }): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t, i18n } = useTranslation("inventory");
+  const amountModeLabelId = React.useId();
   const label = resolveLabelFrom(t);
   const originUnitId = getUnitId(origin.quantity);
   const { countFrom, eachAmountFrom, amountTakenFrom } = operation.effect;
@@ -154,7 +171,12 @@ function OperationDetailsStep({
   const renderInput = (input: OperationInput): React.ReactNode => {
     if (input.type === "text") {
       const blank = Boolean(input.required) && !String(values[input.key] ?? "").trim();
-      const requiredHint = blank ? label("operations.fields.required") : undefined;
+      const tooLong = textTooLong(input, values[input.key]);
+      const requiredHint = tooLong
+        ? label("operations.fields.tooLong", { max: input.maxLength })
+        : blank
+          ? label("operations.fields.required")
+          : undefined;
       if (input.key === operation.effect.processNameFrom) {
         return (
           <Autocomplete
@@ -174,7 +196,7 @@ function OperationDetailsStep({
                 {...params}
                 label={label(input.labelKey)}
                 required={input.required}
-                error={blank}
+                error={blank || tooLong}
                 helperText={requiredHint}
                 margin="dense"
                 fullWidth
@@ -191,7 +213,7 @@ function OperationDetailsStep({
             value={String(values[input.key] ?? "")}
             required={input.required}
             disabled={sampleNameDisabled}
-            error={!sampleNameDisabled && blank}
+            error={!sampleNameDisabled && (blank || tooLong)}
             helperText={sampleNameDisabled ? label("operations.fields.processNameRequired") : requiredHint}
             fullWidth
             margin="dense"
@@ -205,7 +227,7 @@ function OperationDetailsStep({
           label={label(input.labelKey)}
           value={String(values[input.key] ?? "")}
           required={input.required}
-          error={blank}
+          error={blank || tooLong}
           helperText={requiredHint}
           fullWidth
           margin="dense"
@@ -217,13 +239,13 @@ function OperationDetailsStep({
       const min = input.min ?? 1;
       const badCount = !validSubSampleCount(values[input.key], min, input.max);
       return (
-        <TextField
+        <RawNumericField
           key={input.key}
-          type="number"
+          value={values[input.key] as number | undefined}
+          onChange={(count) => set(input.key, count)}
+          parse={parseTypedNumber}
+          allowNegative={false}
           label={label(input.labelKey)}
-          value={String(values[input.key] ?? "")}
-          fullWidth
-          margin="dense"
           error={badCount}
           helperText={
             badCount
@@ -232,8 +254,7 @@ function OperationDetailsStep({
                 : label("operations.fields.countRange", { min, max: input.max })
               : undefined
           }
-          slotProps={{ htmlInput: { min, max: input.max, step: 1 } }}
-          onChange={(e) => set(input.key, Number(e.target.value))}
+          endAdornment={null}
         />
       );
     }
@@ -263,7 +284,7 @@ function OperationDetailsStep({
           key={input.key}
           value={quantity?.numericValue}
           onChange={(numericValue) => set(input.key, { numericValue, unitId: currentUnitId })}
-          parse={parseTemperature}
+          parse={parseTypedNumber}
           allowNegative
           label={label(input.labelKey)}
           error={overMaxTemp || underMinTemp || unstorableTemp || fractionalTemp || temperatureMissing}
@@ -280,10 +301,12 @@ function OperationDetailsStep({
                       ? label("operations.fields.storageTempRequired")
                       : undefined
           }
-          endAdornment={<InputAdornment position="end">{label("operations.fields.temperatureUnit")}</InputAdornment>}
+          endAdornment={null}
+          unitDescription={label("operations.fields.temperatureUnit")}
         />
       );
     const amountMissing = !(quantity && quantity.numericValue > 0);
+    const tooLarge = amountTooLarge(quantity?.numericValue ?? 0);
     const unitMissing = !isTemperature && !(currentUnitId > 0);
     return (
       <RawNumericField
@@ -293,20 +316,23 @@ function OperationDetailsStep({
         parse={parseAmount}
         allowNegative={false}
         label={label(input.labelKey)}
-        error={overRemoval || amountMissing || unitMissing}
+        error={overRemoval || tooLarge || amountMissing || unitMissing}
         helperText={
-          overRemoval
-            ? label("operations.fields.amountTakenExceedsOrigin")
-            : amountMissing
-              ? label("operations.fields.amountRequired")
-              : unitMissing
-                ? label("operations.fields.unitRequired")
-                : undefined
+          tooLarge
+            ? label("operations.fields.amountTooLarge", { max: MAX_QUANTITY })
+            : overRemoval
+              ? label("operations.fields.amountTakenExceedsOrigin")
+              : amountMissing
+                ? label("operations.fields.amountRequired")
+                : unitMissing
+                  ? label("operations.fields.unitRequired")
+                  : undefined
         }
         endAdornment={
           <UnitSelect
             categories={categoriesForInput}
             value={currentUnitId}
+            ariaLabel={label("operations.fields.unitFor", { field: label(input.labelKey) })}
             handleChange={(e) =>
               set(input.key, { numericValue: quantity?.numericValue ?? 0, unitId: Number(e.target.value) })
             }
@@ -324,6 +350,8 @@ function OperationDetailsStep({
       ? { numericValue: getValue(sub.quantity), unitId: getUnitId(sub.quantity) }
       : null;
     const over = quantityExceedsOrigin(current, originQuantity);
+    const missing = !current || !(current.numericValue > 0);
+    const tooLarge = amountTooLarge(current?.numericValue ?? 0);
     const setAmount = (numericValue: number, unitId: number) =>
       onPerSubsampleAmountsChange?.({ ...perSubsampleAmounts, [globalId]: { numericValue, unitId } });
     return (
@@ -334,12 +362,21 @@ function OperationDetailsStep({
         parse={parseAmount}
         allowNegative={false}
         label={sub.name ?? globalId}
-        error={over}
-        helperText={over ? label("operations.fields.amountTakenExceedsOrigin") : undefined}
+        error={over || tooLarge || missing}
+        helperText={
+          tooLarge
+            ? label("operations.fields.amountTooLarge", { max: MAX_QUANTITY })
+            : over
+              ? label("operations.fields.amountTakenExceedsOrigin")
+              : missing
+                ? label("operations.fields.amountRequired")
+                : undefined
+        }
         endAdornment={
           <UnitSelect
             categories={categoriesOfSubSample(sub)}
             value={currentUnitId}
+            ariaLabel={label("operations.fields.unitFor", { field: sub.name ?? globalId })}
             handleChange={(e) => setAmount(current?.numericValue ?? 0, Number(e.target.value))}
           />
         }
@@ -359,8 +396,12 @@ function OperationDetailsStep({
           {count ? renderInput(count) : null}
           {each ? renderInput(each) : null}
           <FormControl>
-            <FormLabel>{label("operations.fields.amountMode")}</FormLabel>
-            <RadioGroup value={amountMode} onChange={(e) => onAmountModeChange?.(e.target.value as AmountMode)}>
+            <FormLabel id={amountModeLabelId}>{label("operations.fields.amountMode")}</FormLabel>
+            <RadioGroup
+              aria-labelledby={amountModeLabelId}
+              value={amountMode}
+              onChange={(e) => onAmountModeChange?.(e.target.value as AmountMode)}
+            >
               <FormControlLabel value="all" control={<Radio />} label={label("operations.fields.amountModeAll")} />
               <FormControlLabel value="same" control={<Radio />} label={label("operations.fields.amountModeSame")} />
               <FormControlLabel
@@ -392,16 +433,25 @@ function OperationDetailsStep({
     );
   }
 
-  const blocked = originBlockedReason(origin.quantity);
+  const emptyOrigins = (origins.length > 0 ? origins : [origin]).filter(
+    (o) => originBlockedReason(o.quantity) === "empty",
+  );
+  const unsupported = originBlockedReason(origin.quantity) === "unsupportedCategory";
 
   return (
     <Stack spacing={1}>
-      {blocked ? (
+      {emptyOrigins.length > 0 ? (
         <Alert severity="error">
-          {label(
-            blocked === "empty" ? "operations.fields.originAmountZero" : "operations.fields.originCategoryUnsupported",
-          )}
+          {label("operations.fields.originAmountZero", {
+            count: emptyOrigins.length,
+            names: formatList(
+              emptyOrigins.map((o) => o.name ?? o.globalId ?? ""),
+              i18n.resolvedLanguage ?? i18n.language,
+            ),
+          })}
         </Alert>
+      ) : unsupported ? (
+        <Alert severity="error">{label("operations.fields.originCategoryUnsupported")}</Alert>
       ) : null}
       {operation.inputs.filter((input) => !amountKeys.has(input.key)).map(renderInput)}
     </Stack>

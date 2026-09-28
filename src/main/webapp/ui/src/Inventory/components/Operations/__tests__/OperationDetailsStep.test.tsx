@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
+import { InEnglish } from "@/__tests__/realI18n";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import OperationDetailsStep from "../OperationDetailsStep";
 import type { InventoryOperation } from "../operations";
@@ -14,7 +15,9 @@ vi.mock("@/components/Inputs/UnitSelect", () => ({
     value,
     handleChange,
     categories,
+    ariaLabel,
   }: {
+    ariaLabel?: string;
     disabled?: boolean;
     value: number;
     handleChange: React.ChangeEventHandler<HTMLSelectElement>;
@@ -22,6 +25,7 @@ vi.mock("@/components/Inputs/UnitSelect", () => ({
   }) => (
     <select
       data-testid="unit-select"
+      aria-label={ariaLabel}
       data-categories={JSON.stringify(categories)}
       disabled={disabled}
       value={value}
@@ -144,28 +148,6 @@ describe("OperationDetailsStep", () => {
     expect(screen.getAllByTestId("unit-select")).toHaveLength(2);
   });
 
-  it("bounds the count input to whole numbers within the definition's own min and max", () => {
-    const aliquot = operations.find((o) => o.key === "aliquot");
-    if (!aliquot) throw new Error("the aliquot definition must exist in operations");
-    const countInput = aliquot.inputs.find((i) => i.key === "count");
-    if (!countInput) throw new Error("aliquot must declare a count input");
-    render(
-      <OperationDetailsStep
-        operation={aliquot}
-        origin={origin}
-        values={{ ...values, count: 2 }}
-        onChange={() => undefined}
-        section="amounts"
-      />,
-    );
-    const count = screen.getByRole("spinbutton", { name: /fields\.count/i });
-    expect(count).toHaveAttribute("min", String(countInput.min));
-    expect(count).toHaveAttribute("max", String(countInput.max));
-    expect(count).toHaveAttribute("step", "1");
-    // and the config really does bound it, or the assertions above pass vacuously
-    expect(countInput.max).toBeGreaterThan(0);
-  });
-
   it("does not accept a minus sign on an amount: the field keeps its value and reports nothing", async () => {
     const onChange = vi.fn();
     render(
@@ -183,19 +165,31 @@ describe("OperationDetailsStep", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("caps the amount at the maximum so it cannot overflow", () => {
-    const onChange = vi.fn();
-    render(
-      <OperationDetailsStep
-        operation={operation}
-        origin={origin}
-        values={values}
-        onChange={onChange}
-        section="amounts"
-      />,
-    );
-    fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: "999999999999999999999" } });
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ eachAmount: { numericValue: 1e9, unitId: 3 } }));
+  it("keeps an amount above the maximum as typed and flags it at the field", async () => {
+    const Parent = () => {
+      const [state, setState] = React.useState<OperationInputs>(values);
+      return (
+        <OperationDetailsStep
+          operation={operation}
+          origin={origin}
+          values={state}
+          onChange={setState}
+          section="amounts"
+        />
+      );
+    };
+    render(<Parent />);
+    const user = userEvent.setup();
+    const field = screen.getByLabelText(/fields\.eachAmount/i);
+    await user.clear(field);
+    await user.type(field, "1000000001");
+    expect(field).toHaveValue("1000000001");
+    expect(field).toBeInvalid();
+    expect(screen.getByText(/fields\.amountTooLarge/)).toBeInTheDocument();
+    await user.type(field, "{Backspace}");
+    await user.type(field, "0");
+    expect(field).toHaveValue("1000000000");
+    expect(screen.queryByText(/fields\.amountTooLarge/)).not.toBeInTheDocument();
   });
 
   it("keeps a zero typed after the decimal point, so 1.05 is reported as 1.05 and not 1.5", async () => {
@@ -300,6 +294,31 @@ describe("OperationDetailsStep", () => {
       <OperationDetailsStep operation={processOperation} origin={origin} values={values} onChange={() => undefined} />,
     );
     expect(screen.queryByText(/originAmountZero/)).not.toBeInTheDocument();
+  });
+
+  it("names each unit select after its field", () => {
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={values}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
+    expect(screen.getAllByRole("combobox", { name: /unitFor/ })).toHaveLength(2);
+  });
+
+  it("announces the temperature unit as part of the field's description", () => {
+    render(
+      <OperationDetailsStep
+        operation={tempOp({})}
+        origin={origin}
+        values={{ storageTemp: { numericValue: -80, unitId: 8 } }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.getByRole("textbox", { name: /storageTemp/ })).toHaveAccessibleDescription(/temperatureUnit/);
   });
 
   it("shows an error on the temperature field when it exceeds the configured maximum", () => {
@@ -432,6 +451,32 @@ describe("OperationDetailsStep (amount modes)", () => {
       />,
     );
 
+  it("names the amount-mode radio group by its label", () => {
+    renderPool();
+    expect(screen.getByRole("radiogroup", { name: /amountMode$/ })).toBeInTheDocument();
+  });
+
+  it("flags a per-subsample amount above the maximum on that row", async () => {
+    render(
+      <InEnglish>
+        <OperationDetailsStep
+          operation={poolOp}
+          origin={origin}
+          values={values}
+          onChange={() => undefined}
+          section="amounts"
+          amountMode="perSubsample"
+          origins={poolOrigins}
+          onAmountModeChange={() => undefined}
+          perSubsampleAmounts={{ SS1: { numericValue: 1e9 + 1, unitId: 3 } }}
+          onPerSubsampleAmountsChange={() => undefined}
+        />
+      </InEnglish>,
+    );
+    expect(await screen.findByRole("textbox", { name: "Vial A" })).toBeInvalid();
+    expect(screen.getByText("Enter at most 1,000,000,000.")).toBeInTheDocument();
+  });
+
   it("offers the three amount-to-take modes for a multi-origin operation", () => {
     renderPool();
     expect(screen.getAllByRole("radio")).toHaveLength(3);
@@ -489,6 +534,29 @@ describe("OperationDetailsStep (amount modes)", () => {
     });
   });
 
+  it("flags a blank or zero per-origin amount with the reason Next is disabled", () => {
+    renderPool({ amountMode: "perSubsample", perSubsampleAmounts: { SS2: { numericValue: 0, unitId: 3 } } });
+    expect(screen.getByRole("textbox", { name: /Vial A/ })).toBeInvalid();
+    expect(screen.getByRole("textbox", { name: /Vial B/ })).toBeInvalid();
+    expect(screen.getAllByText(/amountRequired/)).toHaveLength(2);
+  });
+
+  it("names the empty origins in the empty-origin alert", async () => {
+    const empty = { globalId: "SS3", name: "Vial Empty", quantity: { numericValue: 0, unitId: 3 } };
+    render(
+      <InEnglish>
+        <OperationDetailsStep
+          operation={poolOp}
+          origin={poolOrigins[0]}
+          origins={[poolOrigins[0], empty as unknown as SubSampleModel]}
+          values={values}
+          onChange={() => undefined}
+        />
+      </InEnglish>,
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent("Vial Empty");
+  });
+
   it("flags any positive per-origin amount for an origin whose quantity was never set", () => {
     const unset = { globalId: "SS9", name: "Vial Z", quantity: null } as unknown as SubSampleModel;
     renderPool({
@@ -515,7 +583,7 @@ describe("OperationDetailsStep count errors and temperature unit", () => {
         section="amounts"
       />,
     );
-  const countField = () => screen.getByRole("spinbutton", { name: /fields\.count/i });
+  const countField = () => screen.getByRole("textbox", { name: /fields\.count/i });
 
   it("marks a count above the definition's max invalid and names the allowed range", () => {
     renderCount(101);
@@ -540,11 +608,54 @@ describe("OperationDetailsStep count errors and temperature unit", () => {
     expect(screen.queryByText(/fields\.countRange/)).not.toBeInTheDocument();
   });
 
-  it("reports a cleared count as 0 (Number('') is 0), which the field then flags as out of range", () => {
+  // Stateful: the wizard feeds every edit straight back down as the value prop.
+  const StatefulCount = ({ onChange }: { onChange: (values: OperationInputs) => void }) => {
+    const [vals, setVals] = React.useState<OperationInputs>({ ...values, count: 1 });
+    return (
+      <OperationDetailsStep
+        operation={aliquot}
+        origin={origin}
+        values={vals}
+        onChange={(next) => {
+          setVals(next);
+          onChange(next);
+        }}
+        section="amounts"
+      />
+    );
+  };
+  const typedCountField = () => screen.getByRole("textbox", { name: /fields\.count/i });
+
+  it("keeps a whole count typed with decimals on screen and reads it as that whole number", async () => {
+    const user = userEvent.setup();
     const onChange = vi.fn();
-    renderCount(2, onChange);
-    fireEvent.change(countField(), { target: { value: "" } });
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ count: 0 }));
+    render(<StatefulCount onChange={onChange} />);
+    await user.clear(typedCountField());
+    await user.type(typedCountField(), "2.00");
+    expect(typedCountField()).toHaveValue("2.00");
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ count: 2 }));
+    expect(typedCountField()).toBeValid();
+  });
+
+  it("keeps a fractional count on screen and flags it with the allowed range", async () => {
+    const user = userEvent.setup();
+    render(<StatefulCount onChange={() => undefined} />);
+    await user.clear(typedCountField());
+    await user.type(typedCountField(), "1.9");
+    expect(typedCountField()).toHaveValue("1.9");
+    expect(typedCountField()).toBeInvalid();
+    expect(screen.getByText(/fields\.countRange/)).toBeInTheDocument();
+  });
+
+  it("leaves a cleared count empty, reports no number and flags it with the allowed range", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<StatefulCount onChange={onChange} />);
+    await user.clear(typedCountField());
+    expect(typedCountField()).toHaveValue("");
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ count: Number.NaN }));
+    expect(typedCountField()).toBeInvalid();
+    expect(screen.getByText(/fields\.countRange/)).toBeInTheDocument();
   });
 
   it("stores a typed temperature in Celsius (unit 8) without clamping a sub-zero value", () => {
@@ -564,6 +675,23 @@ describe("OperationDetailsStep count errors and temperature unit", () => {
 });
 
 describe("OperationDetailsStep inline field errors", () => {
+  it("says a text field is too long at the field itself", async () => {
+    const cryo = operations.find((o) => o.key === "cryopreserve");
+    if (!cryo) throw new Error("the test config must declare cryopreserve");
+    render(
+      <InEnglish>
+        <OperationDetailsStep
+          operation={cryo}
+          origin={origin}
+          values={{ ...values, sampleName: "S", cryomedium: "c".repeat(251) }}
+          onChange={() => undefined}
+        />
+      </InEnglish>,
+    );
+    expect(await screen.findByRole("textbox", { name: "Cryomedium" })).toBeInvalid();
+    expect(screen.getByText("At most 250 characters.")).toBeInTheDocument();
+  });
+
   const renderWith = (props: Partial<React.ComponentProps<typeof OperationDetailsStep>>) =>
     render(
       <OperationDetailsStep

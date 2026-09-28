@@ -30,11 +30,14 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.ExtraTextField;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.operations.AliquotOperation;
 import com.researchspace.service.inventory.operations.DestroyOperation;
+import com.researchspace.service.inventory.operations.OperationFieldNames;
 import com.researchspace.service.inventory.operations.PassageOperation;
 import com.researchspace.service.inventory.operations.PoolOperation;
 import com.researchspace.service.inventory.operations.ReviveOperation;
@@ -43,6 +46,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -225,6 +230,37 @@ class InventoryOperationManagerImplTest {
     // The sparse update DTO must carry null tags: a non-null empty list means "clear all tags" in
     // applyChangesToDatabaseInventoryRecord, which would silently wipe a tagged origin's tags.
     assertNull(update.getValue().getTags());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"operations.destroy.disposedField, Disposed", ", disposed"})
+  void aRepeatDestroyUpdatesTheOriginsExistingDisposedField(String existingKey, String existingName)
+      throws Exception {
+    ExtraField existing = new ExtraTextField();
+    existing.setId(55L);
+    existing.setName(existingName);
+    existing.setOperationFieldKey(existingKey);
+    SubSample live = subSampleHolding("2", 3, 1L);
+    when(live.getActiveExtraFields()).thenReturn(List.of(existing));
+    ApiInventoryOperationOriginUpdate origin =
+        origin(100L, new ApiQuantityInfo(new BigDecimal("2"), 3));
+    origin.setExtraFields(
+        List.of(
+            OperationFieldNames.text(
+                "Disposed", "operations.destroy.disposedField", "2026-09-25")));
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setEmptiesOrigin(true);
+    request.setOrigins(List.of(origin));
+    originHolds(100L, live);
+
+    manager.execute(request, user);
+
+    ArgumentCaptor<ApiSubSample> update = ArgumentCaptor.forClass(ApiSubSample.class);
+    verify(subSampleApiMgr).updateApiSubSample(update.capture(), eq(user));
+    ApiExtraField sent = update.getValue().getExtraFields().get(0);
+    assertEquals(Long.valueOf(55L), sent.getId());
+    assertFalse(sent.isNewFieldRequest());
+    assertEquals("2026-09-25", sent.getContent());
   }
 
   @Test

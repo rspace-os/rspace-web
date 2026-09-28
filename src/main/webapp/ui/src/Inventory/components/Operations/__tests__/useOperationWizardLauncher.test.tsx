@@ -156,6 +156,21 @@ describe("useOperationWizardLauncher", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it("shows an alert, not only a console error, when locking fails for another reason", async () => {
+    const user = userEvent.setup();
+    const { origin, acquire } = lockedOrigin();
+    acquire.mockRejectedValue(new Error("Unprocessable entity"));
+    const onLaunched = vi.fn();
+    render(<Workflow origin={origin} onLaunched={onLaunched} />);
+
+    await user.click(screen.getByRole("button", { name: "launch" }));
+
+    await waitFor(() => expect(onLaunched).toHaveBeenCalledWith(false));
+    expect(addAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: "error", message: expect.stringContaining("Unprocessable entity") }),
+    );
+  });
+
   it("refuses with an info alert, taking no lock, when operations are not enabled", async () => {
     const user = userEvent.setup();
     gate.available = false;

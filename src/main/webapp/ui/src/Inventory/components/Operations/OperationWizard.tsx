@@ -1,3 +1,4 @@
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -24,6 +25,7 @@ import type { UnitCategory } from "@/stores/stores/UnitStore";
 import { showToastWhilstPending } from "@/util/alerts";
 import { getErrorMessage } from "@/util/error";
 import ContextDialog from "../ContextMenu/ContextDialog";
+import useLinkTargetSummary from "../Fields/Link/useLinkTargetSummary";
 import { buildFacadeRequest } from "./buildOperationRequest";
 import type { DocumentationSelection } from "./DocumentationStep";
 import DocumentationStep from "./DocumentationStep";
@@ -42,6 +44,7 @@ import { describeOperationError, type OperationResult, performOperation, sampleN
 import {
   amountIsStorable,
   amountTakenExceedsOrigin,
+  amountTooLarge,
   detailsValid,
   originBlockedReason,
   quantityExceedsOrigin,
@@ -174,6 +177,9 @@ function OperationWizard({
   const [operation, setOperation] = React.useState<InventoryOperation | null>(null);
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
+  // A remembered document may have been trashed since it was saved. The link is kept (the user
+  // decides), but the user is told, on the summary as well because a complete bundle skips the step.
+  const documentationTrashed = useLinkTargetSummary(documentation?.globalId ?? "")?.deleted === true;
   const [remember, setRemember] = React.useState(false);
   const [amountMode, setAmountMode] = React.useState<AmountMode>("same");
   const [perSubsampleAmounts, setPerSubsampleAmounts] = React.useState<PerSubsampleAmounts>({});
@@ -209,8 +215,10 @@ function OperationWizard({
     : new Set();
   const amountCategory = templateSelection.quantityCategory ?? originCategory;
   // A multi-origin operation (Pool) has several parent samples, so "use parent template" is
-  // ambiguous and always disabled for it.
-  const parentHasTemplate = !operation?.requiresMultiple && (origin.sample.templateId ?? null) !== null;
+  // ambiguous and never offered for it.
+  const parentHasTemplateFor = (op: InventoryOperation | null) =>
+    !op?.requiresMultiple && (origin.sample.templateId ?? null) !== null;
+  const parentHasTemplate = parentHasTemplateFor(operation);
 
   const parentTemplateId = origin.sample.templateId ?? null;
 
@@ -345,9 +353,9 @@ function OperationWizard({
    * that nothing could ever supply, leaving Next permanently disabled with no way for the user to
    * fix it.
    */
-  const restoredTemplateSelection = (remembered: TemplateSelection): TemplateSelection =>
-    remembered.mode === "fromSample" && !parentHasTemplate
-      ? { ...initialTemplateSelection(parentHasTemplate), remember: remembered.remember }
+  const restoredTemplateSelection = (op: InventoryOperation, remembered: TemplateSelection): TemplateSelection =>
+    remembered.mode === "fromSample" && !parentHasTemplateFor(op)
+      ? { ...initialTemplateSelection(false), remember: remembered.remember }
       : remembered;
 
   const reconcileForOrigins = (
@@ -371,7 +379,7 @@ function OperationWizard({
     const bundle = normalizeProcessValues(processValues[key]);
     const base = freshValues(op, origin, vals);
     if (bundle) {
-      const restoredTemplate = restoredTemplateSelection(templateSelectionFor(bundle.template));
+      const restoredTemplate = restoredTemplateSelection(op, templateSelectionFor(bundle.template));
       const reconciled = reconcileForOrigins(
         op,
         restoredTemplate,
@@ -392,7 +400,7 @@ function OperationWizard({
     }
     return {
       values: base,
-      templateSelection: initialTemplateSelection(parentHasTemplate),
+      templateSelection: initialTemplateSelection(parentHasTemplateFor(op)),
       documentation: null,
       amountMode: resolveDefaultAmountMode(op),
       perSubsampleAmounts: {},
@@ -438,6 +446,8 @@ function OperationWizard({
       setRemember(s.remember);
       setAmountMode(s.amountMode);
       setPerSubsampleAmounts(s.perSubsampleAmounts);
+      // A bundle matching a prefix of the name being typed must not swap Details for the summary.
+      setReviewing(true);
       return;
     }
     if (nameFrom && next[nameFrom] !== values[nameFrom]) setSampleNameEdited(true);
@@ -500,8 +510,16 @@ function OperationWizard({
   // A closing wizard has no lock left to keep alive, so it simply stops renewing.
   const closing = React.useRef(false);
 
+  // A lock lasts five minutes and renewing a large Pool is one POST per origin, so steps renew at
+  // most once a minute. The launcher has just taken the locks when the wizard opens.
+  const lastRenewal = React.useRef(Date.now());
+  React.useEffect(() => {
+    if (open) lastRenewal.current = Date.now();
+  }, [open]);
+
   const extendOriginLocks = () => {
-    if (closing.current) return;
+    if (closing.current || Date.now() - lastRenewal.current < 60_000) return;
+    lastRenewal.current = Date.now();
     const batch = Promise.allSettled(
       origins.map((o) =>
         o.acquireEditLock().catch((error: unknown) => {
@@ -523,6 +541,13 @@ function OperationWizard({
 
   const locksLapsed = (): boolean =>
     origins.some((o) => o.lockExpired || (Boolean(o.lockExpiry) && Date.now() >= o.lockExpiry.getTime()));
+
+  // Shown inside the dialog as well as in the toast: the toast sits outside the modal, where
+  // assistive technology cannot reach it while the wizard is open.
+  const [performError, setPerformError] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    setPerformError(null);
+  }, [activeStep, operation, reviewing]);
 
   const next = () => {
     extendOriginLocks();
@@ -554,7 +579,7 @@ function OperationWizard({
       return origins.every((o) => {
         const q = perSubsampleAmounts[o.globalId ?? ""];
         if (!q || !Number.isFinite(q.numericValue) || q.unitId <= 0 || q.numericValue <= 0) return false;
-        if (!amountIsStorable(q.numericValue)) return false;
+        if (!amountIsStorable(q.numericValue) || amountTooLarge(q.numericValue)) return false;
         return !quantityExceedsOrigin(q, toOrigin(o).quantity);
       });
     }
@@ -596,6 +621,7 @@ function OperationWizard({
       return;
     }
     setSubmitting(true);
+    setPerformError(null);
     extendOriginLocks();
     let created: OperationResult | null;
     try {
@@ -621,13 +647,9 @@ function OperationWizard({
     } catch (error) {
       // The error's `message` for a rejected request is just "Errors detected: 1"; the actual reason
       // lives in the field-scoped errors array, which describeOperationError reads instead.
-      getRootStore().uiStore.addAlert(
-        mkAlert({
-          title: t("operations.wizard.failed"),
-          message: describeOperationError(error, operation, resolveLabel, t("operations.wizard.failed")),
-          variant: "error",
-        }),
-      );
+      const message = describeOperationError(error, operation, resolveLabel, t("operations.wizard.failed"));
+      setPerformError(message);
+      getRootStore().uiStore.addAlert(mkAlert({ title: t("operations.wizard.failed"), message, variant: "error" }));
       // Re-read the origins: the usual rejection is "you asked for more than it holds", and the
       // amounts step validates against origin.quantity, so without a refresh the user could only
       // fail the same way again.
@@ -711,6 +733,7 @@ function OperationWizard({
           values={values}
           onChange={onDetailsChange}
           section="details"
+          origins={origins}
           processNameOptions={
             operation.effect.processNameFrom ? (processNames?.[operation.key] ?? []).filter((n) => n.trim() !== "") : []
           }
@@ -724,6 +747,7 @@ function OperationWizard({
           onChange={onTemplateSelectionChange}
           originSampleName={origin.sample.name}
           parentHasTemplate={parentHasTemplate}
+          multipleParents={operation.requiresMultiple}
           parentTemplateChecking={parentTemplateChecking}
           parentTemplateError={parentTemplateError}
           rememberedTemplateError={rememberedTemplateError}
@@ -748,30 +772,50 @@ function OperationWizard({
       );
     }
     if (key === "documentation") {
-      return <DocumentationStep value={documentation} onChange={setDocumentation} />;
+      return (
+        <>
+          {trashedDocumentationWarning()}
+          <DocumentationStep value={documentation} onChange={setDocumentation} />
+        </>
+      );
     }
     return confirmationStep();
   };
 
+  const trashedDocumentationWarning = (): React.ReactNode =>
+    documentationTrashed && documentation ? (
+      <Alert severity="warning" sx={{ mb: 1 }}>
+        {t("operations.documentation.trashed", { name: documentation.name })}
+      </Alert>
+    ) : null;
+
   const confirmationStep = (): React.ReactNode => {
     if (!operation) return null;
     return (
-      <OperationConfirmation
-        operation={operation}
-        values={values}
-        documentation={documentation}
-        templateSelection={templateSelection}
-        originSampleName={origin.sample.name}
-        originName={origin.name ?? ""}
-        originBlocked={originBlockedReason(origin.quantity)}
-        amountMode={amountMode}
-        perSubsampleAmounts={perSubsampleAmounts}
-        origins={origins.map((o) => ({ globalId: o.globalId ?? "", name: o.name ?? "" }))}
-        remember={remember}
-        // A terminal operation (Destroy) has nothing to remember (no template/amounts/documentation),
-        // so passing no handler hides the checkbox.
-        onRememberChange={operation.noOutput ? undefined : onRememberChange}
-      />
+      <>
+        {performError ? (
+          <Alert severity="error" sx={{ mb: 1 }}>
+            {performError}
+          </Alert>
+        ) : null}
+        {trashedDocumentationWarning()}
+        <OperationConfirmation
+          operation={operation}
+          values={values}
+          documentation={documentation}
+          templateSelection={templateSelection}
+          originSampleName={origin.sample.name}
+          originName={origin.name ?? ""}
+          originBlocked={originBlockedReason(origin.quantity)}
+          amountMode={amountMode}
+          perSubsampleAmounts={perSubsampleAmounts}
+          origins={origins.map((o) => ({ globalId: o.globalId ?? "", name: o.name ?? "" }))}
+          remember={remember}
+          // A terminal operation (Destroy) has nothing to remember (no template/amounts/documentation),
+          // so passing no handler hides the checkbox.
+          onRememberChange={operation.noOutput ? undefined : onRememberChange}
+        />
+      </>
     );
   };
 
@@ -802,7 +846,7 @@ function OperationWizard({
               >
                 {stepKeys.map((key, index) => (
                   <Step key={key}>
-                    <StepLabel>{stepLabel(key)}</StepLabel>
+                    <StepLabel aria-current={index === activeStep ? "step" : undefined}>{stepLabel(key)}</StepLabel>
                     {isViewportSmall ? (
                       <StepContent>{index === activeStep ? stepContent(key) : null}</StepContent>
                     ) : null}

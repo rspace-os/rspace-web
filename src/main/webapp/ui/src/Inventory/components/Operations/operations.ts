@@ -18,6 +18,8 @@ export type OperationInput = {
   type: "text" | "integer" | "quantity" | "temperature";
   labelKey: InventoryKey;
   required?: boolean;
+  /** The server's column limit, checked at the field. */
+  maxLength?: number;
   min?: number;
   max?: number;
   maxCelsius?: number;
@@ -33,6 +35,7 @@ export type ConfirmSummaryField =
   | "subsamples"
   | "amountTaken"
   | "storageTemp"
+  | "cryomedium"
   | "linkBack"
   | "documentation"
   | "originEmptied"
@@ -79,6 +82,7 @@ const sampleName = {
   type: "text",
   labelKey: "operations.fields.sampleName",
   required: true,
+  maxLength: 255,
 } as const satisfies OperationInput;
 
 // The backend's own bound (ApiInventoryOperationRequests.Creating), repeated here so the wizard
@@ -180,6 +184,7 @@ export const operations: ReadonlyArray<InventoryOperation> = [
         type: "text",
         labelKey: "operations.fields.processName",
         required: true,
+        maxLength: 255,
       },
       sampleName,
       count,
@@ -206,7 +211,7 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       count,
       eachAmount,
       amountTaken("operations.fields.amountTaken"),
-      { key: "cryomedium", type: "text", labelKey: "operations.fields.cryomedium" },
+      { key: "cryomedium", type: "text", labelKey: "operations.fields.cryomedium", maxLength: 250 },
       {
         key: "storageTemp",
         type: "temperature",
@@ -223,7 +228,7 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       storageTempFrom: "storageTemp",
       links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.cryopreserve.linkFieldName" }],
     },
-    confirmSummary: ["template", "subsamples", "amountTaken", "storageTemp", "linkBack", "documentation"],
+    confirmSummary: ["template", "subsamples", "amountTaken", "storageTemp", "cryomedium", "linkBack", "documentation"],
   },
   {
     key: "revive",

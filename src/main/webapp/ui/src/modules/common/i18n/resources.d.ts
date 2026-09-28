@@ -3994,7 +3994,8 @@ export default interface Resources {
         "description": "Optionally link this operation to a document in ELN or Gallery, such as a protocol (SOP).",
         "fieldName": "Documented by",
         "none": "No document linked.",
-        "selected": "Linked document: {name}"
+        "selected": "Linked document: {name}",
+        "trashed": "The remembered document \"{name}\" is in the trash."
       },
       "fields": {
         "amountMode": "Amount to take",
@@ -4006,12 +4007,13 @@ export default interface Resources {
         "amountTaken": "Amount taken from original",
         "amountTakenEach": "Amount taken from each",
         "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
+        "amountTooLarge": "Enter at most {max, number}.",
         "count": "Number of new subsamples",
         "countMin": "Enter a whole number of {min} or more.",
         "countRange": "Enter a whole number between {min} and {max}.",
         "cryomedium": "Cryomedium",
         "eachAmount": "Amount per new subsample",
-        "originAmountZero": "Subsample has an amount of 0.",
+        "originAmountZero": "{count, plural, one {Subsample {names} has} other {Subsamples {names} have}} an amount of 0.",
         "originCategoryUnsupported": "This subsample's quantity is not an amount (volume, mass or count), so no operation can take from it.",
         "processName": "Process name",
         "processNameRequired": "Enter a process name first.",
@@ -4026,6 +4028,8 @@ export default interface Resources {
         "storageTempRequired": "Enter a storage temperature.",
         "storageTempWhole": "Enter whole degrees only.",
         "temperatureUnit": "°C",
+        "tooLong": "At most {max} characters.",
+        "unitFor": "Unit for {field}",
         "unitRequired": "Choose a unit."
       },
       "passage": {
@@ -4061,6 +4065,7 @@ export default interface Resources {
         "none": "No template",
         "parentHasNoTemplate": "The parent sample has no template, so this option is unavailable. Choose an existing template or none.",
         "pick": "Choose an existing template",
+        "poolHasNoParentTemplate": "A pool has several parent samples, so choose a template or none.",
         "rememberedDeleted": "The remembered template \"{name}\" is in the trash and cannot be used. Choose another template.",
         "searchLabel": "Search templates",
         "selectedLabel": "Selected template: {name}",

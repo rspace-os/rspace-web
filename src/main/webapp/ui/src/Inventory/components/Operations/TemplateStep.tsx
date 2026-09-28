@@ -18,6 +18,7 @@ function TemplateStep({
   onChange,
   originSampleName,
   parentHasTemplate = true,
+  multipleParents = false,
   parentTemplateChecking = false,
   parentTemplateError = null,
   rememberedTemplateError = null,
@@ -26,11 +27,13 @@ function TemplateStep({
   onChange: React.Dispatch<React.SetStateAction<TemplateSelection>>;
   originSampleName: string;
   parentHasTemplate?: boolean;
+  multipleParents?: boolean;
   parentTemplateChecking?: boolean;
   parentTemplateError?: string | null;
   rememberedTemplateError?: string | null;
 }): React.ReactNode {
   const { t, i18n } = useTranslation("inventory");
+  const descriptionId = React.useId();
   const [checking, setChecking] = React.useState(false);
   const [blockError, setBlockError] = React.useState<string | null>(null);
   const latestPickRef = React.useRef<string | null>(null);
@@ -45,12 +48,13 @@ function TemplateStep({
     setBlockError(null);
     latestPickRef.current = null;
     setChecking(false);
+    const keep = mode === "pick" && value.mode === "pick";
     onChange({
       ...value,
       mode,
-      templateId: mode === "pick" ? value.templateId : null,
-      templateName: mode === "pick" ? value.templateName : undefined,
-      quantityCategory: mode === "pick" ? value.quantityCategory : undefined,
+      templateId: keep ? value.templateId : null,
+      templateName: keep ? value.templateName : undefined,
+      quantityCategory: keep ? value.quantityCategory : undefined,
     });
   };
 
@@ -125,23 +129,29 @@ function TemplateStep({
           {rememberedTemplateError}
         </Alert>
       ) : null}
-      <Typography variant="body2">{t("operations.template.description")}</Typography>
+      <Typography variant="body2" id={descriptionId}>
+        {t("operations.template.description")}
+      </Typography>
       <RadioGroup
+        aria-labelledby={descriptionId}
         value={value.mode === "remembered" || value.mode === "unselected" ? "" : value.mode}
         onChange={(e) => setMode(e.target.value as TemplateSelection["mode"])}
       >
-        <FormControlLabel
-          value="fromSample"
-          control={<Radio />}
-          disabled={!parentHasTemplate}
-          label={t("operations.template.fromSample", { name: originSampleName })}
-        />
+        {parentHasTemplate ? (
+          <FormControlLabel
+            value="fromSample"
+            control={<Radio />}
+            label={t("operations.template.fromSample", { name: originSampleName })}
+          />
+        ) : null}
         <FormControlLabel value="pick" control={<Radio />} label={t("operations.template.pick")} />
         <FormControlLabel value="none" control={<Radio />} label={t("operations.template.none")} />
       </RadioGroup>
       {!parentHasTemplate ? (
         <Typography variant="body2" color="text.secondary">
-          {t("operations.template.parentHasNoTemplate")}
+          {multipleParents
+            ? t("operations.template.poolHasNoParentTemplate")
+            : t("operations.template.parentHasNoTemplate")}
         </Typography>
       ) : null}
       {value.mode === "pick" ? (

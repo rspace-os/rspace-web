@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
@@ -24,6 +25,7 @@ import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.service.inventory.operations.InventoryOperation;
 import com.researchspace.service.inventory.operations.LabelResolver;
+import com.researchspace.service.inventory.operations.OperationFieldNames;
 import com.researchspace.service.inventory.operations.OriginState;
 import com.researchspace.session.SessionTimeZoneUtils;
 import java.math.BigDecimal;
@@ -144,7 +146,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       if (CollectionUtils.isNotEmpty(origin.getExtraFields())) {
         ApiSubSample fieldUpdate = new ApiSubSample();
         fieldUpdate.setId(origin.getId());
-        fieldUpdate.setExtraFields(origin.getExtraFields());
+        fieldUpdate.setExtraFields(
+            updatingExistingFields(
+                origin.getExtraFields(), subSampleApiMgr.getIfExists(origin.getId())));
         // Sparse update: null tags means "leave tags untouched"; the DTO's default empty list
         // would be applied as "clear all tags" and silently wipe a tagged origin's tags.
         fieldUpdate.setTags(null);
@@ -155,6 +159,37 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     return request.getNewSample() == null
         ? null
         : sampleApiMgr.createNewApiSample(request.getNewSample(), user);
+  }
+
+  /**
+   * ADR 0011 D8: a generated origin field the origin already carries, matched by key and then by
+   * name, is updated in place rather than added a second time.
+   */
+  private static List<ApiExtraField> updatingExistingFields(
+      List<ApiExtraField> generated, SubSample live) {
+    List<ExtraField> existing = live.getActiveExtraFields();
+    for (ApiExtraField field : generated) {
+      existing.stream()
+          .filter(
+              e ->
+                  field.getOperationFieldKey() != null
+                      && field.getOperationFieldKey().equals(e.getOperationFieldKey()))
+          .findFirst()
+          .or(
+              () ->
+                  existing.stream()
+                      .filter(
+                          e ->
+                              OperationFieldNames.comparable(e.getName())
+                                  .equals(OperationFieldNames.comparable(field.getName())))
+                      .findFirst())
+          .ifPresent(
+              match -> {
+                field.setId(match.getId());
+                field.setNewFieldRequest(false);
+              });
+    }
+    return generated;
   }
 
   /**

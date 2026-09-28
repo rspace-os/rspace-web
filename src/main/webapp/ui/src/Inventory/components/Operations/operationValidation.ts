@@ -49,6 +49,18 @@ export function temperatureNotStorable(input: OperationInput, value: OperationQu
   return value.numericValue < -273.15 || !amountIsStorable(value.numericValue);
 }
 
+export function textTooLong(input: OperationInput, value: unknown): boolean {
+  return input.maxLength !== undefined && String(value ?? "").length > input.maxLength;
+}
+
+// Practical ceiling for an amount: far beyond any real inventory quantity, yet comfortably inside
+// both the decimal(19,3) DB column and JS's safe-integer range, so no amount loses precision.
+export const MAX_QUANTITY = 1e9;
+
+export function amountTooLarge(value: number): boolean {
+  return value > MAX_QUANTITY;
+}
+
 /**
  * Whether the given inputs are complete enough to advance. `allowedKeys` restricts validation to one
  * wizard step's inputs; omit it to validate every input.
@@ -63,6 +75,7 @@ export function detailsValid(
     const value = values[input.key];
     if (input.type === "text") {
       if (input.required && !String(value ?? "").trim()) return false;
+      if (textTooLong(input, value)) return false;
     } else if (input.type === "integer") {
       if (!validSubSampleCount(value, input.min ?? 1, input.max)) return false;
     } else {
@@ -79,7 +92,7 @@ export function detailsValid(
       if (input.type === "quantity") {
         if (!Number.isFinite(q.unitId) || q.unitId <= 0) return false;
         if (q.numericValue < 0) return false;
-        if (!amountIsStorable(q.numericValue)) return false;
+        if (!amountIsStorable(q.numericValue) || amountTooLarge(q.numericValue)) return false;
         const mustBePositive =
           input.key === operation.effect.eachAmountFrom || input.key === operation.effect.amountTakenFrom;
         if (mustBePositive && q.numericValue <= 0) return false;

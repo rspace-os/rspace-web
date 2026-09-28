@@ -73,6 +73,23 @@ class ApiInventoryOperationRequestsBeanValidationTest {
   }
 
   @Test
+  void aWholeCountWrittenWithADecimalPointOrExponentIsAccepted() {
+    for (String count : List.of("1.0", "2.000", "1e2")) {
+      ApiInventoryOperationRequests.Aliquot request = aliquot();
+      request.setCount(new BigDecimal(count));
+      assertTrue(keysFor(request, "count").isEmpty(), count);
+    }
+  }
+
+  @Test
+  void aCountOfOnePointZeroInJsonIsBoundAsOne() throws Exception {
+    ApiInventoryOperationRequests.Aliquot request =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readValue("{\"count\": 1.0}", ApiInventoryOperationRequests.Aliquot.class);
+    assertEquals(0, request.getCount().scale());
+  }
+
+  @Test
   void aCountOfManyDigitsIsOnlyAboveTheMaximumNotAlsoNotWhole() {
     for (String count : List.of("1001", "123456789012")) {
       ApiInventoryOperationRequests.Aliquot request = aliquot();

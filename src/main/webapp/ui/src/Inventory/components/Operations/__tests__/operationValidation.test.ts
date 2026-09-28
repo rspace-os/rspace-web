@@ -45,6 +45,14 @@ describe("detailsValid", () => {
     expect(detailsValid(cryo, validValues)).toBe(true);
   });
 
+  it("rejects text over the server's column limits: 255 for names, 250 for the cryomedium", () => {
+    const op = real("cryopreserve");
+    expect(detailsValid(op, { ...validValues, sampleName: "a".repeat(255), cryomedium: "c".repeat(250) })).toBe(true);
+    expect(detailsValid(op, { ...validValues, sampleName: "a".repeat(256) })).toBe(false);
+    expect(detailsValid(op, { ...validValues, cryomedium: "c".repeat(251) })).toBe(false);
+    expect(detailsValid(real("derive"), { processName: "p".repeat(256) }, new Set(["processName"]))).toBe(false);
+  });
+
   it("rejects a required text field left blank", () => {
     expect(detailsValid(cryo, { ...validValues, sampleName: "  " })).toBe(false);
   });
@@ -59,6 +67,11 @@ describe("detailsValid", () => {
     expect(detailsValid(cryo, { ...validValues, count: 101 })).toBe(false);
     expect(detailsValid(cryo, { ...validValues, count: 0 })).toBe(false);
     expect(detailsValid(cryo, { ...validValues, count: 100 })).toBe(true);
+  });
+
+  it("rejects an amount above the wizard's maximum and accepts the maximum itself", () => {
+    expect(detailsValid(cryo, { ...validValues, eachAmount: { numericValue: 1e9 + 1, unitId: 3 } })).toBe(false);
+    expect(detailsValid(cryo, { ...validValues, eachAmount: { numericValue: 1e9, unitId: 3 } })).toBe(true);
   });
 
   it("requires the amount taken from the origin to be strictly positive", () => {
