@@ -80,6 +80,9 @@ export function RelationshipPicker({
   onFocus,
   onBlur,
   showClear = true,
+  browseWhenEmpty = false,
+  browseEmptyMessage,
+  minimumSearchLength,
 }: {
   /** One source, retained as a compatibility alias. */
   source?: RelationshipSource;
@@ -110,6 +113,15 @@ export function RelationshipPicker({
   onFocus?: FocusEventHandler<HTMLInputElement>;
   onBlur?: FocusEventHandler<HTMLInputElement>;
   showClear?: boolean;
+  /**
+   * Loads options for an empty term too, so the list can be browsed before typing. Each source's
+   * `search` then receives `""` and decides what an unfiltered page contains.
+   */
+  browseWhenEmpty?: boolean;
+  /** Replaces the generic empty text when browsing with an empty term finds no options. */
+  browseEmptyMessage?: string;
+  /** The shortest term the sources search; a shorter one asks for more characters instead of reporting no matches. */
+  minimumSearchLength?: number;
 }) {
   const { t } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
@@ -117,6 +129,8 @@ export function RelationshipPicker({
   const [term, setTerm] = useState("");
   const sourceList = sources ?? (source === undefined ? [] : [source]);
   const hasSearchTerm = term.trim() !== "";
+  const searchTooShort = hasSearchTerm && minimumSearchLength !== undefined && term.trim().length < minimumSearchLength;
+  const showsOptions = hasSearchTerm || browseWhenEmpty;
   const labels = useMemo(
     () => ({
       idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }),
@@ -140,7 +154,7 @@ export function RelationshipPicker({
     token,
     authScope,
     labels,
-    enabled: hasSearchTerm,
+    enabled: showsOptions,
   });
   const availability = useRelationshipOptionAvailability({
     source: sourceList[0] ?? {
@@ -157,18 +171,22 @@ export function RelationshipPicker({
   // Keeps the selected options selectable while a fresh search is in flight, so a chip never
   // disappears from the list mid-typing.
   const items = useMemo(() => {
-    const shown = hasSearchTerm ? [...options] : [];
+    const shown = showsOptions ? [...options] : [];
     for (const option of selected) {
       if (!shown.some((candidate) => sameOption(candidate, option))) shown.push(option);
     }
     return shown;
-  }, [hasSearchTerm, options, selected]);
-  const emptyMessage = hasSearchTerm
+  }, [showsOptions, options, selected]);
+  const emptyMessage = showsOptions
     ? loading
       ? t("loading")
       : failed
         ? t("relationshipPicker.failed")
-        : t("relationshipPicker.empty")
+        : !hasSearchTerm && browseEmptyMessage !== undefined
+          ? browseEmptyMessage
+          : searchTooShort
+            ? t("relationshipPicker.searchTooShort", { count: minimumSearchLength })
+            : t("relationshipPicker.empty")
     : t("relationshipPicker.enterSearchTerm");
   const handleInputValueChange = (nextTerm: string, { reason }: { reason: string }) => {
     if (reason === "input-change") setTerm(nextTerm);
@@ -255,7 +273,7 @@ export function RelationshipPicker({
             triggerLabel={t("relationshipPicker.openOptions")}
           />
           <ComboboxContent>
-            {loading && hasSearchTerm ? (
+            {loading && showsOptions ? (
               <div role="status" className="px-2 py-1 text-xs text-muted-foreground">
                 {t("loading")}
               </div>
@@ -272,7 +290,7 @@ export function RelationshipPicker({
                 </ComboboxItem>
               )}
             </ComboboxList>
-            <ComboboxEmpty>{loading && hasSearchTerm ? null : emptyMessage}</ComboboxEmpty>
+            <ComboboxEmpty>{loading && showsOptions ? null : emptyMessage}</ComboboxEmpty>
           </ComboboxContent>
         </Combobox>
       </>
@@ -327,7 +345,7 @@ export function RelationshipPicker({
           <ComboboxChipsInput {...common} />
         </ComboboxChips>
         <ComboboxContent anchor={anchor}>
-          {loading && hasSearchTerm ? (
+          {loading && showsOptions ? (
             <div role="status" className="px-2 py-1 text-xs text-muted-foreground">
               {t("loading")}
             </div>
@@ -344,7 +362,7 @@ export function RelationshipPicker({
               </ComboboxItem>
             )}
           </ComboboxList>
-          <ComboboxEmpty>{loading && hasSearchTerm ? null : emptyMessage}</ComboboxEmpty>
+          <ComboboxEmpty>{loading && showsOptions ? null : emptyMessage}</ComboboxEmpty>
         </ComboboxContent>
       </Combobox>
     </>
