@@ -493,6 +493,47 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   }
 
   @Test
+  public void aDestroyOnAnOriginWithANumberFieldNamedDisposedIsRefusedLeavingItUnchanged()
+      throws Exception {
+    ApiSubSample created = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    ApiExtraField disposed = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.NUMBER);
+    disposed.setName("Disposed");
+    disposed.setContent("5");
+    disposed.setNewFieldRequest(true);
+    ApiSubSample addField = new ApiSubSample();
+    addField.setId(created.getId());
+    addField.setExtraFields(List.of(disposed));
+    addField.setTags(null);
+    ApiSubSample origin = subSampleApiManager.updateApiSubSample(addField, anyUser);
+
+    MvcResult result =
+        post("destroy", "{\"origin\":" + originJson(origin, null) + "}")
+            .andExpect(status().isBadRequest())
+            .andReturn();
+
+    List<String> errors = getErrorFromJsonResponseBody(result, ApiError.class).getErrors();
+    assertTrue(
+        errors.stream()
+            .anyMatch(
+                message ->
+                    message.startsWith("origin.extraFields:") && message.contains("Disposed")),
+        () -> "expected the field-name clash on origin.extraFields, got " + errors);
+    assertQuantityUnchanged(origin);
+    List<ApiExtraField> fieldsAfter =
+        subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser).getExtraFields();
+    assertEquals(origin.getExtraFields().size(), fieldsAfter.size());
+    ApiExtraField before = fieldNamed(origin.getExtraFields(), "Disposed");
+    ApiExtraField after = fieldNamed(fieldsAfter, "Disposed");
+    assertEquals(before.getId(), after.getId());
+    assertEquals(ApiExtraField.ExtraFieldTypeEnum.NUMBER, after.getType());
+    assertEquals(before.getContent(), after.getContent());
+  }
+
+  private static ApiExtraField fieldNamed(List<ApiExtraField> fields, String name) {
+    return fields.stream().filter(f -> name.equals(f.getName())).findFirst().orElseThrow();
+  }
+
+  @Test
   public void rejectsPoolingAVolumeOriginWithAMassOrigin() throws Exception {
     ApiSubSample volumeOrigin =
         createSampleHolding("F4a volume", "5", RSUnitDef.MILLI_LITRE.getId())
