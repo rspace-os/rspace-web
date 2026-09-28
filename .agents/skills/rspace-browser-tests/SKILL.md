@@ -46,9 +46,11 @@ Paths below are relative to `src/main/webapp/ui/`.
 - `src/__tests__/pageObjects/viewport.ts`: `isFullyInViewport`,
   `moveToastStackIntoViewport`, `clickWhenInViewport`.
 
-Handlers are file-local; the worker registration is origin-global. Never call
-`worker.stop()` in teardown. Keep `fileParallelism: false`, setup files in list
-order, and `retry: 2`. The `browserLifecycle` regression runs first, unretried.
+Handlers are file-local; the worker registration is origin-global in every
+engine. Don't call `worker.stop()` in teardown; the context cleans up. Keep
+`fileParallelism: false` so Firefox's renewal never overlaps another file,
+setup files in list order, and `retry: 2`. The `browserLifecycle` regression
+runs first in every engine, unretried.
 
 ## Run and verify
 

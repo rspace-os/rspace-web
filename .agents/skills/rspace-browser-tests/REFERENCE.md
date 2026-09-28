@@ -97,13 +97,17 @@ document/page divs, the TinyMCE contenteditable iframe body.
 ## Gotcha catalogue
 
 - **MSW worker lifecycle.** Handlers are file-local; the service-worker
-  registration is origin-global. Firefox can give a new Vitest iframe an
+  registration is origin-global in every engine. Skip `worker.stop()` in
+  teardown; it only closes the current client and the context cleans up. Keep
+  files serial so Firefox's renewal never overlaps another file. A spec that
+  also imports `browserSetup.ts` starts the worker twice in one iframe;
+  `browserSetup.ts` silences that one MSW warning.
+- **Firefox registration renewal.** Firefox can give a new Vitest iframe an
   active controller that still bypasses MSW, so `browserWorkerRegistration.ts`
-  unregisters the old worker first and the new one `clients.claim()`s the
-  iframe. Keep setup files in list order and files serial. Never
-  `worker.stop()` in teardown or patch the generated worker. Remove the
-  workaround only once `src/__tests__/browserLifecycle` and the full Firefox
-  suite pass without it.
+  (a no-op elsewhere) unregisters the old worker first and the new one
+  `clients.claim()`s the iframe. Keep setup files in list order; never patch
+  the generated worker. Remove the workaround only once
+  `src/__tests__/browserLifecycle` and the full Firefox suite pass without it.
 - **`suppressFireAndForget404([...])`.** Components that fire un-awaited requests
   (folder listings, thumbnails) can 404 after teardown and surface as an
   `unhandledrejection` that fails the run even though every assertion passed.
@@ -153,8 +157,8 @@ document/page divs, the TinyMCE contenteditable iframe body.
   `body[contenteditable="true"]`. `pressSequentially` does not exist on Vitest
   locators; use `userEvent.type`.
 - **Firefox coverage.** Every spec file runs in every engine. Only the
-  PDF-preview tests in `CallablePdfPreview.spec.tsx` `skipIf(firefox)`, pending
-  a separate pdf.js worker fix.
+  PDF-preview tests in `CallablePdfPreview.spec.tsx` `skipIf(firefox)`: pdf.js
+  never resolves its worker in headless Firefox.
 - **`optimizeDeps`.** `entries` scans every spec, even in focused runs, and
   `include` pre-bundles lazily discovered deps, so no mid-run optimizer reload
   duplicates React/emotion. The browser config has its own `cacheDir`
