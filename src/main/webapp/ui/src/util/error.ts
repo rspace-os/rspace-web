@@ -104,7 +104,7 @@ export function getApiErrorDetails(
     .map((errors) =>
       errors
         .filter((e): e is string => typeof e === "string")
-        .map((detail) => withOriginIndex(detail, formatOriginIndex))
+        .map((detail) => formatDetail(detail, formatOriginIndex))
         .filter((detail) => detail.length > 0),
     )
     .orElse([]);
@@ -116,13 +116,14 @@ const ORIGIN_INDEX = /^origins\[(\d+)\]/;
 
 /**
  * The reason, with the request path stripped - except that an origin's index is kept, so that a
- * rejection of one of several origins says which one. The index is 1-based here because it is read
+ * rejection of one of several origins says which one. A detail without an `origins[N]` path gets
+ * no index, and one without any path is returned unchanged. The index is 1-based here because it is read
  * by a person, not sent back.
  *
  * The WORDING is the caller's, because this module has no `t` and the reason it is being appended to
  * was already localized by the server.
  */
-function withOriginIndex(detail: string, format: (reason: string, index: number) => string): string {
+function formatDetail(detail: string, format: (reason: string, index: number) => string): string {
   const origin = ORIGIN_INDEX.exec(detail);
   const reason = detail.replace(FIELD_PATH_PREFIX, "").trim();
   if (!origin || reason.length === 0) return reason;
