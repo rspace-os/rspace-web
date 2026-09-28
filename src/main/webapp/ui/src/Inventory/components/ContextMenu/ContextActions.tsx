@@ -97,7 +97,7 @@ const contextActions = ({
         component: (
           <ProcessAction
             key="process"
-            selectedResults={selectedResults}
+            selectedResults={isProcessableSelection(selectedResults) ? selectedResults : []}
             as={as}
             disabled={disableAllActions}
             closeMenu={closeMenu}
