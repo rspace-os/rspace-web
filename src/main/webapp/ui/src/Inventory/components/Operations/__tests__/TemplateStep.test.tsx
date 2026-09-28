@@ -183,7 +183,7 @@ describe("TemplateStep", () => {
     const onChange = vi.fn();
     render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
     await userEvent.setup().click(screen.getByTestId("template-picker"));
-    expect(await screen.findByText(/mandatoryFieldsError|cannot be used|no default/i)).toBeInTheDocument();
+    expect(await screen.findByText(/mandatoryFieldsError/)).toBeInTheDocument();
     expect(selectionsFrom(onChange)).not.toContainEqual(expect.objectContaining({ templateId: 5 }));
   });
 
@@ -368,7 +368,7 @@ describe("TemplateStep failure and clearing paths", () => {
     );
     await userEvent.setup().click(screen.getByTestId("template-picker"));
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/mandatoryFieldsError|cannot be used|no default/i);
+    expect(alert).toHaveTextContent(/mandatoryFieldsError/);
     expect(alert).not.toHaveTextContent("parent problem");
   });
 });
