@@ -2,6 +2,7 @@ package com.researchspace.api.v2.controller;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -216,6 +217,54 @@ class BookingCalendarSubscriptionControllerMVCIT {
                 .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
+  }
+
+  @Test
+  void rotateAcceptsCurrentEtagsAsCompressingProxiesRewriteThem() throws Exception {
+    fixture.enableBookings();
+    String apiKey = fixture.userKey();
+    String userEtag =
+        mockMvc
+            .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader(HttpHeaders.ETAG);
+    String gzipped = userEtag.substring(0, userEtag.length() - 1) + "-gzip\"";
+
+    mockMvc
+        .perform(
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, gzipped))
+        .andExpect(status().isOk())
+        .andExpect(header().string(HttpHeaders.ETAG, not(userEtag)));
+    mockMvc
+        .perform(
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, gzipped))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
+
+    long configurationId = readableConfiguration();
+    create(configurationId, apiKey);
+    String itemEtag =
+        mockMvc
+            .perform(get(path(configurationId)).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getHeader(HttpHeaders.ETAG);
+    mockMvc
+        .perform(
+            post(path(configurationId) + "/rotate")
+                .header("apiKey", apiKey)
+                .header(
+                    HttpHeaders.IF_MATCH,
+                    "W/" + itemEtag.substring(0, itemEtag.length() - 1) + "-br\""))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(true));
   }
 
   @Test
