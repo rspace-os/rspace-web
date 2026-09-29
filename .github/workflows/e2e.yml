@@ -174,6 +174,7 @@ jobs:
           PROTOCOLIO_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_CLIENT_SECRET || '' }}
           ORCID_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_ID || '' }}
           ORCID_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_SECRET || '' }}
+          BIOPORTAL_API_KEY: ${{ inputs.mode == 'real' && secrets.BIOPORTAL_API_KEY || '' }}
         run: |
           set -euo pipefail
           if [ "${{ inputs.mode }}" = "mock" ]; then
@@ -246,6 +247,7 @@ jobs:
               "-Dprotocolsio.secret=$PROTOCOLIO_CLIENT_SECRET"
               "-Dorcid.client.id=$ORCID_CLIENT_ID"
               "-Dorcid.secret=$ORCID_CLIENT_SECRET"
+              "-Dbioportal.api.key=$BIOPORTAL_API_KEY"
             )
           fi
           nohup ./mvnw jetty:run-war \
@@ -302,6 +304,7 @@ jobs:
           E2E_BROWSER: ${{ matrix.project }}
           FIELDMARK_API_KEY: ${{ inputs.mode == 'real' && secrets.FIELDMARK_API_KEY || '' }}
           ZENODO_API_KEY: ${{ inputs.mode == 'real' && secrets.ZENODO_API_KEY || '' }}
+          BIOPORTAL_API_KEY: ${{ inputs.mode == 'real' && secrets.BIOPORTAL_API_KEY || '' }}
           GALAXY_EU_APIKEY: ${{ inputs.mode == 'real' && secrets.GALAXY_EU_APIKEY || '' }}
           DATAVERSE_API_TOKEN: ${{ inputs.mode == 'real' && secrets.DATAVERSE_API_TOKEN || '' }}
           DATAVERSE_SERVER_URL: ${{ inputs.mode == 'real' && secrets.DATAVERSE_SERVER_URL || '' }}

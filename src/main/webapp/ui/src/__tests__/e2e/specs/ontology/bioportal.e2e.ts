@@ -16,6 +16,7 @@ test.describe("BioPortal ontology suggestions", () => {
     env.integrationMode !== "real",
     "BioPortal's API host is fixed to data.bioontology.org, so real mode (with bioportal.api.key set) is required",
   );
+  test.skip(!env.bioportalApiKey, "real mode needs BIOPORTAL_API_KEY in .env / CI secrets");
 
   test("As a PI of two lab groups, BioPortal suggestions only appear once every group allows them", async ({
     appUser,
