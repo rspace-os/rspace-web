@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiSample;
@@ -15,9 +16,11 @@ import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -161,7 +164,13 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
       Thread.sleep(2000);
       releaseFulfilment.countDown();
       fulfilment.get(30, TimeUnit.SECONDS);
-      transfer.get(60, TimeUnit.SECONDS);
+      try {
+        transfer.get(60, TimeUnit.SECONDS);
+      } catch (ExecutionException e) {
+        // with innodb_snapshot_isolation (MariaDB 11.6+) the transfer is refused instead, which is
+        // equally safe; any other failure is not
+        assertTrue(isSnapshotConflict(e), () -> "unexpected transfer failure: " + e.getCause());
+      }
 
       ApiSampleRequest afterwards = sampleRequestApiMgr.getRequestById(requestId, owner);
       assertEquals(SampleRequestStatus.FULFILLED, afterwards.getStatus());
@@ -172,6 +181,16 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
     } finally {
       pool.shutdownNow();
     }
+  }
+
+  /** MariaDB's ER_CHECKREAD: "Record has changed since last read". */
+  private static boolean isSnapshotConflict(Throwable thrown) {
+    for (Throwable cause = thrown; cause != null; cause = cause.getCause()) {
+      if (cause instanceof SQLException sql && sql.getErrorCode() == 1020) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static void awaitQuietly(CountDownLatch latch) {

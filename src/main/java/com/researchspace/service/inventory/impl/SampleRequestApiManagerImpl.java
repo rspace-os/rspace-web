@@ -127,9 +127,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user) {
-    assertSampleRequestsEnabled(user);
-    // locked, so two concurrent transitions serialise and the second sees the committed status
+    // locked, so two concurrent transitions serialise and the second sees the committed status.
+    // It must be the transaction's first read: with innodb_snapshot_isolation (on by default from
+    // MariaDB 11.6), locking a row changed since an earlier read fails instead of waiting for it.
     SampleRequest request = sampleRequestDao.getForUpdate(id);
+    assertSampleRequestsEnabled(user);
     if (request == null) {
       throw requestNotFound(id);
     }
