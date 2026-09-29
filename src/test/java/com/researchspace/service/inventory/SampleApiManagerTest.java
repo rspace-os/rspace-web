@@ -1308,4 +1308,32 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable(),
         "an update that omits 'requestable' must not turn it off");
   }
+
+  @Test
+  public void requestableSearch_stillHonoursOwnedBy() {
+    User alice = createAndSaveUserIfNotExists(getRandomAlphabeticString("alice"));
+    User bob = createAndSaveUserIfNotExists(getRandomAlphabeticString("bob"));
+    initialiseContentWithEmptyContent(alice, bob);
+    ApiSampleWithFullSubSamples alicesSample = createBasicSampleForUser(alice, "alice's sample");
+    ApiSampleWithFullSubSamples bobsSample = createBasicSampleForUser(bob, "bob's sample");
+    markRequestable(alicesSample, alice);
+    markRequestable(bobsSample, bob);
+
+    List<Long> found =
+        sampleApiMgr
+            .getSamplesForUser(null, alice.getUsername(), null, true, testUser)
+            .getSamples()
+            .stream()
+            .map(ApiSampleInfo::getId)
+            .collect(Collectors.toList());
+
+    assertEquals(List.of(alicesSample.getId()), found);
+  }
+
+  private void markRequestable(ApiSampleWithFullSubSamples sample, User owner) {
+    ApiSample update = new ApiSample();
+    update.setId(sample.getId());
+    update.setRequestable(true);
+    sampleApiMgr.updateApiSample(update, owner);
+  }
 }

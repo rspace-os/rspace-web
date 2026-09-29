@@ -37,7 +37,10 @@ public interface SampleRequestsApi {
       User user)
       throws BindException;
 
-  /** A single request. Visible only to its requester and the requested sample's current owner. */
+  /**
+   * A single request. Visible only to its requester, the sample's current owner, and whoever owned
+   * it when the request was raised.
+   */
   @GetMapping(value = "/{id}")
   ApiSampleRequest getRequestById(Long id, User user);
 

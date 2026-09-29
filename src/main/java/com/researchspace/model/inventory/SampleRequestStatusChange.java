@@ -16,7 +16,6 @@ import jakarta.persistence.TemporalType;
 import java.io.Serializable;
 import java.util.Date;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.Setter;
 
 /**
@@ -25,7 +24,6 @@ import lombok.Setter;
  * details view. Modelled on GroupMembershipEvent.
  */
 @Entity
-@Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class SampleRequestStatusChange implements Serializable {

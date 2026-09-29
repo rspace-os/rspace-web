@@ -26,16 +26,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.Setter;
 
 /**
- * A request from one user for material from another user's sample. The approver is not stored: it
- * is always the sample's current owner, so a transfer of ownership moves any open request with it.
+ * A request from one user for material from another user's sample. The sample's current owner
+ * decides it; originalOwner records who was asked. A transfer of ownership rejects any request
+ * still open.
  */
 @Entity
 @AuditTrailData(auditDomain = AuditDomain.REQUEST)
-@Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class SampleRequest implements Serializable {

@@ -68,10 +68,10 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       Boolean requestable,
       User user) {
 
-    // requestable=true is an instance-wide search: every requestable sample is returned
-    // regardless of the requesting user's own ownership/group/sysadmin status, so the normal
-    // owner/permission-limiting fragment and its query parameters are skipped entirely.
+    // requestable=true is an instance-wide search: permission scoping is skipped, so every
+    // requestable sample is visible, but an explicit ownedBy still narrows it
     boolean unscopedRequestableSearch = Boolean.TRUE.equals(requestable);
+    boolean unscopedOwnedBy = unscopedRequestableSearch && ownedBy != null && !ownedBy.isEmpty();
 
     // prepare owner and permission limiting query fragment
     List<String> userGroupMembers =
@@ -81,7 +81,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
     String ownedByAndPermittedItemsQueryFragment =
         unscopedRequestableSearch
-            ? ""
+            ? (unscopedOwnedBy ? "and owner.username=:ownedBy " : "")
             : getOwnedByAndPermittedItemsSqlQueryFragment(
                 ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
     String requestableQueryFragment =
@@ -124,6 +124,9 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     if (limitByParentTemplate) {
       countQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
     }
+    if (unscopedOwnedBy) {
+      countQueryBase.setParameter("ownedBy", ownedBy);
+    }
     Query<Long> countQueryWithParams =
         unscopedRequestableSearch
             ? countQueryBase
@@ -158,6 +161,9 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .setMaxResults(maxResult);
     if (limitByParentTemplate) {
       samplePageQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
+    }
+    if (unscopedOwnedBy) {
+      samplePageQueryBase.setParameter("ownedBy", ownedBy);
     }
     Query<Sample> samplePageQueryWithParams =
         unscopedRequestableSearch
