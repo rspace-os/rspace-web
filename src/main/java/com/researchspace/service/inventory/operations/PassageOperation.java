@@ -3,8 +3,10 @@ package com.researchspace.service.inventory.operations;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.OptionalLong;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Component;
@@ -68,7 +70,18 @@ public class PassageOperation extends CreatingOperation<ApiInventoryOperationReq
       List<OriginState> origins,
       LabelResolver labels,
       Errors errors) {
-    OptionalLong current = currentPassageNumber(origins.get(0), labels);
+    String text = passageNumberText(origins.get(0), labels).orElse("");
+    OptionalLong current;
+    try {
+      current = parsePassageNumber(text);
+    } catch (NumberFormatException unreadable) {
+      errors.rejectValue(
+          "origin.globalId",
+          "errors.inventory.operation.passageNumberUnreadable",
+          new Object[] {text},
+          null);
+      return;
+    }
     if (current.isPresent() && current.getAsLong() >= MAX_PASSAGE_NUMBER) {
       errors.rejectValue(
           "origin.globalId",
@@ -78,35 +91,53 @@ public class PassageOperation extends CreatingOperation<ApiInventoryOperationReq
     }
   }
 
+  /** Only called after {@link #validateOrigins} passed, so the number is readable. */
   private static String nextPassageNumber(OriginState origin, LabelResolver labels) {
-    OptionalLong current = currentPassageNumber(origin, labels);
-    return current.isPresent() ? String.valueOf(current.getAsLong() + 1) : FIRST_PASSAGE;
+    String text = passageNumberText(origin, labels).orElse("");
+    try {
+      OptionalLong current = parsePassageNumber(text);
+      return current.isPresent() ? String.valueOf(current.getAsLong() + 1) : FIRST_PASSAGE;
+    } catch (NumberFormatException unreadable) {
+      throw new IllegalStateException("Unvalidated passage number: " + text, unreadable);
+    }
   }
 
-  /** Empty when the parent has no passage number this could count on from, e.g. "abc" or -1. */
-  private static OptionalLong currentPassageNumber(OriginState origin, LabelResolver labels) {
+  /** The parent's passage number as plain text, or empty when it has none. */
+  private static Optional<String> passageNumberText(OriginState origin, LabelResolver labels) {
     String wanted = labels.resolve(NUMBER_FIELD_KEY).trim().toLowerCase(Locale.ROOT);
-    String current =
-        origin.parentSampleFields().stream()
-            .filter(field -> NUMBER_FIELD_KEY.equals(field.operationFieldKey()))
-            .findFirst()
-            .or(
-                () ->
-                    origin.parentSampleFields().stream()
-                        .filter(
-                            field ->
-                                field.name() != null
-                                    && field.name().trim().toLowerCase(Locale.ROOT).equals(wanted))
-                        .findFirst())
-            .map(OriginState.ParentField::content)
-            .orElse(null);
-    // A number edited in the UI is saved as HTML ("<p>9998</p>"), so the markup is dropped first.
-    // ponytail: Long.parseLong, so "1e3", "0x10" or two paragraphs ("12 13") restart from 1.
-    try {
-      long parsed = Long.parseLong(Jsoup.parse(String.valueOf(current)).text());
-      return parsed >= 0 ? OptionalLong.of(parsed) : OptionalLong.empty();
-    } catch (NumberFormatException notACount) {
+    return origin.parentSampleFields().stream()
+        .filter(field -> NUMBER_FIELD_KEY.equals(field.operationFieldKey()))
+        .findFirst()
+        .or(
+            () ->
+                origin.parentSampleFields().stream()
+                    .filter(
+                        field ->
+                            field.name() != null
+                                && field.name().trim().toLowerCase(Locale.ROOT).equals(wanted))
+                    .findFirst())
+        .map(OriginState.ParentField::content)
+        // A number edited in the UI is saved as HTML ("<p>9998</p>"), so the markup is dropped.
+        .map(content -> Jsoup.parse(content).text().trim());
+  }
+
+  /**
+   * Empty when blank. Throws {@link NumberFormatException} for anything but a whole number from 0,
+   * so a bad value is refused instead of restarting the count at 1.
+   */
+  private static OptionalLong parsePassageNumber(String text) {
+    if (text.isBlank()) {
       return OptionalLong.empty();
     }
+    long parsed;
+    try {
+      parsed = new BigDecimal(text).longValueExact();
+    } catch (ArithmeticException fractionalOrTooLarge) {
+      throw new NumberFormatException(text);
+    }
+    if (parsed < 0) {
+      throw new NumberFormatException(text);
+    }
+    return OptionalLong.of(parsed);
   }
 }

@@ -3,9 +3,11 @@ package com.researchspace.service.inventory.operations;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.KEYS;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.millilitres;
 import static com.researchspace.service.inventory.operations.OperationTestFixtures.requestOrigin;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
@@ -13,7 +15,11 @@ import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 
@@ -22,6 +28,8 @@ class PassageOperationTest {
   private static final PassageOperation PASSAGE = new PassageOperation();
   private static final LocalDate TODAY = LocalDate.parse("2026-08-20");
   private static final String NUMBER_FIELD = "inventory:operations.passage.numberField";
+  private static final String UNREADABLE = "errors.inventory.operation.passageNumberUnreadable";
+  private static final String LIMIT = "errors.inventory.operation.passageLimitReached";
 
   private static ApiInventoryOperationRequests.Passage request() {
     ApiInventoryOperationRequests.Passage request = new ApiInventoryOperationRequests.Passage();
@@ -84,16 +92,6 @@ class PassageOperationTest {
         "a user's own hand-created field has no key, so it is matched by its resolved name");
   }
 
-  @Test
-  void startsAtOneWhenTheParentHasNoUsableNumber() {
-    assertEquals("1", passageNumber(originWithParentFields(List.of())));
-    assertEquals(
-        "1",
-        passageNumber(
-            originWithParentFields(
-                List.of(new OriginState.ParentField("Passage number", "n/a", NUMBER_FIELD)))));
-  }
-
   private static OriginState parentAtPassage(String number) {
     return originWithParentFields(
         List.of(new OriginState.ParentField("Passage number", number, NUMBER_FIELD)));
@@ -104,11 +102,6 @@ class PassageOperationTest {
     BeanPropertyBindingResult errors = new BeanPropertyBindingResult(request, "request");
     PASSAGE.validateOrigins(request, List.of(origin), KEYS, errors);
     return errors;
-  }
-
-  @Test
-  void restartsAtOneFromANegativeNumber() {
-    assertEquals("1", passageNumber(parentAtPassage("-1")));
   }
 
   @Test
@@ -131,11 +124,124 @@ class PassageOperationTest {
     }
   }
 
+  private static void assertRefused(String code, Object shownAs, OriginState origin) {
+    FieldError refusal = originErrors(origin).getFieldError("origin.globalId");
+    assertNotNull(refusal, String.valueOf(shownAs));
+    assertEquals(code, refusal.getCode(), String.valueOf(shownAs));
+    assertArrayEquals(new Object[] {shownAs}, refusal.getArguments());
+  }
+
+  private static void assertUnreadable(String shownAs, OriginState origin) {
+    assertRefused(UNREADABLE, shownAs, origin);
+  }
+
+  private static void assertCountsOnTo(String next, OriginState origin) {
+    assertFalse(originErrors(origin).hasErrors(), next);
+    assertEquals(next, passageNumber(origin));
+  }
+
+  @Nested
+  class AKeyedNumberField {
+
+    @ParameterizedTest
+    @CsvSource({"9998.0, 9999", "+5, 6", "05, 6", "1e3, 1001", "'', 1"})
+    void countsOnFromAWholeNumberInAnyNotation(String number, String next) {
+      assertCountsOnTo(next, parentAtPassage(number));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"9999.0", "1E+4"})
+    void refusesAWholeNumberAtTheLimitInAnyNotation(String number) {
+      assertRefused(
+          LIMIT, String.valueOf(PassageOperation.MAX_PASSAGE_NUMBER), parentAtPassage(number));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"5.5", "10000.5", "12345678901234567890", "-1"})
+    void refusesAnythingButAWholeNumberFromZeroAndNamesIt(String number) {
+      assertUnreadable(number, parentAtPassage(number));
+    }
+  }
+
+  @Nested
+  class AKeyedTextFieldTheUiSavedAsHtml {
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = {"<p>12&nbsp;</p>", "<p> 12 </p>", "<p><strong>12</strong></p>", "  12\n"})
+    void countsOnFromTheNumberInsideTheMarkup(String number) {
+      assertCountsOnTo("13", parentAtPassage(number));
+    }
+
+    @Test
+    void refusesTwoParagraphsAndText() {
+      assertUnreadable("12 13", parentAtPassage("<p>12</p><p>13</p>"));
+      assertUnreadable("abc", parentAtPassage("abc"));
+    }
+  }
+
+  @Nested
+  class AnUnkeyedTemplateFieldNamedPassageNumber {
+
+    private final LabelResolver named =
+        (key, args) -> NUMBER_FIELD.equals(key) ? "Passage number" : key;
+
+    private String passageNumberNamed(OriginState origin) {
+      BeanPropertyBindingResult errors = new BeanPropertyBindingResult(request(), "request");
+      PASSAGE.validateOrigins(request(), List.of(origin), named, errors);
+      assertFalse(errors.hasErrors());
+      return OperationTestFixtures.fieldNamed(
+              PASSAGE
+                  .build(request(), List.of(origin), named, TODAY)
+                  .getNewSample()
+                  .getExtraFields(),
+              "Passage number")
+          .getContent();
+    }
+
+    @Test
+    void losesToAKeyedField() {
+      assertEquals(
+          "8",
+          passageNumberNamed(
+              originWithParentFields(
+                  List.of(
+                      new OriginState.ParentField("Passage number", "abc", null),
+                      new OriginState.ParentField("Passage number", "7", NUMBER_FIELD)))));
+    }
+
+    @Test
+    void theFirstMatchWinsWhateverItsCaseAndSpacing() {
+      assertEquals(
+          "4",
+          passageNumberNamed(
+              originWithParentFields(
+                  List.of(
+                      new OriginState.ParentField("  PASSAGE NUMBER ", "3", null),
+                      new OriginState.ParentField("Passage number", "abc", null)))));
+    }
+
+    @Test
+    void refusesADecimal() {
+      OriginState origin =
+          originWithParentFields(
+              List.of(new OriginState.ParentField("Passage number", "5.5", null)));
+      BeanPropertyBindingResult errors = new BeanPropertyBindingResult(request(), "request");
+      PASSAGE.validateOrigins(request(), List.of(origin), named, errors);
+      assertEquals(UNREADABLE, errors.getFieldError("origin.globalId").getCode());
+    }
+  }
+
   @Test
-  void aParentWithNoUsableNumberIsNotRefused() {
-    assertFalse(originErrors(parentAtPassage("abc")).hasErrors());
-    assertFalse(originErrors(parentAtPassage("-1")).hasErrors());
-    assertFalse(originErrors(originWithParentFields(List.of())).hasErrors());
+  void startsAtOneWhenThereIsNoPassageNumber() {
+    assertCountsOnTo("1", originWithParentFields(List.of()));
+    assertCountsOnTo("1", parentAtPassage(null));
+  }
+
+  @Test
+  void neverBuildsFromAnUnreadableNumber() {
+    assertUnreadable("abc", parentAtPassage("abc"));
+    assertThrows(IllegalStateException.class, () -> passageNumber(parentAtPassage("abc")));
   }
 
   @Test

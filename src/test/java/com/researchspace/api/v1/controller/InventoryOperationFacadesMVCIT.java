@@ -17,6 +17,7 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,8 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   private @Autowired SubSampleApiManager subSampleApiManager;
 
   private @Autowired SystemPropertyManager systemPropertyManager;
+
+  private @Autowired InventoryEditLockTracker editLockTracker;
 
   private User anyUser;
   private String apiKey;
@@ -98,6 +101,57 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
     assertEquals("2", passageNumberField(second).getContent());
   }
 
+  @Test
+  public void aPassageFromAParentWhosePassageNumberIsADecimalIsRefused() throws Exception {
+    ApiInventoryOperationResult first = passaged(origin());
+    setPassageNumber(first, "5.5");
+    ApiSubSample origin = first.getSample().getSubSamples().get(0);
+    Long samplesBefore = sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits();
+
+    List<String> errors = errorsOf(post("passage", passageJson(origin), 400));
+
+    assertEquals(1, errors.size(), errors::toString);
+    assertTrue(errors.get(0).startsWith("origin.globalId:"), errors::toString);
+    assertTrue(errors.get(0).contains("'5.5'"), errors::toString);
+    assertEquals(
+        samplesBefore, sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits());
+    assertUnchanged(origin);
+    assertNull(editLockTracker.getLockOwnerForItem(origin.getGlobalId()));
+    assertNull(editLockTracker.getLockOwnerForItem(first.getSample().getGlobalId()));
+  }
+
+  @Test
+  public void aPassageNumberEditedToAWholeDecimalCountsOn() throws Exception {
+    ApiInventoryOperationResult first = passaged(origin());
+    setPassageNumber(first, "9998.0");
+
+    ApiInventoryOperationResult second = passaged(first.getSample().getSubSamples().get(0));
+    assertEquals("9999", passageNumberField(second).getContent());
+
+    setPassageNumber(second, "9999.0");
+    assertRejectedOn(
+        "origin.globalId",
+        second.getSample().getSubSamples().get(0),
+        "passage",
+        passageJson(second.getSample().getSubSamples().get(0)));
+  }
+
+  private void setPassageNumber(ApiInventoryOperationResult passaged, String number)
+      throws Exception {
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey,
+                "/samples/" + passaged.getSample().getId(),
+                anyUser,
+                "{\"extraFields\":[{\"id\":"
+                    + passageNumberField(passaged).getId()
+                    + ",\"content\":\""
+                    + number
+                    + "\"}]}"))
+        .andExpect(status().isOk());
+  }
+
   private static ApiExtraField passageNumberField(ApiInventoryOperationResult result) {
     return result.getSample().getExtraFields().stream()
         .filter(field -> "Passage number".equals(field.getName()))
@@ -106,13 +160,15 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   private ApiInventoryOperationResult passaged(ApiSubSample origin) throws Exception {
-    return created(
-        "passage",
-        "{\"origin\":"
-            + originJson(origin, null)
-            + ",\"sampleName\":\"HeLa\",\"eachAmount\":"
-            + q("0.5", GRAM)
-            + "}");
+    return created("passage", passageJson(origin));
+  }
+
+  private static String passageJson(ApiSubSample origin) {
+    return "{\"origin\":"
+        + originJson(origin, null)
+        + ",\"sampleName\":\"HeLa\",\"eachAmount\":"
+        + q("0.5", GRAM)
+        + "}";
   }
 
   @Test
