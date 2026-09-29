@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -61,6 +62,14 @@ public class BaseRecordManagerImpl implements BaseRecordManager {
       return recordManager.get(recordId);
     }
     return folderManager.getFolder(recordId, user, includedDeletedFolder);
+  }
+
+  @Override
+  public Optional<BaseRecord> getSafeNull(Long id) {
+    if (isRecord(id)) {
+      return recordDao.getSafeNull(id).map(BaseRecord.class::cast);
+    }
+    return folderDao.getSafeNull(id).map(BaseRecord.class::cast);
   }
 
   protected boolean isRecord(BaseRecord baseRecord) {

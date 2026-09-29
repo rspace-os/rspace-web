@@ -102,8 +102,9 @@ public final class InventoryUrls {
 
   /**
    * The Global ID named by an address when that address is this deployment's own globalId page,
-   * else empty: the inverse of {@link #globalIdPageUrl}, deciding whether a PIDINST related
-   * identifier read back on import may become a link (RSDEV-1528, ADR 0009 decision 9).
+   * else empty: the inverse of {@link #globalIdPageUrl}, deciding whether an address read back by
+   * an import names a local record, for the PIDINST import's related identifiers (RSDEV-1528, ADR
+   * 0009 decision 9) and the CSV link import alike.
    *
    * <p>Same server means same host (case-insensitive), port and path before the segment. The scheme
    * is ignored because http and https on one host are one deployment. A version suffix is returned
@@ -127,9 +128,7 @@ public final class InventoryUrls {
             && page.getPort() == server.getPort()
             && path.substring(0, segment)
                 .equals(StringUtils.stripEnd(StringUtils.defaultString(server.getPath()), "/"));
-    return sameServer && !globalId.isEmpty() && !globalId.contains("/")
-        ? Optional.of(globalId)
-        : Optional.empty();
+    return sameServer && !globalId.contains("/") ? Optional.of(globalId) : Optional.empty();
   }
 
   /** The value as a normalised URI, or null when blank or unparseable. */
@@ -143,20 +142,6 @@ public final class InventoryUrls {
     } catch (IllegalArgumentException unparseable) {
       return null;
     }
-  }
-
-  /**
-   * The prefix every globalId page address on this server starts with, or empty when the server URL
-   * is missing. Exposed so a reader that has to recognise addresses {@link #globalIdPageUrl} wrote
-   * (the CSV link importer, RSDEV-1354) normalises the server URL exactly as the builder did,
-   * rather than keeping a second copy that could disagree.
-   */
-  public static Optional<String> globalIdPagePrefix(String serverUrl) {
-    String trimmed = StringUtils.trimToEmpty(serverUrl);
-    if (trimmed.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.of(StringUtils.stripEnd(trimmed, "/") + GLOBAL_ID_PATH);
   }
 
   /**

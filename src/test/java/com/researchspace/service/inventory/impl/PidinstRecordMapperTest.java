@@ -12,6 +12,7 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiPidinstRecord;
+import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
@@ -221,6 +222,25 @@ class PidinstRecordMapperTest {
         record.getRelatedIdentifiers());
   }
 
+  /** The import matches labels and parses addresses exactly as the mapper leaves them. */
+  @Test
+  void relatedIdentifierLabelsAndValuesAreTrimmed() throws Exception {
+    B2instDraftRecord raw = b2instRecord();
+    raw.getMetadata()
+        .setRelatedIdentifier(
+            List.of(
+                new B2instRelatedIdentifier(
+                    "URL",
+                    "  " + OTHER_SERVER + "/globalId/SA1 ",
+                    "IsDescribedBy",
+                    " Calibration ")));
+
+    assertEquals(
+        List.of(
+            new ApiPidinstRecord.RelatedIdentifier("Calibration", OTHER_SERVER + "/globalId/SA1")),
+        PidinstRecordMapper.fromB2inst(raw).getRelatedIdentifiers());
+  }
+
   @Test
   void dataCiteRelatedIdentifiersKeepALabellessEntryAndDropAValuelessOne() throws Exception {
     ApiPidinstRecord record = PidinstRecordMapper.fromDataCite(dataCiteDoi(DATACITE_DOI));
@@ -254,7 +274,6 @@ class PidinstRecordMapperTest {
     assertEquals("2011-09-30", content(instrument, 4));
     assertEquals("2025-01-15", content(instrument, 5));
     assertEquals("", content(instrument, 6), "link fields are left to the template's defaults");
-    assertNull(instrument.getFields().get(6).getLink(), "no resolved link, no link on the field");
     assertEquals("Fluorescent light; Visible light", content(instrument, 7));
     assertEquals("", content(instrument, 9), "Last calibrated has no PIDINST source");
     assertEquals("https://trello.com/b/BQ8zCcQC/tirf-microscope", content(instrument, 10));

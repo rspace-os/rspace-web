@@ -215,13 +215,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     InstrumentTemplate template =
         instrumentTemplateDao
             .findLockedTemplateByName(CreateDefaultInstrumentTemplate_RSDEV1219.TEMPLATE_NAME)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "The locked default instrument template '"
-                            + CreateDefaultInstrumentTemplate_RSDEV1219.TEMPLATE_NAME
-                            + "' is missing: the RSDEV-1219 Liquibase seeder has not run on this"
-                            + " database"));
+            .orElseThrow(this::lockedTemplateMissing);
     List<ApiPidinstSkippedRelatedIdentifier> skipped = new ArrayList<>();
     Map<String, ApiInventoryLink> links = relatedIdentifierLinks(record, user, skipped);
     ApiInstrument toCreate = PidinstRecordMapper.toApiInstrument(record, template, links);
@@ -239,7 +233,8 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
           "Import of {}: the {} entry {} was not linked ({})",
           record.getPid(),
           entry.getField(),
-          entry.getAddress(),
+          // written by whoever registered the record: no line breaks into the log
+          entry.getAddress().replaceAll("[\\r\\n]", " "),
           entry.getReason());
     }
     return linked;
@@ -498,6 +493,17 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
                     "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess"));
   }
 
+  private IllegalStateException lockedTemplateMissing() {
+    String name = CreateDefaultInstrumentTemplate_RSDEV1219.TEMPLATE_NAME;
+    log.error(
+        "The locked default instrument template '{}' is missing: the RSDEV-1219 Liquibase seeder"
+            + " has not run on this database",
+        name);
+    return new IllegalStateException(
+        messages.getMessage(
+            "errors.inventory.identifier.pidinstTemplateMissing", new Object[] {name}));
+  }
+
   /** Same translation {@code InstrumentsApiController.createNewInstrument} applies to a POST. */
   private static void applyTargetLocation(ApiInstrument toCreate, ApiTargetLocation target) {
     if (target == null) {
@@ -522,7 +528,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
       List<ApiPidinstSkippedRelatedIdentifier> rejected = new ArrayList<>();
       Optional<ApiInventoryLink> link = Optional.empty();
       for (ApiPidinstRecord.RelatedIdentifier entry : record.getRelatedIdentifiers()) {
-        if (!target.registryLabel().equalsIgnoreCase(StringUtils.trimToEmpty(entry.label()))) {
+        if (!target.registryLabel().equalsIgnoreCase(entry.label())) {
           continue;
         }
         link = linkFor(entry.value(), target, user, rejected);
@@ -569,7 +575,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   /** The address's host for the warning, or null when it has none (a bare DOI, or not a URL). */
   private static String hostOf(String address) {
     try {
-      return URI.create(address.trim()).getHost();
+      return URI.create(address).getHost();
     } catch (IllegalArgumentException notAUri) {
       return null;
     }

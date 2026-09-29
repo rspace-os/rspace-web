@@ -621,7 +621,8 @@ class PidinstLookupManagerImplTest {
         .thenReturn(
             Optional.of(
                 publishedRecordWith(
-                    entry("Measurement Technique", SERVER + "/globalId/SD12"),
+                    // registry labels are matched case-insensitively
+                    entry("measurement technique", SERVER + "/globalId/SD12"),
                     entry("Calibration", SERVER + "/globalId/SA32768v3"))));
     ApiInstrument linked = stubImportCollaborators();
     when(inventoryLinkManager.canCreateLink(any(ApiInventoryLink.class), eq(user)))
@@ -716,6 +717,40 @@ class PidinstLookupManagerImplTest {
         List.of(
             new ApiPidinstSkippedRelatedIdentifier(
                 "Calibration", Reason.OTHER_SERVER, "10.1000/manual", null)),
+        result.getSkippedRelatedIdentifiers());
+  }
+
+  /** An installation fault reaches the user as a translated sentence, not developer detail. */
+  @Test
+  void aMissingLockedTemplateRefusesTheImportWithATranslatedMessage() {
+    when(b2instConnector.getRecordByHandle(HANDLE)).thenReturn(Optional.of(publishedRecord()));
+    when(instrumentTemplateDao.findLockedTemplateByName("Instrument (PIDINST 1.0)"))
+        .thenReturn(Optional.empty());
+
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class, () -> manager.importInstrument(HANDLE, null, user));
+
+    assertEquals(
+        "errors.inventory.identifier.pidinstTemplateMissing Instrument (PIDINST 1.0)",
+        ex.getMessage());
+    verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
+  }
+
+  /** URI.create refuses an address with a space, and the entry is still reported, not a failure. */
+  @Test
+  void anEntryThatIsNotEvenAUriIsSkippedWithoutAHost() {
+    String notAUri = "https://example.org/my manual.pdf";
+    when(b2instConnector.getRecordByHandle(HANDLE))
+        .thenReturn(Optional.of(publishedRecordWith(entry("Calibration", notAUri))));
+    stubImportCollaborators();
+
+    ApiInstrument result = manager.importInstrument(HANDLE, null, user);
+
+    assertEquals(
+        List.of(
+            new ApiPidinstSkippedRelatedIdentifier(
+                "Calibration", Reason.OTHER_SERVER, notAUri, null)),
         result.getSkippedRelatedIdentifiers());
   }
 

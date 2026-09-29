@@ -7,6 +7,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DocumentInitializationPolicy;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 
 /** A manager serving BaseRecords. It delegates the work to either Record or Folder manager. */
@@ -41,6 +42,16 @@ public interface BaseRecordManager {
    * @return
    */
   BaseRecord get(Long recordId, User user, boolean includedDeletedFolder);
+
+  /**
+   * The record or folder with this id, or empty when there is none. No permission or deletion
+   * check, and no exception: unlike {@link #get(Long, User)}, it never marks the caller's
+   * transaction rollback-only, so a caller that carries on after a failed lookup can still commit.
+   *
+   * @param id the record or folder id
+   * @return the record or folder, or empty
+   */
+  Optional<BaseRecord> getSafeNull(Long id);
 
   /**
    * Loads up a proxied object for forming associations

@@ -87,6 +87,10 @@ class InventoryUrlsTest {
         InventoryUrls.globalIdOfOwnPage("https://RSPACE.Example.com/globalId/IC65536", SERVER),
         "host names are case-insensitive");
     assertEquals(
+        Optional.of("SA1"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/GLOBALID/SA1", SERVER),
+        "the path segment is folded, as namesGlobalIdPage folds it");
+    assertEquals(
         Optional.of("IC65536"),
         InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536/", SERVER + "/"),
         "trailing slashes on either side are ignored");
@@ -237,18 +241,13 @@ class InventoryUrlsTest {
         InventoryUrls.namesGlobalIdPage("https://old name.example.com/globalId/IN999", "IN5"));
   }
 
+  /** Both importers read back what the builder wrote, so the two must agree. */
   @Test
-  void globalIdPagePrefixNormalisesExactlyAsTheBuilderDoes() {
-    assertEquals(Optional.of(SERVER + "/globalId/"), InventoryUrls.globalIdPagePrefix(SERVER));
+  void globalIdOfOwnPageRecognisesWhatTheBuilderWrites() {
+    String serverUrl = SERVER + "/rspace//";
     assertEquals(
-        Optional.of(SERVER + "/globalId/"),
-        InventoryUrls.globalIdPagePrefix(SERVER + "//"),
-        "repeated trailing slashes go, as in the builder");
-    assertTrue(InventoryUrls.globalIdPagePrefix("  ").isEmpty(), "no server url");
-    // the point of the method: a reader built from it recognises what the builder writes
-    assertTrue(
-        InventoryUrls.globalIdPageUrl(SERVER, "IN114")
-            .get()
-            .startsWith(InventoryUrls.globalIdPagePrefix(SERVER).get()));
+        Optional.of("SA1v2"),
+        InventoryUrls.globalIdOfOwnPage(
+            InventoryUrls.globalIdPageUrl(serverUrl, "SA1v2").orElseThrow(), serverUrl));
   }
 }

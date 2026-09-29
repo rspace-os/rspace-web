@@ -218,9 +218,8 @@ final class PidinstRecordMapper {
 
   private static Optional<ApiInventoryLink> linkFor(
       InventoryEntityField field, Map<String, ApiInventoryLink> links) {
-    String name = field.getName() == null ? "" : field.getName().trim();
     return links.entrySet().stream()
-        .filter(entry -> entry.getKey().equalsIgnoreCase(name))
+        .filter(entry -> PidinstFields.isNamed(field, entry.getKey()))
         .map(Map.Entry::getValue)
         .findFirst();
   }
@@ -249,35 +248,34 @@ final class PidinstRecordMapper {
   }
 
   private static String valueFor(InventoryEntityField field, ApiPidinstRecord record) {
-    String name = field.getName() == null ? "" : field.getName().trim();
     FieldType type = field.getType();
     if (type == FieldType.STRING) {
-      if (PidinstFields.OWNER.equalsIgnoreCase(name)) {
+      if (PidinstFields.isNamed(field, PidinstFields.OWNER)) {
         return String.join(JOIN, record.getOwners());
       }
-      if (PidinstFields.MANUFACTURER.equalsIgnoreCase(name)) {
+      if (PidinstFields.isNamed(field, PidinstFields.MANUFACTURER)) {
         return String.join(JOIN, record.getManufacturers());
       }
-      if (PidinstFields.MODEL.equalsIgnoreCase(name)) {
+      if (PidinstFields.isNamed(field, PidinstFields.MODEL)) {
         return record.getModel();
       }
-      if (PidinstFields.INSTRUMENT_TYPE.equalsIgnoreCase(name)) {
+      if (PidinstFields.isNamed(field, PidinstFields.INSTRUMENT_TYPE)) {
         return String.join(JOIN, record.getInstrumentTypes());
       }
-      if (PidinstFields.MEASURED_QUANTITY.equalsIgnoreCase(name)) {
+      if (PidinstFields.isNamed(field, PidinstFields.MEASURED_QUANTITY)) {
         return String.join(JOIN, record.getMeasuredVariables());
       }
-      if (PidinstFields.ALTERNATE_IDENTIFIER.equalsIgnoreCase(name)) {
+      if (PidinstFields.isNamed(field, PidinstFields.ALTERNATE_IDENTIFIER)) {
         return record.getAlternateIdentifier();
       }
     } else if (type == FieldType.DATE) {
-      if (PidinstFields.COMMISSIONED.equalsIgnoreCase(name)) {
+      if (PidinstFields.isNamed(field, PidinstFields.COMMISSIONED)) {
         return record.getCommissioned();
       }
-      if (PidinstFields.DECOMMISSIONED.equalsIgnoreCase(name)) {
+      if (PidinstFields.isNamed(field, PidinstFields.DECOMMISSIONED)) {
         return record.getDecommissioned();
       }
-    } else if (type == FieldType.URI && PidinstFields.LANDING_PAGE.equalsIgnoreCase(name)) {
+    } else if (type == FieldType.URI && PidinstFields.isNamed(field, PidinstFields.LANDING_PAGE)) {
       return record.getLandingPage();
     }
     return null;

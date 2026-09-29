@@ -25,6 +25,7 @@ import com.researchspace.dao.customliquibaseupdates.CreateDefaultInstrumentTempl
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
@@ -423,6 +424,35 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(missing, skipped.get(1).get("address").asText());
     assertNoLink(created.get("fields").get(6));
     assertNoLink(created.get("fields").get(8));
+  }
+
+  /**
+   * ELN targets resolve through transactional managers, unlike Inventory ones: an unreadable
+   * notebook and a missing document must be skipped as well, without failing the whole import.
+   */
+  @Test
+  public void elnEntriesTheImporterCannotLinkAreSkippedWithoutFailingTheImport() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    Notebook hidden =
+        createNotebookWithNEntries(getRootFolderForUser(owner).getId(), "hidden", 0, owner);
+    User importer = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(importer);
+    b2instDummy
+        .getPublishedRecord(recordId)
+        .orElseThrow()
+        .getMetadata()
+        .setRelatedIdentifier(
+            List.of(
+                related("Measurement Technique", ownPageOf(hidden.getOid().getIdString())),
+                related("Calibration", ownPageOf("SD999999999"))));
+
+    JsonNode created = json(importPid(importer, apiKey, handle, 201));
+
+    JsonNode skipped = created.get("skippedRelatedIdentifiers");
+    assertEquals(2, skipped.size(), skipped.toString());
+    for (JsonNode entry : skipped) {
+      assertEquals("NOT_AVAILABLE", entry.get("reason").asText(), entry.toString());
+    }
   }
 
   /**

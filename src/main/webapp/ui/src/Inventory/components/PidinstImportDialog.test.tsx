@@ -600,9 +600,7 @@ describe("PidinstImportDialog", () => {
     expect(await screen.findByText("inventory:pidinstImport.importSuccess")).toBeVisible();
     expect(onImported).toHaveBeenCalledWith({ id: 77, globalId: "IN77" });
 
-    const warning = (await screen.findByText("inventory:pidinstImport.skipped.title")).closest(
-      '[role="group"]',
-    ) as HTMLElement;
+    const warning = await screen.findByRole("alert", { name: /pidinstImport\.skipped\.title/ });
     await user.click(within(warning).getByRole("button", { name: /detailsToggleLabel/ }));
     expect(within(warning).getByText("Measurement technique")).toBeVisible();
     expect(within(warning).getByText(/pidinstImport\.skipped\.reasons\.otherServer/)).toBeVisible();
@@ -643,15 +641,11 @@ describe("PidinstImportDialog", () => {
     );
     await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
     await user.click(screen.getByRole("button", { name: "Search" }));
-    await waitFor(() => {
-      expect(screen.getByRole("gridcell", { name: HITS[0].name })).toBeInTheDocument();
-    });
+    await screen.findByRole("gridcell", { name: HITS[0].name });
     await user.click(radioFor("Confocal Microscope"));
     await user.click(screen.getByRole("button", { name: "Import" }));
 
-    const warning = (await screen.findByText("Some registry entries were not imported")).closest(
-      '[role="group"]',
-    ) as HTMLElement;
+    const warning = await screen.findByRole("alert", { name: /Some registry entries were not imported/ });
     await user.click(within(warning).getByRole("button", { name: /sub-message/ }));
     // the argument has to reach the sentence: a dropped placeholder ships "another server ()"
     expect(within(warning).getByText(/It points at another server \(other\.researchspace\.com\)\./)).toBeVisible();
@@ -676,13 +670,36 @@ describe("PidinstImportDialog", () => {
     await user.click(radioFor("Confocal Microscope"));
     await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
-    const warning = (await screen.findByText("inventory:pidinstImport.skipped.title")).closest(
-      '[role="group"]',
-    ) as HTMLElement;
+    const warning = await screen.findByRole("alert", { name: /pidinstImport\.skipped\.title/ });
     await user.click(within(warning).getByRole("button", { name: /detailsToggleLabel/ }));
     // a bare DOI as an href would open a page of this RSpace that does not exist
     expect(within(warning).getByText(/10\.1000\/manual/)).toBeVisible();
     expect(within(warning).getByText(/javascript:alert\(1\)/)).toBeVisible();
     expect(within(warning).queryByRole("link")).toBeNull();
+    // neither has a host, so neither may read "another server ()"
+    expect(within(warning).getAllByText(/pidinstImport\.skipped\.reasons\.notAnAddressHere/)).toHaveLength(2);
+  });
+
+  test("names a reason it has no words for by its code rather than by a wrong sentence", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({
+      importReply: [
+        201,
+        {
+          ...CREATED_INSTRUMENT,
+          skippedRelatedIdentifiers: [{ field: "Calibration", reason: "SOMETHING_NEW", address: "10.1000/manual" }],
+        },
+      ],
+    });
+    await renderOpenDialog();
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    const warning = await screen.findByRole("alert", { name: /pidinstImport\.skipped\.title/ });
+    await user.click(within(warning).getByRole("button", { name: /detailsToggleLabel/ }));
+    expect(within(warning).getByText(/SOMETHING_NEW/)).toBeVisible();
+    // the code itself, not a catalogue key built from it
+    expect(within(warning).queryByText(/skipped\.reasons\./)).toBeNull();
   });
 });

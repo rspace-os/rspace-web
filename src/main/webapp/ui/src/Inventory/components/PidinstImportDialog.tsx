@@ -401,7 +401,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
         );
       }
       // closing mid-import promises only that the result will not be shown here; moving the user
-      // to the new instrument anyway would be the opposite of what they chose. The toast above
+      // to the new instrument anyway would be the opposite of what they chose. The success toast
       // still links to it, so the import is not lost. Reporting failure to the caller is what stops
       // it closing the dialog a second time, over whatever session is open by then.
       if (sessionRef.current !== session) return false;

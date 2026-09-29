@@ -219,12 +219,16 @@ and API field names were ported instead.
      (case-insensitive) and port, the same path before `/globalId/`, scheme and trailing slashes and
      query ignored (`InventoryUrls.globalIdOfOwnPage`, the inverse of the builder next to it). A
      server address that has changed since registration is deliberately not recognised: those
-     entries count as another server's (the ticket's out-of-scope item).
+     entries count as another server's (the ticket's out-of-scope item). The CSV link import
+     (RSDEV-1354) uses the same rule, so the two importers agree about which addresses are ours.
    - Such an entry becomes a link exactly when the importing user could have made it by hand,
      decided by the write path's own checks (`InventoryLinkManager.canCreateLink`, which is
      `createLink` without the write), so the pre-check and the create can never disagree and a
      rejected entry is dropped instead of failing the whole import with the 422 that create would
-     answer. A trashed item the user can still see is linked and shows as deleted, as by hand.
+     answer. That only holds while every lookup behind the check answers false without throwing
+     across a transactional manager: an ELN target once failed the import at commit that way,
+     because the throw marked the import's transaction rollback-only even though it was caught. A
+     trashed item the user can still see is linked and shows as deleted, as by hand.
    - The link gets the field's own relation, `IsDocumentedBy` for Measurement technique and
      `IsCalibratedBy` for Calibration, both in the locked template's whitelist: the registry's
      `IsDescribedBy` is the constant ADR 0007 writes whatever the link stored, so it carries no

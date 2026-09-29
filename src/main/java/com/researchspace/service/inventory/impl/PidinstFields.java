@@ -69,8 +69,7 @@ final class PidinstFields {
   private PidinstFields() {}
 
   /**
-   * The record's field with the given canonical name and type, matched case-insensitively and
-   * ignoring surrounding whitespace, so a field is recognised however it was created.
+   * The record's field with the given canonical name and type, matched by {@link #isNamed}.
    *
    * <p>Only active fields are considered, so a soft-deleted field is never treated as the mapped
    * one.
@@ -79,8 +78,17 @@ final class PidinstFields {
       InstrumentEntity record, String canonicalName, FieldType expectedType) {
     return record.getActiveFields().stream()
         .filter(f -> f.getType() == expectedType)
-        .filter(f -> f.getName() != null && canonicalName.equalsIgnoreCase(f.getName().trim()))
+        .filter(f -> isNamed(f, canonicalName))
         .findFirst();
+  }
+
+  /**
+   * Whether the field carries this canonical name: case-insensitively and ignoring surrounding
+   * whitespace, so a field is recognised however it was created. The one rule every PIDINST mapping
+   * matches field names by.
+   */
+  static boolean isNamed(InventoryEntityField field, String canonicalName) {
+    return field.getName() != null && canonicalName.equalsIgnoreCase(field.getName().trim());
   }
 
   /**

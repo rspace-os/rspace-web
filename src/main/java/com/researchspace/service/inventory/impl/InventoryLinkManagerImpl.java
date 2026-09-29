@@ -32,8 +32,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
-    validateForWrite(apiLink);
-    assertTargetAcceptable(apiLink, actor);
+    assertWritable(apiLink, actor);
     InventoryLink entity = new InventoryLink();
     applyApiToEntity(apiLink, entity);
     return linkDao.save(entity);
@@ -42,8 +41,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   @Override
   public boolean canCreateLink(ApiInventoryLink apiLink, User actor) {
     try {
-      validateForWrite(apiLink);
-      assertTargetAcceptable(apiLink, actor);
+      assertWritable(apiLink, actor);
       return true;
     } catch (ApiRuntimeException rejected) {
       return false;
@@ -52,8 +50,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   @Override
   public InventoryLink updateLink(InventoryLink existing, ApiInventoryLink apiLink, User actor) {
-    validateForWrite(apiLink);
-    assertTargetAcceptable(apiLink, actor);
+    assertWritable(apiLink, actor);
     applyApiToEntity(apiLink, existing);
     return linkDao.save(existing);
   }
@@ -122,6 +119,14 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     // current state of the base record: pin/revision deliberately null so the
     // "Target deleted" pill reflects the record as it is now, not as pinned
     return snapshotResolver.resolveSummary(gid.getPrefix(), gid.getDbId(), null, null, actor);
+  }
+
+  /**
+   * The checks every link write runs, and so canCreateLink too: one place, so they cannot drift.
+   */
+  private void assertWritable(ApiInventoryLink apiLink, User actor) {
+    validateForWrite(apiLink);
+    assertTargetAcceptable(apiLink, actor);
   }
 
   /**
