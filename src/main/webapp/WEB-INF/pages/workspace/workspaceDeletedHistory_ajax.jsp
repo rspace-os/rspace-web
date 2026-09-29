@@ -47,9 +47,8 @@
 </div>
 
 <div class="tabularViewBottom bootstrap-custom-flat">
-    <axt:paginate_new paginationList="${paginationList}" />
+    <axt:paginate paginationList="${paginationList}" />
     <axt:numRecords />
     <input type="text" name="" id="resultsPerPage" hidden
            value="${numberRecords}">
 </div>
-

@@ -2,9 +2,9 @@ package com.researchspace.webapp.integrations.protocolsio;
 
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.webapp.integrations.protocolsio.ProtocolsIO_OAuthController.REFRESH_TOKEN_EXPIRED_CODE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
 import com.researchspace.core.util.JacksonUtil;
@@ -95,9 +95,9 @@ public class ProtocolsIOOAuthTest {
     URL url = new URL(view.getUrl());
     assertNotNull(url);
     List<NameValuePair> nvps = URLEncodedUtils.parse(view.getUrl(), Charset.forName("UTF-8"));
-    assertTrue(nvps.stream().anyMatch(nvp -> nvp.getName().equals("scope")));
-    assertTrue(nvps.stream().anyMatch(nvp -> nvp.getName().equals("state")));
-    assertTrue(nvps.stream().anyMatch(nvp -> nvp.getName().equals("redirect_url")));
+    assertThat(nvps).anyMatch(nvp -> nvp.getName().equals("scope"));
+    assertThat(nvps).anyMatch(nvp -> nvp.getName().equals("state"));
+    assertThat(nvps).anyMatch(nvp -> nvp.getName().equals("redirect_url"));
   }
 
   @Test

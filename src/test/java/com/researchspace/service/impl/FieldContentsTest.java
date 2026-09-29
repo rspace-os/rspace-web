@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,7 +33,7 @@ public class FieldContentsTest {
     newest.addElement(c1, "", RSChemElement.class);
     delta = original.computeDelta(newest);
     assertTrue(delta.getRemoved().hasAnyElements());
-    assertTrue(delta.getRemoved().getElements(RSChemElement.class).getElements().contains(c2));
+    assertThat(delta.getRemoved().getElements(RSChemElement.class).getElements()).contains(c2);
     assertFalse(delta.getAdded().hasAnyElements());
     assertFalse(delta.isUnchanged());
 
@@ -47,7 +48,7 @@ public class FieldContentsTest {
     assertFalse(delta.getRemoved().hasAnyElements());
 
     assertTrue(delta.getAdded().hasAnyElements());
-    assertTrue(delta.getAdded().getElements(RSChemElement.class).getElements().contains(c2));
+    assertThat(delta.getAdded().getElements(RSChemElement.class).getElements()).contains(c2);
 
     // remove c1, and add c2, i.e., swap 1 for another
     original = new FieldContents();
@@ -57,8 +58,8 @@ public class FieldContentsTest {
     delta = original.computeDelta(newest);
     assertFalse(delta.isUnchanged());
     assertTrue(delta.getRemoved().hasAnyElements());
-    assertTrue(delta.getRemoved().getElements(RSChemElement.class).getElements().contains(c1));
+    assertThat(delta.getRemoved().getElements(RSChemElement.class).getElements()).contains(c1);
     assertTrue(delta.getAdded().hasAnyElements());
-    assertTrue(delta.getAdded().getElements(RSChemElement.class).getElements().contains(c2));
+    assertThat(delta.getAdded().getElements(RSChemElement.class).getElements()).contains(c2);
   }
 }

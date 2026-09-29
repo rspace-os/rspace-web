@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -93,7 +94,7 @@ public class DocumentSharesBuilderTest {
     assertEquals(record.getName(), result.getSharedDocName());
 
     // assert direct shares mapped
-    assertEquals(1, result.getDirectShares().size());
+    assertThat(result.getDirectShares()).hasSize(1);
     DocumentShares.Share direct = result.getDirectShares().get(0);
     assertEquals(1L, direct.getShareId());
     assertEquals(DocumentShares.RecipientType.USER, direct.getRecipientType());
@@ -103,7 +104,7 @@ public class DocumentSharesBuilderTest {
     assertEquals(directRoot.getId(), direct.getGrandparentId());
 
     // assert implicit (notebook) shares mapped
-    assertEquals(1, result.getNotebookShares().size());
+    assertThat(result.getNotebookShares()).hasSize(1);
     DocumentShares.Share viaNotebook = result.getNotebookShares().get(0);
     assertEquals(2L, viaNotebook.getShareId());
     assertEquals(DocumentShares.RecipientType.GROUP, viaNotebook.getRecipientType());

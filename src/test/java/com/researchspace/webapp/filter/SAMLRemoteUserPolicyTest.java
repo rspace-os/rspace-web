@@ -1,5 +1,6 @@
 package com.researchspace.webapp.filter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -33,8 +34,7 @@ public class SAMLRemoteUserPolicyTest {
     assertNotNull(samlPolicy.getOtherRemoteAttributes(req));
     // this is a known saml attribute ID
     req.setAttribute("mail", "someone@somewhere.com");
-    assertEquals(
-        "someone@somewhere.com",
-        samlPolicy.getOtherRemoteAttributes(req).get(RemoteUserAttribute.EMAIL));
+    assertThat(samlPolicy.getOtherRemoteAttributes(req))
+        .containsEntry(RemoteUserAttribute.EMAIL, "someone@somewhere.com");
   }
 }

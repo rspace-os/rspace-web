@@ -6,6 +6,7 @@ import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.HistoricData;
+import com.researchspace.model.sort.AuditTrailSort;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -189,14 +190,14 @@ public class BasicLogQuerySearcher implements IAuditFileSearch {
   }
 
   Comparator<LogLine> getComparator(IPagination<?> pgcrit, List<LogLine> hits) {
-    if ("username".equals(pgcrit.getOrderBy())) {
-      return new LogLineFullnameComparator(pgcrit.getSortOrder());
-    } else if ("action".equals(pgcrit.getOrderBy())) {
-      return new LogLineActionComparator(pgcrit.getSortOrder());
-    } else if ("date".equals(pgcrit.getOrderBy())) {
-      return new LogLineDateComparator(pgcrit.getSortOrder());
-    } else {
-      return null;
+    switch (AuditTrailSort.fromRequest(pgcrit.getOrderBy())) {
+      case USERNAME:
+        return new LogLineFullnameComparator(pgcrit.getSortOrder());
+      case ACTION:
+        return new LogLineActionComparator(pgcrit.getSortOrder());
+      case DATE:
+      default:
+        return new LogLineDateComparator(pgcrit.getSortOrder());
     }
   }
 

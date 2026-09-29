@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -189,10 +190,10 @@ public class PublicStructuredDocumentControllerIT extends RealTransactionSpringT
   public void shouldReturnEmptyStringWhenNoPublicLinkForDocExists() throws Exception {
     // this shares but doesn't publish
     GroupSetUp setup = setUpDocumentGroupForPIUserAndShareRecord();
-    assertEquals(
-        "",
-        controller.getPublicDocForRecordOrParentOfRecord(
-            setup.structuredDocument.getGlobalIdentifier()));
+    assertThat(
+            controller.getPublicDocForRecordOrParentOfRecord(
+                setup.structuredDocument.getGlobalIdentifier()))
+        .isEmpty();
   }
 
   @Test

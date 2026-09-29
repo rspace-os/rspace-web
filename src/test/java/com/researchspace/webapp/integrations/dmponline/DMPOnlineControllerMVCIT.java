@@ -2,7 +2,7 @@ package com.researchspace.webapp.integrations.dmponline;
 
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,16 +41,16 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
 
     String actualRedirectedUrl = result.getResponse().getRedirectedUrl();
 
-    assertTrue(
-        actualRedirectedUrl.contains("https://dmponline.dmptest.dcc.ac.uk/oauth/authorize?"));
-    assertTrue(actualRedirectedUrl.contains("client_id="));
-    assertTrue(actualRedirectedUrl.contains("redirect_uri="));
-    assertTrue(actualRedirectedUrl.contains("scope="));
-    assertTrue(actualRedirectedUrl.contains("response_type=code"));
+    assertThat(actualRedirectedUrl)
+        .contains("https://dmponline.dmptest.dcc.ac.uk/oauth/authorize?");
+    assertThat(actualRedirectedUrl).contains("client_id=");
+    assertThat(actualRedirectedUrl).contains("redirect_uri=");
+    assertThat(actualRedirectedUrl).contains("scope=");
+    assertThat(actualRedirectedUrl).contains("response_type=code");
 
     Optional<UserConnection> userConnection =
         userConnectionManager.findByUserNameProviderName(user.getUsername(), DMPONLINE_APP_NAME);
-    assertTrue(userConnection.isEmpty());
+    assertThat(userConnection).isEmpty();
   }
 
   @Test
@@ -62,11 +62,10 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     // assert is forwarded to the shared connection-result page (error variant)
-    assertTrue(result.getResponse().getForwardedUrl().contains("connect/connected"));
+    assertThat(result.getResponse().getForwardedUrl()).contains("connect/connected");
     // the shared page serves both outcomes, so pin the error branch via its model attribute
-    assertTrue(
-        ((String) result.getModelAndView().getModel().get("connectionError"))
-            .contains("Error during token creation"));
+    assertThat(((String) result.getModelAndView().getModel().get("connectionError")))
+        .contains("Error during token creation");
   }
 
   @Test
@@ -85,11 +84,10 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     // assert is forwarded to the shared connection-result page (error variant)
-    assertTrue(result.getResponse().getForwardedUrl().contains("connect/connected"));
+    assertThat(result.getResponse().getForwardedUrl()).contains("connect/connected");
     // the shared page serves both outcomes, so pin the error branch via its model attribute
-    assertTrue(
-        ((String) result.getModelAndView().getModel().get("connectionError"))
-            .contains("Error during token refresh"));
+    assertThat(((String) result.getModelAndView().getModel().get("connectionError")))
+        .contains("Error during token refresh");
   }
 
   private void seedUserConnection() {
@@ -112,6 +110,6 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     // assert is redirected to the error page
-    assertTrue(result.getResponse().getForwardedUrl().contains("error"));
+    assertThat(result.getResponse().getForwardedUrl()).contains("error");
   }
 }

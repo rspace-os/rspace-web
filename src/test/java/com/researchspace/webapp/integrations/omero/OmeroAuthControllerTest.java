@@ -1,10 +1,9 @@
 package com.researchspace.webapp.integrations.omero;
 
 import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -173,14 +172,14 @@ class OmeroAuthControllerTest {
             .getAnnotation(IgnoreInLoggingInterceptor.class);
 
     assertNotNull(annotation, "connect() must suppress its request params from the request log");
-    assertTrue(
-        List.of(annotation.ignoreRequestParams()).contains("omeropassword"),
-        "omeropassword must be among the ignored request params");
+    assertThat(List.of(annotation.ignoreRequestParams()))
+        .as("omeropassword must be among the ignored request params")
+        .contains("omeropassword");
     // OmeroUser also has a writable webClientPassword property, so Spring will bind (and the
     // interceptor would log) a request param of that name even though the UI never sends it
-    assertTrue(
-        List.of(annotation.ignoreRequestParams()).contains("webClientPassword"),
-        "webClientPassword must be among the ignored request params");
+    assertThat(List.of(annotation.ignoreRequestParams()))
+        .as("webClientPassword must be among the ignored request params")
+        .contains("webClientPassword");
   }
 
   private JsonObject anOmeroLoginResponse() {
@@ -200,9 +199,11 @@ class OmeroAuthControllerTest {
     assertEquals("connect/connected", mav.getViewName());
     String error = (String) mav.getModel().get("connectionError");
     assertNotNull(error, "connectionError must be set so the Apps page reports the failure");
-    assertFalse(error.contains("null"), "connectionError should not surface a bare null: " + error);
-    assertTrue(
-        error.contains(expectedInMessage),
-        "expected '" + expectedInMessage + "' in connectionError but got: " + error);
+    assertThat(error)
+        .as("connectionError should not surface a bare null: " + error)
+        .doesNotContain("null");
+    assertThat(error)
+        .as("expected '" + expectedInMessage + "' in connectionError but got: " + error)
+        .contains(expectedInMessage);
   }
 }

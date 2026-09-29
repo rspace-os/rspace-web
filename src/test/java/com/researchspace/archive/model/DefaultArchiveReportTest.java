@@ -1,7 +1,7 @@
 package com.researchspace.archive.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,10 +21,10 @@ public class DefaultArchiveReportTest {
     // check that once completed, does not allow new messages to be added
     assertFalse(dar.isArchivalCompleted());
     dar.addMessage("SSS");
-    assertTrue(dar.toString().contains("SSS"));
+    assertThat(dar.toString()).contains("SSS");
 
     dar.setArchivalCompleted(true);
     dar.addMessage("NOO"); // not added
-    assertFalse(dar.toString().contains("NOO"));
+    assertThat(dar.toString()).doesNotContain("NOO");
   }
 }

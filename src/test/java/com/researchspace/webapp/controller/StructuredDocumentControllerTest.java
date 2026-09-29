@@ -1,13 +1,9 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,8 +18,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
-import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.linkedelements.RichTextUpdater;
@@ -298,8 +292,8 @@ public class StructuredDocumentControllerTest {
 
   @Test
   public void testGetTooLongTagRejected() {
-    CoreTestUtils.assertIllegalArgumentException(
-        () -> strucDocCtrller.getTags(randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH + 1)));
+    String overlongTag = randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH + 1);
+    assertThrows(IllegalArgumentException.class, () -> strucDocCtrller.getTags(overlongTag));
   }
 
   @Test
@@ -369,7 +363,7 @@ public class StructuredDocumentControllerTest {
     when(fieldManager.getAutoSavedFieldsByRecordId(1L, user)).thenReturn(rc);
 
     // no temp fields, returns empty list
-    assertEquals(0, strucDocCtrller.getAutoSavedFields(field.getId(), mockPrincipal).size());
+    assertThat(strucDocCtrller.getAutoSavedFields(field.getId(), mockPrincipal)).isEmpty();
 
     // now let's set a etmp field into field
     Field tempField = TestFactory.createAnyField();
@@ -498,23 +492,16 @@ public class StructuredDocumentControllerTest {
     // now try if permission denied....throws AuthException
     when(permissionUtils.isPermitted(sd, PermissionType.READ, user)).thenReturn(false);
 
-    assertAuthExceptionThrown(
-        new Invokable() {
-          public void invoke() {
-            strucDocCtrller.getComments(2L, null, mockPrincipal);
-          }
-        });
+    assertThrows(
+        AuthorizationException.class, () -> strucDocCtrller.getComments(2L, null, mockPrincipal));
 
     // now lets try revision history, also should be authorized
     final int revisionId = 123;
     when(auditMgr.getCommentItemsForCommentAtDocumentRevision(2L, revisionId)).thenReturn(items);
 
-    assertAuthExceptionThrown(
-        new Invokable() {
-          public void invoke() {
-            strucDocCtrller.getComments(2L, revisionId, mockPrincipal);
-          }
-        });
+    assertThrows(
+        AuthorizationException.class,
+        () -> strucDocCtrller.getComments(2L, revisionId, mockPrincipal));
   }
 
   private void verifyWordImportNotAttempted() throws IOException {
@@ -564,19 +551,19 @@ public class StructuredDocumentControllerTest {
     AjaxReturnObject<List<RecordInformation>> res =
         strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     verifyFileImporterCalled(multipart);
-    assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
+    assertThat(res.getData()).containsExactly(created.toRecordInfo());
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenThrow(new RuntimeException());
     res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
-    assertEquals(0, res.getData().size());
-    assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
+    assertThat(res.getData()).isEmpty();
+    assertThat(res.getErrorMsg().getErrorMessages()).hasSize(1);
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenReturn(null);
     res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
-    assertEquals(0, res.getData().size());
-    assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
+    assertThat(res.getData()).isEmpty();
+    assertThat(res.getErrorMsg().getErrorMessages()).hasSize(1);
     verifyNoInteractions(recordShareHandler);
   }
 
@@ -606,7 +593,7 @@ public class StructuredDocumentControllerTest {
     AjaxReturnObject<List<RecordInformation>> res =
         strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     verifyFileImporterCalled(multipart);
-    assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
+    assertThat(res.getData()).containsExactly(created.toRecordInfo());
     verify(recordShareHandler)
         .shareIntoSharedFolderOrNotebook(user, parentFolder, created.getId(), null);
   }

@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.researchspace.Constants;
@@ -78,10 +78,10 @@ public class CommunityAdminControllerMVCIT extends MVCTestBase {
     assertNull(json2.get("errorMsg"));
     assertEquals(comm.getId().longValue(), Long.parseLong(json2.get("data").toString()));
     // assert group has moved
-    assertTrue(
-        communityMgr
-            .getCommunityWithAdminsAndGroups(Community.DEFAULT_COMMUNITY_ID)
-            .getLabGroups()
-            .contains(grp));
+    assertThat(
+            communityMgr
+                .getCommunityWithAdminsAndGroups(Community.DEFAULT_COMMUNITY_ID)
+                .getLabGroups())
+        .contains(grp);
   }
 }

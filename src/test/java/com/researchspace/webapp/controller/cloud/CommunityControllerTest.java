@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller.cloud;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -62,7 +62,8 @@ public class CommunityControllerTest {
     ModelAndView mav =
         controller.getEmailChangeVerificationPage(
             token.getToken(), new ExtendedModelMap(), principal);
-    assertEquals(token, mav.getModel().get(RSCommunityController.EMAIL_CHANGE_TOKEN_ATT_NAME));
+    assertThat(mav.getModel())
+        .containsEntry(RSCommunityController.EMAIL_CHANGE_TOKEN_ATT_NAME, token);
   }
 
   private void principalReturnsUserName() {

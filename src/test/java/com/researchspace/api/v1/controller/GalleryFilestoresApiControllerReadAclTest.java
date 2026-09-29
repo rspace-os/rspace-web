@@ -124,10 +124,11 @@ class GalleryFilestoresApiControllerReadAclTest {
     fs.setReadAllowlist("alice");
     fs.setWriteAllowlist(null);
     when(nfsManager.getFileSystem(fsId)).thenReturn(fs);
+    ApiNfsCredentials credentials = new ApiNfsCredentials();
 
     assertThrows(
         AuthorizationException.class,
-        () -> controller.loginToFilesystem(fsId, new ApiNfsCredentials(), null, user));
+        () -> controller.loginToFilesystem(fsId, credentials, null, user));
 
     verify(credentialsStore, never()).validateCredentialsAndLoginNfs(any(), any(), any(), any());
   }

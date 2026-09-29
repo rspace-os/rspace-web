@@ -1,8 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,9 +10,10 @@ import com.researchspace.licensews.LicenseExceededException;
 import com.researchspace.model.User;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.properties.PropertyHolder;
+import com.researchspace.service.LicenseService;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.hamcrest.Matcher;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +25,7 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
 
   @Autowired private SysAdminController sysCtrller;
 
+  @Autowired protected LicenseService licenseService;
   @Autowired protected PropertyHolder props;
 
   @Autowired protected UserEnablementUtils userEnablementUtils;
@@ -39,7 +39,7 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
   public void testDisableUserAccount() throws Exception {
     final User user = createAndSaveUserIfNotExists(getRandomAlphabeticString(null));
     assertTrue(user.isEnabled());
-    assertEquals(0, userMgr.getAccountEventsForUser(user).size());
+    assertThat(userMgr.getAccountEventsForUser(user)).isEmpty();
     logoutAndLoginAsSysAdmin();
     final MockPrincipal principal = new MockPrincipal(SYS_ADMIN_UNAME);
     final Model model = new ExtendedModelMap();
@@ -47,11 +47,11 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
 
     User updated = userMgr.get(user.getId());
     assertFalse(updated.isEnabled());
-    assertTrue(
-        userMgr.getAccountEventsForUser(user).stream()
-            .filter(event -> AccountEventType.DISABLED.equals(event.getAccountEventType()))
-            .findAny()
-            .isPresent());
+    assertThat(
+            userMgr.getAccountEventsForUser(user).stream()
+                .filter(event -> AccountEventType.DISABLED.equals(event.getAccountEventType()))
+                .findAny())
+        .isPresent();
     final Model model2 = new ExtendedModelMap();
 
     // now we'll mock the license being exceeded - should get exception thrown
@@ -62,13 +62,13 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
     String customMessage = "hello-from-custom-message";
     props.setLicenseExceededCustomMessage(customMessage);
     try {
-      Matcher<String> matcher = containsString(customMessage);
-      assertThat(
+      Long userId = user.getId();
+      String message =
           assertThrows(
                   LicenseExceededException.class,
-                  () -> sysCtrller.setUserAccountEnablement(user.getId(), true))
-              .getMessage(),
-          matcher);
+                  () -> sysCtrller.setUserAccountEnablement(userId, true))
+              .getMessage();
+      assertThat(message).as(message).contains(customMessage);
     } finally {
       sysCtrller.setLicenseService(licenseService);
       props.setLicenseExceededCustomMessage(defaultMessage);
@@ -84,7 +84,9 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
     User toremove = createAndSaveRandomUser();
 
     logoutAndLoginAs(admin);
-    assertAuthorisationExceptionThrown(() -> sysCtrller.removeUserAccount(toremove.getId()));
+    var userId = toremove.getId();
+
+    assertThrows(AuthorizationException.class, () -> sysCtrller.removeUserAccount(userId));
 
     logoutAndLoginAsSysAdmin();
     ResponseEntity<Object> res = sysCtrller.removeUserAccount(toremove.getId());

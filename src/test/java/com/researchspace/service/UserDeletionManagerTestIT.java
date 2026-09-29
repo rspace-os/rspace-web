@@ -1,8 +1,6 @@
 package com.researchspace.service;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -19,10 +17,14 @@ import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatImage;
@@ -43,6 +45,7 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -77,6 +80,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,7 +110,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired RSChemElementManager rsChemElementMgr;
   private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
   private @Autowired InstrumentDao instrumentDao;
-  private @Autowired MessageSourceUtils messages;
+  private @Autowired ContainerDao containerDao;
+  private @Autowired SampleDao sampleDao;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -197,7 +202,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   private void assertUserNotExist(final User tempuser) throws Exception {
-    assertExceptionThrown(() -> userMgr.get(tempuser.getId()), DataAccessException.class);
+    Long userId = tempuser.getId();
+    assertThrows(DataAccessException.class, () -> userMgr.get(userId));
   }
 
   @Test
@@ -209,9 +215,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final User sysadmin = logoutAndLoginAsSysAdmin();
     final UserDeletionPolicy policy = getDeleteTempUserPolicy();
 
-    assertExceptionThrown(
-        () -> userDeletionMgr.removeUser(tempuser.getId(), policy, sysadmin),
-        DataAccessException.class);
+    Long userId = tempuser.getId();
+    assertThrows(
+        DataAccessException.class, () -> userDeletionMgr.removeUser(userId, policy, sysadmin));
   }
 
   @Test
@@ -237,7 +243,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     // let's keep handle to attachment file
     File attachmentOnFilestore = new File(new URI(added.getFileUri()));
-    assertTrue(attachmentOnFilestore.exists());
+    assertThat(attachmentOnFilestore).exists();
 
     // let's save the content as a snippet too
     recordMgr.createSnippet("testSnip", field.getFieldData(), tempuser);
@@ -254,7 +260,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertUserNotExist(tempuser);
 
     // attachment file is still on filestore
-    assertTrue(attachmentOnFilestore.exists());
+    assertThat(attachmentOnFilestore).exists();
 
     // call removal of user's filestore resources
     ServiceOperationResult<Integer> deleteResourcesResult =
@@ -316,11 +322,10 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     initUser(notAnAdmin, true);
     final User toDelete = createAndSaveUser(getRandomAlphabeticString("toDelete"));
     logoutAndLoginAs(notAnAdmin);
-    assertAuthorisationExceptionThrown(
-        () -> {
-          final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
-          userDeletionMgr.removeUser(toDelete.getId(), policy, notAnAdmin);
-        });
+    final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    Long userId = toDelete.getId();
+    assertThrows(
+        AuthorizationException.class, () -> userDeletionMgr.removeUser(userId, policy, notAnAdmin));
   }
 
   @Test
@@ -368,7 +373,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(piToDelete.getId(), policy, sysadmin);
     assertFalse(report.isSucceeded());
-    assertThat(report.getMessage(), containsString("Sorry, cannot remove the only admin or PI"));
+    assertThat(report.getMessage())
+        .as(report.getMessage())
+        .contains("Sorry, cannot remove the only admin or PI");
   }
 
   @Test
@@ -507,7 +514,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
-    assertThat(report.isSucceeded(), is(true));
+    assertEquals(true, report.isSucceeded());
   }
 
   // RSPAC-1929
@@ -526,7 +533,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
-    assertThat(report.isSucceeded(), is(true));
+    assertEquals(true, report.isSucceeded());
   }
 
   private UserDeletionPolicy unrestrictedDeletionPolicy() {
@@ -546,7 +553,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
-    assertThat(report.isSucceeded(), is(false));
+    assertEquals(false, report.isSucceeded());
   }
 
   @Test
@@ -616,7 +623,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     // check u1 form has been deleted (and exception is thrown trying to retrieve) since the form
     // wasn't used by any other users
-    assertThrows(ObjectRetrievalFailureException.class, () -> formMgr.get(u1Form.getId()));
+    Long formId = u1Form.getId();
+    assertThrows(ObjectRetrievalFailureException.class, () -> formMgr.get(formId));
   }
 
   @Test
@@ -1016,7 +1024,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(sysadmin, transferredTemplate.getOwner());
 
     Folder userFolder = findDeletedUsersTemplateFolder(userToDelete, sysadmin);
-    assertTrue(folderMgr.getFolderChildrenIds(userFolder).contains(template.getId()));
+    assertThat(folderMgr.getFolderChildrenIds(userFolder)).contains(template.getId());
 
     assertNotNull(recordMgr.get(piDoc.getId()));
   }
@@ -1055,7 +1063,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(sysadmin, transferredTemplate.getOwner());
 
     Folder userFolder = findDeletedUsersTemplateFolder(userToDelete, sysadmin);
-    assertTrue(folderMgr.getFolderChildrenIds(userFolder).contains(template.getId()));
+    assertThat(folderMgr.getFolderChildrenIds(userFolder)).contains(template.getId());
 
     assertNotNull(recordMgr.get(userBDoc.getId()));
   }
@@ -1073,7 +1081,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
         userDeletionMgr.removeUser(userToDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
 
     assertTrue(report.isSucceeded());
-    assertThrows(ObjectRetrievalFailureException.class, () -> recordMgr.get(template.getId()));
+    Long templateId = template.getId();
+    assertThrows(ObjectRetrievalFailureException.class, () -> recordMgr.get(templateId));
   }
 
   @Test
@@ -1115,7 +1124,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
         recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, sysadmin);
     Folder galleryUserFolder =
         findDeletedUsersSubfolder(galleryImagesFolder, userToDelete, sysadmin);
-    assertTrue(folderMgr.getFolderChildrenIds(galleryUserFolder).contains(image.getId()));
+    assertThat(folderMgr.getFolderChildrenIds(galleryUserFolder)).contains(image.getId());
   }
 
   @Test
@@ -1161,7 +1170,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(sysadmin, ((StructuredDocument) recordMgr.get(template.getId())).getOwner());
 
     Folder userFolder = findDeletedUsersTemplateFolder(userToDelete, sysadmin);
-    assertTrue(folderMgr.getFolderChildrenIds(userFolder).contains(template.getId()));
+    assertThat(folderMgr.getFolderChildrenIds(userFolder)).contains(template.getId());
 
     assertNotNull(recordMgr.get(userBDocFromForm.getId()));
     assertNotNull(recordMgr.get(userBDocFromTemplate.getId()));
@@ -1257,6 +1266,39 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertThrows(
         NotFoundException.class,
         () -> sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.requester));
+  }
+
+  @Test
+  public void removeRecipientOfASampleThatFulfilledARequest() throws Exception {
+    SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers();
+
+    // the owner splits off a new sample, fulfils the request with it, then hands it over
+    logoutAndLoginAs(fixture.owner);
+    ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(fixture.owner);
+    ApiSampleRequestStatusPut fulfil = new ApiSampleRequestStatusPut();
+    fulfil.setStatus(SampleRequestStatus.FULFILLED);
+    fulfil.setTransferredSample(aliquot.getId());
+    sampleRequestApiMgr.updateStatus(fixture.requestId, fulfil, fixture.owner);
+    ApiSample toRequester = new ApiSample();
+    toRequester.setId(aliquot.getId());
+    toRequester.setOwner(new ApiUser(fixture.requester));
+    sampleApiMgr.changeApiSampleOwner(toRequester, fixture.owner);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(
+            fixture.requester.getId(),
+            new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION),
+            sysadmin);
+
+    assertTrue(result.isSucceeded(), "deleting the recipient of a fulfilling sample must succeed");
+    assertUserNotExist(fixture.requester);
+
+    // the fulfilled request survives against the owner's sample, no longer naming the deleted one
+    ApiSampleRequest surviving =
+        sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.owner);
+    assertEquals(SampleRequestStatus.FULFILLED, surviving.getStatus());
+    assertNull(surviving.getStatusChanges().get(1).getTransferredSample());
   }
 
   private static class SampleRequestFixture {

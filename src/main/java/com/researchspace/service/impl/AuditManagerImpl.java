@@ -28,6 +28,7 @@ import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.sort.DeletedRecordSort;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RestoreDeletedItemResult;
@@ -70,20 +71,24 @@ public class AuditManagerImpl implements AuditManager {
   }
 
   private void sortResults(PaginationCriteria<AuditedRecord> pgCrit, List<AuditedRecord> rc) {
-    Comparator<AuditedRecord> cmp = null;
-    if (pgCrit != null) {
-      if ("modificationDate".equals(pgCrit.getOrderBy())) {
+    if (pgCrit == null) {
+      return;
+    }
+    Comparator<AuditedRecord> cmp;
+    switch (DeletedRecordSort.fromRequest(pgCrit.getOrderBy())) {
+      case MODIFICATION_DATE:
         cmp = AuditedRecord.MODIFICATION_COMPARATOR;
-      }
-      if ("creationDate".equals(pgCrit.getOrderBy())) {
+        break;
+      case CREATION_DATE:
         cmp = AuditedRecord.CREATION_COMPARATOR;
-      }
-      if ("name".equals(pgCrit.getOrderBy())) {
+        break;
+      case NAME:
         cmp = AuditedRecord.NAME_COMPARATOR;
-      }
-      if ("deletedDate".equals(pgCrit.getOrderBy())) {
+        break;
+      case DELETED_DATE:
+      default:
         cmp = AuditedRecord.DELETED_COMPARATOR;
-      }
+        break;
     }
     if (cmp != null) {
       if (SortOrder.DESC.equals(pgCrit.getSortOrder())) {

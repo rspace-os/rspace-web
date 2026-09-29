@@ -1,9 +1,9 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.xml.bind.UnmarshalException;
 import java.io.ByteArrayOutputStream;
@@ -87,7 +87,7 @@ public class XMLReadWriteUtilsTest {
     try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
       XMLReadWriteUtils.writeFormattedXML(doc, baos);
       String output = baos.toString(Charset.defaultCharset());
-      assertTrue(output.contains(TEST_XML_ROOT_OBJECT_ELEMENT_NAME));
+      assertThat(output).contains(TEST_XML_ROOT_OBJECT_ELEMENT_NAME);
     }
   }
 
@@ -108,11 +108,9 @@ public class XMLReadWriteUtilsTest {
               XMLReadWriteUtils.fromXML(tmpFile, TestXMLRootObject.class, null, null);
             });
 
-    assertTrue(
-        exception
-            .toString()
-            .contains(
-                "DOCTYPE is disallowed when the feature "
-                    + "\"http://apache.org/xml/features/disallow-doctype-decl\" set to true."));
+    assertThat(exception.toString())
+        .contains(
+            "DOCTYPE is disallowed when the feature "
+                + "\"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
   }
 }

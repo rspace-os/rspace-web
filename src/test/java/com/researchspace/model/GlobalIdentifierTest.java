@@ -32,42 +32,30 @@ public class GlobalIdentifierTest {
 
   @Test
   public void testGlobalIdentifierNotNullString() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          assertFalse(GlobalIdentifier.isValid(null));
-          new GlobalIdentifier(null);
-        });
+    assertFalse(GlobalIdentifier.isValid(null));
+
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null));
   }
 
   @Test
   public void testGlobalIdentifierStringNotEmpty() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          assertFalse(GlobalIdentifier.isValid(""));
-          new GlobalIdentifier("");
-        });
+    assertFalse(GlobalIdentifier.isValid(""));
+
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(""));
   }
 
   @Test
   public void testGlobalIdentifierStringWrongSyntax() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          assertFalse(GlobalIdentifier.isValid("12345"));
-          new GlobalIdentifier("12345");
-        });
+    assertFalse(GlobalIdentifier.isValid("12345"));
+
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier("12345"));
   }
 
   @Test
   public void testGlobalIdentifierStringUnknownPrefix() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          assertFalse(GlobalIdentifier.isValid("XX12345"));
-          new GlobalIdentifier("XX12345");
-        });
+    assertFalse(GlobalIdentifier.isValid("XX12345"));
+
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier("XX12345"));
   }
 
   @Test

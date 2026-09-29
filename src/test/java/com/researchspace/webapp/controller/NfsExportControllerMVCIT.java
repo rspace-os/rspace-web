@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportArchiveConfigForUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -70,12 +70,12 @@ public class NfsExportControllerMVCIT extends MVCTestBase {
 
     NfsExportPlan quickPlan = getFromJsonResponseBody(quickPlanResult, NfsExportPlan.class);
     assertNotNull(quickPlan);
-    assertEquals(1, quickPlan.getFoundFileSystems().size());
+    assertThat(quickPlan.getFoundFileSystems()).hasSize(1);
     assertEquals(1, quickPlan.countFileSystemsRequiringLogin());
-    assertEquals(2, quickPlan.getFoundNfsLinks().size());
-    assertEquals(2, quickPlan.getFoundFileSystems().get(0).getFoundNfsLinks().size());
-    assertEquals(0, quickPlan.getCheckedNfsLinks().size());
-    assertEquals(0, quickPlan.getFoundFileSystems().get(0).getCheckedNfsLinks().size());
+    assertThat(quickPlan.getFoundNfsLinks()).hasSize(2);
+    assertThat(quickPlan.getFoundFileSystems().get(0).getFoundNfsLinks()).hasSize(2);
+    assertThat(quickPlan.getCheckedNfsLinks()).isEmpty();
+    assertThat(quickPlan.getFoundFileSystems().get(0).getCheckedNfsLinks()).isEmpty();
 
     // now let's mock the nfs client as if it was logged in, and ask for full scan
     NfsController mockNfsController = Mockito.mock(NfsController.class);
@@ -117,22 +117,17 @@ public class NfsExportControllerMVCIT extends MVCTestBase {
 
     NfsExportPlan fullPlan = getFromJsonResponseBody(fullPlanResult, NfsExportPlan.class);
     assertNotNull(fullPlan);
-    assertEquals(1, fullPlan.getFoundFileSystems().size());
+    assertThat(fullPlan.getFoundFileSystems()).hasSize(1);
     assertEquals(0, fullPlan.countFileSystemsRequiringLogin());
-    assertEquals(2, fullPlan.getFoundNfsLinks().size()); // file link + folder links
-    assertEquals(2, fullPlan.getFoundFileSystems().get(0).getFoundNfsLinks().size());
-    assertEquals(2, fullPlan.getCheckedNfsLinks().size()); // file elem + folder elem
-    assertEquals(2, fullPlan.getFoundFileSystems().get(0).getCheckedNfsLinks().size());
-    assertTrue(fullPlan.getCheckedNfsLinks().containsValue(testFile));
-    assertTrue(fullPlan.getCheckedNfsLinks().containsValue(testFolder));
-    assertEquals(1, fullPlan.getCheckedNfsLinkMessages().size()); // from skipped subfolder
-    assertEquals(
-        1,
-        fullPlan
-            .getFoundFileSystems()
-            .get(0)
-            .getCheckedNfsLinkMessages()
-            .size()); // from skipped subfolder
+    assertThat(fullPlan.getFoundNfsLinks()).hasSize(2); // file link + folder links
+    assertThat(fullPlan.getFoundFileSystems().get(0).getFoundNfsLinks()).hasSize(2);
+    assertThat(fullPlan.getCheckedNfsLinks()).hasSize(2); // file elem + folder elem
+    assertThat(fullPlan.getFoundFileSystems().get(0).getCheckedNfsLinks()).hasSize(2);
+    assertThat(fullPlan.getCheckedNfsLinks()).containsValue(testFile);
+    assertThat(fullPlan.getCheckedNfsLinks()).containsValue(testFolder);
+    assertThat(fullPlan.getCheckedNfsLinkMessages()).hasSize(1); // from skipped subfolder
+    assertThat(fullPlan.getFoundFileSystems().get(0).getCheckedNfsLinkMessages())
+        .hasSize(1); // from skipped subfolder
     assertEquals(
         messageSource.getMessage(NfsExportManagerImpl.SUBFOLDER_NOT_INCLUDED_MSG_KEY),
         fullPlan.getCheckedNfsLinkMessages().values().iterator().next());
@@ -151,16 +146,14 @@ public class NfsExportControllerMVCIT extends MVCTestBase {
     NfsExportPlan fullPlanRegenerated =
         getFromJsonResponseBody(fullPlanRegeneratedResult, NfsExportPlan.class);
     assertNotNull(fullPlanRegenerated);
-    assertEquals(
-        fullPlan.getFoundFileSystems().size(), fullPlanRegenerated.getFoundFileSystems().size());
-    assertEquals(fullPlan.getFoundNfsLinks().size(), fullPlanRegenerated.getFoundNfsLinks().size());
-    assertEquals(
-        fullPlan.getFoundFileSystems().get(0).getFoundNfsLinks().size(),
-        fullPlanRegenerated.getFoundFileSystems().get(0).getFoundNfsLinks().size());
-    assertEquals(
-        fullPlan.getCheckedNfsLinks().size(), fullPlanRegenerated.getCheckedNfsLinks().size());
-    assertEquals(
-        fullPlan.getFoundFileSystems().get(0).getCheckedNfsLinks().size(),
-        fullPlanRegenerated.getFoundFileSystems().get(0).getCheckedNfsLinks().size());
+    assertThat(fullPlanRegenerated.getFoundFileSystems())
+        .hasSameSizeAs(fullPlan.getFoundFileSystems());
+    assertThat(fullPlanRegenerated.getFoundNfsLinks()).hasSameSizeAs(fullPlan.getFoundNfsLinks());
+    assertThat(fullPlanRegenerated.getFoundFileSystems().get(0).getFoundNfsLinks())
+        .hasSameSizeAs(fullPlan.getFoundFileSystems().get(0).getFoundNfsLinks());
+    assertThat(fullPlanRegenerated.getCheckedNfsLinks())
+        .hasSameSizeAs(fullPlan.getCheckedNfsLinks());
+    assertThat(fullPlanRegenerated.getFoundFileSystems().get(0).getCheckedNfsLinks())
+        .hasSameSizeAs(fullPlan.getFoundFileSystems().get(0).getCheckedNfsLinks());
   }
 }

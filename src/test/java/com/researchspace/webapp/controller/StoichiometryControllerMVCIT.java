@@ -1,6 +1,11 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -18,6 +23,7 @@ import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
+import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
@@ -29,27 +35,35 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.ChemicalSearcher;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.BeanOverrideTestExecutionListener;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoResetTestExecutionListener;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
-@TestPropertySource(
-    properties = {"chemistry.service.url=http://localhost:8090", "chemistry.provider=indigo"})
-@Disabled(
-    "Requires chemistry service to run. See"
-        + " https://documentation.researchspace.com/article/1jbygguzoa")
+@TestPropertySource(properties = "chemistry.provider=indigo")
+@TestExecutionListeners(
+    value = {BeanOverrideTestExecutionListener.class, MockitoResetTestExecutionListener.class},
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
+@Tag("chemistry")
 public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
+
+  private static final String EDITING_SESSION_ID = "stoichiometry-test-editing-session";
 
   private Principal principal;
   private User user;
@@ -57,6 +71,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
   private String apiKey;
 
   @Autowired private AuditManager auditManager;
+  @MockitoBean private ChemicalSearcher chemicalSearcher;
 
   private static final String URL = "/api/v1/stoichiometry";
 
@@ -66,6 +81,11 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     user = createInitAndLoginAnyUser();
     principal = new MockPrincipal(user.getUsername());
     apiKey = createNewApiKeyForUser(user);
+    when(chemicalSearcher.searchChemicals(any(), anyString()))
+        .thenAnswer(
+            invocation ->
+                List.of(
+                    ChemicalImportSearchResult.builder().name(invocation.getArgument(1)).build()));
   }
 
   @Test
@@ -85,7 +105,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
         getFromJsonResponseBody(result, StoichiometryMoleculeDTO.class);
     assertEquals("CCC", molecule.getSmiles());
     assertEquals("C3 H8", molecule.getFormula());
-    assertEquals(44.1, molecule.getMolecularWeight(), 0.01);
+    assertThat(molecule.getMolecularWeight()).isCloseTo(44.1, within(0.01));
     // should be null as entities haven't been saved yet
     assertNull(molecule.getId());
     assertNull(molecule.getRsChemElementId());
@@ -269,7 +289,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
     String responseContent = failResult.getResponse().getContentAsString();
     assertEquals(HttpStatus.BAD_REQUEST.value(), failResult.getResponse().getStatus());
-    assertTrue(responseContent.contains("Stoichiometry already exists for reaction chemId="));
+    assertThat(responseContent).contains("Stoichiometry already exists for reaction chemId=");
   }
 
   @Test
@@ -423,7 +443,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     // check agent added
     StoichiometryDTO updatedAfterAdd =
         getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
-    assertEquals(4, updatedAfterAdd.getMolecules().size());
+    assertThat(updatedAfterAdd.getMolecules()).hasSize(4);
     StoichiometryMoleculeDTO agent =
         updatedAfterAdd.getMolecules().stream()
             .filter(m -> "CCO".equals(m.getSmiles()))
@@ -472,7 +492,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     StoichiometryDTO afterAdd = getFromJsonResponseBody(addResult, StoichiometryDTO.class);
-    assertEquals(originalCount + 1, afterAdd.getMolecules().size());
+    assertThat(afterAdd.getMolecules()).hasSize(originalCount + 1);
 
     // Remove the added agent by keeping only the original molecule(s)
     StoichiometryUpdateDTO deleteAgentDTO = new StoichiometryUpdateDTO();
@@ -482,7 +502,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                 afterAdd.getMolecules())
             .stream()
             .filter(m -> !"CCO".equals(m.getSmiles()))
-            .collect(java.util.stream.Collectors.toList());
+            .collect(Collectors.toList());
     deleteAgentDTO.setMolecules(keepMolecules);
 
     MvcResult removeAgentResult =
@@ -499,9 +519,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
     StoichiometryDTO updatedAfterDelete =
         getFromJsonResponseBody(removeAgentResult, StoichiometryDTO.class);
-    assertEquals(originalCount, updatedAfterDelete.getMolecules().size());
-    assertFalse(
-        updatedAfterDelete.getMolecules().stream().anyMatch(m -> "CCO".equals(m.getSmiles())));
+    assertThat(updatedAfterDelete.getMolecules()).hasSize(originalCount);
+    assertThat(updatedAfterDelete.getMolecules()).noneMatch(m -> "CCO".equals(m.getSmiles()));
   }
 
   @Test
@@ -538,7 +557,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("Molecule ID -999 not found in existing stoichiometry molecules"));
+    assertThat(body).contains("Molecule ID -999 not found in existing stoichiometry molecules");
   }
 
   @Test
@@ -579,7 +598,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     StoichiometryDTO afterUpdate = getFromJsonResponseBody(result, StoichiometryDTO.class);
-    assertTrue(afterUpdate.getMolecules().stream().anyMatch(m -> "CC".equals(m.getSmiles())));
+    assertThat(afterUpdate.getMolecules()).anyMatch(m -> "CC".equals(m.getSmiles()));
   }
 
   @Test
@@ -615,7 +634,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("New molecule requires a SMILES string"));
+    assertThat(body).contains("New molecule requires a SMILES string");
   }
 
   @Test
@@ -629,7 +648,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     // Simulate an editor session holding the lock on the owning document.
     assertEquals(
         com.researchspace.model.EditStatus.EDIT_MODE,
-        recordMgr.requestRecordEdit(doc1.getId(), user, anySessionTracker()));
+        recordMgr.requestRecordEdit(
+            doc1.getId(), user, anySessionTracker(), () -> EDITING_SESSION_ID));
 
     try {
       StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
@@ -648,9 +668,9 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                       .header("apiKey", apiKey))
               .andExpect(status().isConflict())
               .andReturn();
-      assertTrue(
-          conflictResult.getResponse().getContentAsString().contains(user.getUsername()),
-          "409 body should name the user holding the lock");
+      assertThat(conflictResult.getResponse().getContentAsString())
+          .as("409 body should name the user holding the lock")
+          .contains(user.getUsername());
 
       // Without updateFieldHtml=true the same call must succeed even though the lock is held.
       mockMvc
@@ -663,7 +683,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                   .header("apiKey", apiKey))
           .andExpect(status().isOk());
     } finally {
-      recordMgr.unlockRecord(doc1, user);
+      recordMgr.unlockRecord(doc1.getId(), user.getUsername(), () -> EDITING_SESSION_ID);
     }
 
     // After releasing the lock the HTML-sync path must succeed again.
@@ -693,7 +713,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
     assertEquals(
         com.researchspace.model.EditStatus.EDIT_MODE,
-        recordMgr.requestRecordEdit(doc1.getId(), user, anySessionTracker()));
+        recordMgr.requestRecordEdit(
+            doc1.getId(), user, anySessionTracker(), () -> EDITING_SESSION_ID));
 
     try {
       mockMvc
@@ -714,7 +735,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                   .header("apiKey", apiKey))
           .andExpect(status().isOk());
     } finally {
-      recordMgr.unlockRecord(doc1, user);
+      recordMgr.unlockRecord(doc1.getId(), user.getUsername(), () -> EDITING_SESSION_ID);
     }
   }
 
@@ -731,10 +752,10 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isInternalServerError())
             .andReturn();
     String body = result.getResponse().getContentAsString();
-    assertTrue(
-        body.contains(
+    assertThat(body)
+        .contains(
             "Object of class [com.researchspace.model.stoichiometry.Stoichiometry] with identifier"
-                + " [-999]: not found"));
+                + " [-999]: not found");
   }
 
   @Test
@@ -768,10 +789,10 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     String body = result.getResponse().getContentAsString();
-    assertTrue(
-        body.contains(
+    assertThat(body)
+        .contains(
             "Object of class [com.researchspace.model.RSChemElement] with identifier [-999]: not"
-                + " found"));
+                + " found");
   }
 
   @Test
@@ -819,7 +840,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     assertEquals(sample.getGlobalId(), updatedMol.getInventoryLink().getInventoryItemGlobalId());
 
     long revisionAfterCreate = getLatestStoichiometryRevisionId(createdStoichiometry.getId());
-    assertTrue(revisionAfterCreate > revisionBeforeCreate);
+    assertThat(revisionAfterCreate).isGreaterThan(revisionBeforeCreate);
 
     // 2. Remove link via PUT
     moleculeUpdate.setInventoryLink(null);

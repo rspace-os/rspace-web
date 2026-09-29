@@ -1,8 +1,7 @@
 package com.researchspace.webapp.filter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.properties.IPropertyHolder;
 import java.io.IOException;
@@ -49,7 +48,7 @@ public class OriginRefererCheckingInterceptorTest {
         "https://rs-inventory-alpha.researchspace.com");
     req = new MockHttpServletRequest();
     req.addHeader("origin", "https://rs-inventory-alpha.researchspace.com");
-    assertFalse(originRefererChecker.checkOriginReferer(req, resp).isPresent());
+    assertThat(originRefererChecker.checkOriginReferer(req, resp)).isNotPresent();
   }
 
   @Test
@@ -58,29 +57,29 @@ public class OriginRefererCheckingInterceptorTest {
 
     req = new MockHttpServletRequest();
     req.addHeader("origin", testValidHeaderUrl);
-    assertFalse(originRefererChecker.checkOriginReferer(req, resp).isPresent());
+    assertThat(originRefererChecker.checkOriginReferer(req, resp)).isNotPresent();
 
     req = new MockHttpServletRequest();
     req.addHeader("referer", testValidHeaderUrl);
-    assertFalse(originRefererChecker.checkOriginReferer(req, resp).isPresent());
+    assertThat(originRefererChecker.checkOriginReferer(req, resp)).isNotPresent();
 
     // check tunnelled localhost connection (RSPAC-1226)
     req = new MockHttpServletRequest();
     req.addHeader("origin", "http://localhost:8080");
-    assertFalse(originRefererChecker.checkOriginReferer(req, resp).isPresent());
+    assertThat(originRefererChecker.checkOriginReferer(req, resp)).isNotPresent();
 
     req = new MockHttpServletRequest();
     req.addHeader("referer", "https://localhost:8443");
-    assertFalse(originRefererChecker.checkOriginReferer(req, resp).isPresent());
+    assertThat(originRefererChecker.checkOriginReferer(req, resp)).isNotPresent();
 
     // aliases set through deployment property
     req = new MockHttpServletRequest();
     req.addHeader("origin", testServerAlias1);
-    assertFalse(originRefererChecker.checkOriginReferer(req, resp).isPresent());
+    assertThat(originRefererChecker.checkOriginReferer(req, resp)).isNotPresent();
 
     req = new MockHttpServletRequest();
     req.addHeader("referer", testServerAlias2);
-    assertFalse(originRefererChecker.checkOriginReferer(req, resp).isPresent());
+    assertThat(originRefererChecker.checkOriginReferer(req, resp)).isNotPresent();
   }
 
   @Test
@@ -89,34 +88,34 @@ public class OriginRefererCheckingInterceptorTest {
     req = new MockHttpServletRequest();
     req.addHeader("origin", "siteA");
     Optional<String> errOptional = originRefererChecker.checkOriginReferer(req, resp);
-    assertTrue(errOptional.isPresent());
-    assertTrue(errOptional.get().contains("mismatched origin"));
+    assertThat(errOptional).isPresent();
+    assertThat(errOptional.get()).contains("mismatched origin");
 
     req = new MockHttpServletRequest();
     req.addHeader("referer", "siteA");
     errOptional = originRefererChecker.checkOriginReferer(req, resp);
-    assertTrue(errOptional.isPresent());
-    assertTrue(errOptional.get().contains("mismatched referer"));
+    assertThat(errOptional).isPresent();
+    assertThat(errOptional.get()).contains("mismatched referer");
 
     req = new MockHttpServletRequest();
     errOptional = originRefererChecker.checkOriginReferer(req, resp);
-    assertTrue(errOptional.isPresent());
+    assertThat(errOptional).isPresent();
 
-    assertTrue(errOptional.get().contains("no origin or referer"));
+    assertThat(errOptional.get()).contains("no origin or referer");
   }
 
   @Test
   public void acceptGetRequestFromAnywhere() throws IOException {
     req = new MockHttpServletRequest();
     req.setMethod("GET");
-    assertFalse(originRefererChecker.checkOriginReferer(req, resp).isPresent());
+    assertThat(originRefererChecker.checkOriginReferer(req, resp)).isNotPresent();
   }
 
   @Test
   public void testSetupValidDomains() {
     Mockito.when(propertyHolder.getServerUrl()).thenReturn(testServerUrl);
     List<String> defaultDomains = originRefererChecker.listAcceptedDomains();
-    assertEquals(5, defaultDomains.size());
+    assertThat(defaultDomains).hasSize(5);
     assertEquals(testServerUrl, defaultDomains.get(0));
     assertEquals(testServerAlias1, defaultDomains.get(1));
     assertEquals(testServerAlias2, defaultDomains.get(2));
@@ -124,7 +123,7 @@ public class OriginRefererCheckingInterceptorTest {
     // trailing slash stripped from server url property
     Mockito.when(propertyHolder.getServerUrl()).thenReturn(testServerUrl + "/");
     List<String> strippedServerUrl = originRefererChecker.listAcceptedDomains();
-    assertEquals(5, strippedServerUrl.size());
+    assertThat(strippedServerUrl).hasSize(5);
     assertEquals(testServerUrl, strippedServerUrl.get(0));
   }
 }

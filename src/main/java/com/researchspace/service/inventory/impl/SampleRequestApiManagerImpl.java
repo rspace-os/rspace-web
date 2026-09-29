@@ -5,6 +5,7 @@ import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.core.util.ISearchResults;
@@ -20,6 +21,7 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
+import com.researchspace.model.inventory.SampleRequestStatusChange;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
@@ -59,9 +61,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
       SampleRequestStatus to, SampleRequestStatus from, Actor actor, boolean reasonRequired) {}
 
   /**
-   * The whole state machine. PENDING is absent: it is written only when a request is raised.
-   * FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a separate
-   * approval step), or after already approving the request.
+   * Every transition a user can make. PENDING is absent: it is written only when a request is
+   * raised. FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a
+   * separate approval step), or after already approving the request. A sample transfer also rejects
+   * PENDING and APPROVED requests outside this table, see
+   * autoRejectActiveRequestsForTransferredSample.
    */
   private static final List<Transition> TRANSITIONS =
       List.of(
@@ -134,7 +138,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     Transition transition = transitionTo(request.getStatus(), post.getStatus());
     assertPermittedActor(request, user, transition);
     String reason = validatedReason(post, transition);
-    Sample transferredSample = resolveTransferredSample(post.getTransferredSample());
+    Sample transferredSample = resolveTransferredSample(post.getTransferredSample(), user);
 
     request.recordStatus(user, post.getStatus(), reason, transferredSample);
     SampleRequest saved = sampleRequestDao.save(request);
@@ -197,10 +201,13 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     detail.setRequester(toApiUser(request.getRequesterUsername()));
     detail.setOriginalOwner(toApiUser(request.getOriginalOwner()));
     for (int i = 0; i < detail.getStatusChanges().size(); i++) {
-      detail
-          .getStatusChanges()
-          .get(i)
-          .setCreatedBy(toApiUser(request.getStatusChanges().get(i).getCreatedByUsername()));
+      ApiSampleRequestStatusChange apiChange = detail.getStatusChanges().get(i);
+      SampleRequestStatusChange change = request.getStatusChanges().get(i);
+      apiChange.setCreatedBy(toApiUser(change.getCreatedByUsername()));
+      if (change.getTransferredSample() != null) {
+        sampleApiManager.setOtherFieldsForOutgoingApiInventoryRecord(
+            apiChange.getTransferredSample(), change.getTransferredSample(), user);
+      }
     }
     return applyOutgoingSampleRules(detail, request, user);
   }
@@ -249,17 +256,14 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
                     messages.getResourceNotFoundMessage("Sample", oid.getDbId())));
   }
 
-  /** Absent when no transferredSample id was supplied; a supplied id must name a real sample. */
-  private Sample resolveTransferredSample(Long transferredSampleId) {
-    if (transferredSampleId == null) {
-      return null;
-    }
-    return sampleDao
-        .getSafeNull(transferredSampleId)
-        .orElseThrow(
-            () ->
-                new NotFoundException(
-                    messages.getResourceNotFoundMessage("Sample", transferredSampleId)));
+  /**
+   * Absent when no transferredSample id was supplied. A supplied one must be a sample the fulfiller
+   * can read, so a request's history cannot be made to carry a stranger's sample.
+   */
+  private Sample resolveTransferredSample(Long transferredSampleId, User user) {
+    return transferredSampleId == null
+        ? null
+        : sampleApiManager.assertUserCanReadSample(transferredSampleId, user);
   }
 
   @Override

@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.preference.HierarchicalPermission;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /** Two clients transitioning the same request at once must not both succeed. */
 public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
@@ -36,6 +38,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   private User owner;
   private User requester;
   private Long requestId;
+  private Long sampleId;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -56,6 +59,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
     logoutAndLoginAs(owner);
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    sampleId = sample.getId();
     ApiSample requestable = new ApiSample();
     requestable.setId(sample.getId());
     requestable.setRequestable(true);
@@ -119,6 +123,62 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
           "current status must match the last history entry");
     } finally {
       pool.shutdownNow();
+    }
+  }
+
+  @Test
+  public void requestFulfilledDuringATransferStaysFulfilled() throws Exception {
+    User newOwner = createAndSaveUser(getRandomAlphabeticString("cNew"));
+    initUsers(newOwner);
+    CountDownLatch fulfilmentHeld = new CountDownLatch(1);
+    CountDownLatch releaseFulfilment = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    try {
+      // the fulfilment has locked the row but not yet committed
+      Future<?> fulfilment =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          tx -> {
+                            ApiSampleRequestStatusPut fulfil = new ApiSampleRequestStatusPut();
+                            fulfil.setStatus(SampleRequestStatus.FULFILLED);
+                            sampleRequestApiMgr.updateStatus(requestId, fulfil, owner);
+                            fulfilmentHeld.countDown();
+                            awaitQuietly(releaseFulfilment);
+                          }));
+      assertEquals(true, fulfilmentHeld.await(30, TimeUnit.SECONDS));
+
+      Future<?> transfer =
+          pool.submit(
+              () -> {
+                ApiSample toNewOwner = new ApiSample();
+                toNewOwner.setId(sampleId);
+                toNewOwner.setOwner(new ApiUser(newOwner));
+                sampleApiMgr.changeApiSampleOwner(toNewOwner, owner);
+              });
+      // long enough for the transfer to read the request before the fulfilment commits
+      Thread.sleep(2000);
+      releaseFulfilment.countDown();
+      fulfilment.get(30, TimeUnit.SECONDS);
+      transfer.get(60, TimeUnit.SECONDS);
+
+      ApiSampleRequest afterwards = sampleRequestApiMgr.getRequestById(requestId, owner);
+      assertEquals(SampleRequestStatus.FULFILLED, afterwards.getStatus());
+      assertEquals(
+          2,
+          afterwards.getStatusChanges().size(),
+          "the transfer must not reject a request that was fulfilled while it ran");
+    } finally {
+      pool.shutdownNow();
+    }
+  }
+
+  private static void awaitQuietly(CountDownLatch latch) {
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
 

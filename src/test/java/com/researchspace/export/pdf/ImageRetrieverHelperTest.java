@@ -1,7 +1,7 @@
 package com.researchspace.export.pdf;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -85,7 +85,8 @@ public class ImageRetrieverHelperTest {
   @Test
   public void testIncludeExternalUrlFallback() throws IOException {
     String brokenURL = "https://nonexistent.researchspace.com/image.png";
-    assertArrayEquals(fallback, imgRetrieverTSS.getImageBytesFromImgSrc(brokenURL, config));
+    assertThat(imgRetrieverTSS.getImageBytesFromImgSrc(brokenURL, config))
+        .containsExactly(fallback);
   }
 
   @Test
@@ -101,7 +102,7 @@ public class ImageRetrieverHelperTest {
     imagePath = "/images/icons/xxaresdsdas.png";
     res = new FileSystemResource(nonExistent);
     when(resource.getResource(imagePath)).thenReturn(res);
-    assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(imagePath, config));
+    assertThat(imgRetriever.getImageBytesFromImgSrc(imagePath, config)).containsExactly(fallback);
   }
 
   @Test
@@ -116,7 +117,7 @@ public class ImageRetrieverHelperTest {
   public void testIncludeNoneExistentChemImageResource() throws IOException {
     when(chemMgr.get(2L, null)).thenReturn(null);
     String chemLink = textupdater.generateURLStringForRSChemElementLink(2L, 1L, 50, 50);
-    assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(chemLink, config));
+    assertThat(imgRetriever.getImageBytesFromImgSrc(chemLink, config)).containsExactly(fallback);
   }
 
   @Test
@@ -127,8 +128,10 @@ public class ImageRetrieverHelperTest {
     String mathLink = "<img src=\"/svg/2\" />";
     byte[] mathPngBytes = imgRetriever.getImageBytesFromImgSrc(mathLink, config);
     assertNotNull(mathPngBytes);
-    assertTrue(SvgToPngConverterTest.SIMPLEST_SVG_CONVERTED_LENGTH <= mathPngBytes.length);
-    assertTrue(SvgToPngConverterTest.SIMPLEST_SVG_CONVERTED_LENGTH <= mathPngBytes.length);
+    assertThat(mathPngBytes)
+        .hasSizeGreaterThanOrEqualTo(SvgToPngConverterTest.SIMPLEST_SVG_CONVERTED_LENGTH);
+    assertThat(mathPngBytes)
+        .hasSizeGreaterThanOrEqualTo(SvgToPngConverterTest.SIMPLEST_SVG_CONVERTED_LENGTH);
   }
 
   @Test
@@ -147,12 +150,12 @@ public class ImageRetrieverHelperTest {
 
     // now ensure null returned if sketch doesn't exxist
     when(imageMgr.get(2L, config.getExporter())).thenReturn(null);
-    assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(sketchLink, config));
+    assertThat(imgRetriever.getImageBytesFromImgSrc(sketchLink, config)).containsExactly(fallback);
 
     // nothing returned if permissions return false
     when(imageMgr.get(2L, config.getExporter())).thenReturn(sketch);
     setPermissionsToReturn(sketch, false);
-    assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(sketchLink, config));
+    assertThat(imgRetriever.getImageBytesFromImgSrc(sketchLink, config)).containsExactly(fallback);
   }
 
   @Test
@@ -187,13 +190,15 @@ public class ImageRetrieverHelperTest {
 
     // nothing returned if permissions return false
     setPermissionsToReturn(annotation, false);
-    assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));
+    assertThat(imgRetriever.getImageBytesFromImgSrc(annotationLink, config))
+        .containsExactly(fallback);
 
     // authorization failures retrieving the original image also return the fallback image
     setPermissionsToReturn(annotation, true);
     when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true))
         .thenThrow(AuthorizationException.class);
-    assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));
+    assertThat(imgRetriever.getImageBytesFromImgSrc(annotationLink, config))
+        .containsExactly(fallback);
   }
 
   void setPermissionsToReturn(IFieldLinkableElement element, boolean allow) {
@@ -217,7 +222,7 @@ public class ImageRetrieverHelperTest {
         .thenReturn(Optional.of(new FileInputStream(workingImgFile)));
     byte[] retrieved = imgRetriever.getImageBytesFromImgSrc(thumbnailLink, config);
 
-    assertEquals(EXPECTED_LENGTH.intValue(), retrieved.length);
+    assertThat(retrieved).hasSize(EXPECTED_LENGTH.intValue());
   }
 
   @Test
@@ -232,10 +237,12 @@ public class ImageRetrieverHelperTest {
     assertNotNull(imgRetriever.getImageBytesFromImgSrc(thumbnailLink, config));
 
     when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true)).thenReturn(null);
-    assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(thumbnailLink, config));
+    assertThat(imgRetriever.getImageBytesFromImgSrc(thumbnailLink, config))
+        .containsExactly(fallback);
     when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true))
         .thenThrow(AuthorizationException.class);
-    assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(thumbnailLink, config));
+    assertThat(imgRetriever.getImageBytesFromImgSrc(thumbnailLink, config))
+        .containsExactly(fallback);
 
     // simulate revisioned image link (e.g. from signed document)
     String elementHtml = textupdater.generateRawImageElement(rawimg, 4L + "");

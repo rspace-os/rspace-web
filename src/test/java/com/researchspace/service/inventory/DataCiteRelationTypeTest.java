@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,8 +37,8 @@ class DataCiteRelationTypeTest {
 
   @Test
   void vocabularyExposesAllValues() {
-    assertTrue(DataCiteRelationType.allValues().contains("IsCitedBy"));
-    assertTrue(DataCiteRelationType.allValues().contains("HasPart"));
+    assertThat(DataCiteRelationType.allValues()).contains("IsCitedBy");
+    assertThat(DataCiteRelationType.allValues()).contains("HasPart");
     assertEquals(
         DataCiteRelationType.allValues().size(),
         DataCiteRelationType.allValues().stream().distinct().count(),

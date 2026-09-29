@@ -1,12 +1,11 @@
 package com.researchspace.core.util;
 
 import static com.researchspace.core.util.RSCollectionUtils.mergeLists;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.Test;
 
 public class RSCollectionUtilsTest {
@@ -19,10 +18,10 @@ public class RSCollectionUtilsTest {
     List<Integer> EXPECTED = Arrays.asList(new Integer[] {1, 3, 5, 7, 9, 11, 13});
 
     List<Integer> result = mergeLists(l1, l2);
-    assertTrue(CollectionUtils.isEqualCollection(EXPECTED, result));
+    assertThat(EXPECTED).containsExactlyInAnyOrderElementsOf(result);
 
     List<Integer> result2 = mergeLists(l2, l1);
-    assertTrue(CollectionUtils.isEqualCollection(EXPECTED, result2));
+    assertThat(EXPECTED).containsExactlyInAnyOrderElementsOf(result2);
 
     l1 = Arrays.asList(new Integer[] {1, 3});
     l2 = Arrays.asList(new Integer[] {7, 9, 11, 13});
@@ -30,8 +29,8 @@ public class RSCollectionUtilsTest {
 
     l1 = Arrays.asList(new Integer[] {1, 3, 7});
     l2 = Arrays.asList(new Integer[] {1, 3, 7});
-    assertTrue(CollectionUtils.isEqualCollection(l1, mergeLists(l1, l2)));
-    assertTrue(CollectionUtils.isEqualCollection(l2, mergeLists(l1, l2)));
+    assertThat(l1).containsExactlyInAnyOrderElementsOf(mergeLists(l1, l2));
+    assertThat(l2).containsExactlyInAnyOrderElementsOf(mergeLists(l1, l2));
 
     l1 = Arrays.asList(new Integer[] {});
     l2 = Arrays.asList(new Integer[] {});

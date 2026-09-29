@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.imageutils.ImageUtils;
@@ -11,6 +12,7 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.awt.image.BufferedImage;
+import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +50,8 @@ public class EcatDocumentThumbnailInitializationPolicyTest extends SpringTransac
     final EcatDocumentFile doc2 = (EcatDocumentFile) recordDao.get(doc.getId());
     clearSessionAndEvictAll();
     doc2.getThumbNail().getId(); // ok to get id
-    assertLazyInitializationExceptionThrown(() -> doc2.getThumbNail().getData());
+    ImageBlob loadedThumbnail = doc2.getThumbNail();
+    assertThrows(LazyInitializationException.class, () -> loadedThumbnail.getData());
 
     clearSessionAndEvictAll();
     final EcatDocumentFile doc3 = (EcatDocumentFile) recordDao.get(doc.getId());

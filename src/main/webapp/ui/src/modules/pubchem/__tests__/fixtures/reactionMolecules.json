@@ -1,0 +1,38 @@
+{
+  "benzene": {
+    "PropertyTable": {
+      "Properties": [
+        {
+          "CID": 241,
+          "MolecularFormula": "C6H6",
+          "SMILES": "C1=CC=CC=C1",
+          "Title": "Benzene"
+        }
+      ]
+    }
+  },
+  "cyclopentadiene": {
+    "PropertyTable": {
+      "Properties": [
+        {
+          "CID": 7534,
+          "MolecularFormula": "C5H6",
+          "SMILES": "C1C=CC=C1",
+          "Title": "Cyclopentadiene"
+        }
+      ]
+    }
+  },
+  "cyclohexane": {
+    "PropertyTable": {
+      "Properties": [
+        {
+          "CID": 8078,
+          "MolecularFormula": "C6H12",
+          "SMILES": "C1CCCCC1",
+          "Title": "Cyclohexane"
+        }
+      ]
+    }
+  }
+}

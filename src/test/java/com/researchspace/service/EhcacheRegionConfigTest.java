@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.persistence.Entity;
@@ -55,16 +56,22 @@ public class EhcacheRegionConfigTest {
     TreeSet<String> missing = new TreeSet<>(expectedRegionToDeclarer.keySet());
     missing.removeAll(definedRegions);
 
-    assertTrue(
-        missing.isEmpty(),
-        () ->
-            "ehcache.xml is missing region(s) for @Cache-annotated entities. Hibernate 6 names "
-                + "the L2 region after the root entity, and create-warn would silently substitute "
-                + "an untuned region. Add a <cache alias=\"...\"> for each:\n"
-                + missing.stream()
-                    .map(
-                        r -> "  - " + r + "  (declared on " + expectedRegionToDeclarer.get(r) + ")")
-                    .collect(Collectors.joining("\n")));
+    assertThat(missing)
+        .as(
+            () ->
+                "ehcache.xml is missing region(s) for @Cache-annotated entities. Hibernate 6 names"
+                    + " the L2 region after the root entity, and create-warn would silently"
+                    + " substitute an untuned region. Add a <cache alias=\"...\"> for each:\n"
+                    + missing.stream()
+                        .map(
+                            r ->
+                                "  - "
+                                    + r
+                                    + "  (declared on "
+                                    + expectedRegionToDeclarer.get(r)
+                                    + ")")
+                        .collect(Collectors.joining("\n")))
+        .isEmpty();
   }
 
   @Test
@@ -110,16 +117,22 @@ public class EhcacheRegionConfigTest {
     TreeSet<String> missing = new TreeSet<>(expectedRegionToDeclarer.keySet());
     missing.removeAll(definedRegions);
 
-    assertTrue(
-        missing.isEmpty(),
-        () ->
-            "ehcache.xml is missing region(s) for @Cache-annotated collection associations or "
-                + "natural ids. create-warn would silently substitute an untuned region. Add a "
-                + "<cache alias=\"...\"> for each:\n"
-                + missing.stream()
-                    .map(
-                        r -> "  - " + r + "  (declared on " + expectedRegionToDeclarer.get(r) + ")")
-                    .collect(Collectors.joining("\n")));
+    assertThat(missing)
+        .as(
+            () ->
+                "ehcache.xml is missing region(s) for @Cache-annotated collection associations or "
+                    + "natural ids. create-warn would silently substitute an untuned region. Add a "
+                    + "<cache alias=\"...\"> for each:\n"
+                    + missing.stream()
+                        .map(
+                            r ->
+                                "  - "
+                                    + r
+                                    + "  (declared on "
+                                    + expectedRegionToDeclarer.get(r)
+                                    + ")")
+                        .collect(Collectors.joining("\n")))
+        .isEmpty();
   }
 
   /**

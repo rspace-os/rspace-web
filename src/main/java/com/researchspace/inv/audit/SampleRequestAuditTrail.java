@@ -4,6 +4,7 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.events.SampleRequestStatusEvent;
+import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -17,9 +18,14 @@ public class SampleRequestAuditTrail {
 
   @TransactionalEventListener
   public void sampleRequestStatusRecorded(SampleRequestStatusEvent event) {
+    SampleRequest request = event.getRequest();
+    // the User column shows who raised it, so a new request's description names who was asked
+    String description =
+        SampleRequestStatus.PENDING.equals(request.getStatus())
+            ? "to user: " + request.getOriginalOwner()
+            : null;
     auditer.notify(
-        new GenericEvent(
-            event.getActor(), event.getRequest(), actionFor(event.getRequest().getStatus())));
+        new GenericEvent(event.getActor(), request, actionFor(request.getStatus()), description));
   }
 
   /** Exhaustive, so a new status cannot be added without deciding how it is audited. */

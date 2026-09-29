@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.model.preference.Preference.FORM_RESULTS_PER_PAGE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
@@ -34,7 +34,8 @@ public class PaginationSettingsPreferencesTest {
         .filter(pref -> !pref.name().endsWith("RESULTS_PER_PAGE"))
         .forEach(
             pref ->
-                assertIllegalArgumentException(
+                assertThrows(
+                    IllegalArgumentException.class,
                     () ->
                         paginationSettingsPreferences.updateResultsPerPageProperty(
                             anyUser, pgCrit, pref)));

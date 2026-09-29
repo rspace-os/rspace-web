@@ -2,8 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.model.dtos.AbstractFormFieldDTO.MAX_NAME_LENGTH;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
@@ -25,11 +24,8 @@ import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 public class FormManagerIT extends RealTransactionSpringTestBase {
-
-  private @Autowired FormManager formMgr;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -47,41 +43,38 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
     User user = createInitAndLoginAnyUser();
     RSForm form = formMgr.create(user);
     formMgr.publish(form.getId(), true, null, user);
+    Long formId = form.getId();
 
     ChoiceFieldDTO<ChoiceFieldForm> invalidChoice = ChoiceFieldDTOValidatorTest.createValid();
     invalidChoice.setChoiceValues(null);
-    assertThat(
+    var exception1 =
         assertThrows(
-                ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidChoice, form.getId(), user))
-            .getMessage(),
-        containsString("choice options is a required field"));
+            ConstraintViolationException.class,
+            () -> formMgr.createFieldForm(invalidChoice, formId, user));
+    assertThat(exception1.getMessage()).contains("choice options is a required field");
 
     DateFieldDTO<DateFieldForm> invalidDate = DateFieldDTOValidatorTest.createValid();
     invalidDate.setDateFormat("");
-    assertThat(
+    var exception2 =
         assertThrows(
-                ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidDate, form.getId(), user))
-            .getMessage(),
-        containsString("format is a required field"));
+            ConstraintViolationException.class,
+            () -> formMgr.createFieldForm(invalidDate, formId, user));
+    assertThat(exception2.getMessage()).contains("format is a required field");
 
     RadioFieldDTO<RadioFieldForm> invalidRadio = RadioFieldDTOValidatorTest.createValid();
     invalidRadio.setRadioValues("   ");
-    assertThat(
+    var exception3 =
         assertThrows(
-                ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidRadio, form.getId(), user))
-            .getMessage(),
-        containsString("radio options is a required field"));
+            ConstraintViolationException.class,
+            () -> formMgr.createFieldForm(invalidRadio, formId, user));
+    assertThat(exception3.getMessage()).contains("radio options is a required field");
 
     TextFieldDTO<TextFieldForm> invalidText = TextFieldDTOValidatorTest.createValid();
     invalidText.setName(randomAlphabetic(MAX_NAME_LENGTH + 1));
-    assertThat(
+    var exception4 =
         assertThrows(
-                ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidText, form.getId(), user))
-            .getMessage(),
-        containsString("size must be between"));
+            ConstraintViolationException.class,
+            () -> formMgr.createFieldForm(invalidText, formId, user));
+    assertThat(exception4.getMessage()).contains("size must be between");
   }
 }

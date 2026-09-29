@@ -44,6 +44,16 @@ public class SampleRequestAuditTrailTest {
     assertEquals(requester, loggedEvent.getValue().getSubject());
   }
 
+  @Test
+  public void raisedRequestDescriptionNamesTheUserAsked() {
+    SampleRequest request = requestInStatus(SampleRequestStatus.PENDING, requester);
+
+    listener.sampleRequestStatusRecorded(new SampleRequestStatusEvent(request, requester));
+
+    verify(auditTrail).notify(loggedEvent.capture());
+    assertEquals("to user: " + owner.getUsername(), loggedEvent.getValue().getDescription());
+  }
+
   @ParameterizedTest
   @CsvSource({
     "PENDING, REQUEST_SENT",

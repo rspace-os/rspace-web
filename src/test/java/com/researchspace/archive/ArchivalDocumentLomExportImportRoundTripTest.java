@@ -1,5 +1,6 @@
 package com.researchspace.archive;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -61,7 +62,7 @@ public class ArchivalDocumentLomExportImportRoundTripTest {
     assertNotNull(roundTripped);
     ArchivalListOfMaterials importedLom =
         roundTripped.getListFields().get(0).getListsOfMaterials().get(0);
-    assertEquals(2, importedLom.getMaterials().size());
+    assertThat(importedLom.getMaterials()).hasSize(2);
 
     ArchivalMaterialUsage importedInstrument = importedLom.getMaterials().get(0);
     assertEquals("IN42", importedInstrument.getGlobalId());

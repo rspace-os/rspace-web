@@ -1,6 +1,7 @@
 package com.researchspace.model.units;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 import javax.measure.MetricPrefix;
 import javax.measure.Quantity;
@@ -47,7 +48,7 @@ public class KelvinToCelsiusTest {
     Quantity<Temperature> kelvin = Quantities.getQuantity(373.16, Units.KELVIN);
     // get temp difference
     kelvin = kelvin.subtract(celc);
-    assertEquals(78.0, kelvin.getValue().doubleValue(), 0.1);
+    assertThat(kelvin.getValue().doubleValue()).isCloseTo(78.0, within(0.1));
   }
 
   @Test
@@ -55,7 +56,7 @@ public class KelvinToCelsiusTest {
     // 1 EU  = 16.67 nanokatal
     Quantity<CatalyticActivity> nanos = Quantities.getQuantity(16.67, RSUnits.NANOKATAL);
     Quantity<CatalyticActivity> enzymeUnits = Quantities.getQuantity(1, RSUnits.ENZYME_UNIT);
-    assertEquals(2.0, enzymeUnits.add(nanos).getValue().doubleValue(), 0.01);
+    assertThat(enzymeUnits.add(nanos).getValue().doubleValue()).isCloseTo(2.0, within(0.01));
   }
 
   @Test

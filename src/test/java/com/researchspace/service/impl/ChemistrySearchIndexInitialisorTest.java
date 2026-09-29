@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 
@@ -50,7 +51,7 @@ public class ChemistrySearchIndexInitialisorTest extends SpringTransactionalTest
     EcatChemistryFile file = addChemistryFileToGallery("Aminoglutethimide.mol", "CCC", anyUser);
     List<RSChemElement> chemElems =
         rsChemElementMgr.getRSChemElementsLinkedToFile(file.getId(), anyUser);
-    assertEquals(1, chemElems.size());
+    assertThat(chemElems).hasSize(1);
     RSChemElement createdChemElement = chemElems.get(0);
     assertEquals("CCC", createdChemElement.getSmilesString());
 

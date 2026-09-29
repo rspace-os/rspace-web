@@ -137,6 +137,30 @@ Security events and exceptions should be logged by a security logger
 out of a controller will be logged correctly using the
 `ControllerExceptionHandler` wired into controllers.
 
+## Sorting paginated listings
+
+The `orderBy` request parameter on legacy listings is bound straight onto
+`PaginationCriteria` and used to be concatenated into HQL or SQL. Each listing
+now has a sort enum in `com.researchspace.model.sort` (`UserSort`, `GroupSort`,
+`FormSort`, `RecordSort`, `CommunicationSort` and so on). Before database query
+construction, the enum's `fromRequest(String)` method resolves the request
+string: a blank value gives the listing default and an unknown value throws
+`UnknownSortKeyException`. `ControllerExceptionHandler` turns that into HTTP
+400 on an ajax request, which is how listings are re-sorted. A full page load
+gets the error page with the 500 that `error.jsp` produces for every page
+rendering it. DAOs decode the key on entry and build the order clause from a
+`switch`, so no request text reaches query construction.
+
+To add a sort key, add a constant to the listing's enum and a `case` to the
+DAO's switch. Clients send the bare token (`owner`, `sender`, `fileUsage`), not
+a property path. Never read `pgCrit.getOrderBy()` directly in query code: pass
+it through the listing's enum first. This is a review rule, not something the
+build checks.
+
+In-memory result sorting (`SearchUtils.sortList` and `sortInventoryList`) still
+compares the requested key directly. That is safe because the value never
+reaches query construction.
+
 ## UI notes
 
 There are some JSP tags in the Shiro: and rs: namespaces that can be

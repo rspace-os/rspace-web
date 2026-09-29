@@ -82,6 +82,31 @@ the optional Maven/system flag
 proxied — the `@vite/client` script connects directly to the dev server using
 `hmr.clientPort` from `vite.config.ts`.
 
+### Storybook
+
+Run `pnpm storybook` from the repository root to browse the component catalog,
+or `pnpm storybook:build` to produce a static build. The attributed MUI v9
+stories live in `src/modules/common/ui/material-ui`; see its `UPSTREAM.md` for
+provenance. `pnpm storybook:test` runs the stories in Chromium.
+
+To review the built catalog inside a local RSpace development server, run
+`pnpm run storybook:build`, set `dev.storybook.preview.enabled=true` in
+`deployment.properties`, and open `/public/storybook` on that instance.
+The route serves the WAR's `WEB-INF/storybook` bundle first, falling back to the
+gitignored `storybook-static` directory for local development. It is not
+registered when the property is false. When enabled, `/public/storybook` is
+unauthenticated and must only be exposed on local/dev instances.
+
+Check **STORYBOOK** in Jenkins to build and bundle the catalog in the WAR.
+For a local WAR build, run
+`mvn clean package -DgenerateReactDist -DgenerateStorybook=true -DskipTests=true`.
+The checkbox defaults off. Omitting `generateStorybook`, or setting it to
+`false`, excludes Storybook even if a local static build exists. Use a clean
+build when changing the option. Bundling does not enable the public route:
+set `dev.storybook.preview.enabled=true` in the local/dev instance's
+`deployment.properties` to expose it on a local/dev instance. Leave it disabled
+on deployed production instances because the route is unauthenticated.
+
 ## Testing Strategy
 
 ### Testing Frameworks

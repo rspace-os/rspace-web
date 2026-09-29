@@ -1,7 +1,6 @@
 package com.researchspace.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -50,8 +49,8 @@ public class DigitalObjectIdentifierDaoTest extends SpringTransactionalTest {
     flushDatabaseState();
 
     // THEN
-    assertTrue(daoUnderTest.getActiveIdentifiersByOwner(anotherUser).isEmpty());
-    assertEquals(1, daoUnderTest.getActiveIdentifiersByOwner(admin).size());
+    assertThat(daoUnderTest.getActiveIdentifiersByOwner(anotherUser)).isEmpty();
+    assertThat(daoUnderTest.getActiveIdentifiersByOwner(admin)).hasSize(1);
   }
 
   @Test
@@ -68,26 +67,20 @@ public class DigitalObjectIdentifierDaoTest extends SpringTransactionalTest {
     DigitalObjectIdentifier saved = daoUnderTest.save(doiHelper.createDoiToSave(apiDoi, admin));
     flushDatabaseState();
 
-    assertTrue(
-        daoUnderTest
-            .findActiveByIdentifierAndType(handle, IdentifierType.PIDINST_B2INST)
-            .isPresent());
-    assertTrue(
-        daoUnderTest
-            .findActiveByIdentifierAndType(handle, IdentifierType.PIDINST_DATACITE)
-            .isEmpty());
-    assertTrue(
-        daoUnderTest
-            .findActiveByIdentifierAndType("21.11157/other", IdentifierType.PIDINST_B2INST)
-            .isEmpty());
+    assertThat(daoUnderTest.findActiveByIdentifierAndType(handle, IdentifierType.PIDINST_B2INST))
+        .isPresent();
+    assertThat(daoUnderTest.findActiveByIdentifierAndType(handle, IdentifierType.PIDINST_DATACITE))
+        .isEmpty();
+    assertThat(
+            daoUnderTest.findActiveByIdentifierAndType(
+                "21.11157/other", IdentifierType.PIDINST_B2INST))
+        .isEmpty();
 
     saved.setDeleted(true);
     daoUnderTest.save(saved);
     flushDatabaseState();
-    assertTrue(
-        daoUnderTest
-            .findActiveByIdentifierAndType(handle, IdentifierType.PIDINST_B2INST)
-            .isEmpty());
+    assertThat(daoUnderTest.findActiveByIdentifierAndType(handle, IdentifierType.PIDINST_B2INST))
+        .isEmpty();
   }
 
   /**
@@ -116,15 +109,14 @@ public class DigitalObjectIdentifierDaoTest extends SpringTransactionalTest {
             List.of(linked, alsoLinked, softDeleted, onDataCite, "21.11157/never-stored"),
             IdentifierType.PIDINST_B2INST);
 
-    assertEquals(
-        List.of(linked, alsoLinked),
-        found.stream().map(DigitalObjectIdentifier::getIdentifier).sorted().toList(),
-        "the soft-deleted row, the other registry's row and the unknown value are all skipped");
-    assertTrue(
-        daoUnderTest
-            .findActiveByIdentifiersAndType(List.of(), IdentifierType.PIDINST_B2INST)
-            .isEmpty(),
-        "an empty input must not reach the database as an empty IN list");
+    assertThat(found)
+        .as("the soft-deleted row, the other registry's row and the unknown value are all skipped")
+        .extracting(DigitalObjectIdentifier::getIdentifier)
+        .containsExactlyInAnyOrder(linked, alsoLinked);
+    assertThat(
+            daoUnderTest.findActiveByIdentifiersAndType(List.of(), IdentifierType.PIDINST_B2INST))
+        .as("an empty input must not reach the database as an empty IN list")
+        .isEmpty();
   }
 
   private DigitalObjectIdentifier savePidinstIdentifier(

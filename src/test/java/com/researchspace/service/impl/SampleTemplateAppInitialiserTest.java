@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,7 +54,7 @@ public class SampleTemplateAppInitialiserTest {
     when(subject.execute(any(Callable.class))).thenReturn(Boolean.TRUE);
     sampleTemplateAppInitialiser.onAppStartup(null);
     verifyLoginAndLogout();
-    assertFalse(strgLogger.logContents.contains("error"));
+    assertThat(strgLogger.logContents).doesNotContain("error");
   }
 
   @Test
@@ -64,7 +63,7 @@ public class SampleTemplateAppInitialiserTest {
     when(subject.execute(any(Callable.class))).thenReturn(Boolean.FALSE);
     sampleTemplateAppInitialiser.onAppStartup(null);
     verifyLoginAndLogout();
-    assertTrue(strgLogger.logContents.contains("Fatal error"));
+    assertThat(strgLogger.logContents).contains("Fatal error");
   }
 
   private void verifyLoginAndLogout() {

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -73,7 +74,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     List<NfsFileSystemInfo> retrievedFilesystems =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
     assertNotNull(retrievedFilesystems);
-    assertEquals(1, retrievedFilesystems.size());
+    assertThat(retrievedFilesystems).hasSize(1);
     assertEquals("irods_test_instance", retrievedFilesystems.get(0).getName());
   }
 
@@ -93,7 +94,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     assertNull(result.getResolvedException());
     List<NfsFileStoreInfo> retrievedFilestoreInfos =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
-    assertEquals(0, retrievedFilestoreInfos.size());
+    assertThat(retrievedFilestoreInfos).isEmpty();
 
     // try creating new filestore without required params
     result =
@@ -134,7 +135,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     assertNull(result.getResolvedException());
     retrievedFilestoreInfos =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
-    assertEquals(1, retrievedFilestoreInfos.size());
+    assertThat(retrievedFilestoreInfos).hasSize(1);
     assertEquals(createdFilestoreInfo, retrievedFilestoreInfos.get(0));
 
     // assert other user cannot delete user's filestore
@@ -165,7 +166,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     assertNull(result.getResolvedException());
     retrievedFilestoreInfos =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
-    assertEquals(0, retrievedFilestoreInfos.size());
+    assertThat(retrievedFilestoreInfos).isEmpty();
   }
 
   @Test
@@ -217,7 +218,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     when(mockNfsClient.isUserLoggedIn()).thenReturn(true);
 
     // login with dummy credentials
-    assertEquals(0, credentialsStore.getCredentialsMapCache().size());
+    assertThat(credentialsStore.getCredentialsMapCache()).isEmpty();
     result =
         this.mockMvc
             .perform(
@@ -229,7 +230,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     assertNull(result.getResolvedException());
-    assertEquals(1, credentialsStore.getCredentialsMapCache().size());
+    assertThat(credentialsStore.getCredentialsMapCache()).hasSize(1);
 
     // mock calls used by download flow
     NfsTarget dummyTarget = new NfsTarget("testResourcePath");
@@ -254,7 +255,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     assertNull(result.getResolvedException());
     assertEquals("application/octet-stream", result.getResponse().getContentType());
     byte[] responseBytes = result.getResponse().getContentAsByteArray();
-    assertEquals(11, responseBytes.length);
+    assertThat(responseBytes).hasSize(11);
     assertEquals(dummyFileContent, new String(responseBytes));
   }
 }

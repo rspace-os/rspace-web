@@ -8,13 +8,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.core.testutil.CoreTestUtils;
+import com.researchspace.dao.ContainerDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class ContainerApiManagerIT extends RealTransactionSpringTestBase {
+
+  private @Autowired ContainerDao containerDao;
 
   @Test
   public void checkContainerSavingConstraints() throws Exception {

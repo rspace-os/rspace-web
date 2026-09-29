@@ -1,8 +1,8 @@
 package com.researchspace.service.inventory.csvimport;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -33,7 +33,7 @@ public class InventoryImportInventoryEntityFieldCreatorTest {
     InventoryEntityField field = helper.getSuggestedSampleFieldForNameAndValues("testName", values);
     assertEquals(FieldType.RADIO, field.getType());
     assertEquals(List.of("maybe", "no", "yes"), ((InventoryRadioField) field).getAllOptions());
-    assertEquals(3, ((InventoryRadioField) field).getAllOptions().size());
+    assertThat(((InventoryRadioField) field).getAllOptions()).hasSize(3);
 
     // repeating values, but starts to be very low ratio -> string
     values.add("who knows");
@@ -110,7 +110,7 @@ public class InventoryImportInventoryEntityFieldCreatorTest {
         helper.getSuggestedSampleFieldForNameAndValues("Position (A,B,C)", values);
     assertEquals(FieldType.RADIO, field.getType());
     assertEquals(List.of("A", "B"), ((InventoryRadioField) field).getAllOptions());
-    assertEquals(2, ((InventoryRadioField) field).getAllOptions().size());
+    assertThat(((InventoryRadioField) field).getAllOptions()).hasSize(2);
 
     // adding ampersand or equals sign messes the formatting (RSINV-150 is raised that'd solve that)
     values = List.of("A&B", "A&B", "B");
@@ -165,7 +165,7 @@ public class InventoryImportInventoryEntityFieldCreatorTest {
     values.add(" ");
     values.add(null);
     Map<String, String> fieldMappings = helper.getFieldMappingForIdentifier("testIgsn", values);
-    assertEquals("identifier", fieldMappings.get("testIgsn"));
+    assertThat(fieldMappings).containsEntry("testIgsn", "identifier");
 
     // very long values -> text
     values.clear();
@@ -188,6 +188,6 @@ public class InventoryImportInventoryEntityFieldCreatorTest {
     values.add("");
     values.add(null);
     fieldMappings = helper.getFieldMappingForIdentifier("testIgsn", values);
-    assertTrue(fieldMappings.isEmpty());
+    assertThat(fieldMappings).isEmpty();
   }
 }

@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.model.core.RecordType.API_INBOX;
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -21,7 +22,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -52,7 +52,7 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
 
     ApiFileSearchResult apiFiles = getFromJsonResponseBody(result, ApiFileSearchResult.class);
     assertNotNull(apiFiles);
-    assertEquals(1, apiFiles.getFiles().size());
+    assertThat(apiFiles.getFiles()).hasSize(1);
 
     ApiFile apiFile = apiFiles.getFiles().get(0);
     apiModelTestUtils.assertApiFileMatchEcatMediaFile(apiFile, galleryImage);
@@ -146,7 +146,7 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   void assertBytesEqual(byte[] expected, byte[] actual) {
-    assertTrue(Arrays.equals(expected, actual));
+    assertThat(actual).containsExactly(expected);
   }
 
   private String getFileDownloadLink(ApiFile apiFileNew) {

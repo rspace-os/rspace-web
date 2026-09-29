@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.imageutils.ImageUtils;
@@ -10,6 +11,7 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.awt.image.BufferedImage;
+import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +46,10 @@ public class EcatImageDaoTest extends SpringTransactionalTest {
     final EcatImage image2 = imageDao.get(image.getId());
     clearSessionAndEvictAll();
     // blobs are proxied
-    assertLazyInitializationExceptionThrown(() -> image2.getImageThumbnailed().getData());
-    assertLazyInitializationExceptionThrown(() -> image2.getWorkingImage().getData());
+    ImageBlob loadedThumbnail = image2.getImageThumbnailed();
+    ImageBlob loadedWorkingImage = image2.getWorkingImage();
+    assertThrows(LazyInitializationException.class, () -> loadedThumbnail.getData());
+    assertThrows(LazyInitializationException.class, () -> loadedWorkingImage.getData());
     clearSessionAndEvictAll();
 
     // now initialize blobs

@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.TreeSet;
 import org.junit.jupiter.api.Test;
@@ -15,9 +15,9 @@ class ApiExternalStorageOperationInfoTest {
         new ApiExternalStorageOperationInfo(1L, "a", true, null);
     ApiExternalStorageOperationInfo second =
         new ApiExternalStorageOperationInfo(2L, "b", true, null);
-    assertTrue(first.compareTo(second) < 0);
-    assertTrue(second.compareTo(first) > 0);
-    assertEquals(0, first.compareTo(first));
+    assertThat(first.compareTo(second)).isLessThan(0);
+    assertThat(second.compareTo(first)).isGreaterThan(0);
+    assertThat(first).isEqualByComparingTo(first);
   }
 
   @Test
@@ -26,7 +26,7 @@ class ApiExternalStorageOperationInfoTest {
         new ApiExternalStorageOperationInfo(null, "a", true, null);
     ApiExternalStorageOperationInfo withId =
         new ApiExternalStorageOperationInfo(1L, "b", true, null);
-    assertTrue(withNull.compareTo(withId) > 0);
+    assertThat(withNull.compareTo(withId)).isGreaterThan(0);
   }
 
   @Test
@@ -35,14 +35,14 @@ class ApiExternalStorageOperationInfoTest {
         new ApiExternalStorageOperationInfo(1L, "a", true, null);
     ApiExternalStorageOperationInfo withNull =
         new ApiExternalStorageOperationInfo(null, "b", true, null);
-    assertTrue(withId.compareTo(withNull) < 0);
+    assertThat(withId.compareTo(withNull)).isLessThan(0);
   }
 
   @Test
   void compareTo_bothRecordIdsNull_returnsZero() {
     ApiExternalStorageOperationInfo a = new ApiExternalStorageOperationInfo(null, "a", true, null);
     ApiExternalStorageOperationInfo b = new ApiExternalStorageOperationInfo(null, "b", true, null);
-    assertEquals(0, a.compareTo(b));
+    assertThat(a).isEqualByComparingTo(b);
   }
 
   @Test

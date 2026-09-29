@@ -1,7 +1,7 @@
 package com.researchspace.linkedelements;
 
 import static com.researchspace.core.util.FieldParserConstants.VIDEO_CLASSNAME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.dao.EcatVideoDao;
 import com.researchspace.model.EcatVideo;
@@ -38,8 +38,8 @@ public class VideoConverterTest extends AbstractParserTest {
     Element toconvert = getElementToConvert(elementHTml, VIDEO_CLASSNAME);
     Mockito.when(ecaVideoDao.getSafeNull(2L)).thenReturn(Optional.of(ecatVideo));
     videoConverter.jsoup2LinkableElement(contents, toconvert);
-    assertEquals(ecatVideo, contents.getElements(EcatVideo.class).getElements().get(0));
-    assertEquals(1, contents.getElements(EcatVideo.class).getLinks().size());
+    assertThat(contents.getElements(EcatVideo.class).getElements()).element(0).isEqualTo(ecatVideo);
+    assertThat(contents.getElements(EcatVideo.class).getLinks()).hasSize(1);
   }
 
   @Test
@@ -57,8 +57,8 @@ public class VideoConverterTest extends AbstractParserTest {
     Mockito.when(auditDao.getObjectForRevision(EcatVideo.class, 2L, 23L))
         .thenReturn(new AuditedEntity<EcatVideo>(ecatVideo, 23L));
     videoConverter.jsoup2LinkableElement(contents, toconvert);
-    assertEquals(1, contents.getElements(EcatVideo.class).getElements().size());
-    assertEquals(ecatVideo, contents.getElements(EcatVideo.class).getElements().get(0));
-    assertEquals(1, contents.getElements(EcatVideo.class).getLinks().size());
+    assertThat(contents.getElements(EcatVideo.class).getElements()).hasSize(1);
+    assertThat(contents.getElements(EcatVideo.class).getElements()).element(0).isEqualTo(ecatVideo);
+    assertThat(contents.getElements(EcatVideo.class).getLinks()).hasSize(1);
   }
 }

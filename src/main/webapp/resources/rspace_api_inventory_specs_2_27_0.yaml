@@ -1024,6 +1024,10 @@ paths:
         This action requires `CHANGE_OWNER` permission to the sample.
 
 
+        Any sample request against the sample that is still PENDING or APPROVED
+        is rejected, with a reason naming the new owner.
+
+
         ## Examples of the request body
 
 
@@ -1196,22 +1200,29 @@ paths:
       summary: Get sample requests involving the current User
       description: >
         Returns a paginated list of requests for material from Inventory Samples,
-        either raised by the current user, or awaiting them as the current owner of
-        the requested sample.
+        either raised by the current user, or received by them as the owner of the
+        requested sample at the time the request was raised.
 
-        The approver is not stored on the request: it is always the requested
-        sample's current owner, so transferring a sample moves any open request
-        with it. Requests against a deleted sample are excluded.
+        A received request is listed for whoever owned the sample when it was
+        raised, returned as `originalOwner`, so it stays with the person who was
+        asked even after the sample changes hands. Approving, rejecting and
+        fulfilling remain reserved for the sample's current owner. Transferring a
+        sample rejects every request against it that is still PENDING or
+        APPROVED. Requests against a deleted sample are excluded.
 
         | Request | Explanation |
 
         | --- | --- |
 
-        /sampleRequests| Gets requests raised by the current user
+        /sampleRequests| Gets requests raised or received by the current user
 
-        /sampleRequests?role=OWNER&status=PENDING| Gets requests awaiting the current user, as owner of the requested samples
+        /sampleRequests?role=REQUESTER| Gets requests raised by the current user
 
-        /sampleRequests?role=OWNER&sampleId=123| Gets requests made against the sample with id = 123, for its owner. Note role defaults to REQUESTER, so it is always ANDed with the sampleId filter.
+        /sampleRequests?role=OWNER&status=PENDING| Gets pending requests received by the current user
+
+        /sampleRequests?status=PENDING,APPROVED| Gets requests raised or received by the current user that are still open
+
+        /sampleRequests?role=OWNER&sampleId=123| Gets requests received by the current user against the sample with id = 123
       tags:
         - Sample Requests
       parameters:
@@ -1225,7 +1236,8 @@ paths:
           description: >-
             A list of SampleRequest summaries, always newest first. Ordering is
             not configurable on this endpoint. These do not carry the
-            `statusChanges` history; fetch a single request to get it.
+            `statusChanges` history; fetch a single request to get it. Each
+            summary carries `requester` and `originalOwner` as user objects.
     post:
       summary: Raise a request for material from a Sample
       description: >
@@ -1288,10 +1300,29 @@ paths:
 
         | CANCELLED | PENDING | the requester | not accepted |
 
+        | FULFILLED | PENDING | sample's current owner | not accepted |
+
         | FULFILLED | APPROVED | sample's current owner | not accepted |
 
         REJECTED, CANCELLED and FULFILLED are terminal. PENDING is written only
-        when the request is raised and cannot be set here.
+        when the request is raised and cannot be set here. Transferring the
+        requested sample to a new owner also rejects the request if it is still
+        PENDING or APPROVED, recording a reason that names the new owner.
+
+        `transferredSample` optionally gives the numeric id of the sample the
+        request was fulfilled with: the requested sample itself, or a new sample
+        created from it. The caller must be able to read that sample. It is
+        recorded on the new `statusChanges` entry.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+
+        | --- | --- |
+
+        `{ "status": "REJECTED", "reason": "Insufficient material left" }` | Rejects a PENDING request, giving the reason. |
+
+        `{ "status": "FULFILLED", "transferredSample": 456 }` | Fulfils the request, recording sample 456 as the one handed over. |
       tags:
         - Sample Requests
       parameters:
@@ -1303,15 +1334,19 @@ paths:
               example:
                 status: REJECTED
                 reason: Insufficient material left
-        description: The target status, and a reason when rejecting.
+        description: >-
+          The target status, a reason when rejecting, and optionally the sample
+          the request was fulfilled with.
         required: true
       responses:
         "200":
           description: The updated request, including its extended status history.
         "404":
           description: >-
-            No such request, the caller is neither its requester nor the
-            sample's owner, or sample requests are not enabled on this instance.
+            No such request, the caller is neither its requester, the sample's
+            current owner, nor its owner when the request was raised, a supplied
+            `transferredSample` does not exist or cannot be read by the caller, or
+            sample requests are not enabled on this instance.
         "422":
           description: >-
             The caller is not the permitted actor for this transition, the
@@ -1321,9 +1356,10 @@ paths:
     get:
       summary: Get a specific sample request
       description: >
-        Returns a single request. Visible only to the requester and the current
-        owner of the requested sample. Any other user receives a 404, so that a
-        request's existence is not disclosed.
+        Returns a single request. Visible only to the requester, the current
+        owner of the requested sample, and whoever owned it when the request was
+        raised. Any other user receives a 404, so that a request's existence is
+        not disclosed.
       tags:
         - Sample Requests
       parameters:
@@ -1335,8 +1371,12 @@ paths:
             history oldest first. The first entry is always the PENDING entry for
             the request's creation, so a client never has to reconstruct it from
             `created` and `requester`. Each entry is
-            `{ id, status, created, createdBy, reason }`, where `reason` is
-            populated for a rejection.
+            `{ id, status, created, createdBy, reason, transferredSample }`,
+            where `reason` is populated for a rejection, and `transferredSample`
+            summarises the sample the request was fulfilled with, if one was
+            recorded, limited to what the current user may read. `requester`,
+            `originalOwner` and each `createdBy` are user objects; a user deleted
+            since keeps their username, with a null id.
         "404":
           $ref: "#/components/responses/NotFound"
   /subSamples:
@@ -3175,8 +3215,10 @@ paths:
         not returned, and pasting such a PID yields no hit.
 
 
-        Each hit carries `linkedInstrumentGlobalId` when an Instrument in this deployment already
-        links that PID, so a client can disable importing it before the `409`.
+        Each hit carries `alreadyLinked`, true when an Instrument in this deployment already links
+        that PID, so a client can refuse importing it before the `409`; and
+        `linkedInstrumentGlobalId` only when the caller may read that Instrument (read or limited
+        read). An Instrument the caller may not read is never named.
 
 
         Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
@@ -3186,9 +3228,13 @@ paths:
         - in: query
           name: query
           required: true
-          description: Free text, or a DOI or Handle for a direct lookup.
+          description: >
+            Free text, or a DOI or Handle for a direct lookup. At least 4 characters after
+            trimming; shorter, blank or whitespace-only queries are refused with a 422 and never
+            reach the registry.
           schema:
             type: string
+            minLength: 4
       responses:
         "200":
           description: One page of hits from the enabled provider.
@@ -3198,6 +3244,12 @@ paths:
                 $ref: "#/components/schemas/PidinstSearchResult"
         "404":
           description: No PIDINST provider is enabled on this deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: The query is shorter than 4 characters after trimming.
           content:
             application/json:
               schema:
@@ -3928,26 +3980,32 @@ components:
       in: query
       description: >-
         Which side of the request to list. REQUESTER returns requests raised by
-        the current user, OWNER returns requests against samples they currently
-        own.
+        the current user, OWNER returns requests received by them, as the
+        sample's owner when each request was raised. When omitted, both are
+        returned.
       schema:
         type: string
         enum:
           - REQUESTER
           - OWNER
-        default: REQUESTER
     sampleRequestStatusParam:
       name: status
       in: query
-      description: Limits results to requests in the given state.
+      description: >-
+        Limits results to requests in any of the given states, as a
+        comma-separated list, e.g. `PENDING,APPROVED`.
+      style: form
+      explode: false
       schema:
-        type: string
-        enum:
-          - PENDING
-          - APPROVED
-          - REJECTED
-          - FULFILLED
-          - CANCELLED
+        type: array
+        items:
+          type: string
+          enum:
+            - PENDING
+            - APPROVED
+            - REJECTED
+            - FULFILLED
+            - CANCELLED
     sampleRequestSampleIdParam:
       name: sampleId
       in: query
@@ -4037,7 +4095,8 @@ components:
     PidAlreadyLinked:
       description: >
         An Instrument in this deployment already carries a linked identifier for this PID. The
-        message names that Instrument's global id.
+        message names that Instrument's global id when the caller may read it, and otherwise says
+        only that an instrument they cannot access holds the PID.
       content:
         application/json:
           schema:
@@ -4616,11 +4675,19 @@ components:
         updated:
           type: string
           description: Last-update timestamp as the provider reports it.
+        alreadyLinked:
+          type: boolean
+          description: >
+            Whether an Instrument in this deployment already links this PID. Always present.
+            Importing such a PID answers `409`.
+          example: true
         linkedInstrumentGlobalId:
           type: string
           description: >
-            Global id of the Instrument in this deployment that already links this PID, absent when
-            none does. Importing a PID that is already linked answers `409`.
+            Global id of the Instrument that already links this PID, present only when the caller
+            may read that Instrument (read or limited read). Absent when nothing links the PID and
+            when the caller may not read the linking Instrument, so an Instrument they would not be
+            shown is never named.
           example: IN2
     PidinstSearchResult:
       description: One page of PID lookup hits from the enabled provider.

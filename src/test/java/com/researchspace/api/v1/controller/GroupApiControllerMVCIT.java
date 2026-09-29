@@ -1,6 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -48,15 +47,14 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
     mockMvc
         .perform(get(createUrl(API_VERSION.ONE, "/groups")).header("apiKey", apiKey))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()", is(1)))
-        .andExpect(jsonPath("$[0].members.length()", is(5)))
-        .andExpect(jsonPath("$[0].members[0].role", is("PI")))
-        .andExpect(jsonPath("$[0].name", is(testGrp1.getGroup().getDisplayName())))
-        .andExpect(jsonPath("$[0].type", is("LAB_GROUP")))
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].members.length()").value(5))
+        .andExpect(jsonPath("$[0].members[0].role").value("PI"))
+        .andExpect(jsonPath("$[0].name").value(testGrp1.getGroup().getDisplayName()))
+        .andExpect(jsonPath("$[0].type").value("LAB_GROUP"))
         .andExpect(
-            jsonPath(
-                "$[0].sharedFolderId",
-                is(testGrp1.getGroup().getCommunalGroupFolderId().intValue())))
+            jsonPath("$[0].sharedFolderId")
+                .value(testGrp1.getGroup().getCommunalGroupFolderId().intValue()))
         .andReturn();
 
     // now search all public groups with a search term
@@ -66,10 +64,10 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
                 .header("apiKey", apiKey)
                 .param("query", "groupApiSearchTest"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()", is(1)))
-        .andExpect(jsonPath("$[0].members.length()", is(2)))
-        .andExpect(jsonPath("$[0].members[0].role", is("PI")))
-        .andExpect(jsonPath("$[0].name", is(group2.getDisplayName())))
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].members.length()").value(2))
+        .andExpect(jsonPath("$[0].members[0].role").value("PI"))
+        .andExpect(jsonPath("$[0].name").value(group2.getDisplayName()))
         .andReturn();
   }
 
@@ -81,7 +79,7 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
         mockMvc
             .perform(get(createUrl(API_VERSION.ONE, "/groups")).header("apiKey", apiKey))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()", is(0)))
+            .andExpect(jsonPath("$.length()").value(0))
             .andReturn();
   }
 
@@ -94,9 +92,9 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
     mockMvc
         .perform(get(createUrl(API_VERSION.ONE, "/groups/" + groupId)).header("apiKey", apiKey))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id", is(groupId.intValue())))
-        .andExpect(jsonPath("$.name", is(group.getGroup().getDisplayName())))
-        .andExpect(jsonPath("$.type", is("LAB_GROUP")))
+        .andExpect(jsonPath("$.id").value(groupId.intValue()))
+        .andExpect(jsonPath("$.name").value(group.getGroup().getDisplayName()))
+        .andExpect(jsonPath("$.type").value("LAB_GROUP"))
         .andReturn();
   }
 
@@ -112,9 +110,8 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
         .perform(get(createUrl(API_VERSION.ONE, "/groups/" + groupBId)).header("apiKey", apiKeyA))
         .andExpect(status().isNotFound())
         .andExpect(
-            jsonPath(
-                "$.message",
-                is("Group with id: " + groupBId + " not found, or the user isn't a member.")));
+            jsonPath("$.message")
+                .value("Group with id: " + groupBId + " not found, or the user isn't a member."));
   }
 
   @Test
@@ -128,9 +125,9 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
         .perform(get(createUrl(API_VERSION.ONE, "/groups/" + fakeGroupId)).header("apiKey", apiKey))
         .andExpect(status().isNotFound())
         .andExpect(
-            jsonPath(
-                "$.message",
-                is("Group with id: " + fakeGroupId + " not found, or the user isn't a member.")));
+            jsonPath("$.message")
+                .value(
+                    "Group with id: " + fakeGroupId + " not found, or the user isn't a member."));
     ;
   }
 }

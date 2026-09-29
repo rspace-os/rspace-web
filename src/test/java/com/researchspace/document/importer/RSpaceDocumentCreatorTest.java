@@ -1,6 +1,7 @@
 package com.researchspace.document.importer;
 
-import com.researchspace.core.testutil.CoreTestUtils;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
@@ -49,11 +50,13 @@ public class RSpaceDocumentCreatorTest {
   public void imageFolderValidation() throws IOException {
     Folder targetFolder = TestFactory.createAFolder("workspace", anyUser);
     Folder nonImgFolder = TestFactory.createAFolder("workspace", anyUser);
-    CoreTestUtils.assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> creator.create(provider, targetFolder, nonImgFolder, "something.doc", anyUser));
     nonImgFolder.addType(RecordType.SYSTEM);
 
-    CoreTestUtils.assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> creator.create(provider, targetFolder, nonImgFolder, "something.doc", anyUser));
     nonImgFolder.setName(MediaUtils.IMAGES_MEDIA_FLDER_NAME);
     Mockito.when(provider.getContentFolder()).thenReturn(anyFile);

@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
@@ -30,12 +31,17 @@ public class ArchiveIteratorImpl implements ArchiveIterator {
       if (!zipDir.mkdir()) {
         throw new IOException("Couldn't create folder to unzip archive");
       }
+      Path zipDirPath = zipDir.getCanonicalFile().toPath();
       Enumeration<? extends ZipEntry> entries = zipFile.entries();
       log.info("Processing individual zip entries ...");
       while (entries.hasMoreElements()) {
         ZipEntry entry = entries.nextElement();
 
         File entryDestination = new File(zipDir, entry.getName());
+        if (!entryDestination.getCanonicalFile().toPath().startsWith(zipDirPath)) {
+          throw new IOException(
+              "Zip entry resolves outside the extraction directory: " + entry.getName());
+        }
         if (!entry.isDirectory() && include.test(entry)) {
           entryDestination.getParentFile().mkdirs();
           try (InputStream in = zipFile.getInputStream(entry);

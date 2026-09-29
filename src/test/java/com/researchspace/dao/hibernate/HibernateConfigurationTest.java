@@ -5,13 +5,11 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.metamodel.EntityType;
 import jakarta.persistence.metamodel.Metamodel;
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class HibernateConfigurationTest extends BaseDaoTestCase {
-  @Autowired SessionFactory sessionFactory;
   @Autowired EntityManagerFactory emf;
 
   @Test

@@ -1,6 +1,6 @@
 package com.researchspace.admin.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -52,17 +52,17 @@ public class FileLocationBasedRetrieverTest {
   public void testInvalidLineNumberHandled() throws IOException {
     logretriever.setProperties(okProperties());
     List<String> lines = logretriever.retrieveLastNLogLines(-1); // meaningless number
-    assertEquals(FileLocationBasedLogRetriever.DEFAULT_NUM_LINES, lines.size());
+    assertThat(lines).hasSize(FileLocationBasedLogRetriever.DEFAULT_NUM_LINES);
 
     // too big
     List<String> lines2 = logretriever.retrieveLastNLogLines(Integer.MAX_VALUE);
-    assertEquals(431, lines2.size());
+    assertThat(lines2).hasSize(431);
   }
 
   @Test
   public void testRetrieveLastNLogLines() throws IOException {
     logretriever.setProperties(okProperties());
     List<String> lines = logretriever.retrieveLastNLogLines(500);
-    assertEquals(431, lines.size());
+    assertThat(lines).hasSize(431);
   }
 }

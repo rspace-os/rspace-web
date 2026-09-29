@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -57,9 +58,9 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     List<Map> createdSubSamples = getFromJsonResponseBody(addNewSubSamplesResult, List.class);
-    assertEquals(2, createdSubSamples.size());
-    assertEquals("mySample.02", createdSubSamples.get(0).get("name"));
-    assertEquals("mySample.03", createdSubSamples.get(1).get("name"));
+    assertThat(createdSubSamples).hasSize(2);
+    assertThat(createdSubSamples.get(0)).containsEntry("name", "mySample.02");
+    assertThat(createdSubSamples.get(1)).containsEntry("name", "mySample.03");
 
     ApiSampleInfo updatedBasicSample = sampleApiMgr.getApiSampleById(basicSample.getId(), anyUser);
     assertEquals(3, updatedBasicSample.getSubSamplesCount());
@@ -79,8 +80,8 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     createdSubSamples = getFromJsonResponseBody(addOneSubSampleWithQuantityResult, List.class);
-    assertEquals(1, createdSubSamples.size());
-    assertEquals("mySample.04", createdSubSamples.get(0).get("name"));
+    assertThat(createdSubSamples).hasSize(1);
+    assertThat(createdSubSamples.get(0)).containsEntry("name", "mySample.04");
 
     updatedBasicSample = sampleApiMgr.getApiSampleById(basicSample.getId(), anyUser);
     assertEquals(4, updatedBasicSample.getSubSamplesCount());
@@ -116,7 +117,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     ApiInventoryRecordRevisionList history =
         getSampleRevisions(anyUser, apiKey, basicSample.getId());
-    assertEquals(2, history.getRevisions().size(), "one transaction writes one revision");
+    assertThat(history.getRevisions()).as("one transaction writes one revision").hasSize(2);
     ApiSample revision2 =
         getSampleRevisionSnapshot(
             anyUser, apiKey, basicSample.getId(), history.getRevisions().get(1).getRevisionId());
@@ -139,7 +140,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(errorResult, ApiError.class);
-    assertEquals(2, error.getErrors().size());
+    assertThat(error.getErrors()).hasSize(2);
     assertApiErrorContainsMessage(error, "sampleId: must be greater than or equal to 1");
     assertApiErrorContainsMessage(error, "numSubSamples: must be greater than or equal to 1");
 
@@ -150,7 +151,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     error = getErrorFromJsonResponseBody(errorResult, ApiError.class);
-    assertEquals(3, error.getErrors().size());
+    assertThat(error.getErrors()).hasSize(3);
     assertApiErrorContainsMessage(
         error, "singleSubSampleQuantity: Quantity unit id [null] is invalid");
   }
@@ -182,7 +183,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiSubSample editedSubSample = getFromJsonResponseBody(updateimage, ApiSubSample.class);
     assertEquals(fpCount + 2, getCountOfEntityTable("FileProperty"));
-    assertEquals(3, editedSubSample.getLinks().size());
+    assertThat(editedSubSample.getLinks()).hasSize(3);
     // 2 image links - 1 for main image, 1 for thumbnail
     assertEquals(
         2,
@@ -227,7 +228,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSubSample retrievedSubSample =
         getFromJsonResponseBody(retrieveSubSampleResult, ApiSubSample.class);
 
-    assertEquals(3, retrievedSubSample.getLinks().size());
+    assertThat(retrievedSubSample.getLinks()).hasSize(3);
     assertEquals(
         2,
         retrievedSubSample.getLinks().stream()
@@ -274,7 +275,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     ApiSubSample editedSubSample = getFromJsonResponseBody(addNewNoteResult, ApiSubSample.class);
-    assertEquals(1, editedSubSample.getNotes().size());
+    assertThat(editedSubSample.getNotes()).hasSize(1);
     // assert is in Database
     Long afterCount = getCountOfEntityTable("SubSampleNote");
     assertEquals(b4Count + 1, afterCount.intValue());
@@ -308,7 +309,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals("mySubSample", retrievedSubSample.getName());
     assertNotNull(retrievedSubSample.getSampleInfo());
     assertEquals("mySample", retrievedSubSample.getSampleInfo().getName());
-    assertEquals(0, retrievedSubSample.getExtraFields().size());
+    assertThat(retrievedSubSample.getExtraFields()).isEmpty();
     assertEquals(5, retrievedSubSample.getQuantity().getNumericValue().longValue());
 
     // update subsample name and amount - a different, but compatible unit
@@ -381,7 +382,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiInventoryRecordRevisionList history =
         getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
-    assertEquals(2, history.getRevisions().size());
+    assertThat(history.getRevisions()).hasSize(2);
 
     // check details of 1st revision
     result =
@@ -481,7 +482,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
         getFromJsonResponseBody(retrieveSubSampleResult, ApiSubSample.class);
     assertNotNull(movingSubSample);
     assertNotNull(movingSubSample.getParentContainer());
-    assertEquals(1, movingSubSample.getParentContainers().size());
+    assertThat(movingSubSample.getParentContainers()).hasSize(1);
     assertEquals(workbench.getId(), movingSubSample.getParentContainer().getId());
     assertNull(movingSubSample.getLastNonWorkbenchParent());
     assertNull(movingSubSample.getLastMoveDateMillis());
@@ -499,7 +500,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     movingSubSample = getFromJsonResponseBody(editResult, ApiSubSample.class);
     assertEquals(listContainer.getId(), movingSubSample.getParentContainer().getId());
-    assertEquals(2, movingSubSample.getParentContainers().size());
+    assertThat(movingSubSample.getParentContainers()).hasSize(2);
     assertNull(movingSubSample.getLastNonWorkbenchParent());
     assertNotNull(movingSubSample.getLastMoveDateMillis());
     verifyAuditAction(AuditAction.MOVE, 1);
@@ -522,7 +523,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     movingSubSample = getFromJsonResponseBody(editResult, ApiSubSample.class);
     assertEquals(workbench.getId(), movingSubSample.getParentContainer().getId());
-    assertEquals(1, movingSubSample.getParentContainers().size());
+    assertThat(movingSubSample.getParentContainers()).hasSize(1);
     assertEquals(listContainer.getId(), movingSubSample.getLastNonWorkbenchParent().getId());
     assertNotNull(movingSubSample.getLastMoveDateMillis());
 
@@ -646,7 +647,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     getAllResult = getAllSubSamples(anyUser, apiKey, false);
     allSubSamples = getFromJsonResponseBody(getAllResult, ApiSubSampleSearchResult.class);
     assertNotNull(allSubSamples);
-    assertEquals(initialSubSampleCount + 1, allSubSamples.getSubSamples().size());
+    assertThat(allSubSamples.getSubSamples()).hasSize(initialSubSampleCount + 1);
 
     // move subsample inside a container
     moveSubSampleIntoListContainer(basicSubSampleInfo.getId(), basicContainer.getId(), anyUser);
@@ -686,13 +687,13 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     getAllResult = getAllSubSamples(anyUser, apiKey, false);
     allSubSamples = getFromJsonResponseBody(getAllResult, ApiSubSampleSearchResult.class);
     assertNotNull(allSubSamples);
-    assertEquals(initialSubSampleCount, allSubSamples.getSubSamples().size());
+    assertThat(allSubSamples.getSubSamples()).hasSize(initialSubSampleCount);
 
     // but it will show up with include deleted option
     getAllResult = getAllSubSamples(anyUser, apiKey, true);
     allSubSamples = getFromJsonResponseBody(getAllResult, ApiSubSampleSearchResult.class);
     assertNotNull(allSubSamples);
-    assertEquals(initialSubSampleCount + 1, allSubSamples.getSubSamples().size());
+    assertThat(allSubSamples.getSubSamples()).hasSize(initialSubSampleCount + 1);
 
     // subsample cannot be updated
     String updateJson = String.format("{ \"name\" : \"newSubSampleName\" } ");
@@ -742,7 +743,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     getAllResult = getAllSubSamples(anyUser, apiKey, false);
     allSubSamples = getFromJsonResponseBody(getAllResult, ApiSubSampleSearchResult.class);
     assertNotNull(allSubSamples);
-    assertEquals(initialSubSampleCount + 1, allSubSamples.getSubSamples().size());
+    assertThat(allSubSamples.getSubSamples()).hasSize(initialSubSampleCount + 1);
 
     verifyNoMoreInteractions(auditer);
   }
@@ -786,18 +787,13 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiInventoryRecordRevisionList history =
         getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
-    assertEquals(2, history.getRevisions().size());
+    assertThat(history.getRevisions()).hasSize(2);
 
     ApiInventoryRecordRevision subSampleRev1 = history.getRevisions().get(0);
     assertEquals("mySubSample", subSampleRev1.getRecord().getName());
-    assertEquals(3, subSampleRev1.getRecord().getLinks().size());
-    assertTrue(
-        subSampleRev1
-            .getRecord()
-            .getLinks()
-            .get(0)
-            .getLink()
-            .endsWith("/revisions/" + subSampleRev1.getRevisionId()));
+    assertThat(subSampleRev1.getRecord().getLinks()).hasSize(3);
+    assertThat(subSampleRev1.getRecord().getLinks().get(0).getLink())
+        .endsWith("/revisions/" + subSampleRev1.getRevisionId());
     ApiInventoryRecordRevision subSampleRev2 = history.getRevisions().get(1);
     assertEquals("newSubSampleName", subSampleRev2.getRecord().getName());
 
@@ -817,16 +813,12 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiSubSample subSampleRev1Full = getFromJsonResponseBody(result, ApiSubSample.class);
     assertEquals("mySubSample", subSampleRev1Full.getName());
-    assertEquals(1, subSampleRev1Full.getExtraFields().size());
-    assertEquals(1, subSampleRev1Full.getNotes().size());
+    assertThat(subSampleRev1Full.getExtraFields()).hasSize(1);
+    assertThat(subSampleRev1Full.getNotes()).hasSize(1);
     assertEquals("myComplexSample", subSampleRev1Full.getSampleInfo().getName());
-    assertEquals(3, subSampleRev1Full.getLinks().size());
-    assertTrue(
-        subSampleRev1Full
-            .getLinks()
-            .get(0)
-            .getLink()
-            .endsWith("/revisions/" + subSampleRev1.getRevisionId()));
+    assertThat(subSampleRev1Full.getLinks()).hasSize(3);
+    assertThat(subSampleRev1Full.getLinks().get(0).getLink())
+        .endsWith("/revisions/" + subSampleRev1.getRevisionId());
   }
 
   private ApiSample getSampleThroughApi(User user, String apiKey, Long sampleId) throws Exception {

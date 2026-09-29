@@ -1,7 +1,7 @@
 package com.researchspace.service.archive.export;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.properties.IPropertyHolder;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ public class ExportObjectGeneratorTest {
   @Test
   public void testGetFileIdentity() {
     String filename = testExporter.getUniqueName("abc_ 'hello'");
-    assertTrue(filename.contains("abchello"));
+    assertThat(filename).contains("abchello");
   }
 
   @Test

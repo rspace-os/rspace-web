@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,7 +41,7 @@ public class ListOfMaterialsApiControllerTest extends SpringTransactionalTest {
 
     List<ApiListOfMaterials> foundDocLoms =
         lomApiController.getListOfMaterialsForDocument(basicDoc.getId(), testUser);
-    assertEquals(0, foundDocLoms.size());
+    assertThat(foundDocLoms).isEmpty();
 
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(testUser);
     ApiListOfMaterials createdApiLom =
@@ -53,13 +54,13 @@ public class ListOfMaterialsApiControllerTest extends SpringTransactionalTest {
 
     // loms searched by doc/field id doesn't have elnDocument details
     foundDocLoms = lomApiController.getListOfMaterialsForDocument(basicDoc.getId(), testUser);
-    assertEquals(1, foundDocLoms.size());
+    assertThat(foundDocLoms).hasSize(1);
     List<ApiListOfMaterials> foundFieldLoms =
         lomApiController.getListOfMaterialsForField(basicDocField.getId(), testUser);
     assertEquals(foundDocLoms, foundFieldLoms);
     ApiListOfMaterials apiLomFoundWithDocOrFieldSearch = foundFieldLoms.get(0);
     assertEquals(createdApiLom.getGlobalId(), apiLomFoundWithDocOrFieldSearch.getGlobalId());
-    assertEquals(1, apiLomFoundWithDocOrFieldSearch.getMaterials().size());
+    assertThat(apiLomFoundWithDocOrFieldSearch.getMaterials()).hasSize(1);
     assertFalse(apiLomFoundWithDocOrFieldSearch.getMaterials().get(0).getRecord().isDeleted());
     assertNull(apiLomFoundWithDocOrFieldSearch.getElnDocument()); // doesn't have eln doc details
 
@@ -70,18 +71,18 @@ public class ListOfMaterialsApiControllerTest extends SpringTransactionalTest {
     ApiListOfMaterials fullRetrievedLom =
         lomApiController.getListOfMaterialsById(createdLomId, testUser);
     assertEquals(createdApiLom.getGlobalId(), fullRetrievedLom.getGlobalId());
-    assertEquals(1, fullRetrievedLom.getMaterials().size());
+    assertThat(fullRetrievedLom.getMaterials()).hasSize(1);
     assertTrue(fullRetrievedLom.getMaterials().get(0).getRecord().isDeleted());
     assertNotNull(fullRetrievedLom.getElnDocument()); // does have eln doc details
     List<ApiListOfMaterials> foundItemLoms =
         lomApiController.getListOfMaterialsForInventoryItem(basicSample.getGlobalId(), testUser);
-    assertEquals(1, foundDocLoms.size());
-    assertEquals(1, foundDocLoms.get(0).getMaterials().size());
+    assertThat(foundDocLoms).hasSize(1);
+    assertThat(foundDocLoms.get(0).getMaterials()).hasSize(1);
     assertTrue(foundItemLoms.get(0).getMaterials().get(0).getRecord().isDeleted());
     assertEquals(fullRetrievedLom.getElnDocument(), foundItemLoms.get(0).getElnDocument());
 
     lomApiController.deleteListOfMaterials(createdLomId, testUser);
     foundDocLoms = lomApiController.getListOfMaterialsForDocument(basicDoc.getId(), testUser);
-    assertEquals(0, foundDocLoms.size());
+    assertThat(foundDocLoms).isEmpty();
   }
 }
