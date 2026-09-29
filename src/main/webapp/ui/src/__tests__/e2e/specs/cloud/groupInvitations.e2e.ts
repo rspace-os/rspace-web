@@ -50,7 +50,7 @@ test.describe("Community group invitations", () => {
     await test.step("Then the invitee is a member of the group", async () => {
       await pi.profile.open();
       await pi.profile.groupLink(groupName).click();
-      await expect(pi.groupDetails.memberRow(inviteeUsername)).toContainText("User");
+      await expect(pi.groupDetails.memberRole(inviteeUsername)).toHaveText("User");
     });
   });
 
@@ -87,9 +87,9 @@ test.describe("Community group invitations", () => {
     await test.step("Then the group has the nominee as PI, me as Lab Admin and the member as User", async () => {
       await nominatedPi.profile.open();
       await nominatedPi.profile.groupLink(groupName).click();
-      await expect(nominatedPi.groupDetails.memberRow(nominatedPi.username)).toContainText("PI");
-      await expect(nominatedPi.groupDetails.memberRow(creator.username)).toContainText("Lab Admin");
-      await expect(nominatedPi.groupDetails.memberRow(member.username)).toContainText("User");
+      await expect(nominatedPi.groupDetails.memberRole(nominatedPi.username)).toHaveText("PI");
+      await expect(nominatedPi.groupDetails.memberRole(creator.username)).toHaveText("Lab Admin");
+      await expect(nominatedPi.groupDetails.memberRole(member.username)).toHaveText("User");
     });
   });
 });

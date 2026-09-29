@@ -36,26 +36,29 @@ export class MailpitClient {
     await this.assertOk(res, "deleteAllMessages");
   }
 
-  /**
-   * Polls until an email with `subject` reaches `to`, then returns its first link whose URL contains `pathFragment`.
-   */
-  async waitForLink(to: string, subject: string, pathFragment: string, timeoutMs = 15_000): Promise<string> {
+  /** Polls until an email with `subject` reaches `to`, then returns it. */
+  async waitForMessage(to: string, subject: string, timeoutMs = 15_000): Promise<MailpitMessage> {
     const deadline = Date.now() + timeoutMs;
     for (;;) {
       const summary = (await this.listMessages(`to:${to}`)).find((m) => m.Subject === subject);
       if (summary) {
-        const message = await this.getMessage(summary.ID);
-        const link = this.extractLinks(message.HTML).find((href) => href.includes(pathFragment));
-        if (!link) {
-          throw new Error(`"${subject}" email to ${to} has no link containing "${pathFragment}": ${message.HTML}`);
-        }
-        return link;
+        return this.getMessage(summary.ID);
       }
       if (Date.now() > deadline) {
         throw new Error(`no "${subject}" email reached ${to} within ${timeoutMs}ms`);
       }
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
+  }
+
+  /** Waits for the email as {@link waitForMessage}, then returns its first link whose URL contains `pathFragment`. */
+  async waitForLink(to: string, subject: string, pathFragment: string, timeoutMs = 15_000): Promise<string> {
+    const message = await this.waitForMessage(to, subject, timeoutMs);
+    const link = this.extractLinks(message.HTML).find((href) => href.includes(pathFragment));
+    if (!link) {
+      throw new Error(`"${subject}" email to ${to} has no link containing "${pathFragment}": ${message.HTML}`);
+    }
+    return link;
   }
 
   /** Extracts href values from an HTML email body. */

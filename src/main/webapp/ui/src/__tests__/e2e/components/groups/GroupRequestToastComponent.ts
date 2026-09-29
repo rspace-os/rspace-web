@@ -9,15 +9,7 @@ export class GroupRequestToastComponent {
   }
 
   async accept(): Promise<void> {
-    await this.respond("Accept");
-  }
-
-  async decline(): Promise<void> {
-    await this.respond("Decline");
-  }
-
-  private async respond(name: "Accept" | "Decline"): Promise<void> {
-    await this.root.getByRole("button", { name, exact: true }).click();
+    await this.root.getByRole("button", { name: "Accept", exact: true }).click();
     await this.root.waitFor({ state: "hidden" });
   }
 }
