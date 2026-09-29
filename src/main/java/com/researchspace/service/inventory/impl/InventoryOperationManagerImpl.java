@@ -213,16 +213,18 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     }
     List<ExtraField> existing = live.getActiveExtraFields();
     for (ApiExtraField field : origin.getExtraFields()) {
-      if (byKey(field, existing).isEmpty()
-          && byName(field, existing)
-              .filter(match -> match.getType() != field.getTypeAsFieldType())
-              .isPresent()) {
-        errors.rejectValue(
-            "extraFields",
-            "errors.inventory.operation.originFieldNameClash",
-            new Object[] {field.getName()},
-            null);
+      if (byKey(field, existing).isPresent()) {
+        continue;
       }
+      byName(field, existing)
+          .filter(match -> match.getType() != field.getTypeAsFieldType())
+          .ifPresent(
+              match ->
+                  errors.rejectValue(
+                      "globalId",
+                      "errors.inventory.operation.originFieldNameClash",
+                      new Object[] {match.getName()},
+                      null));
     }
   }
 

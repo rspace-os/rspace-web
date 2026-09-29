@@ -155,8 +155,10 @@ Files:
 Two operations record a value the user never types: Passage's passage number and
 Destroy's disposal date. **The server computes both** (`PassageOperation`,
 `DestroyOperation`), because the value that matters is the one that gets stored. The
-confirmation card previews only Destroy's date, as the user's local today
+confirmation card previews only Destroy's date, as today in the browser's time zone
 (`OperationConfirmation`); a change to `DestroyOperation`'s date belongs on both sides.
+The server records the date in the session's time zone, taken at login, so after the
+browser's time zone changes the preview and the stored date can differ by a day.
 
 ## What the backend does
 

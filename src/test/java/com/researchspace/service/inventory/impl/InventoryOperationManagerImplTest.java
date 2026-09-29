@@ -266,10 +266,10 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void destroyIsRefusedWhenTheOriginHasAFieldOfAnotherTypeWithTheDisposedFieldsName() {
+  void destroyIsRefusedOnTheOriginNamingItsOwnFieldOfAnotherTypeWithTheDisposedFieldsName() {
     ExtraField clashing = new ExtraLinkField();
     clashing.setId(55L);
-    clashing.setName("Disposed");
+    clashing.setName("  disposed  ");
     SubSample live = subSampleHolding("2", 3, 1L);
     when(live.getActiveExtraFields()).thenReturn(List.of(clashing));
     ApiInventoryOperationOriginUpdate origin =
@@ -285,9 +285,9 @@ class InventoryOperationManagerImplTest {
 
     BindException rejection = performExpectingRejection(request);
 
-    FieldError error = rejection.getFieldErrors("origins[0].extraFields").get(0);
+    FieldError error = rejection.getFieldErrors("origins[0].globalId").get(0);
     assertEquals("errors.inventory.operation.originFieldNameClash", error.getCode());
-    assertArrayEquals(new Object[] {"Disposed"}, error.getArguments());
+    assertArrayEquals(new Object[] {"  disposed  "}, error.getArguments());
   }
 
   @Test
