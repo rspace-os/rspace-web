@@ -141,9 +141,6 @@ public final class ApiInventoryOperationRequests {
   @Getter
   @Setter
   public static class Pool extends Creating {
-    // Two constraints rather than one @Size(min, max) so each bound keeps its own message: a single
-    // annotation carries a single message, which would report a 101-origin request as "requires at
-    // least two".
     @NotNull(message = "{errors.inventory.operation.originsRequired}")
     @Size.List({
       @Size(min = 2, message = "{errors.inventory.operation.originCountMinimum}"),
