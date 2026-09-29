@@ -29,10 +29,12 @@ means writing both, plus a typed request body and an endpoint.
 The feature ships off. `inventory.operations.available` is a system property
 seeded `DENIED` (`changeLog-rsdev-1231.xml`, changeSet `2026-09-15a`); until a
 sysadmin sets it to `ALLOWED` at **System > Configuration**, every
-`/api/inventory/v1/operations` route answers 404 with errorCode
-`CONFIGURED_UNAVAILABLE` (`InventoryOperationsApiController.assertOperationsAvailable`)
-and the Process entry is hidden from every Inventory context menu
-(`ContextMenu.tsx` reads the property, `ContextActions.tsx` hides the entry).
+`/api/inventory/v1/operations` route answers 404 with `internalCode` 50301
+(`ApiErrorCodes.CONFIGURED_UNAVAILABLE`, from
+`InventoryOperationsApiController.assertOperationsAvailable`); an unknown origin
+answers the same 404 and code, so only the message tells them apart. The Process
+entry is hidden from every Inventory context menu (`ContextMenu.tsx` reads the
+property, `ContextActions.tsx` hides the entry).
 There is no sysadmin bypass. Any test or e2e spec that exercises the wizard has
 to turn the property on first, as the operation MVCITs do in their `setup()`.
 

@@ -21,13 +21,19 @@ tags:
   - name: Operations
     description: >
       Configured Inventory operations. Every endpoint under `/operations` answers `404` with
-      errorCode `CONFIGURED_UNAVAILABLE` while the system property
-      `inventory.operations.available` is `DENIED`, which is how it is seeded; a sysadmin turns it
-      on at System > Configuration. A request whose body cannot be read (malformed JSON, or a
+      `internalCode` 50301 and a message saying the Inventory operations API is not enabled while
+      the system property `inventory.operations.available` is `DENIED`, which is how it is seeded;
+      a sysadmin turns it on at System > Configuration. An unknown or unreadable origin also
+      answers `404` with `internalCode` 50301, so tell the two apart by the message. A request
+      whose body cannot be read (malformed JSON, or a
       content type other than JSON) is rejected with `400` or `415` before that check, so those
       answers can come back while the property is `DENIED`.
       The server builds the new sample from the inputs an operation declares; a property the
       operation does not declare is ignored, as on every other endpoint.
+
+      In a `400`, each entry in `errors` is `"<request path>: <message>"`, for example
+      `origin.globalId: ...`, and `data.validationErrors` carries the same per field as
+      `field`, `rejectedValue`, `objectName` and `message`.
 
 paths:
   /workbenches:
@@ -2571,7 +2577,7 @@ paths:
         "409":
           $ref: "#/components/responses/OperationOriginBusy"
         "422":
-          $ref: "#/components/responses/UnprocessableQuery"
+          $ref: "#/components/responses/OperationRejectedByCore"
   /operations/passage:
     post:
       summary: Passage a SubSample into a new Sample
@@ -2608,8 +2614,10 @@ paths:
           description: >
             Rejected, leaving the origin unchanged. `sampleName` or `eachAmount` is missing;
             `count` is below 1, above 100 or not a whole number; an `amountTaken` was sent, which
-            this operation does not accept; the origin is empty; or `templateId` names a template
-            the created sample does not conform to. Each error names the field that was sent.
+            this operation does not accept; the origin is empty; `templateId` names a template
+            the created sample does not conform to; or the parent sample is already at passage
+            9999, the highest supported (on `origin.globalId`). Each error names the field that
+            was sent.
           content:
             application/json:
               schema:
@@ -2619,7 +2627,7 @@ paths:
         "409":
           $ref: "#/components/responses/OperationOriginBusy"
         "422":
-          $ref: "#/components/responses/UnprocessableQuery"
+          $ref: "#/components/responses/OperationRejectedByCore"
   /operations/pool:
     post:
       summary: Pool material from several SubSamples into a new Sample
@@ -2676,7 +2684,7 @@ paths:
         "409":
           $ref: "#/components/responses/OperationOriginBusy"
         "422":
-          $ref: "#/components/responses/UnprocessableQuery"
+          $ref: "#/components/responses/OperationRejectedByCore"
   /operations/derive:
     post:
       summary: Derive a new Sample from a SubSample by a named process
@@ -2714,7 +2722,7 @@ paths:
         "409":
           $ref: "#/components/responses/OperationOriginBusy"
         "422":
-          $ref: "#/components/responses/UnprocessableQuery"
+          $ref: "#/components/responses/OperationRejectedByCore"
   /operations/cryopreserve:
     post:
       summary: Cryopreserve material from a SubSample
@@ -2762,7 +2770,7 @@ paths:
         "409":
           $ref: "#/components/responses/OperationOriginBusy"
         "422":
-          $ref: "#/components/responses/UnprocessableQuery"
+          $ref: "#/components/responses/OperationRejectedByCore"
   /operations/revive:
     post:
       summary: Revive cryopreserved material from a SubSample
@@ -2803,7 +2811,7 @@ paths:
         "409":
           $ref: "#/components/responses/OperationOriginBusy"
         "422":
-          $ref: "#/components/responses/UnprocessableQuery"
+          $ref: "#/components/responses/OperationRejectedByCore"
   /operations/destroy:
     post:
       summary: Destroy the remaining contents of a SubSample
@@ -2834,9 +2842,11 @@ paths:
         "400":
           description: >
             Rejected, leaving the origin unchanged. The origin is missing, is not identified by a
-            subsample global id, or is already empty; or an `amountTaken` was sent, which this
-            operation does not accept: it always takes whatever the origin holds when it runs.
-            Each error names the field that was sent.
+            subsample global id, or is already empty; an `amountTaken` was sent, which this
+            operation does not accept: it always takes whatever the origin holds when it runs; or
+            the origin already has a field of another type with the Disposed field's name, which
+            would be overwritten (on `origin.globalId`, naming that field). Each error names the
+            field that was sent.
           content:
             application/json:
               schema:
@@ -2846,7 +2856,7 @@ paths:
         "409":
           $ref: "#/components/responses/OperationOriginBusy"
         "422":
-          $ref: "#/components/responses/UnprocessableQuery"
+          $ref: "#/components/responses/OperationRejectedByCore"
   /import/parseFile:
     post:
       summary: Parse the incoming CSV file for import UI
@@ -4201,6 +4211,14 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OperationResult"
+    OperationRejectedByCore:
+      description: >
+        The new sample or the origin update was refused by the core Inventory rules (for example a
+        duplicate field name). Nothing was changed. Rare: the operation checks most of these first.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     OperationOriginBusy:
       description: >
         The operation did not start, and every origin is unchanged. Either another request is
@@ -5442,10 +5460,15 @@ components:
       properties:
         sampleName:
           type: string
-          description: Name of the sample the operation creates.
+          minLength: 1
+          maxLength: 255
+          description: Name of the sample the operation creates. Not blank.
         count:
           type: integer
-          description: Number of subsamples to create. Defaults to 1, at most 100.
+          minimum: 1
+          maximum: 100
+          default: 1
+          description: Number of subsamples to create, sent as a whole number. Defaults to 1.
         eachAmount:
           $ref: "#/components/schemas/Quantity"
         templateId:
@@ -5557,7 +5580,9 @@ components:
               $ref: "#/components/schemas/OperationOriginWithAmount"
             processName:
               type: string
-              description: The process the new material was produced by, e.g. "PCR".
+              minLength: 1
+              maxLength: 255
+              description: The process the new material was produced by, e.g. "PCR". Not blank.
           required:
             - origin
             - processName
@@ -5585,6 +5610,7 @@ components:
               $ref: "#/components/schemas/OperationOriginWithAmount"
             cryomedium:
               type: string
+              maxLength: 250
               description: >
                 The cryoprotectant the material is frozen in, stored as a Cryomedium field on the
                 new sample.
@@ -5661,7 +5687,9 @@ components:
         in that language. Only `en-US` names ship today.
       properties:
         sample:
-          $ref: "#/components/schemas/Sample"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Sample"
         origins:
           type: array
           description: Each origin subsample as it stands after the operation.
