@@ -50,20 +50,18 @@ function state(draft: BookingWindowDraft, targetGlobalId = target.globalId): Boo
 }
 
 describe("useBookingTimelineDraft", () => {
-  it("keeps the latest range pending through an older acknowledgement and waits for the matching form state", () => {
+  it("keeps the latest range pending until the matching form state is reported", () => {
     const { result } = renderHook(() => useBookingTimelineDraft());
 
     act(() => {
       result.current.onTimelineChange(firstDraft, target.globalId);
       result.current.onTimelineChange(secondDraft, target.globalId);
-      result.current.onWindowAdjustmentApplied(firstDraft, target.globalId);
       result.current.onStateChange(state(firstDraft));
     });
 
     expect(result.current.adjustmentPending).toBe(true);
     expect(result.current.draft).toEqual(secondDraft);
 
-    act(() => result.current.onWindowAdjustmentApplied(secondDraft, target.globalId));
     expect(result.current.adjustmentPending).toBe(true);
 
     act(() => result.current.onStateChange(state(secondDraft)));
@@ -71,13 +69,12 @@ describe("useBookingTimelineDraft", () => {
     expect(result.current.draft).toEqual(secondDraft);
   });
 
-  it("requires matching repeated-hour occurrence fields before acknowledging", () => {
+  it("requires matching repeated-hour occurrence fields before accepting the form state", () => {
     const { result } = renderHook(() => useBookingTimelineDraft());
     const occurrenceMismatch = { ...firstDraft, startOccurrence: "later" as const };
 
     act(() => {
       result.current.onTimelineChange(firstDraft, target.globalId);
-      result.current.onWindowAdjustmentApplied(occurrenceMismatch, target.globalId);
       result.current.onStateChange(state(occurrenceMismatch));
     });
 
@@ -92,14 +89,13 @@ describe("useBookingTimelineDraft", () => {
       result.current.onTimelineChange(firstDraft, target.globalId);
       result.current.onDraftChange(secondDraft, target.globalId);
       result.current.onStateChange(state(secondDraft));
-      result.current.onWindowAdjustmentApplied(firstDraft, target.globalId);
     });
 
     expect(result.current.adjustmentPending).toBe(false);
     expect(result.current.draft).toEqual(secondDraft);
   });
 
-  it("clears a pending range when the target changes and ignores an acknowledgement from the old target", () => {
+  it("clears a pending range when the target changes", () => {
     const { result } = renderHook(() => useBookingTimelineDraft());
     const nextDraft = { ...secondDraft, startTime: "10:00", endTime: "11:00" };
 
@@ -107,8 +103,6 @@ describe("useBookingTimelineDraft", () => {
       result.current.onTimelineChange(firstDraft, target.globalId);
       result.current.onTargetChange();
       result.current.onTimelineChange(nextDraft, "IN456");
-      result.current.onWindowAdjustmentApplied(firstDraft, target.globalId);
-      result.current.onWindowAdjustmentApplied(nextDraft, target.globalId);
     });
 
     expect(result.current.adjustmentPending).toBe(true);
@@ -116,7 +110,6 @@ describe("useBookingTimelineDraft", () => {
 
     act(() => {
       result.current.onStateChange(state(nextDraft, "IN456"));
-      result.current.onWindowAdjustmentApplied(nextDraft, "IN456");
     });
     expect(result.current.adjustmentPending).toBe(false);
   });

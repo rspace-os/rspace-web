@@ -2,6 +2,7 @@ import { type FormStore, useField } from "@formisch/react";
 import { CheckIcon, PencilIcon, Undo2Icon, XIcon } from "lucide-react";
 import { type ReactNode, type Ref, useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   ALL_ISO_WEEKDAYS,
   formatIsoWeekday,
@@ -10,7 +11,7 @@ import {
   type OpeningHours,
   validOpeningHours,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import { bookingDateTimeLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 import { RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { Button } from "@/modules/common/ui/button";
 import { Checkbox } from "@/modules/common/ui/checkbox";
@@ -101,6 +102,7 @@ export function OpeningHoursEditor({
   onSaveBlockedChange?: (blocked: boolean) => void;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const id = useId();
   const openDaysField = useField(form, { path: ["openDays"] });
   const exceptionsField = useField(form, { path: ["openingExceptions"] });
@@ -220,7 +222,9 @@ export function OpeningHoursEditor({
           }}
         />
         <FieldDescription>
-          {t("settings.fields.openingEndDescription", { midnight: formatWallClockTime("00:00") })}
+          {t("settings.fields.openingEndDescription", {
+            midnight: formatWallClockTime("00:00", bookingDateTimeLocale(timeFormat)),
+          })}
         </FieldDescription>
         {showList && !noDays ? (
           <ul

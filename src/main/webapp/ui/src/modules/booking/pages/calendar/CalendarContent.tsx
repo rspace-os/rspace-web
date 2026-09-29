@@ -628,7 +628,11 @@ export function CalendarContent() {
         <BookingCreationButtonGroup ownerId="calendar-toolbar" initialDate={selectedDate} size="default" />
       }
       creationDisabled={
-        creationActive || !displayReady || (view === "day" && (blockingEvents.isPending || blockingEvents.isError))
+        creationActive ||
+        !displayReady ||
+        // Only the Resources day view loads the blocking events, which propose a row's free window. A range chosen
+        // on the Time grid needs no proposal, and there the disabled query would read as pending forever.
+        (layout === "resources" && view === "day" && (blockingEvents.isPending || blockingEvents.isError))
       }
       onResourceRangeSelect={(resource, range, trigger) => {
         const window = wallClockDraftFromInstants(

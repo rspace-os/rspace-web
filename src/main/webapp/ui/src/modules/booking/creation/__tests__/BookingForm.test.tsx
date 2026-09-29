@@ -9,7 +9,7 @@ import {
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { type ReactNode, Suspense } from "react";
+import { type ReactNode, Suspense, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { currentWallClock } from "@/modules/booking/domain/bookingTime";
@@ -46,6 +46,7 @@ const editableBooking = {
   state: "CONFIRMED",
   kind: "BOOKING",
   privacy: "full",
+  cancellationReason: null,
   purpose: "Imaging",
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
@@ -108,6 +109,44 @@ function renderForm(node: ReactNode) {
 describe("BookingForm", () => {
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("uses refreshed edit policies without resetting entered fields", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    function Editor() {
+      const [maximum, setMaximum] = useState(30);
+      return (
+        <>
+          <button type="button" onClick={() => setMaximum(0)}>
+            {"Refresh policy"}
+          </button>
+          <BookingForm
+            mode="edit"
+            booking={{ ...editableBooking, start: "2026-08-17T07:00:00Z", end: "2026-08-17T08:00:00Z" }}
+            configuration={{ ...target, maxBookingDurationMinutes: maximum }}
+            token="token"
+            pending={false}
+            onSubmit={submit}
+          />
+        </>
+      );
+    }
+    renderForm(<Editor />);
+    const purpose = await screen.findByRole("textbox", { name: "booking:bookings.form.purpose" });
+    await user.type(purpose, " changed");
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    const endTime = within(end).getByLabelText("booking:bookings.form.time");
+    await user.clear(endTime);
+    await user.type(endTime, "10:30");
+    await user.tab();
+    expect(screen.getByText("booking:bookings.errors.maximumDurationLimit")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Refresh policy" }));
+    expect(screen.queryByText("booking:bookings.errors.maximumDurationLimit")).not.toBeInTheDocument();
+    expect(purpose).toHaveValue("Imaging changed");
+    expect(endTime).toHaveValue("10:30");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ purpose: "Imaging changed" }));
   });
 
   it("round-trips an editable repeated-hour booking and renders a read-only item", async () => {
@@ -788,6 +827,42 @@ describe("BookingForm", () => {
 
     expect(await screen.findByText("booking:bookings.form.openAllDay")).toBeVisible();
     expect(screen.queryByText("booking:bookings.form.openingHoursOnDate")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    // 2026-08-17 is a Monday and 2026-08-18 a Tuesday.
+    ["an open day in the item's own timezone", "UTC", [1, 2, 3, 4, 5, 6], "2026-08-17", "openAllDayOnDate"],
+    [
+      "a day spanning two open days in the item's timezone",
+      "Europe/Berlin",
+      [1, 2, 3, 4, 5],
+      "2026-08-18",
+      "openAllDayOnDate",
+    ],
+    [
+      "a day that starts on a closed day in the item's timezone",
+      "Europe/Berlin",
+      [1, 2, 3, 4, 5],
+      "2026-08-17",
+      "openingHoursOnDate",
+    ],
+  ])("summarizes %s on an item closed on some weekdays", async (_, displayTimezone, openDays, initialDate, summary) => {
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        displayTimezone={displayTimezone}
+        initialTarget={{ ...target, timezone: "UTC", openDays }}
+        initialDate={initialDate}
+        token="token"
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText(`booking:bookings.form.${summary}`)).toBeVisible();
+    expect(screen.queryByText("booking:bookings.form.openAllDay")).not.toBeInTheDocument();
   });
 
   it("allows an unchanged over-limit interval on a purpose-only edit", async () => {
