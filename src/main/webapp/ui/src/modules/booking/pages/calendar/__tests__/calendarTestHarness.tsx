@@ -42,7 +42,8 @@ const timestamps = {
   canCancel: false,
 };
 
-export const ownBooking: BookingListDocument = {
+// Used by both projected calendar reads and complete mutation responses.
+export const ownBooking: BookingListDocument & { cancellationReason: null } = {
   id: 41,
   target: target(123, "Confocal microscope"),
   canViewConfiguration: true,
@@ -54,11 +55,12 @@ export const ownBooking: BookingListDocument = {
   purpose: "Cell imaging",
   bookedBy: "Ada Lovelace (ada)",
   privacy: "full",
+  cancellationReason: null,
   canEdit: true,
   ...timestamps,
 };
 
-export const otherBooking: BookingListDocument = {
+export const otherBooking: BookingListDocument & { cancellationReason: null } = {
   ...ownBooking,
   id: 42,
   target: target(124, "Electron microscope", { name: "Workbench", globalId: "BE124" }),

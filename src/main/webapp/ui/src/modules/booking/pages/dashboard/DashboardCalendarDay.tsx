@@ -1,21 +1,8 @@
-import { CalendarClockIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import {
-  type ComponentProps,
-  createContext,
-  type ReactNode,
-  type SetStateAction,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type ComponentProps, createContext, type SetStateAction, useContext, useEffect, useMemo, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
-import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
+import { BookingSummaryList } from "@/modules/booking/components/BookingSummaryList";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { CalendarDayButton } from "@/modules/common/ui/calendar";
@@ -34,24 +21,6 @@ export type DashboardCalendarContextValue = {
 
 export const DashboardCalendarContext = createContext<DashboardCalendarContextValue | null>(null);
 
-function RestrictedBookingRow({ heading, period, label }: { heading: string; period: ReactNode; label: string }) {
-  return (
-    <li className="flex min-w-0 items-center gap-2 rounded-sm border bg-background px-2 py-1.5">
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200">
-        <CalendarClockIcon className="size-4" aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-medium">{heading}</span>
-        <span className="block truncate text-[11px] text-muted-foreground">
-          {label}
-          {" · "}
-          {period}
-        </span>
-      </span>
-    </li>
-  );
-}
-
 export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayButton>) {
   const { t } = useTranslation("booking");
   const context = useContext(DashboardCalendarContext);
@@ -60,14 +29,10 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
   const { day, children, modifiers, className, ...buttonProps } = props;
   const dateKey = calendarDateKey(day.date);
   const bookings = useMemo(() => (bookingsByDay.get(dateKey) ?? []).map(dashboardBooking), [bookingsByDay, dateKey]);
-  const bookingSignature = bookings.map((booking) => `${booking.id}:${booking.start}:${booking.end}`).join("|");
-  const [requestedPage, setRequestedPage] = useState(0);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const accordionName = `${dateKey}-${useId()}`;
+  const popupRef = useRef<HTMLDivElement>(null);
+  const openedByHover = useRef(false);
 
-  useEffect(() => {
-    setRequestedPage(0);
-  }, [dateKey, bookingSignature]);
   useEffect(() => {
     if (modifiers.focused) buttonRef.current?.focus();
   }, [modifiers.focused]);
@@ -76,16 +41,13 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
     return <CalendarDayButton {...props} className={cn(className, modifiers.today && "max-md:bg-muted")} />;
   }
 
-  const pageCount = Math.ceil(bookings.length / 5);
-  const page = Math.min(requestedPage, Math.max(pageCount - 1, 0));
-  const firstBooking = page * 5;
-  const visibleBookings = bookings.slice(firstBooking, firstBooking + 5);
   const dateLabel = formatCalendarDate(dateKey, locale);
 
   return (
     <Popover
       open={openDayKey === dateKey}
-      onOpenChange={(nextOpen) => {
+      onOpenChange={(nextOpen, eventDetails) => {
+        openedByHover.current = nextOpen && eventDetails.reason === "trigger-hover";
         setOpenDayKey((current) => (nextOpen ? dateKey : current === dateKey ? null : current));
       }}
     >
@@ -94,6 +56,16 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
         delay={0}
         closeDelay={0}
         {...buttonProps}
+        onClick={(event) => {
+          // Base UI closes a hover-opened popover on a click more than 500 ms after it opened. From the keyboard,
+          // Enter and Space mean open, so close it first: Base UI then opens it as a keyboard press and moves focus in.
+          // This handler runs before Base UI's own click handler.
+          if (event.detail === 0 && openedByHover.current && openDayKey === dateKey) {
+            openedByHover.current = false;
+            flushSync(() => setOpenDayKey(null));
+          }
+          buttonProps.onClick?.(event);
+        }}
         ref={buttonRef}
         render={<Button variant="ghost" />}
         data-day={dateKey}
@@ -115,6 +87,10 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
         </Badge>
       </PopoverTrigger>
       <PopoverContent
+        ref={popupRef}
+        // Focus the dialog, so its date and booking count are read first. Focusing the first booking would
+        // open that booking's time tooltip, which then takes the first Escape instead of this popover.
+        initialFocus={popupRef}
         side="bottom"
         align="start"
         sideOffset={8}
@@ -130,81 +106,7 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
             })}
           </PopoverDescription>
         </div>
-        <ul className="min-h-[15.5rem] space-y-1">
-          {visibleBookings.map((booking) =>
-            (() => {
-              const itemName = booking.target?.value.name ?? t("calendar.feed.unknownItem");
-              const period = formatAgendaPeriod(booking.start, booking.end, timeZone);
-              const periodContent = (
-                <BookingInstrumentTimeTooltip
-                  start={booking.start}
-                  end={booking.end}
-                  displayTimeZone={timeZone}
-                  instrumentTimeZone={booking.timezone}
-                >
-                  {period}
-                </BookingInstrumentTimeTooltip>
-              );
-              return booking.privacy === "busy" ? (
-                <RestrictedBookingRow
-                  key={booking.id}
-                  heading={itemName}
-                  period={periodContent}
-                  label={t("calendar.busy")}
-                />
-              ) : (
-                <BookingSummaryAccordion
-                  key={booking.id}
-                  accordionName={accordionName}
-                  heading={itemName}
-                  summaryLabel={itemName}
-                  period={period}
-                  periodTooltip={{
-                    start: booking.start,
-                    end: booking.end,
-                    displayTimeZone: timeZone,
-                    instrumentTimeZone: booking.timezone,
-                  }}
-                  purpose={booking.purpose}
-                  detailsBookingId={booking.id}
-                />
-              );
-            })(),
-          )}
-        </ul>
-        {pageCount > 1 ? (
-          <div className="flex items-center justify-between border-t pt-2 text-xs text-muted-foreground">
-            <span>
-              {t("dashboard.calendar.range", {
-                start: firstBooking + 1,
-                end: Math.min(firstBooking + 5, bookings.length),
-                total: bookings.length,
-              })}
-            </span>
-            <div className="flex gap-1">
-              <Button
-                type="button"
-                aria-label={t("dashboard.calendar.previous")}
-                size="icon-xs"
-                variant="ghost"
-                disabled={page === 0}
-                onClick={() => setRequestedPage(page - 1)}
-              >
-                <ChevronLeftIcon aria-hidden="true" />
-              </Button>
-              <Button
-                type="button"
-                aria-label={t("dashboard.calendar.next")}
-                size="icon-xs"
-                variant="ghost"
-                disabled={page + 1 === pageCount}
-                onClick={() => setRequestedPage(page + 1)}
-              >
-                <ChevronRightIcon aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <BookingSummaryList bookings={bookings} timeZone={timeZone} className="min-h-[15.5rem]" />
       </PopoverContent>
     </Popover>
   );

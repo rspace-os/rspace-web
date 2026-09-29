@@ -290,10 +290,14 @@ describe("Booking dashboard", () => {
 
     await dashboard.calendarDay("Thursday, August 20, 2026").click();
     await expect.element(dashboard.range).toHaveTextContent("1–5 of 12");
+    const pagerTop = () => dashboard.next.element().getBoundingClientRect().top;
+    const fullPagePagerTop = pagerTop();
     await dashboard.next.click();
     await expect.element(dashboard.range).toHaveTextContent("6–10 of 12");
     await dashboard.next.click();
     await expect.element(dashboard.range).toHaveTextContent("11–12 of 12");
+    // The two-booking last page keeps a full page's height, so the pager stays under the pointer.
+    expect(Math.abs(pagerTop() - fullPagePagerTop)).toBeLessThanOrEqual(1);
     await expect.element(dashboard.next).toBeDisabled();
     await expect.element(dashboard.previous).toBeEnabled();
     expect(dashboard.popup.getByRole("button").all()).toHaveLength(2);
@@ -361,11 +365,34 @@ describe("Booking dashboard", () => {
       await expect.element(day19).toHaveFocus();
       await userEvent.keyboard(key);
       await expect.element(dashboard.popup).toBeVisible();
+      await expect.element(dashboard.popup).toHaveFocus();
       await userEvent.keyboard("{Escape}");
       await expect.element(dashboard.popup).not.toBeInTheDocument();
       expect(document.activeElement).toBe(day19.element());
     },
   );
+
+  test.each(["{Enter}", "{Space}"])("keeps a hover-opened day open with %s and moves focus into it", async (key) => {
+    render(<BookingDashboardPageStory history={history} />);
+
+    const day18 = dashboard.calendarDay("Tuesday, August 18, 2026");
+    const day19 = dashboard.calendarDay("Wednesday, August 19, 2026");
+    await expect.element(day19).toBeVisible();
+    await day19.hover();
+    await expect.element(dashboard.popup).toHaveAccessibleName("Wednesday, August 19, 2026");
+    // Base UI keeps a hover-opened popover open for a click in its first 500 ms and toggles it closed
+    // after that. A keyboard user presses the key later, so wait out that window.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    day18.element().focus();
+    await userEvent.keyboard("{ArrowRight}");
+    await expect.element(day19).toHaveFocus();
+    await userEvent.keyboard(key);
+    await expect.element(dashboard.popup).toHaveFocus();
+    await expect.element(dashboard.popup).toHaveAccessibleName("Wednesday, August 19, 2026");
+    await userEvent.keyboard("{Escape}");
+    await expect.element(dashboard.popup).not.toBeInTheDocument();
+    await expect.element(day19).toHaveFocus();
+  });
 
   test("keeps the mobile popup in the viewport and the pager in a stable position", async () => {
     const originalViewport = { width: window.innerWidth, height: window.innerHeight };
