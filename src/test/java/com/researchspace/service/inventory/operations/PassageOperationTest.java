@@ -65,6 +65,17 @@ class PassageOperationTest {
   }
 
   @Test
+  void recordsThePassageNumberInANumberField() {
+    ApiInventoryOperationPost built =
+        PASSAGE.build(request(), List.of(parentAtPassage("4")), KEYS, TODAY);
+
+    assertEquals(
+        ApiExtraField.ExtraFieldTypeEnum.NUMBER,
+        OperationTestFixtures.fieldNamed(built.getNewSample().getExtraFields(), NUMBER_FIELD)
+            .getType());
+  }
+
+  @Test
   void matchesTheParentFieldByItsDisplayNameWhenItCarriesNoOperationKey() {
     assertEquals(
         "3",
@@ -107,8 +118,13 @@ class PassageOperationTest {
   }
 
   @Test
+  void countsOnFromANumberTheUiSavedAsHtml() {
+    assertEquals("9999", passageNumber(parentAtPassage("<p>9998</p>")));
+  }
+
+  @Test
   void refusesToPassageAParentAtOrAboveThePassageLimit() {
-    for (String number : List.of("9999", "10000")) {
+    for (String number : List.of("9999", "10000", "<p>9999</p>")) {
       FieldError refusal = originErrors(parentAtPassage(number)).getFieldError("origin.globalId");
       assertNotNull(refusal, number);
       assertEquals("errors.inventory.operation.passageLimitReached", refusal.getCode());

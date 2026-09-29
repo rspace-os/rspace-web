@@ -202,6 +202,8 @@ amount whose category no longer fits is repaired before it reaches the form.
   visible field: remembered values and derived sample naming key off it, and one uniform
   key beats per-operation branches.
 - **Disposal dates are text fields holding an ISO date**: extra fields have no date type.
+- **Passage numbers are number fields**: a text field is edited as rich text and saved as HTML.
+  Passage still strips markup when reading, for hand-made and template "Passage number" fields.
 - **Category and precision rules also apply to the created subsamples**: each new subsample
   quantity must be in the origin's category (or the template's, when one is chosen) and
   storable at 3dp. There is no top-level quantity on the wire; the server derives it.

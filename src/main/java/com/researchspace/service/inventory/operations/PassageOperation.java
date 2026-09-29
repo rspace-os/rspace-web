@@ -6,6 +6,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import java.util.List;
 import java.util.Locale;
 import java.util.OptionalLong;
+import org.jsoup.Jsoup;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 
@@ -55,7 +56,7 @@ public class PassageOperation extends CreatingOperation<ApiInventoryOperationReq
       List<OriginState> origins,
       LabelResolver labels) {
     return List.of(
-        OperationFieldNames.text(
+        OperationFieldNames.number(
             labels.resolve(NUMBER_FIELD_KEY),
             NUMBER_FIELD_KEY,
             nextPassageNumber(origins.get(0), labels)));
@@ -99,10 +100,10 @@ public class PassageOperation extends CreatingOperation<ApiInventoryOperationReq
                         .findFirst())
             .map(OriginState.ParentField::content)
             .orElse(null);
-    // ponytail: Long.parseLong after trim, not JS Number(); exotic contents JS would coerce
-    // ("1e3", "0x10", "") restart from 1 instead. A passage number is never written that way.
+    // A number edited in the UI is saved as HTML ("<p>9998</p>"), so the markup is dropped first.
+    // ponytail: Long.parseLong, so "1e3", "0x10" or two paragraphs ("12 13") restart from 1.
     try {
-      long parsed = Long.parseLong(String.valueOf(current).trim());
+      long parsed = Long.parseLong(Jsoup.parse(String.valueOf(current)).text());
       return parsed >= 0 ? OptionalLong.of(parsed) : OptionalLong.empty();
     } catch (NumberFormatException notACount) {
       return OptionalLong.empty();
