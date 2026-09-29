@@ -58,7 +58,8 @@ class RelationshipTargetFilterTest {
                     ApiV2BookingInstrumentResource.DESCRIPTION.relationships(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
-                    AccessPolicy.readOnly(readAccess))));
+                    AccessPolicy.readOnly(readAccess)),
+                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
     return RelationshipReadAccess.forActor(registry, null);
   }
 

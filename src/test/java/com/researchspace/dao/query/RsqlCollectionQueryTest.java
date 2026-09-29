@@ -369,7 +369,8 @@ class RsqlCollectionQueryTest {
                     description,
                     ApiV2UserResource.DESCRIPTION,
                     ApiV2BookingInstrumentResource.DESCRIPTION,
-                    ApiV2InstrumentResource.DESCRIPTION)));
+                    ApiV2InstrumentResource.DESCRIPTION,
+                    com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION)));
 
     Predicate result =
         auditTranslator.translate(
