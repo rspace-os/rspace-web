@@ -56,13 +56,9 @@ public final class ApiInventoryOperationRequests {
     private String sampleName;
 
     /**
-     * How many subsamples to create; absent means one.
-     *
-     * <p>Bound as a BigDecimal, NOT an Integer, so a fractional count survives binding long enough
-     * to be rejected by {@code @Digits}. Jackson's {@code ACCEPT_FLOAT_AS_INT} is on by default and
-     * the API converter does not turn it off, so an Integer field would take {@code "count": 1.9}
-     * as 1: the request would deduct the full amountTaken but create one subsample, and {@code
-     * 100.9} would become 100 and slip past the maximum.
+     * How many subsamples to create, a whole number from 1 to 100; absent means one. A BigDecimal,
+     * not an Integer, so Jackson cannot truncate {@code 1.9} to 1 before {@code @Digits} rejects
+     * it.
      */
     @Min(value = 1, message = "{errors.inventory.operation.inputBelowMinimum}")
     @Max(value = 100, message = "{errors.inventory.operation.inputAboveMaximum}")
