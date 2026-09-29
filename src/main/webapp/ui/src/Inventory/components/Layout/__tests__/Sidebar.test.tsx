@@ -22,7 +22,7 @@ vi.mock("../../../../hooks/api/integrationHelpers", () => ({
 // Defaults to DENIED so the two pre-existing tests below are unaffected; the Requests-visibility
 // tests further down set this explicitly for each case.
 const deploymentProperties: Record<string, string> = {
-  "sampleRequests.available": "DENIED",
+  "inventory.sampleRequests.available": "DENIED",
 };
 vi.mock("../../../../hooks/api/useDeploymentProperty", () => ({
   useDeploymentProperty: (name: string) => ({ tag: "success", value: deploymentProperties[name] }),
@@ -32,7 +32,7 @@ const mockAxios = new MockAdapter(axios);
 describe("Sidebar", () => {
   beforeEach(() => {
     mockAxios.reset();
-    deploymentProperties["sampleRequests.available"] = "DENIED";
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
   });
 
   test("Should have no axe violations.", async () => {
@@ -137,15 +137,15 @@ describe("Sidebar", () => {
     );
   }
 
-  test("hides the Requests nav item when sampleRequests.available is not ALLOWED.", () => {
-    deploymentProperties["sampleRequests.available"] = "DENIED";
+  test("hides the Requests nav item when inventory.sampleRequests.available is not ALLOWED.", () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
     renderSidebar();
 
     expect(screen.queryByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeNull();
   });
 
-  test("shows the Requests nav item when sampleRequests.available is ALLOWED.", () => {
-    deploymentProperties["sampleRequests.available"] = "ALLOWED";
+  test("shows the Requests nav item when inventory.sampleRequests.available is ALLOWED.", () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "ALLOWED";
     renderSidebar();
 
     expect(screen.getByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeInTheDocument();

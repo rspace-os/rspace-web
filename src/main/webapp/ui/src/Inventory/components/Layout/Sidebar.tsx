@@ -595,7 +595,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
   const sidebarRef = useLandmark("Navigation");
-  const requestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+  const requestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("inventory.sampleRequests.available"))
     .flatMap(Parsers.isString)
     .map((value) => value === "ALLOWED")
     .orElse(false);

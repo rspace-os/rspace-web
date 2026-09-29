@@ -57,7 +57,9 @@ const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel 
     editing: activeResult.editing,
     globalId: activeResult.globalId,
   });
-  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+  const sampleRequestsAvailable = FetchingData.getSuccessValue(
+    useDeploymentProperty("inventory.sampleRequests.available"),
+  )
     .flatMap(Parser.isString)
     .map((value) => value === "ALLOWED")
     .orElse(false);
@@ -196,7 +198,9 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
     if (!existingRequest) return;
     navigate(`/inventory/requests?requestId=${existingRequest.id}`);
   };
-  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+  const sampleRequestsAvailable = FetchingData.getSuccessValue(
+    useDeploymentProperty("inventory.sampleRequests.available"),
+  )
     .flatMap(Parser.isString)
     .map((value) => value === "ALLOWED")
     .orElse(false);

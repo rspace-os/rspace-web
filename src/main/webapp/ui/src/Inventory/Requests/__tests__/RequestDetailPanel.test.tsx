@@ -32,9 +32,9 @@ vi.mock("@/hooks/api/useWhoAmI", () => ({
 }));
 
 // Both deployment properties default to whatever leaves the pre-existing Choose Sample to
-// Prepare dialog in place (sampleRequests.available alone isn't enough to skip it).
+// Prepare dialog in place (inventory.sampleRequests.available alone isn't enough to skip it).
 const deploymentProperties: Record<string, string> = {
-  "sampleRequests.available": "DENIED",
+  "inventory.sampleRequests.available": "DENIED",
   "inventory.operations.available": "ALLOWED",
 };
 vi.mock("@/hooks/api/useDeploymentProperty", () => ({
@@ -124,7 +124,7 @@ async function waitForInitialFetches() {
 beforeEach(() => {
   vi.clearAllMocks();
   currentUser.value = OWNER;
-  deploymentProperties["sampleRequests.available"] = "DENIED";
+  deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
   deploymentProperties["inventory.operations.available"] = "ALLOWED";
   getUser.mockResolvedValue({ username: REQUESTER.username });
 
@@ -293,7 +293,7 @@ describe("RequestDetailPanel", () => {
     const onStatusChanged = vi.fn();
     window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     // Neither property gates this route toward skipping the dialog.
-    deploymentProperties["sampleRequests.available"] = "DENIED";
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
     deploymentProperties["inventory.operations.available"] = "ALLOWED";
     apiUpdate.mockImplementation((resource: string, path: string) => {
       if (resource === "sampleRequests") return Promise.resolve({ data: { status: "FULFILLED" } });
@@ -378,9 +378,9 @@ describe("RequestDetailPanel", () => {
     ).toBeInTheDocument();
   });
 
-  it("skips the Choose Sample to Prepare dialog and goes straight to Transfer when sampleRequests.available is on and inventory.operations.available is off", async () => {
+  it("skips the Choose Sample to Prepare dialog and goes straight to Transfer when inventory.sampleRequests.available is on and inventory.operations.available is off", async () => {
     const user = userEvent.setup();
-    deploymentProperties["sampleRequests.available"] = "ALLOWED";
+    deploymentProperties["inventory.sampleRequests.available"] = "ALLOWED";
     deploymentProperties["inventory.operations.available"] = "DENIED";
     renderPanel(baseRequest({ status: "APPROVED" }));
     await waitForInitialFetches();
@@ -406,7 +406,7 @@ describe("RequestDetailPanel", () => {
   });
 
   it("keeps the Prepare Sample label and dialog when only one of the two properties allows skipping", async () => {
-    deploymentProperties["sampleRequests.available"] = "ALLOWED";
+    deploymentProperties["inventory.sampleRequests.available"] = "ALLOWED";
     deploymentProperties["inventory.operations.available"] = "ALLOWED";
     renderPanel(baseRequest({ status: "APPROVED" }));
     await waitForInitialFetches();
@@ -422,7 +422,7 @@ describe("RequestDetailPanel", () => {
   describe("Transfer Ownership dialog content", () => {
     /** Reaches the Transfer Ownership dialog by the shortest route (the skip-dialog path). */
     async function openTransferDialog(user: ReturnType<typeof userEvent.setup>) {
-      deploymentProperties["sampleRequests.available"] = "ALLOWED";
+      deploymentProperties["inventory.sampleRequests.available"] = "ALLOWED";
       deploymentProperties["inventory.operations.available"] = "DENIED";
       renderPanel(baseRequest({ status: "APPROVED" }));
       await waitForInitialFetches();
