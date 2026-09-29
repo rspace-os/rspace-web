@@ -135,12 +135,9 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     boolean changed = false;
     RuntimeFeatureFlags responseSnapshot = snapshot;
     if (changesBaseline) {
-      Optional<RuntimeFeatureFlags> updatedSnapshot =
-          setBaselineValue(snapshot, flagName, patch.baselineValue());
-      if (updatedSnapshot.isPresent()) {
-        responseSnapshot = updatedSnapshot.orElseThrow();
-        changed = true;
-      }
+      BaselineUpdate baselineUpdate = setBaselineValue(snapshot, flagName, patch.baselineValue());
+      responseSnapshot = baselineUpdate.snapshot();
+      changed |= baselineUpdate.changed();
     }
     if (changesOverride) {
       Boolean value = patch.overrideValue();
@@ -200,17 +197,20 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     return snapshot.resolveResource(definition, getUserOverrides(user), false).isValue();
   }
 
-  private Optional<RuntimeFeatureFlags> setBaselineValue(
+  private BaselineUpdate setBaselineValue(
       RuntimeFeatureFlags snapshot, String flagName, boolean value) {
     FeatureFlagDefinition definition = snapshot.definitions().get(flagName);
-    boolean currentBaseline = snapshot.baselineValue(definition);
+    RuntimeFeatureFlags current =
+        new RuntimeFeatureFlags(
+            snapshot.definitions(), featureFlagDao.getBaselineValues(), snapshot.forcedValues());
+    boolean currentBaseline = current.baselineValue(definition);
     if (currentBaseline == value) {
-      return Optional.empty();
+      return new BaselineUpdate(current, false);
     }
     featureFlagDao.upsertBaseline(flagName, value);
-    RuntimeFeatureFlags updated = snapshot.withBaseline(flagName, value);
+    RuntimeFeatureFlags updated = current.withBaseline(flagName, value);
     updateRuntimeAfterCommit(flagName, value);
-    return Optional.of(updated);
+    return new BaselineUpdate(updated, true);
   }
 
   @Override
@@ -371,4 +371,6 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
       return new RuntimeFeatureFlags(definitions, updatedBaselines, forcedValues);
     }
   }
+
+  private record BaselineUpdate(RuntimeFeatureFlags snapshot, boolean changed) {}
 }

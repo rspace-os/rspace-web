@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +25,7 @@ import com.researchspace.model.User;
 import com.researchspace.service.FeatureFlagManager.Patch;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -179,6 +183,74 @@ class FeatureFlagManagerImplTest {
   }
 
   @Test
+  void baselineChangesWithinOneTransactionUseThePersistedValue() {
+    initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), false);
+    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
+    sysadmin.setId(19L);
+    Map<String, Boolean> persistedBaselines =
+        new LinkedHashMap<>(Map.of(FeatureFlags.BOOKING_ENABLED, false));
+    when(featureFlagDao.getBaselineValues())
+        .thenAnswer(invocation -> new LinkedHashMap<>(persistedBaselines));
+    doAnswer(
+            invocation -> {
+              persistedBaselines.put(
+                  invocation.getArgument(0, String.class),
+                  invocation.getArgument(1, Boolean.class));
+              return null;
+            })
+        .when(featureFlagDao)
+        .upsertBaseline(any(), anyBoolean());
+    TransactionSynchronizationManager.initSynchronization();
+
+    try {
+      featureFlagManager.updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin);
+      featureFlagManager.updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, baseline(false), sysadmin);
+
+      assertFalse(persistedBaselines.get(FeatureFlags.BOOKING_ENABLED));
+      assertFalse(resource(null).isBaselineValue());
+      TransactionSynchronizationManager.getSynchronizations().stream()
+          .forEach(TransactionSynchronization::afterCommit);
+      assertFalse(resource(null).isBaselineValue());
+    } finally {
+      TransactionSynchronizationManager.clearSynchronization();
+    }
+  }
+
+  @Test
+  void unchangedBaselineResponseUsesThePersistedValueWithinOneTransaction() {
+    initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), false);
+    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
+    sysadmin.setId(20L);
+    Map<String, Boolean> persistedBaselines =
+        new LinkedHashMap<>(Map.of(FeatureFlags.BOOKING_ENABLED, false));
+    when(featureFlagDao.getBaselineValues())
+        .thenAnswer(invocation -> new LinkedHashMap<>(persistedBaselines));
+    doAnswer(
+            invocation -> {
+              persistedBaselines.put(
+                  invocation.getArgument(0, String.class),
+                  invocation.getArgument(1, Boolean.class));
+              return null;
+            })
+        .when(featureFlagDao)
+        .upsertBaseline(any(), anyBoolean());
+    TransactionSynchronizationManager.initSynchronization();
+
+    try {
+      featureFlagManager.updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin);
+      FeatureFlagResource response =
+          featureFlagManager
+              .updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin)
+              .orElseThrow();
+
+      assertTrue(response.isBaselineValue());
+      assertTrue(persistedBaselines.get(FeatureFlags.BOOKING_ENABLED));
+    } finally {
+      TransactionSynchronizationManager.clearSynchronization();
+    }
+  }
+
+  @Test
   void evaluationBeforeStartupReconciliationFailsWithoutInitialisingState() {
     assertThrows(
         IllegalStateException.class,
@@ -192,7 +264,11 @@ class FeatureFlagManagerImplTest {
     User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
     sysadmin.setId(12L);
 
-    featureFlagManager.updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, baseline(false), sysadmin);
+    FeatureFlagResource response =
+        featureFlagManager
+            .updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, baseline(false), sysadmin)
+            .orElseThrow();
+    assertEquals(FeatureFlagSource.DEFAULT.name(), response.getSource());
 
     verify(featureFlagDao, never()).upsertBaseline(FeatureFlags.BOOKING_ENABLED, false);
     verify(events, never())
