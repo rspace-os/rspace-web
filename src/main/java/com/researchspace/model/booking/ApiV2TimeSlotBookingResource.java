@@ -1,5 +1,6 @@
 package com.researchspace.model.booking;
 
+import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
@@ -16,6 +17,7 @@ import com.researchspace.model.collection.WriteOperation;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Function;
 
 /** Stable REST API v2 shape for one-off time-slot bookings. */
 public final class ApiV2TimeSlotBookingResource {
@@ -142,7 +144,7 @@ public final class ApiV2TimeSlotBookingResource {
                     "requesterId",
                     "requester.id",
                     CollectionFieldTypes.longNumber(),
-                    booking -> booking.getRequester().getId())
+                    booking -> visibleRequester(booking, User::getId))
                 .withQueryCapabilities(true, false),
             Field.readOnly(
                 "bookedBy",
@@ -153,19 +155,19 @@ public final class ApiV2TimeSlotBookingResource {
                     "requesterUsername",
                     "requester.username",
                     CollectionFieldTypes.text(255),
-                    booking -> booking.getRequester().getUsername())
+                    booking -> visibleRequester(booking, User::getUsername))
                 .withQueryCapabilities(true, false),
             Field.<TimeSlotBooking, String>readOnly(
                     "requesterFirstName",
                     "requester.firstName",
                     CollectionFieldTypes.text(255),
-                    booking -> booking.getRequester().getFirstName())
+                    booking -> visibleRequester(booking, User::getFirstName))
                 .withQueryCapabilities(true, false),
             Field.<TimeSlotBooking, String>readOnly(
                     "requesterLastName",
                     "requester.lastName",
                     CollectionFieldTypes.text(255),
-                    booking -> booking.getRequester().getLastName())
+                    booking -> visibleRequester(booking, User::getLastName))
                 .withQueryCapabilities(true, false),
             Field.<TimeSlotBooking, String>readOnly(
                     "privacy",
@@ -214,7 +216,8 @@ public final class ApiV2TimeSlotBookingResource {
                     "requesterId",
                     "requester.id",
                     CollectionFieldTypes.longNumber(),
-                    booking -> booking.getRequester().getId())
+                    booking -> visibleRequester(booking, User::getId))
+                .allowNull()
                 .withQueryCapabilities(true, false),
             Field.writable(
                     "kind",
@@ -310,6 +313,15 @@ public final class ApiV2TimeSlotBookingResource {
   }
 
   private ApiV2TimeSlotBookingResource() {}
+
+  /**
+   * Reads a requester value only in full detail, like {@code bookedBy}: a busy event names nobody.
+   * Filters on these fields are limited to the same events by {@link BookingRequesterFilters}.
+   */
+  private static <V> V visibleRequester(TimeSlotBooking booking, Function<User, V> value) {
+    User requester = booking.getPrivacy() == BookingPrivacy.FULL ? booking.getRequester() : null;
+    return requester == null ? null : value.apply(requester);
+  }
 
   private static ResourceReference<BookableTargetType, Long> targetReference(
       TimeSlotBooking booking) {

@@ -101,6 +101,37 @@ class TimeSlotBookingResourceOperationsTest {
   }
 
   @Test
+  void limitsRequesterFiltersToEventsWhoseRequesterTheSubjectMaySee() {
+    when(actor.getId()).thenReturn(7L);
+    ResourceRequest request =
+        new ResourceRequest(
+            new com.researchspace.model.collection.FilterExpression.Comparison(
+                "requesterId",
+                com.researchspace.model.collection.Operator.EQUAL,
+                List.of(42L),
+                false),
+            List.of(),
+            new ResourceRequest.Page(1, 20),
+            com.researchspace.model.collection.FieldSelection.all(),
+            com.researchspace.model.collection.IncludeTree.empty());
+    var guarded =
+        com.researchspace.model.booking.BookingRequesterFilters.visibleRequestersOnly(
+            request.filter(), 7L);
+    when(manager.getBookings(any(ResourceRequest.class), eq(actor)))
+        .thenReturn(new com.researchspace.model.collection.ResourcePage<>(List.of(), 0));
+    when(manager.countBookings(any(ResourceRequest.class), eq(actor))).thenReturn(0L);
+
+    operations.find(request, actor);
+    operations.count(request, actor);
+
+    var captured = org.mockito.ArgumentCaptor.forClass(ResourceRequest.class);
+    verify(manager).getBookings(captured.capture(), eq(actor));
+    assertEquals(guarded, captured.getValue().filter());
+    verify(manager).countBookings(captured.capture(), eq(actor));
+    assertEquals(guarded, captured.getValue().filter());
+  }
+
+  @Test
   void mapsSchedulingConflictsForBothCreateAndUpdate() {
     var spec = operations.timeSlotBookingApiV2Resource();
     Map.of(

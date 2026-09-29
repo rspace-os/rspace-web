@@ -6,6 +6,7 @@ import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingRequesterFilters;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.AccessContext;
@@ -64,7 +65,8 @@ public final class BookingCalendarQuery {
     String alias = "calendarEvent";
     Predicate filter =
         new RsqlCollectionQuery(calendarEvents, alias, "calendarFilter")
-            .translate(calendarFilter(eventRequest.filter()), targets, eventRequest.runtime());
+            .translate(
+                calendarFilter(eventRequest.filter(), caller), targets, eventRequest.runtime());
     ResourceRequest scoped = eventRequest.restrict(interval(start, end));
     if (access.constraintOrEmpty().isPresent())
       scoped = scoped.restrict(access.constraintOrEmpty().orElseThrow());
@@ -72,7 +74,7 @@ public final class BookingCalendarQuery {
         new RsqlCollectionQuery(events, alias, "calendarAccess")
             .translateTrusted(scoped.serverConstraint(), targets);
     Predicate itemText = itemText("bookingConfiguration.target", text, caller);
-    Predicate eventTextPredicate = eventText(alias, text);
+    Predicate eventTextPredicate = eventText(alias, text, caller, targets);
     Predicate body =
         and(
             new Predicate(alias + ".bookingConfiguration.id = bookingConfiguration.id", Map.of()),
@@ -91,8 +93,10 @@ public final class BookingCalendarQuery {
 
   /** Search does not alter the event's mandatory visibility, interval or explicit filters. */
   public Predicate eventSearch(String text, User caller) {
+    RelationshipReadAccess targets = RelationshipReadAccess.forActor(registry.getObject(), caller);
     return or(
-        itemText("booking.bookingConfiguration.target", text, caller), eventText("booking", text));
+        itemText("booking.bookingConfiguration.target", text, caller),
+        eventText("booking", text, caller, targets));
   }
 
   /** Compiles the Calendar-only event facets without publishing them on the bookings collection. */
@@ -100,19 +104,28 @@ public final class BookingCalendarQuery {
     RelationshipReadAccess targets = RelationshipReadAccess.forActor(registry.getObject(), caller);
     Predicate filter =
         new RsqlCollectionQuery(calendarEvents, "booking", "calendarFilter")
-            .translate(calendarFilter(request.filter()), targets, request.runtime());
+            .translate(calendarFilter(request.filter(), caller), targets, request.runtime());
     return and(filter, eventSearch(text, caller));
   }
 
-  private static FilterExpression calendarFilter(FilterExpression filter) {
+  /**
+   * Maps the Calendar facets onto stored selectors, then limits every requester comparison,
+   * including the {@code bookedBy} name facet, to events whose requester the caller may see.
+   */
+  private static FilterExpression calendarFilter(FilterExpression filter, User caller) {
+    return BookingRequesterFilters.visibleRequestersOnly(
+        calendarFacets(filter), caller == null ? null : caller.getId());
+  }
+
+  private static FilterExpression calendarFacets(FilterExpression filter) {
     if (filter == null) return null;
     if (filter instanceof FilterExpression.And and) {
       return new FilterExpression.And(
-          and.children().stream().map(BookingCalendarQuery::calendarFilter).toList());
+          and.children().stream().map(BookingCalendarQuery::calendarFacets).toList());
     }
     if (filter instanceof FilterExpression.Or or) {
       return new FilterExpression.Or(
-          or.children().stream().map(BookingCalendarQuery::calendarFilter).toList());
+          or.children().stream().map(BookingCalendarQuery::calendarFacets).toList());
     }
     FilterExpression.Comparison comparison = (FilterExpression.Comparison) filter;
     if (comparison.field().equals("privacy")) {
@@ -231,8 +244,22 @@ public final class BookingCalendarQuery {
             Map.of("calendarText", pattern(text)));
   }
 
-  private static Predicate eventText(String alias, String text) {
+  /**
+   * Matches the purpose or requester name only on events that show them, so Search cannot reveal
+   * either for an event the caller sees as busy.
+   */
+  private Predicate eventText(
+      String alias, String text, User caller, RelationshipReadAccess targets) {
     if (text == null || text.isBlank()) return null;
+    Predicate shown =
+        new RsqlCollectionQuery(calendarEvents, alias, alias + "TextShown")
+            .translateTrusted(
+                BookingRequesterFilters.requesterVisible(caller == null ? null : caller.getId()),
+                targets);
+    return and(shown, eventTextMatch(alias, text));
+  }
+
+  private static Predicate eventTextMatch(String alias, String text) {
     return or(
         purpose(alias, text),
         new Predicate(

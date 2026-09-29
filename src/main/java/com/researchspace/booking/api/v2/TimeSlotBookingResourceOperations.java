@@ -25,10 +25,12 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingEventKind;
+import com.researchspace.model.booking.BookingRequesterFilters;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedResourceReference;
@@ -180,13 +182,31 @@ public final class TimeSlotBookingResourceOperations
   @Override
   public ResourcePage<TimeSlotBooking> find(ResourceRequest request, User subject) {
     return enabled(subject)
-        ? manager.getBookings(request, subject)
+        ? manager.getBookings(visibleRequestersOnly(request, subject), subject)
         : new ResourcePage<>(List.of(), 0);
   }
 
   @Override
   public long count(ResourceRequest request, User subject) {
-    return enabled(subject) ? manager.countBookings(request, subject) : 0;
+    return enabled(subject)
+        ? manager.countBookings(visibleRequestersOnly(request, subject), subject)
+        : 0;
+  }
+
+  /** A requester comparison may match only an event whose requester the response would show. */
+  static ResourceRequest visibleRequestersOnly(ResourceRequest request, User subject) {
+    FilterExpression filter = request.filter();
+    if (filter == null) {
+      return request;
+    }
+    return new ResourceRequest(
+        BookingRequesterFilters.visibleRequestersOnly(filter, subject.getId()),
+        request.serverConstraint(),
+        request.sort(),
+        request.page(),
+        request.fieldSelections(),
+        request.includes(),
+        request.runtime());
   }
 
   @Override
