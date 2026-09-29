@@ -4,6 +4,9 @@ import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { Button } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
+import { Separator } from "@/modules/common/ui/separator";
+import { Switch } from "@/modules/common/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
 import type { TableListFeatures, TableListFilterButtons } from "../tableListState";
@@ -153,6 +156,8 @@ export function TableListToolbar<TDocument>({
     filterButtons?.buttons.some(({ pressed }) => pressed);
   const visibleColumnCount = visibleColumns.length;
   const listableColumnCount = config.fields.filter((field) => field.list !== false).length;
+  const filterPanelAvailable = features.filtering !== false && !hideFilterPanel;
+  const quickFiltersInMenu = filterButtons?.presentation === "menu" && filterPanelAvailable;
 
   if (features.filtering === false && features.sorting === false && features.columns === false && !filterButtons) {
     return null;
@@ -187,7 +192,7 @@ export function TableListToolbar<TDocument>({
       )}
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         {filterButtons?.controls}
-        {filterButtons ? (
+        {filterButtons && !quickFiltersInMenu ? (
           <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
             <legend className="sr-only">{filterButtons.legend}</legend>
             {filterButtons.buttons.map((button) => (
@@ -195,7 +200,15 @@ export function TableListToolbar<TDocument>({
             ))}
           </fieldset>
         ) : null}
-        {features.filtering !== false && !hideFilterPanel ? (
+        {filterButtons && quickFiltersInMenu ? (
+          <FiltersMenu
+            filterButtons={filterButtons}
+            filterCount={filterCount}
+            panelOpen={activePanel === "filters"}
+            onOpenPanel={() => onPanelChange("filters")}
+          />
+        ) : null}
+        {filterPanelAvailable && !quickFiltersInMenu ? (
           <Button
             aria-label={
               filterCount
@@ -292,6 +305,106 @@ export function TableListToolbar<TDocument>({
           </Tooltip>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/** The Filters button of the `menu` presentation: quick filters as switches, and the way into the filter panel. */
+function FiltersMenu({
+  filterButtons,
+  filterCount,
+  panelOpen,
+  onOpenPanel,
+}: {
+  filterButtons: TableListFilterButtons;
+  filterCount: number;
+  panelOpen: boolean;
+  onOpenPanel: () => void;
+}) {
+  const { t } = useTranslation("common");
+  const [open, setOpen] = useState(false);
+  const appliedCount = filterButtons.buttons.filter(({ pressed }) => pressed).length + filterCount;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            aria-label={
+              appliedCount
+                ? t("tableList.filters.applied", { count: appliedCount })
+                : t("tableList.filters.noneApplied", { count: appliedCount })
+            }
+            // Lets rows that remove a filter (such as a filter chip) hand focus back to this control.
+            data-table-list-filters
+            variant={open || panelOpen || appliedCount > 0 ? "secondary" : "outline"}
+          />
+        }
+      >
+        <ListFilterIcon aria-hidden="true" data-icon="inline-start" />
+        {t("tableList.toolbar.filters")}
+        {appliedCount > 0 ? (
+          <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">{appliedCount}</span>
+        ) : null}
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 gap-3 p-3">
+        <fieldset className="flex flex-col gap-3">
+          <legend className="mb-3 text-xs font-medium text-muted-foreground">{filterButtons.legend}</legend>
+          {filterButtons.buttons.map((button) => (
+            <FilterSwitch key={button.id} button={button} />
+          ))}
+        </fieldset>
+        <Separator />
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs text-muted-foreground">
+            {t("tableList.filters.panelSummary", { count: filterCount })}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            aria-controls="table-list-control-panel"
+            aria-expanded={panelOpen}
+            onClick={() => {
+              setOpen(false);
+              onOpenPanel();
+            }}
+          >
+            {t("tableList.filters.editFilters")}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function FilterSwitch({ button }: { button: TableListFilterButtons["buttons"][number] }) {
+  const id = useId();
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0 text-sm">
+        {/* The popover renders outside the table's section, so size icons as its toolbar does. */}
+        <span id={`${id}-label`} className="flex items-center gap-1.5 font-medium [&_svg]:size-3.5">
+          {button.icon}
+          {button.label}
+          {button.count === undefined ? null : (
+            <span aria-hidden="true" className="rounded-sm bg-foreground px-1 text-[10px] text-background">
+              {button.count}
+            </span>
+          )}
+        </span>
+        {button.description ? (
+          <span id={`${id}-description`} className="block text-xs text-muted-foreground">
+            {button.description}
+          </span>
+        ) : null}
+      </div>
+      <Switch
+        checked={button.pressed}
+        disabled={button.disabled}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={button.description ? `${id}-description` : undefined}
+        onCheckedChange={button.onClick}
+      />
     </div>
   );
 }

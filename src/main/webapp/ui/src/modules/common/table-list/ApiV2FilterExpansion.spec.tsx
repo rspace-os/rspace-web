@@ -92,7 +92,8 @@ describe("API v2 filter expansion", () => {
     await view.addFilter();
     await view.addFilter();
     await view.addFilter();
-    await view.chooseField(1, "State");
+    // The lifecycle state is labelled Status, as its column header is.
+    await view.chooseField(1, "Status");
     await view.chooseField(2, "Bookable item");
     await view.chooseField(3, "Bookable item → Name");
 
