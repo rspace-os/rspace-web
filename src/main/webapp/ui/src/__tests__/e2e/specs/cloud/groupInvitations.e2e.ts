@@ -1,0 +1,95 @@
+import { expect } from "@playwright/test";
+import { test } from "@/__tests__/e2e/fixtures/flows/sessions/cloudSessions";
+import { alphaNumericUnique, DYNAMIC_USER_PASSWORD, E2E_AFFILIATION, uniqueName } from "@/__tests__/e2e/testData";
+
+test.describe("Community group invitations", () => {
+  test("As a group creator, I can invite someone without an account; they sign up from the invite and join", async ({
+    flowCloudUser,
+    flowCloudVisitor,
+    clientMailpit,
+  }) => {
+    const pi = await flowCloudUser("e2eCloudPi");
+    const groupName = uniqueName("e2eCloudGroup");
+    const inviteeUsername = alphaNumericUnique("e2eCloudInvitee");
+    const inviteeEmail = `${inviteeUsername}@example.com`;
+
+    await test.step("Given I create a group inviting a new email address", async () => {
+      await pi.createGroup.open();
+      await pi.createGroup.createGroup({ name: groupName, inviteNewEmails: [inviteeEmail] });
+      await expect(pi.createGroup.resultAlert).toHaveText(`${groupName} group created successfully!`);
+    });
+
+    const invitee = await flowCloudVisitor();
+    const inviteLink = await clientMailpit.waitForLink(
+      inviteeEmail,
+      "Join Group Invitation - Research Space",
+      "/signup?token=",
+    );
+
+    await test.step("When the invitee signs up from the emailed link", async () => {
+      await invitee.signup.openWithInviteLink(inviteLink);
+      await expect(invitee.signup.emailInput).toHaveValue(inviteeEmail);
+      await invitee.signup.signUp({
+        username: inviteeUsername,
+        password: DYNAMIC_USER_PASSWORD,
+        firstName: "E2E",
+        lastName: "CloudInvitee",
+        affiliation: E2E_AFFILIATION,
+        acceptTerms: true,
+      });
+      // The invite already proves the address, so no activation email is needed.
+      await expect(invitee.page).toHaveTitle(/Account Activation Complete/);
+    });
+
+    await test.step("And accepts the group invitation after logging in", async () => {
+      await invitee.login.open();
+      await invitee.login.login(inviteeUsername, DYNAMIC_USER_PASSWORD);
+      await invitee.groupRequest(groupName).accept();
+    });
+
+    await test.step("Then the invitee is a member of the group", async () => {
+      await pi.profile.open();
+      await pi.profile.groupLink(groupName).click();
+      await expect(pi.groupDetails.memberRow(inviteeUsername)).toContainText("User");
+    });
+  });
+
+  test("As a group creator, I can nominate an existing user as PI; when they accept they become PI, I become Lab Admin, and my invitee can join", async ({
+    flowCloudUser,
+  }) => {
+    const creator = await flowCloudUser("e2eCloudCreator");
+    const nominatedPi = await flowCloudUser("e2eCloudNominee");
+    const member = await flowCloudUser("e2eCloudMember");
+    const groupName = uniqueName("e2eCloudNominated");
+
+    await test.step("Given I request a group with another user as PI and an existing user as member", async () => {
+      await creator.createGroup.open();
+      await creator.createGroup.createGroup({
+        name: groupName,
+        nominatedPiEmail: nominatedPi.email,
+        inviteExistingEmails: [member.email],
+      });
+      await expect(creator.createGroup.resultAlert).toHaveText(
+        `Group creation request for ${groupName} sent successfully`,
+      );
+    });
+
+    await test.step("When the nominated PI accepts", async () => {
+      await nominatedPi.page.reload();
+      await nominatedPi.groupRequest(groupName).accept();
+    });
+
+    await test.step("And the invited member accepts the invitation that follows", async () => {
+      await member.page.reload();
+      await member.groupRequest(groupName).accept();
+    });
+
+    await test.step("Then the group has the nominee as PI, me as Lab Admin and the member as User", async () => {
+      await nominatedPi.profile.open();
+      await nominatedPi.profile.groupLink(groupName).click();
+      await expect(nominatedPi.groupDetails.memberRow(nominatedPi.username)).toContainText("PI");
+      await expect(nominatedPi.groupDetails.memberRow(creator.username)).toContainText("Lab Admin");
+      await expect(nominatedPi.groupDetails.memberRow(member.username)).toContainText("User");
+    });
+  });
+});

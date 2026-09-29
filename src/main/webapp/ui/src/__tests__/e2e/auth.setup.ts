@@ -8,6 +8,7 @@ const projectAccounts = {
   firefox: USERS.user3c,
   webkit: USERS.user4d,
   mobile: USERS.user7g,
+  cloud: USERS.user5e,
 };
 const selectedProjectAccounts = env.browser
   ? [projectAccounts[env.browser as keyof typeof projectAccounts]].filter((account) => account !== undefined)

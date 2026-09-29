@@ -36,6 +36,28 @@ export class MailpitClient {
     await this.assertOk(res, "deleteAllMessages");
   }
 
+  /**
+   * Polls until an email with `subject` reaches `to`, then returns its first link whose URL contains `pathFragment`.
+   */
+  async waitForLink(to: string, subject: string, pathFragment: string, timeoutMs = 15_000): Promise<string> {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+      const summary = (await this.listMessages(`to:${to}`)).find((m) => m.Subject === subject);
+      if (summary) {
+        const message = await this.getMessage(summary.ID);
+        const link = this.extractLinks(message.HTML).find((href) => href.includes(pathFragment));
+        if (!link) {
+          throw new Error(`"${subject}" email to ${to} has no link containing "${pathFragment}": ${message.HTML}`);
+        }
+        return link;
+      }
+      if (Date.now() > deadline) {
+        throw new Error(`no "${subject}" email reached ${to} within ${timeoutMs}ms`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+
   /** Extracts href values from an HTML email body. */
   extractLinks(html: string): string[] {
     const { document } = new JSDOM(html).window;

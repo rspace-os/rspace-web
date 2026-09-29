@@ -23,7 +23,7 @@ cp src/main/webapp/ui/.env.example src/main/webapp/ui/.env
 |---|---|---|
 | `RSPACE_BASE_URL` | `http://localhost:8080` | Target instance URL |
 | `HEADLESS` | `true` | Set `false` to watch browsers |
-| `E2E_BROWSER` | _(all)_ | Limit to one project: `chromium`, `firefox`, `webkit`, or `api` |
+| `E2E_BROWSER` | _(all)_ | Limit to one project: `chromium`, `firefox`, `webkit`, `api`, or `cloud` (never part of "all") |
 | `RSPACE_SYSADMIN_USERNAME` | `sysadmin1` | Sysadmin username |
 | `RSPACE_SYSADMIN_PASSWORD` | `sysWisc23!` | Sysadmin password |
 | `RSPACE_SYSADMIN_API_KEY` | `abcdefghijklmnop12` | Sysadmin API key |
@@ -75,6 +75,25 @@ Boot the dev stack (see `docker/dev/README.md`):
 
 Then run tests with the default `RSPACE_BASE_URL=http://localhost:8080`. No
 extra config needed — the Docker stack listens on 8080 by default.
+
+## Running the community (cloud) specs
+
+`specs/cloud/` covers community-only flows (email-verified signup, cloud group
+creation and invitations, directory search, confirmed email change). They need
+a server started with `-Ddeployment.cloud=true`, which is fixed at startup, so
+they run in their own `cloud` project that is only selected explicitly and is
+ignored by every other project. They also need Mailpit.
+
+On the Docker dev stack, add `deployment.cloud=true` to the worktree's
+gitignored `src/main/resources/deployments/dev/deployment.properties`, then:
+
+```bash
+./docker/dev/rspace-dev up --mailpit
+E2E_BROWSER=cloud RSPACE_BASE_URL=http://localhost:<app port> \
+  MAILPIT_HTTP_URL=http://localhost:<mailpit port> pnpm run test-e2e
+```
+
+CI runs them as the `cloud` leg of `.github/workflows/e2e.yml` (mock mode only).
 
 ## File naming — wrong suffix = test silently never runs
 
@@ -137,6 +156,7 @@ Each project uses a distinct seed user so parallel shards do not collide:
 | webkit | user4d | PI + USER |
 | mobile | user7g | PI + USER |
 | api | user2b | USER |
+| cloud | user5e | USER |
 
 All browser projects use PI+USER accounts. See `users.ts` for the full seed
 map and `AGENTS.md` for isolation and multi-user rules. A seed user's workspace
