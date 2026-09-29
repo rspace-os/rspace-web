@@ -528,7 +528,10 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private BookingConfiguration archive(
       BookingConfiguration configuration, User subject, User actor, Date timestamp) {
     for (TimeSlotBooking booking :
-        timeSlotBookings.findFutureConfirmedByConfiguration(configuration.getId(), timestamp)) {
+        BookingCurrentReads.read(
+            () ->
+                timeSlotBookings.findFutureConfirmedByConfiguration(
+                    configuration.getId(), timestamp))) {
       booking.setState(BookingState.CANCELLED);
       booking.setUpdatedAt(timestamp);
       booking.setUpdatedBy(actor);

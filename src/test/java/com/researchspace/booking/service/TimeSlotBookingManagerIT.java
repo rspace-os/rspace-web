@@ -16,6 +16,7 @@ import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingOpeningException;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
+import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
@@ -402,6 +403,108 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
               setup.configurationId()));
     } finally {
       createStarted.countDown();
+      pool.shutdownNow();
+      assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS));
+    }
+  }
+
+  @Test
+  public void archiveCancelsAFutureBookingCreatedAfterItsInitialRead() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Archive create-wins scope");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
+    ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
+    Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    TimeSlotBooking existing =
+        bookingManager.createBooking(
+            new TimeSlotBookingManager.Create(
+                target, Date.from(start), Date.from(start.plus(1, ChronoUnit.HOURS)), null),
+            owner,
+            owner);
+    CountDownLatch creatorLockHeld = new CountDownLatch(1);
+    CountDownLatch archiveRead = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+
+    try {
+      Future<?> create =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          ignored -> {
+                            configurationDao.lockById(setup.configurationId()).orElseThrow();
+                            creatorLockHeld.countDown();
+                            await(archiveRead);
+                            bookingManager.createBooking(
+                                new TimeSlotBookingManager.Create(
+                                    target,
+                                    Date.from(start.plus(2, ChronoUnit.HOURS)),
+                                    Date.from(start.plus(3, ChronoUnit.HOURS)),
+                                    "Created while archive waited"),
+                                owner,
+                                owner);
+                          }));
+      assertTrue(creatorLockHeld.await(10, TimeUnit.SECONDS));
+
+      Future<?> archive =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          ignored -> {
+                            bookingManager.getBooking(existing.getId(), owner).orElseThrow();
+                            BookingConfiguration current =
+                                configurationDao.getSafeNull(setup.configurationId()).orElseThrow();
+                            archiveRead.countDown();
+                            configurationManager
+                                .archiveConfiguration(
+                                    setup.configurationId(),
+                                    current.getConfigurationVersion(),
+                                    owner,
+                                    owner)
+                                .orElseThrow();
+                          }));
+
+      try {
+        archive.get(20, TimeUnit.SECONDS);
+      } catch (java.util.concurrent.ExecutionException exception) {
+        // MariaDB can reject a stale-snapshot locking read instead of returning current rows.
+        assertTrue(exception.getCause() instanceof BookingConcurrentModificationException);
+        create.get(20, TimeUnit.SECONDS);
+        assertEquals(
+            "ACTIVE",
+            jdbcTemplate.queryForObject(
+                "SELECT state FROM BookingConfiguration WHERE id = ?",
+                String.class,
+                setup.configurationId()));
+        assertEquals(
+            Integer.valueOf(2),
+            jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ? AND state ="
+                    + " 'CONFIRMED'",
+                Integer.class,
+                setup.configurationId()));
+        configurationManager
+            .archiveConfiguration(
+                setup.configurationId(),
+                jdbcTemplate.queryForObject(
+                    "SELECT configurationVersion FROM BookingConfiguration WHERE id = ?",
+                    Long.class,
+                    setup.configurationId()),
+                owner,
+                owner)
+            .orElseThrow();
+      }
+      create.get(20, TimeUnit.SECONDS);
+      assertEquals(
+          Integer.valueOf(0),
+          jdbcTemplate.queryForObject(
+              "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ? AND state ="
+                  + " 'CONFIRMED' AND deleted = 0",
+              Integer.class,
+              setup.configurationId()));
+    } finally {
+      archiveRead.countDown();
       pool.shutdownNow();
       assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS));
     }

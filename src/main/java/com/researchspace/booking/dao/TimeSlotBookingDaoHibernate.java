@@ -179,19 +179,30 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
 
   @Override
   public List<TimeSlotBooking> findFutureConfirmedByConfiguration(Long configurationId, Date now) {
-    return getSession()
-        .createQuery(
-            "select booking from TimeSlotBooking booking"
-                + " join fetch booking.requester"
-                + " where booking.bookingConfiguration.id = :configurationId"
-                + " and booking.deleted = false and booking.state = :state"
-                + " and booking.startTime > :now"
-                + " order by booking.startTime, booking.id",
-            TimeSlotBooking.class)
-        .setParameter("configurationId", configurationId)
-        .setParameter("state", BookingState.CONFIRMED)
-        .setParameter("now", now)
-        .getResultList();
+    // Select IDs without joining requester rows; only booking rows need write locks.
+    List<Long> bookingIds =
+        getSession()
+            .createQuery(
+                "select booking.id from TimeSlotBooking booking"
+                    + " where booking.bookingConfiguration.id = :configurationId"
+                    + " and booking.deleted = false and booking.state = :state"
+                    + " and booking.startTime > :now",
+                Long.class)
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .setParameter("configurationId", configurationId)
+            .setParameter("state", BookingState.CONFIRMED)
+            .setParameter("now", now)
+            .getResultList();
+    List<TimeSlotBooking> bookings =
+        bookingIds.stream()
+            .map(
+                id -> {
+                  TimeSlotBooking booking = getSession().getReference(TimeSlotBooking.class, id);
+                  getSession().refresh(booking, LockModeType.PESSIMISTIC_WRITE);
+                  return booking;
+                })
+            .toList();
+    return bookings;
   }
 
   @Override

@@ -50,7 +50,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.orm.hibernate5.HibernateJdbcException;
 import org.springframework.stereotype.Service;
 
 /** Transactional policy module for one-off time-slot bookings. */
@@ -297,7 +296,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     validateWindow(create.start(), create.end());
     validatePurpose(create.purpose());
     BookingConfiguration configuration =
-        currentSchedule(() -> configurationDao.lockActiveByTarget(create.target().reference()))
+        BookingCurrentReads.read(
+                () -> configurationDao.lockActiveByTarget(create.target().reference()))
             .filter(BookingConfiguration::isEnabled)
             .orElseThrow(BookingTargetUnavailableException::new);
     if (!accessManager
@@ -519,7 +519,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       Long excludedId,
       Set<BookingEventKind> includedKinds) {
     Optional<TimeSlotBooking> overlap =
-        currentSchedule(
+        BookingCurrentReads.read(
             () ->
                 bookingDao.findFirstOverlap(
                     configuration.getId(), start, end, excludedId, includedKinds));
@@ -531,7 +531,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       return;
     }
     Optional<TimeSlotBooking> bufferConflict =
-        currentSchedule(
+        BookingCurrentReads.read(
             () ->
                 bookingDao.findFirstOverlap(
                     configuration.getId(),
@@ -544,17 +544,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
           ConflictingEvent.of(bufferConflict.get()),
           configuration.getBufferBeforeMinutes(),
           configuration.getBufferAfterMinutes());
-    }
-  }
-
-  private static <T> T currentSchedule(java.util.function.Supplier<T> query) {
-    try {
-      return query.get();
-    } catch (HibernateJdbcException exception) {
-      // MariaDB can reject a current read against an older snapshot with ER_CHECKREAD.
-      if (exception.getSQLException().getErrorCode() != 1020) throw exception;
-      log.warn("Scheduling snapshot changed during a locking read", exception);
-      throw new BookingConcurrentModificationException();
     }
   }
 
