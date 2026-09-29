@@ -14,7 +14,12 @@ import { BookingItemInformationCard } from "@/modules/booking/creation/BookingIt
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
-import { ALL_ISO_WEEKDAYS, ALWAYS_OPEN, type OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
+import {
+  ALL_ISO_WEEKDAYS,
+  ALWAYS_OPEN,
+  coversInterval,
+  type OpeningSchedule,
+} from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
   bookingLocale,
@@ -23,6 +28,7 @@ import {
   sameTimeZone,
   wallClockDraftFromInstants,
   wallClockInstant,
+  zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
@@ -49,8 +55,8 @@ type PurposeInput = { purpose: string };
 
 /**
  * Opening hours in the viewer's timezone, as the date and time fields use: "open all day" or one range when every day
- * shares the item's hours in the viewer's own zone; otherwise the windows intersecting the viewer's date, or closed.
- * The item's own timezone is named only in the item information panel.
+ * shares the item's hours in the viewer's own zone; otherwise open all day on, closed on, or the windows intersecting
+ * the viewer's date. The item's own timezone is named only in the item information panel.
  */
 function openingHoursSummary(
   target: BookableItemOption,
@@ -64,6 +70,9 @@ function openingHoursSummary(
     // Read-outs print a closing midnight as 00:00, as formatOpeningRange does.
     const end = target.openingEnd === "24:00" ? "00:00" : target.openingEnd;
     return t("bookings.form.openingHours", { start: target.openingStart, end });
+  }
+  if (coversInterval(target, target.timezone, zonedDayBounds(date, displayTimezone))) {
+    return t("bookings.form.openAllDayOnDate");
   }
   const windows = openingWindowsOnDate(date, displayTimezone, target);
   if (windows.length === 0) return t("bookings.form.closedOnDate");

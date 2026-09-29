@@ -226,12 +226,17 @@ public record BookingSchedulingSettings(
     return minutes == 1 || minutes == 5 || minutes == 10 || minutes == 15;
   }
 
+  /**
+   * Whether {@code start}-{@code end} is one opening interval: canonical {@code HH:mm} times with
+   * start before end. An end of {@code 24:00} closes at the next local midnight, so it is valid
+   * after any start, for example {@code 18:00}-{@code 24:00} as well as the full day.
+   */
   public static boolean areOpeningHoursValid(String start, String end) {
     if (!isCanonicalWallTime(start) || end == null) {
       return false;
     }
     if (DEFAULT_OPENING_END.equals(end)) {
-      return DEFAULT_OPENING_START.equals(start);
+      return true;
     }
     if (!isCanonicalWallTime(end)) {
       return false;

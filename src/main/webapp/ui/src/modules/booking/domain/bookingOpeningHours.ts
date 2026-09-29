@@ -91,9 +91,10 @@ export function finalizeOpeningExceptions<T extends Pick<OpeningSchedule, "openD
 
 export type AbsoluteInterval = { start: string; end: string };
 
+/** Whether `start`-`end` is one opening interval. A `24:00` end closes at midnight, so it follows any valid start. */
 export function validOpeningHours(start: string, end: string): boolean {
   if (!WALL_TIME.test(start)) return false;
-  if (end === "24:00") return start === "00:00";
+  if (end === "24:00") return true;
   return WALL_TIME.test(end) && start < end;
 }
 

@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.model.User;
@@ -17,6 +18,8 @@ import com.researchspace.model.booking.BookingOpeningException;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import org.hibernate.Session;
@@ -153,6 +156,51 @@ class BookingOpeningWeekdaysMVCIT {
       assertEquals(RevisionType.DEL, deletion[2]);
       assertNull(((BookingConfiguration) deletion[0]).getOpenDays());
     }
+  }
+
+  @Test
+  void aPartialDayMayCloseAtMidnightAndBookingsMayEndThereButNotLater() throws Exception {
+    User owner = fixture.user();
+    long instrumentId = fixture.instrument(owner, fixture.marker());
+    long id = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
+    String path = "/api/v2/booking-configurations/" + id;
+
+    String patched =
+        patchConfiguration(
+                path,
+                "\"0\"",
+                "{\"openingStart\":\"18:00\",\"openingEnd\":\"24:00\",\"openingExceptions\":"
+                    + "[{\"dayOfWeek\":6,\"start\":\"20:00\",\"end\":\"24:00\"}]}")
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.openingStart").value("18:00"))
+            .andExpect(jsonPath("$.openingEnd").value("24:00"))
+            .andExpect(jsonPath("$.openingExceptions[0].start").value("20:00"))
+            .andExpect(jsonPath("$.openingExceptions[0].end").value("24:00"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    // The configuration uses the institution time zone; times are local midnights in it.
+    ZoneId zone = ZoneId.of(JsonPath.read(patched, "$.timezone"));
+    LocalDate day = LocalDate.now(zone).plusDays(7);
+    fixture.booking(
+        instrumentId,
+        day.atTime(22, 0).atZone(zone).toInstant(),
+        day.plusDays(1).atStartOfDay(zone).toInstant());
+    mockMvc
+        .perform(
+            post("/api/v2/bookings")
+                .header("apiKey", fixture.userKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"target\":{\"relationTo\":\"booking-instruments\",\"value\":%d},"
+                            .formatted(instrumentId)
+                        + "\"start\":\"%s\",\"end\":\"%s\"}"
+                            .formatted(
+                                day.plusDays(1).atTime(22, 0).atZone(zone).toInstant(),
+                                day.plusDays(2).atTime(0, 5).atZone(zone).toInstant())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.booking.openingHours"));
   }
 
   @Test

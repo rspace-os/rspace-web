@@ -60,7 +60,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   private final TimeSlotBookingDao bookingDao;
   private final BookingConfigurationDao configurationDao;
   private final BookingSchedulingPolicy schedulingPolicy;
-  private final BookingMaintenancePolicy maintenancePolicy;
   private final InstrumentDao instrumentDao;
   private final BookingNotificationService bookingNotificationService;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
@@ -75,7 +74,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       @Qualifier("timeSlotBookingDao") TimeSlotBookingDao bookingDao,
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
       BookingSchedulingPolicy schedulingPolicy,
-      BookingMaintenancePolicy maintenancePolicy,
       InstrumentDao instrumentDao,
       BookingNotificationService bookingNotificationService,
       ObjectProvider<ResourceRegistry> resourceRegistry,
@@ -93,7 +91,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     this.bookingDao = bookingDao;
     this.configurationDao = configurationDao;
     this.schedulingPolicy = schedulingPolicy;
-    this.maintenancePolicy = maintenancePolicy;
     this.instrumentDao = instrumentDao;
     this.bookingNotificationService = bookingNotificationService;
     this.resourceRegistry = resourceRegistry;
@@ -108,7 +105,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       TimeSlotBookingDao bookingDao,
       BookingConfigurationDao configurationDao,
       BookingSchedulingPolicy schedulingPolicy,
-      BookingMaintenancePolicy maintenancePolicy,
       InstrumentDao instrumentDao,
       BookingNotificationService bookingNotificationService,
       ObjectProvider<ResourceRegistry> resourceRegistry,
@@ -120,7 +116,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
         bookingDao,
         configurationDao,
         schedulingPolicy,
-        maintenancePolicy,
         instrumentDao,
         bookingNotificationService,
         resourceRegistry,

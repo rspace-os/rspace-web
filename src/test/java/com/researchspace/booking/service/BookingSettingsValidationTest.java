@@ -54,6 +54,26 @@ class BookingSettingsValidationTest {
   }
 
   @Test
+  void acceptsClosingAtMidnightAfterAnyStartInSharedHoursAndExceptions() {
+    assertDoesNotThrow(
+        () ->
+            BookingSettingsValidation.requireValid(
+                new BookingSchedulingSettings.Patch(
+                        null, "18:00", "24:00", null, null, null, null, null, null)
+                    .merge(CURRENT)));
+    assertDoesNotThrow(
+        () ->
+            BookingSettingsValidation.requireValid(
+                exceptions(List.of(new BookingOpeningException(1, "18:00", "24:00")))
+                    .merge(CURRENT)));
+    assertDoesNotThrow(
+        () ->
+            BookingSettingsValidation.requireValid(
+                exceptions(List.of(new BookingOpeningException(2, "23:59", "24:00")))
+                    .merge(CURRENT)));
+  }
+
+  @Test
   void checksAPartialPatchAgainstTheMergedSettings() {
     assertEquals(Reason.OPENING_EXCEPTIONS, rejection(days(List.of(1, 2, 3, 4, 5))));
     assertDoesNotThrow(
@@ -84,7 +104,7 @@ class BookingSettingsValidationTest {
         rejection(exceptions(List.of(new BookingOpeningException(1, "17:00", "09:00")))));
     assertEquals(
         Reason.OPENING_EXCEPTIONS,
-        rejection(exceptions(List.of(new BookingOpeningException(1, "09:00", "24:00")))));
+        rejection(exceptions(List.of(new BookingOpeningException(1, "24:00", "24:00")))));
     assertEquals(
         Reason.OPENING_EXCEPTIONS,
         rejection(
@@ -100,5 +120,10 @@ class BookingSettingsValidationTest {
         rejection(
             new BookingSchedulingSettings.Patch(
                 null, "18:00", "08:00", null, null, null, null, null, null)));
+    assertEquals(
+        Reason.OPENING_HOURS,
+        rejection(
+            new BookingSchedulingSettings.Patch(
+                null, "18:00", "00:00", null, null, null, null, null, null)));
   }
 }

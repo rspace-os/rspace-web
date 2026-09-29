@@ -105,6 +105,32 @@ class BookingSchedulingPolicyImplTest {
   }
 
   @Test
+  void aPartialDayClosingAtMidnightAllowsAnEndAtMidnightButNotLater() {
+    BookingConfiguration evenings =
+        configuration("UTC", "18:00", "24:00", List.of(1, 2), List.of());
+    allowed(evenings, "2026-08-17T22:00:00Z", "2026-08-18T00:00:00Z");
+    rejected(evenings, "2026-08-17T22:00:00Z", "2026-08-18T00:05:00Z");
+    rejected(evenings, "2026-08-17T17:55:00Z", "2026-08-17T19:00:00Z");
+
+    BookingConfiguration lateMonday =
+        configuration(
+            "UTC",
+            "09:00",
+            "17:00",
+            List.of(1, 2),
+            List.of(new BookingOpeningException(1, "18:00", "24:00")));
+    allowed(lateMonday, "2026-08-17T22:00:00Z", "2026-08-18T00:00:00Z");
+    rejected(lateMonday, "2026-08-17T22:00:00Z", "2026-08-18T00:05:00Z");
+    rejected(lateMonday, "2026-08-18T22:00:00Z", "2026-08-19T00:00:00Z");
+
+    // Europe/Berlin is UTC+2 in August, so 24:00 local is 22:00Z.
+    BookingConfiguration berlinEvenings =
+        configuration("Europe/Berlin", "18:00", "24:00", List.of(1), List.of());
+    allowed(berlinEvenings, "2026-08-17T20:00:00Z", "2026-08-17T22:00:00Z");
+    rejected(berlinEvenings, "2026-08-17T20:00:00Z", "2026-08-17T22:05:00Z");
+  }
+
+  @Test
   void theWeekdayIsTheSchedulingZoneWeekday() {
     BookingConfiguration mondayInAuckland =
         configuration("Pacific/Auckland", "00:00", "24:00", List.of(1), List.of());

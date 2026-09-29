@@ -64,7 +64,6 @@ class TimeSlotBookingManagerTest {
   private final ObjectProvider<ResourceRegistry> registry = mock(ObjectProvider.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicyImpl();
-  private final BookingMaintenancePolicy maintenancePolicy = new BookingMaintenancePolicyImpl();
   private final User actor = mock(User.class);
   private final BookingItemPermissions accessManager = mock(BookingItemPermissions.class);
   private final BookingNotificationService bookingNotificationService =
@@ -74,7 +73,6 @@ class TimeSlotBookingManagerTest {
           bookingDao,
           configurationDao,
           schedulingPolicy,
-          maintenancePolicy,
           instrumentDao,
           bookingNotificationService,
           registry,

@@ -74,8 +74,11 @@ describe("opening-hour schemas", () => {
   test.each([
     ["a reversed interval", "16:00", "10:00", false],
     ["an empty interval", "10:00", "10:00", false],
-    ["24:00 after a non-midnight start", "08:00", "24:00", false],
+    ["24:00 after a non-midnight start", "08:00", "24:00", true],
+    ["24:00 after the last minute of the day", "23:59", "24:00", true],
     ["the full-day interval", "00:00", "24:00", true],
+    ["24:00 as the start", "24:00", "24:00", false],
+    ["00:00 as the end after a later start", "08:00", "00:00", false],
   ])("checks exception intervals: %s", (_, start, end, valid) => {
     expect(validOpeningExceptions({ openDays: [2], openingExceptions: [{ dayOfWeek: 2, start, end }] })).toBe(valid);
   });
