@@ -31,9 +31,10 @@ tags:
       The server builds the new sample from the inputs an operation declares; a property the
       operation does not declare is ignored, as on every other endpoint.
 
-      In a `400`, each entry in `errors` is `"<request path>: <message>"`, for example
-      `origin.globalId: ...`, and `data.validationErrors` carries the same per field as
-      `field`, `rejectedValue`, `objectName` and `message`.
+      In a validation `400`, each entry in `errors` is `"<request path>: <message>"`, for
+      example `origin.globalId: ...`, and `data.validationErrors` carries the same per field as
+      `field`, `rejectedValue`, `objectName` and `message`. A body that cannot be parsed gets a
+      `400` with `internalCode` 40009, a single plain `errors` entry and `data: null`.
 
 paths:
   /workbenches:
@@ -5462,6 +5463,7 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+          pattern: '\S'
           description: Name of the sample the operation creates. Not blank.
         count:
           type: integer
@@ -5582,6 +5584,7 @@ components:
               type: string
               minLength: 1
               maxLength: 255
+              pattern: '\S'
               description: The process the new material was produced by, e.g. "PCR". Not blank.
           required:
             - origin
