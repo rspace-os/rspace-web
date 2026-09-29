@@ -204,6 +204,11 @@ class CollectionDescriptionTest {
         relationship.parseGlobalReference("IN42"));
     assertThrows(IllegalArgumentException.class, () -> relationship.parseGlobalReference("SA42"));
     assertThrows(IllegalArgumentException.class, () -> relationship.parseGlobalReference("IN42v1"));
+    // Seeded and baseline rows have negative IDs, rendered as for example "US-3".
+    assertEquals(
+        new ResourceReference<>(TargetKind.INSTRUMENT, -3L),
+        relationship.parseGlobalReference("IN-3"));
+    assertThrows(IllegalArgumentException.class, () -> relationship.parseGlobalReference("IN--3"));
 
     CollectionDescription<TestEntity> description =
         new CollectionDescription<>(

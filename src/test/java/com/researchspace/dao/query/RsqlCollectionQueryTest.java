@@ -387,6 +387,46 @@ class RsqlCollectionQueryTest {
     assertTrue(result.parameters().containsValue(22L));
   }
 
+  @Test
+  void compilesAFixedTargetIdentityByItsStoredIdAlone() {
+    CollectionDescription<Assigned> assigned =
+        new CollectionDescription<>(
+            "assigned",
+            Assigned.class,
+            List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Assigned::id)),
+            List.of(
+                Relationship.polymorphicToOne(
+                        "instrument",
+                        CollectionFieldTypes.longNumber(),
+                        List.of(
+                            new RelationshipTarget<>(
+                                "instruments", "instruments", "IN", RelatedTarget.class)),
+                        SplitReferenceBinding.monomorphic(Assigned::instrument, "instrumentId"))
+                    .writeOnlyOn()),
+            "id",
+            List.of(new Sort("id", true)));
+    RelationshipReadAccess targets =
+        RelationshipReadAccess.unrestricted(
+            new ResourceRegistry(
+                List.of(
+                    assigned,
+                    relationshipTargetDescription(
+                        "instruments", RelatedTarget.class, RelatedTarget::id))));
+
+    Predicate result =
+        new RsqlCollectionQuery(assigned, "item")
+            .translate(
+                new RsqlFilterParser(assigned).parse("instrument=in=(IN42,IN43);instrument!=IN44"),
+                targets);
+
+    assertTrue(result.expression().contains("(item.instrumentId IN :"), result.expression());
+    assertTrue(result.expression().contains("NOT (item.instrumentId IN :"), result.expression());
+    org.junit.jupiter.api.Assertions.assertFalse(
+        result.expression().contains(".null"), result.expression());
+    assertTrue(result.parameters().containsValue(List.of(42L, 43L)));
+    assertTrue(result.parameters().containsValue(List.of(44L)));
+  }
+
   private static CollectionDescription<Related> relationshipDescription() {
     return new CollectionDescription<>(
         "related",
@@ -443,6 +483,13 @@ class RsqlCollectionQueryTest {
   }
 
   private record RelatedTarget(Long id) {}
+
+  /** A single-target relationship, which stores only the target ID. */
+  private record Assigned(Long id, Long instrumentId) {
+    ResourceReference<String, Long> instrument() {
+      return new ResourceReference<>("instruments", instrumentId);
+    }
+  }
 
   private record RelatedSample(Long id) {}
 

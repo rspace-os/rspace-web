@@ -11,6 +11,7 @@ import com.researchspace.model.collection.FilterSelector;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
+import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRegistry.RelationshipQueryPath;
 import com.researchspace.model.collection.ResourceRegistry.TargetQueryField;
 import com.researchspace.model.collection.SplitReferenceBinding;
@@ -125,7 +126,11 @@ final class RsqlRelationshipCompiler {
     }
     String stored;
     if (selector.part() == FilterSelector.RelationshipComponent.ROOT) {
-      stored = compileReference(comparison, kindPath, idPath, state);
+      // A single-target binding stores no kind column; the parser already matched the prefix.
+      stored =
+          binding.hasKindProperty()
+              ? compileReference(comparison, kindPath, idPath, state)
+              : compileFixedTargetReference(comparison, idPath, state);
     } else {
       String path =
           selector.part() == FilterSelector.RelationshipComponent.KIND ? kindPath : idPath;
@@ -196,6 +201,26 @@ final class RsqlRelationshipCompiler {
         + state.addSubquery(
             new RsqlCollectionQuery.Subquery(
                 source.entityType(), sourceAlias, String.join(" AND ", conjuncts)));
+  }
+
+  private static String compileFixedTargetReference(
+      FilterExpression.Comparison comparison, String idPath, RsqlCompilationState state) {
+    if (comparison.values().isEmpty()) {
+      throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
+    }
+    List<Object> ids = new ArrayList<>();
+    for (Object value : comparison.values()) {
+      if (!(value instanceof ResourceReference<?, ?> reference)) {
+        throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
+      }
+      ids.add(reference.id());
+    }
+    String stored = "(" + idPath + " IN :" + state.add(ids) + ")";
+    return switch (comparison.operator()) {
+      case EQUAL, IN -> stored;
+      case NOT_EQUAL, NOT_IN -> "NOT " + stored;
+      default -> throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);
+    };
   }
 
   private String compileReference(

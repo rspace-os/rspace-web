@@ -11,10 +11,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Getter;
 
 /** One relationship to another registered resource. */
 public final class Relationship<T> {
+
+  /**
+   * An unversioned global ID. Unlike {@link GlobalIdentifier} it allows a negative ID, which seeded
+   * and baseline rows have (for example {@code US-3}).
+   */
+  private static final Pattern GLOBAL_REFERENCE = Pattern.compile("([A-Z]{2})(-?\\d+)");
 
   private final String name;
   private final CollectionFieldType<?> idType;
@@ -241,20 +249,19 @@ public final class Relationship<T> {
   }
 
   public ResourceReference<?, ?> parseGlobalReference(String value) {
-    if (value == null || !GlobalIdentifier.isValid(value)) {
+    Matcher reference = value == null ? null : GLOBAL_REFERENCE.matcher(value);
+    if (reference == null || !reference.matches()) {
+      if (value != null && GlobalIdentifier.isValid(value)) {
+        throw new IllegalArgumentException("Versioned relationship global ID is not supported");
+      }
       throw new IllegalArgumentException("Invalid relationship global ID");
-    }
-    GlobalIdentifier identifier = new GlobalIdentifier(value);
-    if (identifier.hasVersionId()) {
-      throw new IllegalArgumentException("Versioned relationship global ID is not supported");
     }
     RelationshipTarget<?> target =
         targets.stream()
-            .filter(candidate -> identifier.getPrefix().name().equals(candidate.globalIdPrefix()))
+            .filter(candidate -> reference.group(1).equals(candidate.globalIdPrefix()))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Unsupported relationship global ID"));
-    return new ResourceReference<>(
-        target.storedKind(), idType.parse(String.valueOf(identifier.getDbId())));
+    return new ResourceReference<>(target.storedKind(), idType.parse(reference.group(2)));
   }
 
   public SplitReferenceBinding<T, ?, ?> binding() {
