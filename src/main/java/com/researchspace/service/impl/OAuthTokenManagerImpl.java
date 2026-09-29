@@ -36,6 +36,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class OAuthTokenManagerImpl implements OAuthTokenManager {
@@ -56,6 +59,14 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
   @Autowired OAuthAppManager appManager;
 
   @Autowired IPropertyHolder properties;
+
+  private TransactionTemplate uiTokenTransaction;
+
+  @Autowired
+  public void setTransactionManager(PlatformTransactionManager transactionManager) {
+    uiTokenTransaction = new TransactionTemplate(transactionManager);
+    uiTokenTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+  }
 
   @Override
   public ServiceOperationResult<Void> validateToken(String token) {
@@ -270,8 +281,11 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
         Retry.decorateCallable(
             retry,
             () ->
-                createNewJwtToken(UI_CLIENT_ID, UI_CLIENT_SECRET, user, OAuthTokenType.UI_TOKEN)
-                    .getEntity());
+                uiTokenTransaction.execute(
+                    status ->
+                        createNewJwtToken(
+                                UI_CLIENT_ID, UI_CLIENT_SECRET, user, OAuthTokenType.UI_TOKEN)
+                            .getEntity()));
     return Try.ofCallable(createWithRetry).get().getAccessToken();
   }
 
@@ -280,7 +294,10 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
     Retry retry = Retry.of("sessionBoundJwtTokenGeneration", UI_TOKEN_RETRY);
     Callable<String> createWithRetry =
         Retry.decorateCallable(
-            retry, () -> createSessionBoundUiToken(subject, actor, sessionContextId));
+            retry,
+            () ->
+                uiTokenTransaction.execute(
+                    status -> createSessionBoundUiToken(subject, actor, sessionContextId)));
     return Try.ofCallable(createWithRetry).get();
   }
 

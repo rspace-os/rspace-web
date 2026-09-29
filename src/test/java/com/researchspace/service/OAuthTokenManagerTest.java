@@ -29,6 +29,7 @@ import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.transaction.TestTransaction;
 
 public class OAuthTokenManagerTest extends SpringTransactionalTest {
   private @Autowired OAuthTokenManager tokenManager;
@@ -41,7 +42,13 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     User actor = createAndSaveRandomUser();
     User subject = createAndSaveRandomUser();
 
+    // The UI token is committed in a REQUIRES_NEW transaction, so its referenced users must already
+    // be visible outside this test transaction.
+    TestTransaction.flagForCommit();
+    TestTransaction.end();
     String token = tokenManager.createUiToken(subject, actor, "session-context");
+    TestTransaction.start();
+    TestTransaction.flagForRollback();
     UiTokenContext context = tokenManager.getUiTokenContext(token).orElseThrow();
 
     assertEquals(subject.getId().longValue(), context.subjectId());
