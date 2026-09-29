@@ -4195,6 +4195,19 @@ export default interface Resources {
           "rejected": "Closed. Your reason for rejecting is shown in the history."
         },
         "title": "Request {id}: {sampleName}",
+        "transferDialog": {
+          "bullets": {
+            "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
+            "requestFulfilled": "Request {id} will be marked as fulfilled",
+            "subsamplesMoved": "Subsamples will be moved from their current locations to {requester}'s bench",
+            "subsamplesTransferred": "All {count} subsamples will be transferred to user {requester}",
+            "subsamplesTransferredBoth": "Both subsamples will be transferred to user {requester}"
+          },
+          "heading": "Hand over {sampleName} to {requester}",
+          "warning": "<strong>You will no longer own this sample.</strong> Only {requester} or their PI can transfer it back.",
+          "whatWillHappen": "What will happen:"
+        },
+        "transferSampleButton": "Transfer Sample",
         "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
       },
       "feedback": "{count} sample requests found.",

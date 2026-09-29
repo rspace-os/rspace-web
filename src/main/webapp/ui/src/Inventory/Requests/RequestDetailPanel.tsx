@@ -24,6 +24,7 @@ import { Heading, HeadingContext } from "@/components/DynamicHeadingLevel";
 import GlobalId from "@/components/GlobalId";
 import NoValue from "@/components/NoValue";
 import UserDetails from "@/components/UserDetails";
+import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
 import useWhoAmI from "@/hooks/api/useWhoAmI";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
@@ -31,6 +32,7 @@ import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobal
 import type PersonModel from "@/stores/models/PersonModel";
 import useStores from "@/stores/use-stores";
 import * as FetchingData from "@/util/fetchingData";
+import * as Parsers from "@/util/parsers";
 import { isoToLocale } from "@/util/Util";
 import ApiService from "../../common/InvApiService";
 import PeopleField from "../components/Inputs/PeopleField";
@@ -48,6 +50,12 @@ const STATUS_HELP_KEY = {
 
 function statusHelpKey(status: string): (typeof STATUS_HELP_KEY)[keyof typeof STATUS_HELP_KEY] | null {
   return status in STATUS_HELP_KEY ? STATUS_HELP_KEY[status as keyof typeof STATUS_HELP_KEY] : null;
+}
+
+/** "Alice", "Alice and Bob", or "Alice, Bob and Carol", for the Transfer Ownership dialog's bullet. */
+function formatNameList(names: ReadonlyArray<string>): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
 function DetailField({
@@ -68,7 +76,10 @@ function DetailField({
   return (
     <FormControl fullWidth role="group" aria-labelledby={labelId}>
       {tooltip ? <CustomTooltip title={tooltip}>{heading}</CustomTooltip> : heading}
-      <Box sx={{ wordBreak: "break-all" }}>{children}</Box>
+      {/* break-word only splits a word that's too long to fit on its own line (e.g. a long
+          global id), rather than break-all's every-line mid-word wrapping of ordinary text
+          like the requester's note or the approver's comment. */}
+      <Box sx={{ overflowWrap: "break-word" }}>{children}</Box>
     </FormControl>
   );
 }
@@ -100,12 +111,26 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
   const [sampleOwnerName, setSampleOwnerName] = useState<string | null>(null);
   const [subSampleCount, setSubSampleCount] = useState<number | null>(null);
-  const [otherActiveRequestsCount, setOtherActiveRequestsCount] = useState<number | null>(null);
+  const [otherActiveRequests, setOtherActiveRequests] = useState<Array<{ id: number; requesterName: string }> | null>(
+    null,
+  );
   const currentUser = useWhoAmI();
   const { peopleStore, uiStore } = useStores();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
     .map((user) => request != null && user.id === request.sample.owner.id)
     .orElse(false);
+  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+    .flatMap(Parsers.isString)
+    .map((value) => value === "ALLOWED")
+    .orElse(false);
+  const operationsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("inventory.operations.available"))
+    .flatMap(Parsers.isString)
+    .map((value) => value === "ALLOWED")
+    .orElse(false);
+  // Without the Operations Wizard enabled, "Create a new sample derived from the existing
+  // sample" has nothing to offer, so the Choose Sample to Prepare dialog would only ever
+  // sensibly end in a direct transfer; skip straight to it instead of making the owner pick.
+  const skipChooseMethodDialog = sampleRequestsAvailable && !operationsAvailable;
 
   useEffect(() => {
     if (!request) return;
@@ -150,9 +175,10 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     };
   }, [request]);
 
-  // Only needed to size the "other requests will be closed automatically" warning in the
-  // Choose Sample to Prepare dialog; refetched whenever this request's own status changes,
-  // since that can move it into or out of the "active" set counted here.
+  // Backs both the "other requests will be closed automatically" warning in the Choose Sample to
+  // Prepare dialog and the Transfer Ownership dialog's "will be automatically rejected" bullet,
+  // which also needs each other request's requester name. Refetched whenever this request's own
+  // status changes, since that can move it into or out of the "active" set counted here.
   useEffect(() => {
     if (!request) return;
     let cancelled = false;
@@ -161,20 +187,29 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       status: "PENDING,APPROVED",
       pageSize: "100",
     });
-    ApiService.query<{ requests: Array<{ id: number }> }>("sampleRequests", params)
+    ApiService.query<{ requests: Array<{ id: number; requester: { firstName: string; lastName: string } }> }>(
+      "sampleRequests",
+      params,
+    )
       .then(({ data }) => {
         if (cancelled) return;
-        setOtherActiveRequestsCount(data.requests.filter((r) => r.id !== request.id).length);
+        setOtherActiveRequests(
+          data.requests
+            .filter((r) => r.id !== request.id)
+            .map((r) => ({ id: r.id, requesterName: `${r.requester.firstName} ${r.requester.lastName}` })),
+        );
       })
       .catch((error: unknown) => {
         if (cancelled) return;
         console.error("Failed to fetch other active sample requests", error);
-        setOtherActiveRequestsCount(null);
+        setOtherActiveRequests(null);
       });
     return () => {
       cancelled = true;
     };
   }, [request, status]);
+
+  const otherActiveRequestsCount = otherActiveRequests?.length ?? null;
 
   const comment = statusChanges
     .filter((change) => change.status === status)
@@ -301,6 +336,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       )
       .then(() => {
         setTransferDialogOpen(false);
+        // The transfer just took effect, which server-side may have auto-rejected other
+        // requests against the same sample (see SampleApiManagerImpl.changeApiSampleOwner);
+        // notify again, now that's actually happened, so the list picks up their new status
+        // too. The earlier notification from markRequestFulfilled fires before this transfer
+        // call even runs, so it can't have reflected that on its own.
+        notifySampleRequestStatusChanged();
         uiStore.addAlert(
           mkAlert({
             variant: "success",
@@ -332,6 +373,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       });
   };
 
+  const requesterFullName = `${request.requester.firstName} ${request.requester.lastName}`;
   const isActionableState = status === "PENDING" || status === "APPROVED";
   const prepareSampleEnabled = isActionableState && selectedSubsampleId !== null;
   const rejectColors = { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" };
@@ -445,7 +487,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               <DetailField label={t("requestsManagement.detail.fields.status")}>
                 <RequestsStatusChip status={status ?? request.status} />
                 {status === "APPROVED" && sampleOwnerName && !isSampleOwner && (
-                  <Typography variant="body2" sx={{ mt: 1, wordBreak: "normal" }}>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
                     {t("requestsManagement.detail.fields.approvedMessage", { owner: sampleOwnerName })}
                   </Typography>
                 )}
@@ -529,9 +571,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
                         }
                       : undefined
                   }
-                  onClick={() => setChooseMethodDialogOpen(true)}
+                  onClick={() => (skipChooseMethodDialog ? openTransferDialog() : setChooseMethodDialogOpen(true))}
                 >
-                  {t("requestsManagement.detail.prepareSampleButton")}
+                  {skipChooseMethodDialog
+                    ? t("requestsManagement.detail.transferSampleButton")
+                    : t("requestsManagement.detail.prepareSampleButton")}
                 </Button>
                 <Button
                   variant="outlined"
@@ -801,14 +845,50 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         </DialogActions>
       </Dialog>
       <Dialog open={transferDialogOpen} onClose={() => setTransferDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t("contextMenu.transfer.dialog.title")}</DialogTitle>
+        <DialogTitle>
+          {t("requestsManagement.detail.transferDialog.heading", {
+            sampleName: request.sample.name,
+            requester: requesterFullName,
+          })}
+        </DialogTitle>
         <DialogContent>
-          <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-            <TransRichText i18nKey="inventory:contextMenu.transfer.dialog.body" />
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <TransRichText
+              i18nKey="inventory:requestsManagement.detail.transferDialog.warning"
+              values={{ requester: requesterFullName }}
+            />
+          </Alert>
+          <Typography component="p" variant="body1" sx={{ mb: 1 }}>
+            {t("requestsManagement.detail.transferDialog.whatWillHappen")}
           </Typography>
-          <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-            {t("contextMenu.transfer.dialog.recipientSearchHint")}
-          </Typography>
+          <Box component="ul" sx={{ mt: 0, mb: 2, pl: 3 }}>
+            {subSampleCount !== null && subSampleCount > 1 && (
+              <Typography component="li" variant="body2">
+                {subSampleCount === 2
+                  ? t("requestsManagement.detail.transferDialog.bullets.subsamplesTransferredBoth", {
+                      requester: requesterFullName,
+                    })
+                  : t("requestsManagement.detail.transferDialog.bullets.subsamplesTransferred", {
+                      count: subSampleCount,
+                      requester: requesterFullName,
+                    })}
+              </Typography>
+            )}
+            <Typography component="li" variant="body2">
+              {t("requestsManagement.detail.transferDialog.bullets.subsamplesMoved", { requester: requesterFullName })}
+            </Typography>
+            <Typography component="li" variant="body2">
+              {t("requestsManagement.detail.transferDialog.bullets.requestFulfilled", { id: request.id })}
+            </Typography>
+            {otherActiveRequests !== null && otherActiveRequests.length > 0 && (
+              <Typography component="li" variant="body2">
+                {t("requestsManagement.detail.transferDialog.bullets.otherRequestsRejected", {
+                  count: otherActiveRequests.length,
+                  names: formatNameList(otherActiveRequests.map((r) => r.requesterName)),
+                })}
+              </Typography>
+            )}
+          </Box>
           <FormControl component="fieldset" fullWidth>
             <PeopleField
               onSelection={(person) => setTransferRecipient(person as PersonModel | null)}

@@ -11,7 +11,10 @@ import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
 import { InvalidState } from "@/util/error";
+import * as FetchingData from "@/util/fetchingData";
+import * as Parsers from "@/util/parsers";
 import { mapNullable } from "@/util/Util";
 import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/IgsnIcon";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
@@ -592,9 +595,18 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
   const sidebarRef = useLandmark("Navigation");
+  const requestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+    .flatMap(Parsers.isString)
+    .map((value) => value === "ALLOWED")
+    .orElse(false);
+
+  // Every index from here on shifts down by one when Requests is hidden, so the roving tab
+  // index never lands on a gap where nothing is rendered.
+  const exportIndex = requestsAvailable ? 9 : 8;
+  const settingsIndex = requestsAvailable ? 10 : 9;
 
   const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
-    max: isSysAdmin ? 10 : 9,
+    max: isSysAdmin ? settingsIndex : exportIndex,
   });
 
   // Must not set the visible panel: the create-new flow does that itself (createNewHelper).
@@ -624,12 +636,14 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
             <TemplateNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
             <InstrumentTemplateNavItem index={6} tabIndex={getTabIndex(6)} getRef={getRef} />
             <IgsnNavItem index={7} tabIndex={getTabIndex(7)} getRef={getRef} />
-            <RequestsNavItem index={8} tabIndex={getTabIndex(8)} getRef={getRef} />
+            {requestsAvailable && <RequestsNavItem index={8} tabIndex={getTabIndex(8)} getRef={getRef} />}
           </List>
           <Divider />
           <List component="ul" aria-label={t("layout.sidebar.otherActionsLabel")}>
-            <ExportNavItem index={9} tabIndex={getTabIndex(9)} getRef={getRef} />
-            {isSysAdmin && <SettingsNavItem index={10} tabIndex={getTabIndex(10)} getRef={getRef} />}
+            <ExportNavItem index={exportIndex} tabIndex={getTabIndex(exportIndex)} getRef={getRef} />
+            {isSysAdmin && (
+              <SettingsNavItem index={settingsIndex} tabIndex={getTabIndex(settingsIndex)} getRef={getRef} />
+            )}
           </List>
         </Box>
       </Box>
