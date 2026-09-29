@@ -17,7 +17,9 @@ import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.ContainerDao;
@@ -43,6 +45,7 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -1263,6 +1266,39 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertThrows(
         NotFoundException.class,
         () -> sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.requester));
+  }
+
+  @Test
+  public void removeRecipientOfASampleThatFulfilledARequest() throws Exception {
+    SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers();
+
+    // the owner splits off a new sample, fulfils the request with it, then hands it over
+    logoutAndLoginAs(fixture.owner);
+    ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(fixture.owner);
+    ApiSampleRequestStatusPut fulfil = new ApiSampleRequestStatusPut();
+    fulfil.setStatus(SampleRequestStatus.FULFILLED);
+    fulfil.setTransferredSample(aliquot.getId());
+    sampleRequestApiMgr.updateStatus(fixture.requestId, fulfil, fixture.owner);
+    ApiSample toRequester = new ApiSample();
+    toRequester.setId(aliquot.getId());
+    toRequester.setOwner(new ApiUser(fixture.requester));
+    sampleApiMgr.changeApiSampleOwner(toRequester, fixture.owner);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(
+            fixture.requester.getId(),
+            new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION),
+            sysadmin);
+
+    assertTrue(result.isSucceeded(), "deleting the recipient of a fulfilling sample must succeed");
+    assertUserNotExist(fixture.requester);
+
+    // the fulfilled request survives against the owner's sample, no longer naming the deleted one
+    ApiSampleRequest surviving =
+        sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.owner);
+    assertEquals(SampleRequestStatus.FULFILLED, surviving.getStatus());
+    assertNull(surviving.getStatusChanges().get(1).getTransferredSample());
   }
 
   private static class SampleRequestFixture {
