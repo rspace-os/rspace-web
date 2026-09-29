@@ -133,7 +133,6 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             },
             {
               onSuccess: (saved) => reset(form, { initialInput: formInput(saved) }),
-              onError: () => reset(form, { initialInput: formInput(preferences) }),
             },
           );
         }}

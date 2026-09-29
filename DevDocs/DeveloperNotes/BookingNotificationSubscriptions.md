@@ -13,8 +13,15 @@ subscription only if that user has no saved choice. Changing the default never r
 existing subscriptions. Subscriptions survive archive, restore and replacement of the
 booking configuration because they belong to the instrument. Explicit off is persisted.
 
-Delivery also requires the corresponding global My Profile event preference. Creation and
-cancellation are independently filtered. The existing email preference controls email only.
+Subscriber delivery also requires the corresponding global My Profile event preference.
+Creation and cancellation are independently filtered. When someone else cancels a booking,
+the active requester also receives an in-app notification if Booking is enabled and they
+still have item read access, even without a subscription or with cancellation notifications
+turned off. A requester who also subscribes receives just one notification.
+
+The My Profile email preference still gates every email, including requester cancellations.
+The requester override bypasses only the event preference in notification creation; it never
+bypasses `BROADCAST_NOTIFICATIONS_BY_EMAIL` in the email broadcaster.
 Self-actions, maintenance and rescheduling do not notify. Notification persistence remains
 inside the booking transaction and external delivery remains after commit.
 
@@ -54,7 +61,8 @@ a newly bookable instrument if the default is still on.
 Booking preferences contains an On/Off radio choice for the automatic default and an
 unsubscribe-all action. The item page contains its personal On/Off subscription with Save
 and Cancel. Saving shows the same green Saved confirmation as Booking preferences; Cancel
-restores the saved choice without a request. Help text links to My Profile and explains
+restores the saved choice without a request. A failed save preserves the edited choices so
+the user can retry. Help text links to My Profile and explains
 that global booking event preferences also gate delivery, while its email preference
 controls email only. No delivery-status summary is displayed.
 Both radio controls use the shared `RenderFields` select
@@ -95,6 +103,10 @@ original ISO interval are also formatted at display time.
 
 The saved message used by email is human-readable in the recipient's configured timezone.
 Browser mode falls back to the institution timezone because email has no browser session.
+
+Cancellation notifications include the optional reason, HTML-escaped as text. The complete
+formatted message is stored without abbreviation so a maximum-length reason is preserved
+in email even when escaping expands its length.
 
 Messages are HTML. The booking ID links to `/booking/calendar/bookings/{id}` and the instrument
 name and global ID link to `/booking/bookable-items/{globalId}`. User-controlled values are

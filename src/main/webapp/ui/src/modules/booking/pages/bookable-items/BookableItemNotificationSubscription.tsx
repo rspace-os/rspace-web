@@ -66,7 +66,6 @@ function ItemNotificationEditor({
           queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "target", globalId] }),
         ]);
       }
-      reset(form, { initialInput: bookingNotificationChoice(subscription.enabled) });
       setFeedback("saveError");
     },
   });
