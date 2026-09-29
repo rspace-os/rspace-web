@@ -1,11 +1,11 @@
 import type { Locator } from "@playwright/test";
+import { SendMessageDialogComponent } from "@/__tests__/e2e/components/shared/SendMessageDialogComponent";
 import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
 import { ChangePiDialogComponent } from "@/__tests__/e2e/components/system/groups/ChangePiDialogComponent";
 import { ChangeRoleDialogComponent } from "@/__tests__/e2e/components/system/groups/ChangeRoleDialogComponent";
 import { GroupHeaderComponent } from "@/__tests__/e2e/components/system/groups/GroupHeaderComponent";
 import { InviteMembersDialogComponent } from "@/__tests__/e2e/components/system/groups/InviteMembersDialogComponent";
 import { RenameGroupDialogComponent } from "@/__tests__/e2e/components/system/groups/RenameGroupDialogComponent";
-import { SendMessageDialogComponent } from "@/__tests__/e2e/components/system/groups/SendMessageDialogComponent";
 import { BasePage } from "@/__tests__/e2e/pageObjects/BasePage";
 
 /** Group details/membership view. */

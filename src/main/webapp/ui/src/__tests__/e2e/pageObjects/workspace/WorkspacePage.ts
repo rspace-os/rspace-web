@@ -138,9 +138,12 @@ export class WorkspacePage extends BasePage {
   }
 
   async openReceivedMessages(): Promise<MessagesAndRequestsDialogComponent> {
-    await this.toolbar.messagesButton.click();
+    await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/dashboard/ajax/allMessages")),
+      this.toolbar.messagesButton.click(),
+    ]);
     const dialog = new MessagesAndRequestsDialogComponent(this.page);
-    await dialog.waitUntilVisible();
+    await dialog.waitUntilListed();
     return dialog;
   }
 

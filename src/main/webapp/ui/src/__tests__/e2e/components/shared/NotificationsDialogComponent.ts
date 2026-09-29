@@ -43,6 +43,11 @@ export class NotificationsDialogComponent {
     await this.root.locator("tr.notificationRow").first().waitFor({ state: "visible" });
   }
 
+  /** Notification rows containing every given text fragment. */
+  row(...texts: string[]): Locator {
+    return texts.reduce((rows, text) => rows.filter({ hasText: text }), this.root.locator("tr.notificationRow"));
+  }
+
   async getNotificationTexts(): Promise<Array<string>> {
     return this.root.locator("tr.notificationRow").allInnerTexts();
   }
@@ -73,5 +78,14 @@ export class NotificationsDialogComponent {
     // Two controls are named Close; the legacy pane class selects the text action.
     await this.root.locator(".ui-dialog-buttonpane").getByRole("button", { name: "Close" }).click();
     await this.root.waitFor({ state: "hidden" });
+  }
+
+  get emptyState(): Locator {
+    return this.root.getByText("There are no new notifications.");
+  }
+
+  async deleteAll(): Promise<void> {
+    await this.root.getByRole("link", { name: "Delete all", exact: true }).click();
+    await this.emptyState.waitFor({ state: "visible" });
   }
 }
