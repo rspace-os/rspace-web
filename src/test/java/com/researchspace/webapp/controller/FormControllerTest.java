@@ -120,7 +120,7 @@ public class FormControllerTest extends SpringTransactionalTest {
 
   @Test
   public void viewFieldRowReturnsRowViewAndModelAttributes() {
-    User user = createAndSaveUserIfNotExists("form_row_owner");
+    User user = createAndSaveUserIfNotExists("formRowOwner");
     logoutAndLoginAs(user);
     RSForm form = createAnyForm(user);
     AjaxReturnObject<TextFieldForm> createdField =
