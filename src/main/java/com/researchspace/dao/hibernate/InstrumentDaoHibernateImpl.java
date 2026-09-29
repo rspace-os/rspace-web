@@ -196,7 +196,16 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   @Override
   public ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
       String query, int page, int limit, User caller) {
-    if (caller == null || !caller.isEnabled() || caller.isAccountLocked()) {
+    return getBookingCatalogueLocations(query, null, page, limit, caller);
+  }
+
+  @Override
+  public ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
+      String query, Set<Long> containerIds, int page, int limit, User caller) {
+    if (caller == null
+        || !caller.isEnabled()
+        || caller.isAccountLocked()
+        || (containerIds != null && containerIds.isEmpty())) {
       return new ResourcePage<>(List.of(), 0);
     }
     List<String> groupMembers =
@@ -223,6 +232,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .append(" and ")
             .append(containerAccess)
             .append(query == null || query.isBlank() ? "" : " and " + nameFilter)
+            .append(containerIds == null ? "" : " and parent.id in (:locationIds)")
             .toString();
     String fromAndWhere =
         new StringBuilder(" from BookingConfiguration configuration, Instrument instrument ")
@@ -247,6 +257,10 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         countQuery, caller, groupMembers, groupNames, visibleOwners, query);
     setBookingCatalogueLocationParameters(
         pageQuery, caller, groupMembers, groupNames, visibleOwners, query);
+    if (containerIds != null) {
+      countQuery.setParameterList("locationIds", containerIds);
+      pageQuery.setParameterList("locationIds", containerIds);
+    }
     long total = countQuery.getSingleResult();
     List<InstrumentParentLocationSummary> locations =
         pageQuery
@@ -459,14 +473,17 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       return Set.of();
     }
     InventoryReadQueryContext context = readQueryContext(subject);
+    // The parent match is a subquery, not outer joins: Hibernate renders the implicit joins
+    // behind location.storedInstrument and parent.owner as inner joins, which would drop every
+    // instrument without a parent location from the name and description matches too.
     String hql =
         "select distinct instrument.id from Instrument instrument "
-            + "left join instrument.parentLocation location "
-            + "left join location.container parent "
             + "where type(instrument) = Instrument and instrument.deleted = false "
             + "and (lower(instrument.editInfo.name) like :search escape '\\' "
             + "or lower(instrument.editInfo.description) like :search escape '\\' "
-            + "or (location.storedInstrument.id = instrument.id and parent.deleted = false and "
+            + "or exists (select location.id from ContainerLocation location "
+            + "join location.container parent "
+            + "where location.storedInstrument.id = instrument.id and parent.deleted = false and "
             + context.readableContainerPredicate(this, "parent")
             + " and lower(parent.editInfo.name) like :search escape '\\'))";
     Query<Long> query =
@@ -474,6 +491,36 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .createQuery(hql, Long.class)
             .setParameter(
                 "search", "%" + LikeEscaper.escape(search.trim().toLowerCase(Locale.ROOT)) + "%");
+    context.bind(query, null);
+    return Set.copyOf(query.getResultList());
+  }
+
+  @Override
+  public Set<Long> findConfiguredInstrumentIdsInReadableParents(Set<Long> parentIds, User caller) {
+    if (caller == null
+        || !caller.isEnabled()
+        || caller.isAccountLocked()
+        || (parentIds != null && parentIds.isEmpty())) {
+      return Set.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(caller);
+    String hql =
+        "select distinct instrument.id from BookingConfiguration configuration, Instrument"
+            + " instrument join instrument.parentLocation location join location.container parent"
+            + " where configuration.target.type = :targetType"
+            + " and configuration.target.id = instrument.id"
+            + " and type(instrument) = Instrument and instrument.deleted = false"
+            + " and location.storedInstrument.id = instrument.id and parent.deleted = false"
+            + (parentIds == null ? "" : " and parent.id in (:parentIds)")
+            + " and "
+            + context.readableContainerPredicate(this, "parent");
+    Query<Long> query =
+        getSession()
+            .createQuery(hql, Long.class)
+            .setParameter("targetType", BookableTargetType.INSTRUMENT);
+    if (parentIds != null) {
+      query.setParameterList("parentIds", parentIds);
+    }
     context.bind(query, null);
     return Set.copyOf(query.getResultList());
   }

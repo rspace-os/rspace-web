@@ -181,7 +181,7 @@ public record ApiV2BookingConfigurationResource(
         CollectionDescription.fromApiV2Resource(
             ApiV2BookingConfigurationResource.class,
             BookingConfiguration.class,
-            List.of(TARGET),
+            List.of(TARGET, ApiV2BookingLocationResource.<BookingConfiguration>relationship()),
             List.of(new Sort("id", true)),
             access);
     List<Field<BookingConfiguration, ?>> fields = new ArrayList<>(base.fields());

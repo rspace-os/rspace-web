@@ -201,6 +201,7 @@ class ApiV2ResourceConfigTest {
           List.of(
               "booking-configurations",
               "booking-instruments",
+              "booking-locations",
               "bookings",
               "instruments",
               "maintenances",
@@ -229,6 +230,7 @@ class ApiV2ResourceConfigTest {
           List.of(
               "booking-configurations",
               "booking-instruments",
+              "booking-locations",
               "bookings",
               "instruments",
               "maintenances",
@@ -279,6 +281,9 @@ class ApiV2ResourceConfigTest {
         () -> mock(BookingConfigurationTargetManager.class));
     context.registerBean(TimeSlotBookingManager.class, () -> mock(TimeSlotBookingManager.class));
     context.registerBean(
+        com.researchspace.booking.service.BookingLocationFilterManager.class,
+        () -> mock(com.researchspace.booking.service.BookingLocationFilterManager.class));
+    context.registerBean(
         InstrumentEntityApiManager.class, () -> mock(InstrumentEntityApiManager.class));
     InstrumentCustomFieldManager customFields = mock(InstrumentCustomFieldManager.class);
     when(customFields.namespace()).thenReturn(RuntimeFieldNamespaces.CUSTOM_FIELDS);
@@ -301,6 +306,7 @@ class ApiV2ResourceConfigTest {
         BookingTimeConfig.class,
         BookingConfigurationResourceOperations.class,
         BookingInstrumentRelationshipOperations.class,
+        com.researchspace.booking.api.v2.BookingLocationRelationshipOperations.class,
         TimeSlotBookingResourceOperations.class,
         InstrumentResourceOperations.class,
         MaintenanceResourceOperations.class,

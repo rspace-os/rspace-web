@@ -187,7 +187,8 @@ public final class ApiV2TimeSlotBookingResource {
                 TimeSlotBooking::getStartTime),
             Field.readOnly(
                 "end", "endTime", CollectionFieldTypes.instant(), TimeSlotBooking::getEndTime)),
-        List.of(TARGET),
+        // Item filters are reused as event filters, so the calendar accepts their location too.
+        List.of(TARGET, ApiV2BookingLocationResource.<TimeSlotBooking>relationship()),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.readOnly(readAccess));

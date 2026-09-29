@@ -21,6 +21,7 @@ import {
 } from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
+import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -45,15 +46,16 @@ import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { cn } from "@/modules/common/utils/cn";
+import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import {
   type AllBookableItem,
-  AvailabilityCandidateLimitError,
   type AvailabilityQuickFilter,
-  deriveAvailabilityCandidateFilter,
   hasAvailabilityFilter,
-  resolveAvailabilityFilters,
-  useAvailabilityQuickFilterIndex,
+  keepAcrossMinutes,
+  serverAvailabilityFilter,
+  todayAvailabilityWindow,
+  useAvailabilityCounts,
   withAvailability,
 } from "./availabilityQuickFilters";
 import { BookingNotificationBulkActions } from "./BookingNotificationBulkActions";
@@ -202,6 +204,10 @@ function AllBookableItemsContentForUser({
 }: AllBookableItemsContentProps & { subjectId: number }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
+  // Add disappears once the caller is known to have no instrument to set up, so it offers no dead
+  // end; it stays while that answer loads so the toolbar does not shift for everyone else.
+  const eligibleTargets = useEligibleBookingTargets().data;
+  const canAdd = eligibleTargets === undefined || eligibleTargets.length > 0;
   const sourceConfig = useMemo(
     () =>
       createAllBookableItemsConfig(
@@ -240,9 +246,11 @@ function AllBookableItemsContentForUser({
         metadata: runtimeFieldState.metadata,
         runtimeFields: runtimeFieldState.runtimeFields,
         localFields: ["availability"],
-        translate: (key) => String(t(key as never)),
+        // The same default-namespace translator as the REST API v2 table hook: shared table labels
+        // live in `common`, and this page's own keys carry their `booking:` namespace.
+        translate: (key, values) => String(commonT(key as never, values as never)),
       }),
-    [runtimeFieldState.metadata, runtimeFieldState.runtimeFields, sourceConfig, t],
+    [commonT, runtimeFieldState.metadata, runtimeFieldState.runtimeFields, sourceConfig],
   );
   const preferences = useBookingDisplayPreferences();
   const userToday = todayInTimeZone(preferences.timeZone, clock());
@@ -254,16 +262,18 @@ function AllBookableItemsContentForUser({
     }),
     [config, q, routeAvailability, target, where],
   );
+  // The server applies availability as one top-level rule; an availability rule nested in an OR
+  // group, which only a hand-written saved view can hold, is reported like an unknown field.
+  const serverFilter = serverAvailabilityFilter(filters.expression);
   const invalidFilter =
-    !runtimeFieldState.pending && runtimeFieldState.error === null && Boolean(where && !filters.expression);
+    !runtimeFieldState.pending &&
+    runtimeFieldState.error === null &&
+    (Boolean(where && !filters.expression) || !serverFilter.supported);
   const runtimeFilterBlocked =
     runtimeFieldState.pending ||
     runtimeFieldState.error !== null ||
     runtimeFieldState.missing.length > 0 ||
     invalidFilter;
-  const candidateFilter = deriveAvailabilityCandidateFilter(filters.expression);
-  const candidateWhere = candidateFilter ? serializeRsqlExpression(candidateFilter) : undefined;
-  const usesAvailability = hasAvailabilityFilter(filters.expression);
   const quickMode = availabilityMode(filters.expression);
   const bounds = useMemo(
     () =>
@@ -275,29 +285,67 @@ function AllBookableItemsContentForUser({
       ),
     [preferences.availabilityWindow.end, preferences.availabilityWindow.start, preferences.timeZone, selectedDate],
   );
-  const quickIndex = useAvailabilityQuickFilterIndex(
-    token,
-    preferences.timeZone,
-    preferences.availabilityWindow.start,
-    preferences.availabilityWindow.end,
-    clock,
-    candidateWhere,
-    !runtimeFilterBlocked,
-    subjectId,
-    { q, types, mine },
+  const minute = useAlignedMinute(clock);
+  const today = useMemo(
+    () =>
+      todayAvailabilityWindow(
+        new Date(minute),
+        preferences.timeZone,
+        preferences.availabilityWindow.start,
+        preferences.availabilityWindow.end,
+      ),
+    [minute, preferences.availabilityWindow.end, preferences.availabilityWindow.start, preferences.timeZone],
   );
-  const quickFilterPending = usesAvailability && quickIndex.isPending;
-  const quickFilterError = usesAvailability && quickIndex.isError;
-  const serverFilter = resolveAvailabilityFilters(filters.expression, quickIndex.data);
-  const serverWhere = serverFilter ? serializeRsqlExpression(serverFilter) : undefined;
+  const serverWhere =
+    serverFilter.supported && serverFilter.where ? serializeRsqlExpression(serverFilter.where) : undefined;
+  const serverAvailability = serverFilter.supported ? serverFilter.availability : undefined;
+  // Counts describe the item rules alone, so each chip shows what selecting it would find.
+  const countsFilter = withAvailability(filters.expression, undefined);
+  const counts = useAvailabilityCounts(
+    token,
+    subjectId,
+    { q, types, mine, where: countsFilter ? serializeRsqlExpression(countsFilter) : undefined },
+    today,
+    !runtimeFilterBlocked,
+  );
+  // The table reads its own page; the server applies an availability rule before paging.
+  const catalogueQueryKey = [
+    "api-v2",
+    "bookings",
+    "booking-catalogue",
+    "all-items",
+    token,
+    q,
+    types,
+    mine,
+    serverWhere,
+    page,
+    pageSize,
+    ...(serverAvailability ? [serverAvailability, today.start, today.end, today.now] : []),
+  ];
   const catalogue = useQuery({
-    queryKey: ["api-v2", "booking-catalogue", "all-items", token, q, types, mine, serverWhere, page, pageSize],
+    queryKey: catalogueQueryKey,
     queryFn: ({ signal }) =>
-      fetchBookingCatalogue({ q, types, mine, where: serverWhere, page, pageSize }, token, signal),
-    enabled: !runtimeFilterBlocked && (!usesAvailability || quickIndex.data !== undefined),
+      fetchBookingCatalogue(
+        {
+          q,
+          types,
+          mine,
+          where: serverWhere,
+          page,
+          pageSize,
+          availability: serverAvailability,
+          availabilityWindow: today,
+        },
+        token,
+        signal,
+      ),
+    enabled: !runtimeFilterBlocked && token.length > 0,
     staleTime: 30_000,
+    placeholderData: serverAvailability ? keepAcrossMinutes(catalogueQueryKey) : undefined,
   });
-  const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  const catalogueItems = catalogue.data?.items ?? [];
+  const rows = runtimeFilterBlocked ? [] : catalogueItems.map(catalogueItemAsConfiguration);
   // An unfiltered empty catalogue means the user has no bookable items yet, not that a filter hid them.
   const hasNoBookableItems =
     catalogue.isSuccess &&
@@ -323,16 +371,10 @@ function AllBookableItemsContentForUser({
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
     return availabilityRow ? [availabilityRow] : [];
   });
-  const useQuickAvailability =
-    selectedDate === userToday &&
-    !quickIndex.isError &&
-    (quickIndex.isPending || availabilityRows.every((row) => quickIndex.data?.has(row.globalId)));
-  const availability = useCalendarAvailability(
-    quickMode || useQuickAvailability ? [] : availabilityRows,
-    bounds,
-    token,
-    subjectId,
-  );
+  // A quick filter always describes today, so its rows show today's bars and book today.
+  const rowsDate = quickMode ? today.date : selectedDate;
+  const rowsBounds = quickMode ? today.bounds : bounds;
+  const availability = useCalendarAvailability(availabilityRows, rowsBounds, token, subjectId);
 
   const setDate = (nextDate: string) => {
     setSelectedNotificationIds(new Set());
@@ -409,18 +451,14 @@ function AllBookableItemsContentForUser({
     getRowId: (row) => String(row.id),
     clientSide: false,
     status:
-      runtimeFieldState.error !== null ||
-      runtimeFieldState.missing.length > 0 ||
-      invalidFilter ||
-      quickFilterError ||
-      catalogue.isError
+      runtimeFieldState.error !== null || runtimeFieldState.missing.length > 0 || invalidFilter || catalogue.isError
         ? "error"
-        : runtimeFieldState.pending || quickFilterPending || catalogue.isPending
+        : runtimeFieldState.pending || catalogue.isPending
           ? "loading"
           : catalogue.isFetching
             ? "refreshing"
             : "idle",
-    error: runtimeFieldState.error ?? (quickFilterError ? undefined : catalogue.error),
+    error: runtimeFieldState.error ?? catalogue.error,
     restoredViewIssue,
     onSelectRuntimeField: runtimeFieldState.selectRuntimeField,
     runtimeFieldDefinitions: runtimeFieldState.runtimeFields,
@@ -481,7 +519,6 @@ function AllBookableItemsContentForUser({
       minWidth: 120,
       renderCell: ({ row }) => {
         if (!row.target) return null;
-        const rowDate = quickMode ? (quickIndex.data?.get(row.target.globalId)?.date ?? selectedDate) : selectedDate;
         const detailsLabel = t("allBookableItems.actions.viewDetails");
         const bookLabel = t("allBookableItems.actions.book");
         return (
@@ -513,7 +550,7 @@ function AllBookableItemsContentForUser({
                       className={buttonVariants({ variant: "outline", size: "icon-lg" })}
                       data-slot="button"
                       to="/booking/calendar/bookings/add"
-                      search={{ date: rowDate, target: row.target.globalId }}
+                      search={{ date: rowsDate, target: row.target.globalId }}
                     />
                   }
                 >
@@ -550,7 +587,7 @@ function AllBookableItemsContentForUser({
       },
       renderInteraction: () => null,
     }),
-    [quickIndex.data, quickMode, selectedDate, t],
+    [rowsDate, t],
   );
 
   const availabilityFilters: TableListFilterButtons = {
@@ -604,10 +641,14 @@ function AllBookableItemsContentForUser({
                 aria-hidden="true"
                 className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background"
               >
-                {quickIndex.isError ? (
+                {counts.isError ? (
                   "—"
-                ) : quickIndex.data ? (
-                  [...quickIndex.data.values()].filter(({ category }) => category === mode).length
+                ) : counts.data ? (
+                  mode === "available-now" ? (
+                    counts.data.availableNow
+                  ) : (
+                    counts.data.freeLaterToday
+                  )
                 ) : (
                   <Skeleton className="h-3 w-3" />
                 )}
@@ -617,7 +658,6 @@ function AllBookableItemsContentForUser({
           description,
           icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
           pressed: quickMode === mode,
-          disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
           onClick: () =>
             setFilters({
               ...filters,
@@ -636,20 +676,12 @@ function AllBookableItemsContentForUser({
           {t("allBookableItems.quickFilters.loading")}
         </p>
       ) : null}
-      {quickIndex.isError ? (
+      {counts.isError ? (
         <div role="alert" className="flex items-center gap-3">
-          <span>
-            {t(
-              quickIndex.error instanceof AvailabilityCandidateLimitError
-                ? "allBookableItems.quickFilters.limit"
-                : "allBookableItems.quickFilters.error",
-            )}
-          </span>
-          {quickIndex.error instanceof AvailabilityCandidateLimitError ? null : (
-            <Button type="button" variant="outline" onClick={() => void quickIndex.refetch()}>
-              {t("allBookableItems.quickFilters.retry")}
-            </Button>
-          )}
+          <span>{t("allBookableItems.quickFilters.error")}</span>
+          <Button type="button" variant="outline" onClick={() => void counts.refetch()}>
+            {t("allBookableItems.quickFilters.retry")}
+          </Button>
         </div>
       ) : null}
       {notificationFeedback ? (
@@ -666,7 +698,7 @@ function AllBookableItemsContentForUser({
         {...tableProps}
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
-        rows={runtimeFilterBlocked || quickFilterPending || quickFilterError ? [] : rows}
+        rows={rows}
         filterButtons={availabilityFilters}
         presentations={{ table: "wide", cards: "narrow" }}
         uiColumns={[
@@ -691,25 +723,7 @@ function AllBookableItemsContentForUser({
                     }
                   : {}),
               };
-              const quickEntry = quickIndex.data?.get(target.globalId);
-              if (quickMode || (useQuickAvailability && quickEntry)) {
-                if (!quickEntry) return t("calendar.availabilityUnavailable");
-                return (
-                  <AvailabilityBar
-                    intervals={quickEntry.intervals}
-                    periodStart={new Date(quickEntry.bounds.start)}
-                    periodEnd={new Date(quickEntry.bounds.end)}
-                    now={quickIndex.now}
-                    showBookingContextDetails={false}
-                    showCurrentAvailability
-                    showPeriodLabels
-                    timeZone={preferences.timeZone}
-                    instrumentTimeZone={row.timezone}
-                    item={item}
-                  />
-                );
-              }
-              if ((useQuickAvailability && quickIndex.isPending) || availability.isPending)
+              if (availability.isPending)
                 return (
                   <div aria-busy="true">
                     <span role="status" className="sr-only">
@@ -724,9 +738,9 @@ function AllBookableItemsContentForUser({
               return (
                 <AvailabilityBar
                   intervals={availability.data.get(target.globalId) ?? []}
-                  periodStart={new Date(bounds.start)}
-                  periodEnd={new Date(bounds.end)}
-                  now={selectedDate === userToday ? quickIndex.now : undefined}
+                  periodStart={new Date(rowsBounds.start)}
+                  periodEnd={new Date(rowsBounds.end)}
+                  now={rowsDate === userToday ? new Date(minute) : undefined}
                   showBookingContextDetails={false}
                   showCurrentAvailability
                   showPeriodLabels
@@ -742,16 +756,23 @@ function AllBookableItemsContentForUser({
         emptyDescription={
           hasNoBookableItems ? (
             <>
-              {t("bookableItems.primer.description")}{" "}
-              <Link to="/booking/bookable-items/add">{t("bookableItems.addTitle")}</Link>
+              {t("bookableItems.primer.description")}
+              {canAdd && (
+                <>
+                  {" "}
+                  <Link to="/booking/bookable-items/add">{t("bookableItems.addTitle")}</Link>
+                </>
+              )}
             </>
           ) : undefined
         }
         createAction={
-          <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
-            <PlusIcon aria-hidden="true" data-icon="inline-start" />
-            {t("bookableItems.actions.add")}
-          </Link>
+          canAdd ? (
+            <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
+              <PlusIcon aria-hidden="true" data-icon="inline-start" />
+              {t("bookableItems.actions.add")}
+            </Link>
+          ) : undefined
         }
       />
     </main>

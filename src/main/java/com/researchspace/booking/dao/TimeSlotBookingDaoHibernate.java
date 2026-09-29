@@ -119,6 +119,33 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   }
 
   @Override
+  public List<EventInterval> findConfirmedEventIntervals(
+      Collection<Long> configurationIds, Date start, Date end) {
+    if (configurationIds.isEmpty() || !start.before(end)) {
+      return List.of();
+    }
+    return getSession()
+        .createQuery(
+            "select booking.bookingConfiguration.id, booking.kind, booking.startTime,"
+                + " booking.endTime from TimeSlotBooking booking"
+                + " where booking.bookingConfiguration.id in :configurationIds"
+                + " and booking.deleted = false and booking.state = :state"
+                + " and booking.startTime < :end and booking.endTime > :start",
+            Object[].class)
+        .setParameter("configurationIds", configurationIds)
+        .setParameter("state", BookingState.CONFIRMED)
+        .setParameter("start", start)
+        .setParameter("end", end)
+        .getResultList()
+        .stream()
+        .map(
+            row ->
+                new EventInterval(
+                    (Long) row[0], (BookingEventKind) row[1], (Date) row[2], (Date) row[3]))
+        .toList();
+  }
+
+  @Override
   public Set<Long> findOwnedInstrumentIds(Collection<Long> targetIds, Long actorId) {
     if (targetIds.isEmpty()) {
       return Set.of();

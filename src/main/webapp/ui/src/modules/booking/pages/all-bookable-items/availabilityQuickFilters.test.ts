@@ -1,384 +1,247 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { createElement, type ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { classifyCurrentDayAvailability } from "@/modules/booking/domain/availability";
+import type { Booking } from "@/modules/booking/domain/booking";
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
-import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
+import { type CalendarAvailabilityRow, rowAvailabilityIntervals } from "../calendar/calendarAvailability";
 import {
   type AllBookableItem,
-  AvailabilityCandidateLimitError,
-  deriveAvailabilityCandidateFilter,
-  fetchAvailabilityCandidates,
-  loadAvailabilityQuickIndex,
-  resolveAvailabilityFilters,
-  useAvailabilityQuickFilterIndex,
+  keepAcrossMinutes,
+  serverAvailabilityFilter,
+  todayAvailabilityWindow,
+  useAvailabilityCounts,
   withAvailability,
 } from "./availabilityQuickFilters";
 
-const candidate = (id: number, globalId: string, timezone: string): BookingConfiguration => ({
-  id,
-  configurationVersion: 0,
-  target: {
-    relationTo: "booking-instruments",
-    value: { id, name: globalId, deleted: false },
-    globalId,
-  },
-  enabled: true,
-  state: "ACTIVE",
-  timezone,
-  slotGranularityMinutes: 5,
-  openingStart: "00:00",
-  openingEnd: "24:00",
-  openDays: [1, 2, 3, 4, 5, 6, 7],
-  openingExceptions: [],
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-  effectiveRole: "Viewer",
-  roleSources: [],
-  capabilities: {
-    canEditConfiguration: false,
-    canViewAudit: false,
-    canViewAccess: false,
-    canManageAssignments: false,
-    canManageOwners: false,
-    canCreateBooking: false,
-    canManageOwnBookings: false,
-    canManageAllEvents: false,
-    canCreateBlockout: false,
-    canSubscribeCalendar: false,
-    canLeaveConfiguration: false,
-    canManageNotificationSubscription: false,
-  },
-});
-
-const page = (docs: readonly BookingConfiguration[], pageNumber = 1, totalPages = 1, totalDocs = docs.length) => ({
-  items: docs.map((doc) => ({
-    ...doc,
-    configurationId: doc.id,
-    targetId: doc.target?.value.id,
-    targetType: "INSTRUMENT",
-    globalId: doc.target?.globalId,
-    name: doc.target?.value.name,
-    location: null,
-  })),
-  total: totalDocs,
-  pageSize: totalPages > 1 && totalDocs < 100 ? 1 : 100,
-  page: pageNumber,
-  facets: { types: ["INSTRUMENT"] },
-});
+const itemA: FilterExpression<AllBookableItem> = {
+  kind: "comparison",
+  field: "target",
+  operator: "equals",
+  value: "IN1",
+};
+const itemB: FilterExpression<AllBookableItem> = {
+  kind: "comparison",
+  field: "target",
+  operator: "equals",
+  value: "IN2",
+};
+const availableNow: FilterExpression<AllBookableItem> = {
+  kind: "comparison",
+  field: "availability",
+  operator: "equals",
+  value: "available-now",
+};
+const freeLater: FilterExpression<AllBookableItem> = { ...availableNow, value: "free-later-today" };
 
 describe("availability quick filters", () => {
-  it("derives a safe candidate predicate while preserving item-only grouping", () => {
-    const itemA: FilterExpression<AllBookableItem> = {
-      kind: "comparison",
-      field: "target",
-      operator: "equals",
-      value: "IN1",
-    };
-    const itemB: FilterExpression<AllBookableItem> = {
-      kind: "comparison",
-      field: "target",
-      operator: "equals",
-      value: "IN2",
-    };
-    const availability: FilterExpression<AllBookableItem> = {
-      kind: "comparison",
-      field: "availability",
-      operator: "equals",
-      value: "available-now",
-    };
-
-    expect(deriveAvailabilityCandidateFilter({ kind: "and", children: [itemA, availability] })).toEqual(itemA);
-    expect(deriveAvailabilityCandidateFilter({ kind: "or", children: [itemA, itemB] })).toEqual({
-      kind: "or",
-      children: [itemA, itemB],
-    });
-    expect(deriveAvailabilityCandidateFilter({ kind: "or", children: [itemA, availability] })).toBeNull();
-    expect(
-      deriveAvailabilityCandidateFilter({
-        kind: "and",
-        children: [{ kind: "or", children: [availability, itemA] }, itemB],
-      }),
-    ).toEqual(itemB);
-  });
-
   it("retains duplicate item and ID rules when a quick filter is changed or removed", () => {
     const original: FilterExpression<AllBookableItem> = {
       kind: "and",
-      children: [
-        { kind: "comparison", field: "id", operator: "greaterThan", value: 5 },
-        { kind: "comparison", field: "target", operator: "equals", value: "IN1" },
-        { kind: "comparison", field: "target", operator: "equals", value: "IN2" },
-      ],
+      children: [{ kind: "comparison", field: "id", operator: "greaterThan", value: 5 }, itemA, itemB],
     };
     const added = withAvailability(original, "available-now");
     expect(withAvailability(added, undefined)).toEqual(original);
     expect(withAvailability(withAvailability(added, "free-later-today"), undefined)).toEqual(original);
-    expect(resolveAvailabilityFilters(added, new Map())).toEqual({
-      kind: "and",
-      children: [...original.children, { kind: "comparison", field: "id", operator: "equals", value: 0 }],
+  });
+
+  it("sends a top-level availability rule as the catalogue parameter and keeps the item rules", () => {
+    expect(serverAvailabilityFilter(null)).toEqual({ supported: true, where: null });
+    expect(serverAvailabilityFilter(itemA)).toEqual({ supported: true, where: itemA });
+    expect(serverAvailabilityFilter(availableNow)).toEqual({
+      supported: true,
+      where: null,
+      availability: "available-now",
+    });
+    expect(
+      serverAvailabilityFilter({
+        kind: "and",
+        children: [
+          { kind: "or", children: [itemA, itemB] },
+          { kind: "and", children: [freeLater, freeLater] },
+        ],
+      }),
+    ).toEqual({ supported: true, where: { kind: "or", children: [itemA, itemB] }, availability: "free-later-today" });
+  });
+
+  it("matches nothing for contradictory categories and refuses availability inside an OR group", () => {
+    expect(serverAvailabilityFilter({ kind: "and", children: [itemA, availableNow, freeLater] })).toEqual({
+      supported: true,
+      where: { kind: "and", children: [itemA, { kind: "comparison", field: "id", operator: "equals", value: 0 }] },
+    });
+    expect(serverAvailabilityFilter({ kind: "or", children: [itemA, availableNow] })).toEqual({ supported: false });
+    expect(
+      serverAvailabilityFilter({ kind: "and", children: [itemB, { kind: "or", children: [availableNow, itemA] }] }),
+    ).toEqual({ supported: false });
+  });
+
+  it("describes today in the display time zone, whatever the page shows", () => {
+    // 23:30Z on 2026-08-16 is already 2026-08-17 in Berlin.
+    const today = todayAvailabilityWindow(new Date("2026-08-16T23:30:00Z"), "Europe/Berlin", "08:00", "18:00");
+    expect(today).toMatchObject({
+      date: "2026-08-17",
+      start: "2026-08-17T06:00:00Z",
+      end: "2026-08-17T16:00:00Z",
+      now: "2026-08-16T23:30:00.000Z",
     });
   });
 
-  it("treats a display window collapsed by DST as unavailable without requesting bookings", async () => {
-    const result = await loadAvailabilityQuickIndex(
-      [candidate(1, "IN1", "Europe/Berlin")],
-      new Date("2026-03-29T00:00:00Z"),
-      "Europe/Berlin",
-      "02:30",
-      "03:00",
-      "token",
-      new AbortController().signal,
-    );
-    expect(result.get("IN1")?.category).toBe("unavailable-today");
-    expect(result.get("IN1")?.bounds.elapsedMinutes).toBe(0);
+  it("collapses a display window that daylight saving skips", () => {
+    const today = todayAvailabilityWindow(new Date("2026-03-29T00:00:00Z"), "Europe/Berlin", "02:30", "03:00");
+    expect(today.bounds.elapsedMinutes).toBe(0);
+    expect(today.start).toBe(today.end);
   });
 
-  it("fetches every catalogue candidate page", async () => {
-    const requests: URL[] = [];
-    server.use(
-      http.get("/api/v2/booking-catalogue", ({ request }) => {
-        const url = new URL(request.url);
-        requests.push(url);
-        return HttpResponse.json(
-          url.searchParams.get("page") === "1"
-            ? page([candidate(1, "IN1", "UTC")], 1, 2, 2)
-            : page([candidate(2, "IN2", "Europe/Berlin")], 2, 2, 2),
-        );
-      }),
-    );
-
-    const result = await fetchAvailabilityCandidates("token", new AbortController().signal);
-    expect(result).toHaveLength(2);
-    expect(requests.map((request) => request.searchParams.get("page"))).toEqual(["1", "2"]);
-    expect(requests[0].searchParams.get("where")).toBeNull();
-    expect(requests[0].searchParams.get("limit")).toBe("100");
+  it("keeps a previous result only while the trailing minute alone changed", () => {
+    const keep = keepAcrossMinutes(["counts", "q", "2026-08-17T09:01:00Z"]);
+    expect(keep("previous", { queryKey: ["counts", "q", "2026-08-17T09:00:00Z"] })).toBe("previous");
+    expect(keep("previous", { queryKey: ["counts", "other", "2026-08-17T09:00:00Z"] })).toBeUndefined();
+    expect(keep("previous", undefined)).toBeUndefined();
   });
 
-  it("pushes the safe candidate predicate down before applying the candidate limit", async () => {
+  it("reads both counts in one request, with the item rules and today's window, and no catalogue page", async () => {
     const requests: URL[] = [];
     server.use(
-      http.get("/api/v2/booking-catalogue", ({ request }) => {
+      http.get("/api/v2/booking-catalogue/availability-counts", ({ request }) => {
         requests.push(new URL(request.url));
-        return HttpResponse.json(page([candidate(1, "IN1", "UTC")]));
+        return HttpResponse.json({ availableNow: 3, freeLaterToday: 1 });
       }),
     );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children);
+    const today = todayAvailabilityWindow(new Date("2026-08-17T09:00:00Z"), "UTC", "08:00", "18:00");
 
-    await fetchAvailabilityCandidates("token", new AbortController().signal, "target.customFields.SF152==BSL-2");
-
-    expect(requests[0].searchParams.get("where")).toBe("target.customFields.SF152==BSL-2");
-  });
-
-  it("preserves OR candidates before the filtered capacity limit", async () => {
-    const rule = "target==IN1,target==IN2";
-    const expected = rule;
-    server.use(
-      http.get("/api/v2/booking-catalogue", ({ request }) =>
-        HttpResponse.json(
-          new URL(request.url).searchParams.get("where") === expected
-            ? page([candidate(1, "IN1", "UTC"), candidate(2, "IN2", "UTC")])
-            : page([], 1, 11, 1001),
+    const { result } = renderHook(
+      () =>
+        useAvailabilityCounts(
+          "token",
+          1,
+          { q: "microscope", types: ["INSTRUMENT"], mine: true, where: "target.name=contains=scope" },
+          today,
         ),
-      ),
+      { wrapper },
     );
-    await expect(fetchAvailabilityCandidates("token", new AbortController().signal, rule)).resolves.toHaveLength(2);
+
+    await waitFor(() => expect(result.current.data).toEqual({ availableNow: 3, freeLaterToday: 1 }));
+    expect(requests).toHaveLength(1);
+    const parameters = requests[0].searchParams;
+    expect(Object.fromEntries(parameters)).toEqual({
+      q: "microscope",
+      where: "target.name=contains=scope",
+      mine: "true",
+      type: "INSTRUMENT",
+      availabilityStart: "2026-08-17T08:00:00Z",
+      availabilityEnd: "2026-08-17T18:00:00Z",
+      now: "2026-08-17T09:00:00.000Z",
+    });
   });
 
-  it("rejects candidate collections above the relationship-filter ceiling", async () => {
-    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([], 1, 11, 1001))));
-    await expect(fetchAvailabilityCandidates("token", new AbortController().signal)).rejects.toBeInstanceOf(
-      AvailabilityCandidateLimitError,
-    );
-  });
-
-  it("applies catalogue search and types before the candidate capacity limit", async () => {
+  it("does not request counts without a token", () => {
+    let requests = 0;
     server.use(
-      http.get("/api/v2/booking-catalogue", ({ request }) => {
-        const parameters = new URL(request.url).searchParams;
-        return HttpResponse.json(
-          parameters.get("q") === "microscope" && parameters.get("type") === "INSTRUMENT"
-            ? page([candidate(1, "IN1", "UTC")])
-            : page([], 1, 11, 1001),
-        );
+      http.get("/api/v2/booking-catalogue/availability-counts", () => {
+        requests += 1;
+        return HttpResponse.json({ availableNow: 0, freeLaterToday: 0 });
       }),
     );
-    await expect(fetchAvailabilityCandidates("token", new AbortController().signal)).rejects.toBeInstanceOf(
-      AvailabilityCandidateLimitError,
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children);
+    const today = todayAvailabilityWindow(new Date("2026-08-17T09:00:00Z"), "UTC", "00:00", "24:00");
+
+    const { result } = renderHook(() => useAvailabilityCounts("", 1, {}, today), { wrapper });
+
+    expect(result.current.fetchStatus).toBe("idle");
+    expect(requests).toBe(0);
+  });
+});
+
+/**
+ * The classification the server now owns, computed with the client's own interval helpers. The mocks
+ * use the same helpers, and `BookingCurrentAvailabilityTest` holds the server's copy of these cases.
+ */
+describe("the availability oracle", () => {
+  const row = (overrides: Partial<CalendarAvailabilityRow> = {}): CalendarAvailabilityRow => ({
+    globalId: "IN1",
+    timezone: "UTC",
+    openingStart: "00:00",
+    openingEnd: "24:00",
+    openDays: [1, 2, 3, 4, 5, 6, 7],
+    openingExceptions: [],
+    bufferBeforeMinutes: 0,
+    bufferAfterMinutes: 0,
+    allowDoubleBooking: false,
+    ...overrides,
+  });
+  const booking = (start: string, end: string, kind: Booking["kind"] = "BOOKING"): Booking => ({
+    id: 1,
+    version: 0,
+    target: { relationTo: "booking-instruments", value: { id: 1, name: "IN1", deleted: false }, globalId: "IN1" },
+    timezone: "UTC",
+    start,
+    end,
+    state: "CONFIRMED",
+    kind,
+    privacy: "busy",
+    purpose: null,
+    cancellationReason: null,
+    bookedBy: null,
+    canEdit: false,
+    canCancel: false,
+    createdAt: start,
+    updatedAt: start,
+  });
+  const classify = (candidate: CalendarAvailabilityRow, now: string, bookings: readonly Booking[] = []) => {
+    const today = todayAvailabilityWindow(new Date(now), "UTC", "00:00", "24:00");
+    return classifyCurrentDayAvailability(
+      rowAvailabilityIntervals(candidate, today.bounds, bookings),
+      new Date(today.start),
+      new Date(today.end),
+      new Date(now),
     );
-    await expect(
-      fetchAvailabilityCandidates("token", new AbortController().signal, undefined, {
-        q: "microscope",
-        types: ["INSTRUMENT"],
-      }),
-    ).resolves.toHaveLength(1);
+  };
+
+  it("classifies each item in its own scheduling time zone", () => {
+    const busy = [booking("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")];
+    expect(classify(row(), "2026-08-17T09:00:00Z", busy)).toBe("free-later-today");
+    expect(classify(row({ globalId: "IN2", timezone: "America/Los_Angeles" }), "2026-08-17T09:00:00Z", busy)).toBe(
+      "available-now",
+    );
   });
 
-  it("classifies candidates using each configured time zone", async () => {
-    server.use(
-      http.get("/api/v2/bookings", () =>
-        HttpResponse.json({
-          docs: [
-            {
-              id: 1,
-              version: 0,
-              target: candidate(1, "IN1", "UTC").target,
-              timezone: "UTC",
-              start: "2026-08-17T08:00:00Z",
-              end: "2026-08-17T10:00:00Z",
-              state: "CONFIRMED",
-              privacy: "full",
-              purpose: null,
-              bookedBy: null,
-              canEdit: false,
-              canCancel: false,
-              createdAt: "2026-08-17T08:00:00Z",
-              updatedAt: "2026-08-17T08:00:00Z",
-            },
-          ],
-          totalDocs: 1,
-          totalPages: 1,
-          page: 1,
-          hasNextPage: false,
-        }),
-      ),
-    );
-    const result = await loadAvailabilityQuickIndex(
-      [candidate(1, "IN1", "UTC"), candidate(2, "IN2", "America/Los_Angeles")],
-      new Date("2026-08-17T09:00:00Z"),
-      "UTC",
-      "00:00",
-      "24:00",
-      "token",
-      new AbortController().signal,
-    );
-    expect(result.get("IN1")?.category).toBe("free-later-today");
-    expect(result.get("IN1")?.date).toBe("2026-08-17");
-    expect(result.get("IN2")?.category).toBe("available-now");
-    expect(result.get("IN2")?.date).toBe("2026-08-17");
+  it("distinguishes before opening, open now, and after closing", () => {
+    const restricted = row({ openingStart: "08:00", openingEnd: "18:00" });
+    expect(classify(restricted, "2026-08-17T07:00:00Z")).toBe("free-later-today");
+    expect(classify(restricted, "2026-08-17T09:00:00Z")).toBe("available-now");
+    expect(classify(restricted, "2026-08-17T19:00:00Z")).toBe("unavailable-today");
   });
 
-  it("distinguishes before opening, open now, and after closing", async () => {
-    server.use(
-      http.get("/api/v2/bookings", () =>
-        HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false }),
-      ),
-    );
-    const restricted = {
-      ...candidate(1, "IN1", "UTC"),
-      openingStart: "08:00",
-      openingEnd: "18:00",
-      openDays: [1, 2, 3, 4, 5, 6, 7],
-      openingExceptions: [],
-    };
-
-    for (const [time, expected] of [
-      ["2026-08-17T07:00:00Z", "free-later-today"],
-      ["2026-08-17T09:00:00Z", "available-now"],
-      ["2026-08-17T19:00:00Z", "unavailable-today"],
-    ] as const) {
-      const result = await loadAvailabilityQuickIndex(
-        [restricted],
-        new Date(time),
-        "UTC",
-        "00:00",
-        "24:00",
-        "token",
-        new AbortController().signal,
-      );
-      expect(result.get("IN1")?.category).toBe(expected);
-    }
-  });
-
-  it("treats an item closed on the instrument's weekday as unavailable and follows its exception", async () => {
-    server.use(
-      http.get("/api/v2/bookings", () =>
-        HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false }),
-      ),
-    );
+  it("treats an item closed on the instrument's weekday as unavailable and follows its exception", () => {
     // 2026-08-17 is a Monday.
-    const closedMonday = { ...candidate(1, "IN1", "UTC"), openDays: [2, 3, 4, 5, 6, 7] };
-    const lateMonday = {
-      ...candidate(2, "IN2", "UTC"),
-      openingExceptions: [{ dayOfWeek: 1, start: "12:00", end: "18:00" }],
-    };
-
-    const result = await loadAvailabilityQuickIndex(
-      [closedMonday, lateMonday],
-      new Date("2026-08-17T09:00:00Z"),
-      "UTC",
-      "00:00",
-      "24:00",
-      "token",
-      new AbortController().signal,
-    );
-
-    expect(result.get("IN1")?.category).toBe("unavailable-today");
-    expect(result.get("IN2")?.category).toBe("free-later-today");
+    expect(classify(row({ openDays: [2, 3, 4, 5, 6, 7] }), "2026-08-17T09:00:00Z")).toBe("unavailable-today");
+    expect(
+      classify(row({ openingExceptions: [{ dayOfWeek: 1, start: "12:00", end: "18:00" }] }), "2026-08-17T09:00:00Z"),
+    ).toBe("free-later-today");
   });
 
-  it("does not request data without a token and loads counts once authenticated", async () => {
-    let candidateRequests = 0;
-    let bookingRequests = 0;
-    server.use(
-      http.get("/api/v2/booking-catalogue", () => {
-        candidateRequests += 1;
-        return HttpResponse.json(page([candidate(1, "IN1", "UTC")]));
-      }),
-      http.get("/api/v2/bookings", () => {
-        bookingRequests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
-      }),
+  it("counts maintenance on double-booked items and widens events by their buffers", () => {
+    const shared = row({ allowDoubleBooking: true });
+    expect(classify(shared, "2026-08-17T09:00:00Z", [booking("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")])).toBe(
+      "available-now",
     );
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: queryClient }, children);
-    const { result, rerender } = renderHook(
-      ({ token }: { token: string }) =>
-        useAvailabilityQuickFilterIndex(token, "UTC", "00:00", "24:00", () => new Date("2026-08-17T09:00:00Z")),
-      {
-        wrapper,
-        initialProps: {
-          token: "",
-        },
-      },
-    );
-    expect(result.current.isPending).toBe(false);
-    expect(candidateRequests).toBe(0);
-    rerender({ token: "token" });
-    await waitFor(() => expect(result.current.data).toBeDefined());
-    rerender({ token: "token" });
-    await waitFor(() => expect(result.current.data).toBeDefined());
-    expect(candidateRequests).toBe(1);
-    expect(bookingRequests).toBe(1);
-  });
-
-  it("refreshes bookings, but not fresh candidates, at the next minute", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime("2026-08-17T09:00:30Z");
-    let candidateRequests = 0;
-    let bookingRequests = 0;
-    server.use(
-      http.get("/api/v2/booking-catalogue", () => {
-        candidateRequests += 1;
-        return HttpResponse.json(page([candidate(1, "IN1", "UTC")]));
-      }),
-      http.get("/api/v2/bookings", () => {
-        bookingRequests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
-      }),
-    );
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: queryClient }, children);
-    const { result } = renderHook(() => useAvailabilityQuickFilterIndex("token"), { wrapper });
-    await act(async () => vi.waitFor(() => expect(result.current.data).toBeDefined()));
-    await act(() => vi.advanceTimersByTimeAsync(30_000));
-    await act(async () => vi.waitFor(() => expect(bookingRequests).toBe(2)));
-    expect(candidateRequests).toBe(1);
-    vi.useRealTimers();
+    expect(
+      classify(shared, "2026-08-17T09:00:00Z", [
+        booking("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z", "MAINTENANCE"),
+      ]),
+    ).toBe("free-later-today");
+    expect(
+      classify(row({ bufferBeforeMinutes: 30 }), "2026-08-17T09:00:00Z", [
+        booking("2026-08-17T09:30:00Z", "2026-08-17T10:00:00Z"),
+      ]),
+    ).toBe("free-later-today");
   });
 });

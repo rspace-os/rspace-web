@@ -36,31 +36,37 @@ afterEach(() => {
 });
 
 describe("the All Bookable Items page", () => {
-  test("explains the quick-filter capacity limit without offering a futile retry", async () => {
-    let requests = 0;
+  test("requests the table's own page and both counts without paging the catalogue", async () => {
+    const pages: string[] = [];
+    let countRequests = 0;
     worker.use(
+      // The mocks classify through the plain catalogue handler without credentials; count the page's own requests.
       http.get("/api/v2/booking-catalogue", ({ request }) => {
-        if (new URL(request.url).searchParams.get("limit") !== "100") return undefined;
-        requests += 1;
-        return HttpResponse.json({ items: [], total: 1001, page: 1, pageSize: 100, facets: { types: ["INSTRUMENT"] } });
+        const url = new URL(request.url);
+        if (request.headers.has("Authorization")) {
+          pages.push(`${url.searchParams.get("page")}/${url.searchParams.get("limit")}`);
+        }
+        return undefined;
+      }),
+      http.get("/api/v2/booking-catalogue/availability-counts", () => {
+        countRequests += 1;
+        return undefined;
       }),
     );
     render(<AllBookableItemsStory history={history} />);
-    await expect
-      .element(page.getByRole("alert"))
-      .toHaveTextContent("Availability quick filters are unavailable for more than 1,000 items.");
-    await expect.element(page.getByRole("button", { name: "Retry", exact: true })).not.toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: /Available now/ })).toBeDisabled();
     await expect.element(pageObj.detailsButton).toBeVisible();
-    expect(requests).toBe(1);
+    await expect.element(pageObj.availableNow).toHaveTextContent(/\d/);
+    expect(pages).toEqual(["1/20"]);
+    expect(countRequests).toBe(1);
   });
 
   test.each([390, 1440])("keeps the quick-filter toolbar and results width stable at %s px", async (width) => {
     const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     const response = Promise.withResolvers<void>();
     worker.use(
+      // Hold the quick-filtered table page, which the server filters before paging.
       http.get("/api/v2/booking-catalogue", async ({ request }) => {
-        if (new URL(request.url).searchParams.get("limit") !== "100") return undefined;
+        if (!new URL(request.url).searchParams.has("availability")) return undefined;
         await response.promise;
         return undefined;
       }),

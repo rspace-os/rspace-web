@@ -30,12 +30,22 @@
       }
     }
   },
+  "duration": {
+    "days": "{0, plural, one {# day} other {# days}}",
+    "hours": "{0, plural, one {# hour} other {# hours}}",
+    "minutes": "{0, plural, one {# minute} other {# minutes}}"
+  },
   "errors": {
     "api": {
       "v2": {
         "bookingCalendar": {
           "ifMatchRequired": "The current calendar subscription version is required.",
           "subscriptionConflict": "The calendar subscription changed. Refresh it and try again."
+        },
+        "bookingCatalogue": {
+          "availability": {
+            "invalid": "Availability filters need available-now or free-later-today and an availability window of at most two days whose end is not before its start."
+          }
         },
         "forbidden": "You do not have permission to perform this action.",
         "invalidRequest": "The request contains an invalid value.",
@@ -134,13 +144,13 @@
             "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
           },
           "openingHours": {
-            "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."
+            "invalid": "Opening hours must use HH:mm with start before end; the end may be 24:00 to close at midnight."
           },
           "openDays": {
             "invalid": "Open days must list one to seven different weekdays, numbered 1 (Monday) to 7 (Sunday)."
           },
           "openingExceptions": {
-            "invalid": "Each day with different hours must be a different open weekday, with HH:mm hours where start is before end, or 00:00–24:00 for the full day."
+            "invalid": "Each day with different hours must be a different open weekday, with HH:mm hours where start is before end; the end may be 24:00 to close at midnight."
           },
           "buffer": {
             "invalid": "Booking buffers must be between 0 and 10,080 minutes."
@@ -173,6 +183,10 @@
           "window": "The end time must be after the start time.",
           "startInPast": "The booking start must be in the future.",
           "duration": "Bookings may not exceed 366 days.",
+          "cancellationReason": {
+            "length": "The cancellation reason must not exceed 500 characters.",
+            "requiresCancel": "A cancellation reason can only be supplied when cancelling a booking."
+          },
           "target": {
             "unavailable": "The selected target is not available for booking."
           },
@@ -186,7 +200,7 @@
           "patch": "The booking patch is invalid.",
           "granularity": "Start and end must align with this bookable item's slot granularity.",
           "openingHours": "The booking must remain within this bookable item's opening hours and cannot include a day on which it is closed.",
-          "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0, plural, one {# minute} other {# minutes}}.",
+          "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",
           "purpose": {
             "length": "Purpose must not exceed 1,000 characters."
           }

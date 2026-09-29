@@ -19,6 +19,7 @@ import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
 import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
 import com.researchspace.booking.service.BookingConfigurationTargetConflictException;
+import com.researchspace.booking.service.BookingLocationFilterManager;
 import com.researchspace.booking.service.InvalidBookableTargetException;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
@@ -56,6 +57,7 @@ public final class BookingConfigurationResourceOperations
     implements ResourceOperations<BookingConfiguration, Long> {
 
   private final BookingConfigurationManager manager;
+  private final BookingLocationFilterManager locations;
   private final BookingConfigurationProtectedResourceAccess protectedResourceAccess;
   private final FeatureFlagManager featureFlags;
   private final Clock institutionClock;
@@ -63,6 +65,7 @@ public final class BookingConfigurationResourceOperations
 
   public BookingConfigurationResourceOperations(
       BookingConfigurationManager manager,
+      BookingLocationFilterManager locations,
       BookingConfigurationProtectedResourceAccess protectedResourceAccess,
       FeatureFlagManager featureFlags,
       @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock,
@@ -71,6 +74,7 @@ public final class BookingConfigurationResourceOperations
                   .BOOKING_CONFIGURATION_DESCRIPTION)
           CollectionDescription<BookingConfiguration> description) {
     this.manager = manager;
+    this.locations = locations;
     this.protectedResourceAccess = protectedResourceAccess;
     this.featureFlags = featureFlags;
     this.institutionClock = institutionClock;
@@ -161,7 +165,7 @@ public final class BookingConfigurationResourceOperations
     if (!enabled(actor)) {
       return new ResourcePage<>(List.of(), 0);
     }
-    return manager.getConfigurations(request, actor);
+    return manager.getConfigurations(locations.resolveLocations(request, actor), actor);
   }
 
   @Override
@@ -169,7 +173,7 @@ public final class BookingConfigurationResourceOperations
     if (!enabled(actor)) {
       return 0;
     }
-    return manager.countConfigurations(request, actor);
+    return manager.countConfigurations(locations.resolveLocations(request, actor), actor);
   }
 
   @Override
@@ -266,7 +270,11 @@ public final class BookingConfigurationResourceOperations
     if (!enabled(caller.subject())) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
-    return manager.updateConfigurations(request, patch(document), caller.subject(), caller.actor());
+    return manager.updateConfigurations(
+        locations.resolveLocations(request, caller.subject()),
+        patch(document),
+        caller.subject(),
+        caller.actor());
   }
 
   @Override
@@ -296,7 +304,8 @@ public final class BookingConfigurationResourceOperations
     if (!enabled(caller.subject())) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
-    return manager.archiveConfigurations(request, caller.subject(), caller.actor());
+    return manager.archiveConfigurations(
+        locations.resolveLocations(request, caller.subject()), caller.subject(), caller.actor());
   }
 
   private boolean enabled(User actor) {
