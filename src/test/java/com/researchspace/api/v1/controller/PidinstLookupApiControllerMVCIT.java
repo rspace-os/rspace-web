@@ -257,6 +257,31 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertTrue(json(afterImport).get("hits").get(0).get("alreadyLinked").asBoolean());
   }
 
+  /** What the search preview shows for the two link fields, as the registry holds them. */
+  @Test
+  public void searchListsTheMeasurementTechniqueAndCalibrationEntries() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    b2instDummy
+        .getPublishedRecord(recordId)
+        .orElseThrow()
+        .getMetadata()
+        .setRelatedIdentifier(
+            List.of(
+                related("Measurement Technique", "https://other.example.org/globalId/IC1"),
+                related("Calibration", "10.1000/calibration")));
+
+    JsonNode hit = json(search(anyUser, apiKey, "microscope")).get("hits").get(0);
+
+    // valueOf, so a missing property fails as null with the whole hit rather than as an NPE
+    assertEquals(
+        "[\"https://other.example.org/globalId/IC1\"]",
+        String.valueOf(hit.get("measurementTechniques")),
+        hit.toString());
+    assertEquals(
+        "[\"10.1000/calibration\"]", String.valueOf(hit.get("calibrations")), hit.toString());
+  }
+
   /**
    * The status is the part of the minimum-length rule a unit test cannot see: the manager throws,
    * and it is {@code ApiControllerAdvice} that decides what a direct API caller actually gets. This

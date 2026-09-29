@@ -41,6 +41,8 @@ const HITS = [
     measuredVariables: ["Fluorescence intensity"],
     commissioned: "2021-03-01",
     landingPage: "https://example.org/lsm980",
+    measurementTechniques: ["https://other.researchspace.com/globalId/IC65536"],
+    calibrations: ["10.1000/calibration-certificate"],
     alternateIdentifier: "INV-0042",
     alreadyLinked: false,
   },
@@ -54,6 +56,8 @@ const HITS = [
     manufacturers: ["Bruker"],
     instrumentTypes: [],
     measuredVariables: [],
+    measurementTechniques: [],
+    calibrations: [],
     alreadyLinked: true,
     linkedInstrumentGlobalId: "IN52",
   },
@@ -108,6 +112,14 @@ async function search(user: ReturnType<typeof userEvent.setup>, query: string, h
   await waitFor(() => {
     expect(screen.getByRole("gridcell", { name: HITS[0].name, hidden })).toBeInTheDocument();
   });
+}
+
+/** What the preview shows under a label: the description list pairs each term with the definition after it. */
+function previewValue(preview: HTMLElement, label: string): HTMLElement {
+  const terms = within(preview).getAllByRole("term");
+  const index = terms.findIndex((term) => term.textContent === label);
+  expect(index, `no "${label}" in the preview`).toBeGreaterThanOrEqual(0);
+  return within(preview).getAllByRole("definition")[index];
 }
 
 /** The row's radio, found through the name cell because every radio label is the same i18n key in cimode. */
@@ -231,6 +243,23 @@ describe("PidinstImportDialog", () => {
     expect(within(preview).getByText("A confocal laser scanning microscope.")).toBeVisible();
     expect(within(preview).getByRole("link", { name: "https://example.org/lsm980" })).toBeVisible();
     expect(within(preview).queryByText("inventory:pidinstImport.preview.decommissioned")).not.toBeInTheDocument();
+  });
+
+  test("previews the registry's Measurement technique and Calibration entries under their own labels", async () => {
+    const user = userEvent.setup();
+    await renderOpenDialog();
+    await search(user, "microscope");
+
+    await user.click(radioFor("Confocal Microscope"));
+
+    const preview = screen.getByRole("region", { name: "inventory:pidinstImport.preview.title" });
+    const measurementTechnique = previewValue(preview, "inventory:pidinstImport.preview.measurementTechnique");
+    expect(
+      within(measurementTechnique).getByRole("link", { name: "https://other.researchspace.com/globalId/IC65536" }),
+    ).toBeVisible();
+    const calibration = previewValue(preview, "inventory:pidinstImport.preview.calibration");
+    expect(calibration).toHaveTextContent("10.1000/calibration-certificate");
+    expect(within(calibration).queryByRole("link")).not.toBeInTheDocument();
   });
 
   test("refuses to import without a selection", async () => {

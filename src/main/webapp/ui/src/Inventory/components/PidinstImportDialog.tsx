@@ -61,6 +61,9 @@ export type PidinstRecord = {
   commissioned?: string;
   decommissioned?: string;
   landingPage?: string;
+  /** The registry's entries for these two link fields, as the import reads them (RSDEV-1528). */
+  measurementTechniques: ReadonlyArray<string>;
+  calibrations: ReadonlyArray<string>;
   alternateIdentifier?: string;
   created?: string;
   updated?: string;
@@ -168,6 +171,19 @@ function ExternalLink({ href }: { href: string }) {
 const isWebAddress = (value: string): boolean =>
   URL.canParse(value) && ["http:", "https:"].includes(new URL(value).protocol);
 
+function Address({ value }: { value: string }) {
+  return isWebAddress(value) ? <ExternalLink href={value} /> : value;
+}
+
+/** One per line: a record may carry several entries for one field. */
+function Addresses({ values }: { values: ReadonlyArray<string> }) {
+  return values.map((value) => (
+    <Box key={value} component="span" sx={{ display: "block" }}>
+      <Address value={value} />
+    </Box>
+  ));
+}
+
 function RecordPreview({ record }: { record: PidinstRecord }) {
   const { t } = useTranslation("inventory");
   const headingId = React.useId();
@@ -232,6 +248,16 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
         {record.landingPage && (
           <PreviewField label={t("pidinstImport.preview.landingPage")}>
             <ExternalLink href={record.landingPage} />
+          </PreviewField>
+        )}
+        {record.measurementTechniques.length > 0 && (
+          <PreviewField label={t("pidinstImport.preview.measurementTechnique")}>
+            <Addresses values={record.measurementTechniques} />
+          </PreviewField>
+        )}
+        {record.calibrations.length > 0 && (
+          <PreviewField label={t("pidinstImport.preview.calibration")}>
+            <Addresses values={record.calibrations} />
           </PreviewField>
         )}
         {record.alternateIdentifier && (
@@ -392,8 +418,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
               title: entry.field,
               help: (
                 <>
-                  {skippedReason(entry)}{" "}
-                  {isWebAddress(entry.address) ? <ExternalLink href={entry.address} /> : entry.address}
+                  {skippedReason(entry)} <Address value={entry.address} />
                 </>
               ),
             })),

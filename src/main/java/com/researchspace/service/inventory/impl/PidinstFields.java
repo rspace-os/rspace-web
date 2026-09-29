@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.model.ApiPidinstRecord;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -65,6 +66,19 @@ final class PidinstFields {
           new ImportedLink(
               RELATED_ID_NAME_MEASUREMENT_TECHNIQUE, MEASUREMENT_TECHNIQUE, "IsDocumentedBy"),
           new ImportedLink(RELATED_ID_NAME_CALIBRATION, CALIBRATION, "IsCalibratedBy"));
+
+  /**
+   * The values of the entries carrying this label, compared case-insensitively, in registry order.
+   * The one label match for the import and the search preview, so the preview lists exactly the
+   * entries the import tries.
+   */
+  static List<String> valuesLabelled(
+      List<ApiPidinstRecord.RelatedIdentifier> entries, String registryLabel) {
+    return entries.stream()
+        .filter(entry -> registryLabel.equalsIgnoreCase(entry.label()))
+        .map(ApiPidinstRecord.RelatedIdentifier::value)
+        .toList();
+  }
 
   private PidinstFields() {}
 

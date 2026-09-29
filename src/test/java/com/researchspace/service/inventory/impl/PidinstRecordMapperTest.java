@@ -241,6 +241,20 @@ class PidinstRecordMapperTest {
         PidinstRecordMapper.fromB2inst(raw).getRelatedIdentifiers());
   }
 
+  /** What the search preview shows for the two link fields. */
+  @Test
+  void theEntriesOfTheTwoImportedLabelsAreListedForThePreview() throws Exception {
+    ApiPidinstRecord b2inst = PidinstRecordMapper.fromB2inst(b2instRecord());
+    ApiPidinstRecord dataCite = PidinstRecordMapper.fromDataCite(dataCiteDoi(DATACITE_DOI));
+
+    assertEquals(List.of(OTHER_SERVER + "/globalId/IC65536"), b2inst.getMeasurementTechniques());
+    assertEquals(List.of(OTHER_SERVER + "/globalId/SA32768"), b2inst.getCalibrations());
+    assertEquals(
+        List.of("https://rspace.example.com/globalId/IC65536"),
+        dataCite.getMeasurementTechniques());
+    assertTrue(dataCite.getCalibrations().isEmpty(), "an entry without a label names no field");
+  }
+
   @Test
   void dataCiteRelatedIdentifiersKeepALabellessEntryAndDropAValuelessOne() throws Exception {
     ApiPidinstRecord record = PidinstRecordMapper.fromDataCite(dataCiteDoi(DATACITE_DOI));

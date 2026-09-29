@@ -527,11 +527,9 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     for (PidinstFields.ImportedLink target : PidinstFields.IMPORTED_LINKS) {
       List<ApiPidinstSkippedRelatedIdentifier> rejected = new ArrayList<>();
       Optional<ApiInventoryLink> link = Optional.empty();
-      for (ApiPidinstRecord.RelatedIdentifier entry : record.getRelatedIdentifiers()) {
-        if (!target.registryLabel().equalsIgnoreCase(entry.label())) {
-          continue;
-        }
-        link = linkFor(entry.value(), target, user, rejected);
+      for (String address :
+          PidinstFields.valuesLabelled(record.getRelatedIdentifiers(), target.registryLabel())) {
+        link = linkFor(address, target, user, rejected);
         if (link.isPresent()) {
           break;
         }

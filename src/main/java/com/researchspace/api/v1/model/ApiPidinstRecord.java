@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
 /**
  * One instrument record as a PID registry describes it, normalised across providers for the PID
  * lookup (RSDEV-1326; CONTEXT.md "PID lookup"). Multi-valued PIDINST properties stay lists here;
- * the import joins them when it fills the single-valued template fields.
+ * the import joins them when it fills the single-valued template fields, except the two
+ * related-identifier lists, which it turns into links (RSDEV-1528).
  */
 @Data
 @NoArgsConstructor
@@ -72,6 +73,18 @@ public class ApiPidinstRecord {
   @JsonProperty("landingPage")
   private String landingPage;
 
+  /**
+   * The values of the related identifiers labelled Measurement Technique, in registry order: the
+   * entries the import tries for the Measurement technique link (RSDEV-1528), listed so the search
+   * preview shows them before the import.
+   */
+  @JsonProperty("measurementTechniques")
+  private List<String> measurementTechniques = new ArrayList<>();
+
+  /** The same for the entries labelled Calibration, which the import tries for Calibration. */
+  @JsonProperty("calibrations")
+  private List<String> calibrations = new ArrayList<>();
+
   @JsonProperty("alternateIdentifier")
   private String alternateIdentifier;
 
@@ -110,7 +123,7 @@ public class ApiPidinstRecord {
    * The record's related identifiers as label and value, in registry order: B2INST's
    * relatedIdentifierName / relatedIdentifierValue, DataCite's relationTypeInformation /
    * relatedIdentifier. Read by the import to fill the two link fields (RSDEV-1528). Internal, never
-   * serialized, so the search response is unchanged. A label may be null; a value never is.
+   * serialized: the search sends only the two lists above. A label may be null; a value never is.
    */
   @JsonIgnore private List<RelatedIdentifier> relatedIdentifiers = new ArrayList<>();
 

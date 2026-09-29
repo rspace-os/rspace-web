@@ -269,8 +269,9 @@ resolved during design. This file is a glossary only — no implementation detai
   dataset, a paper), of which a PIDINST record may carry any number. RSpace writes exactly
   two when it registers an instrument, the addresses of the items its Measurement technique
   and Calibration fields link to (ADR 0007), and reads back only those two, recognised by
-  their labels, when it imports a record. Every other related identifier is ignored quietly
-  on import, like any registry detail the template has no field for.
+  their labels, when it imports a record; the lookup's preview shows the same two before the
+  import. Every other related identifier is ignored quietly on import, like any registry
+  detail the template has no field for.
   _Avoid_: alternate identifier (a different PIDINST property: the instrument's own local
   ids), linked resource, reference
 

@@ -31,6 +31,8 @@ const HITS = [
     measuredVariables: ["Fluorescence intensity"],
     commissioned: "2021-03-01",
     landingPage: "https://example.org/lsm980",
+    measurementTechniques: ["https://other.researchspace.com/globalId/IC65536"],
+    calibrations: ["10.1000/calibration-certificate"],
     alreadyLinked: false,
   },
   {
@@ -43,6 +45,8 @@ const HITS = [
     manufacturers: ["Bruker"],
     instrumentTypes: [],
     measuredVariables: [],
+    measurementTechniques: [],
+    calibrations: [],
     alreadyLinked: true,
     linkedInstrumentGlobalId: "IN52",
   },

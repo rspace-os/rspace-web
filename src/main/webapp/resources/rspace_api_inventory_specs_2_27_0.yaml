@@ -4404,7 +4404,8 @@ components:
       description: >
         One instrument record as a PID registry describes it, normalised across providers.
         Multi-valued PIDINST properties stay lists here; the import joins them with "; " when it
-        fills the single-valued template fields.
+        fills the single-valued template fields, except `measurementTechniques` and
+        `calibrations`, which it turns into links.
       properties:
         pid:
           type: string
@@ -4480,6 +4481,25 @@ components:
           type: string
           description: Only an absolute http(s) address that parses.
           example: https://demos.researchspace.com/PIDINST/IN32781
+        measurementTechniques:
+          type: array
+          description: >
+            Values of the related identifiers labelled "Measurement Technique" (B2INST
+            `relatedIdentifierName`, DataCite `relationTypeInformation`, compared case-insensitively),
+            in registry order, as the registry holds them. Importing links the first one that is
+            this deployment's own page for an item the caller can link; when none is, each one is
+            reported in the created Instrument's `skippedRelatedIdentifiers`.
+          items:
+            type: string
+          example:
+            - https://demos.researchspace.com/globalId/IC65536
+        calibrations:
+          type: array
+          description: The same for the related identifiers labelled "Calibration".
+          items:
+            type: string
+          example:
+            - https://demos.researchspace.com/globalId/SA32768
         alternateIdentifier:
           type: string
           description: The first B2INST `AlternateIdentifier`, or the first DataCite `identifiers` alias.

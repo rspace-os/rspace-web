@@ -113,7 +113,8 @@ final class PidinstRecordMapper {
             names(
                 md.getAlternateIdentifier(),
                 B2instAlternateIdentifier::getAlternateIdentifierValue)));
-    result.setRelatedIdentifiers(
+    fillRelatedIdentifiers(
+        result,
         relatedIdentifiers(
             md.getRelatedIdentifier(),
             B2instRelatedIdentifier::getRelatedIdentifierName,
@@ -165,7 +166,8 @@ final class PidinstRecordMapper {
     result.setLandingPage(resolvableUrl(attr.getUrl()));
     result.setAlternateIdentifier(
         first(names(attr.getIdentifiers(), DataCiteDoiAttributes.Identifier::getIdentifier)));
-    result.setRelatedIdentifiers(
+    fillRelatedIdentifiers(
+        result,
         relatedIdentifiers(
             attr.getRelatedIdentifiers(),
             DataCiteDoiAttributes.RelatedIdentifier::getRelationTypeInformation,
@@ -296,6 +298,16 @@ final class PidinstRecordMapper {
       }
     }
     return result;
+  }
+
+  /** The entries, and the values of the two the import reads, which the search preview lists. */
+  private static void fillRelatedIdentifiers(
+      ApiPidinstRecord result, List<ApiPidinstRecord.RelatedIdentifier> entries) {
+    result.setRelatedIdentifiers(entries);
+    result.setMeasurementTechniques(
+        PidinstFields.valuesLabelled(entries, PidinstFields.RELATED_ID_NAME_MEASUREMENT_TECHNIQUE));
+    result.setCalibrations(
+        PidinstFields.valuesLabelled(entries, PidinstFields.RELATED_ID_NAME_CALIBRATION));
   }
 
   /**

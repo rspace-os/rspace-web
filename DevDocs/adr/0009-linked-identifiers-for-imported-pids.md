@@ -255,10 +255,16 @@ and API field names were ported instead.
      ignored quietly, like any registry detail the template has no field for. A DataCite registrar
      on Metadata Schema 4.6 or earlier drops `relationTypeInformation` (ADR 0007), so on such a DOI
      both entries are ignored without a warning.
+   - The search lists each hit's entries for the two labels (`measurementTechniques`,
+     `calibrations`), matched by the same rule as the import, so the dialog's preview shows them
+     before the import (Nico's request, 2026-09-29). It shows them as the registry holds them, a
+     link only for an http(s) address, and does not say which will be linked: that verdict needs
+     the checks the import runs for the importing user, and the warning after the import gives it.
 
    Rejected along the way: keeping skipped entries on the instrument as extra fields (Nico,
    2026-09-25: the warning at import time is what the user gets, and the registry record keeps the
-   entries); warning inside the dialog before the import rather than after it; a wrapper response
+   entries); warning inside the dialog before the import rather than after it (the preview lists the
+   entries since 2026-09-29, but not which will be linked); a wrapper response
    `{instrument, skipped}` (changes the 201 body of an endpoint still in Release Prep, for no gain);
    a third reason code for a non-RSpace address; re-implementing the link checks inside the lookup
    manager (a smaller diff, but any check later added to the write path would turn into a 422
