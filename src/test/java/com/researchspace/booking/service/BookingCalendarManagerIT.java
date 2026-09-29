@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.booking.dao.UserBookingCalendarSubscriptionDao;
@@ -105,6 +106,20 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
     assertNotEquals(initial.status().etag(), winner.status().etag());
     assertNotEquals(initial.subscriptionUrl(), winner.subscriptionUrl());
     assertEquals(winner.status().etag(), calendarManager.userStatus(user, user).etag());
+  }
+
+  @Test
+  public void recreatingUserSubscriptionInvalidatesTheOldEtag() {
+    User user = createInitAndLoginAnyUser();
+    BookingCalendarManager.Created initial = calendarManager.createUser(user, user);
+
+    calendarManager.revokeUser(user, user);
+    BookingCalendarManager.Created replacement = calendarManager.createUser(user, user);
+
+    assertNotEquals(initial.status().etag(), replacement.status().etag());
+    assertThrows(
+        UserSubscriptionConflictException.class,
+        () -> calendarManager.rotateUser(user, user, initial.status().etag()));
   }
 
   private List<Object> raceFromLockedUser(

@@ -435,7 +435,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   }
 
   private static String userEtag(UserBookingCalendarSubscription subscription) {
-    return "\"subscription-" + subscription.getVersion() + "\"";
+    return "\"subscription-" + subscription.getId() + "-" + subscription.getVersion() + "\"";
   }
 
   /** A user subscription changed after the caller read its status. */
