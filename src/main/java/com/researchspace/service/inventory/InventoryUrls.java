@@ -107,10 +107,11 @@ public final class InventoryUrls {
    * 0009 decision 9) and the CSV link import alike.
    *
    * <p>Only a web address counts, http or https alike, because http and https on one host are one
-   * deployment. Same server means same host (case-insensitive), port and path before the segment. A
-   * version suffix is returned as it is, so the caller keeps the pin the address named. A server
-   * URL that has since changed is deliberately not recognised, unlike in {@link
-   * #namesGlobalIdPage}.
+   * deployment. Same server means same host (case-insensitive), port and path before the segment;
+   * the segment itself is matched exactly, because the route is case-sensitive and {@code
+   * /GLOBALID/} answers 404. A version suffix is returned as it is, so the caller keeps the pin the
+   * address named. A server URL that has since changed, like a differently cased segment, is
+   * deliberately not recognised, unlike in {@link #namesGlobalIdPage}.
    */
   public static Optional<String> globalIdOfOwnPage(String address, String serverUrl) {
     URI page = parseOrNull(address);
@@ -123,7 +124,7 @@ public final class InventoryUrls {
       return Optional.empty();
     }
     String path = StringUtils.stripEnd(StringUtils.defaultString(page.getPath()), "/");
-    int segment = StringUtils.lastIndexOfIgnoreCase(path, GLOBAL_ID_PATH);
+    int segment = path.lastIndexOf(GLOBAL_ID_PATH);
     if (segment < 0) {
       return Optional.empty();
     }

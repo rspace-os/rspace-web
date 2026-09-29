@@ -87,10 +87,6 @@ class InventoryUrlsTest {
         InventoryUrls.globalIdOfOwnPage("https://RSPACE.Example.com/globalId/IC65536", SERVER),
         "host names are case-insensitive");
     assertEquals(
-        Optional.of("SA1"),
-        InventoryUrls.globalIdOfOwnPage(SERVER + "/GLOBALID/SA1", SERVER),
-        "the path segment is folded, as namesGlobalIdPage folds it");
-    assertEquals(
         Optional.of("IC65536"),
         InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536/", SERVER + "/"),
         "trailing slashes on either side are ignored");
@@ -116,6 +112,9 @@ class InventoryUrlsTest {
         .isEmpty();
     assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/other/globalId/IC65536", SERVER))
         .as("another path before the segment")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/GLOBALID/IC65536", SERVER))
+        .as("the segment cased differently: the route is case-sensitive, so it answers 404")
         .isEmpty();
     assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536", SERVER + "/rspace"))
         .as("the server URL has a context path the address lacks")
