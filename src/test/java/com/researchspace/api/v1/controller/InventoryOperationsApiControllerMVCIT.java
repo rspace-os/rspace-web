@@ -515,9 +515,8 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     assertTrue(
         errors.stream()
             .anyMatch(
-                message ->
-                    message.startsWith("origin.extraFields:") && message.contains("Disposed")),
-        () -> "expected the field-name clash on origin.extraFields, got " + errors);
+                message -> message.startsWith("origin.globalId:") && message.contains("Disposed")),
+        () -> "expected the field-name clash on origin.globalId, got " + errors);
     assertQuantityUnchanged(origin);
     List<ApiExtraField> fieldsAfter =
         subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser).getExtraFields();
