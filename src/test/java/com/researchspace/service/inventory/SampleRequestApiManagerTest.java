@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
@@ -390,6 +391,61 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
     assertEquals(SampleRequestStatus.PENDING, raised.getStatus());
     assertEquals(outsider.getUsername(), raised.getRequester().getUsername());
+  }
+
+  @Test
+  public void transferredSample_isShownOnlyAsFarAsTheViewerMayRead() {
+    User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
+    initialiseContentWithEmptyContent(outsider);
+    ApiSampleRequest raised = raiseRequestAs(outsider);
+    ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(owner);
+    ApiSample described = new ApiSample();
+    described.setId(aliquot.getId());
+    described.setDescription("freezer 3, box 12");
+    sampleApiMgr.updateApiSample(described, owner);
+    ApiSampleRequestStatusPut fulfil = statusPost(SampleRequestStatus.FULFILLED, null);
+    fulfil.setTransferredSample(aliquot.getId());
+    sampleRequestApiMgr.updateStatus(raised.getId(), fulfil, owner);
+
+    // the outsider cannot read the aliquot, so gets only its public view
+    ApiSampleInfo seenByOutsider =
+        sampleRequestApiMgr
+            .getRequestById(raised.getId(), outsider)
+            .getStatusChanges()
+            .get(1)
+            .getTransferredSample();
+    assertEquals(aliquot.getGlobalId(), seenByOutsider.getGlobalId());
+    assertNull(seenByOutsider.getDescription());
+
+    ApiSampleInfo seenByOwner =
+        sampleRequestApiMgr
+            .getRequestById(raised.getId(), owner)
+            .getStatusChanges()
+            .get(1)
+            .getTransferredSample();
+    assertEquals("freezer 3, box 12", seenByOwner.getDescription());
+  }
+
+  @Test
+  public void updateStatus_refusesATransferredSampleTheFulfillerCannotRead() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User stranger = createAndSaveUserIfNotExists(getRandomAlphabeticString("stranger"));
+    initialiseContentWithEmptyContent(stranger);
+    ApiSampleWithFullSubSamples strangersSample = createBasicSampleForUser(stranger);
+    // the premise: the fulfiller genuinely cannot read it
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleApiMgr.assertUserCanReadSample(strangersSample.getId(), owner));
+
+    ApiSampleRequestStatusPut fulfil = statusPost(SampleRequestStatus.FULFILLED, null);
+    fulfil.setTransferredSample(strangersSample.getId());
+
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.updateStatus(raised.getId(), fulfil, owner));
+    assertEquals(
+        SampleRequestStatus.PENDING,
+        sampleRequestApiMgr.getRequestById(raised.getId(), owner).getStatus());
   }
 
   @Test
