@@ -19,6 +19,20 @@ one contract:
   show its current URL.
 - `DELETE` revokes the link.
 
+Compressing proxies change ETags in transit. Apache `mod_deflate` appends
+`-gzip` (or `-br`, `-deflate`) inside the quotes by default
+(`DeflateAlterETag AddSuffix`), so the UI receives `"subscription-42-1-gzip"` and
+echoes it in `If-Match`; other proxies weaken tags to `W/"…"`.
+`ApiV2ConditionalRequest` removes one such suffix and the `W/` prefix before it
+compares a subscription ETag (`parseStrongEtag`) or parses a version ETag such
+as `"0-gzip"` (`parseVersion`, used by configuration `PATCH`/`DELETE` and
+resource access), and returns the tag the server issued. Tolerating a weak tag
+in `If-Match` is deliberate: RFC 9110 says weak tags never match there, but the
+weakening is the proxy's, not a different representation. The server's own
+tags never end in those suffixes (item tags are SHA-256 hex, user tags are
+`"subscription-<id>-<version>"`). A deployment can also stop the rewrite with
+`DeflateAlterETag NoChange`.
+
 `GET /api/v2/users/me/bookable-item-calendar-subscriptions` lists the caller's
 item links, with URLs, for active items they can still read. The Booking
 preferences page shows only the user-wide link; item links are managed from
