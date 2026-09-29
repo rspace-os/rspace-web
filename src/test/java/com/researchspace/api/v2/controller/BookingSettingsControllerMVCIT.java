@@ -12,6 +12,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.AbstractAppInitializor;
@@ -71,7 +72,8 @@ class BookingSettingsControllerMVCIT {
             originalDisplaySettings.availabilityWindowStart(),
             originalDisplaySettings.availabilityWindowEnd(),
             originalDisplaySettings.timezoneMode(),
-            originalDisplaySettings.customTimezone()),
+            originalDisplaySettings.customTimezone(),
+            originalDisplaySettings.timeFormat()),
         current.getConfigurationVersion(),
         sysadmin,
         sysadmin);
@@ -257,6 +259,7 @@ class BookingSettingsControllerMVCIT {
         .andExpect(jsonPath("$.availabilityWindowStart").isString())
         .andExpect(jsonPath("$.availabilityWindowEnd").isString())
         .andExpect(jsonPath("$.timezoneMode").isString())
+        .andExpect(jsonPath("$.timeFormat").isString())
         .andExpect(jsonPath("$.institutionTimezone").isString())
         .andExpect(jsonPath("$.defaultSharedWith").doesNotExist())
         .andExpect(jsonPath("$.selectedAccessGrantees").doesNotExist())
@@ -278,7 +281,7 @@ class BookingSettingsControllerMVCIT {
                     """
                     {"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
                      "timezoneMode":"CUSTOM","customTimezone":"America/New_York",
-                     "configurationVersion":%d}
+                     "timeFormat":"H12","configurationVersion":%d}
                     """
                         .formatted(before.getConfigurationVersion())))
         .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
@@ -287,6 +290,7 @@ class BookingSettingsControllerMVCIT {
         .andExpect(jsonPath("$.availabilityWindowEnd").value("17:00"))
         .andExpect(jsonPath("$.timezoneMode").value("CUSTOM"))
         .andExpect(jsonPath("$.customTimezone").value("America/New_York"))
+        .andExpect(jsonPath("$.timeFormat").value("H12"))
         .andExpect(jsonPath("$.institutionTimezone").isString());
 
     BookingDisplaySettings persisted =
@@ -294,6 +298,34 @@ class BookingSettingsControllerMVCIT {
     assertEquals("09:00", persisted.availabilityWindowStart());
     assertEquals("17:00", persisted.availabilityWindowEnd());
     assertEquals("America/New_York", persisted.customTimezone());
+    assertEquals(BookingTimeFormat.H12, persisted.timeFormat());
+    mockMvc
+        .perform(get("/api/v2/booking-settings").header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.timeFormat").value("H12"));
+  }
+
+  @Test
+  void rejectsAnUnknownTimeFormatWithoutWriting() throws Exception {
+    BookingConfigurationDefaults before = settingsManager.getDefaults(sysadmin);
+
+    for (String invalid : new String[] {"\"NOPE\"", "\"h12\"", "1", "true"}) {
+      mockMvc
+          .perform(
+              patch("/api/v2/booking-settings/admin")
+                  .header("apiKey", fixture.sysadminKey())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(
+                      """
+                      {"timeFormat":%s,"configurationVersion":%d}
+                      """
+                          .formatted(invalid, before.getConfigurationVersion())))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    }
+    assertEquals(
+        before.getConfigurationVersion(),
+        settingsManager.getDefaults(sysadmin).getConfigurationVersion());
   }
 
   @Test

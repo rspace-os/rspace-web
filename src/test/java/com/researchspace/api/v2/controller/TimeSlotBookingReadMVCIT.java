@@ -89,9 +89,12 @@ class TimeSlotBookingReadMVCIT {
                     .header("apiKey", fixture.userKey())
                     .header(HttpHeaders.IF_MATCH, booking.getResponse().getHeader(HttpHeaders.ETAG))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"state\":\"CANCELLED\"}"))
+                    .content(
+                        "{\"state\":\"CANCELLED\","
+                            + "\"cancellationReason\":\"Instrument needs recalibration\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.state").value("CANCELLED"))
+            .andExpect(jsonPath("$.cancellationReason").value("Instrument needs recalibration"))
             .andReturn();
 
     mockMvc
@@ -100,7 +103,9 @@ class TimeSlotBookingReadMVCIT {
                 .header("apiKey", fixture.userKey())
                 .header(HttpHeaders.IF_MATCH, cancelled.getResponse().getHeader(HttpHeaders.ETAG))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"state\":\"CANCELLED\"}"))
+                .content(
+                    "{\"state\":\"CANCELLED\","
+                        + "\"cancellationReason\":\"Instrument needs recalibration\"}"))
         .andExpect(status().isOk())
         .andExpect(
             header().string(HttpHeaders.ETAG, cancelled.getResponse().getHeader(HttpHeaders.ETAG)))
@@ -109,7 +114,8 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(get(path).header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.state").value("CANCELLED"));
+        .andExpect(jsonPath("$.state").value("CANCELLED"))
+        .andExpect(jsonPath("$.cancellationReason").value("Instrument needs recalibration"));
     mockMvc
         .perform(
             get("/api/v2/bookings")

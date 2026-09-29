@@ -133,7 +133,8 @@ class BookingConfigurationManagerTest {
                     ApiV2BookingConfigurationResource.DESCRIPTION,
                     ApiV2BookingInstrumentResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,
-                    ApiV2UserResource.DESCRIPTION)));
+                    ApiV2UserResource.DESCRIPTION,
+                    com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION)));
     ResolvedResourceAccess ownerAccess =
         new ResolvedResourceAccess(
             Optional.of(BookingResourceRoleScheme.OWNER),
@@ -363,7 +364,9 @@ class BookingConfigurationManagerTest {
 
   @Test
   void rejectsInvalidSchedulingSettingsBeforeSaving() {
-    assertFalse(BookingSchedulingSettings.areOpeningHoursValid("08:00", "24:00"));
+    assertTrue(BookingSchedulingSettings.areOpeningHoursValid("08:00", "24:00"));
+    assertFalse(BookingSchedulingSettings.areOpeningHoursValid("24:00", "24:00"));
+    assertFalse(BookingSchedulingSettings.areOpeningHoursValid("08:00", "00:00"));
     Create invalid =
         new Create(
             true,

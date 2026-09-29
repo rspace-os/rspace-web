@@ -9,6 +9,13 @@ Booking keeps presentation choices separate from scheduling rules:
 - Booking owner notifications use the recipient's display timezone in the dashboard. Browser mode
   uses the timezone captured for the current session and falls back to the institution zone if it is
   missing; email notifications use the institution zone for Browser mode.
+- The **time format** chooses the 12- or 24-hour clock: Automatic (the default), 12-hour or
+  24-hour. Automatic keeps the existing behaviour: booking pages follow the browser region, in-app
+  notifications follow the region named by the request's `Accept-Language`, and emails, which have
+  no browser, use the usual clock of the message language. An explicit 12- or 24-hour choice
+  replaces all three. `BookingNotificationMessageFormatter` receives it as a `BookingTimeFormat`
+  (from `DashboardController` and from the `BookingNotificationRecipient` snapshot for email) and
+  turns it into the ICU `hc` keyword (`h12`, or `h23` so midnight is 00:00).
 - The **scheduling timezone** remains on each `BookingConfiguration`. It controls opening-hour and
   slot-policy calculations and the timezone metadata in calendar feeds. Existing values are not
   rewritten.
@@ -51,11 +58,11 @@ React state update. Hour labels and day bounds are cached by date and timezone.
 Availability quick-filter counts load even when no filter is selected. They use today's preferred
 display interval: before it starts, an item with a free segment is “Free later”; at or after
 its end, it matches neither filter. Loading these counts does not block the unfiltered catalogue.
-Candidate discovery uses the catalogue's Search, type and item-property predicates before applying
-the 1,000-item availability limit. Local availability comparisons become logical true when deriving
-that candidate predicate, preserving AND/OR grouping. Counts therefore describe the current item
-scope. Today's availability bars reuse the same booking intervals; other dates load their own
-intervals. Both event and availability caches are scoped to the caller.
+The server classifies items and counts them under the page's Search, type and item-property
+filters, so counts describe the current item scope and no request pages through the catalogue. See
+"Booking catalogue availability quick filters" in `RestApiV2Collections.md`. Availability bars load
+the booking intervals of the rows on the page only; under a quick filter they show today. Both
+event and availability caches are scoped to the caller.
 
 The preferences editor derives its initial input from the query cache. Once a user edits a field,
 it keeps that local draft across background refetches. Successful Save or Reset clears the draft
@@ -91,11 +98,17 @@ The booking read document supplies that timezone; a null or hidden timezone prod
 The item information card's opening hours reuse the same `BookingInstrumentTimeTooltip`, passing
 the hours already formatted in the item's timezone through its `time` prop.
 
-Numeric dates and the 12- or 24-hour clock follow the browser's regional format, because native
-date and time inputs always use it; words such as month names and durations follow the app
-language. `bookingDateTimeLocale()` and `bookingHourCycle()` in `domain/bookingTime.ts` supply
-these, so pass `hourCycle: bookingHourCycle()` to any new `Intl.DateTimeFormat` that shows a time.
-The availability bar keeps a 24-hour clock for its compact axis. Time inputs still snap to the
+Numeric dates follow the browser's regional format, because native date and time inputs always
+use it; words such as month names and durations follow the app language. The 12- or 24-hour clock
+follows the browser region too unless the viewer chose an explicit time format.
+`bookingDateTimeLocale(format)` and `bookingHourCycle(format)` in `domain/bookingTime.ts` supply these, so pass
+the resolved `preferences.timeFormat` explicitly to new `Intl.DateTimeFormat` calls and formatter helpers that show a
+time. The helpers default to `AUTOMATIC` for standalone callers and are pure: display preferences are not stored in
+module-level mutable state, and rendering one page cannot change another page's formatting. `bookingDateTimeLocaleFor(format)`
+gives the locale for a particular choice, as the preference examples use. Browsers do not let a page change a native
+`type="time"` input's clock, so those inputs keep the browser region's format; with an explicit
+choice that differs from the region, text beside an input, such as the snapped-time note, can show
+14:00 while the input shows 2:00 PM. The availability bar keeps a 24-hour clock for its compact axis. Time inputs still snap to the
 item's time increment on blur, and the form announces the adjusted value instead of changing it
 silently.
 
@@ -105,9 +118,11 @@ day in the Time grid day view. Duration-sized cards in the week grid and the boo
 schedule drop the booker badge, then the second title line, so the item name and time stay visible.
 
 Global display defaults are stored on the audited `BookingConfigurationDefaults` singleton. The
-initial values are `08:00`–`18:00`, Browser mode, and no custom timezone. A user override is one
+initial values are `08:00`–`18:00`, Browser mode, no custom timezone, and the Automatic time
+format (`timeFormat` column, added by `changeLog-booking-time-format.xml`). A user override is one
 versioned JSON document stored under `BOOKING_DISPLAY_PREFERENCES` in the existing
-`UserPreference` system. `BookingDisplayPreferencesManager` owns serialization, versioning,
+`UserPreference` system. `timeFormat` was added to version 1 of that document; a stored document
+without it reads as Automatic, the behaviour it was saved under. `BookingDisplayPreferencesManager` owns serialization, versioning,
 validation, fallback, and preference access. Blank, corrupt, or unsupported stored documents fall
 back to the current global values.
 
@@ -119,8 +134,20 @@ PUT    /api/v2/users/me/booking-preferences
 DELETE /api/v2/users/me/booking-preferences
 ```
 
-PUT is a complete replacement, not a patch. DELETE removes the logical override. During run-as,
+PUT is a complete replacement, not a patch; an omitted `timeFormat` means `AUTOMATIC`. The
+`timeFormat` field on this API and on `/api/v2/booking-settings` accepts exactly `AUTOMATIC`,
+`H12` or `H24`: other strings, differently cased names and JSON numbers (which Jackson would
+otherwise read as enum ordinals) receive `400 Bad Request` with `errors.api.v2.invalidRequest`.
+DELETE removes the logical override. During run-as,
 the subject owns the preference and the actor remains available for audit context.
+
+Booking preferences and the sysadmin Settings page edit these values, including the Time format
+radios (each labelled with an example time in that format), with the same
+`BookingDisplaySettingsFields`. The custom timezone field is rendered only while Custom is
+selected. Every other mode submits `customTimezone: null`, as the input schema requires, so the
+component keeps the last custom zone in memory and restores it when the user switches back to Custom
+before saving; Custom without a remembered zone starts at `UTC`. A hidden field has no validation
+error, so an invalid custom zone blocks Save only while Custom is selected.
 
 ## Loading layouts
 
@@ -150,10 +177,13 @@ Pages own their main landmark; SidebarInset is only a layout container.
 
 The catalogue's master filter is the complete RSQL `where` URL parameter. Quick buttons replace
 only availability predicates; changing dates removes those predicates without discarding item or
-ID rules. Existing `target` and `availability` links remain readable. Availability predicates resolve
-to target-ID predicates before the request. `/api/v2/booking-catalogue?where=...` validates filters
-with the shared collection parser and intersects them with visibility and active-item constraints
-before database pagination. Do not fetch all catalogue pages to filter them in the browser.
+ID rules. Existing `target` and `availability` links remain readable. A top-level availability
+predicate is sent as the catalogue's `availability` parameter with today's window, and the server
+applies it before paging (see "Booking catalogue availability quick filters" in
+`RestApiV2Collections.md`); an availability predicate inside an OR group is reported as an
+unavailable restored filter. `/api/v2/booking-catalogue?where=...` validates filters with the
+shared collection parser and intersects them with visibility and active-item constraints before
+database pagination. Do not fetch all catalogue pages to filter them in the browser.
 
 Calendar has one Search input and separate Bookable items and Booking events filter groups.
 The groups combine with AND; each group retains its own nested AND/OR expression.
@@ -186,6 +216,14 @@ Before mounting the Booking shell or sidebar, AppShell waits for feature flags. 
 unavailable Booking flags redirect to `/workspace` without issuing Booking queries.
 When Booking is enabled, the Inventory sidebar links to `/booking`; the legacy global AppBar
 does not include a separate Booking link.
+The Booking sidebar's Administration group lists Settings for sysadmins and Bookable Items for
+users who can read at least one booking configuration or set up an eligible instrument
+(`useCanOpenBookableItemsAdministration`: a one-row configurations count and the Add form's blank
+target browse, both cached for 10 minutes); with neither, the group is omitted. The Bookable Items
+page hides Add until an eligible target exists. Settings renders a not-permitted state for
+non-sysadmins without calling its sysadmin-only API. The Settings and bookable item queries do not
+retry permanent 4xx answers (`pages/queryRetry.ts`), so a missing or unreadable item shows its
+not-found state at once; network failures and 5xx responses keep the default three retries.
 Calendar, catalogue, and add-booking routes ignore malformed date parameters (including
 non-string values) and use their normal display-timezone defaults.
 

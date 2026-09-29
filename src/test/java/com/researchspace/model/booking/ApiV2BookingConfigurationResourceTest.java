@@ -96,7 +96,7 @@ class ApiV2BookingConfigurationResourceTest {
             .writableFields(WriteOperation.CREATE)
             .contains("timezone"));
     assertEquals(
-        List.of("target", "createdBy", "updatedBy"),
+        List.of("target", "location", "createdBy", "updatedBy"),
         ApiV2BookingConfigurationResource.DESCRIPTION.relationships().stream()
             .map(relationship -> relationship.name())
             .toList());
@@ -400,7 +400,8 @@ class ApiV2BookingConfigurationResourceTest {
             List.of(
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
-                ApiV2BookingInstrumentResource.DESCRIPTION));
+                ApiV2BookingInstrumentResource.DESCRIPTION,
+                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
 
     Map<String, Object> rendered =
         new ResourceRenderer(registry)
@@ -430,7 +431,8 @@ class ApiV2BookingConfigurationResourceTest {
             List.of(
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
-                ApiV2BookingInstrumentResource.DESCRIPTION));
+                ApiV2BookingInstrumentResource.DESCRIPTION,
+                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
 
     Map<String, Object> rendered =
         new ResourceRenderer(registry)

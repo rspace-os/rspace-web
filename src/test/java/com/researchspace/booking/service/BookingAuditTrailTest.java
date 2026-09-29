@@ -167,6 +167,29 @@ class BookingAuditTrailTest {
   }
 
   @Test
+  void timeSlotBookingAuditSerializesTheCancellationReason() {
+    HistoryDAO historyDao = mock(HistoryDAO.class);
+    AuditTrailImpl auditTrail = new AuditTrailImpl();
+    auditTrail.setHistoryDao(historyDao);
+    BookingAuditTrail listener = new BookingAuditTrail(auditTrail);
+    User actor = TestFactory.createAnyUser("sysadmin");
+    TimeSlotBooking booking = new TimeSlotBooking();
+    booking.setId(42L);
+    booking.setState(com.researchspace.model.booking.BookingState.CANCELLED);
+    booking.setCancellationReason("Instrument needs recalibration\nBefore next run");
+
+    listener.timeSlotBookingChanged(
+        new TimeSlotBookingAuditEvent(actor, actor, booking, AuditAction.WRITE));
+
+    ArgumentCaptor<Iterable<HistoricData>> records = ArgumentCaptor.forClass(Iterable.class);
+    verify(historyDao).save(records.capture());
+    AuditData parsed = AuditData.fromJson(records.getValue().iterator().next().getData().toJson());
+    assertEquals(
+        "Instrument needs recalibration\nBefore next run",
+        parsed.getData().get("cancellationReason"));
+  }
+
+  @Test
   void allBookingAuditPayloadTypesUseTheBookingDomain() {
     assertEquals(
         AuditDomain.BOOKING,

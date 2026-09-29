@@ -352,12 +352,14 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       Long id, Patch patch, Long expectedVersion, User subject, User actor) {
     requireAuthenticated(subject);
     Objects.requireNonNull(patch, "Patch booking command");
+    String cancellationReason = normalizeCancellationReason(patch.cancellationReason());
+    validateCancellationReason(cancellationReason, patch.state());
     return bookingDao
         .findReadableById(id, targetAccess(subject))
         .map(
             booking -> {
               BookingConfiguration configuration =
-                  currentSchedule(
+                  BookingCurrentReads.read(
                           () ->
                               configurationDao.lockActiveById(
                                   booking.getBookingConfiguration().getId()))
@@ -374,8 +376,15 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                   && patch.start() == null
                   && patch.end() == null
                   && !patch.purposeSupplied()) {
+                if (!Objects.equals(cancellationReason, booking.getCancellationReason())) {
+                  throw new BookingStateTransitionException();
+                }
                 prepare(List.of(booking), subject);
                 return booking;
+              }
+              if (patch.state() == BookingState.CONFIRMED
+                  && booking.getState() == BookingState.CANCELLED) {
+                return restore(booking, configuration, patch, subject, actor);
               }
               if (booking.getState() != BookingState.CONFIRMED) {
                 throw new BookingStateTransitionException();
@@ -414,6 +423,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                   throw new BookingStateTransitionException();
                 }
                 booking.setState(BookingState.CANCELLED);
+                booking.setCancellationReason(cancellationReason);
               }
               booking.setStartTime(start);
               booking.setEndTime(end);
@@ -589,6 +599,70 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   private static void validatePurpose(String purpose) {
     if (purpose != null && purpose.length() > 1000) {
       throw new IllegalArgumentException("errors.api.v2.booking.purpose.length");
+    }
+  }
+
+  private static String normalizeCancellationReason(String reason) {
+    if (reason == null) {
+      return null;
+    }
+    String normalized = reason.strip();
+    if (normalized.isEmpty()) {
+      return null;
+    }
+    if (normalized.length() > 500) {
+      throw new BookingCancellationReasonLengthException();
+    }
+    return normalized;
+  }
+
+  /**
+   * Returns a cancelled booking to its slot, as if it were booked again now: the start must still
+   * be ahead, the bookable item enabled, and the slot must pass the current scheduling rules and be
+   * free of other bookings and buffers. Only the state may change in the same request.
+   */
+  private TimeSlotBooking restore(
+      TimeSlotBooking booking,
+      BookingConfiguration configuration,
+      Patch patch,
+      User subject,
+      User actor) {
+    if (patch.start() != null || patch.end() != null || patch.purposeSupplied()) {
+      throw new BookingStateTransitionException();
+    }
+    if (!booking.getStartTime().toInstant().isAfter(clock.instant())) {
+      throw new BookingStateTransitionException();
+    }
+    if (!configuration.isEnabled()) {
+      throw new BookingTargetUnavailableException();
+    }
+    Date start = booking.getStartTime();
+    Date end = booking.getEndTime();
+    BookingSchedulingPolicy.ConflictInterval conflict =
+        validateScheduling(configuration, booking.getKind(), start, end);
+    requireNoConflict(
+        configuration,
+        start,
+        end,
+        conflict,
+        booking.getId(),
+        conflictingKinds(configuration, booking.getKind()));
+    booking.setState(BookingState.CONFIRMED);
+    booking.setCancellationReason(null);
+    booking.setUpdatedAt(new Date());
+    booking.setUpdatedBy(actor);
+    TimeSlotBooking saved = save(booking);
+    if (booking.getKind() == BookingEventKind.BOOKING) {
+      bookingNotificationService.notifyRestored(saved, actor);
+    }
+    events.publishEvent(new TimeSlotBookingAuditEvent(actor, subject, saved, AuditAction.WRITE));
+    prepare(List.of(saved), subject);
+    return saved;
+  }
+
+  private static void validateCancellationReason(String reason, BookingState state) {
+    if (reason != null && state != BookingState.CANCELLED) {
+      throw new BookingCancellationReasonRequiresCancelException();
     }
   }
 

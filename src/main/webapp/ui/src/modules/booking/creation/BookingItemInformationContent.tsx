@@ -4,11 +4,26 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { type WeekdayOpening, weeklyOpeningHours } from "@/modules/booking/configuration/openingHoursFacts";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatIsoWeekday } from "@/modules/booking/domain/bookingOpeningHours";
-import { currentWallClock, isPlainDate, sameTimeZone } from "@/modules/booking/domain/bookingTime";
+import {
+  bookingDateTimeLocale,
+  currentWallClock,
+  formatDurationMinutes,
+  isPlainDate,
+  sameTimeZone,
+} from "@/modules/booking/domain/bookingTime";
 import { CardContent } from "@/modules/common/ui/card";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
+
+/**
+ * A line such as "Monday: 5:00 PM (+1) - 11:00 PM (+1)" with no-break spaces inside each time and before each dash, so
+ * it wraps only after the day and after a dash, never stranding "PM", a day offset or a dash at the start of a line.
+ */
+function keepTimesTogether(line: string): string {
+  return line.replace(/(?<=\d) | (?=\([+-]\d+\)|- )/g, "\u00a0");
+}
 
 /**
  * A time that shows its value in the item's own timezone in the shared instrument-time tooltip. The trigger is an
@@ -36,11 +51,11 @@ function ItemTimezoneTime({
         <button
           type="button"
           aria-label={`${time}, ${t("bookings.instrumentTimeTooltip", { dateTime: itemTime, timezone })}`}
-          className="inline-flex cursor-help appearance-none items-center gap-1 rounded-sm border-0 bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-ring"
+          className="inline-flex cursor-help appearance-none items-center gap-1 rounded-sm border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-2 focus-visible:outline-ring"
         />
       }
     >
-      <span>{time}</span>
+      <span>{keepTimesTogether(time)}</span>
       <GlobeIcon aria-hidden="true" className="size-3.5 shrink-0" />
     </BookingInstrumentTimeTooltip>
   );
@@ -81,7 +96,7 @@ function WeeklyOpeningHours({
           displayTimezone={displayTimezone}
         />
       ) : (
-        time
+        keepTimesTogether(time)
       )}
     </li>
   );
@@ -133,6 +148,7 @@ export function BookingItemInformationContent({
   date?: string;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const referenceDate =
     date && isPlainDate(date) ? date : currentWallClock(new Date().toISOString(), displayTimezone).date;
   const facts: Array<[string, ReactNode]> = [
@@ -140,12 +156,15 @@ export function BookingItemInformationContent({
       t("bookings.itemInformation.open"),
       <WeeklyOpeningHours
         key="open"
-        days={weeklyOpeningHours(item, displayTimezone, referenceDate)}
+        days={weeklyOpeningHours(item, displayTimezone, referenceDate, bookingDateTimeLocale(timeFormat))}
         displayTimezone={displayTimezone}
         itemDays={
           sameTimeZone(item.timezone, displayTimezone)
             ? undefined
-            : { timezone: item.timezone, days: weeklyOpeningHours(item, item.timezone, referenceDate) }
+            : {
+                timezone: item.timezone,
+                days: weeklyOpeningHours(item, item.timezone, referenceDate, bookingDateTimeLocale(timeFormat)),
+              }
         }
       />,
     ],
@@ -157,7 +176,7 @@ export function BookingItemInformationContent({
       t("bookableItemDetails.fields.maximumDuration"),
       item.maxBookingDurationMinutes === 0
         ? t("bookableItemDetails.unlimited")
-        : t("bookableItemDetails.minutes", { count: item.maxBookingDurationMinutes }),
+        : formatDurationMinutes(item.maxBookingDurationMinutes),
     ],
     [
       t("bookings.itemInformation.doubleBookingAllowed"),

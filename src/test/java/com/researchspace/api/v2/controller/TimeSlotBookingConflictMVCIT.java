@@ -102,7 +102,7 @@ class TimeSlotBookingConflictMVCIT {
     create(instrumentId, start, start.plus(2, ChronoUnit.HOURS))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.booking.maximumDuration"))
-        .andExpect(jsonPath("$.detail").value(containsString("maximum duration of 60 minutes")))
+        .andExpect(jsonPath("$.detail").value(containsString("maximum duration of 1 hour.")))
         .andExpect(jsonPath("$.maximumDurationMinutes").value(60))
         .andExpect(jsonPath("$.conflict").doesNotExist());
   }

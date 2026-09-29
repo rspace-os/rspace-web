@@ -174,7 +174,7 @@ describe("the My Bookings page", () => {
     await expect.element(pageObj.confocalMoreActions).toHaveFocus();
   });
 
-  test("moves focus to the next booking and announces a cancellation once its row is gone", async () => {
+  test("reports each cancellation above the table, restores one on Undo and dismisses the other", async () => {
     const electron = {
       ...upcomingBooking,
       id: 42,
@@ -185,28 +185,74 @@ describe("the My Bookings page", () => {
       },
     };
     const docs: Array<Record<string, unknown>> = [{ ...upcomingBooking }, electron];
+    const patches: Array<{ id: string; body: { state: string; cancellationReason?: string }; ifMatch: string | null }> =
+      [];
     worker.use(
       ...bookingHandlers(undefined, undefined, docs),
-      http.patch("/api/v2/bookings/41", () => {
-        docs[0] = { ...upcomingBooking, state: "CANCELLED", version: 1 };
-        return HttpResponse.json(docs[0]);
+      http.patch("/api/v2/bookings/:id", async ({ params, request }) => {
+        const body = (await request.json()) as { state: string; cancellationReason?: string };
+        patches.push({ id: String(params.id), body, ifMatch: request.headers.get("If-Match") });
+        const index = docs.findIndex((doc) => String(doc.id) === String(params.id));
+        docs[index] = {
+          ...docs[index],
+          state: body.state,
+          version: Number(docs[index].version ?? 0) + 1,
+          cancellationReason: body.cancellationReason ?? null,
+        };
+        return HttpResponse.json(docs[index]);
       }),
     );
     render(<MyBookingsPageStory history={history} />);
+    const alerts = page.getByRole("list", { name: "Recent changes" });
+    const confocalAlert = alerts.getByRole("listitem", { name: /^Cancelled Confocal microscope, / });
+    const electronAlert = alerts.getByRole("listitem", { name: /^Cancelled Electron microscope, / });
 
+    await pageObj.confocalMoreActions.click();
+    await pageObj.cancelMenuItem.click();
+    await page.getByRole("textbox", { name: "Cancellation reason (optional)" }).fill("Instrument needs recalibration");
+    await pageObj.cancelDialog.getByRole("button", { name: "Cancel booking" }).click();
+
+    await expect.element(page.getByText("Confocal microscope", { exact: true })).not.toBeInTheDocument();
+    await expect.element(confocalAlert).toHaveFocus();
+    expect(patches[0]).toEqual({
+      id: "41",
+      body: { state: "CANCELLED", cancellationReason: "Instrument needs recalibration" },
+      ifMatch: '"0"',
+    });
+
+    // Electron's row is now the first with More actions.
     await pageObj.confocalMoreActions.click();
     await pageObj.cancelMenuItem.click();
     await pageObj.cancelDialog.getByRole("button", { name: "Cancel booking" }).click();
 
-    await expect.element(page.getByText("Confocal microscope", { exact: true })).not.toBeInTheDocument();
+    await expect.element(electronAlert).toHaveFocus();
     await expect
       .poll(() =>
-        document.activeElement?.closest("[data-booking-row-actions]")?.getAttribute("data-booking-row-actions"),
+        alerts
+          .getByRole("listitem")
+          .elements()
+          .map((item) => item.getAttribute("data-table-list-alert")),
       )
-      .toBe("42");
+      .toEqual(["booking-cancelled-42", "booking-cancelled-41"]);
+
+    await confocalAlert.getByRole("button", { name: "Undo" }).click();
+
+    // Both presentations render the row again; CSS shows one.
     await expect
-      .element(page.getByRole("status").filter({ hasText: "Cancelled the Confocal microscope booking" }))
-      .toBeInTheDocument();
+      .poll(() => page.getByText("Confocal microscope", { exact: true }).elements().length)
+      .toBeGreaterThan(0);
+    expect(patches[2]).toEqual({ id: "41", body: { state: "CONFIRMED" }, ifMatch: '"1"' });
+    await expect
+      .poll(() =>
+        document.activeElement?.closest("[data-table-list-row-actions]")?.getAttribute("data-table-list-row-actions"),
+      )
+      .toBe("41");
+    await expect.element(confocalAlert).not.toBeInTheDocument();
+
+    await electronAlert.getByRole("button", { name: "Dismiss" }).click();
+
+    await expect.element(alerts).not.toBeInTheDocument();
+    await expect.poll(() => document.activeElement?.hasAttribute("data-table-list-filters")).toBe(true);
   });
 
   test("keeps the booking actions on one line", async () => {

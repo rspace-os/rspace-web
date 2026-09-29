@@ -165,6 +165,82 @@ public class AuditTrailSearchResultCsvGeneratorTest {
   }
 
   @Test
+  public void bookingCsvLabelsCreateChangeAndRestoreAndKeepOtherActionsRaw() throws IOException {
+    ISearchResults<AuditTrailSearchResult> results =
+        new SearchResultsImpl<>(
+            toList(
+                createAuditSearchResult(
+                    AuditDomain.BOOKING, AuditAction.CREATE, "bookings:21", "CONFIRMED", null),
+                createAuditSearchResult(
+                    AuditDomain.BOOKING, AuditAction.WRITE, "bookings:21", "CONFIRMED", null),
+                createAuditSearchResult(
+                    AuditDomain.BOOKING,
+                    AuditAction.RESTORE,
+                    "booking-configurations:22",
+                    "ACTIVE",
+                    null),
+                createAuditSearchResult(
+                    AuditDomain.BOOKING, AuditAction.DELETE, "bookings:21", "CONFIRMED", null),
+                createAuditSearchResult(
+                    AuditDomain.RECORD, AuditAction.RESTORE, "SD23", "ACTIVE", null)),
+            0,
+            5);
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
+
+    assertEquals("Created", getCellByRowColumn(csv, 2, 2));
+    assertEquals("Changed", getCellByRowColumn(csv, 3, 2));
+    assertEquals("Restored", getCellByRowColumn(csv, 4, 2));
+    assertEquals("DELETE", getCellByRowColumn(csv, 5, 2));
+    assertEquals("RESTORE", getCellByRowColumn(csv, 6, 2));
+  }
+
+  @Test
+  public void bookingNameIsTheRecordedNameTargetOrConfiguration() throws IOException {
+    AuditTrailSearchResult deleted =
+        createAuditSearchResult(
+            AuditDomain.BOOKING,
+            AuditAction.DELETE,
+            "booking-configurations:24",
+            "ARCHIVED",
+            "permanent=true");
+    deleted.getEvent().getData().getData().put("targetName", "Confocal microscope");
+    deleted.getEvent().getData().getData().put("deletedAt", "2026-09-28T18:29:48.555718112Z");
+    AuditTrailSearchResult configuration =
+        createAuditSearchResult(
+            AuditDomain.BOOKING, AuditAction.WRITE, "booking-configurations:25", "ACTIVE", null);
+    configuration
+        .getEvent()
+        .getData()
+        .getData()
+        .put("target", java.util.Map.of("type", "INSTRUMENT", "id", 5));
+    AuditTrailSearchResult booking =
+        createAuditSearchResult(
+            AuditDomain.BOOKING, AuditAction.WRITE, "bookings:26", "CONFIRMED", null);
+    booking
+        .getEvent()
+        .getData()
+        .getData()
+        .put("bookingConfigurationId", "booking-configurations:25");
+    AuditTrailSearchResult defaults =
+        createAuditSearchResult(
+            AuditDomain.BOOKING, AuditAction.WRITE, "booking-settings:1", null, null);
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(
+            new SearchResultsImpl<>(toList(deleted, configuration, booking, defaults), 0, 4),
+            defaultSearchConfig());
+
+    assertEquals("Confocal microscope", getCellByRowColumn(csv, 2, 5));
+    assertEquals("IN5", getCellByRowColumn(csv, 3, 5));
+    assertEquals("booking-configurations:25", getCellByRowColumn(csv, 4, 5));
+    assertEquals("n/a", getCellByRowColumn(csv, 5, 5));
+    assertThat(csv.getBody(), containsString("Deleted at (UTC): 2026-09-28T18:29:48Z;"));
+    assertThat(csv.getBody(), not(containsString("555718112")));
+  }
+
+  @Test
   public void bookingDescriptionPutsRecordedDetailsBeforeTheLoggedDescription() throws IOException {
     AuditTrailSearchResult deleted =
         createAuditSearchResult(

@@ -20,7 +20,10 @@ import { server } from "@/__tests__/mswServer";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import i18n from "@/modules/common/i18n";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
-import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
+import {
+  customNewYorkBookingPreferences,
+  inheritedBrowserBookingPreferences,
+} from "../../preferences/bookingPreferencesFixtures";
 import { MyBookingsRoutePage } from "../MyBookingsPage";
 import {
   bookingHandlers,
@@ -42,6 +45,8 @@ function renderPage(
   onListRequest: (url: URL) => void = () => undefined,
   onCountRequest: (url: URL) => void = () => undefined,
   docs?: readonly unknown[],
+  openApi: typeof bookingsOpenApi = bookingsOpenApi,
+  preferences = inheritedBrowserBookingPreferences,
 ) {
   const location = new URL(path, window.location.origin);
   server.use(
@@ -50,11 +55,8 @@ function renderPage(
   );
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
-  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
-  queryClient.setQueryData(
-    ["api-v2", "openapi", "bookings"],
-    apiV2CollectionMetadataFromOpenApi(bookingsOpenApi, "bookings"),
-  );
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
+  queryClient.setQueryData(["api-v2", "openapi", "bookings"], apiV2CollectionMetadataFromOpenApi(openApi, "bookings"));
   let search = location.search;
   const onUrlUpdate = ({ queryString }: UrlUpdateEvent) => {
     search = queryString;
@@ -230,6 +232,18 @@ describe("My Bookings page", () => {
     expect(await table.findByText(expectedStart)).toBeVisible();
   });
 
+  it("tells the two occurrences of a repeated hour apart with their offsets", async () => {
+    // New York falls back on 2026-11-01: 05:30Z and 06:30Z are both 1:30 on the wall clock.
+    const repeatedHour = { ...upcomingBooking, start: "2026-11-01T05:30:00Z", end: "2026-11-01T06:30:00Z" };
+    renderPage(initialPath, 84, undefined, undefined, [repeatedHour], bookingsOpenApi, customNewYorkBookingPreferences);
+
+    await screen.findByRole("table");
+    const times = () =>
+      Array.from(document.querySelectorAll(`time[datetime^="2026-11-01"]`), (time) => time.textContent);
+    await waitFor(() => expect(times()).toEqual(expect.arrayContaining([expect.stringMatching(/1:30.* -04:00$/)])));
+    expect(times()).toEqual(expect.arrayContaining([expect.stringMatching(/1:30.* -05:00$/)]));
+  });
+
   it("shows an unknown item for a role-lost requester without item navigation", async () => {
     renderPage(initialPath, 84, undefined, undefined, [roleLostBooking]);
 
@@ -288,11 +302,14 @@ describe("My Bookings page", () => {
     await waitFor(() => expect(moreActions).toHaveFocus());
   });
 
-  it("announces a cancellation from the page and keeps focus in the list once the row is gone", async () => {
+  it("reports a cancellation above the table and restores the booking on Undo", async () => {
     const docs: Array<Record<string, unknown>> = [{ ...upcomingBooking }, pastBooking, cancelledBooking];
+    const patches: Array<{ body: unknown; ifMatch: string | null }> = [];
     server.use(
-      http.patch("/api/v2/bookings/41", () => {
-        docs[0] = { ...upcomingBooking, state: "CANCELLED", version: 1 };
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        const body = (await request.json()) as { state: string };
+        patches.push({ body, ifMatch: request.headers.get("If-Match") });
+        docs[0] = { ...upcomingBooking, state: body.state, version: patches.length };
         return HttpResponse.json(docs[0]);
       }),
     );
@@ -306,17 +323,23 @@ describe("My Bookings page", () => {
     await user.click(within(dialog).getByRole("button", { name: "booking:bookings.actions.cancel" }));
 
     await waitFor(() => expect(table.queryByText(upcomingBooking.target.value.name)).not.toBeInTheDocument());
-    // The row, its dialog and the dialog's own status message are gone, so the page announces instead.
+    // The row and its dialog are gone; the TableList alert outlives them and takes focus.
+    const alerts = screen.getByRole("list", { name: "common:tableList.alerts.label" });
+    const alert = within(alerts).getByRole("listitem", { name: "booking:myBookings.cancelled.alert" });
+    await waitFor(() => expect(alert).toHaveFocus());
+
+    await user.click(within(alert).getByRole("button", { name: "common:tableList.alerts.undo" }));
+
+    // Undo sends the version the cancellation returned.
+    await waitFor(() => expect(patches).toHaveLength(2));
+    expect(patches[1]).toEqual({ body: { state: "CONFIRMED" }, ifMatch: '"1"' });
+    expect(await table.findByText(upcomingBooking.target.value.name)).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "common:tableList.alerts.label" })).not.toBeInTheDocument();
     await waitFor(() =>
-      expect(
-        screen
-          .getAllByRole("status")
-          .some((status) => status.textContent === "booking:myBookings.cancelled.announcement"),
-      ).toBe(true),
-    );
-    // No row is left to take focus (jsdom lays nothing out), so focus falls back to the selected period.
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "booking:myBookings.period.upcoming" })).toHaveFocus(),
+      expect(document.activeElement?.closest("[data-table-list-row-actions]")).toHaveAttribute(
+        "data-table-list-row-actions",
+        String(upcomingBooking.id),
+      ),
     );
   });
 

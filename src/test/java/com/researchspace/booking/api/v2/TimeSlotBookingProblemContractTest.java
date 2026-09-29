@@ -102,9 +102,9 @@ class TimeSlotBookingProblemContractTest {
     assertEquals(
         json.readTree(
             """
-            {"title":"The booking exceeds this bookable item's maximum duration of 90 minutes.",
+            {"title":"The booking exceeds this bookable item's maximum duration of 1 hour, 30 minutes.",
              "status":400,"code":"errors.api.v2.booking.maximumDuration",
-             "detail":"The booking exceeds this bookable item's maximum duration of 90 minutes.",
+             "detail":"The booking exceeds this bookable item's maximum duration of 1 hour, 30 minutes.",
              "maximumDurationMinutes":90}
             """),
         body);

@@ -172,9 +172,10 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     originator = createAndSaveUserIfNotExists("source");
     User target = createAndSaveUserIfNotExists("recipient");
     Notification message = createAnyNotification(originator);
-    // should be permitted and will be truncated if too long.
-    message.setNotificationMessage(
-        RandomStringUtils.randomAlphabetic(Notification.MAX_MESSAGE_LENGTH + 1));
+    // Notification messages retain their complete content, including messages longer than the
+    // former VARCHAR column limit.
+    String longMessage = RandomStringUtils.randomAlphabetic(2001);
+    message.setNotificationMessage(longMessage);
     CommunicationTarget ct = new CommunicationTarget();
     ct.setCommunication(message);
     ct.setRecipient(target);
@@ -187,8 +188,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     assertNotNull(opened.getCreationTime());
     assertEquals(1, opened.getRecipients().size());
     assertEquals(CommunicationStatus.NEW, opened.getRecipients().iterator().next().getStatus());
-    assertEquals(
-        Notification.MAX_MESSAGE_LENGTH, ((Notification) opened).getNotificationMessage().length());
+    assertEquals(longMessage, ((Notification) opened).getNotificationMessage());
   }
 
   @Test
