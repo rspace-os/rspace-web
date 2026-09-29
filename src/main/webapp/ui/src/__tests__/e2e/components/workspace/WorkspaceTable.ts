@@ -16,11 +16,39 @@ export async function waitForTableSwap(page: Page, staleTable: ElementHandle | n
     });
 }
 
+/**
+ * The legacy workspace reveals its listing with jQuery slide/fade effects that keep moving the rows
+ * for a few hundred ms after they render; a click that lands mid-slide focuses its target without
+ * activating it. Resolves once no jQuery animation is running.
+ */
+export async function waitForWorkspaceAnimations(page: Page): Promise<void> {
+  const animating = () => {
+    const { jQuery } = window as unknown as { jQuery?: (selector: string) => ArrayLike<Element> };
+    return jQuery ? Array.from(jQuery(":animated"), (el) => el.id || el.className) : [];
+  };
+  await page
+    .waitForFunction(
+      () => {
+        const { jQuery } = window as unknown as { jQuery?: (selector: string) => ArrayLike<Element> };
+        return !jQuery || jQuery(":animated").length === 0;
+      },
+      undefined,
+      { timeout: 10_000 },
+    )
+    .catch(async (error: unknown) => {
+      const stillRunning = await page.evaluate(animating).catch(() => []);
+      throw new Error(`Workspace animations still running after 10s: ${stillRunning.join(", ") || "unknown"}`, {
+        cause: error,
+      });
+    });
+}
+
 export async function awaitTableRefresh(page: Page, trigger: () => Promise<void>): Promise<void> {
   const staleTable = await page.locator("#file_table").elementHandle();
   await trigger();
   await page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
   await waitForTableSwap(page, staleTable);
+  await waitForWorkspaceAnimations(page);
 }
 
 export class WorkspaceTable {
@@ -68,7 +96,13 @@ export class WorkspaceTable {
   }
 
   async openRecord(name: string): Promise<void> {
-    await this.row(name).getByRole("link", { name, exact: true }).click();
+    const link = this.row(name).getByRole("link", { name, exact: true });
+    // Folder and notebook name links reload the listing in place (a.folder); others navigate away.
+    if (await link.evaluate((el) => el.classList.contains("folder"))) {
+      await awaitTableRefresh(this.page, () => link.click());
+    } else {
+      await link.click();
+    }
   }
 
   async openNotebook(name: string): Promise<void> {

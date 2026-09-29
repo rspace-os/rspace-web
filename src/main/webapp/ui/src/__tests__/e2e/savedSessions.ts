@@ -16,7 +16,14 @@ type SavedLogin = { cookies: unknown[]; origins: unknown[] };
 export async function freshStorageState(account: Credentials): Promise<string> {
   const path = storageStatePath(account.username);
   if (await isLoggedIn(path)) return path;
-  const api = await request.newContext({ baseURL: env.baseURL, ignoreHTTPSErrors: true });
+  // Inside a test, Playwright fills any unset option from the project's context options, so without
+  // an explicit empty storageState this login would carry the running test's session cookie and
+  // save that user's session under this account.
+  const api = await request.newContext({
+    baseURL: env.baseURL,
+    ignoreHTTPSErrors: true,
+    storageState: { cookies: [], origins: [] },
+  });
   try {
     const response = await api.post("/login", {
       form: { username: account.username, password: account.password },

@@ -12,6 +12,7 @@ import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor
 import { WitnessDocumentDialogComponent } from "@/__tests__/e2e/components/document/WitnessDocumentDialogComponent";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
+import { waitForWorkspaceAnimations } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
 import { BasePage } from "../BasePage";
 
 export class DocumentPage extends BasePage {
@@ -150,7 +151,11 @@ export class DocumentPage extends BasePage {
   }
 
   async close(): Promise<void> {
-    await this.toolbar.actions.closeLink.click();
+    await Promise.all([
+      this.page.waitForURL((url) => !url.pathname.includes("/editor/structuredDocument/")),
+      this.toolbar.actions.closeLink.click(),
+    ]);
+    await waitForWorkspaceAnimations(this.page);
   }
 
   async reload(): Promise<void> {

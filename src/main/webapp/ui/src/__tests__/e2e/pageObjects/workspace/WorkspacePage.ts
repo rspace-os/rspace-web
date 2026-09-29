@@ -9,7 +9,11 @@ import { CreateNotebookDialog } from "@/__tests__/e2e/components/workspace/Creat
 import { WorkspacePagination } from "@/__tests__/e2e/components/workspace/WorkspacePagination";
 import { WorkspaceSearchBar } from "@/__tests__/e2e/components/workspace/WorkspaceSearchBar";
 import { WorkspaceSelectionBar } from "@/__tests__/e2e/components/workspace/WorkspaceSelectionBar";
-import { awaitTableRefresh, WorkspaceTable } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
+import {
+  awaitTableRefresh,
+  WorkspaceTable,
+  waitForWorkspaceAnimations,
+} from "@/__tests__/e2e/components/workspace/WorkspaceTable";
 import { WorkspaceTemplatePickerDialog } from "@/__tests__/e2e/components/workspace/WorkspaceTemplatePickerDialog";
 import { WorkspaceToolbar } from "@/__tests__/e2e/components/workspace/WorkspaceToolbar";
 import { WorkspaceTree } from "@/__tests__/e2e/components/workspace/WorkspaceTree";
@@ -43,6 +47,7 @@ export class WorkspacePage extends BasePage {
 
   override async open(folderId?: number): Promise<void> {
     await this.page.goto(folderId !== undefined ? `${this.path}/${folderId}` : this.path);
+    await waitForWorkspaceAnimations(this.page);
   }
 
   async searchFor(name: string): Promise<void> {
@@ -111,7 +116,7 @@ export class WorkspacePage extends BasePage {
   }
 
   private async browseInto(folderName: string): Promise<void> {
-    await awaitTableRefresh(this.page, () => this.table.openRecord(folderName));
+    await this.table.openRecord(folderName);
     await this.waitUntilBreadcrumbShows(folderName);
   }
 

@@ -141,6 +141,7 @@ export class GalleryPage extends BasePage {
     await this.page.getByRole("menuitem", { name: "New Folder" }).click();
     await this.submitNameDialog("New Folder", "Create", name);
     await this.waitForFile(name);
+    await this.sidebar.waitUntilDismissed();
   }
 
   async renameSelectedTo(newName: string): Promise<void> {

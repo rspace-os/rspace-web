@@ -59,6 +59,7 @@ export class DocumentHeader {
     if (!response.ok()) {
       throw new Error(`Adding tag '${tag}' failed: ${response.status()} ${response.statusText()}`);
     }
+    await this.tagChip(tag).waitFor({ state: "visible" });
   }
 
   /** Submits a tag expected to be rejected for containing a forbidden character. */

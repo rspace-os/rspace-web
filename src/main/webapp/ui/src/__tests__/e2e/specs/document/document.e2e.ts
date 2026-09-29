@@ -261,9 +261,8 @@ test.describe("Document CRUD and editing", () => {
   test("As a user, I can insert a video file from Gallery into a document", async ({ pageWorkspace, clientFiles }) => {
     const fileName = `${alphaNumericUnique("e2eDocVideo")}.mp4`;
 
-    await test.step("Given a video file exists in Gallery", async () => {
-      await clientFiles.uploadFile({ name: fileName, mimeType: "video/mp4", buffer: Buffer.from("e2e-fake-video") });
-    });
+    const file = await test.step("Given a video file exists in Gallery", () =>
+      clientFiles.uploadFile({ name: fileName, mimeType: "video/mp4", buffer: Buffer.from("e2e-fake-video") }));
 
     await test.step("When I insert it into a new document's field", async () => {
       await pageWorkspace.open();
@@ -278,6 +277,17 @@ test.describe("Document CRUD and editing", () => {
       await test.step("Then the video appears as an attachment in the field", async () => {
         await expect(field.attachmentIcon).toBeVisible();
         await expect(field.attachmentName(fileName)).toBeVisible();
+      });
+
+      await test.step("And the saved document still links the video after reloading", async () => {
+        const saved = await editor.saveAndView();
+        await saved.reload();
+        const content = await saved.getFieldViewContent("", 0);
+        // Audio/video attachments get their own player (mediaPlayerHTML.vm) instead of a Download link.
+        await expect(content.getByRole("link", { name: fileName, exact: true })).toHaveAttribute(
+          "href",
+          `/Streamfile/${file.id}`,
+        );
       });
     });
   });

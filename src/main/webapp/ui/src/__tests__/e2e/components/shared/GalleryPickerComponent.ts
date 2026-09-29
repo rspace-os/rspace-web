@@ -37,6 +37,7 @@ export class GalleryPickerComponent {
     await fileChooser.setFiles(filePath);
 
     await this.root.getByText(expectedName, { exact: true }).first().waitFor({ state: "visible" });
+    await this.sidebar.waitUntilDismissed();
   }
 
   async selectItem(name: string): Promise<void> {

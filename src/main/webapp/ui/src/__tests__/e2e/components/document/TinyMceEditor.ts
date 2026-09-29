@@ -33,6 +33,8 @@ export class TinyMceEditor {
 
   async fill(text: string): Promise<void> {
     await this.waitForReady();
+    // fill() alone leaves TinyMCE clean on Firefox after focus moved away, so nothing autosaves.
+    await this.body.focus();
     await this.body.fill(text);
   }
 
@@ -136,7 +138,14 @@ export class TinyMceEditor {
     if (!refreshedFields.ok()) {
       throw new Error(`Reloading saved fields failed: ${refreshedFields.status()} ${refreshedFields.statusText()}`);
     }
-    await refreshedFields.finished();
+    // Save only commits what autosave stored, so an edit TinyMCE never registered still saves
+    // successfully. The server lists fields only when the document changed after the page's
+    // last-known modification date, which documentEdit.js never advances for text fields. So this
+    // catches an unregistered first edit in a page session, not every later one.
+    const { data } = (await refreshedFields.json()) as { data: Array<{ id: number }> | null };
+    if (!(data ?? []).some(({ id }) => String(id) === this.fieldId)) {
+      throw new Error(`Saving field ${this.fieldId} left the document unchanged since this page loaded`);
+    }
     await this.container.waitFor({ state: "hidden" });
   }
 
@@ -191,7 +200,7 @@ export class TinyMceEditor {
   async insertStoichiometryTable(): Promise<StoichiometryDialogComponent> {
     await this.clickToolbarButton("Insert reaction table");
     const dialog = new StoichiometryDialogComponent(this.page);
-    await dialog.waitForOpen();
+    await dialog.waitForEditorReady();
     return dialog;
   }
 
@@ -201,7 +210,7 @@ export class TinyMceEditor {
     await this.body.pressSequentially("/stoichiometry");
     await this.page.locator(".tox-autocompleter").getByRole("menuitem", { name: "Stoichiometry Table" }).click();
     const dialog = new StoichiometryDialogComponent(this.page);
-    await dialog.waitForOpen();
+    await dialog.waitForEditorReady();
     return dialog;
   }
 

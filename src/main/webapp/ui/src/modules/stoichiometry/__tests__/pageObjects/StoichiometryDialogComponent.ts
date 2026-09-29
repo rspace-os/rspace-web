@@ -39,6 +39,15 @@ export class StoichiometryDialogComponent {
     await this.root.getByText("Loading stoichiometry table...").waitFor({ state: "hidden" });
   }
 
+  /**
+   * For a freshly inserted blank table. The loading text only appears once the table exists, and the
+   * loading placeholder's Close/Delete do nothing; only the loaded editor renders Add Chemical.
+   */
+  async waitForEditorReady(): Promise<void> {
+    await this.root.waitFor({ state: "visible" });
+    await this.addChemicalButton.waitFor({ state: "visible" });
+  }
+
   async calculate(): Promise<void> {
     await this.calculateButton.click();
     await this.grid.waitFor({ state: "visible" });

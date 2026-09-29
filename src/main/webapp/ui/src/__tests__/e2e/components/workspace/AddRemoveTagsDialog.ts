@@ -53,7 +53,13 @@ export class AddRemoveTagsDialog {
   }
 
   async save(): Promise<void> {
-    await this.saveButton.click();
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => new URL(res.url()).pathname === "/workspace/saveTagsForRecords"),
+      this.saveButton.click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Saving tags failed: ${response.status()} ${response.statusText()}`);
+    }
     await this.root.waitFor({ state: "hidden" });
   }
 
