@@ -722,10 +722,14 @@ describe("BookableItemPage", () => {
       await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
       await expect.element(pageObj.save).toBeDisabled();
 
+      // A changed day makes the form dirty, so Save is enabled once the draft is confirmed.
+      await userEvent.fill(pageObj.dayRow("Monday").getByLabelText("Opening end"), "12:00");
       await pageObj.confirmDayHours("Monday").click();
       await expect.element(pageObj.editDayHours("Monday")).toHaveFocus();
       await expect.element(pageObj.save).toBeEnabled();
       expect(pageObj.dayRow("Monday").element().getBoundingClientRect().height).toBe(sharedHeight);
+      // The newly enabled Save button fades in from its disabled opacity; check contrast once it is opaque.
+      await expect.poll(() => getComputedStyle(pageObj.save.element()).opacity).toBe("1");
       await expectNoAxeViolations();
     } finally {
       await page.viewport(originalViewport.width, originalViewport.height);

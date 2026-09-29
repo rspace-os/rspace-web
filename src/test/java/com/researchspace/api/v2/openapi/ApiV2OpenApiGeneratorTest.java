@@ -459,7 +459,8 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> timeSlotBookingSelectors =
         objectMap(objectMap(timeSlotBookingWhere.get("x-rspace-filter")).get("selectors"));
     Map<String, Object> requesterId = objectMap(timeSlotBookingSelectors.get("requesterId"));
-    assertEquals("integer", objectMap(requesterId.get("schema")).get("type"));
+    // Null for an event the caller sees only as busy.
+    assertEquals(List.of("integer", "null"), objectMap(requesterId.get("schema")).get("type"));
     assertTrue(((List<?>) requesterId.get("operators")).contains("=="));
     Map<String, Object> timeSlotBookingSort =
         timeSlotBookingParameters.stream()
@@ -661,6 +662,33 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(conflict.get("description").toString().contains("errors.api.v2.booking.overlap"));
     assertEquals(
         List.of("integer", "null"), objectMap(properties.get("bufferBeforeMinutes")).get("type"));
+  }
+
+  @Test
+  void targetSearchBrowsesWithoutAQueryWhileGranteeSearchRequiresOne() {
+    Map<String, Object> paths = objectMap(document().get("paths"));
+    Map<String, Object> targets =
+        objectMap(objectMap(paths.get("/api/v2/booking-configuration-targets")).get("get"));
+    Map<String, Object> grantees =
+        objectMap(objectMap(paths.get("/api/v2/booking-settings/access-grantees")).get("get"));
+
+    Map<String, Object> targetQuery = queryParameter(targets);
+    assertEquals(false, targetQuery.get("required"));
+    assertEquals(2, objectMap(targetQuery.get("schema")).get("minLength"));
+    assertTrue(targetQuery.get("description").toString().contains("Omit it to browse"));
+    assertTrue(targets.get("description").toString().contains("without one, the first `limit`"));
+
+    Map<String, Object> granteeQuery = queryParameter(grantees);
+    assertEquals(true, granteeQuery.get("required"));
+    assertEquals(2, objectMap(granteeQuery.get("schema")).get("minLength"));
+    assertFalse(grantees.containsKey("description"));
+  }
+
+  private static Map<String, Object> queryParameter(Map<String, Object> operation) {
+    return objectMapList(operation.get("parameters")).stream()
+        .filter(parameter -> "query".equals(parameter.get("name")))
+        .findFirst()
+        .orElseThrow();
   }
 
   @Test

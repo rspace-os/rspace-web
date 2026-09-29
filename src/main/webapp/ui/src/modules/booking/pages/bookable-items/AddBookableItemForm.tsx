@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import * as v from "valibot";
 import { type BookingSettings, SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
@@ -23,6 +22,7 @@ import {
   BookingConfigurationInputSchema,
   bookingConfigurationFields,
 } from "./bookingConfiguration";
+import { BookingTargetSchema, MINIMUM_TARGET_QUERY_LENGTH, searchBookingTargets } from "./bookingConfigurationTargets";
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
 const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
@@ -48,28 +48,6 @@ async function createBookingConfiguration(input: BookingConfigurationInput, toke
 
 type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
 
-const BookingTargetSchema = v.object({
-  id: v.number(),
-  globalId: v.string(),
-  name: v.string(),
-  deleted: v.literal(false),
-});
-
-const MINIMUM_TARGET_QUERY_LENGTH = 2;
-
-/** Searches eligible instruments; a blank query lists the first eligible instruments by name. */
-export async function searchBookingTargets(query: string, token: string | undefined, signal?: AbortSignal) {
-  const parameters = new URLSearchParams({ limit: "20" });
-  // The API rejects a non-blank query shorter than two characters.
-  if (query.trim().length >= MINIMUM_TARGET_QUERY_LENGTH) parameters.set("query", query.trim());
-  const response = await fetch(`/api/v2/booking-configuration-targets?${parameters}`, {
-    headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    signal,
-  });
-  if (!response.ok) throw new Error(`Booking target search failed with status ${response.status}`);
-  return parseOrThrow(v.array(BookingTargetSchema), (await response.json()) as unknown);
-}
-
 const bookingConfigurationTargetSource: RelationshipSource = {
   id: "booking-configuration-targets",
   globalIdPrefix: "IN",
@@ -88,14 +66,7 @@ const bookingConfigurationTargetSource: RelationshipSource = {
       value: instrument.globalId,
       label: instrument.name,
       content: (
-        <InventoryItem
-          name={instrument.name}
-          globalId={instrument.globalId}
-          href={`/globalId/${instrument.globalId}`}
-          idLinkLabel={context.idLinkLabel(instrument.globalId)}
-          compact={context.compact}
-          size="xs"
-        />
+        <InventoryItem name={instrument.name} globalId={instrument.globalId} compact={context.compact} size="xs" />
       ),
     };
   },
@@ -162,7 +133,11 @@ export function AddBookableItemForm({
   const createMutation = useMutation({
     mutationFn: (input: BookingConfigurationInput) => createBookingConfiguration(input, token),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      // The new configuration is readable, and its instrument is no longer an eligible target.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
+      ]);
       await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
