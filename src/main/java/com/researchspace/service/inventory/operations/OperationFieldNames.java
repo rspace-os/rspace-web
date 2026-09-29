@@ -31,7 +31,16 @@ public final class OperationFieldNames {
   }
 
   public static ApiExtraField text(String name, String fieldKey, String content) {
-    ApiExtraField field = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT);
+    return valued(ApiExtraField.ExtraFieldTypeEnum.TEXT, name, fieldKey, content);
+  }
+
+  public static ApiExtraField number(String name, String fieldKey, String content) {
+    return valued(ApiExtraField.ExtraFieldTypeEnum.NUMBER, name, fieldKey, content);
+  }
+
+  private static ApiExtraField valued(
+      ApiExtraField.ExtraFieldTypeEnum type, String name, String fieldKey, String content) {
+    ApiExtraField field = new ApiExtraField(type);
     field.setName(name);
     field.setNewFieldRequest(true);
     field.setOperationFieldKey(fieldKey);

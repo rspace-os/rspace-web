@@ -88,6 +88,34 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void aPassagedSampleHoldsItsNumberInANumberFieldTheNextPassageCountsOnFrom()
+      throws Exception {
+    ApiInventoryOperationResult first = passaged(origin());
+    ApiInventoryOperationResult second = passaged(first.getSample().getSubSamples().get(0));
+
+    assertEquals(ApiExtraField.ExtraFieldTypeEnum.NUMBER, passageNumberField(first).getType());
+    assertEquals("1", passageNumberField(first).getContent());
+    assertEquals("2", passageNumberField(second).getContent());
+  }
+
+  private static ApiExtraField passageNumberField(ApiInventoryOperationResult result) {
+    return result.getSample().getExtraFields().stream()
+        .filter(field -> "Passage number".equals(field.getName()))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private ApiInventoryOperationResult passaged(ApiSubSample origin) throws Exception {
+    return created(
+        "passage",
+        "{\"origin\":"
+            + originJson(origin, null)
+            + ",\"sampleName\":\"HeLa\",\"eachAmount\":"
+            + q("0.5", GRAM)
+            + "}");
+  }
+
+  @Test
   public void poolTakesEachOriginsOwnAmount() throws Exception {
     ApiSubSample first = origin();
     ApiSubSample second = origin();
