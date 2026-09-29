@@ -3,7 +3,6 @@ package com.researchspace.booking.dao;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
-import com.researchspace.dao.query.IndexedTextNarrowing;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
@@ -16,7 +15,6 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.resourceaccess.ResourceAccess;
-import com.researchspace.search.customfield.RuntimeFieldTextSearch;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
@@ -35,11 +33,7 @@ public class BookingConfigurationDaoHibernate
       new FilterExpression.Comparison(
           "state", Operator.EQUAL, List.of(BookingConfigurationState.ACTIVE), false);
   private final CriteriaBuilderFactory criteriaBuilderFactory;
-  private final CollectionDescription<BookingConfiguration> description;
   private final CollectionQueryExecutor<BookingConfiguration> collectionQuery;
-
-  @Autowired(required = false)
-  private RuntimeFieldTextSearch textSearch;
 
   @Autowired private BookingItemQuery itemQuery;
   @Autowired private com.researchspace.dao.InstrumentDao instruments;
@@ -53,7 +47,6 @@ public class BookingConfigurationDaoHibernate
           CollectionDescription<BookingConfiguration> description) {
     super(BookingConfiguration.class, sessionFactory);
     this.criteriaBuilderFactory = criteriaBuilderFactory;
-    this.description = description;
     collectionQuery =
         new CollectionQueryExecutor<>(
             BookingConfiguration.class, description, "bookingConfiguration");
@@ -70,37 +63,20 @@ public class BookingConfigurationDaoHibernate
       ResourceRequest request,
       RelationshipReadAccess targetAccess,
       com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction) {
-    try {
-      return collectionQuery.page(
-          criteriaBuilderFactory, getSession(), narrowed(request), restriction, targetAccess);
-    } catch (IndexedTextNarrowing.NoMatch noMatch) {
-      return new ResourcePage<>(List.of(), 0);
-    }
+    return collectionQuery.page(
+        criteriaBuilderFactory, getSession(), request, restriction, targetAccess);
   }
 
   @Override
   public long countResources(ResourceRequest request, RelationshipReadAccess targetAccess) {
-    try {
-      return collectionQuery.count(
-          criteriaBuilderFactory, getSession(), narrowed(request), null, targetAccess);
-    } catch (IndexedTextNarrowing.NoMatch noMatch) {
-      return 0;
-    }
+    return collectionQuery.count(criteriaBuilderFactory, getSession(), request, null, targetAccess);
   }
 
   @Override
   public List<BookingConfiguration> getResources(
       ResourceRequest request, int limit, RelationshipReadAccess targetAccess) {
-    try {
-      return collectionQuery.listById(
-          criteriaBuilderFactory, getSession(), narrowed(request), limit, targetAccess);
-    } catch (IndexedTextNarrowing.NoMatch noMatch) {
-      return List.of();
-    }
-  }
-
-  private ResourceRequest narrowed(ResourceRequest request) {
-    return IndexedTextNarrowing.apply(request, description, textSearch);
+    return collectionQuery.listById(
+        criteriaBuilderFactory, getSession(), request, limit, targetAccess);
   }
 
   @Override
@@ -182,12 +158,8 @@ public class BookingConfigurationDaoHibernate
   @Override
   public List<BookingConfiguration> lockResources(
       ResourceRequest request, int limit, RelationshipReadAccess relationshipAccess) {
-    try {
-      return collectionQuery.listByIdForUpdate(
-          criteriaBuilderFactory, getSession(), narrowed(request), limit, relationshipAccess);
-    } catch (IndexedTextNarrowing.NoMatch noMatch) {
-      return List.of();
-    }
+    return collectionQuery.listByIdForUpdate(
+        criteriaBuilderFactory, getSession(), request, limit, relationshipAccess);
   }
 
   @Override

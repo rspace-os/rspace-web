@@ -6,7 +6,6 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.query.CollectionQueryExecutor;
-import com.researchspace.dao.query.IndexedTextNarrowing;
 import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
@@ -24,7 +23,6 @@ import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
-import com.researchspace.search.customfield.RuntimeFieldTextSearch;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Locale;
@@ -34,7 +32,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.query.Query;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository(value = "instrumentDao")
@@ -61,9 +58,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   public record BookingSummaryRow(Long instrumentId, String name, Boolean deleted) {}
 
   private String defaultTemplateOwner;
-
-  @Autowired(required = false)
-  private RuntimeFieldTextSearch textSearch;
 
   public InstrumentDaoHibernateImpl(Class<Instrument> persistentClass) {
     super(persistentClass);
@@ -128,20 +122,12 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   @Override
   public ResourcePage<Instrument> getReadableResources(
       ResourceRequest request, AccessResult access) {
-    try {
-      return readableResourcePage(COLLECTION_QUERY, narrowed(request), access);
-    } catch (IndexedTextNarrowing.NoMatch noMatch) {
-      return new ResourcePage<>(List.of(), 0);
-    }
+    return readableResourcePage(COLLECTION_QUERY, request, access);
   }
 
   @Override
   public long countReadableResources(ResourceRequest request, AccessResult access) {
-    try {
-      return countReadableResources(COLLECTION_QUERY, narrowed(request), access);
-    } catch (IndexedTextNarrowing.NoMatch noMatch) {
-      return 0;
-    }
+    return countReadableResources(COLLECTION_QUERY, request, access);
   }
 
   @Override
@@ -519,10 +505,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         .setParameter("workbenchType", ContainerType.WORKBENCH);
     context.bind(query, null);
     return Set.copyOf(query.getResultList());
-  }
-
-  private ResourceRequest narrowed(ResourceRequest request) {
-    return IndexedTextNarrowing.apply(request, ApiV2InstrumentResource.DESCRIPTION, textSearch);
   }
 
   @Override

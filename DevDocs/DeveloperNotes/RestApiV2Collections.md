@@ -766,62 +766,28 @@ Because a name plus a type is the whole identity of an extra field, a text field
 that share a name are two definitions. The query restricts by the concrete field entity, so a
 numeric comparison never converts the text field's values and never matches it by accident.
 
-Extra fields are not served by the Lucene index, so `=like=` on one takes the database path
-described below, exactly as it did before the index existed.
+Runtime-field values are queried from the database, including ad-hoc extra fields.
 
 ### Text matching on a runtime field or a relationship target
 
-A text runtime field publishes both `=contains=` and `=like=`, and they are answered differently.
+A text runtime field publishes both `=contains=` and `=like=`. Both operators use the database and
+are case-insensitive.
 
 `=contains=` is an exact substring match that always runs in the database. Use it to find a
 character sequence at any position: `=contains=BSL` finds `BSL-2`,
 `XBSL-2` and `Level BSL-2 lab`, and a substring may span words.
 
-`=like=` means "every word must be present, in any order", and it is answered by the Lucene index,
-because a leading-wildcard `LIKE` over a text column cannot use a database index. It has these
-behaviors:
+`=like=` splits the filter value on whitespace and requires every resulting word to occur as a
+substring, in any order. It has these behaviors:
 
-- A word matches whole, after the standard tokenizer and lower-casing. `=like=BSL` finds `BSL-2`,
-  because the tokenizer splits on the hyphen, but not `XBSL-2`. Use `=contains=` for that.
+- A word is a substring, with lower-casing. `=like=BSL` finds `BSL-2`, `XBSL-2`, and `BSL-3`.
+  `=like=BSL-2` does not find `BSL-3`.
 - Several words all have to be present, in any order. `=like=BSL-2 lab` and `=like=lab BSL-2` both
   find `Level BSL-2 lab`; `=like=BSL-2 freezer` finds nothing.
-- Anything the index cannot answer falls back to the database and matches by substring per word, so
-  `=like=SL-2` still finds all three. An empty index answer is never read as "no rows match",
-  because an unbuilt or lagging index answers the same way.
-- Indexed narrowing is enabled only while a completeness marker exists beside the index. A rebuild
-  removes the marker before it starts and restores it atomically after success, so an interrupted or
-  failed rebuild falls back to the database instead of treating a partial index as authoritative.
+- A word can be a partial word, so `=like=SL-2` finds values containing that substring.
 
-`InstrumentCustomFieldTextSearchIT` tests these behaviors. Every other operator and field type uses
-the database as before. Set `collections.textSearch.enabled=false` to put `=like=` back on
-the database too, at the cost of the leading-wildcard scan. The index is built on first deployment
-and on every version update; `collections.indexOnStartup=true` rebuilds it on each restart.
-Raw search terms are excluded from logs by default. Development deployments may set
-`collections.textSearch.debugLogTerms=true` when inspecting analyzer behavior with throwaway data.
-
-Three kinds of filter use this path because they perform the same index lookup:
-
-| Filter | Example | Narrowed to |
-| --- | --- | --- |
-| a runtime field of the listed collection | `customFields.SF104=like=BSL` | `id IN (…)` |
-| a runtime field of a relationship's target | `target.extraFields.XFt4e6f746573=like=cabinet` | `target.value IN (…)` AND the original |
-| a target's own scalar | `target.name=like=confocal` | `target.value IN (…)` AND the original |
-
-Both namespaces use one index field per definition: `rtFieldValue_<namespace>_<id>`. Ad-hoc extra
-fields use the `XF…` identity from their catalog. Renaming a field changes its identity and moves its
-value to a different index field.
-
-A filter through a relationship keeps its original predicate as well as the ID set. The original is
-what compiles to the target's read rule, and an index knows nothing about permissions: `target.value
-IN (…)` on its own would return rows whose target the caller cannot read. The ID set only prunes the
-rows the correlated `EXISTS` has to be evaluated for.
-
-A scalar hop stops narrowing above 2,000 candidate IDs. In a test of 10,047 bookable items filtered
-by instrument name, one match took 24 ms with the index and 89 ms with the database. The methods
-were equal at 1,240 matches. At 7,521 matches, the index took 150 ms and the database took 104 ms.
-A term that selects most of a collection does not narrow the result. The database can evaluate the
-short name predicate efficiently. Custom-field values use the higher limit of 10,000 because their
-database path scans `LONGTEXT` and takes seconds.
+`InstrumentCustomFieldTextSearchIT` tests these behaviors. Collection queries always use the
+database path, so the result does not depend on Hibernate Search index state.
 
 ### Fields reached through a relationship
 

@@ -160,7 +160,6 @@ public class ProductionConfig extends BaseConfig {
     inits.add(fileStoreRootDetector());
     inits.add(indexer());
     inits.add(chemistryIndexer());
-    inits.add(customFieldIndexer());
     inits.add(chemistryImageUpdater());
     inits.add(integrationsHandlerInitialisor());
     inits.add(sampleTemplateAppInitialiser());
@@ -185,7 +184,6 @@ public class ProductionConfig extends BaseConfig {
     inits.add(loadfromCSV());
     inits.add(indexer());
     inits.add(chemistryIndexer());
-    inits.add(customFieldIndexer());
 
     inits.add(chemistryImageUpdater());
     inits.add(licenseServerChecker());

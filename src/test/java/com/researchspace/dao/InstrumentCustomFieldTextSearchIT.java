@@ -24,7 +24,6 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import com.researchspace.search.customfield.RuntimeFieldTextSearch;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
@@ -36,15 +35,12 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.TestPropertySource;
 
-@TestPropertySource(properties = {"collections.textSearch.enabled=true"})
 public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTestBase {
 
   @Autowired private InstrumentDao instrumentDao;
   @Autowired private InstrumentReadAccess instrumentReadAccess;
   @Autowired private InstrumentCustomFieldManager customFields;
-  @Autowired private RuntimeFieldTextSearch textSearch;
   @Autowired private ExtraFieldDao extraFieldDao;
 
   private User owner;
@@ -60,16 +56,17 @@ public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTest
           instrumentFromTemplate(template, "Exact", "BSL-2");
           instrumentFromTemplate(template, "Prefixed", "XBSL-2");
           instrumentFromTemplate(template, "Phrase", "Level BSL-2 lab");
+          instrumentFromTemplate(template, "Other level", "Level BSL-3 lab");
         });
     doInTransaction(() -> instrumentWithExtraField("Ad hoc", "Notes", "BSL-2 cabinet"));
     hazardClass = doInTransaction(() -> definitionOf(template));
     notes = doInTransaction(this::extraFieldDefinition);
-    doInTransaction(() -> textSearch.reindexAll());
   }
 
   @Test
-  public void matchesLikeByWholeWordWhenTheIndexCanAnswer() throws Exception {
-    assertEquals(List.of("Exact", "Phrase"), like("BSL"));
+  public void matchesLikeBySubstringForEachWord() throws Exception {
+    assertEquals(List.of("Exact", "Other level", "Phrase", "Prefixed"), like("BSL"));
+    assertEquals(List.of("Exact", "Phrase", "Prefixed"), like("BSL-2"));
   }
 
   @Test
@@ -80,13 +77,13 @@ public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTest
   }
 
   @Test
-  public void fallsBackToASubstringMatchForAPartialWord() throws Exception {
+  public void matchesPartialWordsAsSubstrings() throws Exception {
     assertEquals(List.of("Exact", "Phrase", "Prefixed"), like("SL-2"));
   }
 
   @Test
   public void keepsContainsAnExactSubstringMatch() throws Exception {
-    assertEquals(List.of("Exact", "Phrase", "Prefixed"), contains("BSL"));
+    assertEquals(List.of("Exact", "Other level", "Phrase", "Prefixed"), contains("BSL"));
     assertEquals(List.of("Exact", "Phrase", "Prefixed"), contains("SL-2"));
     assertEquals(List.of("Phrase"), contains("BSL-2 lab"));
     assertEquals(List.of(), contains("lab BSL-2"));
