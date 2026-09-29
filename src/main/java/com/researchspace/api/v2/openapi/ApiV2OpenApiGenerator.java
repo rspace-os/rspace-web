@@ -130,6 +130,7 @@ public final class ApiV2OpenApiGenerator {
     addCalendarFilePath(paths);
     addBookingDirectoryPaths(paths);
 
+    schemas.replaceAll((name, schema) -> withNullableReferenceProperties(schema));
     Map<String, Object> components = new LinkedHashMap<>();
     components.put("schemas", schemas);
     components.put("responses", standardResponses());
@@ -1868,6 +1869,50 @@ public final class ApiV2OpenApiGenerator {
         "^" + escapeEcmaRegex(prefix) + "\\d+$",
         "example",
         prefix + "1");
+  }
+
+  /**
+   * The swagger converter renders a nullable reference property as {@code {"type": "null", "$ref":
+   * ...}}, which no value satisfies in OpenAPI 3.1. Rewrites each such property as {@code anyOf}
+   * the reference and {@code null}, keeping its other keywords such as the description.
+   */
+  private static Object withNullableReferenceProperties(Object schema) {
+    if (!(schema instanceof Map<?, ?> component)
+        || !(component.get("properties") instanceof Map<?, ?> properties)
+        || properties.values().stream().noneMatch(ApiV2OpenApiGenerator::isNullableReference)) {
+      return schema;
+    }
+    Map<String, Object> rewritten = new LinkedHashMap<>();
+    properties.forEach(
+        (name, property) ->
+            rewritten.put(
+                (String) name,
+                isNullableReference(property)
+                    ? nullableReference((Map<?, ?>) property)
+                    : property));
+    Map<String, Object> result = new LinkedHashMap<>();
+    component.forEach((key, value) -> result.put((String) key, value));
+    result.put("properties", rewritten);
+    return result;
+  }
+
+  private static boolean isNullableReference(Object property) {
+    return property instanceof Map<?, ?> map
+        && map.get("$ref") instanceof String
+        && ("null".equals(map.get("type"))
+            || map.get("type") instanceof List<?> types && types.contains("null"));
+  }
+
+  private static Map<String, Object> nullableReference(Map<?, ?> property) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("anyOf", List.of(ordered("$ref", property.get("$ref")), ordered("type", "null")));
+    property.forEach(
+        (key, value) -> {
+          if (!"$ref".equals(key) && !"type".equals(key)) {
+            result.put((String) key, value);
+          }
+        });
+    return result;
   }
 
   private static Map<String, Object> nullable(Map<String, Object> schema, boolean nullable) {

@@ -609,6 +609,22 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
+  void problemConflictIsTheConflictSchemaOrNullAsOpenApi31AllowsIt() {
+    Map<String, Object> properties =
+        objectMap(objectMap(schemas(document()).get("ApiV2Problem")).get("properties"));
+    Map<String, Object> conflict = objectMap(properties.get("conflict"));
+
+    assertFalse(conflict.containsKey("type"), conflict.toString());
+    assertFalse(conflict.containsKey("$ref"), conflict.toString());
+    assertEquals(
+        List.of(Map.of("$ref", "#/components/schemas/BookingConflict"), Map.of("type", "null")),
+        conflict.get("anyOf"));
+    assertTrue(conflict.get("description").toString().contains("errors.api.v2.booking.overlap"));
+    assertEquals(
+        List.of("integer", "null"), objectMap(properties.get("bufferBeforeMinutes")).get("type"));
+  }
+
+  @Test
   void documentsDailyAuditSnapshotContract() {
     Map<String, Object> document = document();
     Map<String, Object> paths = objectMap(document.get("paths"));
