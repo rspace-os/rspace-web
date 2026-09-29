@@ -6,7 +6,9 @@
 <%--
 Reusable tag for incorporating a notifications section into a page.
  --%>
-<axt:paginate paginationList="${paginationList}" />
+<div class="bootstrap-custom-flat">
+  <axt:paginate paginationList="${paginationList}" />
+</div>
 <input type="hidden" id="timeOfListing" value="${timeOfListing}" />
 <div id=notificationListContents>
 	<c:choose>
@@ -38,7 +40,7 @@ Reusable tag for incorporating a notifications section into a page.
 						<td width="120" valign="top" class="leftInfo"
 							style="line-height: 1.1em;">
 							<div>
-								<span class="boldtext"><spring:message code="notifications.sent"/>
+								<span style="display: block;" class="boldtext"><spring:message code="notifications.sent"/>
 								</span>
 								<rst:relDate input="${notification.creationTime}"></rst:relDate>
 							</div>
