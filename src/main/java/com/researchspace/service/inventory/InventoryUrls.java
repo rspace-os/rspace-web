@@ -107,11 +107,12 @@ public final class InventoryUrls {
    * 0009 decision 9) and the CSV link import alike.
    *
    * <p>Only a web address counts, http or https alike, because http and https on one host are one
-   * deployment. Same server means same host (case-insensitive), port and path before the segment;
-   * the segment itself is matched exactly, because the route is case-sensitive and {@code
-   * /GLOBALID/} answers 404. A version suffix is returned as it is, so the caller keeps the pin the
-   * address named. A server URL that has since changed, like a differently cased segment, is
-   * deliberately not recognised, unlike in {@link #namesGlobalIdPage}.
+   * deployment. Same server means same host (case-insensitive), port (a scheme's default port is
+   * the same whether written or left out) and path before the segment; the segment itself is
+   * matched exactly, because the route is case-sensitive and {@code /GLOBALID/} answers 404. A
+   * version suffix is returned as it is, so the caller keeps the pin the address named. A server
+   * URL that has since changed, like a differently cased segment, is deliberately not recognised,
+   * unlike in {@link #namesGlobalIdPage}.
    */
   public static Optional<String> globalIdOfOwnPage(String address, String serverUrl) {
     URI page = parseOrNull(address);
@@ -131,10 +132,23 @@ public final class InventoryUrls {
     String globalId = path.substring(segment + GLOBAL_ID_PATH.length());
     boolean sameServer =
         page.getHost().equalsIgnoreCase(server.getHost())
-            && page.getPort() == server.getPort()
+            && portOf(page) == portOf(server)
             && path.substring(0, segment)
                 .equals(StringUtils.stripEnd(StringUtils.defaultString(server.getPath()), "/"));
     return sameServer && !globalId.contains("/") ? Optional.of(globalId) : Optional.empty();
+  }
+
+  /**
+   * The port, or -1 when it is the scheme's own default, so {@code https://h:443} and {@code
+   * https://h} compare equal, as they are one origin; a port left out on both sides still matches
+   * across http and https.
+   */
+  private static int portOf(URI uri) {
+    int port = uri.getPort();
+    boolean schemeDefault =
+        (port == 80 && "http".equalsIgnoreCase(uri.getScheme()))
+            || (port == 443 && "https".equalsIgnoreCase(uri.getScheme()));
+    return schemeDefault ? -1 : port;
   }
 
   /** The value as a normalised URI, or null when blank or unparseable. */

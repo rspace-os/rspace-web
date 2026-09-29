@@ -216,14 +216,15 @@ and API field names were ported instead.
    deployment. The import used to leave both fields empty and report plain success.
 
    - An entry is *this RSpace's* when its address is the deployment's own globalId page: an http or
-     https address (either scheme) with the same host (case-insensitive) and port, the same path
-     before `/globalId/` and that segment spelled exactly as the route maps it, trailing slashes
-     and query ignored (`InventoryUrls.globalIdOfOwnPage`, the inverse of the builder next to it).
-     The allowances are the ones the route itself honours: checked on 2026-09-29, `/GLOBALID/`
-     answers 404 while a trailing slash or a query still opens the item. A server address that has
-     changed since registration is deliberately not recognised: those entries count as another
-     server's (the ticket's out-of-scope item). The CSV link import (RSDEV-1354) uses the same
-     rule, so the two importers agree about which addresses are ours.
+     https address (either scheme) with the same host (case-insensitive) and port (a scheme's
+     default port counts the same written or left out, `https://h:443` being `https://h`), the same
+     path before `/globalId/` and that segment spelled exactly as the route maps it, trailing
+     slashes and query ignored (`InventoryUrls.globalIdOfOwnPage`, the inverse of the builder next
+     to it). The allowances are the ones the route itself honours: checked on 2026-09-29,
+     `/GLOBALID/` answers 404 while a trailing slash or a query still opens the item. A server
+     address that has changed since registration is deliberately not recognised: those entries
+     count as another server's (the ticket's out-of-scope item). The CSV link import (RSDEV-1354)
+     uses the same rule, so the two importers agree about which addresses are ours.
    - Such an entry becomes a link exactly when the importing user could have made it by hand,
      decided by the write path's own checks (`InventoryLinkManager.canCreateLink`, which is
      `createLink` without the write), so the pre-check and the create can never disagree and a

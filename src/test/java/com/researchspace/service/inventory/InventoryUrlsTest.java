@@ -88,6 +88,15 @@ class InventoryUrlsTest {
         "host names are case-insensitive");
     assertEquals(
         Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage("https://rspace.example.com:443/globalId/IC65536", SERVER),
+        "an explicit default port is the port the server URL leaves out");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(
+            SERVER + "/globalId/IC65536", "https://rspace.example.com:443"),
+        "and the other way round");
+    assertEquals(
+        Optional.of("IC65536"),
         InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536/", SERVER + "/"),
         "trailing slashes on either side are ignored");
     assertEquals(
