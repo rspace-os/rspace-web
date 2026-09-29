@@ -215,12 +215,13 @@ and API field names were ported instead.
    under the one constraint that an RSpace link can only name an item stored in the same
    deployment. The import used to leave both fields empty and report plain success.
 
-   - An entry is *this RSpace's* when its address is the deployment's own globalId page: same host
-     (case-insensitive) and port, the same path before `/globalId/`, scheme and trailing slashes and
-     query ignored (`InventoryUrls.globalIdOfOwnPage`, the inverse of the builder next to it). A
-     server address that has changed since registration is deliberately not recognised: those
-     entries count as another server's (the ticket's out-of-scope item). The CSV link import
-     (RSDEV-1354) uses the same rule, so the two importers agree about which addresses are ours.
+   - An entry is *this RSpace's* when its address is the deployment's own globalId page: an http or
+     https address (either scheme) with the same host (case-insensitive) and port, the same path
+     before `/globalId/`, trailing slashes and query ignored (`InventoryUrls.globalIdOfOwnPage`, the
+     inverse of the builder next to it). A server address that has changed since registration is
+     deliberately not recognised: those entries count as another server's (the ticket's
+     out-of-scope item). The CSV link import (RSDEV-1354) uses the same rule, so the two importers
+     agree about which addresses are ours.
    - Such an entry becomes a link exactly when the importing user could have made it by hand,
      decided by the write path's own checks (`InventoryLinkManager.canCreateLink`, which is
      `createLink` without the write), so the pre-check and the create can never disagree and a

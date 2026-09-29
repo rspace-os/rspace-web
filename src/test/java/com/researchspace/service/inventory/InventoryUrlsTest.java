@@ -129,6 +129,12 @@ class InventoryUrlsTest {
     assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/", SERVER))
         .as("no global id at all")
         .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage("ftp://rspace.example.com/globalId/IC65536", SERVER))
+        .as("this server's host, but not a web address")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage("//rspace.example.com/globalId/IC65536", SERVER))
+        .as("no scheme at all")
+        .isEmpty();
     assertThat(InventoryUrls.globalIdOfOwnPage("10.1000/manual", SERVER))
         .as("a bare DOI")
         .isEmpty();

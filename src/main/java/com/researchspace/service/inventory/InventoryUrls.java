@@ -106,15 +106,20 @@ public final class InventoryUrls {
    * an import names a local record, for the PIDINST import's related identifiers (RSDEV-1528, ADR
    * 0009 decision 9) and the CSV link import alike.
    *
-   * <p>Same server means same host (case-insensitive), port and path before the segment. The scheme
-   * is ignored because http and https on one host are one deployment. A version suffix is returned
-   * as it is, so the caller keeps the pin the address named. A server URL that has since changed is
-   * deliberately not recognised, unlike in {@link #namesGlobalIdPage}.
+   * <p>Only a web address counts, http or https alike, because http and https on one host are one
+   * deployment. Same server means same host (case-insensitive), port and path before the segment. A
+   * version suffix is returned as it is, so the caller keeps the pin the address named. A server
+   * URL that has since changed is deliberately not recognised, unlike in {@link
+   * #namesGlobalIdPage}.
    */
   public static Optional<String> globalIdOfOwnPage(String address, String serverUrl) {
     URI page = parseOrNull(address);
     URI server = parseOrNull(serverUrl);
-    if (page == null || server == null || page.getHost() == null || server.getHost() == null) {
+    if (page == null
+        || server == null
+        || !StringUtils.equalsAnyIgnoreCase(page.getScheme(), "http", "https")
+        || page.getHost() == null
+        || server.getHost() == null) {
       return Optional.empty();
     }
     String path = StringUtils.stripEnd(StringUtils.defaultString(page.getPath()), "/");
