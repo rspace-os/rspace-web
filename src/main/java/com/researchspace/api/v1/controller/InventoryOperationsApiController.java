@@ -32,7 +32,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
@@ -46,17 +45,40 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class InventoryOperationsApiController extends BaseApiInventoryController
     implements InventoryOperationsApi {
 
-  @Autowired InventoryOperationManager inventoryOperationManager;
-  @Autowired SystemPropertyPermissionManager systemPropertyManager;
-  @Autowired InventoryOperationInFlightOrigins inFlightOrigins;
+  private final InventoryOperationManager inventoryOperationManager;
+  private final SystemPropertyPermissionManager systemPropertyManager;
+  private final InventoryOperationInFlightOrigins inFlightOrigins;
 
-  @Autowired AliquotOperation aliquotOperation;
-  @Autowired PassageOperation passageOperation;
-  @Autowired PoolOperation poolOperation;
-  @Autowired DeriveOperation deriveOperation;
-  @Autowired CryopreserveOperation cryopreserveOperation;
-  @Autowired ReviveOperation reviveOperation;
-  @Autowired DestroyOperation destroyOperation;
+  private final AliquotOperation aliquotOperation;
+  private final PassageOperation passageOperation;
+  private final PoolOperation poolOperation;
+  private final DeriveOperation deriveOperation;
+  private final CryopreserveOperation cryopreserveOperation;
+  private final ReviveOperation reviveOperation;
+  private final DestroyOperation destroyOperation;
+
+  public InventoryOperationsApiController(
+      InventoryOperationManager inventoryOperationManager,
+      SystemPropertyPermissionManager systemPropertyManager,
+      InventoryOperationInFlightOrigins inFlightOrigins,
+      AliquotOperation aliquotOperation,
+      PassageOperation passageOperation,
+      PoolOperation poolOperation,
+      DeriveOperation deriveOperation,
+      CryopreserveOperation cryopreserveOperation,
+      ReviveOperation reviveOperation,
+      DestroyOperation destroyOperation) {
+    this.inventoryOperationManager = inventoryOperationManager;
+    this.systemPropertyManager = systemPropertyManager;
+    this.inFlightOrigins = inFlightOrigins;
+    this.aliquotOperation = aliquotOperation;
+    this.passageOperation = passageOperation;
+    this.poolOperation = poolOperation;
+    this.deriveOperation = deriveOperation;
+    this.cryopreserveOperation = cryopreserveOperation;
+    this.reviveOperation = reviveOperation;
+    this.destroyOperation = destroyOperation;
+  }
 
   /**
    * {@link UnsupportedOperationException} is what {@code ApiControllerAdvice} already maps to a 404

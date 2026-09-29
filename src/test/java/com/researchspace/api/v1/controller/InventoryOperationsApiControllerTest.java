@@ -81,8 +81,8 @@ import org.springframework.validation.FieldError;
 
 class InventoryOperationsApiControllerTest {
 
-  private final InventoryOperationsApiController controller =
-      new InventoryOperationsApiController();
+  private InventoryOperationsApiController controller;
+  private final PoolOperation poolOperation = new PoolOperation();
   private final InventoryOperationManager operationManager = mock(InventoryOperationManager.class);
   private final User user = mock(User.class);
 
@@ -123,10 +123,21 @@ class InventoryOperationsApiControllerTest {
 
   @BeforeEach
   void wireController() {
+    controller =
+        new InventoryOperationsApiController(
+            operationManager,
+            systemPropertyManager,
+            inFlightOrigins,
+            new AliquotOperation(),
+            new PassageOperation(),
+            poolOperation,
+            new DeriveOperation(),
+            new CryopreserveOperation(),
+            new ReviveOperation(),
+            new DestroyOperation());
     controller.sampleApiMgr = sampleApiMgr;
     controller.subSampleApiMgr = subSampleApiMgr;
     controller.tracker = tracker;
-    controller.inFlightOrigins = inFlightOrigins;
     originExists(100L, 10L);
     lockIsFree("SS100");
     lockIsFree("SA10");
@@ -134,15 +145,6 @@ class InventoryOperationsApiControllerTest {
     when(properties.getServerUrl()).thenReturn("https://rspace.example");
     controller.properties = properties;
     controller.inputValidator = new DTOControllerValidatorImpl();
-    controller.inventoryOperationManager = operationManager;
-    controller.systemPropertyManager = systemPropertyManager;
-    controller.aliquotOperation = new AliquotOperation();
-    controller.passageOperation = new PassageOperation();
-    controller.poolOperation = new PoolOperation();
-    controller.deriveOperation = new DeriveOperation();
-    controller.cryopreserveOperation = new CryopreserveOperation();
-    controller.reviveOperation = new ReviveOperation();
-    controller.destroyOperation = new DestroyOperation();
     when(systemPropertyManager.isPropertyAllowed(
             user, SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE))
         .thenReturn(true);
@@ -425,8 +427,7 @@ class InventoryOperationsApiControllerTest {
     @SuppressWarnings("unchecked")
     ArgumentCaptor<List<Long>> originIds = ArgumentCaptor.forClass(List.class);
     verify(operationManager)
-        .performOperation(
-            same(controller.poolOperation), same(request), originIds.capture(), eq(user));
+        .performOperation(same(poolOperation), same(request), originIds.capture(), eq(user));
     assertEquals(List.of(100L, 300L), originIds.getValue());
   }
 
