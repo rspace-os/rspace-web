@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -48,11 +47,24 @@ import org.springframework.validation.BindException;
 @Service("inventoryOperationManager")
 public class InventoryOperationManagerImpl implements InventoryOperationManager {
 
-  @Autowired private SampleApiManager sampleApiMgr;
-  @Autowired private SubSampleApiManager subSampleApiMgr;
-  @Autowired private MessageSource messageSource;
-  @Autowired private OperationTemplateConformanceValidator templateConformance;
-  @Autowired private LinkTargetResolver linkTargetResolver;
+  private final SampleApiManager sampleApiMgr;
+  private final SubSampleApiManager subSampleApiMgr;
+  private final MessageSource messageSource;
+  private final OperationTemplateConformanceValidator templateConformance;
+  private final LinkTargetResolver linkTargetResolver;
+
+  public InventoryOperationManagerImpl(
+      SampleApiManager sampleApiMgr,
+      SubSampleApiManager subSampleApiMgr,
+      MessageSource messageSource,
+      OperationTemplateConformanceValidator templateConformance,
+      LinkTargetResolver linkTargetResolver) {
+    this.sampleApiMgr = sampleApiMgr;
+    this.subSampleApiMgr = subSampleApiMgr;
+    this.messageSource = messageSource;
+    this.templateConformance = templateConformance;
+    this.linkTargetResolver = linkTargetResolver;
+  }
 
   private static final QuantityUtils quantityUtils = new QuantityUtils();
 

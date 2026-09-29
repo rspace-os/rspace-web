@@ -54,7 +54,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 
@@ -105,17 +104,14 @@ class InventoryOperationManagerImplTest {
 
   @BeforeEach
   void setUp() {
-    manager = new InventoryOperationManagerImpl();
-    ReflectionTestUtils.setField(manager, "sampleApiMgr", sampleApiMgr);
-    ReflectionTestUtils.setField(manager, "subSampleApiMgr", subSampleApiMgr);
-    ReflectionTestUtils.setField(manager, "linkTargetResolver", linkTargetResolver);
-    ReflectionTestUtils.setField(manager, "templateConformance", templateConformance);
     org.springframework.context.MessageSource messages =
         mock(org.springframework.context.MessageSource.class);
     lenient()
         .when(messages.getMessage(any(String.class), any(), any(String.class), any()))
         .thenAnswer(invocation -> invocation.getArgument(2));
-    ReflectionTestUtils.setField(manager, "messageSource", messages);
+    manager =
+        new InventoryOperationManagerImpl(
+            sampleApiMgr, subSampleApiMgr, messages, templateConformance, linkTargetResolver);
   }
 
   /** A creating request whose new sample is already stubbed to be created. */
