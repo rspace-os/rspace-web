@@ -55,7 +55,13 @@ behavior and the 500-instrument / 1,003-event development dataset. The
 restricted-location plate reader is the view-only fixture: `user2b` owns it with
 owner-only sharing, so `user1a` reads it only as PI of `user2b`'s group and gets
 the Booking viewer role. Its configuration closes Wednesdays and has a Thursday
-exception.
+exception. The other smaller examples cover scheduling edge cases: weekend and
+Sunday closures, a shorter Friday, an all-day exception on partial shared hours,
+double booking with an actual overlap, a booking ending at midnight before a
+closed day, a booking across two all-day weekdays, far-east, far-west and
+fractional-offset timezones, and a booking and a maintenance event on weekdays
+closed after they were created. Bookings that depend on an open weekday use the
+first open day on or after the fixture date, because that date floats.
 
 Sources: [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L119-L220),
 [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L237-L440),
@@ -109,6 +115,38 @@ rows separate from generated inventory data.
 
 Sources: [`changeLog-rsdev-booking-dev-seed.xml`](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed.xml),
 [`booking-dev-seed.sql`](../../src/main/resources/sqlUpdates/booking-dev-seed.sql).
+
+The seeded instruments have no parent location: the SQL inserts no
+`ContainerLocation` rows, whereas an instrument created through Inventory always
+lands on its owner's workbench, so in a development database seeded this way
+they are usually the only parentless instruments. Booking catalogue text search (`q` on
+`/api/v2/booking-catalogue`, used by All bookable items and the item pickers)
+does not use a search index. `InstrumentDaoHibernateImpl.searchBookingCatalogueTargetIds`
+matches name, description or readable parent-container name with SQL `LIKE`,
+so rows inserted by Liquibase are found without reindexing. The parent-name
+match is an `exists` subquery. Hibernate renders the implicit joins behind
+`location.storedInstrument` and `parent.owner` as inner joins, so outer joins
+would drop every parentless instrument from the name match too; that is why
+these fixtures were once found only by global ID.
+`InstrumentBookingCatalogueSearchTest` covers both cases. Inventory's own search
+uses the Hibernate Search index instead, which sees SQL-inserted rows only after
+a reindex: `rs.indexOnstartup=true` (the default deployment value; the Docker
+stack turns it off unless `RSPACE_INDEX_ON_STARTUP=true`).
+
+Sources: [`InstrumentDaoHibernateImpl.java`](../../src/main/java/com/researchspace/dao/hibernate/InstrumentDaoHibernateImpl.java),
+[`InstrumentBookingCatalogueSearchTest.java`](../../src/test/java/com/researchspace/dao/InstrumentBookingCatalogueSearchTest.java).
+
+`changeLog-rsdev-booking-dev-seed-edge-cases.xml` (also `dev-test`) then turns
+seven of those configurations into scheduling edge cases and adds four events
+on closed days, across two all-day weekdays and ending at closing time. Its
+precondition requires configurations `910100002` to `910100008` to still carry
+the seed's defaults; otherwise it marks itself ran and changes nothing, so it
+never overwrites a developer's edits. The original seed changeset is not edited,
+because it is already applied and checksummed. Like the original seed, the raw
+SQL writes no Envers audit rows.
+
+Sources: [`changeLog-rsdev-booking-dev-seed-edge-cases.xml`](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed-edge-cases.xml),
+[`booking-dev-seed-edge-cases.sql`](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql).
 
 ## Verification path
 

@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,8 +63,128 @@ class BookingFixturesAppInitialiserTest {
 
   @Test
   void viewOnlyFixtureClosesWednesdaysAndShortensThursdays() {
-    BookingSchedulingSettings.Patch patch =
-        BookingFixturesAppInitialiser.VIEW_ONLY_FIXTURE_SETTINGS;
+    BookingSchedulingSettings settings =
+        creatable(BookingFixturesAppInitialiser.VIEW_ONLY_FIXTURE_SETTINGS);
+
+    assertClosed(settings, DayOfWeek.WEDNESDAY);
+    assertHours(settings, DayOfWeek.THURSDAY, "10:00", "14:00");
+    assertHours(settings, DayOfWeek.MONDAY, "08:00", "17:00");
+  }
+
+  @Test
+  void weekdayFixtureClosesWeekendsAndShortensFridays() {
+    BookingSchedulingSettings settings =
+        creatable(BookingFixturesAppInitialiser.WEEKDAY_FIXTURE_SETTINGS);
+
+    assertHours(settings, DayOfWeek.MONDAY, "08:00", "18:00");
+    assertHours(settings, DayOfWeek.FRIDAY, "08:00", "12:00");
+    assertClosed(settings, DayOfWeek.SATURDAY);
+    assertClosed(settings, DayOfWeek.SUNDAY);
+  }
+
+  @Test
+  void doubleBookingFixtureOpensAllDayOnWednesdaysAndClosesSundays() {
+    BookingSchedulingSettings settings =
+        creatable(BookingFixturesAppInitialiser.DOUBLE_BOOKING_FIXTURE_SETTINGS);
+
+    assertTrue(settings.allowDoubleBooking());
+    assertHours(settings, DayOfWeek.TUESDAY, "08:00", "20:00");
+    assertHours(settings, DayOfWeek.WEDNESDAY, "00:00", "24:00");
+    assertHours(settings, DayOfWeek.SATURDAY, "08:00", "20:00");
+    assertClosed(settings, DayOfWeek.SUNDAY);
+  }
+
+  @Test
+  void weekdayAllDayFixtureIsOpenAroundTheClockOnWeekdaysOnly() {
+    BookingSchedulingSettings settings =
+        creatable(BookingFixturesAppInitialiser.WEEKDAY_ALL_DAY_FIXTURE_SETTINGS);
+
+    assertHours(settings, DayOfWeek.MONDAY, "00:00", "24:00");
+    assertHours(settings, DayOfWeek.TUESDAY, "00:00", "24:00");
+    assertClosed(settings, DayOfWeek.SATURDAY);
+    assertClosed(settings, DayOfWeek.SUNDAY);
+  }
+
+  @Test
+  void midnightCloseFixtureIsOpenAroundTheClockExceptSundays() {
+    BookingSchedulingSettings settings =
+        creatable(BookingFixturesAppInitialiser.MIDNIGHT_CLOSE_FIXTURE_SETTINGS);
+
+    assertHours(settings, DayOfWeek.SATURDAY, "00:00", "24:00");
+    assertClosed(settings, DayOfWeek.SUNDAY);
+  }
+
+  @Test
+  void aucklandFixtureOpensEightToFiveEveryDay() {
+    BookingSchedulingSettings settings =
+        creatable(BookingFixturesAppInitialiser.AUCKLAND_FIXTURE_SETTINGS);
+
+    for (DayOfWeek day : DayOfWeek.values()) {
+      assertHours(settings, day, "08:00", "17:00");
+    }
+  }
+
+  @Test
+  void honoluluFixtureOpensInTheEveningAndClosesSundays() {
+    BookingSchedulingSettings settings =
+        creatable(BookingFixturesAppInitialiser.HONOLULU_FIXTURE_SETTINGS);
+
+    assertHours(settings, DayOfWeek.SATURDAY, "17:00", "23:00");
+    assertClosed(settings, DayOfWeek.SUNDAY);
+  }
+
+  @Test
+  void kolkataFixtureUsesQuarterHourSlotsEveryDay() {
+    BookingSchedulingSettings settings =
+        creatable(BookingFixturesAppInitialiser.KOLKATA_FIXTURE_SETTINGS);
+
+    assertEquals(15, settings.slotGranularityMinutes());
+    for (DayOfWeek day : DayOfWeek.values()) {
+      assertHours(settings, day, "09:00", "17:30");
+    }
+  }
+
+  @Test
+  void closedDayFixtureClosesOnlyTheGivenWeekdays() {
+    BookingSchedulingSettings settings =
+        creatable(
+            BookingFixturesAppInitialiser.closedDayFixtureSettings(
+                DayOfWeek.SUNDAY, DayOfWeek.MONDAY));
+
+    assertClosed(settings, DayOfWeek.SUNDAY);
+    assertClosed(settings, DayOfWeek.MONDAY);
+    assertEquals(List.of(2, 3, 4, 5, 6), settings.openDays());
+    assertHours(settings, DayOfWeek.TUESDAY, "00:00", "24:00");
+  }
+
+  @Test
+  void firstOpenDayOnOrAfterKeepsAnOpenDate() {
+    BookingSchedulingSettings weekdays =
+        creatable(BookingFixturesAppInitialiser.WEEKDAY_FIXTURE_SETTINGS);
+    LocalDate friday = LocalDate.of(2026, 10, 2);
+
+    assertEquals(friday, BookingFixturesAppInitialiser.firstOpenDayOnOrAfter(friday, weekdays));
+  }
+
+  @Test
+  void firstOpenDayOnOrAfterWrapsPastAClosedWeekend() {
+    BookingSchedulingSettings weekdays =
+        creatable(BookingFixturesAppInitialiser.WEEKDAY_FIXTURE_SETTINGS);
+    LocalDate monday = LocalDate.of(2026, 10, 5);
+
+    assertEquals(
+        monday,
+        BookingFixturesAppInitialiser.firstOpenDayOnOrAfter(LocalDate.of(2026, 10, 3), weekdays));
+    assertEquals(
+        monday,
+        BookingFixturesAppInitialiser.firstOpenDayOnOrAfter(LocalDate.of(2026, 10, 4), weekdays));
+  }
+
+  /**
+   * Merges a fixture patch into the seeded defaults and checks every rule configuration creation
+   * enforces, because one rejected configuration aborts the whole booking fixture stage.
+   */
+  private static BookingSchedulingSettings creatable(BookingSchedulingSettings.Patch patch) {
     BookingSchedulingSettings settings =
         patch.merge(
             new BookingSchedulingSettings(
@@ -75,20 +197,32 @@ class BookingFixturesAppInitialiserTest {
                 BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES,
                 BookingSchedulingSettings.DEFAULT_MAX_BOOKING_DURATION_MINUTES,
                 BookingSchedulingSettings.DEFAULT_ALLOW_DOUBLE_BOOKING));
-
-    // Configuration creation rejects these, which would abort the whole fixture stage.
+    assertTrue(BookingSchedulingSettings.isGranularityValid(settings.slotGranularityMinutes()));
+    assertTrue(
+        BookingSchedulingSettings.areOpeningHoursValid(
+            settings.openingStart(), settings.openingEnd()));
+    assertTrue(BookingSchedulingSettings.isBufferValid(settings.bufferBeforeMinutes()));
+    assertTrue(BookingSchedulingSettings.isBufferValid(settings.bufferAfterMinutes()));
+    assertTrue(
+        BookingSchedulingSettings.isMaximumDurationValid(
+            settings.maxBookingDurationMinutes(), settings.slotGranularityMinutes()));
     assertTrue(BookingSchedulingSettings.areOpenDaysValid(settings.openDays()));
     assertTrue(BookingSchedulingSettings.areOpeningExceptionsValid(settings.openingExceptions()));
     assertTrue(
         BookingSchedulingSettings.areOpeningExceptionsOnOpenDays(
             settings.openingExceptions(), settings.openDays()));
-    assertEquals(Optional.empty(), settings.effectiveHours(DayOfWeek.WEDNESDAY.getValue()));
+    return settings;
+  }
+
+  private static void assertHours(
+      BookingSchedulingSettings settings, DayOfWeek day, String start, String end) {
     assertEquals(
-        Optional.of(new BookingSchedulingSettings.DailyHours("10:00", "14:00")),
-        settings.effectiveHours(DayOfWeek.THURSDAY.getValue()));
-    assertEquals(
-        Optional.of(new BookingSchedulingSettings.DailyHours("08:00", "17:00")),
-        settings.effectiveHours(DayOfWeek.MONDAY.getValue()));
+        Optional.of(new BookingSchedulingSettings.DailyHours(start, end)),
+        settings.effectiveHours(day.getValue()));
+  }
+
+  private static void assertClosed(BookingSchedulingSettings settings, DayOfWeek day) {
+    assertEquals(Optional.empty(), settings.effectiveHours(day.getValue()));
   }
 
   private ApplicationContext context(String... profiles) {

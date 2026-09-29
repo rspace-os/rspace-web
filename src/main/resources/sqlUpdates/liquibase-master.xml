@@ -87,6 +87,7 @@
     <include relativeToChangelogFile="true" file="changeLog-booking-opening-weekdays.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-booking-time-format.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed-edge-cases.xml"/>
 
   <!-- These two run last: recurring-changeLog.xml (runAlways diagnostics / batch re-init) then
        customUpdates-changeLog.xml. customUpdates-changeLog.xml must ALWAYS be the final include

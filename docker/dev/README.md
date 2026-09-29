@@ -122,7 +122,25 @@ Restricted-location plate reader, which `user2b` owns and shares with nobody, is
 view-only for `user1a`: as PI of `user2b`'s group, `user1a` sees it in the
 Calendar but can neither book it nor edit its configuration. It is closed on
 Wednesdays and opens only 10:00 to 14:00 (Europe/Berlin) on Thursdays, so the
-closure shading on a read-only row is visible. The startup
+closure shading on a read-only row is visible. Other examples cover scheduling
+edge cases:
+
+- The Electron microscope (America/New_York) closes at weekends and at noon on
+  Fridays.
+- The Mass spectrometer (UTC) closes on Sundays and is open all day on
+  Wednesdays although its shared hours are partial. It allows double booking
+  and has two overlapping bookings.
+- The No-parent centrifuge is open all day except on Sundays, with a Saturday
+  booking that ends at midnight.
+- The Deleted-location sequencer is open all day on weekdays only, with one
+  booking from Monday to Wednesday.
+- The Auckland PCR cycler, Honolulu X-ray diffractometer and Kolkata NMR
+  spectrometer (UTC+05:30, 15-minute increments) show day offsets and weekday
+  differences to a European viewer.
+- The Closed-day incubator has a booking and a maintenance event on two
+  weekdays that were closed after the events were created.
+
+The startup
 seed runs only on the first deployment and defaults to disabled. Set the property
 in `deployment.properties` to opt in; it also works with the `prod` profile on AWS
 feature-branch instances. Restarts preserve existing fixtures and do not log in
@@ -133,7 +151,12 @@ instruments and 50 events for `sysadmin1`, `user1a`, `user2b`, and `user3c`.
 The events cover three days ago, today, and seven days from today. Eight of the
 instruments have booking configurations, including one that permits double
 booking; the ninth remains unconfigured. Liquibase skips this seed when booking
-configuration data already exists.
+configuration data already exists. A second dev-test changeset then gives seven
+of those items edge-case schedules: weekend and Sunday closures, a shorter
+Friday, an all-day Wednesday exception, evening-only hours, Pacific/Honolulu and
+Asia/Kolkata timezones, and events on closed days, across two all-day weekdays
+and ending at closing time. It changes nothing unless all seven still have the
+seed's defaults, so it never overwrites edits made on a development database.
 
 Subsequent `up`s reuse the existing database and are much faster.
 

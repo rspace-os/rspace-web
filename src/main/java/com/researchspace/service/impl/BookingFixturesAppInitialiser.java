@@ -16,6 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingOpeningException;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
@@ -27,10 +28,12 @@ import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -80,6 +83,61 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           null,
           null,
           null);
+
+  /** The New York electron microscope closes at weekends and at noon on Fridays. */
+  static final BookingSchedulingSettings.Patch WEEKDAY_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(
+          null,
+          "08:00",
+          "18:00",
+          List.of(1, 2, 3, 4, 5),
+          List.of(new BookingOpeningException(5, "08:00", "12:00")),
+          null,
+          null,
+          null,
+          null);
+
+  /**
+   * The UTC mass spectrometer accepts overlapping bookings. It is closed on Sundays and open all
+   * day on Wednesdays, although its shared hours are partial.
+   */
+  static final BookingSchedulingSettings.Patch DOUBLE_BOOKING_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(
+          null,
+          "08:00",
+          "20:00",
+          List.of(1, 2, 3, 4, 5, 6),
+          List.of(new BookingOpeningException(3, "00:00", "24:00")),
+          null,
+          null,
+          null,
+          true);
+
+  /** The deleted-location sequencer is open around the clock on weekdays only. */
+  static final BookingSchedulingSettings.Patch WEEKDAY_ALL_DAY_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(
+          null, "00:00", "24:00", List.of(1, 2, 3, 4, 5), List.of(), null, null, null, null);
+
+  /**
+   * The no-parent centrifuge is open around the clock except on Sundays, so a Saturday booking can
+   * end at the midnight before the closed day.
+   */
+  static final BookingSchedulingSettings.Patch MIDNIGHT_CLOSE_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(
+          null, "00:00", "24:00", List.of(1, 2, 3, 4, 5, 6), List.of(), null, null, null, null);
+
+  /** Auckland's working day falls overnight for a European viewer. */
+  static final BookingSchedulingSettings.Patch AUCKLAND_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(null, "08:00", "17:00", null, null, null, null);
+
+  /** Honolulu's evening hours fall on the next European day, so the weekdays differ. */
+  static final BookingSchedulingSettings.Patch HONOLULU_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(
+          null, "17:00", "23:00", List.of(1, 2, 3, 4, 5, 6), List.of(), null, null, null, null);
+
+  /** Kolkata's UTC+05:30 offset moves quarter-hour slots onto :15 and :45 for most viewers. */
+  static final BookingSchedulingSettings.Patch KOLKATA_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(15L, "09:00", "17:30", null, null, null, null);
 
   @Value("${default.user.password}")
   private String devUserPassword;
@@ -161,6 +219,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     }
 
     List<Instrument> instruments = new ArrayList<>();
+    List<Instrument> schedulingEdgeInstruments = new ArrayList<>();
     List<Instrument> bookingCardInstruments = new ArrayList<>();
     List<Instrument> busyCalendarInstruments;
     try {
@@ -224,6 +283,14 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       busyCalendarInstruments = ensureBusyCalendarInstruments(owner);
       instruments.add(
           ensureInstrument(message("bookingFixtures.instruments.bookingAlerts"), owner));
+      schedulingEdgeInstruments.add(
+          ensureInstrument(message("bookingFixtures.instruments.aucklandPcrCycler"), owner));
+      schedulingEdgeInstruments.add(
+          ensureInstrument(message("bookingFixtures.instruments.honoluluDiffractometer"), owner));
+      schedulingEdgeInstruments.add(
+          ensureInstrument(message("bookingFixtures.instruments.kolkataNmrSpectrometer"), owner));
+      schedulingEdgeInstruments.add(
+          ensureInstrument(message("bookingFixtures.instruments.closedDayIncubator"), owner));
     } finally {
       logout();
     }
@@ -256,6 +323,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     }
     moveToParent(restrictedLocation, restrictedParent);
     instruments.add(restrictedLocation);
+    // Indices 8 to 11 follow the plate reader so the earlier fixture indices stay stable.
+    instruments.addAll(schedulingEdgeInstruments);
 
     return new FixtureIds(
         owner.getId(),
@@ -281,15 +350,27 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           List.of(
               ensureConfiguration(
                   instruments.get(0), "Europe/Berlin", BLOCKOUT_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(instruments.get(1), "America/New_York", sysadmin),
-              ensureConfiguration(instruments.get(2), "UTC", sysadmin),
+              ensureConfiguration(
+                  instruments.get(1), "America/New_York", WEEKDAY_FIXTURE_SETTINGS, sysadmin),
+              ensureConfiguration(
+                  instruments.get(2), "UTC", DOUBLE_BOOKING_FIXTURE_SETTINGS, sysadmin),
               ensureConfiguration(instruments.get(3), "Asia/Singapore", sysadmin),
-              ensureConfiguration(instruments.get(4), "Europe/Berlin", sysadmin),
-              ensureConfiguration(instruments.get(5), "Europe/Berlin", sysadmin),
+              ensureConfiguration(
+                  instruments.get(4), "Europe/Berlin", MIDNIGHT_CLOSE_FIXTURE_SETTINGS, sysadmin),
+              ensureConfiguration(
+                  instruments.get(5), "Europe/Berlin", WEEKDAY_ALL_DAY_FIXTURE_SETTINGS, sysadmin),
               ensureConfiguration(
                   instruments.get(6), "Europe/Berlin", ALERT_FIXTURE_SETTINGS, sysadmin),
               ensureConfiguration(
-                  instruments.get(7), "Europe/Berlin", VIEW_ONLY_FIXTURE_SETTINGS, sysadmin));
+                  instruments.get(7), "Europe/Berlin", VIEW_ONLY_FIXTURE_SETTINGS, sysadmin),
+              ensureConfiguration(
+                  instruments.get(8), "Pacific/Auckland", AUCKLAND_FIXTURE_SETTINGS, sysadmin),
+              ensureConfiguration(
+                  instruments.get(9), "Pacific/Honolulu", HONOLULU_FIXTURE_SETTINGS, sysadmin),
+              ensureConfiguration(
+                  instruments.get(10), "Asia/Kolkata", KOLKATA_FIXTURE_SETTINGS, sysadmin),
+              // Opens every day until its events exist; the last sysadmin block closes two days.
+              ensureConfiguration(instruments.get(11), "Europe/Berlin", sysadmin));
 
       ensureConfigurationState(
           bookingCardInstruments.get(1), true, BookingConfigurationState.ACTIVE, sysadmin);
@@ -335,22 +416,34 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       ensureBooking(
           instruments.get(1),
           configurations.get(1),
-          fixtureDate,
+          firstOpenDayOnOrAfter(fixtureDate, BookingSchedulingSettings.from(configurations.get(1))),
           10,
           0,
           12,
           0,
           message("bookingFixtures.purposes.ultrastructureImaging"),
           owner);
+      LocalDate massSpectrometerDate =
+          firstOpenDayOnOrAfter(fixtureDate, BookingSchedulingSettings.from(configurations.get(2)));
       ensureBooking(
           instruments.get(2),
           configurations.get(2),
-          fixtureDate,
+          massSpectrometerDate,
           8,
           0,
           9,
           30,
           message("bookingFixtures.purposes.proteomicsRun"),
+          owner);
+      ensureBooking(
+          instruments.get(2),
+          configurations.get(2),
+          massSpectrometerDate,
+          8,
+          30,
+          9,
+          30,
+          message("bookingFixtures.purposes.overlappingProteomicsRun"),
           owner);
       ensureBooking(
           instruments.get(3),
@@ -371,6 +464,66 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           0,
           30,
           message("bookingFixtures.purposes.overnightAnalysis"),
+          owner);
+      ensureBooking(
+          instruments.get(4),
+          configurations.get(4),
+          fixtureDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY)),
+          22,
+          0,
+          0,
+          0,
+          message("bookingFixtures.purposes.lateSpin"),
+          owner);
+      LocalDate sequencerMonday = fixtureDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+      ensureEvent(
+          instruments.get(5),
+          configurations.get(5),
+          sequencerMonday.atStartOfDay(),
+          sequencerMonday.plusDays(2).atStartOfDay(),
+          BookingEventKind.BOOKING,
+          message("bookingFixtures.purposes.twoDaySequencingRun"),
+          owner);
+      // Auckland's 09:00 is the previous European evening, so start a day later to stay future.
+      ensureBooking(
+          instruments.get(8),
+          configurations.get(8),
+          fixtureDate.plusDays(1),
+          9,
+          0,
+          10,
+          0,
+          message("bookingFixtures.purposes.pcrAmplification"),
+          owner);
+      ensureBooking(
+          instruments.get(9),
+          configurations.get(9),
+          firstOpenDayOnOrAfter(fixtureDate, BookingSchedulingSettings.from(configurations.get(9))),
+          18,
+          0,
+          19,
+          0,
+          message("bookingFixtures.purposes.crystalScreening"),
+          owner);
+      ensureBooking(
+          instruments.get(10),
+          configurations.get(10),
+          fixtureDate,
+          10,
+          15,
+          11,
+          30,
+          message("bookingFixtures.purposes.quarterHourNmr"),
+          owner);
+      ensureBooking(
+          instruments.get(11),
+          configurations.get(11),
+          fixtureDate.plusDays(2),
+          10,
+          0,
+          11,
+          0,
+          message("bookingFixtures.purposes.closedDayBooking"),
           owner);
 
       LocalDate busyCalendarWeekStart = fixtureDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
@@ -454,6 +607,23 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           11,
           0,
           message("bookingFixtures.purposes.bookingAlertsOverlap"),
+          sysadmin);
+
+      LocalDate maintenanceDate = fixtureDate.plusDays(3);
+      ensureEvent(
+          instruments.get(11),
+          configurations.get(11),
+          maintenanceDate.atTime(10, 0),
+          maintenanceDate.atTime(12, 0),
+          BookingEventKind.MAINTENANCE,
+          message("bookingFixtures.purposes.closedDayMaintenance"),
+          sysadmin);
+      // Reruns rely on findFirstOverlap skipping both events before createBooking rejects them.
+      ensureConfiguration(
+          instruments.get(11),
+          "Europe/Berlin",
+          closedDayFixtureSettings(
+              fixtureDate.plusDays(2).getDayOfWeek(), maintenanceDate.getDayOfWeek()),
           sysadmin);
     } finally {
       logout();
@@ -635,25 +805,84 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       int endMinute,
       String purpose,
       User owner) {
+    LocalTime startTime = LocalTime.of(startHour, startMinute);
+    LocalTime endTime = LocalTime.of(endHour, endMinute);
+    LocalDate endDate = endTime.isAfter(startTime) ? date : date.plusDays(1);
+    ensureEvent(
+        instrument,
+        configuration,
+        date.atTime(startTime),
+        endDate.atTime(endTime),
+        BookingEventKind.BOOKING,
+        purpose,
+        owner);
+  }
+
+  /** Creates one event between two wall-clock times in the item's time zone unless it exists. */
+  private void ensureEvent(
+      Instrument instrument,
+      BookingConfiguration configuration,
+      LocalDateTime localStart,
+      LocalDateTime localEnd,
+      BookingEventKind kind,
+      String purpose,
+      User owner) {
     if (!configuration.isEnabled()) {
       return;
     }
     ZoneId zone = ZoneId.of(configuration.getTimeZone());
-    LocalTime startTime = LocalTime.of(startHour, startMinute);
-    LocalTime endTime = LocalTime.of(endHour, endMinute);
-    Date start = Date.from(date.atTime(startTime).atZone(zone).toInstant());
-    LocalDate endDate = endTime.isAfter(startTime) ? date : date.plusDays(1);
-    Date end = Date.from(endDate.atTime(endTime).atZone(zone).toInstant());
+    Date start = Date.from(localStart.atZone(zone).toInstant());
+    Date end = Date.from(localEnd.atZone(zone).toInstant());
     if (start.before(new Date())) {
       // The alert fixture intentionally represents a past window. Booking services reject new
       // past events, so keep startup resilient and let the dev-only SQL seed provide past rows.
       log.info("Skipping past booking fixture {}", purpose);
       return;
     }
-    if (bookingDao.findFirstOverlap(configuration.getId(), start, end, null).isEmpty()) {
+    // A double-bookable item accepts overlapping bookings, so look for this exact booking instead.
+    boolean exists =
+        kind == BookingEventKind.BOOKING && configuration.isAllowDoubleBooking()
+            ? bookingDao
+                .findFutureConfirmedByConfiguration(configuration.getId(), new Date())
+                .stream()
+                .anyMatch(
+                    existing ->
+                        existing.getStartTime().getTime() == start.getTime()
+                            && existing.getEndTime().getTime() == end.getTime()
+                            && purpose.equals(existing.getPurpose()))
+            : bookingDao.findFirstOverlap(configuration.getId(), start, end, null).isPresent();
+    if (!exists) {
       bookingManager.createBooking(
-          new TimeSlotBookingManager.Create(target(instrument), start, end, purpose), owner, owner);
+          new TimeSlotBookingManager.Create(target(instrument), start, end, purpose, kind),
+          owner,
+          owner);
     }
+  }
+
+  /** Returns {@code date} when it is an open weekday, otherwise the next open date after it. */
+  static LocalDate firstOpenDayOnOrAfter(LocalDate date, BookingSchedulingSettings settings) {
+    for (int offset = 0; offset < 7; offset++) {
+      LocalDate candidate = date.plusDays(offset);
+      if (settings.effectiveHours(candidate.getDayOfWeek().getValue()).isPresent()) {
+        return candidate;
+      }
+    }
+    throw new IllegalArgumentException("Booking fixture settings have no open weekday");
+  }
+
+  /**
+   * Closes {@code closedDays} on the all-day closed-day incubator. Applied only after both of its
+   * events exist, so a booking and a maintenance event sit on days that are now closed.
+   */
+  static BookingSchedulingSettings.Patch closedDayFixtureSettings(DayOfWeek... closedDays) {
+    List<DayOfWeek> closed = List.of(closedDays);
+    List<Integer> openDays =
+        Arrays.stream(DayOfWeek.values())
+            .filter(day -> !closed.contains(day))
+            .map(DayOfWeek::getValue)
+            .toList();
+    return new BookingSchedulingSettings.Patch(
+        null, null, null, openDays, List.of(), null, null, null, null);
   }
 
   private static ResolvedBookableTarget target(Instrument instrument) {
