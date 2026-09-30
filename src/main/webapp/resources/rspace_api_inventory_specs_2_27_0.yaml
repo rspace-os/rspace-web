@@ -771,11 +771,14 @@ paths:
         /samples?ownedBy=user1a| Gets page of samples owned by user1a (assuming current user can see them)
 
         /samples?requestable=true| Gets page of all requestable samples on the instance, whoever owns them
+
+        /samples?requestable=true&query=buffer| Gets page of requestable samples whose name contains 'buffer'
       tags:
         - Samples
       parameters:
         - $ref: "#/components/parameters/ownedByParam"
         - $ref: "#/components/parameters/samplesRequestableParam"
+        - $ref: "#/components/parameters/samplesNameQueryParam"
         - $ref: "#/components/parameters/deletedItemsParam"
         - $ref: "#/components/parameters/pageNumberParam"
         - $ref: "#/components/parameters/pageSizeParam"
@@ -4020,6 +4023,14 @@ components:
           - creationDate asc
           - creationDate desc
         default: creationDate desc
+    samplesNameQueryParam:
+      name: query
+      in: query
+      description: >-
+        Limits results to samples whose name contains this text, ignoring case.
+        Matches the name only, unlike the full-text `query` of `/search`.
+      schema:
+        type: string
     samplesRequestableParam:
       name: requestable
       in: query

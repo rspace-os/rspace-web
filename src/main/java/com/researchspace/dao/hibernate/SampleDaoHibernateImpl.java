@@ -85,7 +85,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
     String ownedByAndPermittedItemsQueryFragment =
         unscopedRequestableSearch
-            ? ""
+            ? (unscopedOwnedBy ? "and owner.username=:ownedBy " : "")
             : getOwnedByAndPermittedItemsSqlQueryFragment(
                 ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
     String requestableQueryFragment =
