@@ -247,7 +247,7 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
         )}
         {record.landingPage && (
           <PreviewField label={t("pidinstImport.preview.landingPage")}>
-            <ExternalLink href={record.landingPage} />
+            <Address value={record.landingPage} />
           </PreviewField>
         )}
         {record.measurementTechniques.length > 0 && (

@@ -262,6 +262,23 @@ describe("PidinstImportDialog", () => {
     expect(within(calibration).queryByRole("link")).not.toBeInTheDocument();
   });
 
+  test("previews a landing page that is not a web address as text, not as a link", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({
+      searchReply: [200, { ...SEARCH_RESULT, hits: [{ ...HITS[0], landingPage: "www.example.org/lsm980" }, HITS[1]] }],
+    });
+    await renderOpenDialog();
+    await search(user, "microscope");
+
+    await user.click(radioFor("Confocal Microscope"));
+
+    const preview = screen.getByRole("region", { name: "inventory:pidinstImport.preview.title" });
+    const landingPage = previewValue(preview, "inventory:pidinstImport.preview.landingPage");
+    // without a scheme, the href would open a page of this RSpace
+    expect(landingPage).toHaveTextContent("www.example.org/lsm980");
+    expect(within(landingPage).queryByRole("link")).not.toBeInTheDocument();
+  });
+
   test("refuses to import without a selection", async () => {
     const user = userEvent.setup();
     await renderOpenDialog();
