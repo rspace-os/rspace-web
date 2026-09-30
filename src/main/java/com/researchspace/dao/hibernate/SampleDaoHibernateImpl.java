@@ -17,6 +17,7 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.hibernate.search.mapper.orm.Search;
@@ -56,7 +57,8 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       String ownedBy,
       InventorySearchDeletedOption deletedItemsOption,
       User user) {
-    return getSamplesForUser(pgCrit, parentTemplateId, ownedBy, deletedItemsOption, null, user);
+    return getSamplesForUser(
+        pgCrit, parentTemplateId, ownedBy, deletedItemsOption, null, null, user);
   }
 
   @Override
@@ -66,11 +68,13 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       String ownedBy,
       InventorySearchDeletedOption deletedItemsOption,
       Boolean requestable,
+      String query,
       User user) {
 
     // requestable=true is an instance-wide search: every requestable sample is returned
     // regardless of the requesting user's own ownership/group/sysadmin status, so the normal
-    // owner/permission-limiting fragment and its query parameters are skipped entirely.
+    // owner/permission-limiting fragment and its query parameters are skipped entirely. The name
+    // filter below is independent of that and still applies on top of it.
     boolean unscopedRequestableSearch = Boolean.TRUE.equals(requestable);
 
     // prepare owner and permission limiting query fragment
@@ -86,6 +90,8 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
                 ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
     String requestableQueryFragment =
         requestable == null ? "" : "and requestable=" + requestable + " ";
+    boolean limitByNameQuery = StringUtils.isNotBlank(query);
+    String nameQueryFragment = limitByNameQuery ? "and lower(editInfo.name) like :nameQuery " : "";
 
     // get the page of results
     if (pgCrit == null) {
@@ -119,10 +125,14 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
                     + connectSqlConditionsWithAnd(deletedFragment, " type(s) = Sample ")
                     + parentTemplateQueryFragment
                     + requestableQueryFragment
+                    + nameQueryFragment
                     + ownedByAndPermittedItemsQueryFragment,
                 Long.class);
     if (limitByParentTemplate) {
       countQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
+    }
+    if (limitByNameQuery) {
+      countQueryBase.setParameter("nameQuery", "%" + query.toLowerCase() + "%");
     }
     Query<Long> countQueryWithParams =
         unscopedRequestableSearch
@@ -151,6 +161,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
                     + connectSqlConditionsWithAnd(deletedFragment, " type(s) = Sample ")
                     + parentTemplateQueryFragment
                     + requestableQueryFragment
+                    + nameQueryFragment
                     + ownedByAndPermittedItemsQueryFragment
                     + orderByFragment,
                 Sample.class)
@@ -158,6 +169,9 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .setMaxResults(maxResult);
     if (limitByParentTemplate) {
       samplePageQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
+    }
+    if (limitByNameQuery) {
+      samplePageQueryBase.setParameter("nameQuery", "%" + query.toLowerCase() + "%");
     }
     Query<Sample> samplePageQueryWithParams =
         unscopedRequestableSearch

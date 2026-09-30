@@ -95,14 +95,17 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     String ownedBy = null;
     InventorySearchDeletedOption deletedItemsOption = null;
     Boolean requestable = null;
+    String query = null;
     if (srchConfig != null) {
       ownedBy = srchConfig.getOwnedBy();
       deletedItemsOption = srchConfig.getDeletedItemsAsEnum();
       requestable = srchConfig.getRequestable();
+      query = srchConfig.getQuery();
     }
 
     ApiSampleSearchResult apiSearchResult =
-        sampleApiMgr.getSamplesForUser(pgCrit, ownedBy, deletedItemsOption, requestable, user);
+        sampleApiMgr.getSamplesForUser(
+            pgCrit, ownedBy, deletedItemsOption, requestable, query, user);
     setLinksInInventoryRecordInfoList(apiSearchResult.getSamples());
     apiSearchResult.addNavigationLinks(getInventoryApiBaseURIBuilder(), apiPgCrit, srchConfig);
 

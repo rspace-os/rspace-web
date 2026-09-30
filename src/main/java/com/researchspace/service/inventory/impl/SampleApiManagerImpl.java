@@ -86,7 +86,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
       User user) {
-    return getSamplesForUser(pgCrit, ownedBy, deletedOption, null, user);
+    return getSamplesForUser(pgCrit, ownedBy, deletedOption, null, null, user);
   }
 
   @Override
@@ -95,10 +95,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
       Boolean requestable,
+      String query,
       User user) {
 
     ISearchResults<Sample> dbSamples =
-        sampleDao.getSamplesForUser(pgCrit, null, ownedBy, deletedOption, requestable, user);
+        sampleDao.getSamplesForUser(pgCrit, null, ownedBy, deletedOption, requestable, query, user);
     List<ApiSampleInfo> sampleInfos = new ArrayList<>();
     for (Sample sample : dbSamples.getResults()) {
       ApiSampleInfo apiSample = new ApiSampleInfo(sample);

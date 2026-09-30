@@ -273,7 +273,9 @@ export default class CoreFetcher {
     }
     this.endpoint = "search";
     if (!this.parentGlobalId) {
-      if (!this.query && this.resultType === "SAMPLE") {
+      // The samples endpoint also accepts a free-text query alongside `requestable`, unlike the
+      // other type-specific endpoints below, so a query doesn't rule it out once requestable is set.
+      if ((!this.query || this.requestable !== null) && this.resultType === "SAMPLE") {
         this.endpoint = "samples";
       }
       if (!this.query && this.resultType === "SUBSAMPLE") {

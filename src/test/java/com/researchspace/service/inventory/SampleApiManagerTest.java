@@ -810,7 +810,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // asserted to be exactly this one sample, as other requestable samples may pre-exist in the
     // database; the bypass of ownership/group scoping is what's under test here.
     ApiSampleSearchResult otherUserRequestableResult =
-        sampleApiMgr.getSamplesForUser(null, null, null, true, otherUser);
+        sampleApiMgr.getSamplesForUser(null, null, null, true, null, otherUser);
     List<Long> otherUserRequestableResultIds =
         otherUserRequestableResult.getSamples().stream()
             .map(ApiSampleInfo::getId)
@@ -886,6 +886,39 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         ApiInventoryRecordPermittedAction.CHANGE_OWNER,
         fullOtherUserSample.getPermittedActions().get(1));
+  }
+
+  @Test
+  public void requestableSearchCanBeNarrowedByNameQuery() {
+    User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    initialiseContentWithEmptyContent(otherUser);
+
+    String uniqueSampleName = getRandomAlphabeticString("requestableQueryTarget");
+    ApiSampleWithFullSubSamples testUserSample =
+        createBasicSampleForUser(testUser, uniqueSampleName);
+
+    ApiSample requestableUpdate = new ApiSample();
+    requestableUpdate.setId(testUserSample.getId());
+    requestableUpdate.setRequestable(true);
+    sampleApiMgr.updateApiSample(requestableUpdate, testUser);
+
+    // otherUser has no other access to testUser's sample, but the unscoped requestable search
+    // still finds it when the free-text query matches its name
+    ApiSampleSearchResult matchingResult =
+        sampleApiMgr.getSamplesForUser(null, null, null, true, uniqueSampleName, otherUser);
+    List<Long> matchingIds =
+        matchingResult.getSamples().stream().map(ApiSampleInfo::getId).collect(Collectors.toList());
+    assertTrue(matchingIds.contains(testUserSample.getId()));
+
+    // a query that doesn't match its name excludes it, even though it's still requestable
+    ApiSampleSearchResult nonMatchingResult =
+        sampleApiMgr.getSamplesForUser(
+            null, null, null, true, getRandomAlphabeticString("nonMatching"), otherUser);
+    List<Long> nonMatchingIds =
+        nonMatchingResult.getSamples().stream()
+            .map(ApiSampleInfo::getId)
+            .collect(Collectors.toList());
+    assertFalse(nonMatchingIds.contains(testUserSample.getId()));
   }
 
   @Test

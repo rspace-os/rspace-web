@@ -39,6 +39,10 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
+  async getSample(sampleId: number): Promise<ApiInventorySample> {
+    return this.requestJson("get", `/api/inventory/v1/samples/${sampleId}`, { action: "getInventorySample" });
+  }
+
   async getSampleVersions(sampleId: number): Promise<number[]> {
     const body = await this.requestJson<ApiInventorySampleRevisions>(
       "get",
