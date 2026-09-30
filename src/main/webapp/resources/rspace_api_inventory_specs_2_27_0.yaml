@@ -2585,7 +2585,8 @@ paths:
       description: >
         Creates a new sample from one origin, linked to it with an `IsDerivedFrom` field, and
         carries the passage number forward: the server reads the origin's sample's passage-number
-        field and stores that number plus one on the new sample.
+        field and stores the next number on the new sample. It starts at 1 when that field is
+        absent or blank, and refuses a value it cannot read as a whole number from 0 to 9999.
 
 
         This operation takes nothing from its origin. Do not send `amountTaken`; the origin's
@@ -2617,8 +2618,9 @@ paths:
             `count` is below 1, above 100 or not a whole number; an `amountTaken` was sent, which
             this operation does not accept; the origin is empty; `templateId` names a template
             the created sample does not conform to; or the parent sample is already at passage
-            9999, the highest supported (on `origin.globalId`). Each error names the field that
-            was sent.
+            9999, the highest supported, or its passage number is not a whole number from 0 to
+            9999, for example `5.5` or `abc` (both on `origin.globalId`). Each error names the
+            field that was sent.
           content:
             application/json:
               schema:
@@ -5470,7 +5472,9 @@ components:
           minimum: 1
           maximum: 100
           default: 1
-          description: Number of subsamples to create, sent as a whole number. Defaults to 1.
+          description: >
+            Number of subsamples to create, sent as a whole number. Defaults to 1. A numeric
+            string such as "2" is also accepted, and an empty string is treated as absent.
         eachAmount:
           $ref: "#/components/schemas/Quantity"
         templateId:
