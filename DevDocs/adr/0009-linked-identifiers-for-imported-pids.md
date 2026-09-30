@@ -232,7 +232,11 @@ and API field names were ported instead.
      answer. That only holds while every lookup behind the check answers false without throwing
      across a transactional manager: an ELN target once failed the import at commit that way,
      because the throw marked the import's transaction rollback-only even though it was caught. A
-     trashed item the user can still see is linked and shows as deleted, as by hand.
+     trashed Inventory item, document or Gallery file the user can still see is linked and shows as
+     deleted, as by hand; a trashed notebook cannot be linked by hand either, so it is skipped. The
+     CSV link import (RSDEV-1354) is deliberately more lenient and stores a link whatever state its
+     target is in, because a file imports all or nothing and one unreachable target would fail it;
+     this import can skip one entry and report it instead.
    - The link gets the field's own relation, `IsDocumentedBy` for Measurement technique and
      `IsCalibratedBy` for Calibration, both in the locked template's whitelist: the registry's
      `IsDescribedBy` is the constant ADR 0007 writes whatever the link stored, so it carries no

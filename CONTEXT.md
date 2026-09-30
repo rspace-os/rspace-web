@@ -260,8 +260,9 @@ resolved during design. This file is a glossary only — no implementation detai
   with the field's own relation (IsDocumentedBy for Measurement technique, IsCalibratedBy
   for Calibration, since the registry's IsDescribedBy is a constant that says nothing) and
   pinned to the same version the address names, if it names one; a trashed item the user
-  can still see is linked and shows as deleted, as by hand. Every other such entry is a
-  skipped entry. Nothing about a skipped entry is stored on the instrument (RSDEV-1528).
+  can still see is linked and shows as deleted, as by hand, except a trashed notebook, which
+  cannot be linked by hand either. Every other such entry is a skipped entry. Nothing about
+  a skipped entry is stored on the instrument (RSDEV-1528).
   _Avoid_: PIDINST import (the PID is imported, the instrument is created), instrument
   lookup (that is the search that precedes it), sync
 
