@@ -680,9 +680,11 @@ function AllBookableItemsContentForUser({
 
   const availabilityFilters: TableListFilterButtons = {
     legend: t("allBookableItems.quickFilters.legend"),
+    align: "end",
     controlsOnSeparateRow: true,
     controls: (
       <BookingDateControls
+        className="mr-auto"
         date={selectedDate}
         today={userToday}
         timeZone={preferences.timeZone}

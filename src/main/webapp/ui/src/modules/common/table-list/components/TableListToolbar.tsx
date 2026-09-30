@@ -190,10 +190,12 @@ export function TableListToolbar<TDocument>({
       ) : (
         <div className="flex-1" />
       )}
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
+      <div className={cn("flex min-w-0 flex-wrap items-center gap-2", filterButtons?.align === "end" && "justify-end")}>
         {filterButtons?.controls}
         {filterButtons && !quickFiltersInMenu ? (
-          <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
+          <fieldset
+            className={cn("flex min-w-0 flex-wrap items-center gap-2", filterButtons.align === "end" && "justify-end")}
+          >
             <legend className="sr-only">{filterButtons.legend}</legend>
             {filterButtons.buttons.map((button) => (
               <FilterButton key={button.id} button={button} />
