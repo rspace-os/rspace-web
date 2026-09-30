@@ -513,7 +513,7 @@ public class UserDaoTest extends BaseDaoTestCase {
     assertTrue(byQuotedName.getResults().contains(quotedName));
 
     // an injection payload matches nothing rather than widening the query
-    sc.setAllFields("x' or '1'='1");
+    sc.setAllFields("' or '1'='1");
     ISearchResults<User> byPayload = userDao.listUsersInCommunity(comm.getId(), pgCrit);
     assertEquals(0, byPayload.getTotalHits().intValue());
     assertTrue(byPayload.getResults().isEmpty());
