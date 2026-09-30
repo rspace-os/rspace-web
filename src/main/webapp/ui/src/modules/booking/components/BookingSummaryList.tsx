@@ -7,7 +7,6 @@ import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
-import { cn } from "@/modules/common/utils/cn";
 
 const PAGE_SIZE = 5;
 
@@ -53,13 +52,11 @@ export function BookingSummaryList({
   bookings,
   timeZone,
   showActor = false,
-  className,
 }: {
   bookings: readonly BookingListDocument[];
   timeZone: string;
   /** Names who booked each booking, for a list that mixes several people's bookings. */
   showActor?: boolean;
-  className?: string;
 }) {
   const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
@@ -79,7 +76,7 @@ export function BookingSummaryList({
 
   return (
     <>
-      <ul className={cn("space-y-1", className)}>
+      <ul className="space-y-1">
         {visibleBookings.map((booking) => {
           const itemName = booking.target?.value.name ?? t("calendar.feed.unknownItem");
           const period = formatAgendaPeriod(booking.start, booking.end, timeZone, undefined, timeFormat);

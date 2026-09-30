@@ -106,7 +106,7 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
             })}
           </PopoverDescription>
         </div>
-        <BookingSummaryList bookings={bookings} timeZone={timeZone} className="min-h-[15.5rem]" />
+        <BookingSummaryList bookings={bookings} timeZone={timeZone} />
       </PopoverContent>
     </Popover>
   );
