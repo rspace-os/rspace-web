@@ -170,16 +170,14 @@ export const Interactive: Story = {
     expect(await canvas.findByRole("button", { name: /Show details for Confocal microscope/ })).toBeVisible();
     await chooseView("Month");
     expect(canvas.getByRole("button", { name: "View: Time grid · Month" })).toBeVisible();
-    await chooseView("Resources");
-    expect(canvas.getByRole("region", { name: "Resources" })).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "View: Resources · Week" }));
+    await chooseView("By Item");
+    expect(canvas.getByRole("region", { name: "By Item" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "View: By Item · Week" }));
     expect(await body.findByRole("menuitemradio", { name: "Month" })).toHaveAttribute("aria-disabled", "true");
     await userEvent.click(body.getByRole("menuitemradio", { name: "Day" }));
     await closePopup();
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(3);
-    await userEvent.click(canvas.getByRole("button", { name: /^Filters(?:$|,)/ }));
-    await userEvent.click(await body.findByRole("switch", { name: "My Bookings" }));
-    await closePopup();
+    await userEvent.click(canvas.getByRole("button", { name: "My Bookings" }));
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(2);
     expect(canvas.getByRole("button", { name: "Remove My Bookings filter" })).toBeVisible();
   },

@@ -1,6 +1,6 @@
 import { type Locator, page, userEvent } from "vitest/browser";
 
-type CalendarViewOption = "Time grid" | "Resources" | "Agenda" | "Day" | "Week" | "Month";
+type CalendarViewOption = "Time grid" | "By Item" | "Agenda" | "Day" | "Week" | "Month";
 
 export class CalendarPage {
   readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Electron microscope" });
@@ -38,20 +38,17 @@ export class CalendarPage {
   }
 
   quickFilter(name: "My Bookings" | "Owned Items"): Locator {
-    return page.getByRole("switch", { name });
+    return this.toolbar.getByRole("button", { name, exact: true });
   }
 
-  /** Turns a quick filter on or off in the Filters popover, then closes it. */
+  /** Turns a quick filter on or off using its toolbar button. */
   async toggleQuickFilter(name: "My Bookings" | "Owned Items"): Promise<void> {
-    await this.filters.click();
     await this.quickFilter(name).click();
-    await userEvent.keyboard("{Escape}");
   }
 
-  /** Opens the filter panel through the Filters popover. */
+  /** Opens the advanced filter panel directly from the toolbar. */
   async openFilterPanel(): Promise<void> {
     await this.filters.click();
-    await page.getByRole("button", { name: "Edit filters" }).click();
   }
 
   event(itemName: string): Locator {

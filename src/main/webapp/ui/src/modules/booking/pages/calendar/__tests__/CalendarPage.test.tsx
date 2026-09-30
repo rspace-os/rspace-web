@@ -35,12 +35,9 @@ async function chooseView(user: User, option: string) {
   await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
 }
 
-/** Turns a quick filter on or off in the Filters popover, then closes it. */
+/** Turns a quick filter on or off using its toolbar button. */
 async function toggleQuickFilter(user: User, name: string) {
-  await user.click(await screen.findByRole("button", { name: /^Filters(?:$|,)/ }));
-  await user.click(await screen.findByRole("switch", { name }));
-  await user.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryByRole("switch", { name })).not.toBeInTheDocument());
+  await user.click(await screen.findByRole("button", { name }));
 }
 
 function catalogueItem(item: (typeof bookableItemFixtures)[number], overrides: Record<string, unknown> = {}) {
@@ -121,7 +118,7 @@ describe("CalendarPage", () => {
     await renderCalendar();
 
     expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "View: Resources · Day" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "View: By Item · Day" })).toBeVisible();
     expect(await screen.findByText("Mass spectrometer")).toBeVisible();
     expect(screen.queryByText("No records found")).not.toBeInTheDocument();
   });
@@ -142,7 +139,7 @@ describe("CalendarPage", () => {
     expect(new URLSearchParams(window.location.search).get("view")).toBe("week");
   });
 
-  it("opens the week when a link asks for Month in Resources", async () => {
+  it("opens the week when a link asks for Month in By Item", async () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
@@ -151,7 +148,7 @@ describe("CalendarPage", () => {
 
     await renderCalendarAt("/booking/calendar?view=month");
 
-    expect(await screen.findByRole("button", { name: "View: Resources · Week" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "View: By Item · Week" })).toBeVisible();
   });
 
   it("hides item filter controls and keeps Calendar controls available", async () => {
@@ -160,16 +157,17 @@ describe("CalendarPage", () => {
     expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
     expect(screen.queryByRole("button", { name: /^Bookable items(?:,|$)/ })).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Search Calendar" })).toBeVisible();
-    for (const name of ["Jump to date", "View: Resources · Day"]) {
+    for (const name of ["Jump to date", "View: By Item · Day"]) {
       expect(screen.getByRole("button", { name })).toBeVisible();
     }
 
-    await user.click(screen.getByRole("button", { name: /^Filters(?:$|,)/ }));
-    expect(await screen.findByRole("switch", { name: "My Bookings" })).toHaveAccessibleDescription("Bookings you made");
-    expect(screen.getByRole("switch", { name: "Owned Items" })).toHaveAccessibleDescription(
+    expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAccessibleDescription("Bookings you made");
+    expect(screen.getByRole("button", { name: "Owned Items" })).toHaveAccessibleDescription(
       "Bookings on items you own",
     );
-    expect(screen.getByRole("button", { name: "Edit filters" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /^Filters(?:$|,)/ }));
+    expect(await screen.findByRole("button", { name: "Add filter" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /^Filters(?:$|,)/ })).toHaveAttribute("aria-expanded", "true");
   });
 
   it("shows quick filters that are on as removable chips", async () => {
@@ -178,11 +176,13 @@ describe("CalendarPage", () => {
     await screen.findByRole("region", { name: "Resource booking schedule" });
 
     await toggleQuickFilter(user, "My Bookings");
-    expect(screen.getByRole("button", { name: "Filters, 1 applied" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Filters, none applied" })).toBeVisible();
     const remove = screen.getByRole("button", { name: "Remove My Bookings filter" });
 
     await user.click(remove);
     expect(screen.queryByRole("button", { name: "Remove My Bookings filter" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAttribute("aria-pressed", "false");
     // The chip unmounts with its button, so focus moves to the Filters control rather than the page.
     expect(screen.getByRole("button", { name: "Filters, none applied" })).toHaveFocus();
   });
@@ -260,14 +260,15 @@ describe("CalendarPage", () => {
     expect(within(chip).queryByText("Loading", { exact: true })).not.toBeInTheDocument();
   });
 
-  it("explains why Month is unavailable in the Resources layout", async () => {
+  it("explains why Month is unavailable in the By Item layout", async () => {
     const user = userEvent.setup();
     await renderCalendar();
-    await user.click(await screen.findByRole("button", { name: "View: Resources · Day" }));
+    await user.click(await screen.findByRole("button", { name: "View: By Item · Day" }));
     const month = await screen.findByRole("menuitemradio", { name: "Month" });
     expect(month).toHaveAttribute("aria-disabled", "true");
+    expect(within(month).getByText("Not available in the By Item view")).toBeVisible();
     expect(month).toHaveAccessibleDescription(
-      "Month isn't available in Resources. Use Time grid or Agenda for a month overview.",
+      "Month isn't available in the By Item view. Use Time grid or Agenda for a month overview.",
     );
 
     await user.click(screen.getByRole("menuitemradio", { name: "Agenda" }));
@@ -319,7 +320,7 @@ describe("CalendarPage", () => {
     expect(screen.getByTestId("day-timeline-canvas")).toHaveAttribute("data-creation-disabled", "true");
   });
 
-  it("shades a closed weekday for read-only viewers in the Resources and Time grid day views", async () => {
+  it("shades a closed weekday for read-only viewers in the By Item and Time grid day views", async () => {
     const item = bookableItemFixtures[0];
     server.use(
       oauthTokenHandler(true),
@@ -739,7 +740,7 @@ describe("CalendarPage", () => {
     await user.type(screen.getByRole("textbox", { name: "Search Calendar" }), "Mass");
 
     expect(screen.getByRole("button", { name: "Jump to date" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "View: Resources · Day" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "View: By Item · Day" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
     await waitFor(() => expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument());
     expect(await screen.findByText("Mass spectrometer")).toBeVisible();
