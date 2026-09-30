@@ -907,7 +907,18 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setTransferDialogOpen(false)}>{t("common:actions.cancel")}</Button>
-          <Button variant="contained" disabled={transferRecipient === null} onClick={submitTransfer}>
+          <Button
+            variant="contained"
+            disabled={transferRecipient === null}
+            onClick={submitTransfer}
+            sx={{
+              backgroundColor: darken(theme.palette.primary.main, 0.5),
+              color: "white",
+              "&:hover": {
+                backgroundColor: darken(theme.palette.primary.main, 0.55),
+              },
+            }}
+          >
             {t("common:actions.transfer")}
           </Button>
         </DialogActions>

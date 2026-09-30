@@ -13,7 +13,7 @@ import { tags } from "@/__tests__/e2e/tags";
 import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN } from "@/__tests__/e2e/users";
 
-const PROPERTY = "sampleRequests.available";
+const PROPERTY = "inventory.sampleRequests.available";
 const PASSWORD = "Passw0rd!23";
 const openContexts = new Set<Awaited<ReturnType<Browser["newContext"]>>>();
 // Every requestable=true sample is visible to every other user's instance-wide Requestable
@@ -26,14 +26,21 @@ type Actor = { username: string; password: string };
 type InventoryActor = Actor & { client: InventoryClient };
 
 test.afterEach(async () => {
+  // Closing a context doesn't trigger any "cancel edit" flow in the app, so a session that was
+  // still mid-edit (e.g. because an earlier step in the test failed) leaves its edit lock held
+  // server-side rather than releasing it - which would otherwise 422 the rename below with
+  // "currently edited by another user". The lock owner can always release their own lock
+  // (InventoryEditLocksController), and releasing is a no-op, not an error, if there was none, so
+  // it's safe to always attempt this first.
   await Promise.all([...openContexts].map((context) => context.close()));
   openContexts.clear();
   await Promise.all(
-    createdRequestableSamples.splice(0).map(({ client, id }) =>
-      client.renameSample(id, { requestable: false }).catch((error: unknown) => {
+    createdRequestableSamples.splice(0).map(async ({ client, id }) => {
+      await client.releaseEditLock(`SA${id}`).catch(() => {});
+      await client.renameSample(id, { requestable: false }).catch((error: unknown) => {
         console.error(`Failed to clear requestable flag for sample ${id} during teardown`, error);
-      }),
-    ),
+      });
+    }),
   );
 });
 
@@ -101,9 +108,10 @@ async function newSession(browser: Browser, browserContextOptions: BrowserContex
 
 /**
  * Marks a sample requestable via the UI, then verifies via the API that it actually took effect.
- * findRequestableSample has intermittently reported the backend genuinely returning zero hits for
- * a sample that was just marked requestable moments earlier - this confirms outright whether the
- * save itself persisted, rather than leaving that as an open question every time the search fails.
+ * A now-fixed bug (RSDEV-1309: InventoryBaseRecord.fetchAdditionalInfo could resolve after the
+ * user had already started editing, silently reverting fields to their pre-edit values) meant
+ * this could appear to succeed in the UI without actually persisting - verify outright rather than
+ * assume.
  */
 async function markSampleRequestable(
   browser: Browser,
@@ -111,31 +119,13 @@ async function markSampleRequestable(
   actor: InventoryActor & { sample: { id: number; name: string } },
 ): Promise<void> {
   const session = await newSession(browser, browserContextOptions, actor);
-
-  // A previous failure showed the PUT genuinely reaching the server (lastModified moved) but
-  // `requestable` still coming back false, with no clear cause yet - capture the actual request
-  // body so a repeat carries proof of whether the frontend ever sent `requestable: true` at all,
-  // rather than requiring another round trip of speculation.
-  let lastSamplePutBody: string | null = null;
-  const captureRequest = (req: import("@playwright/test").Request) => {
-    const url = new URL(req.url());
-    if (url.pathname === `/api/inventory/v1/samples/${actor.sample.id}` && req.method() === "PUT") {
-      lastSamplePutBody = req.postData();
-    }
-  };
-  session.page.on("request", captureRequest);
   try {
     await session.inventoryPage.openRecord("SAMPLE", actor.sample.name);
     await session.inventoryPage.detailsPanel.enterEditMode();
     await session.inventoryPage.detailsPanel.requestableSwitch().check();
-    // A previous failure showed the saved sample coming back not-requestable despite this check()
-    // having already succeeded - re-verify immediately before Save so a repeat distinguishes "the
-    // switch reverted before Save was clicked" (a UI/model bug reverting the in-progress edit) from
-    // "the switch was still checked, but Save still sent false anyway" (a deeper save-path bug).
     await expect(session.inventoryPage.detailsPanel.requestableSwitch()).toBeChecked();
     await session.inventoryPage.detailsPanel.saveEdit();
   } finally {
-    session.page.off("request", captureRequest);
     await session.close();
   }
 
@@ -143,8 +133,7 @@ async function markSampleRequestable(
   if (saved.requestable !== true) {
     throw new Error(
       `Sample ${actor.sample.id} (${actor.sample.name}) is not requestable via the API immediately ` +
-        `after saving it as requestable via the UI. PUT body sent: ${lastSamplePutBody}. ` +
-        `Sample as returned by the API: ${JSON.stringify(saved)}`,
+        "after saving it as requestable via the UI.",
     );
   }
 }
@@ -152,60 +141,23 @@ async function markSampleRequestable(
 /** Search Requestable Samples for one sample, by name, and open it. */
 async function findRequestableSample(page: Page, inventoryPage: InventoryPage, sampleName: string): Promise<void> {
   await inventoryPage.openSearch("SAMPLE");
+  // Select the filter once, outside the retry loop: MUI's Menu has an open/close transition, and
+  // re-opening and re-closing it on every retry attempt (with no pause between attempts) risks
+  // never letting that transition settle, which can leave its backdrop intercepting clicks on
+  // unrelated elements indefinitely.
+  await inventoryPage.searchPanel.filterChip("Requestable").click({ timeout: 15_000 });
+  await page.getByRole("menuitem", { name: "Requestable only", exact: true }).click({ timeout: 15_000 });
   // Requestable is an instance-wide search across every requestable sample any test in this suite
   // has ever created, so without narrowing by name the row could be paginated arbitrarily deep in
   // that backlog, or past the backend's results cap entirely - narrow by name like any other
   // search. Wait on the results-loaded signal rather than a network response matching this exact
   // query: the fetcher retries an empty exact match with a trailing wildcard internally before
   // resolving, so matching the *first* (possibly still-empty) response resolves before that retry
-  // has actually happened. Re-selecting "Requestable only" on every retry is a harmless no-op once
-  // it's already selected (the UI only re-triggers a fetch on an actual value change), so wrapping
-  // the whole sequence also covers the initial filter selection flaking.
-  //
-  // This has intermittently still failed with "Row not found and no further pages remain" despite
-  // the narrowing, with no clear repro. Rather than guess at another theory blindly, capture the
-  // backend's own last response here so a genuine failure carries hard evidence (total hit count,
-  // whether the sample was actually in the payload) instead of just a DOM-level symptom.
-  let lastSamplesSummary: unknown = null;
-  const captureResponse = (res: import("@playwright/test").Response) => {
-    const url = new URL(res.url());
-    if (url.pathname.endsWith("/api/inventory/v1/samples") && res.request().method() === "GET") {
-      res
-        .json()
-        .then((body: { totalHits?: number; samples?: Array<{ name?: string }> }) => {
-          lastSamplesSummary = {
-            query: url.searchParams.get("query"),
-            requestable: url.searchParams.get("requestable"),
-            totalHits: body.totalHits,
-            returnedNames: (body.samples ?? []).map((s) => s.name),
-          };
-        })
-        .catch(() => {});
-    }
-  };
-  page.on("response", captureResponse);
-  try {
-    // Select the filter once, outside the retry loop: MUI's Menu has an open/close transition,
-    // and re-opening and re-closing it on every retry attempt (with no pause between attempts)
-    // risks never letting that transition settle, which can leave its backdrop intercepting clicks
-    // on unrelated elements indefinitely - exactly the "waiting for element to be visible, enabled
-    // and stable" hang seen once against the search submit button, which ran out the clock on the
-    // whole test rather than this function's own bounded retry.
-    await inventoryPage.searchPanel.filterChip("Requestable").click({ timeout: 15_000 });
-    await page.getByRole("menuitem", { name: "Requestable only", exact: true }).click({ timeout: 15_000 });
-    await expect(async () => {
-      await inventoryPage.searchPanel.searchAndWaitForLoad(sampleName);
-      await inventoryPage.searchPanel.open(sampleName);
-    }).toPass({ timeout: 60_000 });
-  } catch (error) {
-    throw new Error(
-      `findRequestableSample("${sampleName}") failed. Last /samples response summary: ` +
-        `${JSON.stringify(lastSamplesSummary)}`,
-      { cause: error },
-    );
-  } finally {
-    page.off("response", captureResponse);
-  }
+  // has actually happened.
+  await expect(async () => {
+    await inventoryPage.searchPanel.searchAndWaitForLoad(sampleName);
+    await inventoryPage.searchPanel.open(sampleName);
+  }).toPass({ timeout: 60_000 });
 }
 
 test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
@@ -232,7 +184,7 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await systemConfig.open();
       const originalValue = (await systemConfig.getSetting(PROPERTY)).trim() as SystemPropertyValue;
       try {
-        await test.step("Given sampleRequests.available starts Denied", async () => {
+        await test.step("Given inventory.sampleRequests.available starts Denied", async () => {
           await systemConfig.setSetting(PROPERTY, "DENIED");
         });
 
@@ -245,7 +197,7 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
           await expect(inventoryPage.detailsPanel.requestableSwitch()).toBeHidden();
         });
 
-        await test.step("When a sysadmin sets sampleRequests.available to Allowed via System Settings", async () => {
+        await test.step("When a sysadmin sets inventory.sampleRequests.available to Allowed via System Settings", async () => {
           await systemConfig.open();
           await systemConfig.setSetting(PROPERTY, "ALLOWED");
         });
@@ -813,7 +765,7 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await session.requestsPage.openRequest(carolRequestId);
       await expect(session.requestsPage.statusChip("Rejected")).toBeVisible();
       const reason = session.requestsPage.detailField("Additional notes");
-      await expect(reason).toContainText("cancelled as a result of the sample being transferred");
+      await expect(reason).toContainText("rejected because the sample was transferred");
       await expect(reason).toContainText("Bob Requests");
       await session.close();
     });

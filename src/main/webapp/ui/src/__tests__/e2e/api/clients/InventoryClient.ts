@@ -43,6 +43,17 @@ export class InventoryClient extends BaseApiClient {
     return this.requestJson("get", `/api/inventory/v1/samples/${sampleId}`, { action: "getInventorySample" });
   }
 
+  /**
+   * Releases an edit lock on an item, if one is held. The lock owner can always release their own
+   * lock (see InventoryEditLocksController), and it's a no-op, not an error, if there is none -
+   * safe to call defensively before an update that might otherwise 422 with "currently edited".
+   */
+  async releaseEditLock(globalId: string): Promise<void> {
+    return this.requestVoid("delete", `/api/inventory/v1/editLocks/${globalId}`, {
+      action: "releaseInventoryEditLock",
+    });
+  }
+
   async getSampleVersions(sampleId: number): Promise<number[]> {
     const body = await this.requestJson<ApiInventorySampleRevisions>(
       "get",

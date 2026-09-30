@@ -1360,7 +1360,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     List<Long> found =
         sampleApiMgr
-            .getSamplesForUser(null, alice.getUsername(), null, true, testUser)
+            .getSamplesForUser(null, alice.getUsername(), null, true, null, testUser)
             .getSamples()
             .stream()
             .map(ApiSampleInfo::getId)
@@ -1403,7 +1403,8 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     markRequestable(sample, testUser);
     setSampleRequestsAvailable(HierarchicalPermission.DENIED);
 
-    ApiSampleSearchResult found = sampleApiMgr.getSamplesForUser(null, null, null, true, testUser);
+    ApiSampleSearchResult found =
+        sampleApiMgr.getSamplesForUser(null, null, null, true, null, testUser);
     assertEquals(0, found.getTotalHits().intValue());
     assertTrue(found.getSamples().isEmpty());
   }

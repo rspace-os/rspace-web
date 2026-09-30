@@ -3,19 +3,21 @@ import { test as sysadminSessionTest } from "@/__tests__/e2e/fixtures/flows/sess
 import type { SystemPropertyValue } from "@/__tests__/e2e/pageObjects/system/SystemConfigPage";
 
 type SampleRequestsFixtures = {
-  /** Ensures sampleRequests.available is ALLOWED for the test's duration, restoring it after. */
+  /** Ensures inventory.sampleRequests.available is ALLOWED for the test's duration, restoring it after. */
   flowSampleRequestsAvailable: undefined;
 };
 
 export const test = sysadminSessionTest.extend<SampleRequestsFixtures>({
   flowSampleRequestsAvailable: async ({ flowSysadminConfig }, use) => {
     env.assertGlobalMutationsAllowed("flowSampleRequestsAvailable");
-    const original = (await flowSysadminConfig.getSetting("sampleRequests.available")).trim() as SystemPropertyValue;
+    const original = (
+      await flowSysadminConfig.getSetting("inventory.sampleRequests.available")
+    ).trim() as SystemPropertyValue;
     try {
-      await flowSysadminConfig.ensureSetting("sampleRequests.available", "ALLOWED");
+      await flowSysadminConfig.ensureSetting("inventory.sampleRequests.available", "ALLOWED");
       await use(undefined);
     } finally {
-      await flowSysadminConfig.ensureSetting("sampleRequests.available", original);
+      await flowSysadminConfig.ensureSetting("inventory.sampleRequests.available", original);
     }
   },
 });
