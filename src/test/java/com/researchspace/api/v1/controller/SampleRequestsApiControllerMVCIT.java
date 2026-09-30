@@ -8,12 +8,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
+import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyName;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -260,6 +262,69 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(
         1L,
         listRequests(ownerApiKey, owner, "OWNER", "PENDING,APPROVED").getTotalHits().longValue());
+  }
+
+  @Test
+  public void listingSortsByCreationDateOnly() throws Exception {
+    User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
+    User requester = createAndSaveUser(getRandomName(10));
+    initUsers(owner, requester);
+    createGroupForUsersWithDefaultPi(owner, requester);
+
+    String requesterApiKey = createNewApiKeyForUser(requester);
+    sysPropMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
+
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    markRequestable(sample, owner);
+    Long first = raiseRequest(requesterApiKey, requester, sample, "first");
+    Long second = raiseRequest(requesterApiKey, requester, sample, "second");
+
+    assertEquals(List.of(second, first), listedIds(requesterApiKey, requester, null));
+    assertEquals(
+        List.of(second, first), listedIds(requesterApiKey, requester, "creationDate desc"));
+    assertEquals(List.of(first, second), listedIds(requesterApiKey, requester, "creationDate asc"));
+
+    // requests have no name, type or modification date to sort by
+    this.mockMvc
+        .perform(
+            createBuilderForInventoryGet(
+                    API_VERSION.ONE, requesterApiKey, "/sampleRequests", requester)
+                .param("orderBy", "name asc"))
+        .andExpect(status().isBadRequest());
+  }
+
+  private Long raiseRequest(
+      String apiKey, User requester, ApiSampleWithFullSubSamples sample, String note)
+      throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryPostWithJSONBody(
+                    apiKey,
+                    "/sampleRequests",
+                    requester,
+                    Map.of("sampleGlobalId", sample.getGlobalId(), "note", note)))
+            .andReturn();
+    return mvcUtils.getFromJsonResponseBody(result, ApiSampleRequest.class).getId();
+  }
+
+  private List<Long> listedIds(String apiKey, User user, String orderBy) throws Exception {
+    MockHttpServletRequestBuilder request =
+        createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/sampleRequests", user);
+    if (orderBy != null) {
+      request = request.param("orderBy", orderBy);
+    }
+    MvcResult result = this.mockMvc.perform(request).andReturn();
+    assertNull(result.getResolvedException());
+    return mvcUtils
+        .getFromJsonResponseBody(result, ApiSampleRequestSearchResult.class)
+        .getRequests()
+        .stream()
+        .map(ApiSampleRequestInfo::getId)
+        .toList();
   }
 
   private ApiSampleRequestSearchResult listRequests(

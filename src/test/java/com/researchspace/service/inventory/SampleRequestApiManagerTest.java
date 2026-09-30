@@ -58,12 +58,12 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(requester, owner);
     createGroupForUsers(requester, requester.getUsername(), "", requester, owner);
 
-    sample = createBasicSampleForUser(owner);
-    markRequestable(sample);
     systemPropertyMgr.save(
         SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
         HierarchicalPermission.ALLOWED,
         getSysAdminUser());
+    sample = createBasicSampleForUser(owner);
+    markRequestable(sample);
   }
 
   @AfterEach

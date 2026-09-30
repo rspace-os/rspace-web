@@ -66,6 +66,8 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
                 user)
             .uniqueResult();
 
+    // creation date is the only sort key the API accepts
+    String dir = pgCrit.getSortOrder().toString();
     List<SampleRequest> page =
         bind(
                 sessionFactory
@@ -73,7 +75,10 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
                     .createQuery(
                         "from SampleRequest req"
                             + where
-                            + " order by req.created desc, req.id desc",
+                            + " order by req.created "
+                            + dir
+                            + ", req.id "
+                            + dir,
                         SampleRequest.class),
                 hasStatusFilter ? statuses : null,
                 sampleId,

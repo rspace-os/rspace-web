@@ -4,7 +4,7 @@
  */
 package com.researchspace.api.v1;
 
-import com.researchspace.api.v1.controller.InventoryApiPaginationCriteria;
+import com.researchspace.api.v1.controller.SampleRequestApiPaginationCriteria;
 import com.researchspace.api.v1.controller.SampleRequestApiSearchConfig;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
@@ -31,7 +31,7 @@ public interface SampleRequestsApi {
    */
   @GetMapping
   ApiSampleRequestSearchResult getRequestsForUser(
-      @Valid InventoryApiPaginationCriteria pgCrit,
+      @Valid SampleRequestApiPaginationCriteria pgCrit,
       @Valid SampleRequestApiSearchConfig searchConfig,
       BindingResult errors,
       User user)
