@@ -720,6 +720,23 @@ class PidinstLookupManagerImplTest {
         result.getSkippedRelatedIdentifiers());
   }
 
+  /** Our own host is never named as another server; host names ignore case. */
+  @Test
+  void anEntryOnThisServersHostThatIsNotAnItemPageIsSkippedWithoutAHost() {
+    String ownPage = "https://RSpace.Example.com/public/inventory/abc";
+    when(b2instConnector.getRecordByHandle(HANDLE))
+        .thenReturn(Optional.of(publishedRecordWith(entry("Calibration", ownPage))));
+    stubImportCollaborators();
+
+    ApiInstrument result = manager.importInstrument(HANDLE, null, user);
+
+    assertEquals(
+        List.of(
+            new ApiPidinstSkippedRelatedIdentifier(
+                "Calibration", Reason.OTHER_SERVER, ownPage, null)),
+        result.getSkippedRelatedIdentifiers());
+  }
+
   /** An installation fault reaches the user as a translated sentence, not developer detail. */
   @Test
   void aMissingLockedTemplateRefusesTheImportWithATranslatedMessage() {

@@ -20,7 +20,10 @@ public class ApiPidinstSkippedRelatedIdentifier {
 
   /** Why the entry was not imported. */
   public enum Reason {
-    /** The address is not this deployment's own item page: another RSpace, or not an RSpace. */
+    /**
+     * The address is not this deployment's own item page: another RSpace's, one that is not an
+     * RSpace at all, or another page of this deployment.
+     */
     OTHER_SERVER,
     /**
      * The address is this deployment's, but the item cannot be linked by the importing user:
@@ -40,7 +43,10 @@ public class ApiPidinstSkippedRelatedIdentifier {
   @JsonProperty("address")
   private String address;
 
-  /** The address's host, for {@link Reason#OTHER_SERVER} only; absent when the address has none. */
+  /**
+   * The address's host, for {@link Reason#OTHER_SERVER} only; absent when the address has none or
+   * it is this deployment's own host, which is no other server.
+   */
   @JsonProperty("host")
   private String host;
 }

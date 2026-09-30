@@ -4387,18 +4387,20 @@ components:
           type: string
           enum: [OTHER_SERVER, NOT_AVAILABLE]
           description: >
-            `OTHER_SERVER`: the address is not this deployment's own item page (another RSpace, or
-            not an RSpace at all). `NOT_AVAILABLE`: the address is this deployment's, but the item
-            cannot be linked by the importing user. That one reason covers an item they cannot see,
-            an item that does not exist and a kind of item links cannot target alike, so an import
-            never reveals whether an item exists.
+            `OTHER_SERVER`: the address is not this deployment's own item page (another RSpace's,
+            one that is not an RSpace at all, or another page of this deployment). `NOT_AVAILABLE`:
+            the address is this deployment's, but the item cannot be linked by the importing user.
+            That one reason covers an item they cannot see, an item that does not exist and a kind
+            of item links cannot target alike, so an import never reveals whether an item exists.
         address:
           type: string
           description: The entry's address as the registry holds it.
           example: https://other.researchspace.com/globalId/SA32768
         host:
           type: string
-          description: The address's host, for `OTHER_SERVER` only; absent when the address has none.
+          description: >
+            The address's host, for `OTHER_SERVER` only; absent when the address has none or when it
+            is this deployment's own host.
           example: other.researchspace.com
     PidinstRecord:
       description: >

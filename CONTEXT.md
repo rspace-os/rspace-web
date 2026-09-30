@@ -278,11 +278,13 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Skipped entry** — a related identifier the import read but could not turn into a link,
   reported to the user in a warning at import time that stays until dismissed, and to an API
   caller alongside the created instrument: the field it was for, why, and its address. There
-  are only two reasons. Either the address points at another server, named by its host,
-  whether that server is another RSpace or not at all an RSpace; or it points at this RSpace
-  but the item is not available to the importing user, which is the one wording for an item
-  they cannot see, an item that does not exist and a kind of item links cannot name, so an
-  import never reveals whether an item exists (the principle of ADR 0002). A server whose
+  are only two reasons. Either the address is not an item's page in this RSpace, worded as
+  another server named by its host, whether that server is another RSpace or not at all an
+  RSpace, or, when the address has no host or is on this RSpace's own host, as not the
+  address of an item in this RSpace; or it points at this RSpace but the item is not
+  available to the importing user, which is the one wording for an item they cannot see, an
+  item that does not exist and a kind of item links cannot name, so an import never reveals
+  whether an item exists (the principle of ADR 0002). A server whose
   address has changed since it registered the PID is not recognised as this one; its own
   entries are skipped as another server's.
   _Avoid_: dropped entry, lost link, failed link, unresolved identifier

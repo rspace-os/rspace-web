@@ -553,7 +553,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     if (globalId.isEmpty()) {
       rejected.add(
           new ApiPidinstSkippedRelatedIdentifier(
-              target.fieldName(), Reason.OTHER_SERVER, address, hostOf(address)));
+              target.fieldName(), Reason.OTHER_SERVER, address, otherHostOf(address)));
       return Optional.empty();
     }
     ApiInventoryLink link = new ApiInventoryLink();
@@ -570,10 +570,23 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     return Optional.of(link);
   }
 
-  /** The address's host for the warning, or null when it has none (a bare DOI, or not a URL). */
-  private static String hostOf(String address) {
+  /**
+   * The address's host for the warning, or null when it has none (a bare DOI, or not a URL) or it
+   * is this RSpace's own host, which the warning must not call another server.
+   */
+  private String otherHostOf(String address) {
+    String host = hostOf(address);
+    return host != null && host.equalsIgnoreCase(hostOf(properties.getServerUrl())) ? null : host;
+  }
+
+  /** The value's host, or null when it has none. */
+  private static String hostOf(String value) {
+    String trimmed = StringUtils.trimToNull(value);
+    if (trimmed == null) {
+      return null;
+    }
     try {
-      return URI.create(address).getHost();
+      return URI.create(trimmed).getHost();
     } catch (IllegalArgumentException notAUri) {
       return null;
     }

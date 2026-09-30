@@ -239,12 +239,14 @@ and API field names were ported instead.
      information. A version suffix in the address (`SA32768v3`) is passed through unchanged, so
      the new link pins the version the registered address named.
    - Every other entry with one of the two labels is a **skipped entry** (CONTEXT.md), with one
-     of two reasons: `OTHER_SERVER`, carrying the address's host, or `NOT_AVAILABLE` for an address
-     of this RSpace whose item the user cannot link. The second is one reason for an item that is
-     unreadable, missing, or of a kind links cannot target, so the import never confirms that an
-     item exists (ADR 0002). The first is deliberately "other server", not "other RSpace": a
-     registrar that reuses our labels with a manual's URL or a DOI is reported truthfully, and an
-     address with no host at all is reported as not an address in this RSpace.
+     of two reasons: `OTHER_SERVER`, carrying the address's host unless that host is this RSpace's
+     own, or `NOT_AVAILABLE` for an address of this RSpace whose item the user cannot link. The
+     second is one reason for an item that is unreadable, missing, or of a kind links cannot
+     target, so the import never confirms that an item exists (ADR 0002). The first is deliberately
+     "other server", not "other RSpace": a registrar that reuses our labels with a manual's URL or a
+     DOI is reported truthfully. An address with no host at all, or on this RSpace's own host but
+     not an item's page, is reported as not the address of an item in this RSpace, never as another
+     server (Nico, 2026-09-30).
    - The skipped entries travel on the created Instrument (`skippedRelatedIdentifiers`, serialised
      only when non-empty and set only by the import endpoint), so an API caller gets the same list
      with the same reasons. The dialog keeps its success toast and adds a second, persistent
