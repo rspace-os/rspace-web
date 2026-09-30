@@ -143,10 +143,16 @@ function BookingMutationTrigger() {
   );
 }
 
-async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17", extra?: ReactNode) {
+const sysadmin = { id: 1, hasSysAdminRole: true, session: { operatedAs: false } };
+
+async function renderPage(
+  initialEntry = "/booking/all-items?date=2026-08-17",
+  extra?: ReactNode,
+  currentUser: object = { id: 1 },
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
-  queryClient.setQueryData(currentUserQueryKeys.me(), { id: 1 });
+  queryClient.setQueryData(currentUserQueryKeys.me(), currentUser);
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
   const router = createRouter({
@@ -312,6 +318,92 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(updateBody).toEqual({ configurationIds: [7, 8], enabled: true }));
     expect(await screen.findByText("Subscribed to 2 instruments.")).toBeVisible();
     expect(screen.queryByRole("columnheader", { name: "My notifications" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the selection across pages and archives rows from both pages in one request", async () => {
+    const user = userEvent.setup();
+    const archiveRequests: string[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        const page = Number(new URL(request.url).searchParams.get("page"));
+        return HttpResponse.json({
+          ...candidatePage([bookableItemFixtures[page === 2 ? 1 : 0]]),
+          page,
+          pageSize: 20,
+          total: 40,
+        });
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      http.delete("/api/v2/booking-configurations", ({ request }) => {
+        archiveRequests.push(new URL(request.url).searchParams.get("where") ?? "");
+        return new HttpResponse(null, { status: 204 });
+      }),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    await renderPage(undefined, undefined, sysadmin);
+
+    await user.click((await screen.findAllByRole("checkbox", { name: "Select Confocal microscope" }))[0]);
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    await user.click((await screen.findAllByRole("checkbox", { name: "Select Electron microscope" }))[0]);
+    const selectionBar = screen.getByRole("region", { name: "Selected rows actions" });
+    expect(within(selectionBar).getByText("2 rows selected")).toBeVisible();
+    // Every listed item is already enabled, so only the changes that can apply are offered.
+    expect(within(selectionBar).getByRole("button", { name: "Disable" })).toBeVisible();
+    expect(within(selectionBar).queryByRole("button", { name: "Enable" })).not.toBeInTheDocument();
+
+    await user.click(within(selectionBar).getByRole("button", { name: "Archive selected" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Archive 2 booking configurations?" });
+    await user.click(within(dialog).getByRole("button", { name: "Archive" }));
+
+    await waitFor(() => expect(archiveRequests).toEqual(["id=in=(7,8)"]));
+    await waitFor(() =>
+      expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
+    );
+  });
+
+  it("offers a regular user the lifecycle actions their role allows, without sysadmin bulk changes", async () => {
+    const user = userEvent.setup();
+    const archiveRequests: Array<{ url: string; ifMatch: string | null }> = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-catalogue", () =>
+        HttpResponse.json(
+          candidatePage([bookableItemFixtures[0], { ...bookableItemFixtures[1], ...bookerBookingAccess }]),
+        ),
+      ),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      http.delete("/api/v2/booking-configurations/7", ({ request }) => {
+        archiveRequests.push({ url: request.url, ifMatch: request.headers.get("If-Match") });
+        return new HttpResponse(null, { status: 204 });
+      }),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    await renderPage();
+
+    await user.click((await screen.findAllByRole("checkbox", { name: "Select Confocal microscope" }))[0]);
+    const selectionBar = screen.getByRole("region", { name: "Selected rows actions" });
+    expect(within(selectionBar).getByRole("button", { name: "Subscribe" })).toBeVisible();
+    expect(within(selectionBar).queryByRole("button", { name: "Disable" })).not.toBeInTheDocument();
+    expect(within(selectionBar).queryByRole("button", { name: "Archive selected" })).not.toBeInTheDocument();
+    // A booker cannot change the item, so its row has no lifecycle menu.
+    expect(screen.queryByRole("button", { name: "Actions for Electron microscope" })).not.toBeInTheDocument();
+
+    await user.click(screen.getAllByRole("button", { name: "Actions for Confocal microscope" })[0]);
+    expect(screen.queryByRole("menuitem", { name: "Delete permanently" })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("menuitem", { name: "Archive" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Archive booking configuration?" });
+    await user.click(within(dialog).getByRole("button", { name: "Archive" }));
+
+    await waitFor(() => expect(archiveRequests).toHaveLength(1));
+    expect(archiveRequests[0]).toEqual({
+      url: expect.stringMatching(/\/api\/v2\/booking-configurations\/7$/),
+      ifMatch: '"0"',
+    });
+    // The archived row leaves the selection with the list.
+    await waitFor(() =>
+      expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
+    );
   });
 
   it("combines Owned Items with the table request and the counts request", async () => {

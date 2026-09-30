@@ -68,7 +68,10 @@ controls email only. No delivery-status summary is displayed.
 Both radio controls use the shared `RenderFields` select
 field with `form.widget: "radio"`. The existing `select` and `card` widgets remain available.
 All bookable items uses the production table's row selection for bulk subscribe/unsubscribe;
-it does not contain a notification switch on each row.
+it does not contain a notification switch on each row. The selection survives paging, so rows
+from several pages act together; a date, filter or reset change clears it. The same selection
+offers a direct sysadmin Administration's bulk Disable and Archive (not Enable, since the list
+holds only enabled items), and each row offers the Administration lifecycle menu its role allows.
 
 All readable instruments offer the same personal controls. There is no access-level or
 notification column, per-row toggle, or access-lost panel.

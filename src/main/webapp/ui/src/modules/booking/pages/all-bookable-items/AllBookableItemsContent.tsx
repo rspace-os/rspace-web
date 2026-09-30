@@ -9,7 +9,7 @@ import {
   PlusIcon,
   SettingsIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
 import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
@@ -46,7 +46,18 @@ import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { cn } from "@/modules/common/utils/cn";
+import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
+import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
+import {
+  archiveBookingConfiguration,
+  mutateBookableItems,
+  permanentlyDeleteBookingConfiguration,
+} from "../bookable-items/BookableItemsContent";
+import { BookingConfigurationActionsMenu } from "../bookable-items/BookingConfigurationActionsMenu";
+import { calendarSubscriptionQueryKey } from "../bookable-items/bookableItemCalendarSubscription";
+import type { BookableItemsBulkAction } from "../bookable-items/bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
+import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import {
   type AllBookableItem,
@@ -195,13 +206,21 @@ export function AllBookableItemsContent({
   userTimeZone: _legacyUserTimeZone,
 }: AllBookableItemsContentProps = {}) {
   const { data: currentUser } = useCurrentUserQuery();
-  return <AllBookableItemsContentForUser key={currentUser.id} subjectId={currentUser.id} clock={clock} />;
+  return (
+    <AllBookableItemsContentForUser
+      key={currentUser.id}
+      subjectId={currentUser.id}
+      directSysadmin={currentUser.hasSysAdminRole && !currentUser.session.operatedAs}
+      clock={clock}
+    />
+  );
 }
 
 function AllBookableItemsContentForUser({
   clock = currentDate,
   subjectId,
-}: AllBookableItemsContentProps & { subjectId: number }) {
+  directSysadmin,
+}: AllBookableItemsContentProps & { subjectId: number; directSysadmin: boolean }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   // Add disappears once the caller is known to have no instrument to set up, so it offers no dead
@@ -231,7 +250,7 @@ function AllBookableItemsContentForUser({
   const navigate = useNavigate({ from: "/booking/all-items" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
-  const [selectedNotificationIds, setSelectedNotificationIds] = useState<ReadonlySet<string>>(new Set());
+  const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [notificationFeedback, setNotificationFeedback] = useState<{ enabled: boolean; count: number }>();
   const runtimeSelectors = useMemo(() => (where ? rsqlSelectors(where) : []), [where]);
   const runtimeFieldState = useApiV2RuntimeFields<AllBookableItem>({
@@ -361,11 +380,40 @@ function AllBookableItemsContentForUser({
       updateBookingNotificationSubscriptions(configurationIds, enabled, token),
     onMutate: () => setNotificationFeedback(undefined),
     onSuccess: async (subscriptions, variables) => {
-      setSelectedNotificationIds(new Set());
+      setSelectedRowIds(new Set());
       setNotificationFeedback({ enabled: variables.enabled, count: subscriptions.length });
       await queryClient.invalidateQueries({ queryKey: bookingNotificationSubscriptionsQueryKey.all(subjectId) });
     },
   });
+  // A disabled, archived or deleted item leaves this list, so it also leaves the selection.
+  const onLifecycleChanged = useCallback(
+    async (configurationIds: readonly number[], permanent = false) => {
+      setSelectedRowIds((current) => {
+        const next = new Set(current);
+        for (const id of configurationIds) next.delete(String(id));
+        return next;
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+        ...configurationIds.map((id) => queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(id) })),
+        // A permanently deleted item's instrument becomes an eligible target again.
+        ...(permanent
+          ? [queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] })]
+          : []),
+      ]);
+    },
+    [queryClient],
+  );
+  const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
+  const bulkMutation = useMutation({
+    mutationFn: ({ action, rowIds }: { action: BookableItemsBulkAction; rowIds: readonly string[] }) =>
+      mutateBookableItems(action, rowIds, token),
+    onMutate: () => setFailedBulkAction(null),
+    onSuccess: (_data, { rowIds }) => onLifecycleChanged(rowIds.map(Number)),
+    onError: (_error, { action }) => setFailedBulkAction(action),
+  });
+  const selectionPending = notificationSubscriptionMutation.isPending || bulkMutation.isPending;
   const availabilityRows = rows.flatMap((row) => {
     if (!row.target) return [];
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
@@ -377,7 +425,7 @@ function AllBookableItemsContentForUser({
   const availability = useCalendarAvailability(availabilityRows, rowsBounds, token, subjectId);
 
   const setDate = (nextDate: string) => {
-    setSelectedNotificationIds(new Set());
+    setSelectedRowIds(new Set());
     const remaining = withAvailability(filters.expression, undefined);
     void navigate({
       search: (current) => ({
@@ -392,7 +440,7 @@ function AllBookableItemsContentForUser({
     });
   };
   const resetView = () => {
-    setSelectedNotificationIds(new Set());
+    setSelectedRowIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -414,7 +462,7 @@ function AllBookableItemsContentForUser({
     if (nextSearch === q && nextWhere === where && !target && !routeAvailability && page === 1) {
       return;
     }
-    setSelectedNotificationIds(new Set());
+    setSelectedRowIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -429,7 +477,7 @@ function AllBookableItemsContentForUser({
     });
   };
   const removeRestoredViewIssue = () => {
-    setSelectedNotificationIds(new Set());
+    setSelectedRowIds(new Set());
     void navigate({
       search: (current) => ({ ...current, where: undefined, page: undefined }),
       replace: true,
@@ -477,7 +525,7 @@ function AllBookableItemsContentForUser({
         onChange: (nextPage) => {
           const nextPageNumber = nextPage.pageSize === pageSize ? nextPage.pageIndex + 1 : 1;
           if (nextPageNumber === page && nextPage.pageSize === pageSize) return;
-          setSelectedNotificationIds(new Set());
+          // Selection survives paging, as in Administration, so rows from several pages act together.
           void navigate({
             search: (current) => ({
               ...current,
@@ -490,22 +538,38 @@ function AllBookableItemsContentForUser({
       },
     },
     selection: {
-      value: selectedNotificationIds,
-      onChange: setSelectedNotificationIds,
-      disabled: notificationSubscriptionMutation.isPending,
+      value: selectedRowIds,
+      onChange: (value) => {
+        setSelectedRowIds(value);
+        setFailedBulkAction(null);
+      },
+      disabled: selectionPending,
       maximumCount: 100,
       getRowLabel: (row) => row.target?.value.name ?? commonT("values.unknownItem"),
       renderActions: (selection) => {
         const selectedConfigurationIds = [...selection.selectedRowIds].map(Number);
         return (
-          <BookingNotificationBulkActions
-            selection={selection}
-            selectedConfigurationIds={selectedConfigurationIds}
-            pending={notificationSubscriptionMutation.isPending}
-            onAction={(configurationIds, enabled) =>
-              notificationSubscriptionMutation.mutateAsync({ configurationIds, enabled })
-            }
-          />
+          <>
+            <BookingNotificationBulkActions
+              selection={selection}
+              selectedConfigurationIds={selectedConfigurationIds}
+              pending={notificationSubscriptionMutation.isPending}
+              onAction={(configurationIds, enabled) =>
+                notificationSubscriptionMutation.mutateAsync({ configurationIds, enabled })
+              }
+            />
+            {/* The server allows these bulk changes to sysadmins only, as in Administration. */}
+            {directSysadmin ? (
+              <BookableItemsBulkActions
+                selection={selection}
+                disabled={selectionPending}
+                activeAction={bulkMutation.isPending ? (bulkMutation.variables?.action ?? null) : null}
+                failedAction={failedBulkAction}
+                offerEnable={false}
+                onAction={(action, rowIds) => bulkMutation.mutateAsync({ action, rowIds: [...rowIds] })}
+              />
+            ) : null}
+          </>
         );
       },
     },
@@ -515,14 +579,14 @@ function AllBookableItemsContentForUser({
     () => ({
       id: "actions",
       label: t("allBookableItems.fields.actions"),
-      width: 176,
-      minWidth: 120,
-      renderCell: ({ row }) => {
+      width: 224,
+      minWidth: 176,
+      renderCell: ({ row, activate }) => {
         if (!row.target) return null;
         const detailsLabel = t("allBookableItems.actions.viewDetails");
         const bookLabel = t("allBookableItems.actions.book");
         return (
-          <div className="flex gap-1">
+          <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -582,12 +646,36 @@ function AllBookableItemsContentForUser({
                 </TooltipContent>
               </Tooltip>
             ) : null}
+            {/* The Administration lifecycle actions; listed items are always active, so never Restore. */}
+            <BookingConfigurationActionsMenu
+              configuration={row}
+              itemName={row.target.value.name}
+              directSysadmin={directSysadmin}
+              // The neighbouring links render borderless at 40 px.
+              triggerClassName="min-h-10 min-w-10 border-transparent"
+              onAction={activate}
+            />
           </div>
         );
       },
-      renderInteraction: () => null,
+      renderInteraction: ({ actionId, row, close }) =>
+        actionId === "archive" ? (
+          <ArchiveBookableItemDialog
+            configuration={row}
+            close={close}
+            onArchive={(id, version) => archiveBookingConfiguration(id, version, token)}
+            onArchived={(id) => onLifecycleChanged([id])}
+          />
+        ) : actionId === "permanent-delete" ? (
+          <PermanentDeleteBookableItemDialog
+            configuration={row}
+            close={close}
+            onDelete={(id, version) => permanentlyDeleteBookingConfiguration(id, version, token)}
+            onDeleted={() => onLifecycleChanged([row.id], true)}
+          />
+        ) : null,
     }),
-    [rowsDate, t],
+    [directSysadmin, onLifecycleChanged, rowsDate, t, token],
   );
 
   const availabilityFilters: TableListFilterButtons = {
@@ -617,7 +705,7 @@ function AllBookableItemsContentForUser({
         icon: <PackageCheckIcon aria-hidden="true" />,
         pressed: mine,
         onClick: () => {
-          setSelectedNotificationIds(new Set());
+          setSelectedRowIds(new Set());
           void navigate({
             search: (current) => ({ ...current, mine: mine ? undefined : true, page: undefined }),
             replace: true,
