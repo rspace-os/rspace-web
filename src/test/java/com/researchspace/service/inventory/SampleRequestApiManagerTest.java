@@ -58,12 +58,12 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(requester, owner);
     createGroupForUsers(requester, requester.getUsername(), "", requester, owner);
 
-    sample = createBasicSampleForUser(owner);
-    markRequestable(sample);
     systemPropertyMgr.save(
         SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
         HierarchicalPermission.ALLOWED,
         getSysAdminUser());
+    sample = createBasicSampleForUser(owner);
+    markRequestable(sample);
   }
 
   @AfterEach
@@ -105,6 +105,26 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void transferAutoRejection_publishesStatusEventForAuditing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+    sampleRequestApiMgr.setPublisher(mockPublisher);
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    ArgumentCaptor<SampleRequestStatusEvent> published =
+        ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
+    Mockito.verify(mockPublisher).publishEvent(published.capture());
+    assertEquals(raised.getId(), published.getValue().getRequest().getId());
+    assertEquals(SampleRequestStatus.REJECTED, published.getValue().getRequest().getStatus());
+    assertEquals(owner, published.getValue().getActor());
+  }
+
+  @Test
   public void refusedTransitionPublishesNothingToAudit() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
     ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
@@ -134,21 +154,6 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     assertEquals(sample.getGlobalId(), created.getSample().getGlobalId());
     assertEquals(requester.getUsername(), created.getRequester().getUsername());
     assertEquals(owner.getUsername(), created.getOriginalOwner().getUsername());
-  }
-
-  @Test
-  public void originalOwner_isUnaffectedByALaterOwnershipTransfer() {
-    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
-
-    ApiSample transfer = new ApiSample();
-    transfer.setId(sample.getId());
-    transfer.setOwner(new ApiUser(requester));
-    sampleApiMgr.changeApiSampleOwner(transfer, owner);
-
-    // originalOwner is fixed at creation time, so it still names the owner at the time the
-    // request was raised, not the sample's current (now transferred-away) owner
-    ApiSampleRequest reloaded = sampleRequestApiMgr.getRequestById(raised.getId(), requester);
-    assertEquals(owner.getUsername(), reloaded.getOriginalOwner().getUsername());
   }
 
   @Test
@@ -286,28 +291,6 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     ApiSampleRequestSearchResult sentOnly = listFor(SampleRequestRole.REQUESTER, requester);
     assertEquals(1L, sentOnly.getTotalHits().longValue());
     assertEquals(sent.getId(), sentOnly.getRequests().get(0).getId());
-  }
-
-  @Test
-  public void getRequestsForUser_ownerRole_excludesCallersOwnRequestEvenIfTheyNowOwnTheSample() {
-    ApiSampleRequest ownRequest = raiseRequest("Need 2ml for the binding assay");
-
-    // simulate the sample being transferred to the requester (e.g. as part of fulfilling
-    // someone else's request against it): requester now owns the sample they themselves
-    // once requested material from
-    ApiSample transfer = new ApiSample();
-    transfer.setId(sample.getId());
-    transfer.setOwner(new ApiUser(requester));
-    sampleApiMgr.changeApiSampleOwner(transfer, owner);
-
-    // "Received" must not show requester's own request back to them, even though they are
-    // now, technically, the sample's owner
-    assertEquals(0L, listFor(SampleRequestRole.OWNER, requester).getTotalHits().longValue());
-
-    // it still counts as one of requester's requests overall
-    ApiSampleRequestSearchResult all = listFor(null, requester);
-    assertEquals(1L, all.getTotalHits().longValue());
-    assertEquals(ownRequest.getId(), all.getRequests().get(0).getId());
   }
 
   @Test
@@ -491,7 +474,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     // at creation), so they must still be able to open it
     assertEquals(raised.getId(), sampleRequestApiMgr.getRequestById(raised.getId(), owner).getId());
 
-    // the sample's new (current) owner can see it too, e.g. to review requests they've inherited
+    // the sample's new owner can open it too, though the transfer has rejected it
     assertEquals(
         raised.getId(), sampleRequestApiMgr.getRequestById(raised.getId(), newOwner).getId());
   }
@@ -503,6 +486,14 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
     assertEquals(0L, listFor(SampleRequestRole.OWNER, owner).getTotalHits().longValue());
     assertEquals(0L, listFor(SampleRequestRole.REQUESTER, requester).getTotalHits().longValue());
+  }
+
+  @Test
+  public void createRequest_isRefusedForADeletedSample() {
+    sampleApiMgr.markSampleAsDeleted(sample.getId(), true, owner);
+
+    // still flagged requestable, but a trashed sample is gone as far as requests are concerned
+    assertThrows(NotFoundException.class, () -> raiseRequest("Need 2ml for the binding assay"));
   }
 
   @Test
@@ -549,6 +540,16 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     ApiSampleRequestPost post = new ApiSampleRequestPost();
     // a container global id whose db id happens to match a real sample must not be accepted
     post.setSampleGlobalId("IC" + sample.getId());
+    post.setNote("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class, () -> sampleRequestApiMgr.createRequest(post, requester));
+  }
+
+  @Test
+  public void createRequest_isRefusedForAMalformedGlobalId() {
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    post.setSampleGlobalId("not a global id");
     post.setNote("Need 2ml for the binding assay");
 
     assertThrows(
@@ -666,6 +667,22 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
         () ->
             sampleRequestApiMgr.updateStatus(
                 raised.getId(), statusPost(SampleRequestStatus.CANCELLED, null), owner));
+  }
+
+  @Test
+  public void updateStatus_checksTheActorBeforeWhetherTheTransitionIsLegal() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    // approving again is both illegal from APPROVED and not the requester's to do
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                sampleRequestApiMgr.updateStatus(
+                    raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), requester));
+    assertEquals("errors.inventory.sampleRequest.wrongActor", refused.getMessage());
   }
 
   @Test

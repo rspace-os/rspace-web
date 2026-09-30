@@ -119,7 +119,9 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
     .map((user) => request != null && user.id === request.sample.owner.id)
     .orElse(false);
-  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+  const sampleRequestsAvailable = FetchingData.getSuccessValue(
+    useDeploymentProperty("inventory.sampleRequests.available"),
+  )
     .flatMap(Parsers.isString)
     .map((value) => value === "ALLOWED")
     .orElse(false);

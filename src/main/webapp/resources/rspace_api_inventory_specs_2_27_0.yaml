@@ -769,10 +769,13 @@ paths:
         /samples?pageSize=10| Gets first 10 samples
 
         /samples?ownedBy=user1a| Gets page of samples owned by user1a (assuming current user can see them)
+
+        /samples?requestable=true| Gets page of all requestable samples on the instance, whoever owns them
       tags:
         - Samples
       parameters:
         - $ref: "#/components/parameters/ownedByParam"
+        - $ref: "#/components/parameters/samplesRequestableParam"
         - $ref: "#/components/parameters/deletedItemsParam"
         - $ref: "#/components/parameters/pageNumberParam"
         - $ref: "#/components/parameters/pageSizeParam"
@@ -1231,11 +1234,12 @@ paths:
         - $ref: "#/components/parameters/sampleRequestSampleIdParam"
         - $ref: "#/components/parameters/pageNumberParam"
         - $ref: "#/components/parameters/pageSizeParam"
+        - $ref: "#/components/parameters/sampleRequestOrderByParam"
       responses:
         "200":
           description: >-
-            A list of SampleRequest summaries, always newest first. Ordering is
-            not configurable on this endpoint. These do not carry the
+            A list of SampleRequest summaries, newest first unless `orderBy`
+            says otherwise. These do not carry the
             `statusChanges` history; fetch a single request to get it. Each
             summary carries `requester` and `originalOwner` as user objects.
     post:
@@ -1244,7 +1248,7 @@ paths:
         Raises a request against a requestable Sample. The new request is always
         created in PENDING state; changing that state is a separate operation.
 
-        Requires the `sampleRequests.available` system property to be enabled, and
+        Requires the `inventory.sampleRequests.available` system property to be enabled, and
         the sample to be marked `requestable` by its owner. Read access to the
         sample is not required: marking a sample requestable is the owner's opt-in 
         to being asked by anyone, and requestable samples are discoverable 
@@ -4006,6 +4010,28 @@ components:
             - REJECTED
             - FULFILLED
             - CANCELLED
+    sampleRequestOrderByParam:
+      name: orderBy
+      in: query
+      description: Sort order for sample requests, by the date each was raised.
+      schema:
+        type: string
+        enum:
+          - creationDate asc
+          - creationDate desc
+        default: creationDate desc
+    samplesRequestableParam:
+      name: requestable
+      in: query
+      description: >-
+        Limits results to samples with this `requestable` value. When true, the
+        search covers every requestable sample on the instance, regardless of
+        the current user's permissions, ownership or group membership; samples
+        the user cannot otherwise read are returned in their public view. While
+        sample requests are not enabled for the current user, `true` returns no
+        samples.
+      schema:
+        type: boolean
     sampleRequestSampleIdParam:
       name: sampleId
       in: query
@@ -4391,6 +4417,16 @@ components:
             template:
               type: boolean
               description: Flag descirbing whether this sample is a template
+              example: false
+            requestable:
+              type: boolean
+              description: >-
+                Whether other users may request material from this sample. Always
+                false on a new sample: it can only be set by updating an existing
+                sample, and only by its owner; a change sent by anyone else is
+                ignored. Turning it on is refused with 422 while sample requests
+                are not enabled for the owner; turning it off is always allowed.
+                Visible in every view of the sample, including the public view.
               example: false
             revisionId:
               type: number

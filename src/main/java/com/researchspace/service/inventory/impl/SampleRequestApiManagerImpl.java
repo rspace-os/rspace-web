@@ -127,16 +127,20 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user) {
-    assertSampleRequestsEnabled(user);
-    // locked, so two concurrent transitions serialise and the second sees the committed status
+    // locked, so two concurrent transitions serialise and the second sees the committed status.
+    // It must be the transaction's first read: with innodb_snapshot_isolation (on by default from
+    // MariaDB 11.6), locking a row changed since an earlier read fails instead of waiting for it.
     SampleRequest request = sampleRequestDao.getForUpdate(id);
+    assertSampleRequestsEnabled(user);
     if (request == null) {
       throw requestNotFound(id);
     }
     assertUserIsPartyToRequest(request, user);
 
-    Transition transition = transitionTo(request.getStatus(), post.getStatus());
-    assertPermittedActor(request, user, transition);
+    List<Transition> toTarget = transitionsTo(post.getStatus());
+    // every transition to one target shares its actor, so who may act is checked first
+    assertPermittedActor(request, user, toTarget.get(0).actor());
+    Transition transition = legalFrom(toTarget, request.getStatus());
     String reason = validatedReason(post, transition);
     Sample transferredSample = resolveTransferredSample(post.getTransferredSample(), user);
 
@@ -146,9 +150,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     return toDetail(saved, user);
   }
 
-  private void assertPermittedActor(SampleRequest request, User user, Transition transition) {
+  private void assertPermittedActor(SampleRequest request, User user, Actor actor) {
     String permitted =
-        Actor.OWNER.equals(transition.actor())
+        Actor.OWNER.equals(actor)
             ? request.getSample().getOwner().getUsername()
             : request.getRequesterUsername();
     if (!user.getUsername().equals(permitted)) {
@@ -156,25 +160,26 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     }
   }
 
-  /**
-   * Some target statuses (e.g. FULFILLED) are reachable from more than one current status, so the
-   * legal transition depends on both. A target with no transitions at all is never settable; a
-   * target with transitions but none matching the current status is an illegal transition from here
-   * specifically.
-   */
-  private Transition transitionTo(SampleRequestStatus currentStatus, SampleRequestStatus target) {
-    List<Transition> toTarget =
-        TRANSITIONS.stream().filter(t -> t.to().equals(target)).collect(Collectors.toList());
+  /** Every transition to the target; a target with none is never settable. */
+  private List<Transition> transitionsTo(SampleRequestStatus target) {
+    List<Transition> toTarget = TRANSITIONS.stream().filter(t -> t.to().equals(target)).toList();
     if (toTarget.isEmpty()) {
       throw new ApiRuntimeException("errors.inventory.sampleRequest.statusNotSettable", target);
     }
+    return toTarget;
+  }
+
+  /** A target may be reachable from several statuses, e.g. FULFILLED from PENDING or APPROVED. */
+  private Transition legalFrom(List<Transition> toTarget, SampleRequestStatus current) {
     return toTarget.stream()
-        .filter(t -> t.from().equals(currentStatus))
+        .filter(t -> t.from().equals(current))
         .findFirst()
         .orElseThrow(
             () ->
                 new ApiRuntimeException(
-                    "errors.inventory.sampleRequest.illegalTransition", currentStatus, target));
+                    "errors.inventory.sampleRequest.illegalTransition",
+                    current,
+                    toTarget.get(0).to()));
   }
 
   private String validatedReason(ApiSampleRequestStatusPut post, Transition transition) {
@@ -238,18 +243,20 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /**
-   * Loads the requested sample, rejecting a global id that is well formed but does not name a
-   * sample. Read permission is not required: marking a sample requestable is the owner's opt-in to
-   * being asked by anyone, and the requestable search is instance-wide, so requestable is the gate
-   * rather than readability.
+   * Loads the requested sample, rejecting a global id that is malformed or names something other
+   * than a sample, and treating a sample in the trash as not found. Read permission is not
+   * required: marking a sample requestable is the owner's opt-in to being asked by anyone, and the
+   * requestable search is instance-wide, so requestable is the gate rather than readability.
    */
   private Sample readRequestedSample(String sampleGlobalId) {
-    GlobalIdentifier oid = new GlobalIdentifier(sampleGlobalId);
-    if (!GlobalIdPrefix.SA.equals(oid.getPrefix())) {
-      throw new ApiRuntimeException("errors.inventory.globalId.unsupportedType", oid.getIdString());
+    GlobalIdentifier oid =
+        GlobalIdentifier.isValid(sampleGlobalId) ? new GlobalIdentifier(sampleGlobalId) : null;
+    if (oid == null || !GlobalIdPrefix.SA.equals(oid.getPrefix())) {
+      throw new ApiRuntimeException("errors.inventory.globalId.unsupportedType", sampleGlobalId);
     }
     return sampleDao
         .getSafeNull(oid.getDbId())
+        .filter(sample -> !sample.isDeleted())
         .orElseThrow(
             () ->
                 new NotFoundException(
@@ -281,9 +288,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /**
-   * The requester, the sample's current owner (who may have inherited the request via a transfer),
-   * and its original owner (whose "Received" listing keeps showing it under originalOwner even once
-   * the sample has since moved on) may see a request.
+   * The requester, the sample's current owner, and whoever owned it when the request was raised may
+   * see a request.
    */
   private void assertUserIsPartyToRequest(SampleRequest request, User user) {
     if (!user.getUsername().equals(request.getRequesterUsername())

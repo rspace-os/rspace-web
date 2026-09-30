@@ -74,7 +74,9 @@ function SearchParameterControls(): React.ReactNode {
   const [tagsDropdown, setTagsDropdown] = useState<HTMLElement | null>(null);
   const [requestableDropdown, setRequestableDropdown] = useState<HTMLElement | null>(null);
 
-  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+  const sampleRequestsAvailable = FetchingData.getSuccessValue(
+    useDeploymentProperty("inventory.sampleRequests.available"),
+  )
     .flatMap(Parser.isString)
     .map((value) => value === "ALLOWED")
     .orElse(false);

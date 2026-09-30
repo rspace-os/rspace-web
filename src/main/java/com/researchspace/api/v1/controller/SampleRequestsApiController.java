@@ -26,7 +26,7 @@ public class SampleRequestsApiController extends BaseApiInventoryController
 
   @Override
   public ApiSampleRequestSearchResult getRequestsForUser(
-      @Valid InventoryApiPaginationCriteria apiPgCrit,
+      @Valid SampleRequestApiPaginationCriteria apiPgCrit,
       @Valid SampleRequestApiSearchConfig srchConfig,
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
@@ -34,7 +34,7 @@ public class SampleRequestsApiController extends BaseApiInventoryController
 
     throwBindExceptionIfErrors(errors);
     if (apiPgCrit == null) {
-      apiPgCrit = new InventoryApiPaginationCriteria();
+      apiPgCrit = new SampleRequestApiPaginationCriteria();
     }
     if (srchConfig == null) {
       srchConfig = new SampleRequestApiSearchConfig();

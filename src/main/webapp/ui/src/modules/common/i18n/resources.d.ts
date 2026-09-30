@@ -7225,7 +7225,7 @@ export default interface Resources {
         "label": "List of materials"
       },
       "sampleRequest": {
-        "autoRejectedReason": "This request has been cancelled as a result of the sample being transferred to user {0}. If you still need this sample make another request for the new owner to action."
+        "autoRejectedReason": "This request was rejected because the sample was transferred to {0}. If you still need it, make a new request to the new owner."
       }
     }
   },

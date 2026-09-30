@@ -43,6 +43,8 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -79,6 +81,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   // Lazy: SampleRequestApiManagerImpl depends back on SampleApiManager, so eager injection here
   // would form a cycle at context startup.
   @Autowired @Lazy private SampleRequestApiManager sampleRequestApiManager;
+  private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
 
   @Override
   public ApiSampleSearchResult getSamplesForUser(
@@ -98,6 +101,13 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       String query,
       User user) {
 
+    if (Boolean.TRUE.equals(requestable) && !sampleRequestsAvailable(user)) {
+      ApiSampleSearchResult none = new ApiSampleSearchResult();
+      none.setTotalHits(0L);
+      none.setPageNumber(0);
+      none.setItems(new ArrayList<>());
+      return none;
+    }
     ISearchResults<Sample> dbSamples =
         sampleDao.getSamplesForUser(pgCrit, null, ownedBy, deletedOption, requestable, query, user);
     List<ApiSampleInfo> sampleInfos = new ArrayList<>();
@@ -613,6 +623,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     // assertUserCanEditSample returns a Sample (a template id 404s), so ApiSample is safe
     SampleEntity dbSample = assertUserCanEditSample(apiSample.getId(), user);
     ApiSample original = new ApiSample(dbSample);
+    assertRequestableMayBeTurnedOn(apiSample, original, user);
 
     boolean temporaryLock = lockItemForEdit(dbSample, user);
     try {
@@ -627,6 +638,21 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     ApiSample sample = getOutgoingApiSample(dbSample, user);
     updateOntologyOnUpdate(original, sample, user);
     return sample;
+  }
+
+  /** Only turning the flag on is gated, so existing requestable samples stay editable. */
+  private void assertRequestableMayBeTurnedOn(
+      ApiSampleWithoutSubSamples update, ApiSample current, User user) {
+    if (Boolean.TRUE.equals(update.getRequestable())
+        && !Boolean.TRUE.equals(current.getRequestable())
+        && !sampleRequestsAvailable(user)) {
+      throw new ApiRuntimeException("errors.inventory.sampleRequest.notEnabled");
+    }
+  }
+
+  private boolean sampleRequestsAvailable(User user) {
+    return systemPropertyPermissions.isPropertyAllowed(
+        user, SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE);
   }
 
   @Override

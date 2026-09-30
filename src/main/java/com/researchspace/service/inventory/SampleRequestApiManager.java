@@ -25,7 +25,8 @@ public interface SampleRequestApiManager {
   ApiSampleRequest createRequest(ApiSampleRequestPost post, User user);
 
   /**
-   * A single request, visible only to its requester and the current owner of the requested sample.
+   * A single request, visible only to its requester, the sample's current owner, and whoever owned
+   * it when the request was raised.
    *
    * @throws jakarta.ws.rs.NotFoundException if absent, or the user is neither party
    */
@@ -43,8 +44,8 @@ public interface SampleRequestApiManager {
   /**
    * Page of requests involving the user, on the given side of the request.
    *
-   * @param role REQUESTER for requests the user raised, OWNER for requests against samples the user
-   *     currently owns; null means either role
+   * @param role REQUESTER for requests the user raised, OWNER for requests they received as the
+   *     sample's owner when each was raised; null means either role
    * @param statuses optional status filter; a request matches if its status is any of these. Null
    *     or empty means no status filtering.
    * @param sampleId optional filter to requests against one sample

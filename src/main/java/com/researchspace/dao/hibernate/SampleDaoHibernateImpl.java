@@ -71,11 +71,11 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       String query,
       User user) {
 
-    // requestable=true is an instance-wide search: every requestable sample is returned
-    // regardless of the requesting user's own ownership/group/sysadmin status, so the normal
-    // owner/permission-limiting fragment and its query parameters are skipped entirely. The name
+    // requestable=true is an instance-wide search: permission scoping is skipped, so every
+    // requestable sample is visible, but an explicit ownedBy still narrows it. The name
     // filter below is independent of that and still applies on top of it.
     boolean unscopedRequestableSearch = Boolean.TRUE.equals(requestable);
+    boolean unscopedOwnedBy = unscopedRequestableSearch && ownedBy != null && !ownedBy.isEmpty();
 
     // prepare owner and permission limiting query fragment
     List<String> userGroupMembers =
@@ -131,6 +131,9 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     if (limitByParentTemplate) {
       countQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
     }
+    if (unscopedOwnedBy) {
+      countQueryBase.setParameter("ownedBy", ownedBy);
+    }
     if (limitByNameQuery) {
       countQueryBase.setParameter("nameQuery", "%" + query.toLowerCase() + "%");
     }
@@ -169,6 +172,9 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .setMaxResults(maxResult);
     if (limitByParentTemplate) {
       samplePageQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
+    }
+    if (unscopedOwnedBy) {
+      samplePageQueryBase.setParameter("ownedBy", ownedBy);
     }
     if (limitByNameQuery) {
       samplePageQueryBase.setParameter("nameQuery", "%" + query.toLowerCase() + "%");

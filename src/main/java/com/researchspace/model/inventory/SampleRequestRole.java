@@ -9,6 +9,6 @@ public enum SampleRequestRole {
   /** Requests the caller raised. */
   REQUESTER,
 
-  /** Requests awaiting the caller, as current owner of the requested sample. */
+  /** Requests received by the caller, as the sample's owner when each was raised. */
   OWNER
 }

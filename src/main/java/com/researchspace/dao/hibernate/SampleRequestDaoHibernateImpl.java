@@ -66,6 +66,8 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
                 user)
             .uniqueResult();
 
+    // creation date is the only sort key the API accepts
+    String dir = pgCrit.getSortOrder().toString();
     List<SampleRequest> page =
         bind(
                 sessionFactory
@@ -73,7 +75,10 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
                     .createQuery(
                         "from SampleRequest req"
                             + where
-                            + " order by req.created desc, req.id desc",
+                            + " order by req.created "
+                            + dir
+                            + ", req.id "
+                            + dir,
                         SampleRequest.class),
                 hasStatusFilter ? statuses : null,
                 sampleId,
@@ -86,26 +91,16 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
   }
 
   /**
-   * The approver is never stored as such, so "received" is driven by originalOwner: who owned the
-   * requested sample at the moment the request was raised, not the sample's current owner. This is
-   * deliberately stable across a later ownership transfer, so a request keeps showing up for the
-   * person who was actually asked, even once they've since given the sample away; conversely a
-   * transfer recipient never sees someone else's old request appear under "received" just because
-   * they now happen to own the sample. A null role means no filtering by role: the user is either
-   * the requester or the original owner.
+   * OWNER follows originalOwner rather than the sample's current owner, so a request stays with
+   * whoever was asked even after a transfer. A null role means either side.
    */
   private String roleClause(SampleRequestRole role) {
-    if (role == null) {
-      return "(req.requesterUsername = :username or req.originalOwner = :username)";
-    }
-    switch (role) {
-      case REQUESTER:
-        return "req.requesterUsername = :username";
-      case OWNER:
-        return "req.originalOwner = :username";
-      default:
-        throw new UnsupportedOperationException("Unhandled sample request role: " + role);
-    }
+    return role == null
+        ? "(req.requesterUsername = :username or req.originalOwner = :username)"
+        : switch (role) {
+          case REQUESTER -> "req.requesterUsername = :username";
+          case OWNER -> "req.originalOwner = :username";
+        };
   }
 
   @Override
