@@ -165,4 +165,19 @@ class InventoryUrlsTest {
     assertFalse(
         InventoryUrls.namesGlobalIdPage("https://old name.example.com/globalId/IN999", "IN5"));
   }
+
+  @Test
+  void globalIdPagePrefixNormalisesExactlyAsTheBuilderDoes() {
+    assertEquals(Optional.of(SERVER + "/globalId/"), InventoryUrls.globalIdPagePrefix(SERVER));
+    assertEquals(
+        Optional.of(SERVER + "/globalId/"),
+        InventoryUrls.globalIdPagePrefix(SERVER + "//"),
+        "repeated trailing slashes go, as in the builder");
+    assertTrue(InventoryUrls.globalIdPagePrefix("  ").isEmpty(), "no server url");
+    // the point of the method: a reader built from it recognises what the builder writes
+    assertTrue(
+        InventoryUrls.globalIdPageUrl(SERVER, "IN114")
+            .get()
+            .startsWith(InventoryUrls.globalIdPagePrefix(SERVER).get()));
+  }
 }

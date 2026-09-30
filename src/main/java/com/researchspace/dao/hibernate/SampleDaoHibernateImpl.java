@@ -77,7 +77,6 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     boolean unscopedRequestableSearch = Boolean.TRUE.equals(requestable);
     boolean unscopedOwnedBy = unscopedRequestableSearch && ownedBy != null && !ownedBy.isEmpty();
 
-    // prepare owner and permission limiting query fragment
     List<String> userGroupMembers =
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
     List<String> userGroupsUniqueNames =
@@ -93,7 +92,6 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     boolean limitByNameQuery = StringUtils.isNotBlank(query);
     String nameQueryFragment = limitByNameQuery ? "and lower(editInfo.name) like :nameQuery " : "";
 
-    // get the page of results
     if (pgCrit == null) {
       pgCrit = PaginationCriteria.createDefaultForClass(Sample.class);
     }
@@ -113,7 +111,6 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     String parentTemplateQueryFragment =
         limitByParentTemplate ? "and STemplate.id=:parentTemplateId " : "";
 
-    // get total count
     // type() discriminator anchor (matching the instrument DAOs): keeps the WHERE clause
     // non-empty when deletedOption=INCLUDE makes the deleted fragment blank; redundant with the
     // discriminator Hibernate adds for the concrete entity
@@ -155,7 +152,6 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       allSamplesCount = Math.min(allSamplesCount, MAX_SYSADMIN_RESULTS);
     }
 
-    // get a page of samples
     Query<Sample> samplePageQueryBase =
         sessionFactory
             .getCurrentSession()
@@ -282,7 +278,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .getCurrentSession()
             .createQuery(
                 "select count(se) from SampleEntity se where se.editInfo.name=:name and"
-                    + " se.owner=:owner",
+                    + " se.owner=:owner and se.deleted=false",
                 Long.class)
             .setParameter("name", name)
             .setParameter("owner", owner)

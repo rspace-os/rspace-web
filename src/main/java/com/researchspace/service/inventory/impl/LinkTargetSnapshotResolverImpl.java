@@ -1,6 +1,8 @@
 package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
+import com.researchspace.dao.FolderDao;
+import com.researchspace.dao.RecordDao;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
@@ -13,12 +15,15 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -32,6 +37,9 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
 
   @Autowired private AuditManager auditManager;
   @Autowired private LinkTargetResolver linkTargetResolver;
+  @Autowired private IPermissionUtils permissionUtils;
+  @Autowired private RecordDao recordDao;
+  @Autowired private FolderDao folderDao;
 
   @Override
   public Long resolveRevisionForVersion(GlobalIdPrefix prefix, Long dbId, Long version) {
@@ -74,6 +82,35 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
             ? auditManager.getObjectForRevision(cls, dbId, targetRevisionId)
             : auditManager.getNewestRevisionForEntity(cls, dbId);
     if (snapshot == null || snapshot.getEntity() == null) {
+      // No audit history does not mean no record: rows can be purged while the record lives on.
+      // Report the live record's own state, so a trashed Inventory item reads exactly as it does
+      // with a snapshot - deleted, but readable and openable in the trash - rather than being
+      // hidden behind "No access". The lookup is permission-gated and type-exact, so an
+      // unreadable record and a sibling sharing the db id (SA/IT) both fall through to redaction.
+      //
+      // Inventory only. The ELN lookup resolves through transactional *Manager proxies
+      // (BaseRecordManager -> FolderManager) whose folderDao.get and read/not-deleted assertions
+      // throw for a missing, unreadable or deleted record. Catching the throw is not enough: it
+      // crosses a transactional proxy and marks the caller's transaction rollback-only, so
+      // getTargetSummary would fail at commit with UnexpectedRollbackException instead of
+      // returning the redacted summary below - the same trap isReadable's javadoc describes, and
+      // reachable here because import can store a link to a notebook that does not exist. The
+      // inventory lookup throws only its own NotFoundException from a non-transactional
+      // component, so it is safe to consult.
+      if (isInventoryPrefix(prefix)) {
+        Optional<InventoryRecord> liveTarget =
+            linkTargetResolver.viewableInventoryTarget(new GlobalIdentifier(prefix, dbId), user);
+        if (liveTarget.isPresent()) {
+          summary.setReadable(true);
+          summary.setType(typeFor(prefix));
+          summary.setName(nameOf(liveTarget.get()));
+          summary.setDeleted(deletedOf(liveTarget.get()));
+          return summary;
+        }
+      }
+      // Otherwise redacted, for every prefix. Nonexistent must look exactly like unreadable
+      // (ADR-0002), so the card says "No access" either way and a caller walking ids learns
+      // nothing about which records are there.
       return summary;
     }
     Object entity = snapshot.getEntity();
@@ -90,15 +127,18 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
 
   /**
    * Read permission for the target snapshot. The snapshot owner is checked first because a user can
-   * always read their own record, deleted or not, and that check cannot throw. This matters for a
-   * soft-deleted folder/notebook: the live readability lookup loads the folder with
-   * includeDeleted=false and throws (the document branch returns deleted records, but the folder
-   * branch does not). Because that lookup runs through a transactional {@code *Manager}, the throw
-   * marks the summary's transaction rollback-only even though it is caught, 500ing the summary
-   * endpoint so the link card shows no "Target deleted" pill and keeps Open. Short-circuiting on
-   * the owner avoids the throwing call for the owner (who deleted the notebook in the reported
-   * case). Non-owners still go through the live check, which also covers shared, still-live
-   * targets.
+   * always read their own record, deleted or not, and that check cannot throw.
+   *
+   * <p>For a non-owner, ELN read permission comes from the live row, loaded straight from the DAO.
+   * Not from the snapshot: sharing and publishing a document write no audit revision, so a
+   * snapshot's ACL can still grant what the live row has revoked. Not through BaseRecordManager ->
+   * FolderManager either: those assertions throw inside transactional {@code *Manager} proxies,
+   * which marks the summary's transaction rollback-only even when caught, so getTargetSummary fails
+   * at commit. A DAO lookup returns empty instead of throwing and crosses no proxy.
+   *
+   * <p>Inventory targets keep the live check: their lookup throws only its own NotFoundException,
+   * from non-transactional components, so it is safe to consult and reflects current sharing. It
+   * accepts limited read as well as full READ, since either opens the item.
    */
   private boolean isReadable(GlobalIdPrefix prefix, Long dbId, Object entity, User user) {
     User owner = ownerOf(entity);
@@ -108,8 +148,26 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
         && owner.getUsername().equals(user.getUsername())) {
       return true;
     }
-    GlobalIdentifier baseGid = new GlobalIdentifier(prefix, dbId);
-    return linkTargetResolver.targetExistsAndIsReadable(baseGid, user);
+    if (!isInventoryPrefix(prefix)) {
+      // an unshare only queues the revocation; Shiro keeps the viewer's RECORD:READ grant until a
+      // permission-checked request applies it. The live lookup this replaced refreshed first, so
+      // skipping it would let a former sharee keep the target's name and type until cache expiry.
+      permissionUtils.refreshCacheIfNotified();
+      return liveElnRecord(prefix, dbId)
+          .map(live -> permissionUtils.isPermitted(live, PermissionType.READ, user))
+          .orElse(false);
+    }
+    // limited read counts: the item still opens, in the limited view
+    return linkTargetResolver
+        .viewableInventoryTarget(new GlobalIdentifier(prefix, dbId), user)
+        .isPresent();
+  }
+
+  private Optional<? extends BaseRecord> liveElnRecord(GlobalIdPrefix prefix, Long dbId) {
+    Optional<? extends BaseRecord> live =
+        prefix == GlobalIdPrefix.NB ? folderDao.getSafeNull(dbId) : recordDao.getSafeNull(dbId);
+    // type-exact, as in LinkTargetResolverImpl: a record sharing the id is not the target
+    return live.filter(r -> r.getOid() != null && r.getOid().getPrefix() == prefix);
   }
 
   private String buildGlobalId(GlobalIdPrefix prefix, Long dbId, Long versionPin) {

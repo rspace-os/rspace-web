@@ -20,7 +20,9 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // Backend test resources: fixtures a Java test and a TS test both assert against (A10)
+      "@testresources/*": ["../../../test/resources/*"]
     },
     "resolveJsonModule": true,
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
