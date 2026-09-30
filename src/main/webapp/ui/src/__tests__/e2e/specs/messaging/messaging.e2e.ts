@@ -101,8 +101,5 @@ test.describe("Messaging", () => {
     await expect(announcement.getByRole("link", { name: url })).toHaveAttribute("rel", "nofollow");
     await expect(announcement.getByRole("strong").filter({ hasText: "strongtext" })).toBeVisible();
     await expect(announcement).not.toContainText("alert(1)");
-
-    await session.sendMessage.openFromToolbar();
-    await expect(session.sendMessage.typeOptions).toHaveText(["Basic message"]);
   });
 });

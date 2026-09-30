@@ -29,16 +29,28 @@ export class DashboardPage extends BasePage {
   }
 
   async openSentRequests(): Promise<void> {
-    await this.page.getByRole("link", { name: "Open Sent Requests" }).click();
-    await this.page.getByRole("heading", { name: "My Sent Requests" }).waitFor({ state: "visible" });
+    const [res] = await Promise.all([
+      this.page.waitForResponse((r) => r.url().includes("/dashboard/ajax/listMyRequests")),
+      this.page.getByRole("link", { name: "Open Sent Requests" }).click(),
+    ]);
+    if (!res.ok()) {
+      throw new Error(`Listing sent requests failed: ${res.status()}`);
+    }
+    // myrequests_ajax.jsp renders this container whether or not there are requests; the heading only when there are.
+    await this.page.locator("#myrequestListContents").waitFor({ state: "attached" });
   }
 
-  async cancelSentRequest(text: string): Promise<void> {
-    const row = this.sentRequest(text);
-    await Promise.all([
-      this.page.waitForResponse((res) => res.url().includes("/dashboard/ajax/cancelRequest")),
-      row.getByRole("link", { name: "Cancel Request", exact: true }).click(),
-    ]);
-    await row.waitFor({ state: "hidden" });
+  async cancelSentRequestQuietly(text: string): Promise<void> {
+    const rowId = await this.sentRequest(text).first().getAttribute("id");
+    const messageOrRequestId = rowId?.replace("myrequestID_", "");
+    if (!messageOrRequestId) {
+      throw new Error(`No sent request id found for "${text}"`);
+    }
+    const res = await this.page.request.post("/dashboard/ajax/cancelRequest", {
+      form: { messageOrRequestId, quiet: "true" },
+    });
+    if (!res.ok()) {
+      throw new Error(`Cancelling sent request ${messageOrRequestId} failed: ${res.status()}`);
+    }
   }
 }

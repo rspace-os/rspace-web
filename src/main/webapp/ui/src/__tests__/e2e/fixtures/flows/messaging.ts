@@ -67,7 +67,7 @@ export const test = userSessionTest.extend<MessagingFixtures>({
           await dashboard.openSentRequests();
           for (const marker of sent) {
             if ((await dashboard.sentRequest(marker).count()) > 0) {
-              await dashboard.cancelSentRequest(marker);
+              await dashboard.cancelSentRequestQuietly(marker);
             }
           }
         }

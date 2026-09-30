@@ -46,6 +46,9 @@ test.describe("Notifications", () => {
     await colleagueSession.notifications.open();
     await expect(colleagueSession.notifications.row(`${owner.username} stopped sharing ${docName}`)).toBeVisible();
     await colleagueSession.notifications.deleteAll();
-    await expect(colleagueSession.notifications.row(docName)).toHaveCount(0);
+
+    await colleagueSession.workspace.open();
+    await colleagueSession.notifications.open();
+    await expect(colleagueSession.notifications.emptyState).toBeVisible();
   });
 });

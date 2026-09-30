@@ -50,12 +50,15 @@ export class SendMessageDialogComponent {
       await this.root.getByRole("listitem").filter({ hasText: to }).first().click();
     }
     await this.messageField.fill(text);
-    await Promise.all([
+    const [res] = await Promise.all([
       this.page.waitForResponse(
         (res) => res.request().method() === "POST" && res.url().includes("/messaging/ajax/create"),
       ),
       this.root.getByRole("button", { name: "Send", exact: true }).click(),
     ]);
+    if (!res.ok()) {
+      throw new Error(`Sending message failed: ${res.status()}`);
+    }
     await this.root.waitFor({ state: "hidden" });
   }
 

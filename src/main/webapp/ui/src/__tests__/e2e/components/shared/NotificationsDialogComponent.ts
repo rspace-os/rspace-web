@@ -40,12 +40,11 @@ export class NotificationsDialogComponent {
     await this.bellButton.click();
     await this.root.waitFor({ state: "visible" });
     // AJAX-rendered rows have no accessible name; this class distinguishes notifications.
-    await this.root.locator("tr.notificationRow").first().waitFor({ state: "visible" });
+    await this.root.locator("tr.notificationRow").first().or(this.emptyState).waitFor({ state: "visible" });
   }
 
-  /** Notification rows containing every given text fragment. */
-  row(...texts: string[]): Locator {
-    return texts.reduce((rows, text) => rows.filter({ hasText: text }), this.root.locator("tr.notificationRow"));
+  row(text: string): Locator {
+    return this.root.locator("tr.notificationRow").filter({ hasText: text });
   }
 
   async getNotificationTexts(): Promise<Array<string>> {
