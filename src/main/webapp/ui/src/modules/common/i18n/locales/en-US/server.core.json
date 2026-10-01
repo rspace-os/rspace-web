@@ -22,6 +22,11 @@
     }
   },
   "errors": {
+    "api": {
+      "v2": {
+        "forbidden": "You do not have permission to perform this action."
+      }
+    },
     "upload": {
       "imageContentMismatch": "File {0} was rejected: its content does not match the {1} type claimed by its file extension."
     },
@@ -290,6 +295,11 @@
     "dataverseConfiguration": "Dataverse configuration",
     "exportPlan": "Export plan",
     "property": "Property"
+  },
+  "resourceAccess": {
+    "audiences": {
+      "allUsers": "All users"
+    }
   },
   "validation": {
     "errors": {
