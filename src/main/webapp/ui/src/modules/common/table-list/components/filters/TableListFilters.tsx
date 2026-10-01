@@ -130,7 +130,14 @@ function isActive<TDocument>(rule: DraftRule<TDocument>): boolean {
 }
 
 function defaultOperator<TDocument>(field: ResolvedFieldConfig<TDocument>): FilterOperator {
-  if (field.type === "select" && field.capabilities.filterOperators.includes("equals")) return "equals";
+  if (
+    (field.type === "select" ||
+      field.type === "relationship" ||
+      field.filterPicker ||
+      field.origin?.kind === "relationshipTarget") &&
+    field.capabilities.filterOperators.includes("equals")
+  )
+    return "equals";
   return field.capabilities.filterOperators.includes("contains")
     ? "contains"
     : (field.capabilities.filterOperators[0] ?? "equals");
@@ -146,7 +153,7 @@ function fieldGroups<TDocument>(
 ): readonly { key: string; labelKey: string | null; fields: readonly ResolvedFieldConfig<TDocument>[] }[] {
   const groups = new Map<string, { key: string; labelKey: string | null; fields: ResolvedFieldConfig<TDocument>[] }>();
   for (const field of fields) {
-    const labelKey = field.origin?.groupLabelKey ?? null;
+    const labelKey = field.origin?.viaLabel || field.origin?.groupLabelKey || null;
     const key = labelKey ?? "";
     const group = groups.get(key) ?? { key, labelKey, fields: [] };
     group.fields.push(field);
@@ -352,8 +359,8 @@ export function TableListFilters<TDocument>({
               const valueControl = awaitingDefinition ? null : (
                 <FilterValueInput
                   field={field}
-                  fields={config.fields}
                   sources={config.relationshipSources}
+                  authScope={runtimeFieldAuthScope}
                   operator={rule.operator}
                   value={rule.value}
                   number={index + 1}

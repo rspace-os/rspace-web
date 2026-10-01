@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
@@ -69,7 +69,7 @@ async function openFilterOn(field: string | RegExp) {
 }
 
 describe("filtering on a relationship target's field", () => {
-  it("suggests names from the target collection while keeping the value free text", async () => {
+  it("uses plain text for target fields without querying relationship options", async () => {
     const { container } = render(
       <TableList
         queryString={false}
@@ -87,20 +87,21 @@ describe("filtering on a relationship target's field", () => {
 
     const user = await openFilterOn(/Bookable item/);
     expect(screen.getByRole("combobox", { name: "common:tableList.filters.field" })).toHaveValue("Bookable item: Name");
-    const value = screen.getByRole("combobox", { name: "common:tableList.filters.value" });
+    const value = screen.getByRole("textbox", { name: "common:tableList.filters.value" });
+    relationshipOptions.mockClear();
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
 
     await user.type(value, "conf");
 
     expect(value).toHaveValue("conf");
-    await waitFor(() => expect(screen.getByRole("option", { name: "Confocal microscope" })).toBeInTheDocument());
-    expect(screen.getByRole("option", { name: "Alpha scope" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Confocal microscope" })).not.toBeInTheDocument();
+    expect(relationshipOptions).not.toHaveBeenCalled();
 
     await user.keyboard("{Escape}");
     await expectAccessible(container);
   });
 
-  it("does not enable suggestions for a one-character term", async () => {
+  it("leaves an ordinary field on the plain input", async () => {
     render(
       <TableList
         queryString={false}
@@ -116,11 +117,8 @@ describe("filtering on a relationship target's field", () => {
       />,
     );
 
-    const user = await openFilterOn(/Bookable item/);
-    await user.type(screen.getByRole("combobox", { name: "common:tableList.filters.value" }), "c");
+    await openFilterOn(/fields\.notes/);
 
-    await waitFor(() =>
-      expect(relationshipOptions).toHaveBeenLastCalledWith(expect.objectContaining({ term: "c", enabled: false })),
-    );
+    expect(screen.getByRole("textbox", { name: "common:tableList.filters.value" })).not.toHaveAttribute("list");
   });
 });

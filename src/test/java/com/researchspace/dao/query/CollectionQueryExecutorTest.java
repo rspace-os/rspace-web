@@ -65,6 +65,7 @@ class CollectionQueryExecutorTest {
     Widget third = new Widget(3L, "Grace");
     Widget fourth = new Widget(4L, "Linus");
     when(query.page(2, 2)).thenReturn(paginated);
+    when(paginated.withInlineCountQuery(false)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(page);
     when(page.getTotalSize()).thenReturn(5L);
     when(page.toArray()).thenReturn(new Object[] {third, fourth});
@@ -86,6 +87,7 @@ class CollectionQueryExecutorTest {
     verify(query).setParameter("rsql0", "Ada");
     verify(query).orderBy("item.name", false);
     verify(query).page(2, 2);
+    verify(paginated).withInlineCountQuery(false);
   }
 
   @Test
@@ -93,11 +95,13 @@ class CollectionQueryExecutorTest {
     PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
     PagedList<Widget> page = erasedMock(PagedList.class);
     when(query.page(0, 1)).thenReturn(paginated);
+    when(paginated.withInlineCountQuery(false)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(page);
     when(page.getTotalSize()).thenReturn(7L);
 
     assertEquals(7L, executor.count(factory, session, request(null, List.of(), 1, 20)));
     verify(query).orderByAsc("item.entityId");
+    verify(paginated).withInlineCountQuery(false);
   }
 
   @Test
@@ -105,6 +109,7 @@ class CollectionQueryExecutorTest {
     PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
     PagedList<Widget> countPage = erasedMock(PagedList.class);
     when(query.page(0, 1)).thenReturn(paginated);
+    when(paginated.withInlineCountQuery(false)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(countPage);
     when(countPage.getTotalSize()).thenReturn(7L);
 
@@ -114,6 +119,7 @@ class CollectionQueryExecutorTest {
     assertEquals(List.of(), result.resources());
     assertEquals(7L, result.total());
     verify(query).orderByAsc("item.entityId");
+    verify(paginated).withInlineCountQuery(false);
   }
 
   @Test
@@ -123,6 +129,7 @@ class CollectionQueryExecutorTest {
     PagedList<WidgetRow> page = erasedMock(PagedList.class);
     WidgetRow row = new WidgetRow(4L, "Ada");
     when(projection.page(2, 2)).thenReturn(paginated);
+    when(paginated.withInlineCountQuery(false)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(page);
     when(page.getTotalSize()).thenReturn(5L);
     when(page.toArray()).thenReturn(new Object[] {row});
@@ -168,6 +175,7 @@ class CollectionQueryExecutorTest {
     PaginatedCriteriaBuilder<WidgetRow> paginated = erasedMock(PaginatedCriteriaBuilder.class);
     PagedList<WidgetRow> countPage = erasedMock(PagedList.class);
     when(projection.page(0, 1)).thenReturn(paginated);
+    when(paginated.withInlineCountQuery(false)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(countPage);
     when(countPage.getTotalSize()).thenReturn(7L);
 
@@ -184,6 +192,7 @@ class CollectionQueryExecutorTest {
     assertEquals(List.of(), result.resources());
     assertEquals(7L, result.total());
     verify(projection).orderByAsc("item.entityId");
+    verify(paginated).withInlineCountQuery(false);
   }
 
   private CriteriaBuilder<WidgetRow> scalarQuery() {
@@ -235,6 +244,7 @@ class CollectionQueryExecutorTest {
     doReturn(innerBuilder).when(innerSubquery).from(Widget.class, "inner");
     doReturn(innerBuilder).when(innerBuilder).select("1");
     when(query.page(0, 1)).thenReturn(paginated);
+    when(paginated.withInlineCountQuery(false)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(page);
     when(page.getTotalSize()).thenReturn(1L);
 
@@ -252,6 +262,7 @@ class CollectionQueryExecutorTest {
     verify(outerBuilder, never()).whereExpression("EXISTS innerSub");
     verify(innerBuilder).whereExpression("inner.entityId = outer.entityId");
     verify(query).setParameter("nestedParam", 7L);
+    verify(paginated).withInlineCountQuery(false);
   }
 
   private static ResourceRequest request(

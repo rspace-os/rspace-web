@@ -295,7 +295,7 @@ export function BookingEventsCalendar({
                     resourceTableProps.status === "loading" || (eventScopeIsFiltered && calendarEvents.length > 0)
                   }
                   hideHeader
-                  // The page owns both server-backed filter panels.
+                  // The nested resource table does not own a filter panel.
                   hideFilterPanel
                   variant="transparent"
                   renderRows={() => {
