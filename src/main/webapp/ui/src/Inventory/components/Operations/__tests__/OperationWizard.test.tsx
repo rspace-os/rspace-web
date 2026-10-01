@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render as renderWithoutQueryClient, screen, waitFor } from "@testing-library/react";
+import { act, render as renderWithoutQueryClient, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
 import { HttpResponse, http } from "msw";
@@ -827,6 +827,27 @@ describe("OperationWizard step flow", () => {
     // cimode renders a key without its parameters, so this can only show the join message was chosen.
     expect(alert.message).toMatch(/operations\.wizard\.fieldReason/);
     expect(alert.message).not.toMatch(/^sampleName:/);
+  });
+
+  it("lists several rejection reasons as separate items, and a single reason as plain text", async () => {
+    // MSW tries the most recently added handler first.
+    rejectOnce(400, { message: "Errors detected: 1", errors: ["Warning: stock is low"] });
+    rejectOnce(400, {
+      message: "Errors detected: 2",
+      errors: ["origins[0].amountTaken: Too much", "Warning: stock is low"],
+    });
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[mockOrigin()]} />);
+    await reachConfirm(user, "reasons");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(within(alert).getAllByRole("listitem")).toHaveLength(2);
+    expect(within(alert).getByText("Warning: stock is low")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(within(screen.getByRole("alert")).queryByRole("list")).not.toBeInTheDocument());
+    expect(screen.getByRole("alert")).toHaveTextContent("Warning: stock is low");
   });
 
   it("blocks the amounts step in per-subsample mode until every origin has an amount", async () => {

@@ -3,6 +3,8 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
 import Step from "@mui/material/Step";
 import StepContent from "@mui/material/StepContent";
 import StepLabel from "@mui/material/StepLabel";
@@ -545,7 +547,7 @@ function OperationWizard({
 
   // Shown inside the dialog as well as in the toast: the toast sits outside the modal, where
   // assistive technology cannot reach it while the wizard is open.
-  const [performError, setPerformError] = React.useState<string | null>(null);
+  const [performError, setPerformError] = React.useState<Array<string> | null>(null);
   React.useEffect(() => {
     setPerformError(null);
   }, [activeStep, operation, reviewing]);
@@ -648,9 +650,11 @@ function OperationWizard({
     } catch (error) {
       // The error's `message` for a rejected request is just "Errors detected: 1"; the actual reason
       // lives in the field-scoped errors array, which describeOperationError reads instead.
-      const message = describeOperationError(error, operation, resolveLabel, t("operations.wizard.failed"));
-      setPerformError(message);
-      getRootStore().uiStore.addAlert(mkAlert({ title: t("operations.wizard.failed"), message, variant: "error" }));
+      const reasons = describeOperationError(error, operation, resolveLabel, t("operations.wizard.failed"));
+      setPerformError(reasons);
+      getRootStore().uiStore.addAlert(
+        mkAlert({ title: t("operations.wizard.failed"), message: reasons.join("\n"), variant: "error" }),
+      );
       // Re-read the origins: the usual rejection is "you asked for more than it holds", and the
       // amounts step validates against origin.quantity, so without a refresh the user could only
       // fail the same way again.
@@ -795,8 +799,18 @@ function OperationWizard({
     return (
       <>
         {performError ? (
-          <Alert severity="error" sx={{ mb: 1, whiteSpace: "pre-line" }}>
-            {performError}
+          <Alert severity="error" sx={{ mb: 1 }}>
+            {performError.length === 1 ? (
+              performError[0]
+            ) : (
+              <List dense disablePadding>
+                {performError.map((reason) => (
+                  <ListItem key={reason} disableGutters>
+                    {reason}
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Alert>
         ) : null}
         {trashedDocumentationWarning()}
