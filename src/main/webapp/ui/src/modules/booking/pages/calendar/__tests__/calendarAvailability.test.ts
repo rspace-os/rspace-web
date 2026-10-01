@@ -280,8 +280,9 @@ describe("calendar availability", () => {
         const where = url.searchParams.get("where") ?? "";
         const targetId = where.split("target=in=(")[1]?.split(",")[0] ?? "";
         const start = (page - 1) * 100;
+        const idOffset = targetId === "IN0500" ? 1000 : 0;
         const docs = Array.from({ length: 100 }, (_, index) =>
-          booking(start + index + 1, targetId, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
+          booking(idOffset + start + index + 1, targetId, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
         );
         return HttpResponse.json(collectionResponse(docs, { page: page, totalPages: 10, totalDocs: 1000 }));
       }),
