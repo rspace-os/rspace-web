@@ -95,7 +95,12 @@
     <!-- Enable Shiro Annotations for Spring-configured beans. Only run after -->
     <!-- the lifecycleBeanProcessor has run: -->
     <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
-          depends-on="lifecycleBeanPostProcessor" />
+          depends-on="lifecycleBeanPostProcessor">
+        <!-- Keep the outer proxy class-based: the annotation proxy may already expose only
+             Spring's AOP interfaces, which would otherwise turn concrete transactional beans into
+             JDK proxies and break concrete injection and transactional event listeners. -->
+        <property name="proxyTargetClass" value="true" />
+    </bean>
     <bean class="com.researchspace.auth.LazySecurityManagerAuthorizationAttributeSourceAdvisor" />
 
 </beans>

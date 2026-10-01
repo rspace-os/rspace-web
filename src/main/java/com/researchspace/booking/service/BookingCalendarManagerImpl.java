@@ -26,7 +26,6 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.persistence.OptimisticLockException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -72,7 +71,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   private final TimeSlotBookingManager bookingManager;
   private final InstrumentDao instrumentDao;
   private final FeatureFlagManager featureFlags;
-  private final ResourceAccessManager accessManager;
+  private final BookingItemPermissions accessManager;
   private final BookingCalendarFeedGenerator generator;
   private final BookingCalendarProperties limits;
   private final URI serverBaseUrl;
@@ -88,7 +87,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       TimeSlotBookingManager bookingManager,
       InstrumentDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
       BookingCalendarCreationTransaction creationTransaction,
       BookingCalendarProperties limits,
@@ -115,7 +114,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       TimeSlotBookingManager bookingManager,
       InstrumentDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
       BookingCalendarCreationTransaction creationTransaction,
       BookingCalendarProperties limits,
@@ -164,16 +163,19 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     requirePersonalCaller(subject, actor);
     return creationTransaction.create(
         subject.getId(),
-        freshSubject -> createOrRotateItem(configurationId, freshSubject, expectedEtag));
+        freshSubject -> createOrRotateInTransaction(configurationId, freshSubject, expectedEtag));
   }
 
-  private Created createOrRotateItem(Long configurationId, User subject, String expectedEtag) {
+  private Created createOrRotateInTransaction(
+      Long configurationId, User subject, String expectedEtag) {
     requireFeatureMutation(subject);
     BookingConfiguration configuration =
         configurationDao
             .lockById(configurationId)
             .orElseThrow(BookingCalendarNotFoundException::new);
-    requireCapability(
+    // The configuration lock is acquired before resolveForMutation takes the shared permission
+    // fence; this is the lock order used by all booking mutations.
+    requireMutationCapability(
         configuration, subject, BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION);
     if (configuration.getState() == BookingConfigurationState.ARCHIVED) {
       throw new BookingConfigurationLifecycleException();
@@ -542,15 +544,13 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private boolean hasCapability(
       BookingConfiguration configuration, User subject, String capability) {
-    ResolvedResourceAccess access =
-        accessManager.resolve(configuration.getResourceAccess(), subject);
+    ResolvedResourceAccess access = accessManager.resolve(configuration, subject);
     return access.hasCapability(capability);
   }
 
   private void requireMutationCapability(
       BookingConfiguration configuration, User subject, String capability) {
-    ResolvedResourceAccess access =
-        accessManager.resolve(configuration.getResourceAccess(), subject);
+    ResolvedResourceAccess access = accessManager.resolveForMutation(configuration, subject);
     if (!access.hasCapability(BookingResourceRoleScheme.READ_RESOURCE)) {
       throw new BookingCalendarNotFoundException();
     }
