@@ -373,6 +373,7 @@
       "target": "Bookable item",
       "targetName": "Bookable item name",
       "timezone": "Time zone",
+      "timezoneDescription": "Opening hours and booking rules use this time zone. It cannot be changed after the item is added.",
       "updatedAt": "Last updated"
     },
     "lifecycleErrors": {
@@ -544,6 +545,7 @@
       "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
       "typeBooking": "Booking"
     },
+    "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
     "itemInformation": {
       "buffer": "Buffer",
       "bufferAfter": "{count}m after",
