@@ -1,7 +1,7 @@
 import { faCodeBranch } from "@fortawesome/free-solid-svg-icons/faCodeBranch";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type MenuItem from "@mui/material/MenuItem";
-import { Observer } from "mobx-react-lite";
+import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
@@ -15,7 +15,7 @@ type ProcessActionArgs = {
   closeMenu: () => void;
 };
 
-export default function ProcessAction({
+function ProcessAction({
   as,
   disabled,
   selectedResults,
@@ -26,19 +26,17 @@ export default function ProcessAction({
   const { launch, wizard } = useOperationWizardLauncher(selectedResults, { onClose: closeMenu });
 
   return (
-    <Observer>
-      {() => (
-        <ContextMenuAction
-          onClick={() => void launch()}
-          icon={<FontAwesomeIcon icon={faCodeBranch} size="lg" />}
-          label={t("operations.action.process")}
-          disabledHelp={disabled || (selectedResults.every((r) => r.canEdit) ? "" : t("contextMenu.edit.noPermission"))}
-          as={as}
-          ref={ref}
-        >
-          {wizard}
-        </ContextMenuAction>
-      )}
-    </Observer>
+    <ContextMenuAction
+      onClick={() => void launch()}
+      icon={<FontAwesomeIcon icon={faCodeBranch} size="lg" />}
+      label={t("operations.action.process")}
+      disabledHelp={disabled || (selectedResults.every((r) => r.canEdit) ? "" : t("contextMenu.edit.noPermission"))}
+      as={as}
+      ref={ref}
+    >
+      {wizard}
+    </ContextMenuAction>
   );
 }
+
+export default observer(ProcessAction);
