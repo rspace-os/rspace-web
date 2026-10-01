@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.analytics.service.AnalyticsManager;
+import com.researchspace.auth.BrowserSessionAuthContext;
 import com.researchspace.model.User;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt;
@@ -68,6 +69,7 @@ public class LogoutController extends BaseController {
   private void releaseRunAsUserIfAny(Principal principal, HttpSession session) {
     Object isSessionRunAs = session.getAttribute(SessionAttributeUtils.IS_RUN_AS);
     if (Boolean.TRUE.equals(isSessionRunAs)) {
+      BrowserSessionAuthContext.rotate(session);
       PrincipalCollection prev = SecurityUtils.getSubject().getPreviousPrincipals();
       String adminUname = (String) prev.getPrimaryPrincipal();
       SecurityUtils.getSubject().releaseRunAs();

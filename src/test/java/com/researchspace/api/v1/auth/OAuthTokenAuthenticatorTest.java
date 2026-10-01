@@ -3,6 +3,7 @@ package com.researchspace.api.v1.auth;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,8 +15,10 @@ import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.OAuthTokenManager;
+import com.researchspace.service.OAuthTokenManager.UiTokenContext;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
+import java.util.Optional;
 import org.apache.shiro.session.InvalidSessionException;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
@@ -155,6 +158,15 @@ class OAuthTokenAuthenticatorTest {
             ApiAuthenticationException.class, () -> authenticator.retrieveTokenFromHeader(request));
 
     assertEquals("api.errors.authentication.oauthHeaderInvalid", exception.getMessageKey());
+  }
+
+  @Test
+  void sessionBoundApiV2TokenIsNotAcceptedAsAnApiV1BearerToken() {
+    when(tokenManager.getUiTokenContext("v2-ui-token"))
+        .thenReturn(Optional.of(new UiTokenContext(42L, Optional.empty(), "session-context")));
+
+    assertTrue(authenticator.findUserForToken().apply("v2-ui-token").isEmpty());
+    verify(tokenManager, never()).authenticate("v2-ui-token");
   }
 
   private void givenTokenFor(User user, OAuthTokenType tokenType) {

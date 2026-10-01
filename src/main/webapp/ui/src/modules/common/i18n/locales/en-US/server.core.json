@@ -24,7 +24,77 @@
   "errors": {
     "api": {
       "v2": {
-        "forbidden": "You do not have permission to perform this action."
+        "forbidden": "You do not have permission to perform this action.",
+        "invalidRequest": "The request contains an invalid value.",
+        "authenticationRequired": "Authentication is required.",
+        "notFound": "The requested resource was not found.",
+        "tooManyRequests": "Too many requests. Please try again later.",
+        "resourceAccess": {
+          "forbidden": "You do not have permission to manage access to this resource.",
+          "ownerRequired": "At least one direct Owner must remain.",
+          "stale": "Access changed after this page was loaded. Review the latest access before saving again.",
+          "invalidGrantee": "The selected user or group is no longer available.",
+          "invalidRole": "The selected role is not valid for this resource.",
+          "duplicateGrantee": "Each user or group can have only one direct role.",
+          "assignmentLimit": "A resource can have at most 100 named user or group assignments.",
+          "selfRemovalRequiresLeave": "Use the leave action to remove your own direct access.",
+          "ifMatchRequired": "The current access version is required."
+        },
+        "query": {
+          "syntax": "The RSQL expression is invalid.",
+          "field": "The query contains an unsupported field.",
+          "operator": "The query contains an unsupported operator.",
+          "value": "The query contains an invalid value.",
+          "complexity": "The query is too complex."
+        },
+        "bulk": {
+          "filter": {
+            "required": "A where filter is required for bulk operations."
+          },
+          "limit": "The bulk operation exceeds the allowed batch size for this operation."
+        },
+        "notAcceptable": "The requested response content type is not available.",
+        "unsupportedMediaType": "This content type is not supported for this resource.",
+        "missingParameter": "A required request parameter is missing.",
+        "unexpected": "An unexpected error occurred.",
+        "methodNotAllowed": "This HTTP method is not supported for this resource.",
+        "requestRejected": "The request could not be processed.",
+        "runtimeFields": {
+          "ids": {
+            "limit": "A request must not name more than {0} custom fields."
+          },
+          "query": {
+            "invalid": "The custom field request is invalid. The page size must be between 1 and {0}."
+          },
+          "page": {
+            "invalid": "The page number is out of range."
+          },
+          "projection": {
+            "limit": "A request must not select more than {0} custom field values."
+          }
+        },
+        "where": {
+          "length": "The where expression must not exceed {0} characters."
+        },
+        "depth": {
+          "range": "Depth must be between 0 and {0}.",
+          "min": "Depth must be 0 or greater.",
+          "max": "Depth must not exceed {value}."
+        },
+        "delete": {
+          "permanent": {
+            "unsupported": "This resource does not support permanent deletion."
+          }
+        }
+      },
+      "pagination": {
+        "limit": {
+          "min": "Limit must be 1 or greater.",
+          "max": "Limit must not exceed {value}."
+        },
+        "page": {
+          "min": "Page must be 1 or greater."
+        }
       }
     },
     "upload": {
