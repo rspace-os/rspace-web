@@ -12,6 +12,7 @@ export type RelationshipOptionContext = {
   idLinkLabel: (globalId: string) => string;
   /** Renders each option on one line, for a picker in a narrow control such as a filter row. */
   compact?: boolean;
+  unavailableLabel?: (value: string) => string;
 };
 
 export type RelationshipSource = {
@@ -55,6 +56,15 @@ async function instrumentRequest(
     throw new Error(`Relationship option request failed with status ${response.status}`);
   }
   return response;
+}
+
+/** Returns a positive JavaScript-safe database ID from a resource global ID. */
+export function databaseIdFromGlobalId(value: string, prefix: string): number | null {
+  const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`^${escapedPrefix}(\\d+)$`, "i").exec(value.trim());
+  if (!match) return null;
+  const id = Number(match[1]);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
 const instruments: RelationshipSource = {
@@ -104,9 +114,36 @@ const instruments: RelationshipSource = {
   },
 };
 
-function databaseIdFromGlobalId(value: string, prefix: string): number | null {
-  const match = new RegExp(`^${prefix}(\\d+)$`, "i").exec(value.trim());
-  return match ? Number(match[1]) : null;
+const GranteeSchema = v.object({
+  kind: v.picklist(["USER", "GROUP", "AUDIENCE"]),
+  id: v.union([v.number(), v.string()]),
+  key: v.string(),
+  name: v.string(),
+  detail: v.optional(v.nullable(v.string())),
+});
+
+export function granteeRelationshipSource(resource: string, resourceId: number): RelationshipSource {
+  const id = `grantees:${resource}:${resourceId}`;
+  return {
+    id,
+    search: async (term, token, signal) => {
+      const query = term.trim();
+      if (query.length < 2) return [];
+      const params = new URLSearchParams({ query, limit: "20" });
+      const response = await fetch(`/api/v2/${resource}/${resourceId}/access/grantees?${params}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        signal,
+      });
+      if (!response.ok) throw new Error(`Relationship option request failed with status ${response.status}`);
+      const body: unknown = await response.json();
+      return Array.isArray(body) ? body : [];
+    },
+    ownsValue: (value) => /^(user|group):\d+$/i.test(value),
+    toOption: (document) => {
+      const grantee = parseOrThrow(GranteeSchema, document);
+      return { value: grantee.key, label: grantee.name };
+    },
+  };
 }
 
 /**
