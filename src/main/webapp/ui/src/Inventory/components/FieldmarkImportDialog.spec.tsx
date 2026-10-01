@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { clickWhenInViewport, moveToastStackIntoViewport } from "@/__tests__/pageObjects/viewport";
 import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 import { FieldmarkImportDialogPage } from "./pageObjects/FieldmarkImportDialogPage";
