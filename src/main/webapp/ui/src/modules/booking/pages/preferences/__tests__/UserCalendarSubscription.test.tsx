@@ -27,7 +27,7 @@ function renderSubscription() {
 }
 
 describe("UserCalendarSubscription", () => {
-  it("keeps a replaced link when an older status request returns afterward", async () => {
+  it("keeps a rotated link when an older status request returns afterward", async () => {
     const user = userEvent.setup();
     const staleResponse = Promise.withResolvers<Response>();
     const staleReadStarted = Promise.withResolvers<void>();
@@ -47,11 +47,11 @@ describe("UserCalendarSubscription", () => {
           { headers: { ETag: '"current"' } },
         );
       }),
-      http.post(path, ({ request }) => {
+      http.post(`${path}/rotate`, ({ request }) => {
         expect(request.headers.get("If-Match")).toBe('"current"');
         return HttpResponse.json(
           { active: true, updatedAt, subscriptionUrl: urlFor("r") },
-          { headers: { ETag: '"replaced"' } },
+          { headers: { ETag: '"rotated"' } },
         );
       }),
     );
@@ -64,6 +64,9 @@ describe("UserCalendarSubscription", () => {
     const statusRefresh = queryClient.refetchQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
     await staleReadStarted.promise;
     await user.click(screen.getByRole("button", { name: "booking:preferences.calendarSubscription.replace" }));
+    await user.click(
+      screen.getByRole("button", { name: "booking:preferences.calendarSubscription.replaceDialog.confirm" }),
+    );
     await waitFor(() => expect(linkField).toHaveValue(urlFor("r")));
 
     staleResponse.resolve(
@@ -72,7 +75,7 @@ describe("UserCalendarSubscription", () => {
     await Promise.all([statusRefresh, staleReadReturned.promise]);
     expect(queryClient.getQueryData(userCalendarSubscriptionQueryKey)).toMatchObject({
       subscriptionUrl: urlFor("r"),
-      etag: '"replaced"',
+      etag: '"rotated"',
     });
     expect(screen.getByRole("textbox", { name: "booking:preferences.calendarSubscription.copyPrompt" })).toHaveValue(
       urlFor("r"),

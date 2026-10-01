@@ -8,11 +8,22 @@ import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
   calendarApplicationUrls,
-  createOrReplaceUserCalendarSubscription,
+  createUserCalendarSubscription,
   fetchUserCalendarSubscriptionStatus,
   revokeUserCalendarSubscription,
+  rotateUserCalendarSubscription,
   userCalendarSubscriptionQueryKey,
 } from "@/modules/booking/pages/bookable-items/bookableItemCalendarSubscription";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/modules/common/ui/alert-dialog";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/modules/common/ui/input-group";
 import { Skeleton } from "@/modules/common/ui/skeleton";
@@ -22,48 +33,64 @@ export function UserCalendarSubscription({ token }: { token: string }) {
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
   const [clipboardError, setClipboardError] = useState(false);
+  const [confirmingReplace, setConfirmingReplace] = useState(false);
   const status = useQuery({
     queryKey: userCalendarSubscriptionQueryKey,
     queryFn: ({ signal }) => fetchUserCalendarSubscriptionStatus(token, signal),
     retry: false,
   });
+  const resetCopy = () => {
+    setCopied(false);
+    setClipboardError(false);
+  };
   const create = useMutation({
-    mutationFn: () => {
-      if (status.data === undefined) throw new Error("Calendar subscription status is unavailable");
-      return createOrReplaceUserCalendarSubscription(token, status.data.etag);
-    },
+    mutationFn: () => createUserCalendarSubscription(token),
     retry: false,
     onMutate: () => {
-      setCopied(false);
-      setClipboardError(false);
+      resetCopy();
+      // A fresh link supersedes any earlier replace conflict.
+      rotate.reset();
     },
     onSuccess: async (created) => {
       await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
       queryClient.setQueryData(userCalendarSubscriptionQueryKey, created);
+    },
+  });
+  const rotate = useMutation({
+    mutationFn: () => {
+      if (status.data === undefined) throw new Error("Calendar subscription status is unavailable");
+      return rotateUserCalendarSubscription(token, status.data.etag);
+    },
+    retry: false,
+    onMutate: resetCopy,
+    onSuccess: async (rotated) => {
+      await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
+      queryClient.setQueryData(userCalendarSubscriptionQueryKey, rotated);
     },
     onError: (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 409) {
         void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
       }
     },
+    onSettled: () => setConfirmingReplace(false),
   });
   const revoke = useMutation({
     mutationFn: () => revokeUserCalendarSubscription(token),
     retry: false,
     onSuccess: async () => {
       await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
-      setCopied(false);
-      setClipboardError(false);
+      resetCopy();
+      rotate.reset();
       void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
     },
   });
   const subscriptionUrl = status.data?.subscriptionUrl ?? null;
-  const pending = create.isPending || revoke.isPending;
+  const pending = create.isPending || rotate.isPending || revoke.isPending;
+  const rotateConflict = rotate.error instanceof ApiV2ProblemError && rotate.error.status === 409;
 
   const copyLink = async () => {
     if (subscriptionUrl === null) return;
-    setCopied(false);
-    setClipboardError(false);
+    resetCopy();
     try {
       await navigator.clipboard.writeText(subscriptionUrl);
       setCopied(true);
@@ -105,28 +132,7 @@ export function UserCalendarSubscription({ token }: { token: string }) {
       ) : null}
       {subscriptionUrl !== null ? (
         <div className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {(
-              [
-                ["apple", faApple, t("preferences.calendarSubscription.apple")],
-                ["google", faGoogle, t("preferences.calendarSubscription.google")],
-              ] as const
-            ).map(([application, icon, label]) => (
-              <a
-                key={application}
-                className={buttonVariants({ variant: "outline" })}
-                href={calendarApplicationUrls(subscriptionUrl)[application]}
-                {...(application === "google" ? { target: "_blank", rel: "noreferrer" } : {})}
-              >
-                <FontAwesomeIcon icon={icon} className="size-4" />
-                {label}
-              </a>
-            ))}
-            <a className={buttonVariants({ variant: "outline" })} href={calendarApplicationUrls(subscriptionUrl).other}>
-              <CalendarIcon aria-hidden="true" />
-              {t("preferences.calendarSubscription.other")}
-            </a>
-          </div>
+          <CalendarApplicationLinks subscriptionUrl={subscriptionUrl} />
           <div className="space-y-2">
             <label htmlFor="user-booking-calendar-url" className="text-sm font-medium">
               {t("preferences.calendarSubscription.copyPrompt")}
@@ -155,7 +161,11 @@ export function UserCalendarSubscription({ token }: { token: string }) {
               </p>
             ) : null}
           </div>
-          {create.isError || revoke.isError ? (
+          {rotateConflict ? (
+            <p role="alert" className="text-sm">
+              {t("preferences.calendarSubscription.replaceConflict")}
+            </p>
+          ) : rotate.isError || revoke.isError ? (
             <p role="alert" className="text-sm text-destructive">
               {t("preferences.calendarSubscription.changeError")}
             </p>
@@ -165,8 +175,11 @@ export function UserCalendarSubscription({ token }: { token: string }) {
               type="button"
               variant="outline"
               disabled={pending}
-              aria-busy={create.isPending}
-              onClick={() => create.mutate()}
+              aria-busy={rotate.isPending}
+              onClick={() => {
+                rotate.reset();
+                setConfirmingReplace(true);
+              }}
             >
               {t("preferences.calendarSubscription.replace")}
             </Button>
@@ -182,11 +195,59 @@ export function UserCalendarSubscription({ token }: { token: string }) {
           </div>
         </div>
       ) : null}
-      {create.isError && subscriptionUrl === null ? (
+      {create.isError ? (
         <p role="alert" className="text-sm text-destructive">
-          {t("preferences.calendarSubscription.changeError")}
+          {t("preferences.calendarSubscription.createError")}
         </p>
       ) : null}
+      <AlertDialog
+        open={confirmingReplace}
+        onOpenChange={(open) => !open && !rotate.isPending && setConfirmingReplace(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("preferences.calendarSubscription.replaceDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("preferences.calendarSubscription.replaceDialog.description")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={rotate.isPending}>
+              {t("preferences.calendarSubscription.replaceDialog.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={rotate.isPending}
+              aria-busy={rotate.isPending}
+              onClick={() => rotate.mutate()}
+            >
+              {t("preferences.calendarSubscription.replaceDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
+  );
+}
+
+function CalendarApplicationLinks({ subscriptionUrl }: { subscriptionUrl: string }) {
+  const { t } = useTranslation("booking");
+  const apps = calendarApplicationUrls(subscriptionUrl);
+  const className = buttonVariants({ variant: "outline" });
+  return (
+    <div className="flex flex-wrap gap-2">
+      <a className={className} href={apps.apple}>
+        <FontAwesomeIcon icon={faApple} className="size-4" />
+        {t("preferences.calendarSubscription.apple")}
+      </a>
+      <a className={className} href={apps.google} target="_blank" rel="noreferrer">
+        <FontAwesomeIcon icon={faGoogle} className="size-4" />
+        {t("preferences.calendarSubscription.google")}
+      </a>
+      <a className={className} href={apps.other}>
+        <CalendarIcon aria-hidden="true" />
+        {t("preferences.calendarSubscription.other")}
+      </a>
+    </div>
   );
 }
