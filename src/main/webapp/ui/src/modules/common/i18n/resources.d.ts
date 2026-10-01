@@ -1783,7 +1783,7 @@ export default interface Resources {
         "saved": "Notification subscription saved.",
         "saving": "Saving…",
         "someEventsDisabled": "One booking event is off in My Profile.",
-        "title": "Instrument notifications"
+        "title": "Notifications"
       },
       "options": {
         "off": "Off",

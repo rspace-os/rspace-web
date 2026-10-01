@@ -1031,7 +1031,7 @@
       "saveError": "The notification subscription could not be saved. Try again.",
       "saving": "Saving…",
       "someEventsDisabled": "One booking event is off in My Profile.",
-      "title": "Instrument notifications"
+      "title": "Notifications"
     },
     "options": {
       "off": "Off",

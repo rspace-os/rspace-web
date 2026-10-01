@@ -396,11 +396,11 @@ describe("BookableItemPage", () => {
     expect(
       await screen.findByRole("radiogroup", { name: "booking:notificationSubscriptions.item.label" }),
     ).toBeVisible();
-    expect(screen.getByText("booking:notificationSubscriptions.item.description")).toBeVisible();
-    expect(screen.getByText("booking:notificationSubscriptions.item.offSummary")).toBeVisible();
+    expect(screen.queryByText("booking:notificationSubscriptions.item.description")).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:notificationSubscriptions.item.offSummary")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "booking:notificationSubscriptions.item.preferencesLink" }),
-    ).toHaveAttribute("href", "/booking/preferences");
+      screen.queryByRole("link", { name: "booking:notificationSubscriptions.item.preferencesLink" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "booking:notificationSubscriptions.item.profileLink" }),
     ).not.toBeInTheDocument();
@@ -409,7 +409,6 @@ describe("BookableItemPage", () => {
 
     await waitFor(() => expect(notificationSubscriptionRequest).toEqual({ enabled: true, version: 0 }));
     expect(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
-    // The radio is the source of truth, so a fully on subscription has no status line.
     expect(screen.queryByText("booking:notificationSubscriptions.item.offSummary")).not.toBeInTheDocument();
     const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
     expect(savedButton).toBeDisabled();
@@ -538,12 +537,16 @@ describe("BookableItemPage", () => {
     expect(attempts).toBe(2);
   });
 
-  it("explains that an enabled subscription is paused when both booking events are off", async () => {
+  it.each([
+    { createdEnabled: false, cancelledEnabled: false },
+    { createdEnabled: true, cancelledEnabled: false },
+    { createdEnabled: false, cancelledEnabled: true },
+    { createdEnabled: true, cancelledEnabled: true },
+  ])("keeps enabled item controls concise with global event preferences %o", async (preferences) => {
     currentNotificationSubscription = {
       ...currentNotificationSubscription,
       enabled: true,
-      createdEnabled: false,
-      cancelledEnabled: false,
+      ...preferences,
     };
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -555,10 +558,12 @@ describe("BookableItemPage", () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByText("booking:notificationSubscriptions.item.effective.paused")).toBeVisible();
+    expect(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
+    expect(screen.queryByText("booking:notificationSubscriptions.item.description")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^booking:notificationSubscriptions.item.effective\./)).not.toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "booking:notificationSubscriptions.item.preferencesLink" }),
-    ).toHaveAttribute("href", "/booking/preferences");
+      screen.queryByRole("link", { name: "booking:notificationSubscriptions.item.preferencesLink" }),
+    ).not.toBeInTheDocument();
   });
 
   it("gives the item notification options an accessible English group name", async () => {
@@ -574,6 +579,7 @@ describe("BookableItemPage", () => {
     );
 
     expect(await screen.findByRole("radiogroup", { name: "Receive booking notifications" })).toBeVisible();
+    expect(screen.getByText("Notifications")).toBeVisible();
   });
 
   it("reloads the latest item choice after a subscription conflict", async () => {
