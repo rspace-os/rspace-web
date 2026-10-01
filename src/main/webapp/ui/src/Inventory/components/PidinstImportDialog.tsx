@@ -61,6 +61,8 @@ export type PidinstRecord = {
   commissioned?: string;
   decommissioned?: string;
   landingPage?: string;
+  measurementTechniques: ReadonlyArray<string>;
+  calibrations: ReadonlyArray<string>;
   alternateIdentifier?: string;
   created?: string;
   updated?: string;
@@ -79,10 +81,18 @@ type PidinstSearchResult = {
   hits: ReadonlyArray<PidinstRecord>;
 };
 
+type SkippedRelatedIdentifier = {
+  field: string;
+  reason: string;
+  address: string;
+  host?: string;
+};
+
 type ImportedInstrumentResponse = {
   id: number;
   globalId: string;
   name: string;
+  skippedRelatedIdentifiers?: ReadonlyArray<SkippedRelatedIdentifier>;
 };
 
 const joined = (values: ReadonlyArray<string>): string => values.join("; ");
@@ -152,6 +162,13 @@ function ExternalLink({ href }: { href: string }) {
   );
 }
 
+const isWebAddress = (value: string): boolean =>
+  URL.canParse(value) && ["http:", "https:"].includes(new URL(value).protocol);
+
+function Address({ value }: { value: string }) {
+  return isWebAddress(value) ? <ExternalLink href={value} /> : <span>{value}</span>;
+}
+
 function RecordPreview({ record }: { record: PidinstRecord }) {
   const { t } = useTranslation("inventory");
   const headingId = React.useId();
@@ -215,7 +232,25 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
         )}
         {record.landingPage && (
           <PreviewField label={t("pidinstImport.preview.landingPage")}>
-            <ExternalLink href={record.landingPage} />
+            <Address value={record.landingPage} />
+          </PreviewField>
+        )}
+        {record.measurementTechniques.length > 0 && (
+          <PreviewField label={t("pidinstImport.preview.measurementTechnique")}>
+            <Stack component="span">
+              {record.measurementTechniques.map((value) => (
+                <Address key={value} value={value} />
+              ))}
+            </Stack>
+          </PreviewField>
+        )}
+        {record.calibrations.length > 0 && (
+          <PreviewField label={t("pidinstImport.preview.calibration")}>
+            <Stack component="span">
+              {record.calibrations.map((value) => (
+                <Address key={value} value={value} />
+              ))}
+            </Stack>
           </PreviewField>
         )}
         {record.alternateIdentifier && (
@@ -285,6 +320,28 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
     return provider;
   };
 
+  const skippedReason = (entry: SkippedRelatedIdentifier): React.ReactNode => {
+    const address = <Address value={entry.address} />;
+    if (entry.reason === "NOT_AVAILABLE")
+      return <TransRichText i18nKey="inventory:pidinstImport.skipped.reasons.notAvailable" components={{ address }} />;
+    if (entry.reason === "OTHER_SERVER")
+      return entry.host ? (
+        <TransRichText
+          i18nKey="inventory:pidinstImport.skipped.reasons.otherServer"
+          values={{ host: entry.host }}
+          components={{ address }}
+        />
+      ) : (
+        <TransRichText i18nKey="inventory:pidinstImport.skipped.reasons.notAnAddressHere" components={{ address }} />
+      );
+    // a reason this dialog has no words for: the code itself beats a wrong sentence (as providerLabel)
+    return (
+      <>
+        {entry.reason} {address}
+      </>
+    );
+  };
+
   async function runSearch() {
     const trimmed = query.trim();
     if (trimmed.length < MIN_QUERY_LENGTH) return;
@@ -352,8 +409,24 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
           ],
         }),
       );
+      const skipped = data.skippedRelatedIdentifiers ?? [];
+      if (skipped.length > 0) {
+        addAlert(
+          mkAlert({
+            variant: "warning",
+            isInfinite: true,
+            title: t("pidinstImport.skipped.title"),
+            message: t("pidinstImport.skipped.message", { count: skipped.length }),
+            details: skipped.map((entry) => ({
+              variant: "warning",
+              title: entry.field,
+              help: skippedReason(entry),
+            })),
+          }),
+        );
+      }
       // closing mid-import promises only that the result will not be shown here; moving the user
-      // to the new instrument anyway would be the opposite of what they chose. The toast above
+      // to the new instrument anyway would be the opposite of what they chose. The success toast
       // still links to it, so the import is not lost. Reporting failure to the caller is what stops
       // it closing the dialog a second time, over whatever session is open by then.
       if (sessionRef.current !== session) return false;

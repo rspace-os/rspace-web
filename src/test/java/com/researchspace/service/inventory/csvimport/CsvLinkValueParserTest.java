@@ -78,14 +78,21 @@ public class CsvLinkValueParserTest {
 
   @Test
   void blankServerUrlAcceptsNothingRatherThanMatchingARelativeLookingCell() {
-    // the prefix must not be allowed to collapse to "/globalId/", or a cell naming no host at
-    // all would parse as a link to a local record
+    // without a server URL nothing names a local record, not even a cell with no host at all
     IPropertyHolder unset = mock(IPropertyHolder.class);
     when(unset.getServerUrl()).thenReturn("");
     parser.properties = unset;
 
     assertFalse(parser.isParseable("Cites /globalId/SA1"));
     assertFalse(parser.isParseable("Cites https://rspace.example.com/globalId/SA1"));
+  }
+
+  /** The rule the PIDINST import applies too (InventoryUrls.globalIdOfOwnPage, RSDEV-1528). */
+  @Test
+  void anAddressOfThisServerInAnotherSchemeStillNamesALocalRecord() {
+    ApiInventoryLink link = parser.parse("Cites http://rspace.example.com/globalId/SA123");
+
+    assertEquals("SA123", link.getTargetGlobalId());
   }
 
   @Test

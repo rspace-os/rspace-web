@@ -42,6 +42,11 @@ public interface PidinstLookupManager {
    * default PIDINST template filled from it, attaches a linked identifier, and returns the result;
    * one transaction.
    *
+   * <p>The record's Measurement Technique and Calibration related identifiers fill the instrument's
+   * two link fields when they name an item in this deployment the user can link (RSDEV-1528, ADR
+   * 0009 decision 9); every other such entry is returned as a skipped entry on the created
+   * instrument, and the import still succeeds.
+   *
    * @throws jakarta.ws.rs.NotFoundException when the provider has no PUBLIC instrument record for
    *     the PID, or the value is not a PID of the enabled provider. Only a public record may be
    *     linked, so a PID that exists but is not published is reported exactly like one that does

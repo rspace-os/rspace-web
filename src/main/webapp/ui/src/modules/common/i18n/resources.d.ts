@@ -4002,6 +4002,7 @@ export default interface Resources {
         "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
         "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "alternateIdentifier": "Alternate identifier",
+        "calibration": "Calibration",
         "commissioned": "Commissioned",
         "decommissioned": "Decommissioned",
         "description": "Description",
@@ -4009,6 +4010,7 @@ export default interface Resources {
         "landingPage": "Landing page",
         "manufacturers": "Manufacturers",
         "measuredVariables": "Measured variables",
+        "measurementTechnique": "Measurement technique",
         "model": "Model",
         "owners": "Owners",
         "pid": "PID",
@@ -4035,6 +4037,15 @@ export default interface Resources {
       },
       "searchError": "Could not search the PID registry.",
       "selectRadioLabel": "Select record: {name}",
+      "skipped": {
+        "message": "{count, plural, one {# entry} other {# entries}} of the registry record could not be linked from the new instrument. Each is listed here with the reason.",
+        "reasons": {
+          "notAnAddressHere": "It is not the address of an item in this RSpace: <address/>",
+          "notAvailable": "The item it points at is not available to you: <address/>",
+          "otherServer": "It points at another server ({host}): <address/>"
+        },
+        "title": "Some registry entries were not imported"
+      },
       "title": "Import Instrument from PIDINST",
       "validation": {
         "alreadyLinked": "This PID is already linked to instrument {globalId}.",
@@ -6892,6 +6903,7 @@ export default interface Resources {
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
           "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
           "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registry.",
+          "pidinstTemplateMissing": "This RSpace has no \"{0}\" template, which importing an instrument requires. Ask your system administrator to check the installation.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },

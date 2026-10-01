@@ -20,7 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
  * The exporter and the importer are tested apart, each against the same hand-written literal cell,
  * so nothing has pinned the one property the feature exists for: that what the exporter actually
  * writes is what the importer accepts. The two sides derive the URL differently ({@code
- * globalIdPageUrl} against {@code globalIdPagePrefix}) and handle the relation token and the {@code
+ * globalIdPageUrl} against {@code globalIdOfOwnPage}) and handle the relation token and the {@code
  * vN} suffix independently, so either can move without a test noticing until a customer's exported
  * CSV will not re-import.
  *

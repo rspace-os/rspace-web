@@ -4,10 +4,12 @@ import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
-import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.api.v1.model.ApiPidinstRecord;
 import com.researchspace.api.v1.model.ApiPidinstSearchResult;
+import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier;
+import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier.Reason;
 import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
@@ -21,15 +23,20 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
+import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import com.researchspace.service.inventory.PidinstLookupManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -143,6 +150,8 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   @Autowired private InventoryIdentifierApiManager identifierMgr;
   @Autowired private MessageSourceUtils messages;
   @Autowired private InventoryPermissionUtils invPermissions;
+  @Autowired private InventoryLinkManager inventoryLinkManager;
+  @Autowired private IPropertyHolder properties;
 
   @Override
   public ApiPidinstSearchResult search(String query, User user) {
@@ -206,22 +215,29 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     InstrumentTemplate template =
         instrumentTemplateDao
             .findLockedTemplateByName(CreateDefaultInstrumentTemplate_RSDEV1219.TEMPLATE_NAME)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "The locked default instrument template '"
-                            + CreateDefaultInstrumentTemplate_RSDEV1219.TEMPLATE_NAME
-                            + "' is missing: the RSDEV-1219 Liquibase seeder has not run on this"
-                            + " database"));
-    ApiInstrument toCreate = PidinstRecordMapper.toApiInstrument(record, template);
+            .orElseThrow(this::lockedTemplateMissing);
+    List<ApiPidinstSkippedRelatedIdentifier> skipped = new ArrayList<>();
+    Map<String, ApiInventoryLink> links = relatedIdentifierLinks(record, user, skipped);
+    ApiInstrument toCreate = PidinstRecordMapper.toApiInstrument(record, template, links);
     applyTargetLocation(toCreate, newTargetLocation);
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(toCreate, user);
     ApiInventoryDOI link = PidinstRecordMapper.toLinkedIdentifier(record, user);
-    ApiInventoryRecordInfo linked =
-        identifierMgr.linkExternalIdentifier(
-            new GlobalIdentifier(created.getGlobalId()), link, user);
+    ApiInstrument linked =
+        (ApiInstrument)
+            identifierMgr.linkExternalIdentifier(
+                new GlobalIdentifier(created.getGlobalId()), link, user);
+    linked.setSkippedRelatedIdentifiers(skipped);
     log.info("Imported {} from {} as {}", record.getPid(), provider, created.getGlobalId());
-    return (ApiInstrument) linked;
+    for (ApiPidinstSkippedRelatedIdentifier entry : skipped) {
+      log.info(
+          "Import of {}: the {} entry {} was not linked ({})",
+          record.getPid(),
+          entry.getField(),
+          // written by whoever registered the record: no line breaks into the log
+          entry.getAddress().replaceAll("[\\r\\n]", " "),
+          entry.getReason());
+    }
+    return linked;
   }
 
   /**
@@ -477,6 +493,17 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
                     "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess"));
   }
 
+  private IllegalStateException lockedTemplateMissing() {
+    String name = CreateDefaultInstrumentTemplate_RSDEV1219.TEMPLATE_NAME;
+    log.error(
+        "The locked default instrument template '{}' is missing: the RSDEV-1219 Liquibase seeder"
+            + " has not run on this database",
+        name);
+    return new IllegalStateException(
+        messages.getMessage(
+            "errors.inventory.identifier.pidinstTemplateMissing", new Object[] {name}));
+  }
+
   /** Same translation {@code InstrumentsApiController.createNewInstrument} applies to a POST. */
   private static void applyTargetLocation(ApiInstrument toCreate, ApiTargetLocation target) {
     if (target == null) {
@@ -486,5 +513,82 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     parentContainer.setId(target.getContainerId());
     toCreate.setParentContainer(parentContainer);
     toCreate.setParentLocation(target.getContainerLocation());
+  }
+
+  /**
+   * The links the record's Measurement Technique and Calibration related identifiers become, by
+   * canonical field name; every entry that cannot become one goes to {@code skipped} (RSDEV-1528,
+   * ADR 0009 decision 9). Each is checked with the write path's own rules first, so a bad entry is
+   * dropped here instead of failing the whole import with the create's 422.
+   */
+  private Map<String, ApiInventoryLink> relatedIdentifierLinks(
+      ApiPidinstRecord record, User user, List<ApiPidinstSkippedRelatedIdentifier> skipped) {
+    Map<String, ApiInventoryLink> links = new HashMap<>();
+    for (PidinstFields.ImportedLink target : PidinstFields.IMPORTED_LINKS) {
+      List<ApiPidinstSkippedRelatedIdentifier> rejected = new ArrayList<>();
+      Optional<ApiInventoryLink> link = Optional.empty();
+      for (String address :
+          PidinstFields.valuesLabelled(record.getRelatedIdentifiers(), target.registryLabel())) {
+        link = linkFor(address, target, user, rejected);
+        if (link.isPresent()) {
+          break;
+        }
+      }
+      if (link.isPresent()) {
+        links.put(target.fieldName(), link.get());
+      } else {
+        skipped.addAll(rejected);
+      }
+    }
+    return links;
+  }
+
+  /** The link for one entry, or empty with the reason added to {@code rejected}. */
+  private Optional<ApiInventoryLink> linkFor(
+      String address,
+      PidinstFields.ImportedLink target,
+      User user,
+      List<ApiPidinstSkippedRelatedIdentifier> rejected) {
+    Optional<String> globalId = InventoryUrls.globalIdOfOwnPage(address, properties.getServerUrl());
+    if (globalId.isEmpty()) {
+      rejected.add(
+          new ApiPidinstSkippedRelatedIdentifier(
+              target.fieldName(), Reason.OTHER_SERVER, address, otherHostOf(address)));
+      return Optional.empty();
+    }
+    ApiInventoryLink link = new ApiInventoryLink();
+    link.setRelationType(target.relationType());
+    // the Global ID as registered, version suffix included, so the pin the address names is kept
+    link.setTargetGlobalId(globalId.get());
+    if (!inventoryLinkManager.canCreateLink(link, user)) {
+      // one reason whatever failed, so the import never confirms that an item exists (ADR 0002)
+      rejected.add(
+          new ApiPidinstSkippedRelatedIdentifier(
+              target.fieldName(), Reason.NOT_AVAILABLE, address, null));
+      return Optional.empty();
+    }
+    return Optional.of(link);
+  }
+
+  /**
+   * The address's host for the warning, or null when it has none (a bare DOI, or not a URL) or it
+   * is this RSpace's own host, which the warning must not call another server.
+   */
+  private String otherHostOf(String address) {
+    String host = hostOf(address);
+    return host != null && host.equalsIgnoreCase(hostOf(properties.getServerUrl())) ? null : host;
+  }
+
+  /** The value's host, or null when it has none. */
+  private static String hostOf(String value) {
+    String trimmed = StringUtils.trimToNull(value);
+    if (trimmed == null) {
+      return null;
+    }
+    try {
+      return URI.create(trimmed).getHost();
+    } catch (IllegalArgumentException notAUri) {
+      return null;
+    }
   }
 }

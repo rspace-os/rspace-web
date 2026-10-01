@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -75,6 +76,33 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
 
     assertEquals(Long.valueOf(5), saved.getVersionPin());
     assertEquals(target.getId(), saved.getTargetDbId());
+  }
+
+  /**
+   * RSDEV-1528: the pre-check the PIDINST import runs must answer exactly as createLink would, and
+   * answer false for every failure alike, so a caller learns nothing about why.
+   */
+  @Test
+  public void canCreateLinkIsTrueOnlyWhereCreateLinkWouldSucceed() {
+    User owner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(owner);
+    ApiInventoryLink api = new ApiInventoryLink();
+    api.setRelationType("IsCalibratedBy");
+    api.setTargetGlobalId(target.getGlobalId() + "v1");
+
+    assertTrue(linkManager.canCreateLink(api, owner), "a readable target, version suffix and all");
+
+    User stranger = createInitAndLoginAnyUser();
+    assertFalse(linkManager.canCreateLink(api, stranger), "a target the actor cannot read");
+    api.setTargetGlobalId("SA999999999");
+    assertFalse(linkManager.canCreateLink(api, owner), "a target that does not exist");
+    api.setTargetGlobalId("FL" + target.getId());
+    assertFalse(linkManager.canCreateLink(api, owner), "a kind links cannot target");
+    api.setTargetGlobalId("not-a-global-id");
+    assertFalse(linkManager.canCreateLink(api, owner), "a malformed id");
+    api.setTargetGlobalId(target.getGlobalId());
+    api.setRelationType("IsFriendsWith");
+    assertFalse(linkManager.canCreateLink(api, owner), "an unknown relation type");
   }
 
   @Test
