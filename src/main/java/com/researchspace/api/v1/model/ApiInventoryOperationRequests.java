@@ -57,8 +57,8 @@ public final class ApiInventoryOperationRequests {
 
     /**
      * How many subsamples to create, a whole number from 1 to 100; absent means one. A BigDecimal,
-     * not an Integer, so Jackson cannot truncate {@code 1.9} to 1 before {@code @Digits} rejects
-     * it.
+     * not an Integer, so Jackson cannot truncate {@code 1.9} to 1, and it keeps the JSON text's
+     * scale, so {@code @Digits} rejects {@code 1.0} as well.
      */
     @Min(value = 1, message = "{errors.inventory.operation.inputBelowMinimum}")
     @Max(value = 100, message = "{errors.inventory.operation.inputAboveMaximum}")
@@ -68,11 +68,6 @@ public final class ApiInventoryOperationRequests {
         message = "{errors.inventory.operation.countNotWhole}")
     @JsonProperty("count")
     private BigDecimal count;
-
-    /** Whole by value, not by scale: "1.0" is one, "1.9" still fails {@code @Digits}. */
-    public void setCount(BigDecimal count) {
-      this.count = count == null ? null : count.stripTrailingZeros();
-    }
 
     @NotNull(message = "{errors.inventory.operation.inputRequired}")
     @JsonProperty("eachAmount")
