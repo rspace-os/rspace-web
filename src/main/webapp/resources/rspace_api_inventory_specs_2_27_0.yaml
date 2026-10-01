@@ -5351,6 +5351,29 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/GroupShareInfo"
+    OperationAmount:
+      type: object
+      description: |
+        An amount an operation takes from an origin or gives each subsample it creates. Both
+        properties are required and the amount must be greater than zero. Quantities are stored
+        to three decimal places, so an amount with more decimal places is rejected rather than
+        rounded. The field that uses this schema says which measurement category the unit must
+        belong to.
+      properties:
+        numericValue:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          description: The amount, greater than zero, to at most three decimal places.
+          example: 5
+        unitId:
+          type: integer
+          minimum: 1
+          description: Id of the unit the amount is in, as listed by `GET /api/v1/units`.
+          example: 3
+      required:
+        - numericValue
+        - unitId
     OperationOrigin:
       description: |
         A subsample an operation consumes, identified by its global id (`SS` prefix). A sample or
@@ -5381,7 +5404,7 @@ components:
         - $ref: "#/components/schemas/OperationOrigin"
         - properties:
             amountTaken:
-              $ref: "#/components/schemas/Quantity"
+              $ref: "#/components/schemas/OperationAmount"
           required:
             - amountTaken
     PoolOrigin:
@@ -5393,7 +5416,7 @@ components:
         - $ref: "#/components/schemas/OperationOrigin"
         - properties:
             amountTaken:
-              $ref: "#/components/schemas/Quantity"
+              $ref: "#/components/schemas/OperationAmount"
     CreatingOperationFields:
       description: |
         The fields shared by every operation that creates a sample: the sample's name, how many
@@ -5416,7 +5439,7 @@ components:
             string such as "2" is also accepted, and an empty string is treated as absent. A
             decimal point is rejected, even `1.0`.
         eachAmount:
-          $ref: "#/components/schemas/Quantity"
+          $ref: "#/components/schemas/OperationAmount"
         templateId:
           type: integer
           format: int64
