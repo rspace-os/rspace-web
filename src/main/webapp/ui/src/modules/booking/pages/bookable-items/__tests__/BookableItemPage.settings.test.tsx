@@ -120,9 +120,9 @@ describe("BookableItemPage", () => {
   });
 
   it("keeps a caller without edit capability in view mode on the direct edit URL", async () => {
-    mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: false } } as ReturnType<
-      typeof useCurrentUserQuery
-    >);
+    mockedUseCurrentUserQuery.mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
     server.use(
       http.get("/api/v2/booking-configurations", () =>
         HttpResponse.json(collectionPage([{ ...configuration, ...bookerBookingAccess }], 2)),

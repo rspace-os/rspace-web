@@ -2,8 +2,10 @@ import { createRootRoute, createRoute, createRouter, Outlet, type RouterHistory 
 import { isPlainDate } from "@/modules/booking/domain/bookingTime";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import AddBookingPage from "@/modules/booking/pages/bookings/AddBookingPage";
 import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPage from "../BookingPage";
+import { createBookingEventTestRouteTree } from "../bookings/__tests__/bookingEventTestHarness";
 
 export function createCalendarRouter(history: RouterHistory) {
   const root = createRootRoute({ component: Outlet });
@@ -20,6 +22,13 @@ export function createCalendarRouter(history: RouterHistory) {
           }),
           component: CalendarPage,
         }),
+        createRoute({
+          getParentRoute: () => booking,
+          path: "/calendar/bookings/add/",
+          validateSearch: bookingFormSearch,
+          component: AddBookingPage,
+        }),
+        createBookingEventTestRouteTree(booking),
         createRoute({
           getParentRoute: () => booking,
           path: "/bookable-items/$globalId/{-$tab}/",
