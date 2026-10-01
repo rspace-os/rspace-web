@@ -11,6 +11,7 @@ import {
 import { render } from "@testing-library/react";
 import { Suspense } from "react";
 import { vi } from "vitest";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
@@ -33,7 +34,7 @@ export const configuration = {
   createdByName: "Grace Hopper (grace)",
   updatedAt: null,
 };
-export const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
+const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
 export const mockedUseCurrentUserQuery = vi.mocked(useCurrentUserQuery);
 
 export function setupPage() {
@@ -63,9 +64,11 @@ export function renderPage(initialEntry = "/booking/bookable-items/IN123") {
   });
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <RouterProvider router={router as never} />
-      </Suspense>
+      <BookingCreationStoreProvider>
+        <Suspense fallback={null}>
+          <RouterProvider router={router as never} />
+        </Suspense>
+      </BookingCreationStoreProvider>
     </QueryClientProvider>,
   );
   return { ...result, queryClient, router };

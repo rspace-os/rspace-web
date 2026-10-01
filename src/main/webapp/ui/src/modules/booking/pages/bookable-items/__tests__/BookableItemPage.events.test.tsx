@@ -80,9 +80,9 @@ describe("BookableItemPage", () => {
     const user = userEvent.setup();
     let lookupFails = true;
     let eventRequests = 0;
-    mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: false } } as ReturnType<
-      typeof useCurrentUserQuery
-    >);
+    mockedUseCurrentUserQuery.mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
     server.use(
       http.get("/api/v2/booking-configurations", () =>
         lookupFails ? HttpResponse.json(collectionPage([], 2)) : HttpResponse.json(collectionPage([configuration], 2)),
