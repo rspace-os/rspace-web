@@ -3,6 +3,7 @@ import { CatchBoundary, HeadContent, Outlet, useMatches, useRouter, useRouterSta
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
 import { navigationProgressQueryFilters } from "@/modules/common/queries/navigationProgress";
 import {
   Sidebar,
@@ -111,6 +112,7 @@ export default function AppShell() {
           </NuqsAdapter>
         </SidebarInset>
       </div>
+      <FeatureFlagDevtoolsMount />
     </>
   );
   if (!renderSidebar) return <div className="flex min-h-svh w-full flex-col">{content}</div>;
