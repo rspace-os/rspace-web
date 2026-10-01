@@ -58,6 +58,8 @@ final class BookingConfigurationManagerTestFixtures {
   final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
   final BookingItemPermissions itemPermissions = mock(BookingItemPermissions.class);
+  final BookingNotificationService bookingNotificationService =
+      mock(BookingNotificationService.class);
   final LocalValidatorFactoryBean validator = BookingSettingsTestFixtures.validator();
   final BookingCalendarPermissionGateDao permissionGate =
       mock(BookingCalendarPermissionGateDao.class);
@@ -74,6 +76,7 @@ final class BookingConfigurationManagerTestFixtures {
           itemPermissions,
           calendarSubscriptions,
           timeSlotBookings,
+          bookingNotificationService,
           permissionGate);
 
   void setUp() {

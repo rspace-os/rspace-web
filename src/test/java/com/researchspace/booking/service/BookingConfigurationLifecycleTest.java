@@ -22,6 +22,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -29,6 +30,7 @@ import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.comms.NotificationType;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +54,8 @@ class BookingConfigurationLifecycleTest {
   private final ApplicationEventPublisher events = fixture.events;
   private final LocalValidatorFactoryBean validator = fixture.validator;
   private final BookingConfigurationManager manager = fixture.manager;
+  private final BookingNotificationService bookingNotificationService =
+      fixture.bookingNotificationService;
 
   @BeforeEach
   void setUp() {
@@ -71,9 +75,12 @@ class BookingConfigurationLifecycleTest {
     first.setState(BookingState.CONFIRMED);
     TimeSlotBooking second = new TimeSlotBooking();
     second.setState(BookingState.CONFIRMED);
+    second.setKind(BookingEventKind.MAINTENANCE);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
     when(timeSlotBookings.findFutureConfirmedByConfiguration(eq(42L), any(Date.class)))
         .thenReturn(List.of(first, second));
+    when(timeSlotBookings.saveAndFlush(any(TimeSlotBooking.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     BookingConfiguration removed =
         manager.archiveConfiguration(42L, 0L, actor, actor).orElseThrow();
@@ -88,6 +95,15 @@ class BookingConfigurationLifecycleTest {
     assertSame(actor, first.getUpdatedBy());
     assertSame(actor, second.getUpdatedBy());
     verify(dao).saveAndFlush(configuration);
+    verify(timeSlotBookings, times(2)).saveAndFlush(any(TimeSlotBooking.class));
+    ArgumentCaptor<TimeSlotBooking> notifiedBooking =
+        ArgumentCaptor.forClass(TimeSlotBooking.class);
+    verify(bookingNotificationService)
+        .notify(
+            notifiedBooking.capture(),
+            eq(actor),
+            eq(NotificationType.NOTIFICATION_BOOKING_CANCELLED));
+    assertSame(first, notifiedBooking.getValue());
     verify(dao, never()).remove(any());
     verify(calendarSubscriptions).deleteByConfigurationId(42L);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));

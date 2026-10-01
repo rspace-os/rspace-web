@@ -46,6 +46,8 @@ class TimeSlotBookingManagerTest {
   final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicy();
   final User actor = mock(User.class);
   final BookingItemPermissions accessManager = mock(BookingItemPermissions.class);
+  final BookingNotificationService bookingNotificationService =
+      mock(BookingNotificationService.class);
   final TimeSlotBookingManager manager =
       new TimeSlotBookingManagerImpl(
           bookingDao,
@@ -53,6 +55,7 @@ class TimeSlotBookingManagerTest {
           schedulingPolicy,
           instrumentDao,
           bookingInstruments,
+          bookingNotificationService,
           registry,
           events,
           accessManager,

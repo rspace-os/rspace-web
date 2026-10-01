@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
 import {
   type AvailabilityInterval,
@@ -32,6 +33,7 @@ export type AvailabilityBarProps = {
   showCurrentAvailability?: boolean;
   showPeriodLabels?: boolean;
   timeZone: string;
+  instrumentTimeZone?: string | null;
   /** @deprecated The bar domain is now always the resolved display timezone. */
   userTimeZone?: string;
   item: {
@@ -86,6 +88,7 @@ export function AvailabilityBar({
   showCurrentAvailability = false,
   showPeriodLabels = false,
   timeZone,
+  instrumentTimeZone,
   item,
   className,
 }: AvailabilityBarProps) {
@@ -309,6 +312,12 @@ export function AvailabilityBar({
                                   : t("availabilityBar.slice.sources.booking")
                             }
                             period={formatTimeRange(source)}
+                            periodTooltip={{
+                              start: source.startsAt.toISOString(),
+                              end: source.endsAt.toISOString(),
+                              displayTimeZone: timeZone,
+                              instrumentTimeZone,
+                            }}
                             purpose={source.booking.purpose}
                             maintenance={maintenance}
                             item={maintenance || showBookingContextDetails ? item : undefined}
@@ -331,7 +340,16 @@ export function AvailabilityBar({
                                   ? t("availabilityBar.slice.sources.booking")
                                   : t("availabilityBar.slice.sources.openingHours")}
                             </span>
-                            <span className="block text-[11px] text-muted-foreground">{formatTimeRange(source)}</span>
+                            <span className="block text-[11px] text-muted-foreground">
+                              <BookingInstrumentTimeTooltip
+                                start={source.startsAt.toISOString()}
+                                end={source.endsAt.toISOString()}
+                                displayTimeZone={timeZone}
+                                instrumentTimeZone={instrumentTimeZone}
+                              >
+                                {formatTimeRange(source)}
+                              </BookingInstrumentTimeTooltip>
+                            </span>
                           </span>
                         </li>
                       );
