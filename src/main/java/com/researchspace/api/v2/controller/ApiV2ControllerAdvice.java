@@ -120,6 +120,17 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
   }
 
+  @ExceptionHandler(ApiV2AuditSnapshotConflictException.class)
+  public ResponseEntity<ApiV2Problem> handleAuditSnapshotConflict() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.audit.snapshot.changed");
+  }
+
+  @ExceptionHandler(ApiV2AuditUnavailableException.class)
+  public ResponseEntity<ApiV2Problem> handleAuditUnavailable(ApiV2AuditUnavailableException ex) {
+    log.error("REST API v2 audit snapshot is unavailable", ex.getCause());
+    return problem(HttpStatus.SERVICE_UNAVAILABLE, "errors.api.v2.audit.unavailable");
+  }
+
   @ExceptionHandler(ThrottlingException.class)
   public ResponseEntity<ApiV2Problem> handleThrottling() {
     return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
