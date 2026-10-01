@@ -51,6 +51,10 @@ public class ApiV2BrowserSessionAuthenticator {
       return Optional.empty();
     }
 
+    if (authenticatedUser.isLoginDisabled()) {
+      throw new ApiV2AuthenticationException();
+    }
+
     if (!sessionSaysRunAs) {
       return Optional.of(ApiV2Caller.direct(authenticatedUser));
     }
@@ -60,7 +64,7 @@ public class ApiV2BrowserSessionAuthenticator {
       throw new ApiV2AuthenticationException();
     }
     User actor = userManager.getUserByUsername(actorUsername, true);
-    if (actor == null) {
+    if (actor == null || actor.isLoginDisabled()) {
       throw new ApiV2AuthenticationException();
     }
     return Optional.of(new ApiV2Caller(authenticatedUser, actor));

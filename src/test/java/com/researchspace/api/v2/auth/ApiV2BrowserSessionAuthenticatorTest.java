@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.auth;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -16,6 +17,8 @@ import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 class ApiV2BrowserSessionAuthenticatorTest {
@@ -85,5 +88,53 @@ class ApiV2BrowserSessionAuthenticatorTest {
 
     assertSame(target, caller.subject());
     assertSame(actor, caller.actor());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "direct, false",
+    "direct, true",
+    "subject, false",
+    "subject, true",
+    "actor, false",
+    "actor, true"
+  })
+  void rejectsAnExistingSessionAfterEitherIdentityIsDisabledOrLocked(
+      String identity, boolean locked) {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.getSession(true);
+    boolean runAs = !identity.equals("direct");
+    Subject subject = mock(Subject.class);
+    Session session = mock(Session.class);
+    User target = new User("target1");
+    target.setId(41L);
+    User actor = new User("sysadmin1");
+    actor.setId(99L);
+    when(subject.isAuthenticated()).thenReturn(true);
+    when(subject.isRunAs()).thenReturn(runAs);
+    when(subject.getSession(false)).thenReturn(session);
+    when(subject.getPrincipal()).thenReturn("target1");
+    when(session.getAttribute(SessionAttributeUtils.IS_RUN_AS)).thenReturn(runAs);
+    when(userManager.getUserByUsername("target1", true)).thenReturn(target);
+    if (runAs) {
+      PrincipalCollection previousPrincipals = mock(PrincipalCollection.class);
+      when(subject.getPreviousPrincipals()).thenReturn(previousPrincipals);
+      when(previousPrincipals.getPrimaryPrincipal()).thenReturn("sysadmin1");
+      when(userManager.getUserByUsername("sysadmin1", true)).thenReturn(actor);
+    }
+    ThreadContext.bind(subject);
+    ApiV2Caller caller = authenticator.authenticateIfPresent(request).orElseThrow();
+    assertSame(target, caller.subject());
+    assertSame(runAs ? actor : target, caller.actor());
+
+    User blocked = identity.equals("actor") ? actor : target;
+    if (locked) {
+      blocked.setAccountLocked(true);
+    } else {
+      blocked.setEnabled(false);
+    }
+
+    assertThrows(
+        ApiV2AuthenticationException.class, () -> authenticator.authenticateIfPresent(request));
   }
 }

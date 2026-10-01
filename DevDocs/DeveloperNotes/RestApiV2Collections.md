@@ -963,6 +963,10 @@ request. Endpoint metadata selects browser-session authentication only for the t
 session-bound UI token authorizes as its subject and records both actor and subject for delegated
 security events. Other credentials never consult the browser identity.
 
+Browser authentication reloads the subject and originating actor on every request
+and rejects either identity if its account is disabled or locked. This applies to
+UI token creation and to each use of a session-bound UI token, including run-as.
+
 Starting and ending legacy Shiro run-as rotates the opaque browser authentication context. Tokens
 from before either transition therefore fail immediately, even if their JWT expiry has not passed.
 The UI mints a fresh v2 token after each page load. It does not trust a token retained in session
