@@ -12,6 +12,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class BookingAuditDetailsTest {
@@ -78,6 +79,71 @@ class BookingAuditDetailsTest {
   }
 
   @Test
+  void cancellationReasonIsLabelledButNullAndIsoLookingTextStayUnmodified() {
+    AuditData withReason =
+        AuditData.fromJson(
+            "{\"data\":{\"state\":\"CANCELLED\","
+                + "\"cancellationReason\":\"2026-09-28T18:29:48.555718112Z\"}}");
+    AuditData withoutReason =
+        AuditData.fromJson("{\"data\":{\"state\":\"CONFIRMED\",\"cancellationReason\":null}}");
+
+    assertEquals(
+        "Status: CANCELLED; Cancellation reason: 2026-09-28T18:29:48.555718112Z",
+        BookingAuditDetails.format(withReason.getData(), messages, Locale.US));
+    assertEquals(
+        "Status: CONFIRMED",
+        BookingAuditDetails.format(withoutReason.getData(), messages, Locale.US));
+  }
+
+  @Test
+  void instantsReadToTheSecond() {
+    AuditData data =
+        AuditData.fromJson(
+            "{\"data\":{\"id\":\"booking-configurations:525\","
+                + "\"start\":1790773200123,\"end\":1790776800999,"
+                + "\"deletedAt\":\"2026-09-28T18:29:48.555718112Z\","
+                + "\"purpose\":\"2026-09-28T18:29:48.5Z\",\"legacyAt\":\"2026-09-28T18:29:48Z\"}}");
+
+    assertEquals(
+        "Start (UTC): 2026-09-30T13:00:00Z; End (UTC): 2026-09-30T14:00:00Z;"
+            + " Purpose / notes: 2026-09-28T18:29:48.5Z; Deleted at (UTC): 2026-09-28T18:29:48Z;"
+            + " legacyAt: 2026-09-28T18:29:48Z",
+        BookingAuditDetails.format(data.getData(), messages, Locale.US));
+  }
+
+  @Test
+  void displayNamePrefersTheRecordedNameThenTheTargetThenTheConfiguration() {
+    assertEquals(
+        "Acceptance admin instrument",
+        BookingAuditDetails.displayName(
+            AuditData.fromJson(
+                    "{\"data\":{\"id\":\"booking-configurations:525\","
+                        + "\"target\":{\"type\":\"INSTRUMENT\",\"id\":591},"
+                        + "\"targetName\":\"Acceptance admin instrument\"}}")
+                .getData()));
+    assertEquals(
+        "IN5",
+        BookingAuditDetails.displayName(
+            AuditData.fromJson(
+                    "{\"data\":{\"id\":\"booking-configurations:12\",\"targetName\":\" \","
+                        + "\"target\":{\"type\":\"INSTRUMENT\",\"id\":5}}}")
+                .getData()));
+    assertEquals(
+        "booking-configurations:12",
+        BookingAuditDetails.displayName(
+            AuditData.fromJson(
+                    "{\"data\":{\"id\":\"bookings:93\","
+                        + "\"bookingConfigurationId\":\"booking-configurations:12\"}}")
+                .getData()));
+    assertNull(
+        BookingAuditDetails.displayName(
+            AuditData.fromJson(
+                    "{\"data\":{\"id\":\"booking-settings:1\","
+                        + "\"target\":{\"type\":\"CONTAINER\",\"id\":5}}}")
+                .getData()));
+  }
+
+  @Test
   void defaultsSnapshotLabelsItsDisplayFields() {
     AuditData data =
         AuditData.fromJson(
@@ -97,11 +163,17 @@ class BookingAuditDetailsTest {
     AuditTrailSearchResult legacyBooking = result(AuditDomain.UNKNOWN, "bookings:2");
     AuditTrailSearchResult record = result(AuditDomain.RECORD, "SD3");
 
+    booking.getEvent().getData().getData().put("target", Map.of("type", "INSTRUMENT", "id", 7));
+    record.getEvent().getData().getData().put("target", Map.of("type", "INSTRUMENT", "id", 7));
+
     BookingAuditDetails.addTo(List.of(booking, legacyBooking, record), messages, Locale.US);
 
-    assertEquals("Status: ACTIVE", booking.getEvent().getDetails());
+    assertEquals("Status: ACTIVE; Bookable item: IN7", booking.getEvent().getDetails());
+    assertEquals("IN7", booking.getEvent().getDisplayName());
     assertEquals("Status: ACTIVE", legacyBooking.getEvent().getDetails());
+    assertNull(legacyBooking.getEvent().getDisplayName());
     assertNull(record.getEvent().getDetails());
+    assertNull(record.getEvent().getDisplayName());
   }
 
   private static AuditTrailSearchResult result(AuditDomain domain, String id) {

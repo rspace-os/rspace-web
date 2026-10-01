@@ -961,7 +961,8 @@
       "viewDetails": "View details"
     },
     "cancelled": {
-      "announcement": "Cancelled the {itemName} booking for {period}. It is now listed under Cancelled."
+      "alert": "Cancelled {itemName}, {period}.",
+      "undoFailed": "The booking could not be restored: {reason}"
     },
     "count": {
       "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",

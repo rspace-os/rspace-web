@@ -1,3 +1,5 @@
+import { BookingTimeFormatProvider } from "@/modules/booking/domain/bookingDisplayPreferences";
+import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -32,6 +34,7 @@ const fullBooking = {
   end: "2026-08-25T10:00:00Z",
   state: "CONFIRMED",
   privacy: "full",
+  cancellationReason: null,
   purpose: "Cell imaging",
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
@@ -43,6 +46,7 @@ const busyBooking = {
   ...fullBooking,
   id: 42,
   privacy: "busy",
+  cancellationReason: null,
   purpose: null,
   bookedBy: null,
   canEdit: false,
@@ -87,12 +91,16 @@ beforeEach(() => {
 
 function renderList(options: { controls?: boolean } = {}) {
   function Page() {
+    const [timeFormat, setTimeFormat] = useState<BookingTimeFormat>("H24");
     const [timezone, setTimezone] = useState("UTC");
     const [globalId, setGlobalId] = useState("IN12");
     return (
       <>
         {options.controls ? (
           <>
+            <button type="button" onClick={() => setTimeFormat("H12")}>
+              {"Change time format"}
+            </button>
             <button type="button" onClick={() => setTimezone("Europe/Berlin")}>
               {changeTimezoneLabel}
             </button>
@@ -101,7 +109,9 @@ function renderList(options: { controls?: boolean } = {}) {
             </button>
           </>
         ) : null}
-        <BookingEventList globalId={globalId} timezone={timezone} period="upcoming" cutoff="2026-08-24T12:00:00Z" />
+        <BookingTimeFormatProvider timeFormat={timeFormat}>
+          <BookingEventList globalId={globalId} timezone={timezone} period="upcoming" cutoff="2026-08-24T12:00:00Z" />
+        </BookingTimeFormatProvider>
       </>
     );
   }
@@ -130,6 +140,24 @@ function renderList(options: { controls?: boolean } = {}) {
 }
 
 describe("BookingEventList", () => {
+  it("reformats a mounted event table when the clock preference changes without refetching", async () => {
+    const user = userEvent.setup();
+    let requests = 0;
+    server.use(
+      http.get("/api/v2/bookings", () => {
+        requests += 1;
+        return HttpResponse.json(envelope([fullBooking]));
+      }),
+    );
+    renderList({ controls: true });
+    const time = (await screen.findAllByRole("time"))[0];
+    const before = time.textContent;
+    await user.click(screen.getByRole("button", { name: "Change time format" }));
+    expect(screen.getAllByRole("time")[0].textContent).not.toBe(before);
+    expect(screen.getAllByRole("time")[0]).toHaveTextContent(/AM|am/);
+    expect(requests).toBe(1);
+  });
+
   it("renders full and busy events without leaking busy details", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([fullBooking, busyBooking]))));
     renderList();

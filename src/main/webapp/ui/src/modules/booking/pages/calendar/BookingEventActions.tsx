@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import type { EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { buttonVariants } from "@/modules/common/ui/button";
@@ -20,13 +21,16 @@ export function BookingActions({
   event,
   timezone,
   timelineDate,
+  timelineEventElement,
 }: {
   event: BookingListDocument;
   timezone: string;
   timelineDate?: string;
+  timelineEventElement?: HTMLElement | null;
 }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
+  const timeFormat = useBookingTimeFormat();
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const [editing, setEditing] = React.useState(false);
   const editable = isEditableBooking(event);
@@ -36,6 +40,7 @@ export function BookingActions({
         event={event}
         timezone={timezone}
         timelineDate={timelineDate}
+        timelineEventElement={timelineEventElement}
         token={token}
         onClose={() => setEditing(false)}
       />
@@ -76,7 +81,7 @@ export function BookingActions({
         <BookingCalendarFileButton
           bookingId={event.id}
           itemName={event.target?.value.name ?? commonT("values.unknownItem")}
-          period={formatAgendaPeriod(event.start, event.end, timezone)}
+          period={formatAgendaPeriod(event.start, event.end, timezone, undefined, timeFormat)}
           token={token}
           size="xs"
           variant="link"

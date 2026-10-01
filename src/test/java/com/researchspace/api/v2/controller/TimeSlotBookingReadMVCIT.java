@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -81,20 +82,40 @@ class TimeSlotBookingReadMVCIT {
             .perform(get(path).header("apiKey", fixture.userKey()))
             .andExpect(status().isOk())
             .andReturn();
+    MvcResult cancelled =
+        mockMvc
+            .perform(
+                patch(path)
+                    .header("apiKey", fixture.userKey())
+                    .header(HttpHeaders.IF_MATCH, booking.getResponse().getHeader(HttpHeaders.ETAG))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"state\":\"CANCELLED\","
+                            + "\"cancellationReason\":\"Instrument needs recalibration\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.state").value("CANCELLED"))
+            .andExpect(jsonPath("$.cancellationReason").value("Instrument needs recalibration"))
+            .andReturn();
+
     mockMvc
         .perform(
             patch(path)
                 .header("apiKey", fixture.userKey())
-                .header(HttpHeaders.IF_MATCH, booking.getResponse().getHeader(HttpHeaders.ETAG))
+                .header(HttpHeaders.IF_MATCH, cancelled.getResponse().getHeader(HttpHeaders.ETAG))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"state\":\"CANCELLED\"}"))
+                .content(
+                    "{\"state\":\"CANCELLED\","
+                        + "\"cancellationReason\":\"Instrument needs recalibration\"}"))
         .andExpect(status().isOk())
+        .andExpect(
+            header().string(HttpHeaders.ETAG, cancelled.getResponse().getHeader(HttpHeaders.ETAG)))
         .andExpect(jsonPath("$.state").value("CANCELLED"));
 
     mockMvc
         .perform(get(path).header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.state").value("CANCELLED"));
+        .andExpect(jsonPath("$.state").value("CANCELLED"))
+        .andExpect(jsonPath("$.cancellationReason").value("Instrument needs recalibration"));
     mockMvc
         .perform(
             get("/api/v2/bookings")

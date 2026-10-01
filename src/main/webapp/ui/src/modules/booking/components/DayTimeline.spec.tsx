@@ -182,7 +182,7 @@ describe("DayTimeline expanded cards", () => {
     await expect.element(tooltip).toHaveTextContent("America/New_York");
   });
 
-  test("closes on outside press and Escape while preserving event privacy rules", async () => {
+  test("preserves the outside destination while restoring focus for Escape", async () => {
     render(<DayTimelineStory />);
     await timeline.open(LONG_ITEM_NAME);
     const booking = timeline.popup("09:30 AM–10:30 AM");
@@ -193,7 +193,7 @@ describe("DayTimeline expanded cards", () => {
 
     await timeline.outsideButton.click();
     await expect.element(booking).not.toBeInTheDocument();
-    await expect.element(timeline.trigger(LONG_ITEM_NAME)).toHaveFocus();
+    await expect.element(timeline.outsideButton).toHaveFocus();
 
     await timeline.open("Scheduled maintenance");
     const blockout = timeline.popup("11:00 AM–12:00 PM");
@@ -208,6 +208,9 @@ describe("DayTimeline expanded cards", () => {
     await expect.element(page.getByText("Booked by")).not.toBeInTheDocument();
     await expect.element(page.getByText("Cell imaging with the 63x oil objective.")).not.toBeInTheDocument();
     await expect.element(page.getByText("Read-only booking purpose.")).not.toBeInTheDocument();
+
+    await timeline.outsideButton.click();
+    await expect.element(timeline.outsideButton).toHaveFocus();
   });
 
   test("has no accessibility violations with an expanded event", async () => {

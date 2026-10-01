@@ -74,6 +74,10 @@ describe("recorded audit values", () => {
       ["openDays", "Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday"],
       ["openingExceptions", "\u2014"],
     ]);
+    expect(recordedValues({ openingStart: "18:00", openingEnd: "24:00" }, "en-US")).toEqual([
+      ["openingStart", "18:00"],
+      ["openingEnd", "00:00"],
+    ]);
     // An unrecognised shape keeps the raw snapshot rather than a misleading reading.
     expect(recordedValues({ openDays: [0], openingExceptions: "not json" }, "en-US")).toEqual([
       ["openDays", "[0]"],
@@ -108,6 +112,14 @@ describe("recorded audit values", () => {
       ["start", "invalid"],
       ["end", "—"],
     ]);
+  });
+
+  it("keeps cancellation reasons as free text and omits null reasons", () => {
+    expect(recordedValues({ state: "CANCELLED", cancellationReason: "2026-10-09T08:00:00Z" }, "en-US")).toEqual([
+      ["state", "CANCELLED"],
+      ["cancellationReason", "2026-10-09T08:00:00Z"],
+    ]);
+    expect(recordedValues({ state: "CONFIRMED", cancellationReason: null }, "en-US")).toEqual([["state", "CONFIRMED"]]);
   });
 });
 
