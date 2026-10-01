@@ -22,7 +22,7 @@ describe("CalendarPage", () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([]))),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))),
     );
 
     await renderCalendar();
@@ -30,7 +30,7 @@ describe("CalendarPage", () => {
     expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Resources" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Day" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Mass spectrometer")).toBeVisible();
+    expect(await screen.findByText("Mass spectrometer")).toBeVisible();
     expect(screen.queryByText("No records found")).not.toBeInTheDocument();
   });
 });

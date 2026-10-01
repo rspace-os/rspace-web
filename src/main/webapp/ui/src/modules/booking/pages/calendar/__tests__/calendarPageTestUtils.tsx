@@ -1,7 +1,7 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { bookableItemsHandlers } from "../../bookable-items/mocks/bookableItemsMocks";
+import { bookingPagesHandlers } from "../../mocks/bookingPagesMocks";
 
 export { renderCalendar } from "./calendarTestHarness";
 
@@ -14,7 +14,7 @@ export function setupCalendarScrollTo() {
 export function setupCalendarBookableItems() {
   // The calendar keeps its search in the document URL, so a search typed in one test must not seed the next.
   window.history.replaceState(null, "", "/");
-  server.use(...bookableItemsHandlers(() => undefined));
+  server.use(...bookingPagesHandlers());
 }
 
 export function restoreCalendarScrollTo() {

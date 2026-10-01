@@ -1,4 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { CheckIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
@@ -53,6 +54,7 @@ export function BookingPreferencesContent() {
   const valid = v.safeParse(BookingDisplayPreferencesInputSchema, input).success;
   const dirty = draft !== undefined;
   const pending = replace.isPending || reset.isPending;
+  const saved = replace.isSuccess && !dirty;
 
   return (
     <main className="space-y-6 p-4 sm:p-8">
@@ -68,12 +70,17 @@ export function BookingPreferencesContent() {
         className="max-w-2xl space-y-6"
         onSubmit={(event) => {
           event.preventDefault();
-          if (valid && !pending) replace.mutate(input, { onSuccess: () => setDraft(undefined) });
+          if (valid && dirty && !pending) {
+            reset.reset();
+            replace.mutate(input, { onSuccess: () => setDraft(undefined) });
+          }
         }}
       >
         <BookingDisplaySettingsFields
           value={input}
           onChange={(value) => {
+            replace.reset();
+            reset.reset();
             setDraft((current) => {
               const baseline = current?.baseline ?? inputFrom(document);
               return JSON.stringify(value) === JSON.stringify(baseline) ? undefined : { baseline, input: value };
@@ -83,28 +90,35 @@ export function BookingPreferencesContent() {
           institutionTimezone={document.institutionTimezone}
           disabled={pending}
         />
-        {!valid ? (
-          <p role="alert" className="text-sm text-destructive">
-            {t("preferences.errors.invalid")}
-          </p>
-        ) : null}
         {replace.isError || reset.isError ? (
           <p role="alert" className="text-sm text-destructive">
             {t("preferences.errors.save")}
           </p>
         ) : null}
-        {replace.isSuccess && !dirty ? <p role="status">{t("preferences.saved")}</p> : null}
         {reset.isSuccess && !dirty ? <p role="status">{t("preferences.resetComplete")}</p> : null}
         <div className="flex flex-wrap gap-3">
-          <Button type="submit" disabled={pending || !dirty || !valid} aria-busy={replace.isPending}>
-            {t("preferences.actions.save")}
+          <Button
+            type="submit"
+            disabled={pending || !dirty || !valid}
+            aria-busy={replace.isPending}
+            className={
+              saved
+                ? "bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-100 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                : undefined
+            }
+          >
+            {saved ? <CheckIcon aria-hidden="true" /> : null}
+            {saved ? t("preferences.actions.saved") : t("preferences.actions.save")}
           </Button>
           <Button
             type="button"
             variant="outline"
             disabled={pending || (!document.overridden && !dirty)}
             aria-busy={reset.isPending}
-            onClick={() => reset.mutate(undefined, { onSuccess: () => setDraft(undefined) })}
+            onClick={() => {
+              replace.reset();
+              reset.mutate(undefined, { onSuccess: () => setDraft(undefined) });
+            }}
           >
             {t("preferences.actions.reset")}
           </Button>

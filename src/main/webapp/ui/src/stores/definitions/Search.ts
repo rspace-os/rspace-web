@@ -461,11 +461,7 @@ export interface Search {
   duplicateRecords(records: Array<InventoryRecord>): Promise<void>;
   restoreRecords(records: Array<InventoryRecord>): Promise<void>;
   splitRecord(copies: number, subsample: SubSample): Promise<void>;
-  transferRecords(
-    username: Username,
-    records: Array<InventoryRecord>,
-    transferBookingConfigurationOwnership?: boolean,
-  ): Promise<void>;
+  transferRecords(username: Username, records: Array<InventoryRecord>): Promise<void>;
   exportRecords(exportOptions: ExportOptions, records: Array<InventoryRecord>): Promise<void>;
 
   /*

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig } from "@/modules/common/collection/config";
 import i18n from "@/modules/common/i18n";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
@@ -18,6 +19,7 @@ function dateTime(value: BookingListDocument["start"], timeZone: string): ReactN
 export function bookingListConfig(timeZone: string): CollectionConfig<BookingListDocument> {
   return {
     slug: "my-bookings",
+    relationshipSources: bookingRelationshipSources,
     idField: "id",
     useAsTitle: "target",
     labels: {

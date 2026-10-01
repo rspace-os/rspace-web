@@ -42,9 +42,10 @@ describe("the All Bookable Items page", () => {
   test("explains the quick-filter capacity limit without offering a futile retry", async () => {
     let requests = 0;
     worker.use(
-      http.get("/api/v2/booking-configurations", () => {
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        if (new URL(request.url).searchParams.get("limit") !== "100") return undefined;
         requests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 1001, totalPages: 11 });
+        return HttpResponse.json({ items: [], total: 1001, page: 1, pageSize: 100, facets: { types: ["INSTRUMENT"] } });
       }),
     );
     render(<AllBookableItemsStory history={history} />);
@@ -60,7 +61,8 @@ describe("the All Bookable Items page", () => {
   test.each([390, 1440])("keeps the quick-filter toolbar and results width stable at %s px", async (width) => {
     const response = Promise.withResolvers<void>();
     worker.use(
-      http.get("/api/v2/booking-configurations", async () => {
+      http.get("/api/v2/booking-catalogue", async ({ request }) => {
+        if (new URL(request.url).searchParams.get("limit") !== "100") return undefined;
         await response.promise;
         return undefined;
       }),
