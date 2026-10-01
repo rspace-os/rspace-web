@@ -130,8 +130,10 @@ beforeEach(() => {
   } as ReturnType<typeof useCurrentUserQuery>);
 });
 
-function renderPage(initialEntry = "/booking/bookable-items/IN123") {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderPage(
+  initialEntry = "/booking/bookable-items/IN123",
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   const root = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
@@ -152,15 +154,73 @@ function renderPage(initialEntry = "/booking/bookable-items/IN123") {
 }
 
 describe("BookableItemPage", () => {
-  it("keeps the draft's original version through background and conflict refreshes", async () => {
+  it("keeps the instrument notification choice after a failed save and allows retrying", async () => {
+    const user = userEvent.setup();
+    let attempts = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.put("/api/v2/booking-configurations/7/notification-subscription", () => {
+        attempts += 1;
+        if (attempts === 1) return HttpResponse.json({}, { status: 503 });
+        currentNotificationSubscription = { ...currentNotificationSubscription, enabled: true, version: 1 };
+        return HttpResponse.json(currentNotificationSubscription);
+      }),
+    );
+    renderPage();
+    await user.click(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" }));
+    const save = screen.getByRole("button", { name: "booking:preferences.actions.save" });
+    await user.click(save);
+    expect(await screen.findByText("booking:notificationSubscriptions.item.saveError")).toBeVisible();
+    expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
+    expect(save).toBeEnabled();
+    await user.click(save);
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    expect(attempts).toBe(2);
+  });
+
+  it.each([
+    { createdEnabled: false, cancelledEnabled: false },
+    { createdEnabled: true, cancelledEnabled: false },
+    { createdEnabled: false, cancelledEnabled: true },
+    { createdEnabled: true, cancelledEnabled: true },
+  ])("keeps enabled item controls concise with global event preferences %o", async (preferences) => {
+    currentNotificationSubscription = {
+      ...currentNotificationSubscription,
+      enabled: true,
+      ...preferences,
+    };
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <BookableItemNotificationSubscription
+          configurationId={7}
+          globalId="IN123"
+          canManageNotificationSubscription={true}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
+    expect(screen.queryByText("booking:notificationSubscriptions.item.description")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^booking:notificationSubscriptions.item.effective\./)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "booking:notificationSubscriptions.item.preferencesLink" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the draft through a background refresh and saves it against the version loaded by a conflict", async () => {
     const user = userEvent.setup();
     let current = configuration;
     const versions: (string | null)[] = [];
+    const bodies: unknown[] = [];
     server.use(
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([current], 2))),
-      http.patch("/api/v2/booking-configurations/7", ({ request }) => {
+      http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
         versions.push(request.headers.get("If-Match"));
-        return HttpResponse.json({ status: 412 }, { status: 412 });
+        bodies.push(await request.json());
+        return versions.length === 1
+          ? HttpResponse.json({ status: 412 }, { status: 412 })
+          : HttpResponse.json({ ...current, maxBookingDurationMinutes: 60, configurationVersion: 2 });
       }),
     );
     const { queryClient } = renderPage("/booking/bookable-items/IN123/details?edit=true");
@@ -170,17 +230,62 @@ describe("BookableItemPage", () => {
     expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
     await user.clear(maximum);
     await user.type(maximum, "60");
+    // A background refresh alone does not move the draft onto a version the user has not been told about.
     current = { ...configuration, configurationVersion: 1, openingEnd: "20:00" };
     await act(() => queryClient.refetchQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] }));
     const save = screen.getByRole("button", { name: "booking:bookableItems.actions.save" });
     await user.click(save);
     expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.staleEdit");
     await waitFor(() => expect(save).toBeEnabled());
+    expect(maximum).toHaveValue(60);
     await user.click(save);
     await waitFor(() => expect(versions).toHaveLength(2));
 
-    expect(versions).toEqual(['"0"', '"0"']);
-    expect(maximum).toHaveValue(60);
+    expect(versions).toEqual(['"0"', '"1"']);
+    expect(bodies[1]).toMatchObject({ maxBookingDurationMinutes: 60 });
+    expect(await screen.findByText("booking:bookableItemDetails.update.saved")).toBeInTheDocument();
+    expect(screen.queryByText("booking:bookableItems.staleEdit")).not.toBeInTheDocument();
+  });
+
+  it("keeps the conflict alert until the user discards the draft and loads the latest version", async () => {
+    const user = userEvent.setup();
+    let current = configuration;
+    const versions: (string | null)[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([current], 2))),
+      http.patch("/api/v2/booking-configurations/7", ({ request }) => {
+        versions.push(request.headers.get("If-Match"));
+        return versions.length === 1
+          ? HttpResponse.json({ status: 412 }, { status: 412 })
+          : HttpResponse.json({ ...current, configurationVersion: 2 });
+      }),
+    );
+    renderPage("/booking/bookable-items/IN123/details?edit=true");
+    const maximum = await screen.findByRole("spinbutton", {
+      name: "booking:bookableItemDetails.fields.maximumDuration",
+    });
+    await user.clear(maximum);
+    await user.type(maximum, "60");
+    current = { ...configuration, configurationVersion: 1, maxBookingDurationMinutes: 120 };
+    const save = screen.getByRole("button", { name: "booking:bookableItems.actions.save" });
+    await user.click(save);
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.staleEdit");
+    await waitFor(() => expect(save).toBeEnabled());
+    await user.type(maximum, "0");
+    expect(screen.getByRole("alert")).toHaveTextContent("booking:bookableItems.staleEdit");
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.discardDraft" }));
+
+    const reloaded = await screen.findByRole("spinbutton", {
+      name: "booking:bookableItemDetails.fields.maximumDuration",
+    });
+    expect(reloaded).toHaveValue(120);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "booking:bookableItems.actions.save" })).toBeDisabled();
+    await user.clear(reloaded);
+    await user.type(reloaded, "90");
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
+    await waitFor(() => expect(versions).toEqual(['"0"', '"1"']));
   });
 
   it.each([403, 404])("conceals the previous resource while navigating to a delayed %s response", async (status) => {
@@ -210,7 +315,7 @@ describe("BookableItemPage", () => {
       expect(screen.queryByRole("tab")).not.toBeInTheDocument();
       expect(screen.queryByRole("button")).not.toBeInTheDocument();
       await act(async () => response.resolve());
-      expect(await screen.findByText("booking:bookableItemDetails.error.title")).toBeVisible();
+      expect(await screen.findByText("booking:bookableItemDetails.notFound.title")).toBeVisible();
       expect(screen.getByRole("main")).not.toHaveAttribute("aria-busy");
       expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     } finally {
@@ -242,7 +347,7 @@ describe("BookableItemPage", () => {
       expect(screen.getByRole("heading", { name: "Confocal microscope" })).toBeVisible();
       expect(screen.getByRole("main")).not.toHaveAttribute("aria-busy", "true");
       await act(async () => response.resolve());
-      expect(await screen.findByText("booking:bookableItemDetails.error.title")).toBeVisible();
+      expect(await screen.findByText("booking:bookableItemDetails.notFound.title")).toBeVisible();
       expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
       expect(screen.queryByRole("tab")).not.toBeInTheDocument();
     } finally {
@@ -960,7 +1065,7 @@ describe("BookableItemPage", () => {
     );
     renderPage();
 
-    expect(await screen.findByText("booking:bookableItemDetails.error.title")).toBeVisible();
+    expect(await screen.findByText("booking:bookableItemDetails.notFound.title")).toBeVisible();
     expect(eventRequests).toBe(0);
     lookupFails = false;
     await user.click(screen.getByRole("button", { name: "common:actions.retry" }));
@@ -968,6 +1073,46 @@ describe("BookableItemPage", () => {
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(screen.queryByRole("link", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
     await waitFor(() => expect(eventRequests).toBe(2));
+  });
+
+  it.each([
+    ["an unreadable or unconfigured item", () => HttpResponse.json(envelope([], 2))],
+    ["a forbidden lookup", () => new HttpResponse(null, { status: 403 })],
+    ["a missing lookup", () => new HttpResponse(null, { status: 404 })],
+  ])("shows the not-found state at once, without retrying, for %s", async (_label, respond) => {
+    let lookups = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => {
+        lookups += 1;
+        return respond();
+      }),
+    );
+    // The application's QueryClient defaults, which retry failed queries three times with backoff.
+    renderPage("/booking/bookable-items/IN999", new QueryClient());
+
+    expect(await screen.findByText("booking:bookableItemDetails.notFound.title", {}, { timeout: 500 })).toBeVisible();
+    expect(screen.getByText("booking:bookableItemDetails.notFound.description")).toBeVisible();
+    expect(screen.getByRole("main")).not.toHaveAttribute("aria-busy");
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    expect(lookups).toBe(1);
+  });
+
+  it("retries a server error before giving up on the item", async () => {
+    let lookups = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => {
+        lookups += 1;
+        return lookups === 1
+          ? new HttpResponse(null, { status: 503 })
+          : HttpResponse.json(envelope([configuration], 2));
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+    );
+    renderPage(undefined, new QueryClient());
+
+    expect(await screen.findByRole("heading", { name: "Confocal microscope" }, { timeout: 4000 })).toBeVisible();
+    expect(lookups).toBe(2);
+    expect(screen.queryByText("booking:bookableItemDetails.notFound.title")).not.toBeInTheDocument();
   });
 
   it("does not show the configuration update timestamp in booking rules", async () => {
@@ -984,25 +1129,36 @@ describe("BookableItemPage", () => {
     expect(screen.queryByText("booking:bookableItemDetails.fields.updatedAt")).not.toBeInTheDocument();
   });
 
-  it("reformats existing events after a configuration timezone refresh without refetching events", async () => {
-    let timezone = "UTC";
+  it("reformats existing events after a display timezone refresh without refetching events", async () => {
     let eventRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(envelope([{ ...configuration, timezone }], 2)),
-      ),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
       http.get("/api/v2/bookings", () => {
         eventRequests += 1;
         return HttpResponse.json(envelope([booking], 10));
       }),
     );
     const { queryClient } = renderPage();
+    act(() => {
+      queryClient.setQueryData(bookingDisplayPreferencesQueryKey, {
+        ...inheritedBrowserBookingPreferences,
+        timezoneMode: "CUSTOM",
+        customTimezone: "UTC",
+        overridden: true,
+      });
+    });
 
     const times = await screen.findAllByRole("time");
     const utcText = times[0].textContent;
     expect(eventRequests).toBe(2);
-    timezone = "Europe/Berlin";
-    await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] });
+    act(() => {
+      queryClient.setQueryData(bookingDisplayPreferencesQueryKey, {
+        ...inheritedBrowserBookingPreferences,
+        timezoneMode: "CUSTOM",
+        customTimezone: "Europe/Berlin",
+        overridden: true,
+      });
+    });
 
     await waitFor(() => expect(screen.getAllByRole("time")[0]).not.toHaveTextContent(utcText ?? ""));
     expect(eventRequests).toBe(2);

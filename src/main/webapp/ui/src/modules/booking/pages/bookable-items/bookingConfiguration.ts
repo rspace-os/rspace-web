@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
   finalizeOpeningExceptions,
@@ -8,7 +9,11 @@ import {
   validOpeningHours,
 } from "@/modules/booking/configuration/schedulingSettings";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
-import { bookingTimeZoneOptions, isValidTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  bookingTimeZoneOptions,
+  isValidTimeZone,
+  useBookingTimeFormat,
+} from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
@@ -177,11 +182,15 @@ const bookingConfigurationReadParameters = {
   "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
 };
 
-/** The booking configuration API answered with an error status. */
 export class BookingConfigurationRequestError extends Error {
   constructor(readonly status: number) {
     super(`Booking configuration request failed with status ${status}`);
   }
+}
+
+/** No readable booking configuration exists for a target: it is unconfigured, missing, or not visible. */
+export class BookingConfigurationNotFoundError extends Error {
+  readonly status = 404;
 }
 
 async function withLocation(
@@ -228,7 +237,7 @@ export async function fetchBookingConfiguration(
     headers: bookingApiV2Headers(token),
     signal,
   });
-  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  if (!response.ok) throw new BookingConfigurationRequestError(response.status);
   return parseOrThrow(BookingConfigurationSchema, (await response.json()) as unknown);
 }
 
@@ -252,13 +261,14 @@ export async function fetchBookingConfigurationByTarget(
     headers: bookingApiV2Headers(token),
     signal,
   });
-  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  if (!response.ok) throw new BookingConfigurationRequestError(response.status);
   const configurations = parseOrThrow(
     v2ListEnvelope(BookingConfigurationSchema),
     (await response.json()) as unknown,
   ).docs;
-  if (configurations.length !== 1 || configurations[0].target?.globalId !== globalId) {
-    throw new Error(`Expected exactly one booking configuration for ${globalId}`);
+  if (configurations.length > 1) throw new Error(`Expected exactly one booking configuration for ${globalId}`);
+  if (configurations.length === 0 || configurations[0].target?.globalId !== globalId) {
+    throw new BookingConfigurationNotFoundError(`Expected exactly one booking configuration for ${globalId}`);
   }
   return configurations[0];
 }
@@ -292,7 +302,7 @@ export async function findBookingConfigurationByTarget(
     headers: bookingApiV2Headers(token),
     signal,
   });
-  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  if (!response.ok) throw new BookingConfigurationRequestError(response.status);
   const configurations = parseOrThrow(
     v2ListEnvelope(BookingConfigurationSchema),
     (await response.json()) as unknown,
@@ -323,7 +333,7 @@ export async function fetchBookingOwnershipCandidates(
     headers: bookingApiV2Headers(token),
     signal,
   });
-  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  if (!response.ok) throw new BookingConfigurationRequestError(response.status);
   return parseOrThrow(v2ListEnvelope(BookingConfigurationSchema), (await response.json()) as unknown).docs;
 }
 
@@ -373,12 +383,12 @@ export const bookingConfigurationConfig = {
       name: "state",
       type: "select",
       options: ["ACTIVE", "ARCHIVED"],
-      labelKey: "booking:bookableItems.fields.state",
+      // The column header and the columns panel both read this label.
+      labelKey: "booking:bookableItems.fields.status",
       form: false,
       list: {
         dependencies: ["enabled"],
         // One status column: an archived item is Archived; an active one is Enabled or Disabled.
-        renderHeader: () => i18n.t("booking:bookableItems.fields.status"),
         renderCell: ({ row }) =>
           row.state === "ARCHIVED"
             ? i18n.t("booking:bookableItemDetails.archived")
@@ -401,14 +411,7 @@ export const bookingConfigurationConfig = {
       labelKey: "booking:bookableItems.fields.updatedAt",
       form: false,
       list: {
-        renderCell: ({ row }) =>
-          row.updatedAt
-            ? new Intl.DateTimeFormat(i18n.language, {
-                dateStyle: "medium",
-                timeStyle: "short",
-                hourCycle: bookingHourCycle(),
-              }).format(new Date(row.updatedAt))
-            : i18n.t("booking:bookableItemDetails.notAvailable"),
+        renderCell: ({ row }) => createElement(ConfigurationUpdatedAt, { value: row.updatedAt }),
       },
     },
     {
@@ -467,3 +470,15 @@ export const bookingConfigurationConfig = {
 export type BookingConfigurationRow = CollectionRow<BookingConfiguration, "id" | "target">;
 
 export const bookingConfigurationFields = resolveCollectionConfig(bookingConfigurationConfig).fields;
+
+function ConfigurationUpdatedAt({ value }: { value: string | null | undefined }) {
+  const { i18n, t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
+  return value
+    ? new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        hourCycle: bookingHourCycle(timeFormat),
+      }).format(new Date(value))
+    : t("bookableItemDetails.notAvailable");
+}
