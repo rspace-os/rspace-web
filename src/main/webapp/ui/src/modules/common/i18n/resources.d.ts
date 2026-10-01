@@ -1125,6 +1125,7 @@ export default interface Resources {
         "target": "Bookable item",
         "targetName": "Bookable item name",
         "timezone": "Time zone",
+        "timezoneDescription": "Opening hours and booking rules use this time zone. It cannot be changed after the item is added.",
         "updatedAt": "Last updated"
       },
       "lifecycleErrors": {
@@ -1296,6 +1297,7 @@ export default interface Resources {
         "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
         "typeBooking": "Booking"
       },
+      "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
       "itemInformation": {
         "buffer": "Buffer",
         "bufferAfter": "{count}m after",
@@ -6443,6 +6445,8 @@ export default interface Resources {
         }
       },
       "message": {
+        "bookingCancelled": "A booking on an instrument I own is cancelled",
+        "bookingCreated": "A booking is created on an instrument I own",
         "delivery": {
           "label": "Preferred delivery method"
         },
@@ -6837,6 +6841,10 @@ export default interface Resources {
         "proteomicsRun": "Proteomics run",
         "ultrastructureImaging": "Ultrastructure imaging"
       }
+    },
+    "bookingNotifications": {
+      "cancelled": "Booking {0} for instrument {1} ({2}) was cancelled. It was scheduled from {3} to {4}.",
+      "created": "Booking {0} was created for instrument {1} ({2}) from {3} to {4}."
     }
   },
   "server.core": {
@@ -7479,6 +7487,8 @@ export default interface Resources {
     },
     "notificationType": {
       "archiveExportCompleted": "Export Completed",
+      "bookingCancelled": "Booking Cancelled",
+      "bookingCreated": "Booking Created",
       "documentDeleted": "Document Deleted",
       "documentEdited": "Document Edited",
       "documentShared": "Document Shared",
