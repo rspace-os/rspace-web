@@ -976,6 +976,7 @@ export default class InventoryBaseRecord
           : `${this.recordType}s/${id}`;
       this.fetchingAdditionalInfo = ApiService.query<object>(endpoint, new URLSearchParams(queryParameters));
       const { data } = await this.fetchingAdditionalInfo;
+      this.fetchingAdditionalInfo = null;
       runInAction(() => {
         this.infoLoaded = true;
       });
