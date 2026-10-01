@@ -22,6 +22,7 @@ import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
@@ -34,13 +35,17 @@ import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.StaleObjectStateException;
 import org.hibernate.exception.ConstraintViolationException;
@@ -144,29 +149,39 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     return subscriptionDao
         .findByUserIdAndConfigurationId(subject.getId(), configurationId)
-        .map(
-            subscription ->
-                new Status(
-                    true,
-                    subscription.getUpdatedAt(),
-                    subscription.getRawToken() == null
-                        ? null
-                        : subscriptionUrl(subscription.getRawToken()),
-                    itemEtag(subscription)))
+        .map(this::itemStatus)
         .orElseGet(() -> new Status(false, null, null, INACTIVE_USER_ETAG));
   }
 
-  @Override
-  public Created createOrRotate(
-      Long configurationId, User subject, User actor, String expectedEtag) {
-    requirePersonalCaller(subject, actor);
-    return creationTransaction.create(
-        subject.getId(),
-        freshSubject -> createOrRotateInTransaction(configurationId, freshSubject, expectedEtag));
+  private Status itemStatus(BookableItemCalendarSubscription subscription) {
+    return new Status(
+        true,
+        subscription.getUpdatedAt(),
+        subscriptionUrl(subscription.getRawToken()),
+        itemEtag(subscription));
   }
 
-  private Created createOrRotateInTransaction(
-      Long configurationId, User subject, String expectedEtag) {
+  @Override
+  public Created create(Long configurationId, User subject, User actor) {
+    requirePersonalCaller(subject, actor);
+    return creationTransaction.create(
+        subject.getId(), freshSubject -> issueItemLink(configurationId, freshSubject, null));
+  }
+
+  @Override
+  public Created rotate(Long configurationId, User subject, User actor, String expectedEtag) {
+    requirePersonalCaller(subject, actor);
+    Objects.requireNonNull(expectedEtag, "Expected ETag");
+    return creationTransaction.create(
+        subject.getId(),
+        freshSubject -> issueItemLink(configurationId, freshSubject, expectedEtag));
+  }
+
+  /**
+   * Issues the caller's item link. Without {@code rotateFromEtag} this only creates: an existing
+   * link is returned unchanged. With it, the existing link is replaced if the ETag still matches.
+   */
+  private Created issueItemLink(Long configurationId, User subject, String rotateFromEtag) {
     requireFeatureMutation(subject);
     BookingConfiguration configuration =
         configurationDao
@@ -181,9 +196,12 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     Optional<BookableItemCalendarSubscription> existing =
         subscriptionDao.findByUserIdAndConfigurationId(subject.getId(), configurationId);
-    String currentEtag =
-        existing.map(BookingCalendarManagerImpl::itemEtag).orElse(INACTIVE_USER_ETAG);
-    if (!Objects.equals(expectedEtag, currentEtag)) {
+    if (rotateFromEtag == null && existing.isPresent()) {
+      Status current = itemStatus(existing.get());
+      return new Created(current, current.subscriptionUrl(), false);
+    }
+    if (rotateFromEtag != null
+        && (existing.isEmpty() || !Objects.equals(rotateFromEtag, itemEtag(existing.get())))) {
       throw new UserSubscriptionConflictException();
     }
     String rawToken = tokenSupplier.get();
@@ -213,7 +231,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         saved.getId());
     String url = subscriptionUrl(rawToken);
     Status status = new Status(true, saved.getUpdatedAt(), url, itemEtag(saved));
-    return new Created(status, url);
+    return new Created(status, url, true);
   }
 
   private static String itemEtag(BookableItemCalendarSubscription subscription) {
@@ -257,19 +275,36 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     requireFeatureRead(subject);
     return userSubscriptionDao
         .findByUserId(subject.getId())
-        .map(
-            subscription ->
-                new Status(
-                    true,
-                    subscription.getUpdatedAt(),
-                    subscriptionUrl(subscription.getRawToken()),
-                    userEtag(subscription)))
+        .map(this::userStatus)
         .orElseGet(() -> new Status(false, null, null, INACTIVE_USER_ETAG));
   }
 
+  private Status userStatus(UserBookingCalendarSubscription subscription) {
+    return new Status(
+        true,
+        subscription.getUpdatedAt(),
+        subscriptionUrl(subscription.getRawToken()),
+        userEtag(subscription));
+  }
+
   @Override
-  public Created createOrRotateUser(User subject, User actor, String expectedEtag) {
+  public Created createUser(User subject, User actor) {
     requirePersonalCaller(subject, actor);
+    // READ_COMMITTED, so a create that waited on the user lock sees the link the winner committed.
+    return creationTransaction.create(
+        subject.getId(), freshSubject -> issueUserLink(freshSubject, actor, null));
+  }
+
+  @Override
+  public Created rotateUser(User subject, User actor, String expectedEtag) {
+    requirePersonalCaller(subject, actor);
+    Objects.requireNonNull(expectedEtag, "Expected ETag");
+    return creationTransaction.create(
+        subject.getId(), freshSubject -> issueUserLink(freshSubject, actor, expectedEtag));
+  }
+
+  /** User-wide counterpart of {@link #issueItemLink}, serialized on the user row lock. */
+  private Created issueUserLink(User subject, User actor, String rotateFromEtag) {
     requireFeatureMutation(subject);
     User lockedUser = userSubscriptionDao.lockUser(subject.getId());
     if (lockedUser == null) {
@@ -277,9 +312,12 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     Optional<UserBookingCalendarSubscription> existing =
         userSubscriptionDao.findByUserId(subject.getId());
-    String currentEtag =
-        existing.map(BookingCalendarManagerImpl::userEtag).orElse(INACTIVE_USER_ETAG);
-    if (!Objects.equals(expectedEtag, currentEtag)) {
+    if (rotateFromEtag == null && existing.isPresent()) {
+      Status current = userStatus(existing.get());
+      return new Created(current, current.subscriptionUrl(), false);
+    }
+    if (rotateFromEtag != null
+        && (existing.isEmpty() || !Objects.equals(rotateFromEtag, userEtag(existing.get())))) {
       throw new UserSubscriptionConflictException();
     }
     String rawToken = tokenSupplier.get();
@@ -316,7 +354,66 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         subject.getUsername(),
         saved.getId());
     String url = subscriptionUrl(rawToken);
-    return new Created(new Status(true, saved.getUpdatedAt(), url, userEtag(saved)), url);
+    return new Created(new Status(true, saved.getUpdatedAt(), url, userEtag(saved)), url, true);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ItemLink> itemLinks(User subject, User actor) {
+    requirePersonalCaller(subject, actor);
+    requireFeatureRead(subject);
+    List<BookableItemCalendarSubscription> eligible =
+        subscriptionDao.findByUserId(subject.getId()).stream()
+            .filter(subscription -> listable(subscription.getBookingConfiguration()))
+            .toList();
+    Map<Long, ResolvedResourceAccess> resolved =
+        accessManager.resolveAll(
+            eligible.stream()
+                .map(BookableItemCalendarSubscription::getBookingConfiguration)
+                .toList(),
+            subject);
+    List<BookableItemCalendarSubscription> listable =
+        eligible.stream()
+            .filter(
+                subscription ->
+                    resolved
+                        .getOrDefault(
+                            subscription.getBookingConfiguration().getId(),
+                            ResolvedResourceAccess.none())
+                        .hasCapability(BookingResourceRoleScheme.READ_RESOURCE))
+            .toList();
+    Map<Long, InstrumentReadSummary> instruments =
+        instrumentDao.getBookingSummaries(
+            listable.stream()
+                .map(subscription -> subscription.getBookingConfiguration().getTarget().id())
+                .collect(Collectors.toSet()));
+    return listable.stream()
+        .flatMap(
+            subscription -> {
+              Long targetId = subscription.getBookingConfiguration().getTarget().id();
+              InstrumentReadSummary instrument = instruments.get(targetId);
+              if (instrument == null || instrument.deleted()) {
+                return Stream.empty();
+              }
+              return Stream.of(
+                  new ItemLink(
+                      subscription.getBookingConfiguration().getId(),
+                      targetId,
+                      instrument.name(),
+                      subscription.getUpdatedAt(),
+                      subscriptionUrl(subscription.getRawToken())));
+            })
+        .sorted(Comparator.comparing(ItemLink::itemName, String.CASE_INSENSITIVE_ORDER))
+        .toList();
+  }
+
+  /** Filters configurations that cannot produce an item link before resolving permissions. */
+  private boolean listable(BookingConfiguration configuration) {
+    BookableTargetReference target = configuration.getTarget();
+    return configuration.getState() != BookingConfigurationState.ARCHIVED
+        && target != null
+        && target.type() == BookableTargetType.INSTRUMENT
+        && target.id() != null;
   }
 
   @Override

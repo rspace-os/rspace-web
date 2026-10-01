@@ -49,7 +49,8 @@ class BookingNotificationServiceTest {
   private final BookingNotificationRecipientReader recipientReader =
       mock(BookingNotificationRecipientReader.class);
   private final BookingNotificationMessageFormatter messageFormatter =
-      new BookingNotificationMessageFormatter(new JsonMessageSource());
+      new BookingNotificationMessageFormatter(
+          new JsonMessageSource(), "https://rspace.example.org/");
   private final BookingNotificationService service =
       new BookingNotificationService(
           instrumentDao, communicationManager, recipientReader, messageFormatter);
@@ -98,12 +99,25 @@ class BookingNotificationServiceTest {
     assertEquals("IN12", data.getInstrumentGlobalIdentifier());
     assertEquals("2026-01-02T03:04:05Z", data.getStartTime());
     assertEquals("2026-01-02T04:04:05Z", data.getEndTime());
+    // The saved message is also the email body, so it links with absolute URLs.
+    String bookingLink =
+        "<a href=\"https://rspace.example.org/booking/calendar/bookings/42\">42</a>";
+    String itemLink =
+        "<a href=\"https://rspace.example.org/booking/bookable-items/IN12\">"
+            + "&lt;Mic &amp; scope&gt; (IN12)</a>";
     String expectedMessage =
         notificationType == NotificationType.NOTIFICATION_BOOKING_CREATED
-            ? "Booking 42 was created for instrument &lt;Mic &amp; scope&gt; (IN12) from "
-                + "Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
+            ? "Booking "
+                + bookingLink
+                + " was created for instrument "
+                + itemLink
+                + " from Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
                 + "Jan 2, 2026, 5:04 AM (Europe/Berlin, UTC+01:00)."
-            : "Booking 42 for instrument &lt;Mic &amp; scope&gt; (IN12) was cancelled. It was "
+            : "Booking "
+                + bookingLink
+                + " for instrument "
+                + itemLink
+                + " was cancelled. It was "
                 + "scheduled from Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
                 + "Jan 2, 2026, 5:04 AM (Europe/Berlin, UTC+01:00).";
     assertEquals(expectedMessage, message.getValue());
