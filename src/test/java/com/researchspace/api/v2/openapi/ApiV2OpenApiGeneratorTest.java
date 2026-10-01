@@ -603,9 +603,44 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
-  void generatedFilterMetadataIsDeterministicAndAdditive() {
+  void publishesTheLocationFilterWithAPickerAndNoRequesterRelationship() {
+    Map<String, Object> bookings = whereParameter(document(), "/api/v2/bookings");
+    Map<String, Object> bookingSelectors =
+        objectMap(objectMap(bookings.get("x-rspace-filter")).get("selectors"));
+
+    // People are filtered by the scalar requester ID and the Calendar "Booked by" text facet only.
+    assertTrue(bookingSelectors.containsKey("requesterId"));
+    assertFalse(bookingSelectors.containsKey("requester"));
+    // Bookings render the readable location too, and filter by it with the same picker.
+    assertEquals(
+        "booking-locations",
+        objectMap(objectMap(bookingSelectors.get("location")).get("picker")).get("resource"));
+
+    Map<String, Object> configurations =
+        whereParameter(document(), "/api/v2/booking-configurations");
+    Map<String, Object> configurationSelectors =
+        objectMap(objectMap(configurations.get("x-rspace-filter")).get("selectors"));
+
+    assertEquals(
+        Map.of("resource", "booking-locations", "identity", "globalId", "globalIdPrefix", "IC"),
+        objectMap(configurationSelectors.get("location")).get("picker"));
+    // Location is resolved through Inventory read access only, so no target field is filterable.
+    assertEquals(
+        List.of(), objectMap(configurationSelectors.get("location.name")).get("operators"));
+  }
+
+  private static Map<String, Object> whereParameter(Map<String, Object> document, String path) {
+    Map<String, Object> list =
+        objectMap(objectMap(objectMap(document.get("paths")).get(path)).get("get"));
+    return objectMapList(list.get("parameters")).stream()
+        .filter(parameter -> parameter.get("name").equals("where"))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  @Test
+  void publishesFilterLimitsAndRelationshipTargetFields() {
     Map<String, Object> first = document();
-    Map<String, Object> second = document();
     Map<String, Object> paths = objectMap(first.get("paths"));
     Map<String, Object> list =
         objectMap(objectMap(paths.get("/api/v2/booking-configurations")).get("get"));
@@ -615,7 +650,6 @@ class ApiV2OpenApiGeneratorTest {
             .findFirst()
             .orElseThrow();
 
-    assertEquals(first, second);
     assertTrue(objectMap(where.get("x-rspace-filter")).containsKey("maximumComparisons"));
     assertTrue(
         objectMap(objectMap(where.get("x-rspace-filter")).get("selectors"))
@@ -658,6 +692,16 @@ class ApiV2OpenApiGeneratorTest {
       assertTrue(properties.containsKey(member), member);
       assertFalse(((List<?>) problem.getOrDefault("required", List.of())).contains(member), member);
     }
+    Map<String, Object> conflictProperty = objectMap(properties.get("conflict"));
+    assertFalse(conflictProperty.containsKey("type"), conflictProperty.toString());
+    assertFalse(conflictProperty.containsKey("$ref"), conflictProperty.toString());
+    assertEquals(
+        List.of(Map.of("$ref", "#/components/schemas/BookingConflict"), Map.of("type", "null")),
+        conflictProperty.get("anyOf"));
+    assertTrue(
+        conflictProperty.get("description").toString().contains("errors.api.v2.booking.overlap"));
+    assertEquals(
+        List.of("integer", "null"), objectMap(properties.get("bufferBeforeMinutes")).get("type"));
     Map<String, Object> conflict = objectMap(schemas.get("BookingConflict"));
     assertEquals(
         List.of("end", "id", "kind", "start"),

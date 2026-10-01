@@ -51,6 +51,7 @@ public record ApiV2BookingConfigurationResource(
             title = "Booking target",
             description = "Instrument to which this booking configuration applies.")
         ResourceReference<BookableTargetType, Long> target,
+    @ApiV2ResourceMember(factory = "locationRelationship") ResourceReference<String, Long> location,
     @ApiV2ResourceField(
             createAccess = INHERITED,
             updateAccess = INHERITED,
@@ -209,6 +210,10 @@ public record ApiV2BookingConfigurationResource(
         BookingConfiguration.class,
         List.of(new Sort("id", true)),
         access);
+  }
+
+  private static Relationship<BookingConfiguration> locationRelationship() {
+    return ApiV2BookingLocationResource.relationship();
   }
 
   private static Field<BookingConfiguration, ?> openingHoursField() {

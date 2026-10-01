@@ -28,7 +28,9 @@ export function toTimelineEvent(
   const target = event.target;
   const itemName = target?.value.name ?? i18n.t("common:values.unknownItem");
   const itemGlobalId = target?.globalId ?? null;
-  const location = target ? resourceLocation(target) : undefined;
+  const location = event.location
+    ? { name: event.location.value.name, globalId: event.location.value.globalId }
+    : undefined;
   const item = { name: itemName, globalId: itemGlobalId, location };
   if (event.kind === "MAINTENANCE") {
     return {

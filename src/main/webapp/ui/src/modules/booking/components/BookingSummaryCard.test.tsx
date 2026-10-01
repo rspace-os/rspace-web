@@ -24,6 +24,7 @@ const busyBooking = bookingListDocument({
     },
     globalId: "IN42",
   },
+  location: null,
   start: "2026-09-24T08:00:00.000Z",
   end: "2026-09-24T09:00:00.000Z",
   privacy: "busy",

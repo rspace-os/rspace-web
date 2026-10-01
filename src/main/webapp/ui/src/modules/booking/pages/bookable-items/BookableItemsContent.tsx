@@ -22,6 +22,7 @@ import {
   type BookingConfigurationRow,
   BookingConfigurationSchema,
   bookingConfigurationConfig,
+  invalidateBookingCatalogueQueries,
   permanentlyDeleteBookingConfiguration,
   restoreBookingConfiguration,
 } from "./bookingConfiguration";
@@ -149,7 +150,9 @@ export function BookableItemsContent() {
       setFailedBulkAction(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
+        variables.action === "archive"
+          ? queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] })
+          : invalidateBookingCatalogueQueries(queryClient),
         ...(variables.action === "archive"
           ? [
               queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),

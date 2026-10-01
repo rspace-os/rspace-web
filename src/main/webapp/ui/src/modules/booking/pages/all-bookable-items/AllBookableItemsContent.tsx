@@ -4,6 +4,7 @@ import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterState } from "@/modules/common/table-list/types";
+import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
 import { AllBookableItemsTable } from "./AllBookableItemsTable";
 import { type AllBookableItem, hasAvailabilityFilter, withAvailability } from "./availabilityQuickFilters";
 import { BookingNotificationBulkActions } from "./BookingNotificationBulkActions";
@@ -17,13 +18,21 @@ export type AllBookableItemsContentProps = {
 
 export function AllBookableItemsContent({ clock = currentDate }: AllBookableItemsContentProps = {}) {
   const { data: currentUser } = useCurrentUserQuery();
-  return <AllBookableItemsContentForUser key={currentUser.id} subjectId={currentUser.id} clock={clock} />;
+  return (
+    <AllBookableItemsContentForUser
+      key={currentUser.id}
+      subjectId={currentUser.id}
+      directSysadmin={currentUser.hasSysAdminRole && !currentUser.session.operatedAs}
+      clock={clock}
+    />
+  );
 }
 
 function AllBookableItemsContentForUser({
   clock = currentDate,
   subjectId,
-}: AllBookableItemsContentProps & { subjectId: number }) {
+  directSysadmin,
+}: AllBookableItemsContentProps & { subjectId: number; directSysadmin: boolean }) {
   const { t: commonT } = useTranslation("common");
   const {
     date,
@@ -42,9 +51,12 @@ function AllBookableItemsContentForUser({
     invalidFilter,
     catalogue,
     runtimeFieldState,
-    selectedNotificationIds,
-    setSelectedNotificationIds,
+    selectedRowIds,
     notificationSubscriptionMutation,
+    bulkMutation,
+    failedBulkAction,
+    selectionPending,
+    setFailedBulkAction,
     ...data
   } = useAllBookableItemsData({
     clock,
@@ -59,10 +71,10 @@ function AllBookableItemsContentForUser({
     page,
     pageSize,
   });
-  const { filters, userToday, rows, quickFilterError, quickFilterPending } = data;
+  const { filters, rows, setSelectedRowIds, userToday } = data;
 
   const setDate = (nextDate: string) => {
-    setSelectedNotificationIds(new Set());
+    setSelectedRowIds(new Set());
     const remaining = withAvailability(filters.expression, undefined);
     void navigate({
       search: (current) => ({
@@ -77,7 +89,7 @@ function AllBookableItemsContentForUser({
     });
   };
   const resetView = () => {
-    setSelectedNotificationIds(new Set());
+    setSelectedRowIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -99,7 +111,7 @@ function AllBookableItemsContentForUser({
     if (nextSearch === q && nextWhere === where && !target && !routeAvailability && page === 1) {
       return;
     }
-    setSelectedNotificationIds(new Set());
+    setSelectedRowIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -114,7 +126,7 @@ function AllBookableItemsContentForUser({
     });
   };
   const removeRestoredViewIssue = () => {
-    setSelectedNotificationIds(new Set());
+    setSelectedRowIds(new Set());
     void navigate({
       search: (current) => ({ ...current, where: undefined, page: undefined }),
       replace: true,
@@ -136,18 +148,14 @@ function AllBookableItemsContentForUser({
     getRowId: (row) => String(row.id),
     clientSide: false,
     status:
-      runtimeFieldState.error !== null ||
-      runtimeFieldState.missing.length > 0 ||
-      invalidFilter ||
-      quickFilterError ||
-      catalogue.isError
+      runtimeFieldState.error !== null || runtimeFieldState.missing.length > 0 || invalidFilter || catalogue.isError
         ? "error"
-        : runtimeFieldState.pending || quickFilterPending || catalogue.isPending
+        : runtimeFieldState.pending || catalogue.isPending
           ? "loading"
           : catalogue.isFetching
             ? "refreshing"
             : "idle",
-    error: runtimeFieldState.error ?? (quickFilterError ? undefined : catalogue.error),
+    error: runtimeFieldState.error ?? catalogue.error,
     restoredViewIssue,
     onSelectRuntimeField: runtimeFieldState.selectRuntimeField,
     runtimeFieldDefinitions: runtimeFieldState.runtimeFields,
@@ -166,7 +174,7 @@ function AllBookableItemsContentForUser({
         onChange: (nextPage) => {
           const nextPageNumber = nextPage.pageSize === pageSize ? nextPage.pageIndex + 1 : 1;
           if (nextPageNumber === page && nextPage.pageSize === pageSize) return;
-          setSelectedNotificationIds(new Set());
+          // Selection survives paging, as in Administration, so rows from several pages act together.
           void navigate({
             search: (current) => ({
               ...current,
@@ -179,22 +187,38 @@ function AllBookableItemsContentForUser({
       },
     },
     selection: {
-      value: selectedNotificationIds,
-      onChange: setSelectedNotificationIds,
-      disabled: notificationSubscriptionMutation.isPending,
+      value: selectedRowIds,
+      onChange: (value) => {
+        setSelectedRowIds(value);
+        setFailedBulkAction(null);
+      },
+      disabled: selectionPending,
       maximumCount: 100,
       getRowLabel: (row) => row.target?.value.name ?? commonT("values.unknownItem"),
       renderActions: (selection) => {
         const selectedConfigurationIds = [...selection.selectedRowIds].map(Number);
         return (
-          <BookingNotificationBulkActions
-            selection={selection}
-            selectedConfigurationIds={selectedConfigurationIds}
-            pending={notificationSubscriptionMutation.isPending}
-            onAction={(configurationIds, enabled) =>
-              notificationSubscriptionMutation.mutateAsync({ configurationIds, enabled })
-            }
-          />
+          <>
+            <BookingNotificationBulkActions
+              selection={selection}
+              selectedConfigurationIds={selectedConfigurationIds}
+              pending={notificationSubscriptionMutation.isPending}
+              onAction={(configurationIds, enabled) =>
+                notificationSubscriptionMutation.mutateAsync({ configurationIds, enabled })
+              }
+            />
+            {/* The server allows these bulk changes to sysadmins only, as in Administration. */}
+            {directSysadmin ? (
+              <BookableItemsBulkActions
+                selection={selection}
+                disabled={selectionPending}
+                activeAction={bulkMutation.isPending ? (bulkMutation.variables?.action ?? null) : null}
+                failedAction={failedBulkAction}
+                offerEnable={false}
+                onAction={(action, rowIds) => bulkMutation.mutateAsync({ action, rowIds: [...rowIds] })}
+              />
+            ) : null}
+          </>
         );
       },
     },
@@ -205,7 +229,7 @@ function AllBookableItemsContentForUser({
       {...data}
       types={types}
       mine={mine}
-      setSelectedNotificationIds={setSelectedNotificationIds}
+      directSysadmin={directSysadmin}
       tableProps={tableProps}
       setDate={setDate}
       resetView={resetView}

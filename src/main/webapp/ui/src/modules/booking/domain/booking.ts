@@ -53,6 +53,19 @@ const BookingTargetSchema = v.object({
   globalId: v.string(),
 });
 
+const BookingLocationValueSchema = v.object({ id: v.number(), globalId: v.string(), name: v.string() });
+
+/** The bookable item's parent Container or workbench; null where the caller may not read it. */
+const BookingLocationSchema = v.optional(
+  v.nullable(
+    v.object({
+      relationTo: v.literal("containers"),
+      value: BookingLocationValueSchema,
+      globalId: v.string(),
+    }),
+  ),
+);
+
 const BookingReadTargetSchema = v.nullable(BookingTargetSchema);
 
 // Mutation responses are serialized directly from the saved entity. Unlike reads, they do not
@@ -63,11 +76,25 @@ const MutationTargetSchema = v.object({
   globalId: v.string(),
 });
 
-function bookingIdentity<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(target: TTarget) {
+const MutationLocationSchema = v.optional(
+  v.nullable(
+    v.object({
+      relationTo: v.literal("containers"),
+      value: v.union([v.number(), BookingLocationValueSchema]),
+      globalId: v.string(),
+    }),
+  ),
+);
+
+function bookingIdentity<
+  TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
+  TLocation extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>> = typeof BookingLocationSchema,
+>(target: TTarget, location: TLocation = BookingLocationSchema as unknown as TLocation) {
   return {
     id: v.number(),
     version: v.number(),
     target,
+    location,
     timezone: v.nullable(v.string()),
     ...BookingTimestampEntries,
     state: v.picklist(["CONFIRMED", "CANCELLED"]),
@@ -78,6 +105,7 @@ function bookingIdentity<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIs
 const BookingAvailabilityIdentitySchema = {
   id: v.number(),
   target: BookingReadTargetSchema,
+  location: BookingLocationSchema,
   timezone: v.nullable(v.string()),
   ...BookingTimestampEntries,
   state: v.picklist(["CONFIRMED", "CANCELLED"]),
@@ -96,8 +124,11 @@ const BookingFullManagementEntries = {
   updatedAt: v.string(),
 };
 
-function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(target: TTarget) {
-  const identity = bookingIdentity(target);
+function bookingSchema<
+  TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
+  TLocation extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>> = typeof BookingLocationSchema,
+>(target: TTarget, location: TLocation = BookingLocationSchema as unknown as TLocation) {
+  const identity = bookingIdentity(target, location);
   return v.variant("privacy", [
     v.object({
       ...identity,
@@ -139,7 +170,7 @@ export const BookingDetailsSchema = withEndAfterStart(
   ["end"],
 );
 
-const BookingMutationSchema = withEndAfterStart(bookingSchema(MutationTargetSchema), ["end"]);
+const BookingMutationSchema = withEndAfterStart(bookingSchema(MutationTargetSchema, MutationLocationSchema), ["end"]);
 
 const BookingListDocumentObjectSchema = v.object({
   ...BookingReadIdentitySchema,

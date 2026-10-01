@@ -144,8 +144,12 @@ export function BookingEventContent() {
               ) : undefined
             }
           >
-            {canViewItem && location && typeof location.value === "object" ? (
-              <InventoryLocationLink name={location.value.name} globalId={location.globalId} compact />
+            {canViewItem && document.location ? (
+              <InventoryLocationLink
+                name={document.location.value.name}
+                globalId={document.location.value.globalId}
+                compact
+              />
             ) : null}
           </InventoryItem>
         ) : (

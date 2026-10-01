@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
 import {
-  type AvailabilityInterval,
   type AvailabilitySource,
   type AvailabilityState,
   buildAvailabilitySlices,
+  type SourcedAvailabilityInterval,
   timestamp,
 } from "@/modules/booking/domain/availability";
 import { bookingLocale } from "@/modules/booking/domain/bookingTime";
@@ -16,16 +16,10 @@ import { cn } from "@/modules/common/utils/cn";
 import { AvailabilitySlicePopover } from "./AvailabilitySlicePopover";
 import { BookingSourceRow } from "./BookingSourceRow";
 
-export type { AvailabilityInterval } from "@/modules/booking/domain/availability";
-
 const DEFAULT_PERIOD_MILLISECONDS = 24 * 60 * 60 * 1000;
 
-type AvailabilityBarInterval = AvailabilityInterval & {
-  source?: AvailabilitySource;
-};
-
 export type AvailabilityBarProps = {
-  intervals: ReadonlyArray<AvailabilityBarInterval>;
+  intervals: ReadonlyArray<SourcedAvailabilityInterval>;
   periodStart: Date;
   periodEnd?: Date;
   now?: Date;
@@ -35,8 +29,6 @@ export type AvailabilityBarProps = {
   showPeriodLabels?: boolean;
   timeZone: string;
   instrumentTimeZone?: string | null;
-  /** @deprecated The bar domain is now always the resolved display timezone. */
-  userTimeZone?: string;
   item: {
     name: string;
     globalId: string;
@@ -50,10 +42,6 @@ type TimestampInterval = {
   endsAt: number | Date;
 };
 
-type SourcedAvailabilityBarInterval = AvailabilityBarInterval & {
-  source: AvailabilitySource;
-};
-
 type DetailedBookingSource = AvailabilitySource & {
   booking: NonNullable<AvailabilitySource["booking"]> & { privacy: "full" };
 };
@@ -65,8 +53,7 @@ const stateClasses: Record<AvailabilityState, string> = {
   overlap: "bg-[repeating-linear-gradient(135deg,var(--color-blue-600)_0_3px,var(--color-amber-400)_3px_6px)]",
 };
 
-function hasValidSource(interval: AvailabilityBarInterval): interval is SourcedAvailabilityBarInterval {
-  if (interval.source === undefined) return false;
+function hasValidSource(interval: SourcedAvailabilityInterval): boolean {
   const startsAt = interval.source.startsAt.getTime();
   const endsAt = interval.source.endsAt.getTime();
   return Number.isFinite(startsAt) && Number.isFinite(endsAt) && endsAt > startsAt;

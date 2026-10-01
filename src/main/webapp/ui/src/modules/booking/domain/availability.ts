@@ -366,4 +366,20 @@ function bookingInterval(
   );
 }
 
-export { availabilityEnvelope, bookingInterval, closedIntervals };
+/** Busy and closed intervals for one row, using bookings fetched for the shared target envelope. */
+export function rowAvailabilityIntervals(
+  row: CalendarAvailabilityRow,
+  interval: AbsoluteDisplayInterval,
+  bookings: readonly Booking[],
+): SourcedAvailabilityInterval[] {
+  const intervals = closedIntervals(row, interval);
+  for (const booking of bookings) {
+    if (booking.state !== "CONFIRMED" || booking.target?.globalId !== row.globalId) continue;
+    if (row.allowDoubleBooking && booking.kind === "BOOKING") continue;
+    const clipped = bookingInterval(booking, row, interval);
+    if (clipped) intervals.push(clipped);
+  }
+  return intervals;
+}
+
+export { availabilityEnvelope };

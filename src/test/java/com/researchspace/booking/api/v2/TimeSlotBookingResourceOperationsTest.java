@@ -26,6 +26,7 @@ import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.service.BookingBufferConflictException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
+import com.researchspace.booking.service.BookingLocationFilterManager;
 import com.researchspace.booking.service.BookingOverlapException;
 import com.researchspace.booking.service.ConflictingEvent;
 import com.researchspace.booking.service.TimeSlotBookingManager;
@@ -81,7 +82,8 @@ class TimeSlotBookingResourceOperationsTest {
           manager,
           featureFlags,
           ApiV2TimeSlotBookingResource.DESCRIPTION,
-          mock(MessageSourceUtils.class));
+          mock(MessageSourceUtils.class),
+          mock(BookingLocationFilterManager.class, invocation -> invocation.getArgument(0)));
   private final User actor = mock(User.class);
 
   @BeforeEach
