@@ -12,13 +12,22 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookableItemFixtures } from "../../bookable-items/mocks/bookableItemsMocks";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createBookingEventRouteTree } from "../routes";
+
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+beforeAll(() => vi.stubGlobal("ResizeObserver", ResizeObserverStub));
+afterAll(() => vi.unstubAllGlobals());
 
 const document = {
   id: 41,
@@ -57,11 +66,22 @@ const configurationResponse = {
   nextPage: null,
 };
 
-function renderEdit() {
-  server.use(oauthTokenHandler(true));
+function renderEdit(scheduleBookings: readonly unknown[] = [], preferences = inheritedBrowserBookingPreferences) {
+  server.use(
+    oauthTokenHandler(true),
+    http.get("/api/v2/bookings", () =>
+      HttpResponse.json({
+        docs: scheduleBookings,
+        totalDocs: scheduleBookings.length,
+        totalPages: scheduleBookings.length ? 1 : 0,
+        page: 1,
+        hasNextPage: false,
+      }),
+    ),
+  );
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
-  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
   const root = createRootRoute({ component: Outlet });
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
   const myBookings = createRoute({ getParentRoute: () => booking, path: "/my-bookings", component: Outlet });
@@ -126,6 +146,48 @@ describe("BookingInlineEditForm", () => {
     expect(patch?.headers.get("If-Match")).toBe('"7"');
     expect(await patch?.json()).toEqual({ purpose: "Updated imaging" });
     expect(reads).toBe(2);
+  });
+
+  it("submits the acknowledged timeline range and omits the unchanged purpose from the patch", async () => {
+    let patch: Request | undefined;
+    server.use(
+      http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(configurationResponse)),
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        patch = request.clone();
+        return HttpResponse.json({
+          ...document,
+          version: 8,
+          start: "2026-10-19T08:05:00Z",
+          end: "2026-10-19T10:05:00Z",
+        });
+      }),
+    );
+    const { router } = renderEdit([document], {
+      ...inheritedBrowserBookingPreferences,
+      timezoneMode: "CUSTOM",
+      customTimezone: "Europe/Berlin",
+      overridden: true,
+    });
+    const user = userEvent.setup();
+
+    await screen.findByDisplayValue("Cell imaging");
+    screen.getByRole("button", { name: /booking:dayTimeline.vertical.moveDraft/ }).focus();
+    await user.keyboard("{ArrowDown}");
+
+    const start = screen.getByRole("group", { name: "booking:bookings.form.start" });
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    await waitFor(() => {
+      expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("10:05");
+      expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveValue("12:05");
+    });
+    const save = screen.getByRole("button", { name: "booking:bookings.form.save" });
+    await waitFor(() => expect(save).toBeEnabled());
+    await user.click(save);
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
+    expect(patch?.headers.get("If-Match")).toBe('"7"');
+    expect(await patch?.json()).toEqual({ start: "2026-10-19T08:05:00Z", end: "2026-10-19T10:05:00Z" });
   });
 
   it("keeps the draft and permanently blocks save after a conflict without refetching", async () => {
