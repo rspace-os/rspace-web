@@ -15,10 +15,17 @@ import { Suspense } from "react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { ApiV2ProblemError, updateBooking } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookableItemFixtures } from "../../bookable-items/mocks/bookableItemsMocks";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createBookingEventRouteTree } from "../routes";
+
+// Delegates to the real request unless a test rejects with a problem carrying its parsed body.
+vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/booking/domain/booking")>();
+  return { ...actual, updateBooking: vi.fn(actual.updateBooking) };
+});
 
 class ResizeObserverStub {
   observe() {}
@@ -135,7 +142,7 @@ describe("BookingInlineEditForm", () => {
       name: "booking:bookings.itemInformation.title",
     });
     expect(within(itemInformation).getByText("Confocal microscope")).toBeVisible();
-    expect(within(itemInformation).getByText("booking:bookableItemDetails.fields.openingHours")).toBeVisible();
+    expect(within(itemInformation).getByText("booking:bookings.itemInformation.open")).toBeVisible();
     expect(screen.getByRole("heading", { name: "booking:bookings.details.edit.title" })).toHaveFocus();
     await user.clear(purpose);
     await user.type(purpose, "Updated imaging");
@@ -241,6 +248,37 @@ describe("BookingInlineEditForm", () => {
     await user.type(purpose, " again");
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
     expect(save).toBeEnabled();
+  });
+
+  it("lists the event a server buffer rejection names, explains the buffer, and focuses the alert", async () => {
+    vi.mocked(updateBooking).mockRejectedValueOnce(
+      Object.assign(new ApiV2ProblemError(409, "errors.api.v2.booking.buffer", "save failed"), {
+        problem: {
+          status: 409,
+          code: "errors.api.v2.booking.buffer",
+          conflict: { id: 59, kind: "BOOKING", start: "2026-10-19T10:00:00Z", end: "2026-10-19T11:00:00Z" },
+          bufferBeforeMinutes: 0,
+          bufferAfterMinutes: 30,
+        },
+      }),
+    );
+    server.use(
+      http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(configurationResponse)),
+    );
+    renderEdit();
+    const user = userEvent.setup();
+    const purpose = await screen.findByDisplayValue("Cell imaging");
+    await user.type(purpose, " updated");
+    const save = screen.getByRole("button", { name: "booking:bookings.form.save" });
+    await user.click(save);
+
+    const alert = await screen.findByRole("alert");
+    await waitFor(() => expect(alert).toHaveFocus());
+    expect(alert).toHaveTextContent("booking:bookings.errors.bufferAfter");
+    expect(alert).toHaveTextContent("booking:bookings.errors.bufferSummary");
+    expect(within(alert).getByRole("listitem")).toHaveTextContent("booking:bookings.errors.overlapBooking");
+    expect(save).toBeDisabled();
   });
 
   it("normalises a non-editable direct edit URL without rendering a form", async () => {

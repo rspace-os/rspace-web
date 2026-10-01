@@ -48,6 +48,8 @@ export async function loadBookableItems(
         slotGranularityMinutes: item.slotGranularityMinutes,
         openingStart: item.openingStart,
         openingEnd: item.openingEnd,
+        openDays: item.openDays,
+        openingExceptions: item.openingExceptions,
         bufferBeforeMinutes: item.bufferBeforeMinutes,
         bufferAfterMinutes: item.bufferAfterMinutes,
         maxBookingDurationMinutes: item.maxBookingDurationMinutes,

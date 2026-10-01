@@ -22,7 +22,7 @@ describe("DayTimeline expanded cards", () => {
     await expect
       .poll(() => {
         const scroller = bounds(timeline.scroller);
-        const popup = bounds(timeline.popup("09:30–10:30"));
+        const popup = bounds(timeline.popup("09:30 AM–10:30 AM"));
         return {
           left: popup.left >= scroller.left - 1,
           right: popup.right <= scroller.right + 1,
@@ -36,8 +36,8 @@ describe("DayTimeline expanded cards", () => {
     render(<DayTimelineStory />);
     await timeline.open(LONG_ITEM_NAME);
 
-    const popup = timeline.popup("09:30–10:30");
-    const period = popup.getByRole("heading", { name: "09:30–10:30" });
+    const popup = timeline.popup("09:30 AM–10:30 AM");
+    const period = popup.getByRole("heading", { name: "09:30 AM–10:30 AM" });
     const duration = popup.getByText(/1 hour/);
     await expect.element(duration).toBeVisible();
     const periodBox = period.element().getBoundingClientRect();
@@ -57,7 +57,7 @@ describe("DayTimeline expanded cards", () => {
     await expect
       .poll(() => {
         const scrollerBounds = scroller.getBoundingClientRect();
-        const popup = bounds(timeline.popup("09:30–10:30"));
+        const popup = bounds(timeline.popup("09:30 AM–10:30 AM"));
         return popup.left >= scrollerBounds.left - 1 && popup.right <= scrollerBounds.right + 1;
       })
       .toBe(true);
@@ -66,15 +66,15 @@ describe("DayTimeline expanded cards", () => {
   test("keeps only one overlapping popup open and restores focus when it closes", async () => {
     render(<DayTimelineStory />);
     await timeline.open(LONG_ITEM_NAME);
-    await expect.element(timeline.popup("09:30–10:30")).toBeVisible();
+    await expect.element(timeline.popup("09:30 AM–10:30 AM")).toBeVisible();
 
     await timeline.openWithKeyboard("Electron microscope · Grace Hopper");
 
-    await expect.element(timeline.popup("09:30–10:30")).not.toBeInTheDocument();
-    await expect.element(timeline.popup("09:45–10:45")).toBeVisible();
+    await expect.element(timeline.popup("09:30 AM–10:30 AM")).not.toBeInTheDocument();
+    await expect.element(timeline.popup("09:45 AM–10:45 AM")).toBeVisible();
 
-    await timeline.close("09:45–10:45", "Electron microscope · Grace Hopper");
-    await expect.element(timeline.popup("09:45–10:45")).not.toBeInTheDocument();
+    await timeline.close("09:45 AM–10:45 AM", "Electron microscope · Grace Hopper");
+    await expect.element(timeline.popup("09:45 AM–10:45 AM")).not.toBeInTheDocument();
     await expect.element(timeline.trigger("Electron microscope · Grace Hopper")).toHaveFocus();
   });
 
@@ -130,7 +130,7 @@ describe("DayTimeline expanded cards", () => {
     await expect.element(tooltip).not.toHaveTextContent("Cross-zone run");
 
     await trigger.click();
-    const booking = timeline.popup("09:30–10:30");
+    const booking = timeline.popup("09:30 AM–10:30 AM");
     await expect.element(booking).toBeVisible();
     await expect.element(booking.getByText("Cross-zone run")).toBeVisible();
   });
@@ -185,7 +185,7 @@ describe("DayTimeline expanded cards", () => {
   test("closes on outside press and Escape while preserving event privacy rules", async () => {
     render(<DayTimelineStory />);
     await timeline.open(LONG_ITEM_NAME);
-    const booking = timeline.popup("09:30–10:30");
+    const booking = timeline.popup("09:30 AM–10:30 AM");
     await expect.element(booking.getByText("Ada Lovelace")).toBeVisible();
     await expect.element(booking.getByText("Cell imaging with the 63x oil objective.")).toBeVisible();
     await expect.element(booking.getByRole("link", { name: "View details" })).toBeVisible();
@@ -196,7 +196,7 @@ describe("DayTimeline expanded cards", () => {
     await expect.element(timeline.trigger(LONG_ITEM_NAME)).toHaveFocus();
 
     await timeline.open("Scheduled maintenance");
-    const blockout = timeline.popup("11:00–12:00");
+    const blockout = timeline.popup("11:00 AM–12:00 PM");
     await expect.element(blockout.getByText("Laser alignment and inspection.")).toBeVisible();
     await expect.element(blockout.getByText("Booked by")).not.toBeInTheDocument();
     await expect.element(blockout.getByRole("link", { name: "View details" })).not.toBeInTheDocument();

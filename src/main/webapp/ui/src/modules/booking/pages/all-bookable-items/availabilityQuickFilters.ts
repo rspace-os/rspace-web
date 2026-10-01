@@ -106,6 +106,8 @@ type AvailabilityCandidate = Pick<
   | "slotGranularityMinutes"
   | "openingStart"
   | "openingEnd"
+  | "openDays"
+  | "openingExceptions"
   | "bufferBeforeMinutes"
   | "bufferAfterMinutes"
   | "maxBookingDurationMinutes"
@@ -158,6 +160,8 @@ export async function loadAvailabilityQuickIndex(
             timezone: candidate.timezone,
             openingStart: candidate.openingStart,
             openingEnd: candidate.openingEnd,
+            openDays: candidate.openDays,
+            openingExceptions: candidate.openingExceptions,
             bufferBeforeMinutes: candidate.bufferBeforeMinutes,
             bufferAfterMinutes: candidate.bufferAfterMinutes,
             maxBookingDurationMinutes: candidate.maxBookingDurationMinutes,
@@ -218,6 +222,8 @@ export function useAvailabilityQuickFilterIndex(
               candidate.timezone,
               candidate.openingStart,
               candidate.openingEnd,
+              candidate.openDays.join(","),
+              JSON.stringify(candidate.openingExceptions),
               candidate.bufferBeforeMinutes,
               candidate.bufferAfterMinutes,
               candidate.maxBookingDurationMinutes,

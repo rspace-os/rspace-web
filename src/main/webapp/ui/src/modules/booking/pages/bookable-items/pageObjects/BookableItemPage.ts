@@ -77,11 +77,32 @@ export class BookableItemPage {
   }
 
   get cancel(): Locator {
-    return page.getByRole("button", { name: "Cancel" });
+    // The Instrument notifications card has its own Cancel.
+    return page.getByLabelText("Details", { exact: true }).getByRole("button", { name: "Cancel" });
   }
 
   get maximumDuration(): Locator {
     return page.getByRole("spinbutton").first();
+  }
+
+  get setDifferentHours(): Locator {
+    return page.getByRole("button", { name: "Set different hours for some days" });
+  }
+
+  get hoursByDay(): Locator {
+    return page.getByRole("list", { name: "Hours by day" });
+  }
+
+  dayRow(day: string): Locator {
+    return this.hoursByDay.getByRole("listitem").filter({ hasText: day });
+  }
+
+  editDayHours(day: string): Locator {
+    return page.getByRole("button", { name: `Edit ${day} hours` });
+  }
+
+  confirmDayHours(day: string): Locator {
+    return page.getByRole("button", { name: `Confirm ${day} hours` });
   }
 
   async openEditor(): Promise<void> {

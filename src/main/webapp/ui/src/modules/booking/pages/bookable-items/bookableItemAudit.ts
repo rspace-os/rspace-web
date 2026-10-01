@@ -1,6 +1,14 @@
 import * as v from "valibot";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
+import {
+  formatIsoWeekday,
+  formatOpeningRange,
+  OpenDaysSchema,
+  OpeningExceptionsSchema,
+} from "@/modules/booking/domain/bookingOpeningHours";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -30,26 +38,23 @@ export type AuditDateValidation =
   | { valid: true; range: AuditDateRange }
   | { valid: false; fields: Partial<Record<AuditDateField, AuditDateError>> };
 
-export const AUDIT_ACTIONS = [
-  "CREATE",
-  "DELETE",
-  "DOWNLOAD",
-  "DUPLICATE",
-  "EXPORT",
-  "MOVE",
-  "READ",
-  "RENAME",
-  "RESTORE",
-  "SEARCH",
-  "SHARE",
-  "SIGN",
-  "TRANSFER",
-  "UNSHARE",
-  "VIEW",
-  "WITNESSED",
-  "WRITE",
-] as const;
+/**
+ * The audit actions Booking records: bookings are created (CREATE) and edited or cancelled (WRITE);
+ * configurations are also deleted (DELETE) and restored (RESTORE).
+ */
+export const AUDIT_ACTIONS = ["CREATE", "WRITE", "DELETE", "RESTORE"] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+/** A Booking-level reading of an audit event. A WRITE that sets the state to CANCELLED is a cancellation. */
+export type AuditEventKind = "created" | "changed" | "cancelled" | "deleted" | "restored";
+
+export function auditEventKind(event: Pick<AuditEvent, "action" | "payload">): AuditEventKind | null {
+  if (event.action === "CREATE") return "created";
+  if (event.action === "WRITE") return event.payload.state === "CANCELLED" ? "cancelled" : "changed";
+  if (event.action === "DELETE") return "deleted";
+  if (event.action === "RESTORE") return "restored";
+  return null;
+}
 
 const AuditPageSchema = v.object({
   docs: v.array(AuditEventSchema),
@@ -173,11 +178,82 @@ export async function fetchBookingConfigurationAudit(input: {
   };
 }
 
+/** The snapshot may hold the array itself or its JSON text. */
+function parsedArray(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
+
+/** Open days as weekday names, and each exception as `Weekday HH:mm–HH:mm`; otherwise undefined. */
+function openingValue(key: string, value: unknown, locale: string): string | undefined {
+  if (key === "openDays") {
+    const days = v.safeParse(OpenDaysSchema, parsedArray(value));
+    if (days.success)
+      return formatList(
+        days.output.toSorted((left, right) => left - right).map((day) => formatIsoWeekday(day, "long", locale)),
+        locale,
+        { type: "unit" },
+      );
+  }
+  if (key === "openingExceptions") {
+    const exceptions = v.safeParse(OpeningExceptionsSchema, parsedArray(value));
+    if (exceptions.success) {
+      if (exceptions.output.length === 0) return "—";
+      return formatList(
+        exceptions.output
+          .toSorted((left, right) => left.dayOfWeek - right.dayOfWeek)
+          .map(
+            (exception) => `${formatIsoWeekday(exception.dayOfWeek, "long", locale)} ${formatOpeningRange(exception)}`,
+          ),
+        locale,
+        { type: "unit" },
+      );
+    }
+  }
+  return undefined;
+}
+
+/** Translated words for recorded booleans and enumerated values, so they read as the rest of the UI does. */
+export type RecordedValueWords = { yes: string; no: string; values: Readonly<Record<string, string>> };
+
+const BOOLEAN_KEYS = new Set(["enabled", "allowDoubleBooking"]);
+
+/** Booleans as Yes/No, states and kinds by their labels, and a bookable-item target by its global ID. */
+function wordValue(key: string, value: unknown, words: RecordedValueWords): string | undefined {
+  if (typeof value === "boolean" || (BOOLEAN_KEYS.has(key) && (value === "true" || value === "false"))) {
+    return value === true || value === "true" ? words.yes : words.no;
+  }
+  if ((key === "state" || key === "kind") && typeof value === "string") return words.values[value];
+  if (key === "target") {
+    const target = parsedArray(value);
+    if (
+      typeof target === "object" &&
+      target !== null &&
+      "type" in target &&
+      "id" in target &&
+      target.type === "INSTRUMENT" &&
+      typeof target.id === "number"
+    ) {
+      return `IN${target.id}`;
+    }
+  }
+  return undefined;
+}
+
 /** Recorded values for one event. Nested values are JSON-encoded, never dropped. */
-export function recordedValues(payload: AuditEvent["payload"], locale: string): Array<[string, string]> {
+export function recordedValues(
+  payload: AuditEvent["payload"],
+  locale: string,
+  words?: RecordedValueWords,
+): Array<[string, string]> {
   const dateFormat = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "long",
+    hourCycle: bookingHourCycle(),
     timeZone: "UTC",
   });
   return Object.entries(payload).map(([key, value]) => {
@@ -185,6 +261,10 @@ export function recordedValues(payload: AuditEvent["payload"], locale: string): 
       const date = new Date(value);
       if (Number.isFinite(date.getTime())) return [key, dateFormat.format(date)];
     }
+    const opening = openingValue(key, value, locale);
+    if (opening !== undefined) return [key, opening];
+    const word = words && wordValue(key, value, words);
+    if (word !== undefined) return [key, word];
     return [
       key,
       value === null || value === undefined

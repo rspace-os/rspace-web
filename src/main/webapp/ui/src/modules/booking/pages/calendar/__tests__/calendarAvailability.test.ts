@@ -5,8 +5,11 @@ import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import {
+  calendarAvailabilityRow,
+  closedDayRanges,
   loadCalendarAvailability,
   loadDatedCalendarAvailability,
   useCalendarAvailability,
@@ -52,6 +55,8 @@ const booking = (id: number, target: string, start: string, end: string) => ({
 const schedule = {
   openingStart: "00:00",
   openingEnd: "24:00",
+  openDays: ALL_ISO_WEEKDAYS,
+  openingExceptions: [],
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   allowDoubleBooking: false,
@@ -235,7 +240,7 @@ describe("calendar availability", () => {
     ]);
   });
 
-  it("generates and clips closures for every scheduling date overlapped by the display interval", async () => {
+  it("generates closures between the opening intervals of every scheduling date overlapped by the display interval", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
     const interval = displayInterval("2026-08-18", "Pacific/Auckland", "00:00", "24:00");
 
@@ -246,6 +251,8 @@ describe("calendar availability", () => {
           timezone: "America/Los_Angeles",
           openingStart: "08:00",
           openingEnd: "18:00",
+          openDays: ALL_ISO_WEEKDAYS,
+          openingExceptions: [],
           bufferBeforeMinutes: 0,
           bufferAfterMinutes: 0,
           allowDoubleBooking: false,
@@ -257,29 +264,100 @@ describe("calendar availability", () => {
     );
 
     expect(interval).toMatchObject({ start: "2026-08-17T12:00:00Z", end: "2026-08-18T12:00:00Z" });
+    // The evening and next-morning closures meet at the scheduling midnight, so they form one closed period.
     expect(result.get("IN1")).toEqual([
       sourced(
-        closureId("IN1", "2026-08-17T07:00:00Z", "2026-08-17T15:00:00Z"),
+        closureId("IN1", "2026-08-17T12:00:00Z", "2026-08-17T15:00:00Z"),
         "blockout",
         "2026-08-17T12:00:00Z",
         "2026-08-17T15:00:00Z",
-        "2026-08-17T07:00:00Z",
       ),
       sourced(
-        closureId("IN1", "2026-08-18T01:00:00Z", "2026-08-18T07:00:00Z"),
+        closureId("IN1", "2026-08-18T01:00:00Z", "2026-08-18T12:00:00Z"),
         "blockout",
         "2026-08-18T01:00:00Z",
-        "2026-08-18T07:00:00Z",
-      ),
-      sourced(
-        closureId("IN1", "2026-08-18T07:00:00Z", "2026-08-18T15:00:00Z"),
-        "blockout",
-        "2026-08-18T07:00:00Z",
         "2026-08-18T12:00:00Z",
-        "2026-08-18T07:00:00Z",
-        "2026-08-18T15:00:00Z",
       ),
     ]);
+  });
+
+  it("closes whole unselected weekdays even when the shared hours are all day", async () => {
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    const row = { ...schedule, globalId: "IN1", timezone: "UTC", openDays: [1, 2, 3, 4, 5] };
+    // Saturday 2026-08-22 through the end of Monday 2026-08-24.
+    const interval = { ...displayInterval("2026-08-22", "UTC", "00:00", "24:00"), end: "2026-08-25T00:00:00Z" };
+
+    const result = await loadCalendarAvailability([row], interval, "token", new AbortController().signal);
+
+    expect(result.get("IN1")).toEqual([
+      sourced(
+        closureId("IN1", "2026-08-22T00:00:00Z", "2026-08-24T00:00:00Z"),
+        "blockout",
+        "2026-08-22T00:00:00Z",
+        "2026-08-24T00:00:00Z",
+      ),
+    ]);
+  });
+
+  it("uses a weekday exception instead of the shared hours", async () => {
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    const row = {
+      ...schedule,
+      globalId: "IN1",
+      timezone: "UTC",
+      openingStart: "09:00",
+      openingEnd: "17:00",
+      openingExceptions: [{ dayOfWeek: 2, start: "10:00", end: "16:00" }],
+    };
+    // Monday 2026-08-17 and Tuesday 2026-08-18.
+    const interval = { ...displayInterval("2026-08-17", "UTC", "00:00", "24:00"), end: "2026-08-19T00:00:00Z" };
+
+    const result = await loadCalendarAvailability([row], interval, "token", new AbortController().signal);
+
+    expect(result.get("IN1")?.map(({ startsAt, endsAt }) => [startsAt.toISOString(), endsAt.toISOString()])).toEqual([
+      ["2026-08-17T00:00:00.000Z", "2026-08-17T09:00:00.000Z"],
+      ["2026-08-17T17:00:00.000Z", "2026-08-18T10:00:00.000Z"],
+      ["2026-08-18T16:00:00.000Z", "2026-08-19T00:00:00.000Z"],
+    ]);
+  });
+
+  it("never assumes every day is open when a row omits open days or exceptions", () => {
+    expect(calendarAvailabilityRow({ ...schedule, globalId: "IN1", timezone: "UTC", openDays: undefined })).toBe(
+      undefined,
+    );
+    expect(
+      calendarAvailabilityRow({ ...schedule, globalId: "IN1", timezone: "UTC", openingExceptions: undefined }),
+    ).toBe(undefined);
+  });
+
+  it("recomputes closures when only one exception changes", async () => {
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result, rerender } = renderHook(
+      ({ end }) =>
+        useCalendarAvailability(
+          [
+            {
+              globalId: "IN1",
+              timezone: "UTC",
+              ...schedule,
+              openingExceptions: [{ dayOfWeek: 1, start: "09:00", end }],
+            },
+          ],
+          "2026-08-17",
+          "token",
+        ),
+      { wrapper, initialProps: { end: "17:00" } },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toISOString()).toBe("2026-08-17T17:00:00.000Z");
+
+    rerender({ end: "18:00" });
+
+    await waitFor(() =>
+      expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toISOString()).toBe("2026-08-17T18:00:00.000Z"),
+    );
   });
 
   it("marks closed and buffered periods unavailable while double-bookable events stay available", async () => {
@@ -293,6 +371,8 @@ describe("calendar availability", () => {
       timezone: "UTC",
       openingStart: "08:00",
       openingEnd: "18:00",
+      openDays: ALL_ISO_WEEKDAYS,
+      openingExceptions: [],
       bufferBeforeMinutes: 10,
       bufferAfterMinutes: 20,
       allowDoubleBooking: false,
@@ -348,5 +428,32 @@ describe("calendar availability", () => {
         controller.signal,
       ),
     ).rejects.toThrow();
+  });
+
+  it("converts closures on the displayed day to timeline minutes", () => {
+    const schedule = {
+      globalId: "IN1",
+      timezone: "Europe/Berlin",
+      openingStart: "09:00",
+      openingEnd: "17:00",
+      openDays: [1, 2, 3, 4, 5],
+      openingExceptions: [{ dayOfWeek: 5, start: "10:00", end: "16:00" }],
+    };
+    expect(closedDayRanges(schedule, "2026-09-21", "Europe/Berlin")).toEqual([
+      { startMinute: 0, endMinute: 9 * 60 },
+      { startMinute: 17 * 60, endMinute: 24 * 60 },
+    ]);
+    expect(closedDayRanges(schedule, "2026-09-25", "Europe/Berlin")).toEqual([
+      { startMinute: 0, endMinute: 10 * 60 },
+      { startMinute: 16 * 60, endMinute: 24 * 60 },
+    ]);
+    expect(closedDayRanges(schedule, "2026-09-26", "Europe/Berlin")).toEqual([{ startMinute: 0, endMinute: 24 * 60 }]);
+    // A viewer in London sees the Berlin schedule an hour earlier.
+    expect(closedDayRanges(schedule, "2026-09-21", "Europe/London")).toEqual([
+      { startMinute: 0, endMinute: 8 * 60 },
+      { startMinute: 16 * 60, endMinute: 24 * 60 },
+    ]);
+    // The 23-hour clock-change day is fully shaded when closed.
+    expect(closedDayRanges(schedule, "2026-03-29", "Europe/Berlin")).toEqual([{ startMinute: 0, endMinute: 23 * 60 }]);
   });
 });

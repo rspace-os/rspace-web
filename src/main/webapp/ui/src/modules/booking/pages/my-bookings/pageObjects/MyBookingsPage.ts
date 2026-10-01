@@ -17,6 +17,10 @@ export class MyBookingsPageObject {
     return page.getByRole("button", { name: "Past" });
   }
 
+  get cancelled(): Locator {
+    return page.getByRole("button", { name: "Cancelled", exact: true });
+  }
+
   get upcomingCount(): Locator {
     return page.getByLabelText("2 upcoming bookings");
   }
@@ -51,22 +55,16 @@ export class MyBookingsPageObject {
     return page.getByRole("link", { name: "Edit", exact: true }).first();
   }
 
-  get confocalCalendarFile(): Locator {
-    return page.getByRole("button", { name: /^\.ics file for Confocal microscope,/ }).first();
+  get confocalMoreActions(): Locator {
+    return page.getByRole("button", { name: "More actions", exact: true }).first();
   }
 
-  get confocalCancel(): Locator {
-    return page.getByRole("button", { name: "Cancel booking", exact: true }).first();
+  get cancelMenuItem(): Locator {
+    return page.getByRole("menuitem", { name: "Cancel booking", exact: true });
   }
 
-  get unknownItem(): Locator {
-    return page.getByRole("article", { name: "Unknown item", exact: true }).getByText("Unknown item", { exact: true });
-  }
-
-  get roleLossNotice(): Locator {
-    return page
-      .getByRole("article", { name: "Unknown item", exact: true })
-      .getByText("Read-only: you no longer have access to this item.");
+  get cancelDialog(): Locator {
+    return page.getByRole("alertdialog");
   }
 
   tooltip(name: string): Locator {

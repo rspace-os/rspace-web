@@ -83,7 +83,13 @@ export function BookingDayTimelineAside({
       itemName={target?.name}
       scheduleWindow={
         target
-          ? { timezone: target.timezone, openingStart: target.openingStart, openingEnd: target.openingEnd }
+          ? {
+              timezone: target.timezone,
+              openingStart: target.openingStart,
+              openingEnd: target.openingEnd,
+              openDays: target.openDays,
+              openingExceptions: target.openingExceptions,
+            }
           : undefined
       }
       events={(schedule.data ?? []).map((booking) => toTimelineEvent(booking, date, timezone))}

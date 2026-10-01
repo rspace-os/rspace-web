@@ -108,6 +108,63 @@ describe("AllBookableItemsPage", () => {
     expect(await screen.findByRole("link", { name: "Add" })).toHaveAttribute("href", "/booking/bookable-items/add");
   });
 
+  it("explains how instruments become bookable when the user has none", async () => {
+    server.use(
+      candidateHandler(() => HttpResponse.json(candidatePage([]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(candidatePage([]))),
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+
+    await renderPage();
+
+    const [primer] = await screen.findAllByText(/Instruments from Inventory become bookable/);
+    expect(primer).toHaveTextContent("Access follows the instrument's Inventory sharing.");
+    const [addLink] = screen.getAllByRole("link", { name: "Add Bookable Item" });
+    expect(addLink).toHaveAttribute("href", "/booking/bookable-items/add");
+  });
+
+  it("keeps the generic empty text when a search hides every item", async () => {
+    server.use(
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(candidatePage([]))),
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+
+    await renderPage("/booking/all-items?date=2026-08-17&q=nothing");
+
+    expect((await screen.findAllByText(commonEnglish.tableList.empty.title))[0]).toBeVisible();
+    expect(screen.queryByText(/Instruments from Inventory become bookable/)).not.toBeInTheDocument();
+  });
+
+  it("labels the Inventory location and explains workbench names", async () => {
+    server.use(
+      candidateHandler(() => HttpResponse.json(candidatePage([bookableItemFixtures[0]]))),
+      http.get("/api/v2/booking-catalogue", () =>
+        HttpResponse.json({
+          ...candidatePage([bookableItemFixtures[0]]),
+          items: candidatePage([bookableItemFixtures[0]]).items.map((item) => ({
+            ...item,
+            location: { name: "WB user1a", globalId: "BE1" },
+          })),
+        }),
+      ),
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+
+    const { container } = await renderPage();
+
+    const [location] = await screen.findAllByRole("link", { name: "WB user1a" });
+    expect(location).toHaveAttribute("href", "/globalId/BE1");
+    expect(location.parentElement).toHaveTextContent(/^WB user1a$/);
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Available now/ })).toHaveTextContent(/\d/));
+    await expectAccessible(container);
+  });
+
   it("subscribes selected owned and readable non-owned items in bulk", async () => {
     const user = userEvent.setup();
     let updateBody: unknown;
@@ -230,7 +287,7 @@ describe("AllBookableItemsPage", () => {
     );
     await renderPage();
     await screen.findAllByRole("link", { name: "Book" });
-    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent(/\d/));
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Available now/ })).toHaveTextContent(/\d/));
     expect(bookings).toHaveBeenCalledTimes(1);
   });
 
@@ -368,6 +425,8 @@ describe("AllBookableItemsPage", () => {
       timezone: "UTC",
       openingStart: "00:00",
       openingEnd: "24:00",
+      openDays: [1, 2, 3, 4, 5, 6, 7],
+      openingExceptions: [],
     }));
     server.use(
       candidateHandler(() => HttpResponse.json(candidatePage(candidates))),
@@ -399,10 +458,15 @@ describe("AllBookableItemsPage", () => {
       ),
     );
     await renderPage("/booking/all-items?date=2026-08-20");
-    const available = await screen.findByRole("button", { name: "Available now" });
-    const later = screen.getByRole("button", { name: "Free later today" });
+    const available = await screen.findByRole("button", { name: /^Available now/ });
+    const later = screen.getByRole("button", { name: /^Busy now, free later/ });
+    // The categories are mutually exclusive, so each chip carries what it counts.
+    expect(available).toHaveAccessibleName("Available now");
+    expect(available).toHaveAccessibleDescription("Free at this moment");
+    expect(later).toHaveAccessibleName("Busy now, free later");
+    expect(later).toHaveAccessibleDescription("Busy now, free again later today");
     await waitFor(() => expect(available).toHaveTextContent("Available now1"));
-    expect(later).toHaveTextContent("Free later today1");
+    expect(later).toHaveTextContent("Busy now, free later1");
     for (const link of screen.getAllByRole("link", { name: "Book" })) {
       expect(link.getAttribute("href")).toContain("date=2026-08-20");
     }
@@ -410,7 +474,7 @@ describe("AllBookableItemsPage", () => {
     await userEvent.click(available);
     await waitFor(() => expect(available).toHaveAttribute("aria-pressed", "false"));
     expect(available).toHaveTextContent("Available now1");
-    expect(later).toHaveTextContent("Free later today1");
+    expect(later).toHaveTextContent("Busy now, free later1");
   });
 
   it.each([false, true])(
