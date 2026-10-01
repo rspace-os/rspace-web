@@ -1277,7 +1277,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(fixture.owner);
     ApiSampleRequestStatusPut fulfil = new ApiSampleRequestStatusPut();
     fulfil.setStatus(SampleRequestStatus.FULFILLED);
-    fulfil.setTransferredSample(aliquot.getId());
+    fulfil.setTransferredSampleGlobalId(aliquot.getGlobalId());
     sampleRequestApiMgr.updateStatus(fixture.requestId, fulfil, fixture.owner);
     ApiSample toRequester = new ApiSample();
     toRequester.setId(aliquot.getId());

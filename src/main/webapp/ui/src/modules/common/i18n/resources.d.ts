@@ -5851,6 +5851,7 @@ export default interface Resources {
         "invalidFormat": "Incorrect id format - should be ''\\d+-\\d+'' but was ''{0}''",
         "missing": "No id to retrieve"
       },
+      "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
       "date": "{0} is not a date.",
       "dateOutsideAllowedRange": "Default date is outside the allowed range.",
       "detail": "{0}",
@@ -7329,6 +7330,7 @@ export default interface Resources {
             "invalid": "Requested status must be one of: PENDING, APPROVED, REJECTED, FULFILLED or CANCELLED"
           },
           "statusNotSettable": "A sample request cannot be set to {0}.",
+          "transferredSampleNotAllowed": "A transferred sample can only be given when fulfilling a request, not when setting it to {0}.",
           "wrongActor": "You are not permitted to make this change to the request."
         },
         "search": {

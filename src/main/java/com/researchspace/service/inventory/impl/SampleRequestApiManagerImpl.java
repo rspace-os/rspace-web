@@ -142,7 +142,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     assertPermittedActor(request, user, toTarget.get(0).actor());
     Transition transition = legalFrom(toTarget, request.getStatus());
     String reason = validatedReason(post, transition);
-    Sample transferredSample = resolveTransferredSample(post.getTransferredSample(), user);
+    Sample transferredSample = resolveTransferredSample(post, user);
 
     request.recordStatus(user, post.getStatus(), reason, transferredSample);
     SampleRequest saved = sampleRequestDao.save(request);
@@ -249,11 +249,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
    * requestable search is instance-wide, so requestable is the gate rather than readability.
    */
   private Sample readRequestedSample(String sampleGlobalId) {
-    GlobalIdentifier oid =
-        GlobalIdentifier.isValid(sampleGlobalId) ? new GlobalIdentifier(sampleGlobalId) : null;
-    if (oid == null || !GlobalIdPrefix.SA.equals(oid.getPrefix())) {
-      throw new ApiRuntimeException("errors.inventory.globalId.unsupportedType", sampleGlobalId);
-    }
+    GlobalIdentifier oid = sampleOid(sampleGlobalId);
     return sampleDao
         .getSafeNull(oid.getDbId())
         .filter(sample -> !sample.isDeleted())
@@ -263,14 +259,30 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
                     messages.getResourceNotFoundMessage("Sample", oid.getDbId())));
   }
 
+  /** Rejects a global id that is malformed or names something other than a sample. */
+  private GlobalIdentifier sampleOid(String globalId) {
+    GlobalIdentifier oid =
+        GlobalIdentifier.isValid(globalId) ? new GlobalIdentifier(globalId) : null;
+    if (oid == null || !GlobalIdPrefix.SA.equals(oid.getPrefix())) {
+      throw new ApiRuntimeException("errors.inventory.globalId.unsupportedType", globalId);
+    }
+    return oid;
+  }
+
   /**
-   * Absent when no transferredSample id was supplied. A supplied one must be a sample the fulfiller
-   * can read, so a request's history cannot be made to carry a stranger's sample.
+   * Absent when none was supplied. A supplied one is only accepted when fulfilling, and must be a
+   * sample the fulfiller can read, so a request's history cannot be made to carry a stranger's.
    */
-  private Sample resolveTransferredSample(Long transferredSampleId, User user) {
-    return transferredSampleId == null
-        ? null
-        : sampleApiManager.assertUserCanReadSample(transferredSampleId, user);
+  private Sample resolveTransferredSample(ApiSampleRequestStatusPut post, User user) {
+    String globalId = post.getTransferredSampleGlobalId();
+    if (globalId == null) {
+      return null;
+    }
+    if (post.getStatus() != SampleRequestStatus.FULFILLED) {
+      throw new ApiRuntimeException(
+          "errors.inventory.sampleRequest.transferredSampleNotAllowed", post.getStatus());
+    }
+    return sampleApiManager.assertUserCanReadSample(sampleOid(globalId).getDbId(), user);
   }
 
   @Override

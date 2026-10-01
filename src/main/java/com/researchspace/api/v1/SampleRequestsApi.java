@@ -46,9 +46,9 @@ public interface SampleRequestsApi {
 
   /**
    * Move a request to a new status. Approve, reject and fulfil are the sample's current owner;
-   * cancel is the requester. A reason is required when rejecting and not accepted otherwise. A
-   * transferredSample id may optionally be supplied on any transition, naming the sample the
-   * request was fulfilled with (transferred, or newly created).
+   * cancel is the requester. A reason is required when rejecting and not accepted otherwise. When
+   * fulfilling, a transferredSampleGlobalId may name the sample the request was fulfilled with
+   * (transferred, or newly created).
    */
   @PutMapping(value = "/{id}/status")
   ApiSampleRequest updateStatus(

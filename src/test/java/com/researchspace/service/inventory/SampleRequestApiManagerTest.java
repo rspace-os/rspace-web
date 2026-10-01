@@ -387,7 +387,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     described.setDescription("freezer 3, box 12");
     sampleApiMgr.updateApiSample(described, owner);
     ApiSampleRequestStatusPut fulfil = statusPost(SampleRequestStatus.FULFILLED, null);
-    fulfil.setTransferredSample(aliquot.getId());
+    fulfil.setTransferredSampleGlobalId(aliquot.getGlobalId());
     sampleRequestApiMgr.updateStatus(raised.getId(), fulfil, owner);
 
     // the outsider cannot read the aliquot, so gets only its public view
@@ -421,7 +421,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
         () -> sampleApiMgr.assertUserCanReadSample(strangersSample.getId(), owner));
 
     ApiSampleRequestStatusPut fulfil = statusPost(SampleRequestStatus.FULFILLED, null);
-    fulfil.setTransferredSample(strangersSample.getId());
+    fulfil.setTransferredSampleGlobalId(strangersSample.getGlobalId());
 
     assertThrows(
         NotFoundException.class,
@@ -760,7 +760,9 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
     ApiSampleRequest fulfilled =
         sampleRequestApiMgr.updateStatus(
-            raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null, sample.getId()), owner);
+            raised.getId(),
+            statusPost(SampleRequestStatus.FULFILLED, null, sample.getGlobalId()),
+            owner);
 
     ApiSampleRequestStatusChange latest =
         fulfilled.getStatusChanges().get(fulfilled.getStatusChanges().size() - 1);
@@ -791,7 +793,37 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
         () ->
             sampleRequestApiMgr.updateStatus(
                 raised.getId(),
-                statusPost(SampleRequestStatus.FULFILLED, null, Long.MAX_VALUE),
+                statusPost(SampleRequestStatus.FULFILLED, null, "SA" + Long.MAX_VALUE),
+                owner));
+  }
+
+  @Test
+  public void updateStatus_transferredSampleIsOnlyAcceptedWhenFulfilling() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(),
+                statusPost(SampleRequestStatus.APPROVED, null, sample.getGlobalId()),
+                owner));
+    assertEquals(
+        SampleRequestStatus.PENDING,
+        sampleRequestApiMgr.getRequestById(raised.getId(), owner).getStatus());
+  }
+
+  @Test
+  public void updateStatus_transferredSampleMustNameASample() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    String subSampleGlobalId = sample.getSubSamples().get(0).getGlobalId();
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(),
+                statusPost(SampleRequestStatus.FULFILLED, null, subSampleGlobalId),
                 owner));
   }
 
@@ -800,11 +832,11 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   private ApiSampleRequestStatusPut statusPost(
-      SampleRequestStatus status, String reason, Long transferredSample) {
+      SampleRequestStatus status, String reason, String transferredSampleGlobalId) {
     ApiSampleRequestStatusPut post = new ApiSampleRequestStatusPut();
     post.setStatus(status);
     post.setReason(reason);
-    post.setTransferredSample(transferredSample);
+    post.setTransferredSampleGlobalId(transferredSampleGlobalId);
     return post;
   }
 

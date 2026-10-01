@@ -22,6 +22,7 @@
     }
   },
   "errors": {
+    "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
     "upload": {
       "imageContentMismatch": "File {0} was rejected: its content does not match the {1} type claimed by its file extension."
     },

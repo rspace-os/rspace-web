@@ -1072,6 +1072,8 @@ paths:
           description: Success - sample is updated.
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConcurrentChange"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
         "500":
@@ -1335,10 +1337,11 @@ paths:
         requested sample to a new owner also rejects the request if it is still
         PENDING or APPROVED, recording a reason that names the new owner.
 
-        `transferredSample` optionally gives the numeric id of the sample the
-        request was fulfilled with: the requested sample itself, or a new sample
-        created from it. The caller must be able to read that sample. It is
-        recorded on the new `statusChanges` entry.
+        `transferredSampleGlobalId` optionally gives the global id of the sample
+        the request was fulfilled with: the requested sample itself, or a new
+        sample created from it. It is only accepted when setting FULFILLED, and
+        the caller must be able to read that sample. It is recorded on the new
+        `statusChanges` entry, as `transferredSample`.
 
         ## Examples of the request body
 
@@ -1348,7 +1351,7 @@ paths:
 
         `{ "status": "REJECTED", "reason": "Insufficient material left" }` | Rejects a PENDING request, giving the reason. |
 
-        `{ "status": "FULFILLED", "transferredSample": 456 }` | Fulfils the request, recording sample 456 as the one handed over. |
+        `{ "status": "FULFILLED", "transferredSampleGlobalId": "SA456" }` | Fulfils the request, recording sample SA456 as the one handed over. |
       tags:
         - Sample Requests
       parameters:
@@ -1371,13 +1374,17 @@ paths:
           description: >-
             No such request, the caller is neither its requester, the sample's
             current owner, nor its owner when the request was raised, a supplied
-            `transferredSample` does not exist or cannot be read by the caller, or
-            sample requests are not enabled on this instance.
+            `transferredSampleGlobalId` does not exist or cannot be read by the
+            caller, or sample requests are not enabled on this instance.
+        "409":
+          $ref: "#/components/responses/ConcurrentChange"
         "422":
           description: >-
             The caller is not the permitted actor for this transition, the
-            transition is not legal from the request's current status, or the
-            reason is missing on a rejection or supplied when not accepted.
+            transition is not legal from the request's current status, the
+            reason is missing on a rejection or supplied when not accepted, or
+            `transferredSampleGlobalId` is given on a transition other than
+            FULFILLED or does not name a sample.
   "/sampleRequests/{id}":
     get:
       summary: Get a specific sample request
@@ -4481,6 +4488,14 @@ components:
       description: >
         The new sample or the origin update was refused by the core Inventory rules (for example a
         duplicate field name). Nothing was changed. Rare: the operation checks most of these first.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ConcurrentChange:
+      description: >
+        Nothing was changed: the database refused the update because another
+        request changed the same record at the same time. Reload and retry.
       content:
         application/json:
           schema:

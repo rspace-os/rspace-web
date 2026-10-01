@@ -24,9 +24,9 @@ public class ApiSampleRequestStatusPut {
   private String reason;
 
   /**
-   * Optional id of the sample the request is being fulfilled with, e.g. the original sample whose
-   * ownership was transferred, or a new sample created from it.
+   * Optional global id of the sample the request was fulfilled with, e.g. the requested sample
+   * itself, or a new sample created from it. Only accepted when fulfilling.
    */
-  @JsonProperty("transferredSample")
-  private Long transferredSample;
+  @JsonProperty("transferredSampleGlobalId")
+  private String transferredSampleGlobalId;
 }
