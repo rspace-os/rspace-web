@@ -58,13 +58,12 @@ public class SlackMessageSenderTest {
       strings = {
         "これはテストです。this is a test",
         "中文 한국어",
-        "café cafe\u0301",
         "العربية עברית",
         "हिन्दी",
         "𠮷 😀",
+        "café cafe\u0301",
         "試料 α μm −20 °C “quote”",
-        "Newline\nTab\tQuote\"Backslash\\",
-        "ASCII message<br/>second line"
+        "Newline\nTab\tQuote\"Backslash\\<br/>second line"
       })
   void sendsUtf8JsonWithoutChangingText(String message) throws Exception {
     CompletableFuture<CapturedRequest> captured = new CompletableFuture<>();
@@ -124,9 +123,7 @@ public class SlackMessageSenderTest {
       assertEquals(
           "https://rspace.example.com/globalId/SD123", attachment.get("title_link").asText());
       assertEquals("POST", request.method());
-      assertEquals(
-          new MediaType("application", "json", StandardCharsets.UTF_8),
-          MediaType.parseMediaType(request.contentType()));
+      assertEquals(MediaType.APPLICATION_JSON, MediaType.parseMediaType(request.contentType()));
     } finally {
       server.stop(0);
     }

@@ -9,12 +9,9 @@ import com.researchspace.model.apps.App;
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.properties.IPropertyHolder;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 public class SlackMessageSender extends AbstractExternalWebhookMessageSender
@@ -64,13 +61,6 @@ public class SlackMessageSender extends AbstractExternalWebhookMessageSender
   @Override
   protected String getPostUrlSetting() {
     return webhookURLSettingName;
-  }
-
-  @Override
-  protected HttpHeaders createPostHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(new MediaType("application", "json", StandardCharsets.UTF_8));
-    return headers;
   }
 
   @Override

@@ -81,15 +81,6 @@ For integrations that use a simple API key or token per user:
    - `providerId`: Your integration's app name
    - `accessToken`: The actual token/API key
 
-### Webhook message encoding
-
-Slack's `SlackMessageSender` declares `application/json; charset=UTF-8` when posting
-JSON strings through `AbstractExternalWebhookMessageSender`. Without an explicit
-content type, `RestTemplate` uses its string converter's `text/plain` and
-ISO-8859-1 defaults, which can replace Unicode characters with `?` regardless of
-the JVM's default charset. `SlackMessageSenderTest` captures the HTTP request at a
-local receiver and checks the UTF-8 body, message text, and attachments.
-
 ## Frontend changes
 
 For UI guidance, see:
