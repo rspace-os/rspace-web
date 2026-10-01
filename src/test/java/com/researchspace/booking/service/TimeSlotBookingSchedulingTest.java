@@ -28,7 +28,6 @@ import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -56,7 +55,7 @@ class TimeSlotBookingSchedulingTest {
   private ApplicationEventPublisher events;
   private BookingSchedulingPolicy schedulingPolicy;
   private User actor;
-  private ResourceAccessManager accessManager;
+  private BookingItemPermissions accessManager;
   private TimeSlotBookingManager manager;
 
   @BeforeEach
@@ -206,8 +205,7 @@ class TimeSlotBookingSchedulingTest {
     BookingConfiguration configuration = configuration(4L, 12L, true);
     when(configurationDao.lockActiveByTarget(target.reference()))
         .thenReturn(Optional.of(configuration));
-    when(accessManager.resolveForMutation(configuration.getResourceAccess(), actor))
-        .thenReturn(bookerAccess());
+    when(accessManager.resolveForMutation(configuration, actor)).thenReturn(bookerAccess());
     TimeSlotBookingManager.Create maintenance =
         new TimeSlotBookingManager.Create(
             target, start(), end(), null, BookingEventKind.MAINTENANCE);

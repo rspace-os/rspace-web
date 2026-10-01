@@ -178,11 +178,11 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
           .append(relatedItemPrefix)
           .append(
               "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.WHITELIST")
-          .append(" and ")
+          .append(" and concat('&', ")
           .append(relatedItemPrefix)
-          .append("sharingACL.acl LIKE :userGroupUniqueName")
+          .append("sharingACL.acl) LIKE :userGroupUniqueName")
           .append(i)
-          .append(") ");
+          .append(" escape '\\' ) ");
     }
     return predicate.append(")").toString();
   }
@@ -308,7 +308,11 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
         setParameterList.accept("userGroupMembers", userGroupMembers);
       }
       for (int i = 0; i < userGroupsUniqueNames.size(); i++) {
-        setParameter.accept("userGroupUniqueName" + i, "%" + userGroupsUniqueNames.get(i) + "%");
+        setParameter.accept(
+            "userGroupUniqueName" + i,
+            "%&"
+                + com.researchspace.dao.query.LikeEscaper.escape(userGroupsUniqueNames.get(i))
+                + "=%");
       }
     }
   }

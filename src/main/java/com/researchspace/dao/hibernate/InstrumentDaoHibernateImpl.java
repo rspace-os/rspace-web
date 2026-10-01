@@ -78,8 +78,8 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         .uniqueResultOptional()
         .map(
             instrument -> {
-              // A readable precheck may already have put this entity in the session. Refresh the
-              // locked row so authorization sees its current owner and deletion state.
+              // The entity may already be in the session from a readable precheck. Refresh it so
+              // permission rechecks under the lock observe the current sharing state.
               getSession().refresh(instrument, LockModeType.PESSIMISTIC_WRITE);
               return instrument;
             });

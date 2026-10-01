@@ -540,6 +540,51 @@ class ResourceAccessManagerTest {
   }
 
   @Test
+  void inheritedAccessRejectsEveryAclMutationBeforeResolvingThePersistedAggregate() {
+    when(resource.isInherited(protectedEntity)).thenReturn(true);
+    when(resource.resolveInheritedForMutation(protectedEntity, owner))
+        .thenReturn(
+            new ResolvedResourceAccess(
+                Optional.of(ResourceAccessTestScheme.OWNER),
+                Set.of(ResourceRoleScheme.READ_RESOURCE_CAPABILITY),
+                List.of()));
+
+    ResourceAccessException replaceError =
+        assertThrows(
+            ResourceAccessException.class,
+            () ->
+                manager.replace(
+                    resource, new ReplaceResourceAccess<>(9L, 7L, grants()), owner, owner));
+    ResourceAccessException transferError =
+        assertThrows(
+            ResourceAccessException.class,
+            () -> manager.transferDirectOwnership(resource, 9L, owner, other, owner, owner));
+    ResourceAccessException leaveError =
+        assertThrows(
+            ResourceAccessException.class,
+            () -> manager.removeSelf(resource, new RemoveSelfResourceAccess<>(9L), owner, owner));
+
+    assertEquals(ResourceAccessException.Reason.INHERITED_READ_ONLY, replaceError.reason());
+    assertEquals(ResourceAccessException.Reason.INHERITED_READ_ONLY, transferError.reason());
+    assertEquals(ResourceAccessException.Reason.INHERITED_READ_ONLY, leaveError.reason());
+    verify(resource, never()).access(protectedEntity);
+    verify(gateway, never()).lockAuthorizationFacts(any(), any());
+    verify(gateway, never()).flush();
+
+    when(resource.resolveInheritedForMutation(protectedEntity, other))
+        .thenReturn(ResolvedResourceAccess.none());
+    ResourceAccessException hiddenError =
+        assertThrows(
+            ResourceAccessException.class,
+            () ->
+                manager.replace(
+                    resource, new ReplaceResourceAccess<>(9L, 7L, grants()), other, other));
+    assertEquals(ResourceAccessException.Reason.NOT_FOUND, hiddenError.reason());
+    verify(resource, never()).access(protectedEntity);
+    verify(gateway, never()).lockAuthorizationFacts(any(), any());
+  }
+
+  @Test
   void inheritedDirectoryChecksTheDerivedPolicyWithoutLoadingAnAcl() {
     ResolvedResourceAccess inherited =
         new ResolvedResourceAccess(

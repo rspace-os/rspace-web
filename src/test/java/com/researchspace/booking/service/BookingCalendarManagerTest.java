@@ -17,7 +17,6 @@ import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.util.Date;
@@ -40,7 +39,7 @@ class BookingCalendarManagerTest {
       TimeSlotBookingManager bookingManager,
       BookingInstrumentQueryDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
       BookingCalendarCreationTransaction creationTransaction) {
     IPropertyHolder properties = mock(IPropertyHolder.class);

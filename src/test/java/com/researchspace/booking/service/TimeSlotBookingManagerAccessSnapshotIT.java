@@ -2,7 +2,6 @@ package com.researchspace.booking.service;
 
 import static com.researchspace.booking.service.TimeSlotBookingManagerIT.sevenDaysFromNow;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -10,21 +9,20 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.service.TimeSlotBookingManagerIT.Setup;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
-import com.researchspace.service.resourceaccess.ReplaceResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessException;
-import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +37,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
 
   private final TimeSlotBookingManager bookingManager;
   private final BookingConfigurationManager configurationManager;
+  private final BookingCalendarManager calendarManager;
   private final BookingConfigurationDao configurationDao;
   private final InstrumentDao instrumentDao;
   private final JdbcTemplate jdbcTemplate;
@@ -50,6 +49,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
   TimeSlotBookingManagerAccessSnapshotIT(
       TimeSlotBookingManager bookingManager,
       BookingConfigurationManager configurationManager,
+      BookingCalendarManager calendarManager,
       BookingConfigurationDao configurationDao,
       InstrumentDao instrumentDao,
       JdbcTemplate jdbcTemplate,
@@ -58,6 +58,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
       FeatureFlagManager featureFlags) {
     this.bookingManager = bookingManager;
     this.configurationManager = configurationManager;
+    this.calendarManager = calendarManager;
     this.configurationDao = configurationDao;
     this.instrumentDao = instrumentDao;
     this.jdbcTemplate = jdbcTemplate;
@@ -95,10 +96,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
     ApiInstrument instrument = createBasicInstrumentForUser(owner, "Access snapshot scope");
     Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
     User requester = owner;
-    if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
-      requester = createInitAndLoginAnyUser();
-      setAudienceRole(setup.configurationId(), owner, "BOOKER");
-    }
+    User newOwner = createInitAndLoginAnyUser();
     Instant start = sevenDaysFromNow();
     User bookingRequester = requester;
     TimeSlotBooking existing =
@@ -122,8 +120,8 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
                       bookingManager.getBooking(existing.getId(), subject).orElseThrow();
                       competing.executeWithoutResult(
                           other -> {
-                            if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
-                              setAudienceRole(setup.configurationId(), owner, "NO_ACCESS");
+                            if (mutation == SnapshotMutation.CHANGE_ITEM_OWNER) {
+                              instrumentDao.get(instrument.getId()).setOwner(newOwner);
                             } else {
                               configurationManager.updateConfiguration(
                                   setup.configurationId(),
@@ -132,7 +130,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
                                   owner);
                             }
                           });
-                      if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
+                      if (mutation == SnapshotMutation.CHANGE_ITEM_OWNER) {
                         assertTrue(
                             bookingManager
                                 .updateBooking(
@@ -155,15 +153,9 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
                             owner);
                       }
                     });
-    if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
-      ResourceAccessException exception =
-          assertThrows(ResourceAccessException.class, updateFromStaleSnapshot::run);
-      assertEquals(ResourceAccessException.Reason.STALE, exception.reason());
-    } else {
-      assertThrows(BookingConcurrentModificationException.class, updateFromStaleSnapshot::run);
-    }
+    assertThrows(BookingConcurrentModificationException.class, updateFromStaleSnapshot::run);
 
-    if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
+    if (mutation == SnapshotMutation.CHANGE_ITEM_OWNER) {
       assertTrue(
           bookingManager
               .updateBooking(
@@ -176,68 +168,88 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
   }
 
   @Test
-  public void editReadsAssignmentsCurrentWhenAccessWasNotLoadedBeforeTheRevocation() {
+  public void membershipRevocationRejectsWritesWithAnAlreadyInitializedSubject() throws Exception {
+    super.setUp();
     User owner = createInitAndLoginAnyUser();
-    ApiInstrument instrument = createBasicInstrumentForUser(owner, "Uncached access scope");
-    Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
     User booker = createInitAndLoginAnyUser();
-    setAudienceRole(setup.configurationId(), owner, "BOOKER");
+    Group group =
+        new TransactionTemplate(getTxMger())
+            .execute(
+                ignored -> {
+                  Group created =
+                      new Group("booking" + UUID.randomUUID().toString().substring(0, 8), piUser);
+                  created.setDisplayName(created.getUniqueName());
+                  perFactory
+                      .createDefaultGlobalGroupPermissions(created)
+                      .forEach(created::addPermission);
+                  created = grpMgr.saveGroup(created, piUser);
+                  grpMgr.addMembersToGroup(
+                      created.getId(),
+                      List.of(piUser, owner, booker),
+                      piUser.getUsername(),
+                      null,
+                      piUser);
+                  permissionUtils.refreshCache();
+                  return created;
+                });
+    ApiInstrument instrument = createBasicInstrumentForUser(owner, "Membership snapshot scope");
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored ->
+                instrumentDao
+                    .get(instrument.getId())
+                    .setSharingMode(
+                        com.researchspace.model.inventory.InventoryRecord.InventorySharingMode
+                            .OWNER_GROUPS));
+    Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
     Instant start = sevenDaysFromNow();
-    var existing =
-        bookingManager.createBooking(
-            new TimeSlotBookingManager.Create(
-                new ResolvedBookableTarget(setup.target(), setup.instrument()),
-                Date.from(start),
-                Date.from(start.plus(1, ChronoUnit.HOURS)),
-                null),
-            booker,
-            booker);
+    var create =
+        new TimeSlotBookingManager.Create(
+            new ResolvedBookableTarget(setup.target(), setup.instrument()),
+            Date.from(start),
+            Date.from(start.plus(1, ChronoUnit.HOURS)),
+            null);
+    var booking = bookingManager.createBooking(create, booker, booker);
+    var link =
+        calendarManager.createOrRotate(setup.configurationId(), booker, booker, "\"inactive\"");
+    String token =
+        java.net.URI.create(link.subscriptionUrl()).getRawQuery().substring("token=".length());
     var competing = new TransactionTemplate(getTxMger());
     competing.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    try {
-      new TransactionTemplate(getTxMger())
-          .executeWithoutResult(
-              ignored -> {
-                configurationDao.getSafeNull(setup.configurationId()).orElseThrow();
-                competing.executeWithoutResult(
-                    other -> setAudienceRole(setup.configurationId(), owner, "NO_ACCESS"));
-                assertTrue(
-                    bookingManager
-                        .updateBooking(
-                            existing.getId(),
-                            new TimeSlotBookingManager.Patch(
-                                null, null, true, "Revoked edit", null),
-                            booker,
-                            booker)
-                        .isEmpty());
-              });
-    } catch (BookingConcurrentModificationException exception) {
-      // MariaDB can reject a stale-snapshot locking read instead of returning current rows.
-    } catch (ResourceAccessException exception) {
-      assertEquals(ResourceAccessException.Reason.STALE, exception.reason());
-    }
-    assertEquals(
-        "CONFIRMED",
-        jdbcTemplate.queryForObject(
-            "SELECT state FROM TimeSlotBooking WHERE id = ?", String.class, existing.getId()));
-  }
 
-  private void setAudienceRole(long id, User owner, String role) {
-    long version = resourceAccessManager.get(protectedAccess, id, owner).version();
-    resourceAccessManager.replace(
-        protectedAccess,
-        new ReplaceResourceAccess<>(
-            id,
-            version,
-            List.of(
-                new ResourceAccessGrant("user:" + owner.getId(), "OWNER"),
-                new ResourceAccessGrant("audience:all-users", role))),
-        owner,
-        owner);
+    logoutAndLoginAs(piUser);
+    User staleBooker =
+        new TransactionTemplate(getTxMger())
+            .execute(
+                ignored -> {
+                  User stale = userDao.get(booker.getId());
+                  stale.getGroups().forEach(g -> g.getMembers().size());
+                  assertTrue(
+                      stale.getGroups().stream().anyMatch(g -> g.getId().equals(group.getId())));
+                  return stale;
+                });
+    competing.executeWithoutResult(
+        other -> grpMgr.removeUserFromGroup(booker.getUsername(), group.getId(), piUser));
+    assertTrue(
+        bookingManager
+            .updateBooking(
+                booking.getId(),
+                new TimeSlotBookingManager.Patch(null, null, true, "Must not be saved", null),
+                staleBooker,
+                staleBooker)
+            .isEmpty());
+    assertThrows(
+        org.apache.shiro.authz.AuthorizationException.class,
+        () -> bookingManager.createBooking(create, staleBooker, staleBooker));
+    grpMgr.addUserToGroup(
+        booker.getUsername(), group.getId(), com.researchspace.model.RoleInGroup.DEFAULT);
+    org.junit.jupiter.api.Assertions.assertInstanceOf(
+        BookingCalendarManager.NotFound.class,
+        calendarManager.feed(token, java.util.Locale.UK, new Date()));
   }
 
   private enum SnapshotMutation {
-    REVOKE_BOOKER_ACCESS,
+    CHANGE_ITEM_OWNER,
     DISABLE_CONFIGURATION
   }
 
