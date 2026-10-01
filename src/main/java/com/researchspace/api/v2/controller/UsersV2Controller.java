@@ -12,6 +12,7 @@ import com.researchspace.model.UserProfile;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
@@ -40,6 +41,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class UsersV2Controller {
 
   private final ContainerApiManager containerApiManager;
+  private final FeatureFlagManager featureFlagManager;
   private final UserExternalIdResolver externalIdResolver;
   private final UserProfileManager userProfileManager;
   private final SystemPropertyPermissionManager propertyPermissionManager;
@@ -134,7 +136,11 @@ public class UsersV2Controller {
   private Session session(User user, ApiV2Caller caller) {
     Date lastLogin = user.getLastLogin();
     return new Session(
-        caller.isDelegated(), lastLogin == null ? null : lastLogin.toInstant().toString());
+        caller.isDelegated(),
+        lastLogin == null ? null : lastLogin.toInstant().toString(),
+        featureFlagManager.canUseDevtools(user),
+        featureFlagManager.canOverrideFeatureFlags(user),
+        featureFlagManager.canChangeFeatureFlagBaselines(user));
   }
 
   private LiveChat liveChat() {

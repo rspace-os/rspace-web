@@ -8,6 +8,7 @@ import { currentUserResponse } from "@/__tests__/helpers/currentUserResponse";
 import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import AccountMenu from "@/modules/common/app/AccountMenu";
 import NewAppBar from "@/modules/common/app/AppBar";
 import HelpMenu from "@/modules/common/app/HelpMenu";
@@ -24,6 +25,10 @@ vi.mock("@/modules/common/hooks/auth", () => ({
 
 vi.mock("@/modules/common/app/lighthouse", () => ({
   useLighthouseSdk: vi.fn(),
+}));
+
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: vi.fn(),
 }));
 
 vi.mock("@/modules/common/ui/avatar", () => ({
@@ -78,6 +83,7 @@ beforeEach(() => {
   server.use(...defaultHandlers);
   vi.mocked(useOauthTokenQuery).mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
   vi.mocked(useLighthouseSdk).mockReturnValue({ lighthouseReady: false, showLighthouse: vi.fn() });
+  vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(true);
 });
 
 afterEach(() => {
@@ -122,6 +128,17 @@ describe("NewAppBar (MSW-driven)", () => {
       within(navigation).queryByRole("link", { name: "common:appBar.sections.inventory.title" }),
     ).not.toBeInTheDocument();
     expect(within(navigation).getByRole("link", { name: "common:appBar.sections.system.title" })).toBeInTheDocument();
+  });
+
+  it("hides the booking nav link when the booking feature flag is disabled", async () => {
+    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(false);
+
+    renderAppBar();
+
+    const navigation = await screen.findByRole("navigation", { name: "common:appBar.mainLinks" });
+    expect(
+      within(navigation).queryByRole("link", { name: "common:appBar.sections.booking.title" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the maintenance notice when /api/v2/maintenances carries a scheduled window", async () => {
