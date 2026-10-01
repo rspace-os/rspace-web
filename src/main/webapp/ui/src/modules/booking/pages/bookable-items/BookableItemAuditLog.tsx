@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -39,6 +40,11 @@ function RecordedValues({ row }: { row: AuditRow }) {
       ))}
     </dl>
   );
+}
+
+function bookingId(target: string | null | undefined): string | null {
+  const match = target?.match(/^bookings:(\d+)$/);
+  return match?.[1] ?? null;
 }
 
 const auditEventConfig = resolveCollectionConfig<AuditRow>({
@@ -100,7 +106,16 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
         width: 120,
         minWidth: 100,
         dependencies: ["payload"],
-        renderCell: ({ row }) => <span>{row.target ?? "—"}</span>,
+        renderCell: ({ row }) => {
+          const id = bookingId(row.target);
+          return id === null ? (
+            <span>{row.target ?? "—"}</span>
+          ) : (
+            <Link className="underline" to="/booking/calendar/bookings/$id" params={{ id: String(id) }}>
+              {row.target}
+            </Link>
+          );
+        },
       },
     },
     {
