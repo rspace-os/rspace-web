@@ -36,7 +36,6 @@ import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -60,6 +59,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 class BookingCalendarManagerTest {
 
@@ -75,7 +75,7 @@ class BookingCalendarManagerTest {
   private UserBookingCalendarSubscriptionDao userSubscriptionDao;
   private TimeSlotBookingManager bookingManager;
   private FeatureFlagManager featureFlags;
-  private ResourceAccessManager accessManager;
+  private BookingItemPermissions accessManager;
   private BookingCalendarFeedGenerator generator;
   private BookingCalendarCreationTransaction creationTransaction;
   private InstrumentDao instrumentDao;
@@ -91,7 +91,7 @@ class BookingCalendarManagerTest {
     bookingManager = mock(TimeSlotBookingManager.class);
     instrumentDao = mock(InstrumentDao.class);
     featureFlags = mock(FeatureFlagManager.class);
-    accessManager = mock(ResourceAccessManager.class);
+    accessManager = mock(BookingItemPermissions.class);
     generator = mock(BookingCalendarFeedGenerator.class);
     creationTransaction = mock(BookingCalendarCreationTransaction.class);
     IPropertyHolder properties = mock(IPropertyHolder.class);
@@ -108,7 +108,8 @@ class BookingCalendarManagerTest {
     when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
     when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
     when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
-    when(accessManager.resolve(configuration.getResourceAccess(), owner)).thenReturn(ownerAccess());
+    when(accessManager.resolve(configuration, owner)).thenReturn(ownerAccess());
+    when(accessManager.resolveForMutation(configuration, owner)).thenReturn(ownerAccess());
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.empty());
     when(subscriptionDao.saveAndFlush(any(BookableItemCalendarSubscription.class)))
@@ -156,6 +157,10 @@ class BookingCalendarManagerTest {
             CryptoUtils.hashToken(RAW_TOKEN).getBytes(StandardCharsets.UTF_8),
             storedHash.getBytes(StandardCharsets.UTF_8)));
 
+    InOrder lockOrder = org.mockito.Mockito.inOrder(configurationDao, accessManager);
+    lockOrder.verify(configurationDao).lockById(CONFIGURATION_ID);
+    lockOrder.verify(accessManager).resolveForMutation(configuration, owner);
+
     URI url = URI.create(created.subscriptionUrl());
     assertEquals("https", url.getScheme());
     assertEquals("rspace.example", url.getHost());
@@ -163,6 +168,16 @@ class BookingCalendarManagerTest {
     assertTrue(url.getRawQuery().startsWith("token="));
     assertEquals(RAW_TOKEN.length(), url.getRawQuery().substring("token=".length()).length());
     assertTrue(created.status().active());
+  }
+
+  @Test
+  void resetUsesFreshInheritedPermissionFacts() {
+    when(subscriptionDao.deleteByConfigurationId(CONFIGURATION_ID)).thenReturn(3);
+
+    assertEquals(3, manager.resetForConfiguration(CONFIGURATION_ID, owner, owner));
+
+    verify(accessManager).resolveForMutation(configuration, owner);
+    verify(subscriptionDao).deleteByConfigurationId(CONFIGURATION_ID);
   }
 
   @Test
@@ -273,13 +288,26 @@ class BookingCalendarManagerTest {
       when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.empty());
       when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.empty());
     } else {
-      when(accessManager.resolve(configuration.getResourceAccess(), owner))
+      when(accessManager.resolve(configuration, owner)).thenReturn(ResolvedResourceAccess.none());
+      when(accessManager.resolveForMutation(configuration, owner))
           .thenReturn(ResolvedResourceAccess.none());
     }
 
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
         () -> manager.status(CONFIGURATION_ID, owner, owner));
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
+  }
+
+  @Test
+  void createConcealsAnArchivedConfigurationWithoutBookingAccess() {
+    configuration.setState(BookingConfigurationState.ARCHIVED);
+    when(accessManager.resolve(configuration, owner)).thenReturn(ResolvedResourceAccess.none());
+    when(accessManager.resolveForMutation(configuration, owner))
+        .thenReturn(ResolvedResourceAccess.none());
+
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
         () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
@@ -318,8 +346,7 @@ class BookingCalendarManagerTest {
 
   @Test
   void revokeConcealsAConfigurationTheCallerCannotRead() {
-    when(accessManager.resolve(configuration.getResourceAccess(), owner))
-        .thenReturn(ResolvedResourceAccess.none());
+    when(accessManager.resolve(configuration, owner)).thenReturn(ResolvedResourceAccess.none());
 
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
@@ -460,12 +487,11 @@ class BookingCalendarManagerTest {
   void downloadIsUnavailableWithoutReadAccessOrForAnUnconfirmedBooking() {
     TimeSlotBooking booking = confirmedBooking();
     stubDownload(booking, "Microscope", "UTC");
-    when(accessManager.resolve(configuration.getResourceAccess(), owner))
-        .thenReturn(ResolvedResourceAccess.none());
+    when(accessManager.resolve(configuration, owner)).thenReturn(ResolvedResourceAccess.none());
 
     assertTrue(manager.download(BOOKING_ID, owner, Locale.ENGLISH).isEmpty());
 
-    when(accessManager.resolve(configuration.getResourceAccess(), owner)).thenReturn(ownerAccess());
+    when(accessManager.resolve(configuration, owner)).thenReturn(ownerAccess());
     booking.setState(BookingState.CANCELLED);
     assertTrue(manager.download(BOOKING_ID, owner, Locale.ENGLISH).isEmpty());
 
