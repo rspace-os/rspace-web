@@ -17,7 +17,11 @@ describe("generated application routes", () => {
     ["/public/apiDocs", "/public/apiDocs/", "__root__"],
     ["/booking", "/booking/", "/booking"],
     ["/booking/preferences", "/booking/preferences/", "/booking"],
+    ["/booking/config/bookable-items", "/booking/config/bookable-items/", "/booking"],
     ["/booking/config/settings", "/booking/config/settings/", "/booking"],
+    ["/booking/bookable-items/add", "/booking/bookable-items/add/", "/booking"],
+    ["/booking/bookable-items/IN42", "/booking/bookable-items/$globalId/{-$tab}/", "/booking"],
+    ["/booking/bookable-items/IN42/availability", "/booking/bookable-items/$globalId/{-$tab}/", "/booking"],
   ])("matches %s with its intended layout", (path, routeId, parentId) => {
     const router = routerAt(path);
     const matches = router.matchRoutes(path);
@@ -26,9 +30,26 @@ describe("generated application routes", () => {
     expect(router.matchRoutes(`${path}/`).at(-1)?.routeId).toBe(routeId);
   });
 
+  it.each([
+    ["/booking/bookable-items/add?target=IN42", { target: "IN42" }],
+    ["/booking/bookable-items/IN42?edit=true", { edit: true }],
+  ])("attaches search validation to %s", async (path, search) => {
+    const router = routerAt(path);
+    await router.load();
+    expect(router.state.matches.at(-1)?.search).toMatchObject(search);
+  });
+
   it.each(["/unknown", "/booking/unknown"])("marks an unknown path as not found: %s", async (path) => {
     const router = routerAt(path);
     await router.load();
     expect(router.state.matches.some((match) => match.globalNotFound || match.status === "notFound")).toBe(true);
+  });
+
+  it("matches dynamic and optional parameters under a deployment context path", async () => {
+    const router = routerAt("/rspace/booking/bookable-items/IN42/availability", "/rspace");
+    await router.load();
+    const match = router.state.matches.at(-1);
+    expect(match?.routeId).toBe("/booking/bookable-items/$globalId/{-$tab}/");
+    expect(match?.params).toMatchObject({ globalId: "IN42", tab: "availability" });
   });
 });
