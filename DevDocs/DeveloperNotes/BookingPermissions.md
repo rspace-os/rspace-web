@@ -6,6 +6,24 @@ Other Inventory editors can book and manage their own eligible bookings;
 full-read users can view and subscribe. Limited read does not grant Booking
 access. Run-as requests use the effective subject's permissions.
 
+Maintenance events (`kind: MAINTENANCE`) need the `CREATE_BLOCKOUT`
+capability, reported to clients as `capabilities.canCreateBlockout`.
+`BookingItemPermissions` gives both the item's owner and a sysadmin the owner
+role, which holds it, so owners schedule maintenance on their own items; it is
+not sysadmin-only. Inventory editors and readers do not hold it.
+`TimeSlotBookingManagerImpl.createBooking` checks the capability, then
+`BookingSchedulingPolicy.validateMaintenance` applies only slot alignment:
+maintenance is exempt from opening hours, closed weekdays and the item's
+maximum duration, so an owner can block out a day on which the item is closed.
+The absolute 366-day limit still applies, and maintenance still conflicts with
+every booking and maintenance event, even on items that allow double booking.
+
+An authorized cancellation may include an optional reason for either a booking or a
+maintenance event. The reason is trimmed, blank becomes null, and the maximum length
+is 500 characters. It follows purpose visibility: full readers see it, BUSY readers
+receive null. Cancellation remains terminal, and its reason cannot be edited.
+Maintenance cancellation stores and audits the reason but sends no notification.
+
 The requester can still read their own past and future bookings after losing
 item access. The response redacts the item and configuration relationship;
 the UI displays "Unknown item". This does not permit editing, cancellation,

@@ -31,6 +31,12 @@ beforeEach(() => {
   vi.mocked(useCurrentUserQuery).mockReturnValue({
     data: { hasSysAdminRole: true, session: { operatedAs: false } },
   } as ReturnType<typeof useCurrentUserQuery>);
+  // One instrument the caller could set up, so the page offers Add unless a test says otherwise.
+  server.use(
+    http.get("/api/v2/booking-configuration-targets", () =>
+      HttpResponse.json([{ id: 900, globalId: "IN900", name: "Unconfigured spectrometer", deleted: false }]),
+    ),
+  );
 });
 
 const bookingConfiguration = {
@@ -280,7 +286,7 @@ describe("BookableItemsPage", () => {
     expect(screen.queryByText("booking:bookableItems.ownerHealth.needsOwner")).not.toBeInTheDocument();
     expect(collectionRequests[0]?.headers.get("Authorization")).toBe("Bearer new-token");
     expect(new URL(collectionRequests[0]?.url ?? "http://localhost").searchParams.get("depth")).toBe("1");
-    expect(screen.getByRole("link", { name: "booking:bookableItems.actions.add" })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: "booking:bookableItems.actions.add" })).toHaveAttribute(
       "href",
       "/booking/bookable-items/add",
     );
@@ -302,6 +308,24 @@ describe("BookableItemsPage", () => {
 
     expect(screen.queryByRole("button", { name: "booking:bookableItems.ownerHealth.filter" })).not.toBeInTheDocument();
     await expectAccessible(container);
+  });
+
+  it("hides Add when the user has no instrument to set up", async () => {
+    let targetRequests = 0;
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionResponse([]))),
+      http.get("/api/v2/booking-configuration-targets", () => {
+        targetRequests += 1;
+        return HttpResponse.json([]);
+      }),
+    );
+    renderBookableItemsPage();
+
+    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    await waitFor(() => expect(targetRequests).toBe(1));
+    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.add" })).not.toBeInTheDocument();
   });
 
   it("combines lifecycle state and enabled into one Status column", async () => {
@@ -334,6 +358,12 @@ describe("BookableItemsPage", () => {
     expect(screen.getByRole("cell", { name: "booking:bookableItemDetails.disabled" })).toBeVisible();
     expect(screen.getByRole("cell", { name: "booking:bookableItemDetails.archived" })).toBeVisible();
     expect(screen.queryByText("booking:bookableItems.states.active")).not.toBeInTheDocument();
+
+    // The columns panel names the column with the same label as its header.
+    await userEvent.setup().click(screen.getByRole("button", { name: "common:tableList.toolbar.columns" }));
+    const columnsPanel = await screen.findByRole("region", { name: "common:tableList.columns.title" });
+    expect(within(columnsPanel).getByText("booking:bookableItems.fields.status")).toBeVisible();
+    expect(within(columnsPanel).queryByText("booking:bookableItems.fields.state")).not.toBeInTheDocument();
   });
 
   it("renders an unknown item when the related instrument is unreadable", async () => {
