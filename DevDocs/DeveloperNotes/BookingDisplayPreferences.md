@@ -5,6 +5,9 @@ Booking keeps presentation choices separate from scheduling rules:
 - The **display timezone** and **availability window** come from the current user's Booking
   preference, falling back to the global Booking defaults. They control rendered dates and times,
   route-level “today”, booking-form wall clocks, availability domains, and the Now marker.
+- Booking owner notifications use the recipient's display timezone in the dashboard. Browser mode
+  uses the timezone captured for the current session and falls back to the institution zone if it is
+  missing; email notifications use the institution zone for Browser mode.
 - The **scheduling timezone** remains on each `BookingConfiguration`. It controls opening-hour and
   slot-policy calculations and the timezone metadata in calendar feeds. Existing values are not
   rewritten.
