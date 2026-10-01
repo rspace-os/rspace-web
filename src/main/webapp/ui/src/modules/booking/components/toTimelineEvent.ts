@@ -27,13 +27,9 @@ export function toTimelineEvent(
   const target = event.target;
   const itemName = target?.value.name ?? i18n.t("common:values.unknownItem");
   const itemGlobalId = target?.globalId ?? null;
-  const location =
-    target?.value.parentContainerName != null && target.value.parentContainerGlobalId != null
-      ? {
-          name: target.value.parentContainerName,
-          globalId: target.value.parentContainerGlobalId,
-        }
-      : undefined;
+  const location = event.location
+    ? { name: event.location.value.name, globalId: event.location.value.globalId }
+    : undefined;
   const item = { name: itemName, globalId: itemGlobalId, location };
   if (event.kind === "MAINTENANCE") {
     return {

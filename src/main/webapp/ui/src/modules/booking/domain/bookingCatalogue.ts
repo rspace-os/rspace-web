@@ -85,7 +85,7 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
   };
 }
 
-export type BookingCatalogueSearch = {
+type CatalogueSearch = {
   q?: string;
   calendarStart?: string;
   calendarEnd?: string;
@@ -96,22 +96,30 @@ export type BookingCatalogueSearch = {
   mine?: boolean;
   types?: readonly string[];
   locations?: readonly string[];
+  /** Keeps only items in this availability quick filter; needs `availabilityWindow`. */
+  availability?: CatalogueAvailability;
+  availabilityWindow?: CatalogueAvailabilityWindow;
   page?: number;
   pageSize?: number;
 };
 
-const CATALOGUE_PAGE_SIZE = 100;
-const MAX_SAFE_REQUEST_BYTES = 6000;
+export type CatalogueAvailability = "available-now" | "free-later-today";
+
+/** Today's availability window `[start, end)` in the display time zone, and the instant to classify. */
+export type CatalogueAvailabilityWindow = { start: string; end: string; now: string };
+
+export const BookingCatalogueAvailabilityCountsSchema = v.object({
+  availableNow: v.number(),
+  freeLaterToday: v.number(),
+});
+
+export type BookingCatalogueAvailabilityCounts = v.InferOutput<typeof BookingCatalogueAvailabilityCountsSchema>;
 
 function appendAll(parameters: URLSearchParams, name: string, values: readonly string[] | undefined) {
   for (const value of values ?? []) parameters.append(name, value);
 }
 
-function buildBookingCatalogueRequest(search: BookingCatalogueSearch, token: string) {
-  const parameters = new URLSearchParams({
-    page: String(search.page ?? 1),
-    limit: String(search.pageSize ?? 20),
-  });
+function appendItemFilters(parameters: URLSearchParams, search: CatalogueSearch) {
   if (search.q?.trim()) parameters.set("q", search.q.trim());
   if (search.where) parameters.set("where", search.where);
   if (search.target) parameters.set("target", search.target);
@@ -119,142 +127,64 @@ function buildBookingCatalogueRequest(search: BookingCatalogueSearch, token: str
   if (search.mine) parameters.set("mine", "true");
   appendAll(parameters, "type", search.types);
   appendAll(parameters, "location", search.locations);
+}
+
+function appendAvailabilityWindow(parameters: URLSearchParams, window: CatalogueAvailabilityWindow) {
+  parameters.set("availabilityStart", window.start);
+  parameters.set("availabilityEnd", window.end);
+  parameters.set("now", window.now);
+}
+
+export async function fetchBookingCatalogue(
+  search: CatalogueSearch,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingCataloguePage> {
+  const parameters = new URLSearchParams({
+    page: String(search.page ?? 1),
+    limit: String(search.pageSize ?? 20),
+  });
+  appendItemFilters(parameters, search);
+  if (search.availability && search.availabilityWindow) {
+    parameters.set("availability", search.availability);
+    appendAvailabilityWindow(parameters, search.availabilityWindow);
+  }
   if (search.calendarStart) parameters.set("calendarStart", search.calendarStart);
   if (search.calendarEnd) parameters.set("calendarEnd", search.calendarEnd);
   if (search.eventWhere) parameters.set("eventWhere", search.eventWhere);
   const endpoint = search.calendarStart ? "/api/v2/booking-catalogue/calendar" : "/api/v2/booking-catalogue";
-  return {
-    url: `${endpoint}?${parameters.toString()}`,
+  const response = await fetch(`${endpoint}?${parameters}`, {
     headers: apiV2Headers(token),
-  };
-}
-
-function serializedRequestBytes(url: string, headers: Headers): number {
-  const encoder = new TextEncoder();
-  let bytes = encoder.encode(`GET ${url} HTTP/1.1\r\n`).length + encoder.encode("\r\n").length;
-  headers.forEach((value, name) => {
-    bytes += encoder.encode(`${name}: ${value}\r\n`).length;
-  });
-  return bytes;
-}
-
-/** Leaves room below Jetty's 8 KiB limit for browser/proxy headers not visible to the application. */
-export function bookingCatalogueRequestFits(search: BookingCatalogueSearch, token: string): boolean {
-  const request = buildBookingCatalogueRequest(search, token);
-  return serializedRequestBytes(request.url, request.headers) <= MAX_SAFE_REQUEST_BYTES;
-}
-
-export class BookingCatalogueRequestTooLargeError extends Error {
-  constructor() {
-    super("Booking catalogue request exceeds the safe request budget");
-    this.name = "BookingCatalogueRequestTooLargeError";
-  }
-}
-
-function throwIfAborted(signal: AbortSignal): void {
-  if (signal.aborted) throw signal.reason ?? new DOMException("The operation was aborted", "AbortError");
-}
-
-async function requestBookingCatalogue(
-  search: BookingCatalogueSearch,
-  token: string,
-  signal?: AbortSignal,
-  allowRequestSizeRetry = false,
-): Promise<BookingCataloguePage> {
-  const request = buildBookingCatalogueRequest(search, token);
-  const response = await fetch(request.url, {
-    headers: request.headers,
     signal,
   });
-  if (allowRequestSizeRetry && (response.status === 414 || response.status === 431)) {
-    throw new BookingCatalogueRequestTooLargeError();
-  }
   if (!response.ok) throw new Error(`Booking catalogue request failed (${response.status})`);
   return parseOrThrow(BookingCataloguePageSchema, await response.json());
 }
 
-export async function fetchBookingCatalogue(
-  search: BookingCatalogueSearch,
+/** How many items the same catalogue filters match in each availability quick filter, without rows. */
+export async function fetchBookingCatalogueAvailabilityCounts(
+  search: Pick<CatalogueSearch, "q" | "where" | "target" | "mine" | "types" | "locations">,
+  window: CatalogueAvailabilityWindow,
   token: string,
   signal?: AbortSignal,
-): Promise<BookingCataloguePage> {
-  return requestBookingCatalogue(search, token, signal);
-}
-
-export async function fetchBookingCataloguePageWithinSafeBudget(
-  search: BookingCatalogueSearch,
-  token: string,
-  signal: AbortSignal,
-): Promise<BookingCataloguePage> {
-  throwIfAborted(signal);
-  if (!bookingCatalogueRequestFits(search, token)) throw new BookingCatalogueRequestTooLargeError();
-  const result = await requestBookingCatalogue(search, token, signal, true);
-  throwIfAborted(signal);
-  return result;
-}
-
-export function assertBookingCataloguePage(
-  page: BookingCataloguePage,
-  requestedPage: number,
-  expectedTotal?: number,
-): void {
-  if (
-    !Number.isSafeInteger(page.page) ||
-    page.page !== requestedPage ||
-    page.pageSize !== CATALOGUE_PAGE_SIZE ||
-    !Number.isSafeInteger(page.total) ||
-    page.total < 0 ||
-    (expectedTotal !== undefined && page.total !== expectedTotal)
-  ) {
-    throw new Error("Booking catalogue returned inconsistent pagination metadata");
-  }
-  const expectedItemCount = Math.min(
-    CATALOGUE_PAGE_SIZE,
-    Math.max(0, page.total - (requestedPage - 1) * CATALOGUE_PAGE_SIZE),
-  );
-  if (page.items.length !== expectedItemCount) {
-    throw new Error("Booking catalogue pagination returned an incomplete page");
-  }
-}
-
-export async function fetchAllBookingCataloguePages(
-  search: BookingCatalogueSearch,
-  token: string,
-  signal: AbortSignal,
-  maximumItems: number,
-): Promise<BookingCataloguePage> {
-  if (!Number.isSafeInteger(maximumItems) || maximumItems < 0) {
-    throw new Error("Booking catalogue page bound must be a non-negative integer");
-  }
-  const first = await fetchBookingCataloguePageWithinSafeBudget(
-    { ...search, page: 1, pageSize: CATALOGUE_PAGE_SIZE },
-    token,
+): Promise<BookingCatalogueAvailabilityCounts> {
+  const parameters = new URLSearchParams();
+  appendItemFilters(parameters, search);
+  appendAvailabilityWindow(parameters, window);
+  const response = await fetch(`/api/v2/booking-catalogue/availability-counts?${parameters}`, {
+    headers: apiV2Headers(token),
     signal,
-  );
-  assertBookingCataloguePage(first, 1);
-  if (first.total > maximumItems) {
-    throw new Error("Booking catalogue returned more rows than the scoped target set");
-  }
-  const items = [...first.items];
-  const totalPages = Math.ceil(first.total / CATALOGUE_PAGE_SIZE);
-  for (let page = 2; page <= totalPages; page += 1) {
-    throwIfAborted(signal);
-    const next = await fetchBookingCataloguePageWithinSafeBudget(
-      { ...search, page, pageSize: CATALOGUE_PAGE_SIZE },
-      token,
-      signal,
-    );
-    assertBookingCataloguePage(next, page, first.total);
-    items.push(...next.items);
-  }
-  if (items.length !== first.total) {
-    throw new Error("Booking catalogue pagination returned an incomplete result");
-  }
-  return { ...first, items };
+  });
+  if (!response.ok) throw new Error(`Booking availability counts request failed (${response.status})`);
+  return parseOrThrow(BookingCatalogueAvailabilityCountsSchema, await response.json());
 }
 
+/**
+ * Readable parent Containers and workbenches that hold an active bookable item. A `q` that is an
+ * `IC` or `BE` global ID matches that location; `globalIds` restores saved selections in one batch.
+ */
 export async function fetchBookingCatalogueLocations(
-  search: Pick<BookingCatalogueSearch, "q" | "types" | "page" | "pageSize">,
+  search: Pick<CatalogueSearch, "q" | "types" | "page" | "pageSize"> & { globalIds?: readonly string[] },
   token: string,
   signal?: AbortSignal,
 ) {
@@ -264,6 +194,7 @@ export async function fetchBookingCatalogueLocations(
   });
   if (search.q?.trim()) parameters.set("q", search.q.trim());
   appendAll(parameters, "type", search.types);
+  appendAll(parameters, "globalId", search.globalIds);
   const response = await fetch(`/api/v2/booking-catalogue/locations?${parameters}`, {
     headers: apiV2Headers(token),
     signal,

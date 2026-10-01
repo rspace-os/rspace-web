@@ -6,6 +6,7 @@ import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,20 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
       Date end,
       Long excludedBookingId,
       Set<BookingEventKind> includedKinds);
+
+  /** The interval and kind of one confirmed event, for availability evaluation. */
+  record EventInterval(long configurationId, BookingEventKind kind, Date start, Date end) {}
+
+  /**
+   * Returns the confirmed, non-deleted events of these configurations that overlap the half-open
+   * interval {@code [start, end)}. It applies no read rule: callers pass only configurations the
+   * caller may read, whose events that caller may read too ({@code BookingEventReadAccess}).
+   */
+  List<EventInterval> findConfirmedEventIntervals(
+      Collection<Long> configurationIds, Date start, Date end);
+
+  /** Returns target IDs owned by the actor in one query. */
+  Set<Long> findOwnedInstrumentIds(Collection<Long> targetIds, Long actorId);
 
   /** Returns the ordered, fetch-complete rows used to build one calendar feed. */
   List<TimeSlotBooking> findCalendarBookings(Long configurationId, Date cutoff, int maximumRows);
