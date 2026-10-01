@@ -938,23 +938,38 @@ export default interface Resources {
           "tooWide": "Choose a period of no more than 183 days."
         },
         "values": {
-          "allowDoubleBooking": "Allow concurrent bookings",
+          "allowDoubleBooking": "Allow double booking",
+          "availabilityWindowEnd": "Availability window end",
+          "availabilityWindowStart": "Availability window start",
           "bufferAfter": "Buffer after (minutes)",
           "bufferBefore": "Buffer before (minutes)",
+          "cancellationReason": "Cancellation reason",
           "configuration": "Booking configuration",
+          "configurationVersion": "Configuration version",
+          "customTimezone": "Custom time zone",
+          "defaultSharedWith": "Default sharing",
+          "deletedAt": "Deleted at (UTC)",
           "empty": "No details recorded",
           "enabled": "Enabled",
           "end": "End (UTC)",
           "increment": "Time increment (minutes)",
           "kind": "Event type",
           "maximumDuration": "Maximum duration (minutes)",
+          "openDays": "Open days",
           "openingEnd": "Closing time",
+          "openingExceptions": "Different hours by day",
           "openingStart": "Opening time",
           "purpose": "Purpose / notes",
+          "removedAssignments": "Removed assignments",
+          "removedBookings": "Removed bookings",
+          "removedSubscriptions": "Removed subscriptions",
           "start": "Start (UTC)",
           "state": "Status",
           "target": "Bookable item",
-          "timezone": "Scheduling timezone"
+          "targetName": "Bookable item name",
+          "timeFormat": "Time format",
+          "timezone": "Scheduling time zone",
+          "timezoneMode": "Time zone mode"
         }
       },
       "calendarSubscription": {
@@ -7127,6 +7142,11 @@ export default interface Resources {
         }
       }
     },
+    "duration": {
+      "days": "{0, plural, one {# day} other {# days}}",
+      "hours": "{0, plural, one {# hour} other {# hours}}",
+      "minutes": "{0, plural, one {# minute} other {# minutes}}"
+    },
     "errors": {
       "ajax": {
         "unauthenticated": {
@@ -7167,12 +7187,13 @@ export default interface Resources {
           },
           "authenticationRequired": "Authentication is required.",
           "booking": {
+            "buffer": "The selected time is too close to another booking (buffer).",
             "concurrentModification": "The event changed while it was being edited.",
             "create": "The booking is invalid.",
             "duration": "Bookings may not exceed 366 days.",
             "granularity": "Start and end must align with this bookable item's slot granularity.",
-            "maximumDuration": "The booking exceeds this bookable item's maximum duration.",
-            "openingHours": "The booking must remain within this bookable item's opening hours.",
+            "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",
+            "openingHours": "The booking must remain within this bookable item's opening hours and cannot include a day on which it is closed.",
             "overlap": "The selected time overlaps another booking.",
             "patch": "The booking patch is invalid.",
             "purpose": {
@@ -7207,6 +7228,12 @@ export default interface Resources {
             "lifecycleConflict": "Restore the archived booking configuration before changing it.",
             "maximumDuration": {
               "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."
+            },
+            "openDays": {
+              "invalid": "Open days must list one to seven different weekdays, numbered 1 (Monday) to 7 (Sunday)."
+            },
+            "openingExceptions": {
+              "invalid": "Each day with different hours must be a different open weekday, with HH:mm hours where start is before end, or 00:00–24:00 for the full day."
             },
             "openingHours": {
               "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."

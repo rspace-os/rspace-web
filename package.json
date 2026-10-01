@@ -6,8 +6,8 @@
   "scripts": {
     "prepare": "node scripts/install-git-hooks.mjs",
     "postinstall": "node scripts/link-skills.mjs",
-    "test": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vitest run",
-    "test:ui": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vitest --ui",
+    "test": "cd src/main/webapp/ui && cross-env LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 NODE_OPTIONS=\"--max-old-space-size=8192\" vitest run",
+    "test:ui": "cd src/main/webapp/ui && cross-env LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 NODE_OPTIONS=\"--max-old-space-size=8192\" vitest --ui",
     "build": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite build --config vite.config.ts",
     "build:stats": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" FRONTEND_BUILD_STATS=true vite build --config vite.config.ts",
     "serve": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite --config vite.config.ts",
@@ -190,7 +190,7 @@
     "@dnd-kit/utilities": "3.2.2",
     "@rsql/parser": "1.6.0",
     "@tanstack/react-table": "9.0.0",
-    "@formisch/react": "1.0.0-rc.0",
+    "@formisch/react": "1.1.0",
     "@js-temporal/polyfill": "0.5.1"
   },
   "intent": {

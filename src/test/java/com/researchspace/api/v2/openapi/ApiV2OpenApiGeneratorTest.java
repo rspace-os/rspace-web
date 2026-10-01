@@ -211,6 +211,16 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "#/components/schemas/ResourceRoleSource",
         objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
+    Map<String, Object> openDays = objectMap(readProperties.get("openDays"));
+    assertEquals("array", openDays.get("type"));
+    assertEquals("integer", objectMap(openDays.get("items")).get("type"));
+    assertEquals(true, openDays.get("uniqueItems"));
+    Map<String, Object> updateProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
+    Map<String, Object> exceptionItem =
+        objectMap(objectMap(updateProperties.get("openingExceptions")).get("items"));
+    assertEquals(false, exceptionItem.get("additionalProperties"));
+    assertTrue(objectMap(exceptionItem.get("properties")).containsKey("dayOfWeek"));
   }
 
   @Test
@@ -558,6 +568,42 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(first, second);
     assertTrue(objectMap(where.get("x-rspace-filter")).containsKey("maximumComparisons"));
     assertTrue(objectMap(where.get("x-rspace-relationship-fields")).containsKey("target.name"));
+  }
+
+  @Test
+  void problemSchemaDocumentsTheBookingExtensionMembersAsOptional() {
+    Map<String, Object> schemas = schemas(document());
+    Map<String, Object> problem = objectMap(schemas.get("ApiV2Problem"));
+    Map<String, Object> properties = objectMap(problem.get("properties"));
+
+    for (String member :
+        List.of(
+            "conflict", "bufferBeforeMinutes", "bufferAfterMinutes", "maximumDurationMinutes")) {
+      assertTrue(properties.containsKey(member), member);
+      assertFalse(((List<?>) problem.get("required")).contains(member), member);
+    }
+    Map<String, Object> conflict = objectMap(schemas.get("BookingConflict"));
+    assertEquals(
+        List.of("end", "id", "kind", "start"),
+        ((List<?>) conflict.get("required")).stream().map(Object::toString).sorted().toList());
+    assertEquals(
+        "date-time", objectMap(objectMap(conflict.get("properties")).get("start")).get("format"));
+  }
+
+  @Test
+  void problemConflictIsTheConflictSchemaOrNullAsOpenApi31AllowsIt() {
+    Map<String, Object> properties =
+        objectMap(objectMap(schemas(document()).get("ApiV2Problem")).get("properties"));
+    Map<String, Object> conflict = objectMap(properties.get("conflict"));
+
+    assertFalse(conflict.containsKey("type"), conflict.toString());
+    assertFalse(conflict.containsKey("$ref"), conflict.toString());
+    assertEquals(
+        List.of(Map.of("$ref", "#/components/schemas/BookingConflict"), Map.of("type", "null")),
+        conflict.get("anyOf"));
+    assertTrue(conflict.get("description").toString().contains("errors.api.v2.booking.overlap"));
+    assertEquals(
+        List.of("integer", "null"), objectMap(properties.get("bufferBeforeMinutes")).get("type"));
   }
 
   @Test

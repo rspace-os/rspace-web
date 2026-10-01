@@ -551,6 +551,14 @@ This setting prevents the query layer from sending the property to Hibernate.
 Use a programmatic `CollectionDescription` for another scalar type. Also use it for a custom
 writer or row-specific field access.
 
+`CollectionFieldTypes.array()` and `object()` stay read-only. A field that must accept a JSON array
+or object uses `CollectionFieldTypes.structured(...)` instead. The parser still checks the JSON kind,
+then passes the whole node to the type's decoder; a decoder failure is an invalid value. The decoder
+validates the complete value, and its `structure` map (for example `items`) is published in the
+field's OpenAPI schema. Structured fields are never filterable or sortable. Booking configurations
+use this for `openDays` and `openingExceptions`; rules that span fields, such as an exception day
+having to be open, stay in the manager's validation of the merged settings.
+
 A programmatic writable field can call `defaultValue(value)` to supply a fixed value when a create
 document omits that field. An explicit client value, including an allowed `null`, takes precedence.
 The framework applies this default only on create and publishes it in the create schema. Dynamic
@@ -580,7 +588,7 @@ Before it calls the operations class, the parser rejects these inputs:
 - An unknown field.
 - A read-only field.
 - A missing required field.
-- An invalid scalar value.
+- An invalid scalar value, or an invalid value for a structured field.
 - A relationship with an invalid form.
 
 ### Bulk create
@@ -1192,6 +1200,22 @@ REST API v2 returns errors as RFC 9457 problem details. The response content typ
 `title`, `status`, and `code` are always present. `detail` and `invalidParams` are present when the
 error has that information.
 
+Some problems add RFC 9457 extension members. Each is present only on the codes that document it:
+
+| Code | Status | Extension members |
+| --- | --- | --- |
+| `errors.api.v2.booking.overlap` | 409 | `conflict` |
+| `errors.api.v2.booking.buffer` | 409 | `conflict`, `bufferBeforeMinutes`, `bufferAfterMinutes` |
+| `errors.api.v2.booking.maximumDuration` | 400 | `maximumDurationMinutes` |
+
+`conflict` is `{"id": 59, "kind": "BOOKING", "start": "2026-09-28T08:00:00Z", "end":
+"2026-09-28T10:00:00Z"}`: the first event that blocks the requested interval, as UTC instants.
+`kind` is `BOOKING` or `MAINTENANCE`. It never contains a purpose, requester, or other private
+field, and the server does not format its times into `detail`. The server checks the requested
+interval first; only when that is free does it check the interval widened by the item's buffers,
+so `buffer` means that moving the booking slightly would resolve the conflict. Both checks apply to
+create, time-changing edits, and maintenance, and respect the item's double-booking setting.
+
 The `code` value is stable. The server resolves `title` and `detail` from the message catalog.
 Authentication errors also contain `WWW-Authenticate: Bearer`.
 
@@ -1234,6 +1258,10 @@ Declare each non-standard error in the resource spec. An error mapping has these
 - It converts the mapped domain exception to the specified HTTP response for that operation.
 - It resolves the response detail from the stable message key.
 - It adds the error response to OpenAPI.
+
+The six-argument `ApiV2ErrorMapping.of` also extracts `ApiV2Problem.Extensions` from the exception,
+for problems whose body carries typed extension members. Add a new member to `ApiV2Problem` as a
+nullable component so OpenAPI documents it.
 
 When exception classes overlap, the most specific matching class applies. An unmapped exception
 continues through the normal controller-advice chain. Startup fails if a mapping refers to an

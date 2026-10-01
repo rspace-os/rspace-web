@@ -1,5 +1,6 @@
 package com.researchspace.model.collection;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -92,6 +93,26 @@ public final class CollectionFieldTypes {
     return new OpaqueFieldType<>((Class) List.class, CollectionFieldType.InputKind.ARRAY);
   }
 
+  /**
+   * A writable structured field decoded from its complete JSON value by {@code parser}.
+   *
+   * @param structure JSON Schema keywords, such as {@code items}, published for the value
+   */
+  public static <V> CollectionFieldType<V> structured(
+      Class<V> javaType,
+      CollectionFieldType.InputKind inputKind,
+      Map<String, Object> structure,
+      Function<JsonNode, V> parser,
+      Function<V, Object> serializer) {
+    return new StructuredType<>(
+        Objects.requireNonNull(javaType, "Structured Java type"),
+        Objects.requireNonNull(inputKind, "Structured input kind"),
+        new CollectionFieldType.Schema(
+            inputKind.name().toLowerCase(java.util.Locale.ROOT), null, null, structure),
+        Objects.requireNonNull(parser, "Structured parser"),
+        Objects.requireNonNull(serializer, "Structured serializer"));
+  }
+
   public static CollectionFieldType<String> text() {
     return text(Integer.MAX_VALUE);
   }
@@ -156,6 +177,40 @@ public final class CollectionFieldTypes {
     @Override
     public Object serialize(V value) {
       return serializer.apply(value);
+    }
+  }
+
+  private record StructuredType<V>(
+      Class<V> javaType,
+      InputKind inputKind,
+      Schema schema,
+      Function<JsonNode, V> parser,
+      Function<V, Object> serializer)
+      implements StructuredFieldType<V> {
+
+    @Override
+    public V parse(JsonNode value) {
+      return parser.apply(value);
+    }
+
+    @Override
+    public V parse(String value) {
+      throw new UnsupportedOperationException("Structured fields cannot be parsed from text");
+    }
+
+    @Override
+    public Object serialize(V value) {
+      return serializer.apply(value);
+    }
+
+    @Override
+    public Set<Operator> operators() {
+      return Set.of();
+    }
+
+    @Override
+    public boolean sortable() {
+      return false;
     }
   }
 

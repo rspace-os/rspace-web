@@ -313,6 +313,8 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
             configuration.getSlotGranularityMinutes(),
             configuration.getOpeningStart(),
             configuration.getOpeningEnd(),
+            configuration.getOpenDays(),
+            configuration.getOpeningExceptions(),
             configuration.getBufferBeforeMinutes(),
             configuration.getBufferAfterMinutes(),
             configuration.getMaxBookingDurationMinutes(),
