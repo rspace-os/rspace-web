@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { UserBadge, userInitials } from "./user-badge";
+import { UserBadge, userInitials, userSwatch } from "./user-badge";
 
 describe("UserBadge", () => {
   it("renders one compact identity from a full name and username", async () => {
@@ -17,6 +17,38 @@ describe("UserBadge", () => {
 
     expect(screen.getByText("Grace Hopper (ghopper)")).toBeVisible();
     expect(screen.queryByText("Grace Hopper (ghopper) (ghopper)")).not.toBeInTheDocument();
+  });
+
+  it("shows the full name and username on hover", () => {
+    render(<UserBadge name="Ada Lovelace" username="alovelace" density="compact" />);
+
+    expect(screen.getByTitle("Ada Lovelace (alovelace)")).toHaveAttribute("data-slot", "user-badge");
+  });
+
+  it("colours avatars by username so people with the same initials stay distinguishable", () => {
+    render(
+      <>
+        <UserBadge name="user user" username="user" />
+        <UserBadge name="user3 user3" username="user3" />
+      </>,
+    );
+
+    const [first, second] = screen.getAllByText("UU");
+    expect(first).toHaveClass(...userSwatch("user").split(" "));
+    expect(second).toHaveClass(...userSwatch("user3").split(" "));
+    expect(userSwatch("user")).not.toBe(userSwatch("user3"));
+  });
+
+  it("derives the same avatar colour from the same identity every time", () => {
+    expect(userSwatch("alovelace")).toBe(userSwatch("alovelace"));
+    expect(userSwatch("user user")).not.toBe(userSwatch("user3 user3"));
+    expect(userSwatch("")).toMatch(/^bg-\w+-200 text-\w+-900 /);
+  });
+
+  it("falls back to the full name for the avatar colour when there is no username", () => {
+    render(<UserBadge name="Grace Hopper" />);
+
+    expect(screen.getByText("GH")).toHaveClass(...userSwatch("Grace Hopper").split(" "));
   });
 
   it("derives stable initials from names, usernames, and honorifics", () => {

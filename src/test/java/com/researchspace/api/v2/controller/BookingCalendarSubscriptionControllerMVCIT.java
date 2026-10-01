@@ -2,6 +2,8 @@ package com.researchspace.api.v2.controller;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,6 +57,8 @@ class BookingCalendarSubscriptionControllerMVCIT {
 
   private static final String USER_SUBSCRIPTION_PATH =
       "/api/v2/users/me/booking-calendar-subscription";
+  private static final String ITEM_LINKS_PATH =
+      "/api/v2/users/me/bookable-item-calendar-subscriptions";
 
   @Autowired private WebApplicationContext context;
   @Autowired private BookingCalendarSubscriptionDao subscriptionDao;
@@ -105,12 +109,8 @@ class BookingCalendarSubscriptionControllerMVCIT {
 
     MvcResult created =
         mockMvc
-            .perform(
-                post(USER_SUBSCRIPTION_PATH)
-                    .header("apiKey", apiKey)
-                    .header(
-                        HttpHeaders.IF_MATCH, inactive.getResponse().getHeader(HttpHeaders.ETAG)))
-            .andExpect(status().isOk())
+            .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+            .andExpect(status().isCreated())
             .andExpect(header().exists(HttpHeaders.ETAG))
             .andExpect(jsonPath("$.active").value(true))
             .andExpect(jsonPath("$.updatedAt").isString())
@@ -131,6 +131,32 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .andExpect(jsonPath("$.subscriptionUrl").value(subscriptionUrl));
 
     mockMvc
+        .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(
+            header().string(HttpHeaders.ETAG, created.getResponse().getHeader(HttpHeaders.ETAG)))
+        .andExpect(jsonPath("$.subscriptionUrl").value(subscriptionUrl));
+
+    MvcResult rotated =
+        mockMvc
+            .perform(
+                post(USER_SUBSCRIPTION_PATH + "/rotate")
+                    .header("apiKey", apiKey)
+                    .header(
+                        HttpHeaders.IF_MATCH, created.getResponse().getHeader(HttpHeaders.ETAG)))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNotEquals(
+        subscriptionUrl,
+        objectMapper
+            .readTree(rotated.getResponse().getContentAsByteArray())
+            .path("subscriptionUrl")
+            .textValue());
+    assertNotEquals(
+        created.getResponse().getHeader(HttpHeaders.ETAG),
+        rotated.getResponse().getHeader(HttpHeaders.ETAG));
+
+    mockMvc
         .perform(delete(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
         .andExpect(status().isNoContent());
     mockMvc
@@ -141,122 +167,153 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   @Test
-  void userCalendarCreateRequiresTheExactCurrentEtag() throws Exception {
+  void userCalendarRotateRequiresTheExactCurrentEtag() throws Exception {
     fixture.enableBookings();
     String apiKey = fixture.userKey();
 
     mockMvc
         .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+        .andExpect(status().isCreated());
+
+    mockMvc
+        .perform(post(USER_SUBSCRIPTION_PATH + "/rotate").header("apiKey", apiKey))
         .andExpect(status().isPreconditionRequired())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.ifMatchRequired"));
     mockMvc
         .perform(
-            post(USER_SUBSCRIPTION_PATH)
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "inactive"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
     mockMvc
         .perform(
-            post(USER_SUBSCRIPTION_PATH)
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
 
-    String inactiveEtag =
+    String currentEtag =
         mockMvc
             .perform(get(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getHeader(HttpHeaders.ETAG);
-    String currentEtag =
-        mockMvc
-            .perform(
-                post(USER_SUBSCRIPTION_PATH)
-                    .header("apiKey", apiKey)
-                    .header(HttpHeaders.IF_MATCH, inactiveEtag))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getHeader(HttpHeaders.ETAG);
-    String rewrittenEtag = "W/" + currentEtag.substring(0, currentEtag.length() - 1) + "-gzip\"";
     MvcResult replacement =
         mockMvc
             .perform(
-                post(USER_SUBSCRIPTION_PATH)
+                post(USER_SUBSCRIPTION_PATH + "/rotate")
                     .header("apiKey", apiKey)
-                    .header(HttpHeaders.IF_MATCH, rewrittenEtag))
+                    .header(HttpHeaders.IF_MATCH, currentEtag))
             .andExpect(status().isOk())
             .andReturn();
     assertNotEquals(currentEtag, replacement.getResponse().getHeader(HttpHeaders.ETAG));
     mockMvc
         .perform(
-            post(USER_SUBSCRIPTION_PATH)
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
                 .header("apiKey", apiKey)
-                .header(HttpHeaders.IF_MATCH, rewrittenEtag))
+                .header(HttpHeaders.IF_MATCH, currentEtag))
         .andExpect(status().isConflict());
   }
 
   @Test
-  void itemCalendarCreateRequiresTheExactCurrentEtag() throws Exception {
+  void itemCalendarRotateRequiresTheExactCurrentEtag() throws Exception {
     fixture.enableBookings();
     long configurationId = readableConfiguration();
     String apiKey = fixture.userKey();
+    create(configurationId, apiKey);
 
     mockMvc
-        .perform(post(path(configurationId)).header("apiKey", apiKey))
+        .perform(post(path(configurationId) + "/rotate").header("apiKey", apiKey))
         .andExpect(status().isPreconditionRequired())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.ifMatchRequired"));
     mockMvc
         .perform(
-            post(path(configurationId))
+            post(path(configurationId) + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "inactive"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
     mockMvc
         .perform(
-            post(path(configurationId))
+            post(path(configurationId) + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
 
-    String inactiveEtag =
+    String currentEtag =
         mockMvc
             .perform(get(path(configurationId)).header("apiKey", apiKey))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getHeader(HttpHeaders.ETAG);
-    String currentEtag =
-        mockMvc
-            .perform(
-                post(path(configurationId))
-                    .header("apiKey", apiKey)
-                    .header(HttpHeaders.IF_MATCH, inactiveEtag))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getHeader(HttpHeaders.ETAG);
-    String rewrittenEtag = "W/" + currentEtag.substring(0, currentEtag.length() - 1) + "-br\"";
     MvcResult replacement =
         mockMvc
             .perform(
-                post(path(configurationId))
+                post(path(configurationId) + "/rotate")
                     .header("apiKey", apiKey)
-                    .header(HttpHeaders.IF_MATCH, rewrittenEtag))
+                    .header(HttpHeaders.IF_MATCH, currentEtag))
             .andExpect(status().isOk())
             .andReturn();
     assertNotEquals(currentEtag, replacement.getResponse().getHeader(HttpHeaders.ETAG));
     mockMvc
         .perform(
-            post(path(configurationId))
+            post(path(configurationId) + "/rotate")
                 .header("apiKey", apiKey)
-                .header(HttpHeaders.IF_MATCH, rewrittenEtag))
+                .header(HttpHeaders.IF_MATCH, currentEtag))
         .andExpect(status().isConflict());
+  }
+
+  @Test
+  void rotateAcceptsCurrentEtagsAsCompressingProxiesRewriteThem() throws Exception {
+    fixture.enableBookings();
+    String apiKey = fixture.userKey();
+    String userEtag =
+        mockMvc
+            .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader(HttpHeaders.ETAG);
+    String gzipped = userEtag.substring(0, userEtag.length() - 1) + "-gzip\"";
+
+    mockMvc
+        .perform(
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, gzipped))
+        .andExpect(status().isOk())
+        .andExpect(header().string(HttpHeaders.ETAG, not(userEtag)));
+    mockMvc
+        .perform(
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, gzipped))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
+
+    long configurationId = readableConfiguration();
+    create(configurationId, apiKey);
+    String itemEtag =
+        mockMvc
+            .perform(get(path(configurationId)).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getHeader(HttpHeaders.ETAG);
+    mockMvc
+        .perform(
+            post(path(configurationId) + "/rotate")
+                .header("apiKey", apiKey)
+                .header(
+                    HttpHeaders.IF_MATCH,
+                    "W/" + itemEtag.substring(0, itemEtag.length() - 1) + "-br\""))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(true));
   }
 
   @Test
@@ -284,20 +341,14 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .perform(get(path(Long.MAX_VALUE)).header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(
-            post(path(Long.MAX_VALUE))
-                .header("apiKey", fixture.userKey())
-                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
+        .perform(post(path(Long.MAX_VALUE)).header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound());
 
     mockMvc
         .perform(get(path(configurationId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(
-            post(path(configurationId))
-                .header("apiKey", fixture.otherUserKey())
-                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
+        .perform(post(path(configurationId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
 
     new TransactionTemplate(transactionManager)
@@ -308,10 +359,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
               configurationDao.saveAndFlush(configuration);
             });
     mockMvc
-        .perform(
-            post(path(configurationId))
-                .header("apiKey", fixture.otherUserKey())
-                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
+        .perform(post(path(configurationId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
   }
 
@@ -339,8 +387,11 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .andExpect(jsonPath("$.updatedAt").isString())
         .andExpect(jsonPath("$.subscriptionUrl").value(firstUrl));
 
-    String replacementUrl = create(configurationId, apiKey);
-    assertNotEquals(firstUrl, replacementUrl);
+    mockMvc
+        .perform(post(path(configurationId)).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.subscriptionUrl").value(firstUrl));
+    assertNotEquals(firstUrl, rotate(configurationId, apiKey));
 
     mockMvc
         .perform(delete(path(configurationId)).header("apiKey", apiKey))
@@ -353,6 +404,42 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.active").value(false))
         .andExpect(jsonPath("$.subscriptionUrl").value((Object) null));
+  }
+
+  @Test
+  void listsTheCallersItemLinksUntilTheyAreRevoked() throws Exception {
+    long configurationId = readableConfiguration();
+    String apiKey = fixture.userKey();
+
+    mockMvc
+        .perform(get(ITEM_LINKS_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
+
+    String url = create(configurationId, apiKey);
+
+    mockMvc
+        .perform(get(ITEM_LINKS_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Cache-Control", containsString("no-store")))
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].configurationId").value(configurationId))
+        .andExpect(jsonPath("$[0].itemGlobalId").value(startsWith("IN")))
+        .andExpect(jsonPath("$[0].itemName").isString())
+        .andExpect(jsonPath("$[0].updatedAt").isString())
+        .andExpect(jsonPath("$[0].subscriptionUrl").value(url));
+    mockMvc
+        .perform(get(ITEM_LINKS_PATH).header("apiKey", fixture.otherUserKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
+
+    mockMvc
+        .perform(delete(path(configurationId)).header("apiKey", apiKey))
+        .andExpect(status().isNoContent());
+    mockMvc
+        .perform(get(ITEM_LINKS_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
   }
 
   @Test
@@ -578,6 +665,21 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   private String create(long configurationId, String apiKey) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(post(path(configurationId)).header("apiKey", apiKey))
+            .andExpect(status().isCreated())
+            .andExpect(header().string("Cache-Control", containsString("no-store")))
+            .andExpect(header().string("Cache-Control", containsString("private")))
+            .andExpect(jsonPath("$.active").value(true))
+            .andExpect(jsonPath("$.updatedAt").isString())
+            .andExpect(jsonPath("$.subscriptionUrl").isNotEmpty())
+            .andReturn();
+    JsonNode document = objectMapper.readTree(result.getResponse().getContentAsByteArray());
+    return document.path("subscriptionUrl").textValue();
+  }
+
+  private String rotate(long configurationId, String apiKey) throws Exception {
     String etag =
         mockMvc
             .perform(get(path(configurationId)).header("apiKey", apiKey))
@@ -588,15 +690,11 @@ class BookingCalendarSubscriptionControllerMVCIT {
     MvcResult result =
         mockMvc
             .perform(
-                post(path(configurationId))
+                post(path(configurationId) + "/rotate")
                     .header("apiKey", apiKey)
                     .header(HttpHeaders.IF_MATCH, etag))
             .andExpect(status().isOk())
-            .andExpect(header().string("Cache-Control", containsString("no-store")))
-            .andExpect(header().string("Cache-Control", containsString("private")))
             .andExpect(jsonPath("$.active").value(true))
-            .andExpect(jsonPath("$.updatedAt").isString())
-            .andExpect(jsonPath("$.subscriptionUrl").isNotEmpty())
             .andReturn();
     JsonNode document = objectMapper.readTree(result.getResponse().getContentAsByteArray());
     return document.path("subscriptionUrl").textValue();
