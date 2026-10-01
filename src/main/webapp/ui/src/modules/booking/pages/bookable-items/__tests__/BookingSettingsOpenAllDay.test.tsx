@@ -148,7 +148,7 @@ describe("Open all day", () => {
     expect(screen.getByRole("checkbox", { name: "Sunday" })).not.toBeChecked();
 
     await user.click(save());
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
     expect(submitted[0]).toMatchObject({
       openingHours: settings.openingHours
         .filter((entry) => entry.dayOfWeek !== 7)
@@ -177,7 +177,7 @@ describe("Open all day", () => {
     succeed = true;
     await user.click(controls(mondayHours()).allDay);
     await user.click(save());
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
     expect(submitted.at(-1)).toMatchObject({
       openingHours: settings.openingHours
         .filter((entry) => entry.dayOfWeek !== 2)
@@ -206,7 +206,7 @@ describe("Open all day", () => {
     await user.click(monday);
     expectHours(mondayHours(), "10:00", "16:00");
     await user.click(save());
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
     expect(submitted[0]).toMatchObject({ openingHours: [{ dayOfWeek: 1, start: "10:00", end: "16:00" }] });
   });
 });

@@ -13,7 +13,7 @@ import {
   type OpeningSchedule,
   openingIntervals,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { type AbsoluteDisplayInterval, displayInterval } from "@/modules/booking/domain/bookingTime";
+import { type AbsoluteDisplayInterval, displayInterval, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 
 export type AvailabilityInterval = {
@@ -47,6 +47,31 @@ export type AvailabilitySource = {
 export type SourcedAvailabilityInterval = AvailabilityInterval & {
   source: AvailabilitySource;
 };
+
+export type BookingConflict = NonNullable<AvailabilitySource["booking"]> & {
+  start: string;
+  end: string;
+  timezone: string;
+};
+
+export function bookingConflicts(
+  intervals: readonly SourcedAvailabilityInterval[],
+  timezone: string,
+  excludedBookingId?: number,
+): BookingConflict[] {
+  const conflicts = new Map<number, BookingConflict>();
+  for (const interval of intervals) {
+    const booking = interval.source.booking;
+    if (!booking || booking.id === excludedBookingId || conflicts.has(booking.id)) continue;
+    conflicts.set(booking.id, {
+      ...booking,
+      start: interval.source.startsAt.toISOString(),
+      end: interval.source.endsAt.toISOString(),
+      timezone,
+    });
+  }
+  return [...conflicts.values()];
+}
 
 type AvailabilitySlice<T extends AvailabilityInterval = AvailabilityInterval> = AvailabilitySegment & {
   intervals: readonly T[];
@@ -180,6 +205,8 @@ export type CalendarAvailabilityRow = OpeningSchedule & {
   allowDoubleBooking: boolean;
 };
 
+export type DatedCalendarAvailabilityRow = CalendarAvailabilityRow & { date: string };
+
 export function calendarAvailabilityRow(row: {
   globalId: string;
   timezone?: string;
@@ -224,7 +251,7 @@ const MAX_ENCODED_WHERE_BYTES = 32768;
 const MAX_BOOKINGS_PER_BATCH = 1000;
 
 function bookingWhere(globalIds: readonly string[], start: string, end: string): string {
-  return `target=in=(${globalIds.join(",")});start<${end};end>${start};state==CONFIRMED`;
+  return `target=in=(${globalIds.join(",")});start=lt=${end};end=gt=${start};state==CONFIRMED`;
 }
 
 function availabilityRequest(
@@ -481,7 +508,7 @@ async function loadAvailabilityBatch(
     rowIntervalById.set(row.globalId, rowInterval);
   }
   for (const booking of bookings) {
-    if (booking.state !== "CONFIRMED") continue;
+    if (booking.state !== "CONFIRMED" || booking.target === null) continue;
     const rowInterval = rowIntervalById.get(booking.target.globalId);
     if (!rowInterval || (rowInterval.row.allowDoubleBooking && booking.kind === "BOOKING")) continue;
     const clipped = bookingInterval(booking, rowInterval.row, rowInterval.interval);
@@ -562,10 +589,37 @@ export async function loadCalendarAvailability(
   );
 }
 
+export async function loadDatedCalendarAvailability(
+  rows: readonly DatedCalendarAvailabilityRow[],
+  token: string,
+  signal: AbortSignal,
+): Promise<ReadonlyMap<string, readonly SourcedAvailabilityInterval[]>> {
+  if (rows.length === 0) return new Map();
+  const bounds = rows.map((row) => zonedDayBounds(row.date, row.timezone));
+  const gap = Math.max(...rows.map(sharedBufferGapMinutes));
+  const envelope = {
+    start: Temporal.Instant.from(
+      bounds.reduce((value, bound) => (bound.start < value ? bound.start : value), bounds[0].start),
+    )
+      .subtract({ minutes: gap })
+      .toString(),
+    end: Temporal.Instant.from(bounds.reduce((value, bound) => (bound.end > value ? bound.end : value), bounds[0].end))
+      .add({ minutes: gap })
+      .toString(),
+  };
+  return loadAvailability(
+    rows.map((row) => ({ row, interval: displayInterval(row.date, row.timezone, "00:00", "24:00") })),
+    envelope,
+    token,
+    signal,
+  );
+}
+
 export function useCalendarAvailability(
   rows: readonly CalendarAvailabilityRow[],
   intervalOrDate: AbsoluteDisplayInterval | string,
   token: string,
+  authScope: string | number = token,
 ) {
   const interval =
     typeof intervalOrDate === "string"
@@ -582,7 +636,7 @@ export function useCalendarAvailability(
     ])
     .toSorted();
   return useQuery({
-    queryKey: ["api-v2", "bookings", "calendar-availability", sortedRows, interval.start, interval.end],
+    queryKey: ["api-v2", "bookings", "calendar-availability", sortedRows, interval.start, interval.end, authScope],
     queryFn: ({ signal }) => loadCalendarAvailability(rows, interval, token, signal),
     enabled: rows.length > 0 && token.length > 0,
     staleTime: 30_000,

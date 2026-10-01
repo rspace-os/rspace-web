@@ -82,6 +82,7 @@ export function CalendarResourceSchedule({
   date,
   view,
   events,
+  blockingEvents = events,
   resources,
   timezone,
   today,
@@ -96,6 +97,7 @@ export function CalendarResourceSchedule({
   date: string;
   view: CalendarView;
   events: readonly BookingListDocument[];
+  blockingEvents?: readonly BookingListDocument[];
   resources?: readonly BookingCalendarResource[];
   timezone: string;
   today: string;
@@ -186,7 +188,7 @@ export function CalendarResourceSchedule({
     );
   };
   return (
-    <section aria-label={t("calendar.layout.resources")} className="p-3" aria-busy={isLoading}>
+    <section aria-label={t("calendar.layout.resources")} className="py-3" aria-busy={isLoading}>
       <section
         ref={calendarRef}
         className="overflow-x-auto rounded-sm border bg-card"
@@ -203,7 +205,7 @@ export function CalendarResourceSchedule({
               const canCreateBooking = configuration?.capabilities?.canCreateBooking === true;
               const proposedRange = configuration
                 ? nextFreeRange(
-                    resourceEvents,
+                    blockingEvents.filter((event) => event.target?.globalId === resource.globalId),
                     date,
                     timezone,
                     availabilityStartMinute,
@@ -213,7 +215,7 @@ export function CalendarResourceSchedule({
                 : undefined;
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
-                  <header className="border-r bg-muted/30 p-1">
+                  <header className="sticky left-0 z-10 border-r bg-muted/30 p-1">
                     <ResourceHeader resource={resource} />
                   </header>
                   <div className="relative grid min-h-32 min-w-0">
@@ -244,7 +246,7 @@ export function CalendarResourceSchedule({
                     </div>
                     {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
                   </div>
-                  <div className="flex flex-col items-center justify-center gap-1 border-l p-2">
+                  <div className="sticky right-0 z-10 flex flex-col items-center justify-center gap-1 border-l bg-background p-2">
                     <Button
                       type="button"
                       size="icon-sm"
@@ -306,7 +308,7 @@ export function ResourceScheduleSkeleton({ period }: { period?: { date: string; 
   const { t } = useTranslation("common");
   const dates = period && period.view !== "day" ? periodDates(period.date, period.view) : undefined;
   return (
-    <section className="p-3" aria-label={t("loading")} aria-busy="true">
+    <section className="py-3" aria-label={t("loading")} aria-busy="true">
       <div aria-hidden="true" className="overflow-hidden rounded-sm border">
         {dates && period ? (
           <ResourceDateGrid dates={dates} view={period.view}>

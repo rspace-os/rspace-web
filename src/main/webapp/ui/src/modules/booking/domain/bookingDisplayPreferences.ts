@@ -44,8 +44,8 @@ export const BookingDisplayPreferencesDocumentSchema = v.pipe(
 
 export const BookingDisplayPreferencesInputSchema = v.pipe(
   v.strictObject({ ...BookingDisplayPreferencesEntries }),
-  v.check((document) => hasValidAvailabilityWindow(document)),
-  v.check((document) => hasValidCustomTimezone(document)),
+  v.forward(v.check(hasValidAvailabilityWindow), ["availabilityWindowEnd"]),
+  v.forward(v.check(hasValidCustomTimezone), ["customTimezone"]),
 );
 
 export type BookingDisplayPreferencesDocument = v.InferOutput<typeof BookingDisplayPreferencesDocumentSchema>;

@@ -4,6 +4,7 @@ import { ApiV2ProblemError, createBooking } from "@/modules/booking/domain/booki
 import type { BookingFormSubmission } from "./BookingForm";
 
 const BOOKING_PROBLEM_KEYS = {
+  "errors.api.v2.booking.startInPast": "bookings.errors.startInPast",
   "errors.api.v2.booking.window": "bookings.errors.endAfterStart",
   "errors.api.v2.booking.duration": "bookings.errors.duration",
   "errors.api.v2.booking.maximumDuration": "bookings.errors.maximumDuration",

@@ -7,12 +7,19 @@ import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
 import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import i18n from "@/modules/common/i18n";
-import { parseRsqlExpression, serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { enrichApiV2FilterConfig } from "@/modules/common/table-list/adapters/apiV2/apiV2FilterFields";
+import { useApiV2RuntimeFields } from "@/modules/common/table-list/adapters/apiV2/useApiV2RuntimeFields";
+import {
+  parseRsqlExpression,
+  rsqlSelectors,
+  serializeRsqlExpression,
+} from "@/modules/common/table-list/rsql/rsqlCodec";
 import {
   TableList,
   type TableListFilterButtons,
@@ -31,13 +38,18 @@ import {
   type AllBookableItem,
   AvailabilityCandidateLimitError,
   type AvailabilityQuickFilter,
+  deriveAvailabilityCandidateFilter,
   fetchAvailabilityFilteredCatalogue,
   hasAvailabilityFilter,
   useAvailabilityQuickFilterIndex,
   withAvailability,
 } from "./availabilityQuickFilters";
 
-function createAllBookableItemsConfig(availableNow: string, freeLaterToday: string) {
+function createAllBookableItemsConfig(
+  availableNow: string,
+  freeLaterToday: string,
+  openRecordLabel: (globalId: string) => string,
+) {
   return resolveCollectionConfig({
     slug: "all-bookable-items",
     idField: "id",
@@ -48,6 +60,7 @@ function createAllBookableItemsConfig(availableNow: string, freeLaterToday: stri
     },
     defaultColumns: ["target"],
     listSearchableFields: ["target.name"],
+    relationshipSources: bookingRelationshipSources,
     fields: [
       { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
       {
@@ -66,7 +79,7 @@ function createAllBookableItemsConfig(availableNow: string, freeLaterToday: stri
                 name={row.target.value.name}
                 globalId={row.target.globalId}
                 href={`/globalId/${row.target.globalId}`}
-                idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
+                idLinkLabel={openRecordLabel(row.target.globalId)}
                 size="xs"
               >
                 <InventoryLocationLink
@@ -145,13 +158,15 @@ export type AllBookableItemsContentProps = {
 
 export function AllBookableItemsContent({ clock = currentDate }: AllBookableItemsContentProps = {}) {
   const { t } = useTranslation("booking");
-  const config = useMemo(
+  const { t: commonT } = useTranslation("common");
+  const sourceConfig = useMemo(
     () =>
       createAllBookableItemsConfig(
         t("allBookableItems.quickFilters.availableNow"),
         t("allBookableItems.quickFilters.freeLaterToday"),
+        (globalId) => commonT("tableList.filters.openRecord", { globalId }),
       ),
-    [t],
+    [commonT, t],
   );
   const {
     date,
@@ -165,6 +180,24 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
   } = useSearch({ from: "/booking/all-items" });
   const navigate = useNavigate({ from: "/booking/all-items" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const { data: currentUser } = useCurrentUserQuery();
+  const runtimeSelectors = useMemo(() => (where ? rsqlSelectors(where) : []), [where]);
+  const runtimeFieldState = useApiV2RuntimeFields<AllBookableItem>({
+    resourceName: "booking-configurations",
+    selectors: runtimeSelectors,
+    request: { token, authScope: currentUser.id },
+  });
+  const config = useMemo(
+    () =>
+      enrichApiV2FilterConfig({
+        config: sourceConfig,
+        metadata: runtimeFieldState.metadata,
+        runtimeFields: runtimeFieldState.runtimeFields,
+        localFields: ["availability"],
+        translate: (key) => String(t(key as never)),
+      }),
+    [runtimeFieldState.metadata, runtimeFieldState.runtimeFields, sourceConfig, t],
+  );
   const preferences = useBookingDisplayPreferences();
   const userToday = todayInTimeZone(preferences.timeZone, clock());
   const selectedDate = date ?? userToday;
@@ -175,7 +208,15 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     }),
     [config, q, routeAvailability, target, where],
   );
-  const invalidFilter = Boolean(where && !filters.expression);
+  const invalidFilter =
+    !runtimeFieldState.pending && runtimeFieldState.error === null && Boolean(where && !filters.expression);
+  const runtimeFilterBlocked =
+    runtimeFieldState.pending ||
+    runtimeFieldState.error !== null ||
+    runtimeFieldState.missing.length > 0 ||
+    invalidFilter;
+  const candidateFilter = deriveAvailabilityCandidateFilter(filters.expression);
+  const candidateWhere = candidateFilter ? serializeRsqlExpression(candidateFilter) : undefined;
   const usesAvailability = hasAvailabilityFilter(filters.expression);
   const quickMode = availabilityMode(filters.expression);
   const quickFilterLabels = {
@@ -198,6 +239,10 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     preferences.availabilityWindow.start,
     preferences.availabilityWindow.end,
     clock,
+    candidateWhere,
+    !runtimeFilterBlocked,
+    currentUser.id,
+    { q, types },
   );
   const quickFilterPending = usesAvailability && quickIndex.isPending;
   const quickFilterError = usesAvailability && quickIndex.isError;
@@ -240,16 +285,25 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       }
       return fetchBookingCatalogue({ q, types, where: serverWhere, page, pageSize }, token, signal);
     },
-    enabled: !invalidFilter && (!usesAvailability || quickIndex.data !== undefined),
+    enabled: !runtimeFilterBlocked && (!usesAvailability || quickIndex.data !== undefined),
     staleTime: 30_000,
   });
-  const rows = (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
   const availabilityRows = rows.flatMap((row) => {
     if (!row.target) return [];
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
     return availabilityRow ? [availabilityRow] : [];
   });
-  const availability = useCalendarAvailability(quickMode ? [] : availabilityRows, bounds, token);
+  const useQuickAvailability =
+    selectedDate === userToday &&
+    !quickIndex.isError &&
+    (quickIndex.isPending || availabilityRows.every((row) => quickIndex.data?.has(row.globalId)));
+  const availability = useCalendarAvailability(
+    quickMode || useQuickAvailability ? [] : availabilityRows,
+    bounds,
+    token,
+    currentUser.id,
+  );
 
   const setDate = (nextDate: string) => {
     const remaining = withAvailability(filters.expression, undefined);
@@ -298,20 +352,43 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       replace: true,
     });
   };
+  const removeRestoredViewIssue = () =>
+    void navigate({
+      search: (current) => ({ ...current, where: undefined, page: undefined }),
+      replace: true,
+    });
+  const restoredViewIssue = runtimeFieldState.error
+    ? {
+        kind: "network" as const,
+        encoded: where ?? "",
+        retry: () => void runtimeFieldState.retry(),
+        remove: removeRestoredViewIssue,
+      }
+    : !runtimeFieldState.pending && (runtimeFieldState.missing.length > 0 || invalidFilter)
+      ? { kind: "invalid" as const, encoded: where ?? "", remove: removeRestoredViewIssue }
+      : undefined;
   const tableProps: TableListProps<AllBookableItem> = {
     config,
     rows,
     getRowId: (row) => String(row.id),
     clientSide: false,
     status:
-      invalidFilter || quickFilterError || catalogue.isError
+      runtimeFieldState.error !== null ||
+      runtimeFieldState.missing.length > 0 ||
+      invalidFilter ||
+      quickFilterError ||
+      catalogue.isError
         ? "error"
-        : quickFilterPending || catalogue.isPending
+        : runtimeFieldState.pending || quickFilterPending || catalogue.isPending
           ? "loading"
           : catalogue.isFetching
             ? "refreshing"
             : "idle",
-    error: quickFilterError ? undefined : catalogue.error,
+    error: runtimeFieldState.error ?? (quickFilterError ? undefined : catalogue.error),
+    restoredViewIssue,
+    onSelectRuntimeField: runtimeFieldState.selectRuntimeField,
+    runtimeFieldDefinitions: runtimeFieldState.runtimeFields,
+    runtimeFieldAuthScope: currentUser.id,
     queryString: false,
     features: {
       filtering: {
@@ -470,7 +547,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
         {...tableProps}
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
-        rows={quickFilterPending || quickFilterError ? [] : rows}
+        rows={runtimeFilterBlocked || quickFilterPending || quickFilterError ? [] : rows}
         filterButtons={availabilityFilters}
         presentations={{ table: "wide", cards: "narrow" }}
         uiColumns={[
@@ -496,7 +573,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
                   : {}),
               };
               const quickEntry = quickIndex.data?.get(target.globalId);
-              if (quickMode) {
+              if (quickMode || (useQuickAvailability && quickEntry)) {
                 if (!quickEntry) return t("calendar.availabilityUnavailable");
                 return (
                   <AvailabilityBar
@@ -512,7 +589,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
                   />
                 );
               }
-              if (availability.isPending)
+              if ((useQuickAvailability && quickIndex.isPending) || availability.isPending)
                 return (
                   <div aria-busy="true">
                     <span role="status" className="sr-only">
