@@ -41,9 +41,17 @@ const availabilityBookings = [
     end: "2026-08-17T14:00:00Z",
     purpose: `Concurrent booking ${index + 1}`,
   })),
+  {
+    ...sampleBookingEvents[0],
+    id: 57,
+    start: "2026-08-17T10:00:00Z",
+    end: "2026-08-17T11:00:00Z",
+    purpose: "Laser maintenance",
+    bookedBy: null,
+  },
 ].map((booking) => ({
   ...booking,
-  kind: "BOOKING",
+  kind: booking.id === 57 ? "MAINTENANCE" : "BOOKING",
   canEdit: booking.privacy === "full",
   canCancel: booking.privacy === "full",
   createdAt: "2026-08-01T09:00:00Z",
