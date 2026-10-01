@@ -1175,6 +1175,10 @@ A response includes `globalId` when the target has a global-ID prefix. For examp
 reference includes `"globalId": "IN123"`. The response keeps `globalId` when `value` is expanded. A
 target without a global ID, such as a user, does not include this field.
 
+A global ID in a relationship filter or write is a prefix and an unversioned ID. The ID can be
+negative, as seeded and baseline rows are (for example `US-3`). A versioned ID such as `IN12v2` is
+rejected.
+
 Relationship population is request-scoped and breadth-first. The renderer deduplicates target IDs,
 groups them by resource type, and issues one authorized `IN` query per type at each requested depth.
 Resolved and unavailable targets are cached for the request. This bounds projection queries by
