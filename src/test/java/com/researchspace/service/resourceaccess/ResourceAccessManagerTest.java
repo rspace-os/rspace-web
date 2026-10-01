@@ -122,6 +122,7 @@ class ResourceAccessManagerTest {
     ResourceAccessDocument document = manager.replace(resource, command, owner, owner);
 
     assertEquals(7L, document.version());
+    assertFalse(document.inherited());
     verify(gateway, never()).flush();
   }
 
@@ -397,6 +398,101 @@ class ResourceAccessManagerTest {
             .anyMatch(source -> source.kind() == ResourceRoleSourceKind.IMPLICIT));
     assertFalse(document.caller().capabilities().canLeave());
     assertTrue(document.caller().capabilities().canManageAssignments());
+  }
+
+  @Test
+  void inheritedAccessReturnsDerivedDocumentWithoutLoadingAnAcl() {
+    ResolvedResourceAccess inherited =
+        new ResolvedResourceAccess(
+            Optional.of(BookingResourceRoleScheme.OWNER),
+            Set.of(
+                ResourceRoleScheme.READ_RESOURCE_CAPABILITY,
+                BookingResourceRoleScheme.MANAGE_ASSIGNMENTS,
+                BookingResourceRoleScheme.MANAGE_OWNERS),
+            List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.OWNER)));
+    ResourceAccessCallerDocument caller =
+        new ResourceAccessCallerDocument(
+            inherited.effectiveRole(),
+            inherited.roleSources(),
+            new ResourceAccessCallerCapabilities(true, true, false),
+            "user:" + owner.getId());
+    when(resource.isInherited(protectedEntity)).thenReturn(true);
+    when(resource.resolveInherited(protectedEntity, owner)).thenReturn(inherited);
+    when(resource.inheritedDocument(protectedEntity, owner, inherited))
+        .thenReturn(new ResourceAccessDocument("booking-configurations", 0L, List.of(), caller));
+
+    ResourceAccessDocument document = manager.get(resource, 9L, owner);
+
+    assertTrue(document.inherited());
+    assertEquals(Optional.of(BookingResourceRoleScheme.OWNER), document.caller().effectiveRole());
+    verify(resource, never()).access(protectedEntity);
+    verify(gateway, never()).assignedUserGroupIds(any());
+  }
+
+  @Test
+  void inheritedAccessRejectsEveryAclMutationBeforeResolvingThePersistedAggregate() {
+    when(resource.isInherited(protectedEntity)).thenReturn(true);
+    when(resource.resolveInheritedForMutation(protectedEntity, owner))
+        .thenReturn(
+            new ResolvedResourceAccess(
+                Optional.of(BookingResourceRoleScheme.OWNER),
+                Set.of(ResourceRoleScheme.READ_RESOURCE_CAPABILITY),
+                List.of()));
+
+    ResourceAccessException replaceError =
+        assertThrows(
+            ResourceAccessException.class,
+            () ->
+                manager.replace(
+                    resource, new ReplaceResourceAccess<>(9L, 7L, grants()), owner, owner));
+    ResourceAccessException transferError =
+        assertThrows(
+            ResourceAccessException.class,
+            () -> manager.transferDirectOwnership(resource, 9L, owner, other, owner, owner));
+    ResourceAccessException leaveError =
+        assertThrows(
+            ResourceAccessException.class,
+            () -> manager.removeSelf(resource, new RemoveSelfResourceAccess<>(9L), owner, owner));
+
+    assertEquals(ResourceAccessException.Reason.INHERITED_READ_ONLY, replaceError.reason());
+    assertEquals(ResourceAccessException.Reason.INHERITED_READ_ONLY, transferError.reason());
+    assertEquals(ResourceAccessException.Reason.INHERITED_READ_ONLY, leaveError.reason());
+    verify(resource, never()).access(protectedEntity);
+    verify(gateway, never()).lockAuthorizationFacts(any(), any());
+    verify(gateway, never()).flush();
+
+    when(resource.resolveInheritedForMutation(protectedEntity, other))
+        .thenReturn(ResolvedResourceAccess.none());
+    ResourceAccessException hiddenError =
+        assertThrows(
+            ResourceAccessException.class,
+            () ->
+                manager.replace(
+                    resource, new ReplaceResourceAccess<>(9L, 7L, grants()), other, other));
+    assertEquals(ResourceAccessException.Reason.NOT_FOUND, hiddenError.reason());
+    verify(resource, never()).access(protectedEntity);
+    verify(gateway, never()).lockAuthorizationFacts(any(), any());
+  }
+
+  @Test
+  void inheritedDirectoryChecksTheDerivedPolicyWithoutLoadingAnAcl() {
+    ResolvedResourceAccess inherited =
+        new ResolvedResourceAccess(
+            Optional.of(BookingResourceRoleScheme.OWNER),
+            Set.of(
+                ResourceRoleScheme.READ_RESOURCE_CAPABILITY,
+                BookingResourceRoleScheme.MANAGE_ASSIGNMENTS),
+            List.of());
+    when(resource.isInherited(protectedEntity)).thenReturn(true);
+    when(resource.resolveInherited(protectedEntity, owner)).thenReturn(inherited);
+    when(directory.search("us", 20, owner)).thenReturn(List.of());
+
+    List<ResourceGranteeDirectoryEntry> result =
+        new ResourceAccessDirectoryManagerImpl(directory, manager)
+            .searchForResource(resource, 9L, "us", 20, owner);
+
+    assertTrue(result.isEmpty());
+    verify(resource, never()).access(protectedEntity);
   }
 
   @Test
