@@ -20,6 +20,8 @@ import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingPrivacy;
 import com.researchspace.model.booking.BookingState;
@@ -27,7 +29,6 @@ import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ class TimeSlotBookingManagerLifecycleTest {
   private InstrumentDao instrumentDao;
   private ApplicationEventPublisher events;
   private User actor;
-  private ResourceAccessManager accessManager;
+  private BookingItemPermissions accessManager;
   private TimeSlotBookingManager manager;
 
   @BeforeEach
@@ -143,8 +144,7 @@ class TimeSlotBookingManagerLifecycleTest {
     when(bookingDao.getReadableResources(any(), any()))
         .thenReturn(new ResourcePage<>(List.of(requested), 1));
     when(accessManager.resolveAll(any(), eq(actor)))
-        .thenReturn(
-            Map.of(requested.getBookingConfiguration().getResourceAccess().getId(), noAccess()));
+        .thenReturn(Map.of(requested.getBookingConfiguration().getId(), noAccess()));
 
     TimeSlotBooking prepared =
         manager.getBookings(ResourceRequest.unpaged(null), actor).resources().get(0);
@@ -152,6 +152,47 @@ class TimeSlotBookingManagerLifecycleTest {
     assertEquals(BookingPrivacy.FULL, prepared.getPrivacy());
     assertFalse(prepared.isCanEdit());
     assertFalse(prepared.isCanViewConfiguration());
+    assertNull(prepared.getVisibleTarget());
+    assertNull(prepared.getVisibleTimeZone());
+    assertEquals(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L),
+        prepared.getBookingConfiguration().getTarget());
+  }
+
+  @Test
+  void maintenanceRequesterWithBookerAccessDoesNotGetOwnBookingCapabilities() {
+    TimeSlotBooking maintenance = booking(1L, 12L, actor);
+    maintenance.setKind(BookingEventKind.MAINTENANCE);
+    maintenance.setCreatedBy(actor);
+    when(bookingDao.getReadableResources(any(), any()))
+        .thenReturn(new ResourcePage<>(List.of(maintenance), 1));
+    when(accessManager.resolveAll(any(), eq(actor)))
+        .thenReturn(Map.of(maintenance.getBookingConfiguration().getId(), bookerAccess()));
+
+    TimeSlotBooking prepared =
+        manager.getBookings(ResourceRequest.unpaged(null), actor).resources().get(0);
+
+    assertFalse(prepared.isCanEdit());
+    assertFalse(prepared.isCanCancel());
+  }
+
+  @Test
+  void personalCalendarOmitsTheHiddenItemNameAndReference() throws Exception {
+    TimeSlotBooking requested = booking(1L, 12L, actor);
+    when(bookingDao.findUserCalendarBookings(eq(actor.getId()), any(), eq(2)))
+        .thenReturn(List.of(requested));
+    when(accessManager.resolveAll(any(), eq(actor)))
+        .thenReturn(Map.of(requested.getBookingConfiguration().getId(), noAccess()));
+
+    TimeSlotBookingManager.CalendarSource source =
+        manager.getUserCalendarSource(actor, new Date(), 1);
+
+    assertEquals("booking:calendar.feed.myBookings", source.itemName());
+    assertTrue(source.translateName());
+    assertEquals(1, source.events().size());
+    assertNull(source.events().get(0).itemName());
+    assertFalse(requested.isCanViewConfiguration());
+    verify(instrumentDao).getNamesByIds(Set.of());
   }
 
   @Test
@@ -202,8 +243,7 @@ class TimeSlotBookingManagerLifecycleTest {
     User requester = mock(User.class);
     TimeSlotBooking existing = booking(41L, 12L, requester);
     stubReadableBookingAndConfigurationLock(existing);
-    when(accessManager.resolveForMutation(
-            existing.getBookingConfiguration().getResourceAccess(), actor))
+    when(accessManager.resolveForMutation(existing.getBookingConfiguration(), actor))
         .thenReturn(viewerAccess());
 
     assertThrows(
@@ -249,8 +289,7 @@ class TimeSlotBookingManagerLifecycleTest {
   void bookerCannotMutateMaintenanceRegardlessOfTheAuditActor() {
     TimeSlotBooking maintenance = maintenanceBooking(41L, 12L, actor);
     stubReadableBookingAndConfigurationLock(maintenance);
-    when(accessManager.resolveForMutation(
-            maintenance.getBookingConfiguration().getResourceAccess(), actor))
+    when(accessManager.resolveForMutation(maintenance.getBookingConfiguration(), actor))
         .thenReturn(bookerAccess());
 
     assertThrows(
@@ -296,8 +335,7 @@ class TimeSlotBookingManagerLifecycleTest {
   void unreadableBookingIsConcealedRegardlessOfExpectedVersion() {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     stubReadableBookingAndConfigurationLock(existing);
-    when(accessManager.resolveForMutation(
-            existing.getBookingConfiguration().getResourceAccess(), actor))
+    when(accessManager.resolveForMutation(existing.getBookingConfiguration(), actor))
         .thenReturn(noAccess());
 
     for (long version : new long[] {existing.getVersion(), existing.getVersion() + 1}) {
@@ -312,25 +350,6 @@ class TimeSlotBookingManagerLifecycleTest {
               .isEmpty());
     }
     assertEquals("Private purpose", existing.getPurpose());
-  }
-
-  @Test
-  void maintenanceRequesterWithBookerAccessDoesNotGetOwnBookingCapabilities() {
-    TimeSlotBooking maintenance = booking(1L, 12L, actor);
-    maintenance.setKind(BookingEventKind.MAINTENANCE);
-    maintenance.setCreatedBy(actor);
-    when(bookingDao.getReadableResources(any(), any()))
-        .thenReturn(new ResourcePage<>(List.of(maintenance), 1));
-    when(accessManager.resolveAll(any(), eq(actor)))
-        .thenReturn(
-            Map.of(
-                maintenance.getBookingConfiguration().getResourceAccess().getId(), bookerAccess()));
-
-    TimeSlotBooking prepared =
-        manager.getBookings(ResourceRequest.unpaged(null), actor).resources().get(0);
-
-    assertFalse(prepared.isCanEdit());
-    assertFalse(prepared.isCanCancel());
   }
 
   private void stubReadableBookingAndConfigurationLock(TimeSlotBooking booking) {

@@ -6,11 +6,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
-import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
@@ -23,7 +21,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.AssertTrue;
@@ -114,23 +111,6 @@ public class BookingConfiguration implements Serializable {
   @Getter(onMethod_ = {@Version, @Column(nullable = false)})
   @Setter
   private long configurationVersion;
-
-  /**
-   * Optional retained access aggregate, explicitly removed by the DAO with this configuration. New
-   * configurations leave it null and inherit current permissions from their Inventory target;
-   * retained assignments must not grant current Booking access.
-   */
-  @Getter(
-      onMethod_ = {
-        @OneToOne(
-            fetch = FetchType.LAZY,
-            optional = false,
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE}),
-        @JoinColumn(name = "resourceAccess_id", nullable = false, unique = true),
-        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-      })
-  @Setter
-  private ResourceAccess resourceAccess;
 
   @Getter(
       onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "slotGranularityMinutes")})

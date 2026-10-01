@@ -442,7 +442,7 @@ class InstrumentParentLocationQueryCountMVCIT {
           };
       ids.add(instrumentId);
       fixture.bookingConfiguration(instrumentId, "Europe/Berlin");
-      fixture.booking(instrumentId, BOOKING_START, BOOKING_END);
+      fixture.booking(instrumentId, BOOKING_START, BOOKING_END, fixture.sysadminKey());
     }
     if (count > 3) {
       new TransactionTemplate(transactionManager)

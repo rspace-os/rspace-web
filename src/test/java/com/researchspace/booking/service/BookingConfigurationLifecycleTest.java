@@ -250,7 +250,7 @@ class BookingConfigurationLifecycleTest {
 
     verify(timeSlotBookings).removeAllByConfigurationId(42L);
     verify(calendarSubscriptions).deleteByConfigurationId(42L);
-    verify(dao).removeConfigurationAndAccess(configuration);
+    verify(dao).remove(42L);
     verify(events).publishEvent(any(BookingConfigurationPermanentDeleteAuditEvent.class));
   }
 
@@ -267,7 +267,7 @@ class BookingConfigurationLifecycleTest {
 
     verify(dao, never()).lockById(any());
     verify(timeSlotBookings, never()).removeAllByConfigurationId(any());
-    verify(dao, never()).removeConfigurationAndAccess(any());
+    verify(dao, never()).remove(any());
   }
 
   @Test

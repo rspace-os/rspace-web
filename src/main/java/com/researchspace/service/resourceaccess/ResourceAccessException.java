@@ -6,6 +6,7 @@ public class ResourceAccessException extends RuntimeException {
   public enum Reason {
     NOT_FOUND("errors.api.v2.notFound"),
     FORBIDDEN("errors.api.v2.resourceAccess.forbidden"),
+    INHERITED_READ_ONLY("errors.api.v2.resourceAccess.inheritedReadOnly"),
     OWNER_REQUIRED("errors.api.v2.resourceAccess.ownerRequired"),
     STALE("errors.api.v2.resourceAccess.stale"),
     INVALID_GRANTEE("errors.api.v2.resourceAccess.invalidGrantee"),
