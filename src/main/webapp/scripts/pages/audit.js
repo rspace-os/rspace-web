@@ -177,6 +177,12 @@ function _convertAuditTrailResults (xhr){
      	result.timestamp = new Date(result.timestamp).toISOString();
 		result.event.displayAction = _getAuditDisplayAction(result.event);
 		result.event.resourceHref = _getAuditResourceHref(result.event);
+		// booking details are formatted by the server; displayAction above still reads the raw description
+		if (result.event.details) {
+			result.event.description = result.event.description
+				? result.event.details + "; " + result.event.description
+				: result.event.details;
+		}
      	// show export description if possible:
      	if( result.data.action ==='EXPORT'
      		&& result.data.data && result.data.data.data) {
