@@ -29,31 +29,29 @@ const BARE_KEY_PREFIX = /^([A-Za-z_]\w*):\s*/;
  * An error against one of the operation's own fields comes back keyed by that bare field name
  * ("sampleName: Required by this operation."), so the key is swapped for the input's label as the
  * wizard shows it. Anything else (an origin error under "origins[0].amountTaken", a 409, a bare
- * message) is left to getApiErrorDetails. Several errors come back one per line.
+ * message) is left to getApiErrorDetails. Returns one entry per reason.
  */
 export function describeOperationError(
   error: unknown,
   operation: InventoryOperation,
   resolveLabel: ResolveLabel,
   fallback: string,
-): string {
+): Array<string> {
   // The "which origin" marker is worded from the catalog: welding " (origin 3)" onto a reason the
   // server already localized shipped half an English sentence to a non-English user.
   return getApiErrorDetails(error, fallback, (reason, index) =>
     resolveLabel("operations.wizard.originIndex", { reason, index }),
-  )
-    .map((detail) => {
-      const match = BARE_KEY_PREFIX.exec(detail);
-      const input = match ? operation.inputs.find((i) => i.key === match[1]) : undefined;
-      // The "<label>: <reason>" join goes through the catalog: not every locale separates with a
-      // colon-space.
-      if (!input || !match) return detail;
-      return resolveLabel("operations.wizard.fieldReason", {
-        label: resolveLabel(input.labelKey),
-        reason: detail.slice(match[0].length),
-      });
-    })
-    .join("\n");
+  ).map((detail) => {
+    const match = BARE_KEY_PREFIX.exec(detail);
+    const input = match ? operation.inputs.find((i) => i.key === match[1]) : undefined;
+    // The "<label>: <reason>" join goes through the catalog: not every locale separates with a
+    // colon-space.
+    if (!input || !match) return detail;
+    return resolveLabel("operations.wizard.fieldReason", {
+      label: resolveLabel(input.labelKey),
+      reason: detail.slice(match[0].length),
+    });
+  });
 }
 
 /**

@@ -96,7 +96,7 @@ describe("describeOperationError", () => {
         resolveLabel,
         "failed",
       ),
-    ).toBe("Sample name: Required by this operation.");
+    ).toEqual(["Sample name: Required by this operation."]);
   });
 
   it("strips a dotted origin path but keeps which origin it was, through the catalog", () => {
@@ -107,20 +107,20 @@ describe("describeOperationError", () => {
         resolveLabel,
         "failed",
       ),
-    ).toBe("Cannot take more from an origin than it currently holds [ORIGIN 1]");
+    ).toEqual(["Cannot take more from an origin than it currently holds [ORIGIN 1]"]);
   });
 
   it("leaves a leading word that is not one of the operation's inputs alone", () => {
-    expect(describeOperationError(rejectedWith("Warning: stock is low"), operation, resolveLabel, "failed")).toBe(
+    expect(describeOperationError(rejectedWith("Warning: stock is low"), operation, resolveLabel, "failed")).toEqual([
       "Warning: stock is low",
-    );
+    ]);
   });
 
   it("falls back to the response message when there is no field-scoped error", () => {
     const conflict = { response: { data: { message: "The subsample's quantity changed", errors: [""] } } };
-    expect(describeOperationError(conflict, operation, resolveLabel, "failed")).toBe(
+    expect(describeOperationError(conflict, operation, resolveLabel, "failed")).toEqual([
       "The subsample's quantity changed",
-    );
+    ]);
   });
 
   it("strips a dotted `inputs.<key>` path to the bare reason, without the input's label", () => {
@@ -130,12 +130,12 @@ describe("describeOperationError", () => {
     } as unknown as InventoryOperation;
     const labels = (key: string, params?: Record<string, unknown>): string =>
       key === "operations.fields.count" ? "Number of subsamples" : resolveLabel(key, params);
-    expect(describeOperationError(rejectedWith("inputs.count: must be at most 100"), withCount, labels, "failed")).toBe(
-      "must be at most 100",
-    );
+    expect(
+      describeOperationError(rejectedWith("inputs.count: must be at most 100"), withCount, labels, "failed"),
+    ).toEqual(["must be at most 100"]);
   });
 
-  it("shows every rejection, one per line, each worded for its own field or origin", () => {
+  it("returns every rejection separately, each worded for its own field or origin", () => {
     const twoErrors = {
       response: {
         data: {
@@ -144,21 +144,24 @@ describe("describeOperationError", () => {
         },
       },
     };
-    expect(describeOperationError(twoErrors, operation, resolveLabel, "failed")).toBe(
-      "Too much [ORIGIN 1]\nSample name: Required by this operation.",
-    );
+    expect(describeOperationError(twoErrors, operation, resolveLabel, "failed")).toEqual([
+      "Too much [ORIGIN 1]",
+      "Sample name: Required by this operation.",
+    ]);
   });
 
   it("reports a network failure (no response at all) by the error's own message", () => {
-    expect(describeOperationError(new Error("Network Error"), operation, resolveLabel, "failed")).toBe("Network Error");
+    expect(describeOperationError(new Error("Network Error"), operation, resolveLabel, "failed")).toEqual([
+      "Network Error",
+    ]);
   });
 
   it("reports a 404 by its message body, like any response without a field-scoped error", () => {
     const notFound = { response: { status: 404, data: { message: "Origin SS100 was not found", errors: [""] } } };
-    expect(describeOperationError(notFound, operation, resolveLabel, "failed")).toBe("Origin SS100 was not found");
+    expect(describeOperationError(notFound, operation, resolveLabel, "failed")).toEqual(["Origin SS100 was not found"]);
   });
 
   it("uses the fallback when there is nothing to describe at all", () => {
-    expect(describeOperationError(undefined, operation, resolveLabel, "failed")).toBe("failed");
+    expect(describeOperationError(undefined, operation, resolveLabel, "failed")).toEqual(["failed"]);
   });
 });
