@@ -590,6 +590,42 @@ describe("filter selectors derived from published relationship targets", () => {
     expect(params.get("where")).toBe("target.name=contains=scope");
   });
 
+  it("maps a global-ID search field to an exact relationship search", () => {
+    const searchable = adapterWithSearch(["target.name", "target.globalId"]);
+    const params = searchable.toSearchParams({
+      filters: { search: "in2", expression: null },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 10 },
+      visibleFields: ["target"],
+    });
+
+    expect(params.get("where")).toBe("target.name=contains=in2,target==IN2");
+  });
+
+  it("keeps an out-of-range instrument identifier as plain text", () => {
+    const searchable = adapterWithSearch(["target.name", "target.globalId"]);
+    const params = searchable.toSearchParams({
+      filters: { search: "IN9223372036854775808", expression: null },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 10 },
+      visibleFields: ["target"],
+    });
+
+    expect(params.get("where")).toBe("target.name=contains=IN9223372036854775808");
+  });
+
+  it("keeps non-instrument identifiers as ordinary name searches", () => {
+    const searchable = adapterWithSearch(["target.name", "target.globalId"]);
+    const params = searchable.toSearchParams({
+      filters: { search: "ic2", expression: null },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 10 },
+      visibleFields: ["target"],
+    });
+
+    expect(params.get("where")).toBe("target.name=contains=ic2");
+  });
+
   it.each([
     ["target.unknown", "not filterable"],
     ["room.floor", "does not support contains"],

@@ -16,6 +16,9 @@ import { Route as PublicMaintenanceInProgressIndexRouteImport } from './routes/p
 import { Route as PublicApiDocsIndexRouteImport } from './routes/public/apiDocs/index'
 import { Route as BookingPreferencesIndexRouteImport } from './routes/booking/preferences/index'
 import { Route as BookingConfigSettingsIndexRouteImport } from './routes/booking/config/settings/index'
+import { Route as BookingConfigBookableItemsIndexRouteImport } from './routes/booking/config/bookable-items/index'
+import { Route as BookingBookableItemsAddIndexRouteImport } from './routes/booking/bookable-items/add/index'
+import { Route as BookingBookableItemsGlobalIdChar123TabChar125IndexRouteImport } from './routes/booking/bookable-items/$globalId/{-$tab}/index'
 
 const BookingRouteRoute = BookingRouteRouteImport.update({
   id: '/booking',
@@ -54,6 +57,24 @@ const BookingConfigSettingsIndexRoute =
     path: '/config/settings/',
     getParentRoute: () => BookingRouteRoute,
   } as any)
+const BookingConfigBookableItemsIndexRoute =
+  BookingConfigBookableItemsIndexRouteImport.update({
+    id: '/config/bookable-items/',
+    path: '/config/bookable-items/',
+    getParentRoute: () => BookingRouteRoute,
+  } as any)
+const BookingBookableItemsAddIndexRoute =
+  BookingBookableItemsAddIndexRouteImport.update({
+    id: '/bookable-items/add/',
+    path: '/bookable-items/add/',
+    getParentRoute: () => BookingRouteRoute,
+  } as any)
+const BookingBookableItemsGlobalIdChar123TabChar125IndexRoute =
+  BookingBookableItemsGlobalIdChar123TabChar125IndexRouteImport.update({
+    id: '/bookable-items/$globalId/{-$tab}/',
+    path: '/bookable-items/$globalId/{-$tab}/',
+    getParentRoute: () => BookingRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/booking': typeof BookingRouteRouteWithChildren
@@ -62,7 +83,10 @@ export interface FileRoutesByFullPath {
   '/booking/preferences/': typeof BookingPreferencesIndexRoute
   '/public/apiDocs/': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress/': typeof PublicMaintenanceInProgressIndexRoute
+  '/booking/bookable-items/add/': typeof BookingBookableItemsAddIndexRoute
+  '/booking/config/bookable-items/': typeof BookingConfigBookableItemsIndexRoute
   '/booking/config/settings/': typeof BookingConfigSettingsIndexRoute
+  '/booking/bookable-items/$globalId/{-$tab}/': typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof AboutIndexRoute
@@ -70,7 +94,10 @@ export interface FileRoutesByTo {
   '/booking/preferences': typeof BookingPreferencesIndexRoute
   '/public/apiDocs': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress': typeof PublicMaintenanceInProgressIndexRoute
+  '/booking/bookable-items/add': typeof BookingBookableItemsAddIndexRoute
+  '/booking/config/bookable-items': typeof BookingConfigBookableItemsIndexRoute
   '/booking/config/settings': typeof BookingConfigSettingsIndexRoute
+  '/booking/bookable-items/$globalId/{-$tab}': typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,7 +107,10 @@ export interface FileRoutesById {
   '/booking/preferences/': typeof BookingPreferencesIndexRoute
   '/public/apiDocs/': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress/': typeof PublicMaintenanceInProgressIndexRoute
+  '/booking/bookable-items/add/': typeof BookingBookableItemsAddIndexRoute
+  '/booking/config/bookable-items/': typeof BookingConfigBookableItemsIndexRoute
   '/booking/config/settings/': typeof BookingConfigSettingsIndexRoute
+  '/booking/bookable-items/$globalId/{-$tab}/': typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,7 +121,10 @@ export interface FileRouteTypes {
     | '/booking/preferences/'
     | '/public/apiDocs/'
     | '/public/maintenanceInProgress/'
+    | '/booking/bookable-items/add/'
+    | '/booking/config/bookable-items/'
     | '/booking/config/settings/'
+    | '/booking/bookable-items/$globalId/{-$tab}/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
@@ -99,7 +132,10 @@ export interface FileRouteTypes {
     | '/booking/preferences'
     | '/public/apiDocs'
     | '/public/maintenanceInProgress'
+    | '/booking/bookable-items/add'
+    | '/booking/config/bookable-items'
     | '/booking/config/settings'
+    | '/booking/bookable-items/$globalId/{-$tab}'
   id:
     | '__root__'
     | '/booking'
@@ -108,7 +144,10 @@ export interface FileRouteTypes {
     | '/booking/preferences/'
     | '/public/apiDocs/'
     | '/public/maintenanceInProgress/'
+    | '/booking/bookable-items/add/'
+    | '/booking/config/bookable-items/'
     | '/booking/config/settings/'
+    | '/booking/bookable-items/$globalId/{-$tab}/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -169,19 +208,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookingConfigSettingsIndexRouteImport
       parentRoute: typeof BookingRouteRoute
     }
+    '/booking/config/bookable-items/': {
+      id: '/booking/config/bookable-items/'
+      path: '/config/bookable-items'
+      fullPath: '/booking/config/bookable-items/'
+      preLoaderRoute: typeof BookingConfigBookableItemsIndexRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
+    '/booking/bookable-items/add/': {
+      id: '/booking/bookable-items/add/'
+      path: '/bookable-items/add'
+      fullPath: '/booking/bookable-items/add/'
+      preLoaderRoute: typeof BookingBookableItemsAddIndexRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
+    '/booking/bookable-items/$globalId/{-$tab}/': {
+      id: '/booking/bookable-items/$globalId/{-$tab}/'
+      path: '/bookable-items/$globalId/{-$tab}'
+      fullPath: '/booking/bookable-items/$globalId/{-$tab}/'
+      preLoaderRoute: typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
   }
 }
 
 interface BookingRouteRouteChildren {
   BookingIndexRoute: typeof BookingIndexRoute
   BookingPreferencesIndexRoute: typeof BookingPreferencesIndexRoute
+  BookingBookableItemsAddIndexRoute: typeof BookingBookableItemsAddIndexRoute
+  BookingConfigBookableItemsIndexRoute: typeof BookingConfigBookableItemsIndexRoute
   BookingConfigSettingsIndexRoute: typeof BookingConfigSettingsIndexRoute
+  BookingBookableItemsGlobalIdChar123TabChar125IndexRoute: typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRoute
 }
 
 const BookingRouteRouteChildren: BookingRouteRouteChildren = {
   BookingIndexRoute: BookingIndexRoute,
   BookingPreferencesIndexRoute: BookingPreferencesIndexRoute,
+  BookingBookableItemsAddIndexRoute: BookingBookableItemsAddIndexRoute,
+  BookingConfigBookableItemsIndexRoute: BookingConfigBookableItemsIndexRoute,
   BookingConfigSettingsIndexRoute: BookingConfigSettingsIndexRoute,
+  BookingBookableItemsGlobalIdChar123TabChar125IndexRoute:
+    BookingBookableItemsGlobalIdChar123TabChar125IndexRoute,
 }
 
 const BookingRouteRouteWithChildren = BookingRouteRoute._addFileChildren(
