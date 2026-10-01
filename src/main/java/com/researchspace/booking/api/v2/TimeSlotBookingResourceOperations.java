@@ -12,6 +12,7 @@ import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.service.BookingBufferConflictException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingDurationException;
+import com.researchspace.booking.service.BookingLocationFilterManager;
 import com.researchspace.booking.service.BookingOverlapException;
 import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.BookingStartInPastException;
@@ -65,17 +66,20 @@ public final class TimeSlotBookingResourceOperations
   private final MessageSourceUtils messages;
   private final FeatureFlagManager featureFlags;
   private final CollectionDescription<TimeSlotBooking> description;
+  private final BookingLocationFilterManager locations;
 
   public TimeSlotBookingResourceOperations(
       TimeSlotBookingManager manager,
       FeatureFlagManager featureFlags,
       @Qualifier(BookingResourceAccessConfiguration.TIME_SLOT_BOOKING_DESCRIPTION)
           CollectionDescription<TimeSlotBooking> description,
-      MessageSourceUtils messages) {
+      MessageSourceUtils messages,
+      BookingLocationFilterManager locations) {
     this.messages = messages;
     this.manager = manager;
     this.featureFlags = featureFlags;
     this.description = description;
+    this.locations = locations;
   }
 
   @Bean
@@ -210,15 +214,18 @@ public final class TimeSlotBookingResourceOperations
   @Override
   public ResourcePage<TimeSlotBooking> find(ResourceRequest request, User subject) {
     return enabled(subject)
-        ? manager.getBookings(visibleRequestersOnly(request, subject), subject)
+        ? manager.getBookings(readableRequest(request, subject), subject)
         : new ResourcePage<>(List.of(), 0);
   }
 
   @Override
   public long count(ResourceRequest request, User subject) {
-    return enabled(subject)
-        ? manager.countBookings(visibleRequestersOnly(request, subject), subject)
-        : 0;
+    return enabled(subject) ? manager.countBookings(readableRequest(request, subject), subject) : 0;
+  }
+
+  /** Resolves location rules against readable Containers and hides unseen requesters. */
+  private ResourceRequest readableRequest(ResourceRequest request, User subject) {
+    return locations.resolveLocations(visibleRequestersOnly(request, subject), subject);
   }
 
   /** A requester comparison may match only an event whose requester the response would show. */

@@ -21,6 +21,7 @@ import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingEventKind;
@@ -30,6 +31,8 @@ import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.util.Date;
 import java.util.List;
@@ -140,6 +143,28 @@ class TimeSlotBookingManagerLifecycleTest {
     assertTrue(page.resources().get(1).isCanEdit());
     assertTrue(page.resources().get(1).isCanViewConfiguration());
     verify(accessManager).resolveAll(any(), eq(actor));
+  }
+
+  @Test
+  void preparesReadableParentLocationsWithOneBatchedLookup() {
+    TimeSlotBooking stored = booking(1L, 12L, actor);
+    TimeSlotBooking unreadable = booking(2L, 13L, actor);
+    when(bookingDao.getReadableResources(any(), any()))
+        .thenReturn(new ResourcePage<>(List.of(stored, unreadable), 2));
+    when(instrumentDao.getReadableParentLocationSummaries(Set.of(12L, 13L), actor))
+        .thenReturn(
+            Map.of(
+                12L,
+                new InstrumentParentLocationSummary(
+                    7L, "Cold room", Container.ContainerType.LIST)));
+
+    List<TimeSlotBooking> prepared =
+        manager.getBookings(ResourceRequest.unpaged(null), actor).resources();
+
+    assertEquals(
+        new ApiV2BookingLocationResource.Location(7L, "IC7", "Cold room"),
+        prepared.get(0).getVisibleLocation());
+    assertNull(prepared.get(1).getVisibleLocation());
   }
 
   @Test
