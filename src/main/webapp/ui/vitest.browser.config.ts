@@ -128,6 +128,8 @@ export default defineConfig({
       "@mui/material/Modal",
       // SidebarToggle is loaded by the gallery picker during stoichiometry tests.
       "@mui/icons-material/Menu",
+      // Used by the booking calendar-subscription dialog.
+      "@fortawesome/free-brands-svg-icons/faApple",
       // TinyMCE React wrapper: discovered lazily the first time a component
       // mounts a TinyMCE editor, causing a mid-run optimizer reload that
       // makes the Vitest runner warn and can cause flakiness.

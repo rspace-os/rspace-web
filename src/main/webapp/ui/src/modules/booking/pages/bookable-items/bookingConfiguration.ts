@@ -242,6 +242,32 @@ async function readBookingConfigurationsByTarget(
   return configurations;
 }
 
+/** Returns the readable Booking configurations for a bounded set of Instrument global IDs. */
+export async function fetchBookingOwnershipCandidates(
+  globalIds: readonly string[],
+  token: string,
+  signal?: AbortSignal,
+): Promise<readonly BookingConfiguration[]> {
+  if (globalIds.length === 0) return [];
+  const where = serializeRsqlExpression<BookingConfiguration>({
+    kind: "comparison",
+    field: "target",
+    operator: "in",
+    value: globalIds,
+  });
+  const parameters = new URLSearchParams({
+    ...bookingConfigurationReadParameters,
+    limit: String(Math.min(globalIds.length, 100)),
+    where,
+  });
+  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+    headers: bookingApiV2Headers(token),
+    signal,
+  });
+  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  return parseOrThrow(v2ListEnvelope(BookingConfigurationSchema), (await response.json()) as unknown).docs;
+}
+
 export const bookingConfigurationConfig = {
   slug: "bookable-items",
   idField: "id",
