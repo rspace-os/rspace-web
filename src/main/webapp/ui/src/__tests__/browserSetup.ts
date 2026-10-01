@@ -2,6 +2,7 @@ import { setupWorker } from "msw/browser";
 import { afterEach, beforeAll } from "vitest";
 import { cdp, server } from "vitest/browser";
 import i18n from "@/modules/common/i18n";
+import "@/modules/common/styles/index.css";
 import { galleryAppShellHandlers } from "./mocks/galleryMocks";
 import { oauthTokenHandler } from "./mocks/oauthTokenMocks";
 import { appShellHandlers } from "./mswAppShellHandlers";
