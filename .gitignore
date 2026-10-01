@@ -80,6 +80,7 @@ src/main/webapp/ui/coverage
 
 # other tooling
 /.claude/
+.playwright-mcp/
 .worktrees/
 # Firecrawl scrape cache (research artifacts, same status as /.claude/ notes)
 /.firecrawl/
