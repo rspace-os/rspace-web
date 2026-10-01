@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -83,6 +84,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -105,6 +107,8 @@ class BookingConfigurationManagerTest {
   private final TimeSlotBookingDao timeSlotBookings = mock(TimeSlotBookingDao.class);
   private final BookingNotificationService bookingNotificationService =
       mock(BookingNotificationService.class);
+  private final BookingNotificationSubscriptionManager notificationSubscriptions =
+      mock(BookingNotificationSubscriptionManager.class);
 
   private final User actor = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
@@ -125,6 +129,7 @@ class BookingConfigurationManagerTest {
           calendarSubscriptions,
           timeSlotBookings,
           bookingNotificationService,
+          notificationSubscriptions,
           permissionGate);
 
   @BeforeEach
@@ -139,6 +144,8 @@ class BookingConfigurationManagerTest {
     when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
         .thenReturn(Optional.of(defaults(5, "00:00", "24:00", 0, 0, 0, false)));
     when(instrumentDao.lockById(any()))
+        .thenAnswer(invocation -> Optional.of(instrument(invocation.getArgument(0), actor)));
+    when(instrumentDao.getSafeNull(any()))
         .thenAnswer(invocation -> Optional.of(instrument(invocation.getArgument(0), actor)));
     when(resourceRegistry.getObject())
         .thenReturn(
@@ -239,7 +246,9 @@ class BookingConfigurationManagerTest {
     assertEquals(5, created.getSlotGranularityMinutes());
     assertEquals(BookingSchedulingSettings.DEFAULT_OPENING_HOURS, created.getOpeningHours());
     assertEquals(null, created.getResourceAccess());
-    verify(dao).saveAndFlush(created);
+    InOrder createOrder = inOrder(dao, notificationSubscriptions);
+    createOrder.verify(dao).saveAndFlush(created);
+    createOrder.verify(notificationSubscriptions).initializeForInstrument(any(Instrument.class));
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 

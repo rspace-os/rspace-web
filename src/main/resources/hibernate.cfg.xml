@@ -140,6 +140,7 @@
         <mapping class="com.researchspace.model.inventory.Instrument"/>
         <mapping class="com.researchspace.model.inventory.InstrumentTemplate"/>
         <mapping class="com.researchspace.model.booking.BookableItemCalendarSubscription"/>
+        <mapping class="com.researchspace.model.booking.BookableItemNotificationSubscription"/>
         <mapping class="com.researchspace.model.booking.UserBookingCalendarSubscription"/>
         <mapping class="com.researchspace.model.booking.BookingDefaultAccessGrantee"/>
         <mapping class="com.researchspace.model.booking.BookingConfiguration"/>
