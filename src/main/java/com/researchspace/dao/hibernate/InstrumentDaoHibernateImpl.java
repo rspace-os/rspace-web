@@ -1,16 +1,25 @@
 package com.researchspace.dao.hibernate;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.blazebit.persistence.CriteriaBuilder;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
-import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
-import java.util.ArrayList;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.query.Query;
@@ -19,6 +28,23 @@ import org.springframework.stereotype.Repository;
 @Repository(value = "instrumentDao")
 public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument, Long>
     implements InstrumentDao {
+
+  private static final CollectionQueryExecutor<Instrument> COLLECTION_QUERY =
+      new CollectionQueryExecutor<>(
+          Instrument.class, ApiV2InstrumentResource.DESCRIPTION, "collectionInstrument");
+
+  public record ParentLocationRow(
+      Long instrumentId, Long containerId, String containerName, ContainerType containerType) {}
+
+  public record InstrumentNameRow(Long instrumentId, String name) {}
+
+  public record InstrumentReadSummaryRow(
+      Long instrumentId,
+      String name,
+      Boolean deleted,
+      Long parentContainerId,
+      String parentContainerName,
+      ContainerType parentContainerType) {}
 
   private String defaultTemplateOwner;
 
@@ -31,6 +57,161 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
+  public ResourcePage<Instrument> getReadableResources(
+      ResourceRequest request, AccessResult access) {
+    return readableResourcePage(COLLECTION_QUERY, request, access);
+  }
+
+  @Override
+  public long countReadableResources(ResourceRequest request, AccessResult access) {
+    return countReadableResources(COLLECTION_QUERY, request, access);
+  }
+
+  @Override
+  public Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(
+      Set<Long> instrumentIds) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    CriteriaBuilder<ParentLocationRow> query = parentLocationQuery();
+    query.whereExpression("instrument.id IN :instrumentIds");
+    query.whereExpression("location.storedInstrument.id = instrument.id");
+    query.setParameter("instrumentIds", instrumentIds);
+    return query.getResultList().stream()
+        .collect(
+            Collectors.toMap(
+                ParentLocationRow::instrumentId,
+                row ->
+                    new InstrumentParentLocationSummary(
+                        row.containerId(), row.containerName(), row.containerType())));
+  }
+
+  @Override
+  public Map<Long, InstrumentParentLocationSummary> getReadableParentLocationSummaries(
+      Set<Long> instrumentIds, User caller) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(caller);
+    CriteriaBuilder<ParentLocationRow> query = parentLocationQuery();
+    query.whereExpression("instrument.id IN :instrumentIds");
+    query.whereExpression("location.storedInstrument.id = instrument.id");
+    query.whereExpression("parent.deleted = false");
+    query.whereExpression(context.readableContainerPredicate(this, "parent"));
+    query.setParameter("instrumentIds", instrumentIds);
+    context.bind(query, null);
+    return query.getResultList().stream()
+        .collect(
+            Collectors.toMap(
+                ParentLocationRow::instrumentId,
+                row ->
+                    new InstrumentParentLocationSummary(
+                        row.containerId(), row.containerName(), row.containerType())));
+  }
+
+  private CriteriaBuilder<ParentLocationRow> parentLocationQuery() {
+    return criteriaBuilderFactory()
+        .create(getSession(), ParentLocationRow.class)
+        .from(Instrument.class, "instrument")
+        .innerJoin("instrument.parentLocation", "location")
+        .innerJoin("location.container", "parent")
+        .selectNew(ParentLocationRow.class)
+        .with("instrument.id")
+        .with("parent.id")
+        .with("parent.editInfo.name")
+        .with("parent.containerType")
+        .end();
+  }
+
+  @Override
+  public Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(user);
+    String permission = context.permissionPredicate(this, "instrument.");
+    CriteriaBuilder<InstrumentReadSummaryRow> query =
+        criteriaBuilderFactory()
+            .create(getSession(), InstrumentReadSummaryRow.class)
+            .from(Instrument.class, "instrument")
+            .leftJoinOn("instrument.parentLocation", "location")
+            .setOnExpression("location.storedInstrument.id = instrument.id")
+            .leftJoin("location.container", "parent")
+            .selectNew(InstrumentReadSummaryRow.class)
+            .with("instrument.id")
+            .with("instrument.editInfo.name")
+            .with("instrument.deleted")
+            .with("parent.id")
+            .with("parent.editInfo.name")
+            .with("parent.containerType")
+            .end()
+            .whereExpression("instrument.id in :instrumentIds")
+            .whereExpression("instrument.deleted = false")
+            .whereExpression(permission)
+            .setParameter("instrumentIds", instrumentIds);
+    context.bind(query, null);
+    return query
+        .getResultStream()
+        .map(
+            row ->
+                new InstrumentReadSummary(
+                    row.instrumentId(),
+                    row.name(),
+                    row.deleted(),
+                    row.parentContainerId(),
+                    row.parentContainerName(),
+                    row.parentContainerType()))
+        .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
+  }
+
+  @Override
+  public Map<Long, String> getNamesByIds(Set<Long> instrumentIds) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    return criteriaBuilderFactory()
+        .create(getSession(), InstrumentNameRow.class)
+        .from(Instrument.class, "instrument")
+        .selectNew(InstrumentNameRow.class)
+        .with("instrument.id")
+        .with("instrument.editInfo.name")
+        .end()
+        .whereExpression("instrument.id IN :instrumentIds")
+        .setParameter("instrumentIds", instrumentIds)
+        .getResultStream()
+        .collect(Collectors.toMap(InstrumentNameRow::instrumentId, InstrumentNameRow::name));
+  }
+
+  @Override
+  public Set<Long> findByReadableImmediateParentIds(
+      Set<Long> containerIds, Set<Long> workbenchIds, User caller) {
+    if (containerIds.isEmpty() && workbenchIds.isEmpty()) {
+      return Set.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(caller);
+    String parentType =
+        "((parent.id in (:containerIds) and parent.containerType <> :workbenchType)"
+            + " or (parent.id in (:workbenchIds) and parent.containerType = :workbenchType))";
+    String hql =
+        "select distinct instrument.id from Instrument instrument"
+            + " join instrument.parentLocation location"
+            + " join location.container parent"
+            + " where type(instrument) = Instrument and instrument.deleted = false"
+            + " and location.storedInstrument.id = instrument.id and parent.deleted = false"
+            + " and "
+            + parentType
+            + " and "
+            + context.readableContainerPredicate(this, "parent");
+    Query<Long> query = getSession().createQuery(hql, Long.class);
+    query
+        .setParameterList("containerIds", containerIds.isEmpty() ? Set.of(-1L) : containerIds)
+        .setParameterList("workbenchIds", workbenchIds.isEmpty() ? Set.of(-1L) : workbenchIds)
+        .setParameter("workbenchType", ContainerType.WORKBENCH);
+    context.bind(query, null);
+    return Set.copyOf(query.getResultList());
+  }
+
+  @Override
   public ISearchResults<Instrument> getInstrumentsForUser(
       PaginationCriteria<Instrument> pgCrit,
       String ownedBy,
@@ -38,14 +219,8 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       String searchTerm,
       User user) {
 
-    List<String> userGroupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
-    List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
-    String permittedFragment =
-        getOwnedByAndPermittedItemsSqlQueryFragment(
-            ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
+    InventoryReadQueryContext context = readQueryContext(user);
+    String permittedFragment = context.ownedByAndPermitted(this, ownedBy);
 
     if (pgCrit == null) {
       pgCrit = PaginationCriteria.createDefaultForClass(Instrument.class);
@@ -66,15 +241,13 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                         deletedFragment, " type(i) = Instrument ", nameFragment)
                     + permittedFragment,
                 Long.class);
-    Query<Long> countQueryWithParams =
-        addQueryParams(
-            ownedBy, user, countQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Long> countQueryWithParams = context.bind(countQuery, ownedBy);
     if (StringUtils.isNotBlank(searchTerm)) {
       countQueryWithParams.setParameter("searchTerm", "%" + searchTerm + "%");
     }
     long totalCount = countQueryWithParams.getSingleResult();
     if (totalCount == 0) {
-      return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
+      return new SearchResultsImpl<>(List.of(), pgCrit, 0);
     }
 
     Query<Instrument> pageQuery =
@@ -89,9 +262,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                 Instrument.class)
             .setFirstResult(startPosition)
             .setMaxResults(maxResult);
-    Query<Instrument> pageQueryWithParams =
-        addQueryParams(
-            ownedBy, user, pageQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Instrument> pageQueryWithParams = context.bind(pageQuery, ownedBy);
     if (StringUtils.isNotBlank(searchTerm)) {
       pageQueryWithParams.setParameter("searchTerm", "%" + searchTerm + "%");
     }
@@ -129,14 +300,8 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       InventorySearchDeletedOption deletedOption,
       User user) {
 
-    List<String> userGroupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
-    List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
-    String permittedFragment =
-        getOwnedByAndPermittedItemsSqlQueryFragment(
-            ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
+    InventoryReadQueryContext context = readQueryContext(user);
+    String permittedFragment = context.ownedByAndPermitted(this, ownedBy);
 
     if (pgCrit == null) {
       pgCrit = PaginationCriteria.createDefaultForClass(Instrument.class);
@@ -158,12 +323,10 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                     + permittedFragment,
                 Long.class)
             .setParameter("templateId", templateId);
-    Query<Long> countQueryWithParams =
-        addQueryParams(
-            ownedBy, user, countQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Long> countQueryWithParams = context.bind(countQuery, ownedBy);
     long totalCount = countQueryWithParams.getSingleResult();
     if (totalCount == 0) {
-      return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
+      return new SearchResultsImpl<>(List.of(), pgCrit, 0);
     }
 
     Query<Instrument> pageQuery =
@@ -181,9 +344,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .setParameter("templateId", templateId)
             .setFirstResult(startPosition)
             .setMaxResults(maxResult);
-    Query<Instrument> pageQueryWithParams =
-        addQueryParams(
-            ownedBy, user, pageQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Instrument> pageQueryWithParams = context.bind(pageQuery, ownedBy);
     List<Instrument> page = pageQueryWithParams.list();
     return new SearchResultsImpl<>(page, pgCrit, totalCount);
   }

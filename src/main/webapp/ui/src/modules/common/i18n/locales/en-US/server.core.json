@@ -342,7 +342,6 @@
     "inventoryField": {
       "invalidData": "{0}",
       "invalidDate": "{0} is an invalid date format. Valid format is yyyy-MM-dd.",
-      "extraNumberInvalid": "''{0}'' cannot be parsed into number",
       "invalidForFieldType": "[{0}] is invalid for field type {1}: {2}",
       "invalidIgsn": "Invalid IGSN format: [{0}]",
       "invalidNumber": "Invalid number: {0}",
