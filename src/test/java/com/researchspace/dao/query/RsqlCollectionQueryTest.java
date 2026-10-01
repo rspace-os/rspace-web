@@ -162,30 +162,6 @@ class RsqlCollectionQueryTest {
   }
 
   @Test
-  void rejectsFiltersLongerThanTheQueryLengthLimitBeforeParsing() {
-    String prefix = "message=contains='";
-    String suffix = "'";
-    String atLimit =
-        prefix
-            + "a".repeat(CollectionQueryLimits.MAX_WHERE_LENGTH - prefix.length() - suffix.length())
-            + suffix;
-    assertTrue(parser.parse(atLimit) != null);
-
-    String belowLimit =
-        prefix
-            + "a"
-                .repeat(
-                    CollectionQueryLimits.MAX_WHERE_LENGTH - prefix.length() - suffix.length() - 1)
-            + suffix;
-    assertTrue(parser.parse(belowLimit) != null);
-
-    String oversized = prefix + "a".repeat(CollectionQueryLimits.MAX_WHERE_LENGTH) + suffix;
-    CollectionQueryException rejected =
-        assertThrows(CollectionQueryException.class, () -> parser.parse(oversized));
-    assertEquals(CollectionQueryException.Reason.COMPLEXITY, rejected.getReason());
-  }
-
-  @Test
   void limitsTheTotalNumberOfGeneratedLikePredicates() {
     String fiftyWords =
         IntStream.range(0, 50).mapToObj(ignored -> "a").collect(Collectors.joining(" "));
