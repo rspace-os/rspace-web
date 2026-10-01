@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import * as v from "valibot";
-import { schedulingSettingsEntries } from "@/modules/booking/configuration/schedulingSettings";
 import {
   type AvailabilityInterval,
   type CurrentDayAvailability,
   classifyCurrentDayAvailability,
 } from "@/modules/booking/domain/availability";
+import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
@@ -23,6 +22,29 @@ export function hasAvailabilityFilter(expression: FilterExpression<AllBookableIt
       ? expression.field === "availability"
       : expression.children.some(hasAvailabilityFilter))
   );
+}
+
+/**
+ * Derives the safe item-only predicate to use while loading availability candidates.
+ *
+ * Availability is computed locally, so its comparisons become `true`. A local
+ * comparison in an OR branch makes that branch unrestricted; a local comparison
+ * in an AND branch can simply be removed. Returning null means the candidate
+ * request must remain unrestricted.
+ */
+export function deriveAvailabilityCandidateFilter(
+  expression: FilterExpression<AllBookableItem> | null,
+): FilterExpression<AllBookableItem> | null {
+  if (!expression) return null;
+  if (expression.kind === "comparison") return expression.field === "availability" ? null : expression;
+
+  const children = expression.children.map(deriveAvailabilityCandidateFilter);
+  if (expression.kind === "or" && children.some((child) => child === null)) return null;
+
+  const remaining = children.filter((child): child is FilterExpression<AllBookableItem> => child !== null);
+  if (remaining.length === 0) return null;
+  if (remaining.length === 1) return remaining[0];
+  return { ...expression, children: remaining };
 }
 
 /** Replaces only availability predicates; other rules and their grouping remain intact. */
@@ -77,19 +99,19 @@ export type AvailabilityQuickIndexEntry = {
   category: CurrentDayAvailability;
 };
 
-const AvailabilityCandidateSchema = v.object({
-  target: v.nullable(v.object({ globalId: v.string() })),
-  timezone: v.string(),
-  ...schedulingSettingsEntries,
-});
-
-type AvailabilityCandidate = v.InferOutput<typeof AvailabilityCandidateSchema>;
-
-const CandidatePageSchema = v.object({
-  docs: v.array(AvailabilityCandidateSchema),
-  totalDocs: v.number(),
-  totalPages: v.number(),
-});
+type AvailabilityCandidate = Pick<
+  BookingConfiguration,
+  | "target"
+  | "timezone"
+  | "slotGranularityMinutes"
+  | "openingStart"
+  | "openingEnd"
+  | "bufferBeforeMinutes"
+  | "bufferAfterMinutes"
+  | "maxBookingDurationMinutes"
+  | "allowDoubleBooking"
+>;
+type CandidateSearch = { q?: string; types?: readonly string[] };
 
 export class AvailabilityCandidateLimitError extends Error {
   constructor() {
@@ -99,34 +121,22 @@ export class AvailabilityCandidateLimitError extends Error {
 }
 
 const now = () => new Date();
-async function fetchCandidatePage(page: number, token: string, signal: AbortSignal) {
-  const parameters = new URLSearchParams({
-    where: "enabled==true;state==ACTIVE;target.deleted==false",
-    page: String(page),
-    limit: "100",
-    depth: "1",
-    "fields[booking-configurations]":
-      "target,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
-  });
-  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
-    headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
-    signal,
-  });
-  if (!response.ok) throw new Error(`Bookable item request failed (${response.status})`);
-  return v.parse(CandidatePageSchema, await response.json());
-}
-
 export async function fetchAvailabilityCandidates(
   token: string,
   signal: AbortSignal,
+  candidateWhere?: string,
+  search: CandidateSearch = {},
 ): Promise<readonly AvailabilityCandidate[]> {
-  const first = await fetchCandidatePage(1, token, signal);
-  if (first.totalDocs > 1000) throw new AvailabilityCandidateLimitError();
-  const candidates = [...first.docs];
-  for (let page = 2; page <= first.totalPages; page += 1) {
-    candidates.push(...(await fetchCandidatePage(page, token, signal)).docs);
+  const fetchPage = (page: number) =>
+    fetchBookingCatalogue({ ...search, where: candidateWhere, page, pageSize: 100 }, token, signal);
+  const first = await fetchPage(1);
+  if (first.total > 1000) throw new AvailabilityCandidateLimitError();
+  const candidates = [...first.items];
+  for (let page = 2; page <= Math.ceil(first.total / first.pageSize); page += 1) {
+    candidates.push(...(await fetchPage(page)).items);
+    if (candidates.length > 1000) throw new AvailabilityCandidateLimitError();
   }
-  return candidates.filter((candidate) => candidate.target !== null);
+  return candidates.map(catalogueItemAsConfiguration);
 }
 
 export async function loadAvailabilityQuickIndex(
@@ -176,13 +186,25 @@ export function useAvailabilityQuickFilterIndex(
   availabilityWindowStart = "00:00",
   availabilityWindowEnd = "24:00",
   clock: () => Date = now,
+  candidateWhere?: string,
+  enabled = true,
+  authScope: string | number = token,
+  search: CandidateSearch = {},
 ) {
-  const enabled = token.length > 0;
+  const queryEnabled = enabled && token.length > 0;
   const minute = useAlignedMinute(clock);
   const candidates = useQuery({
-    queryKey: ["api-v2", "booking-configurations", "availability-candidates"],
-    queryFn: ({ signal }) => fetchAvailabilityCandidates(token, signal),
-    enabled,
+    queryKey: [
+      "api-v2",
+      "booking-catalogue",
+      "availability-candidates",
+      authScope,
+      candidateWhere,
+      search.q,
+      search.types,
+    ],
+    queryFn: ({ signal }) => fetchAvailabilityCandidates(token, signal, candidateWhere, search),
+    enabled: queryEnabled,
     staleTime: 60_000,
     retry: (failureCount, error) => !(error instanceof AvailabilityCandidateLimitError) && failureCount < 3,
   });
@@ -209,6 +231,7 @@ export function useAvailabilityQuickFilterIndex(
       "api-v2",
       "bookings",
       "availability-quick-index",
+      authScope,
       signature,
       minute,
       displayTimeZone,
@@ -225,14 +248,14 @@ export function useAvailabilityQuickFilterIndex(
         token,
         signal,
       ),
-    enabled: enabled && candidates.isSuccess,
+    enabled: queryEnabled && candidates.isSuccess,
     meta: viewTransitionQueryMeta,
   });
   return {
-    data: enabled ? index.data : undefined,
+    data: queryEnabled ? index.data : undefined,
     now: new Date(minute),
-    isPending: enabled && !candidates.isError && (candidates.isPending || index.isPending),
-    isError: enabled && (candidates.isError || index.isError),
+    isPending: queryEnabled && !candidates.isError && (candidates.isPending || index.isPending),
+    isError: queryEnabled && (candidates.isError || index.isError),
     error: candidates.error ?? index.error,
     refetch: candidates.isError ? candidates.refetch : index.refetch,
   };

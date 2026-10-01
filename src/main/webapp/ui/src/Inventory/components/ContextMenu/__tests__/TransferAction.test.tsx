@@ -2,12 +2,9 @@ import Dialog from "@mui/material/Dialog";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
 import type React from "react";
 import { describe, expect, test, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { server } from "@/__tests__/mswServer";
-import JwtService from "@/common/JwtService";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockInstrument } from "../../../../stores/models/__tests__/InstrumentModel/mocking";
 import materialTheme from "../../../../theme";
@@ -40,62 +37,7 @@ describe("TransferAction", () => {
     });
   });
 
-  test("offers the accessible opt-in only for a manageable Booking configuration", async () => {
-    JwtService.saveToken("test-token");
-    server.use(
-      http.post("/api/v2/oauth/tokens", ({ request }) => {
-        expect(request.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
-        return HttpResponse.json({ accessToken: "v2-token" });
-      }),
-      http.get("/api/v2/booking-configurations", ({ request }) => {
-        expect(request.headers.get("Authorization")).toBe("Bearer v2-token");
-        return HttpResponse.json({
-          docs: [
-            {
-              id: 7,
-              configurationVersion: 0,
-              state: "ACTIVE",
-              target: {
-                relationTo: "booking-instruments",
-                value: { id: 1, name: "An instrument", deleted: false },
-                globalId: "IN1",
-              },
-              enabled: true,
-              timezone: "UTC",
-              slotGranularityMinutes: 5,
-              openingStart: "00:00",
-              openingEnd: "24:00",
-              bufferBeforeMinutes: 0,
-              bufferAfterMinutes: 0,
-              maxBookingDurationMinutes: 0,
-              allowDoubleBooking: false,
-              capabilities: {
-                canEditConfiguration: true,
-                canViewAudit: true,
-                canViewAccess: true,
-                canManageAssignments: true,
-                canManageOwners: true,
-                canCreateBooking: true,
-                canManageOwnBookings: true,
-                canManageAllEvents: true,
-                canCreateBlockout: true,
-                canSubscribeCalendar: true,
-                canLeaveConfiguration: false,
-              },
-            },
-          ],
-          totalDocs: 1,
-          limit: 1,
-          totalPages: 1,
-          page: 1,
-          pagingCounter: 1,
-          hasPrevPage: false,
-          hasNextPage: false,
-          prevPage: null,
-          nextPage: null,
-        });
-      }),
-    );
+  test("does not expose Booking-specific ownership controls", async () => {
     const user = userEvent.setup();
     const { baseElement } = render(
       <ThemeProvider theme={materialTheme}>
@@ -106,11 +48,10 @@ describe("TransferAction", () => {
     await user.click(screen.getAllByText("common:actions.transfer")[0]);
 
     expect(
-      await screen.findByRole("checkbox", {
+      screen.queryByRole("checkbox", {
         name: "inventory:contextMenu.transfer.dialog.transferBookingConfigurationOwnership",
       }),
-    ).toBeInTheDocument();
-    expect(JwtService.getToken()).toBe("test-token");
+    ).not.toBeInTheDocument();
     await expectAccessible(baseElement);
   });
 });

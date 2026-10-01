@@ -12,6 +12,7 @@ import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
 import type { CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
@@ -21,6 +22,7 @@ import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
+import { cn } from "@/modules/common/utils/cn";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { bookingListConfig } from "./bookingList";
 import type { MyBookingsPeriod } from "./routes";
@@ -75,6 +77,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
   const listConfig = useMemo(() => bookingListConfig(preferences.timeZone), [preferences.timeZone]);
   const asOf = useAlignedMinute();
@@ -116,12 +119,13 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
   const request = useMemo(
     () => ({
       token,
+      authScope: currentUser.id,
       depth: 1,
       projection,
       baseFilter,
       validateRows: BookingListDocumentTableValidation.validateRows,
     }),
-    [baseFilter, token],
+    [baseFilter, currentUser.id, token],
   );
   const table = useApiV2TableList({
     resourceName: "bookings",
@@ -151,13 +155,13 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
         const itemCalendarLabel = t("myBookings.actions.itemCalendar");
         return (
           <div className="flex flex-wrap gap-1">
-            {row.canViewConfiguration ? (
+            {row.canViewConfiguration && row.target ? (
               <Tooltip>
                 <TooltipTrigger
                   render={
                     <Link
                       aria-label={itemCalendarLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
                       data-slot="button"
                       to="/booking/bookable-items/$globalId/{-$tab}"
                       params={{ globalId: row.target.globalId, tab: undefined }}
@@ -175,7 +179,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
                   render={
                     <Link
                       aria-label={viewDetailsLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
                       data-slot="button"
                       to="/booking/calendar/bookings/$id"
                       params={{ id: String(row.id) }}
@@ -193,7 +197,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
                   render={
                     <Link
                       aria-label={editLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
                       data-slot="button"
                       to="/booking/calendar/bookings/$id/edit"
                       params={{ id: String(row.id) }}
@@ -205,10 +209,10 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
                 <TooltipContent role="tooltip">{editLabel}</TooltipContent>
               </Tooltip>
             ) : null}
-            {row.canViewConfiguration && row.state === "CONFIRMED" ? (
+            {row.canViewConfiguration && row.target && row.state === "CONFIRMED" ? (
               <BookingCalendarFileButton
                 bookingId={row.id}
-                itemName={row.target.value.name}
+                itemName={row.target?.value.name ?? commonT("values.unknownItem")}
                 period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
                 token={token}
                 iconOnly
@@ -218,10 +222,11 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
               <DeleteBookingDialog
                 bookingId={row.id}
                 bookingVersion={row.version ?? 0}
-                itemName={row.target.value.name}
+                itemName={row.target?.value.name ?? commonT("values.unknownItem")}
                 period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
                 token={token}
                 iconOnly
+                triggerVariant="outline"
                 onDeleted={async () => {
                   await table.refetch();
                 }}
