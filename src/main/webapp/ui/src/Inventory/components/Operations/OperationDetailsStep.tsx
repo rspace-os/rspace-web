@@ -394,23 +394,22 @@ function OperationDetailsStep({
   const emptyOrigins = (origins.length > 0 ? origins : [origin]).filter(
     (o) => originBlockedReason(o.quantity) === "empty",
   );
-  const unsupported = originBlockedReason(origin.quantity) === "unsupportedCategory";
+  let originAlert: string | null = null;
+  if (emptyOrigins.length > 0) {
+    originAlert = label("operations.fields.originAmountZero", {
+      count: emptyOrigins.length,
+      names: formatList(
+        emptyOrigins.map((o) => o.name ?? o.globalId ?? ""),
+        i18n.resolvedLanguage ?? i18n.language,
+      ),
+    });
+  } else if (originBlockedReason(origin.quantity) === "unsupportedCategory") {
+    originAlert = label("operations.fields.originCategoryUnsupported");
+  }
 
   return (
     <Stack spacing={1}>
-      {emptyOrigins.length > 0 ? (
-        <Alert severity="error">
-          {label("operations.fields.originAmountZero", {
-            count: emptyOrigins.length,
-            names: formatList(
-              emptyOrigins.map((o) => o.name ?? o.globalId ?? ""),
-              i18n.resolvedLanguage ?? i18n.language,
-            ),
-          })}
-        </Alert>
-      ) : unsupported ? (
-        <Alert severity="error">{label("operations.fields.originCategoryUnsupported")}</Alert>
-      ) : null}
+      {originAlert ? <Alert severity="error">{originAlert}</Alert> : null}
       {operation.inputs.filter((input) => !amountKeys.has(input.key)).map(renderInput)}
     </Stack>
   );
