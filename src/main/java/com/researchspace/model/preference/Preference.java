@@ -228,7 +228,21 @@ public enum Preference {
       "",
       SettingsType.TEXT,
       PreferenceCategory.UI,
-      "userProfile.preferences.bookingDisplayPreferences");
+      "userProfile.preferences.bookingDisplayPreferences"),
+
+  /** Follows naming convention of {@link NotificationType} name + "_PREF" */
+  NOTIFICATION_BOOKING_CREATED_PREF(
+      Boolean.TRUE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.MESSAGING,
+      "userProfile.message.bookingCreated"),
+
+  /** Follows naming convention of {@link NotificationType} name + "_PREF" */
+  NOTIFICATION_BOOKING_CANCELLED_PREF(
+      Boolean.TRUE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.MESSAGING,
+      "userProfile.message.bookingCancelled");
 
   private String defaultValue;
   private SettingsType prefType;

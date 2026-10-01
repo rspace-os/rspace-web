@@ -29,6 +29,7 @@ import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.util.Date;
 import java.util.List;
@@ -53,6 +54,7 @@ class TimeSlotBookingManagerLifecycleTest {
   private User actor;
   private BookingItemPermissions accessManager;
   private TimeSlotBookingManager manager;
+  private BookingNotificationService bookingNotificationService;
 
   @BeforeEach
   void setUp() {
@@ -64,6 +66,7 @@ class TimeSlotBookingManagerLifecycleTest {
     actor = fixture.actor;
     accessManager = fixture.accessManager;
     manager = fixture.manager;
+    bookingNotificationService = fixture.bookingNotificationService;
   }
 
   @Test
@@ -233,6 +236,8 @@ class TimeSlotBookingManagerLifecycleTest {
     assertSame(cancelled, retried);
     verify(bookingDao, times(1)).saveAndFlush(any(TimeSlotBooking.class));
     verify(events, times(1)).publishEvent(any(TimeSlotBookingAuditEvent.class));
+    verify(bookingNotificationService, times(1))
+        .notify(cancelled, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
     assertThrows(
         BookingStateTransitionException.class,
         () ->
@@ -296,6 +301,7 @@ class TimeSlotBookingManagerLifecycleTest {
                 actor)
             .orElseThrow();
     assertEquals(BookingState.CANCELLED, cancelled.getState());
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
   }
 
   @Test
