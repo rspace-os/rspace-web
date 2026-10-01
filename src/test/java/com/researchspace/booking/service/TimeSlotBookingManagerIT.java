@@ -171,8 +171,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
             Date.from(start.plus(1, ChronoUnit.HOURS)),
             null);
     var booking = bookingManager.createBooking(create, booker, booker);
-    var link =
-        calendarManager.createOrRotate(setup.configurationId(), booker, booker, "\"inactive\"");
+    var link = calendarManager.create(setup.configurationId(), booker, booker);
     String token =
         java.net.URI.create(link.subscriptionUrl()).getRawQuery().substring("token=".length());
     var competing = new TransactionTemplate(getTxMger());
