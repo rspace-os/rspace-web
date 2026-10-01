@@ -283,15 +283,16 @@
       }
     },
     "message": {
-      "bookingCancelled": "A booking on an instrument I own is cancelled",
-      "bookingCreated": "A booking is created on an instrument I own",
+      "bookingCancelled": "A booking on an instrument I subscribe to is cancelled",
+      "bookingCreated": "A booking is created on an instrument I subscribe to",
       "delivery": {
         "label": "Preferred delivery method"
       },
       "notify": {
         "label": "Notify me when"
       },
-      "title": "Messaging and Notification Preferences"
+      "title": "Messaging and Notification Preferences",
+      "bookingAutoSubscribe": "Automatically subscribe to booking notifications for new instruments I own"
     },
     "messageSettingsChanged": {
       "confirmation": "Message preferences updated"
