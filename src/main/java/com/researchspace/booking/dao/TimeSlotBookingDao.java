@@ -54,6 +54,17 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
         Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
   }
 
+  /** The interval and kind of one confirmed event, for availability evaluation. */
+  record EventInterval(long configurationId, BookingEventKind kind, Date start, Date end) {}
+
+  /**
+   * Returns the confirmed, non-deleted events of these configurations that overlap the half-open
+   * interval {@code [start, end)}. It applies no read rule: callers pass only configurations the
+   * caller may read, whose events that caller may read too ({@code BookingEventReadAccess}).
+   */
+  List<EventInterval> findConfirmedEventIntervals(
+      Collection<Long> configurationIds, Date start, Date end);
+
   /** Returns target IDs owned by the actor in one query. */
   Set<Long> findOwnedInstrumentIds(Collection<Long> targetIds, Long actorId);
 

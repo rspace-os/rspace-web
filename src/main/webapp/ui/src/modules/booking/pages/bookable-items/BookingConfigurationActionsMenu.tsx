@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/modules/common/ui/menu";
+import { cn } from "@/modules/common/utils/cn";
 import type { BookingConfiguration } from "./bookingConfiguration";
 
 export type BookingConfigurationLifecycleAction = "archive" | "restore" | "permanent-delete";
@@ -14,6 +15,7 @@ export function BookingConfigurationActionsMenu({
   compact = false,
   disabled = false,
   triggerRef,
+  triggerClassName,
   onAction,
 }: {
   configuration: {
@@ -25,6 +27,8 @@ export function BookingConfigurationActionsMenu({
   compact?: boolean;
   disabled?: boolean;
   triggerRef?: RefObject<HTMLButtonElement | null>;
+  /** Lets a row match the trigger to its neighbouring buttons. */
+  triggerClassName?: string;
   onAction: (action: BookingConfigurationLifecycleAction) => void;
 }) {
   const { t } = useTranslation("booking");
@@ -43,7 +47,7 @@ export function BookingConfigurationActionsMenu({
             type="button"
             variant="outline"
             size={compact ? "icon-sm" : "icon-lg"}
-            className={compact ? "rounded-sm" : "min-h-11 min-w-11 rounded-sm"}
+            className={cn(compact ? "rounded-sm" : "min-h-11 min-w-11 rounded-sm", triggerClassName)}
             aria-label={t("bookableItems.actions.menu", { item: itemName })}
           >
             <EllipsisVerticalIcon aria-hidden="true" className="size-3.5" />

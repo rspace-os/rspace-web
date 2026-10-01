@@ -133,7 +133,8 @@ class BookingConfigurationManagerTest {
                     ApiV2BookingConfigurationResource.DESCRIPTION,
                     ApiV2BookingInstrumentResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,
-                    ApiV2UserResource.DESCRIPTION)));
+                    ApiV2UserResource.DESCRIPTION,
+                    com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION)));
     ResolvedResourceAccess ownerAccess =
         new ResolvedResourceAccess(
             Optional.of(BookingResourceRoleScheme.OWNER),
