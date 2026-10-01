@@ -88,7 +88,7 @@ function InteractiveCalendar() {
   const [layout, setLayout] = React.useState<CalendarLayout>("time-grid");
   const [search, setSearch] = React.useState("");
   const [mineOnly, setMineOnly] = React.useState(false);
-  // The page asks the server to filter; the story filters its fixture so Search and My calendar visibly work.
+  // The page asks the server to filter; the story filters its fixture so Search and My Bookings visibly work.
   const events = storyEvents.filter(
     (event) =>
       (!mineOnly || event.requesterId === 1) &&
@@ -147,6 +147,18 @@ type Story = StoryObj<typeof meta>;
 export const Interactive: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    // Menus and popovers render in a portal outside the story canvas.
+    const body = within(canvasElement.ownerDocument.body);
+    const closePopup = async () => {
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("menu")).not.toBeInTheDocument());
+      await waitFor(() => expect(body.queryByRole("dialog")).not.toBeInTheDocument());
+    };
+    const chooseView = async (option: string) => {
+      await userEvent.click(canvas.getByRole("button", { name: /^View: / }));
+      await userEvent.click(await body.findByRole("menuitemradio", { name: option }));
+      await closePopup();
+    };
     const search = await canvas.findByRole("textbox", { name: "Search Calendar" });
     await userEvent.type(search, "Grace");
     // Search is debounced, as it is for the server-filtered page.
@@ -156,15 +168,17 @@ export const Interactive: Story = {
     expect(canvas.getByRole("button", { name: /Show details for Electron microscope/ })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Clear search" }));
     expect(await canvas.findByRole("button", { name: /Show details for Confocal microscope/ })).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Month" }));
-    expect(canvas.getByRole("button", { name: "Month" })).toHaveAttribute("aria-pressed", "true");
-    await userEvent.click(canvas.getByRole("button", { name: "Resources" }));
-    expect(canvas.getByRole("region", { name: "Resources" })).toBeVisible();
-    expect(canvas.getByRole("button", { name: "Month" })).toBeDisabled();
-    expect(canvas.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
-    await userEvent.click(canvas.getByRole("button", { name: "Day" }));
+    await chooseView("Month");
+    expect(canvas.getByRole("button", { name: "View: Time grid · Month" })).toBeVisible();
+    await chooseView("By Item");
+    expect(canvas.getByRole("region", { name: "By Item" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "View: By Item · Week" }));
+    expect(await body.findByRole("menuitemradio", { name: "Month" })).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(body.getByRole("menuitemradio", { name: "Day" }));
+    await closePopup();
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(3);
     await userEvent.click(canvas.getByRole("button", { name: "My Bookings" }));
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(2);
+    expect(canvas.getByRole("button", { name: "Remove My Bookings filter" })).toBeVisible();
   },
 };

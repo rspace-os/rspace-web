@@ -82,6 +82,8 @@ export type WeekGridOverflow = {
   lane: number;
   laneCount: number;
   hiddenCount: number;
+  /** The collapsed bookings, in start order, for the slot to list. */
+  hidden: readonly WeekGridEvent[];
 };
 
 /**
@@ -108,6 +110,7 @@ export function collapseWeekGridLanes(
         lane: maxLanes - 1,
         laneCount: maxLanes,
         hiddenCount: hidden.length,
+        hidden,
       });
     } else {
       visible.push(...group);
