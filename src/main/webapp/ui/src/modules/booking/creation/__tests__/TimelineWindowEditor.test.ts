@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { closestSchedulingTimelineSlot } from "../schedulingTimelineGrid";
 import { adjustTimelineRange } from "../TimelineWindowEditor";
 
 describe("adjustTimelineRange", () => {
@@ -43,5 +44,40 @@ describe("adjustTimelineRange", () => {
       startMinute: 0,
       endMinute: 180,
     });
+  });
+});
+
+describe("closestSchedulingTimelineSlot", () => {
+  it("snaps hourly Kathmandu slots to UTC :15", () => {
+    expect(
+      closestSchedulingTimelineSlot("2026-08-17T09:50:00Z", {
+        date: "2026-08-17",
+        displayTimezone: "UTC",
+        schedulingTimezone: "Asia/Kathmandu",
+        slotGranularityMinutes: 60,
+      }),
+    ).toBe("2026-08-17T10:15:00Z");
+  });
+
+  it("keeps ordinary UTC slots on the expected quarter-hour grid", () => {
+    expect(
+      closestSchedulingTimelineSlot("2026-08-17T10:07:00Z", {
+        date: "2026-08-17",
+        displayTimezone: "UTC",
+        schedulingTimezone: "UTC",
+        slotGranularityMinutes: 15,
+      }),
+    ).toBe("2026-08-17T10:00:00Z");
+  });
+
+  it("keeps the correct repeated-hour occurrence when snapping across a DST fall-back", () => {
+    expect(
+      closestSchedulingTimelineSlot("2026-10-25T00:52:00Z", {
+        date: "2026-10-25",
+        displayTimezone: "Europe/Berlin",
+        schedulingTimezone: "Europe/Berlin",
+        slotGranularityMinutes: 60,
+      }),
+    ).toBe("2026-10-25T01:00:00Z");
   });
 });

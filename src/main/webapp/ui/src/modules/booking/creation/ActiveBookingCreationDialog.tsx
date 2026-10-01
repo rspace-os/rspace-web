@@ -202,6 +202,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           creation={creation}
           draft={markerDraft}
           timeZone={preferences.timeZone}
+          schedulingTimezone={availabilityTarget?.timezone ?? preferences.timeZone}
           snapIncrementMinutes={availabilityTarget?.slotGranularityMinutes}
           onChange={creation.timelineAdjustable ? setWindowAdjustment : undefined}
         />

@@ -9,6 +9,7 @@ import {
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { cn } from "@/modules/common/utils/cn";
+import { closestSchedulingTimelineSlot } from "./schedulingTimelineGrid";
 import { resolveBookingWindow } from "./ZonedBookingWindowFields";
 
 type TimelineRange = { startMinute: number; endMinute: number };
@@ -52,6 +53,7 @@ export function TimelineWindowEditor({
   verticalAnchor,
   date,
   timezone,
+  schedulingTimezone = timezone,
   draft,
   snapIncrementMinutes,
   onChange,
@@ -63,6 +65,7 @@ export function TimelineWindowEditor({
   verticalAnchor?: HTMLElement | null;
   date: string;
   timezone: string;
+  schedulingTimezone?: string;
   draft: BookingWindowDraft;
   snapIncrementMinutes: number;
   onChange?: (draft: BookingWindowDraft) => void;
@@ -97,6 +100,18 @@ export function TimelineWindowEditor({
     const bounds = canvas.getBoundingClientRect();
     return snapMinute(((clientX - bounds.left) / bounds.width) * dayMinutes);
   };
+  const resizeMinuteAt = (clientX: number) => {
+    const bounds = canvas.getBoundingClientRect();
+    const minute = Math.min(dayMinutes, Math.max(0, Math.round(((clientX - bounds.left) / bounds.width) * dayMinutes)));
+    const target = dayMinuteToZonedTime(date, timezone, minute).toInstant().toString();
+    const slot = closestSchedulingTimelineSlot(target, {
+      date,
+      displayTimezone: timezone,
+      schedulingTimezone,
+      slotGranularityMinutes: snapIncrementMinutes,
+    });
+    return slot ? instantToDayMinute(slot, date, timezone) : snapMinute(minute);
+  };
   const changedDraft = (next: TimelineRange) =>
     wallClockDraftFromInstants(
       dayMinuteToZonedTime(date, timezone, next.startMinute).toInstant().toString(),
@@ -106,7 +121,7 @@ export function TimelineWindowEditor({
   const adjustedAt = (clientX: number) => {
     const active = interaction.current;
     if (!active) return activeRange;
-    const minute = minuteAt(clientX);
+    const minute = active.mode === "move" ? minuteAt(clientX) : resizeMinuteAt(clientX);
     return adjustTimelineRange(
       active.range,
       active.mode,

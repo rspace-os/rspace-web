@@ -189,14 +189,6 @@ public final class ApiV2AuditLog {
     Instant suppliedFrom = instant(query.getDateFrom());
     Instant suppliedTo = instant(query.getDateTo());
     Instant effectiveTo = suppliedTo == null ? now : suppliedTo;
-    Instant effectiveFrom;
-    if (suppliedFrom == null) {
-      effectiveFrom = effectiveTo.minus(MAX_SEARCH_RANGE);
-    } else if (suppliedTo == null && suppliedFrom.isBefore(now.minus(MAX_SEARCH_RANGE))) {
-      effectiveFrom = now.minus(MAX_SEARCH_RANGE);
-    } else {
-      effectiveFrom = suppliedFrom;
-    }
 
     LocalDate latestCompleted = LocalDate.ofInstant(now, ZoneOffset.UTC).minusDays(1);
     LocalDate latestWithinRequest = latestCompletedDay(effectiveTo);
@@ -210,6 +202,14 @@ public final class ApiV2AuditLog {
       throw new ApiV2BadRequestException("errors.api.v2.audit.snapshot.invalid");
     }
     Instant toExclusive = snapshotDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+    Instant effectiveFrom;
+    if (suppliedTo == null) {
+      Instant minimumFrom = toExclusive.minus(MAX_SEARCH_RANGE);
+      effectiveFrom =
+          suppliedFrom == null || suppliedFrom.isBefore(minimumFrom) ? minimumFrom : suppliedFrom;
+    } else {
+      effectiveFrom = suppliedFrom == null ? effectiveTo.minus(MAX_SEARCH_RANGE) : suppliedFrom;
+    }
     return new SearchWindow(effectiveFrom, toExclusive, snapshotDate);
   }
 

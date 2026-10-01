@@ -39,6 +39,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -253,6 +254,44 @@ class ApiV2AuditLogTest {
     assertThrows(
         ApiV2AuditSnapshotConflictException.class,
         () -> auditLog.search(resource, "7", laterQuery, actor));
+  }
+
+  @Test
+  void defaultAndClampedStartStayFixedWhenClockAdvancesPastSnapshot() {
+    Clock movingClock = mock(Clock.class);
+    when(movingClock.instant())
+        .thenReturn(
+            NOW,
+            NOW.plus(Duration.ofDays(5)),
+            NOW.plus(Duration.ofDays(5)),
+            NOW.plus(Duration.ofDays(10)));
+    ApiV2AuditLog movingAuditLog = new ApiV2AuditLog(strictSearch, movingClock, 100);
+    when(strictSearch.search(any()))
+        .thenReturn(List.of(result("Visible", Instant.parse("2026-01-02T12:00:00Z"))));
+
+    ApiV2AuditQuery firstDefault = new ApiV2AuditQuery();
+    var defaultPage = movingAuditLog.search(resource, "7", firstDefault, actor);
+    ApiV2AuditQuery laterDefault = new ApiV2AuditQuery();
+    laterDefault.setSnapshotDate(defaultPage.snapshotDate());
+    laterDefault.setSnapshotFingerprint(defaultPage.snapshotFingerprint());
+    movingAuditLog.search(resource, "7", laterDefault, actor);
+
+    Date oldDateFrom = Date.from(NOW.minus(Duration.ofDays(365)));
+    ApiV2AuditQuery firstClamped = new ApiV2AuditQuery();
+    firstClamped.setDateFrom(oldDateFrom);
+    var clampedPage = movingAuditLog.search(resource, "7", firstClamped, actor);
+    ApiV2AuditQuery laterClamped = new ApiV2AuditQuery();
+    laterClamped.setDateFrom(oldDateFrom);
+    laterClamped.setSnapshotDate(clampedPage.snapshotDate());
+    laterClamped.setSnapshotFingerprint(clampedPage.snapshotFingerprint());
+    movingAuditLog.search(resource, "7", laterClamped, actor);
+
+    ArgumentCaptor<ApiV2AuditStrictSearch.Request> requests =
+        ArgumentCaptor.forClass(ApiV2AuditStrictSearch.Request.class);
+    verify(strictSearch, org.mockito.Mockito.times(4)).search(requests.capture());
+    List<ApiV2AuditStrictSearch.Request> captured = requests.getAllValues();
+    assertEquals(captured.get(0).fromInclusive(), captured.get(1).fromInclusive());
+    assertEquals(captured.get(2).fromInclusive(), captured.get(3).fromInclusive());
   }
 
   @Test

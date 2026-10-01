@@ -13,7 +13,11 @@ The optional `search` parameter matches actor names, actions, descriptions, targ
 and readable recorded values before pagination and the result ceiling. Matching is
 case-insensitive and treats the query as literal text. Unpublished audit fields are
 not searchable. Changing the query starts a new paged snapshot; clients must discard
-the previous page and fingerprint. The snapshot cutoff remains the previous UTC day.
+the previous page and fingerprint. For requests without `dateTo`, the default or clamped
+`dateFrom` is 183 days before midnight after `snapshotDate`. Later pages derive that lower
+boundary from the supplied snapshot date, so clock movement cannot change either boundary.
+When `dateTo` is explicit and `dateFrom` is omitted, the lower boundary remains 183 days before
+the supplied `dateTo`.
 
 The Booking audit page combines text, date, and action filters on the server.
 Changing any applied filter resets pagination and discards the prior snapshot.

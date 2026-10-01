@@ -210,6 +210,7 @@ export function InlineBookingEditor({
           verticalAnchor={timelineEventElement}
           date={timelineDate}
           timezone={timezone}
+          schedulingTimezone={configuration.data.timezone}
           draft={timelineDraft}
           snapIncrementMinutes={configuration.data.slotGranularityMinutes}
           onChange={setWindowAdjustment}

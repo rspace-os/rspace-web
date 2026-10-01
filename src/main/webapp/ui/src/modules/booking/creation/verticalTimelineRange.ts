@@ -5,6 +5,7 @@ import {
   wallClockDraftFromInstants,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
+import { schedulingTimelineCandidates } from "./schedulingTimelineGrid";
 
 export type VerticalTimelineRange = { start: string; end: string };
 export type VerticalTimelineRangeEdge = "move" | "start" | "end";
@@ -16,7 +17,6 @@ export type VerticalTimelineRangeContext = {
 };
 
 type Candidate = Temporal.Instant;
-const MINUTE_NS = 60_000_000_000n;
 const CANDIDATE_CACHE_LIMIT = 8;
 const candidateCache = new Map<string, readonly Candidate[]>();
 
@@ -38,32 +38,7 @@ function contextKey(context: VerticalTimelineRangeContext): string {
 }
 
 function candidatesForDay(context: VerticalTimelineRangeContext): readonly Candidate[] {
-  if (!Number.isInteger(context.slotGranularityMinutes) || context.slotGranularityMinutes <= 0) return [];
-
-  return cachedCandidates(`${contextKey(context)}|slots`, () => {
-    const bounds = zonedDayBounds(context.date, context.displayTimezone);
-    const dayStart = Temporal.Instant.from(bounds.start);
-    const dayEnd = Temporal.Instant.from(bounds.end);
-    const endNs = dayEnd.epochNanoseconds;
-    const remainder = ((dayStart.epochNanoseconds % MINUTE_NS) + MINUTE_NS) % MINUTE_NS;
-    let candidateNs = dayStart.epochNanoseconds + (remainder === 0n ? 0n : MINUTE_NS - remainder);
-    const candidates: Candidate[] = [];
-
-    for (; candidateNs <= endNs; candidateNs += MINUTE_NS) {
-      const instant = Temporal.Instant.fromEpochNanoseconds(candidateNs);
-      if (
-        isBookingInstantAlignedToGranularity(
-          instant.toString(),
-          context.schedulingTimezone,
-          context.slotGranularityMinutes,
-        )
-      ) {
-        candidates.push(instant);
-      }
-    }
-
-    return candidates;
-  });
+  return schedulingTimelineCandidates(context);
 }
 
 function resolvedRange(range: VerticalTimelineRange): { start: Temporal.Instant; end: Temporal.Instant } | undefined {

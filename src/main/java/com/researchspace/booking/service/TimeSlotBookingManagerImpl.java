@@ -495,7 +495,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       boolean ownBooking = isRequester(booking, actor);
       boolean mayManage =
           (access.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS)
-              || (ownBooking
+              || (booking.getKind() == BookingEventKind.BOOKING
+                  && ownBooking
                   && access.hasCapability(BookingResourceRoleScheme.MANAGE_OWN_BOOKINGS)));
       boolean futureConfirmed =
           !booking.isDeleted()

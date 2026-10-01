@@ -16,6 +16,15 @@ class ExtraNumberFieldTest {
   }
 
   @Test
+  void copiesHistoricalNumbersWithoutRelaxingNewValueValidation() {
+    ExtraNumberField storedField = new ExtraNumberField();
+    storedField.getEditInfo().setDescription("1e-40");
+
+    assertEquals("1e-40", storedField.shallowCopy().getData());
+    assertThrows(IllegalArgumentException.class, () -> new ExtraNumberField().setData("1e-40"));
+  }
+
+  @Test
   void reportsSyntaxAndRangeErrorsWithTheExternalizedMessage() {
     ExtraNumberField field = new ExtraNumberField();
 

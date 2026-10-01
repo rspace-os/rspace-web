@@ -6,12 +6,14 @@ export function DraftMarker({
   creation,
   draft,
   timeZone,
+  schedulingTimezone = timeZone,
   snapIncrementMinutes = 5,
   onChange,
 }: {
   creation: BookingCreationContext;
   draft: BookingFormState["draft"];
   timeZone: string;
+  schedulingTimezone?: string;
   snapIncrementMinutes?: number;
   onChange?: (draft: BookingFormState["draft"]) => void;
 }) {
@@ -23,6 +25,7 @@ export function DraftMarker({
       anchor={trigger}
       date={originDate}
       timezone={timeZone}
+      schedulingTimezone={schedulingTimezone}
       draft={draft}
       snapIncrementMinutes={snapIncrementMinutes}
       onChange={onChange}

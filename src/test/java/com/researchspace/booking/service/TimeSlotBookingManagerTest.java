@@ -771,6 +771,23 @@ class TimeSlotBookingManagerTest {
   }
 
   @Test
+  void maintenanceRequesterWithBookerAccessDoesNotGetOwnBookingCapabilities() {
+    TimeSlotBooking maintenance = booking(1L, 12L, actor);
+    maintenance.setKind(BookingEventKind.MAINTENANCE);
+    maintenance.setCreatedBy(actor);
+    when(bookingDao.getReadableResources(any(), any()))
+        .thenReturn(new ResourcePage<>(List.of(maintenance), 1));
+    when(accessManager.resolveAll(any(), eq(actor)))
+        .thenReturn(Map.of(maintenance.getBookingConfiguration().getId(), bookerAccess()));
+
+    TimeSlotBooking prepared =
+        manager.getBookings(ResourceRequest.unpaged(null), actor).resources().get(0);
+
+    assertFalse(prepared.isCanEdit());
+    assertFalse(prepared.isCanCancel());
+  }
+
+  @Test
   void personalCalendarOmitsTheHiddenItemNameAndReference() throws Exception {
     TimeSlotBooking requested = booking(1L, 12L, actor);
     when(bookingDao.findUserCalendarBookings(eq(actor.getId()), any(), eq(2)))
