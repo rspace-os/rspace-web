@@ -10,6 +10,7 @@ import {
 } from "@/modules/booking/creation/BookingForm";
 import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
 import { bookingProblemKey, isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
+import { bookingConflicts } from "@/modules/booking/domain/availability";
 import {
   ApiV2ProblemError,
   type BookingListDocument,
@@ -117,7 +118,8 @@ export function InlineBookingEditor({
           event.kind === "MAINTENANCE"
             ? [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
             : configuration.data.openingHours,
-        allowDoubleBooking: event.kind === "MAINTENANCE" ? false : configuration.data.allowDoubleBooking,
+        // Fetch overlaps even when double booking is allowed, so the form can explain them.
+        allowDoubleBooking: false,
       })
     : undefined;
   const availabilityInterval = formState?.window
@@ -138,6 +140,10 @@ export function InlineBookingEditor({
     availability.isSuccess &&
       availability.data.get(event.target.globalId)?.some((interval) => interval.source.id !== `booking:${event.id}`),
   );
+  const conflicts = availabilityViolation
+    ? bookingConflicts(availability.data?.get(event.target.globalId) ?? [], timezone, event.id)
+    : [];
+  const conflictBlocksSubmission = availabilityViolation && configuration.data?.allowDoubleBooking === false;
 
   if (configuration.isPending) {
     return (
@@ -203,7 +209,7 @@ export function InlineBookingEditor({
           token={token}
           pending={mutation.isPending}
           error={
-            availabilityViolation
+            availabilityViolation && conflicts.length === 0
               ? t("bookings.errors.overlap")
               : mutation.error
                 ? t(
@@ -213,7 +219,9 @@ export function InlineBookingEditor({
                   )
                 : undefined
           }
-          submissionBlocked={checkingAvailability || availabilityViolation || isBookingOverlapError(mutation.error)}
+          conflicts={conflicts}
+          conflictSeverity={configuration.data.allowDoubleBooking ? "warning" : "error"}
+          submissionBlocked={checkingAvailability || conflictBlocksSubmission || isBookingOverlapError(mutation.error)}
           windowAdjustment={windowAdjustment}
           onStateChange={clearMutationErrorOnChange}
           onCancel={() => {

@@ -25,7 +25,7 @@ describe("CalendarPage", () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", () => {
+      http.get("/api/v2/booking-calendar/events", () => {
         requests += 1;
         return requests === 1
           ? new HttpResponse(null, { status: 503 })
@@ -55,7 +55,7 @@ describe("CalendarPage", () => {
       server.use(
         oauthTokenHandler(true),
         http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-        http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([booking]))),
+        http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([booking]))),
       );
       await renderCalendar(`/booking/calendar?date=${booking.start.slice(0, 10)}`);
       await userEvent.setup().click(await screen.findByRole("button", { name: "Time grid" }));

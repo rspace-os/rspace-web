@@ -1,12 +1,16 @@
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
-import i18n from "@/modules/common/i18n";
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import type { AllBookableItem, AvailabilityQuickFilter } from "./availabilityQuickFilters";
 
-function createAllBookableItemsConfig(availableNow: string, freeLaterToday: string) {
+function createAllBookableItemsConfig(
+  availableNow: string,
+  freeLaterToday: string,
+  openRecordLabel: (globalId: string) => string,
+) {
   return resolveCollectionConfig({
     slug: "all-bookable-items",
     idField: "id",
@@ -17,6 +21,7 @@ function createAllBookableItemsConfig(availableNow: string, freeLaterToday: stri
     },
     defaultColumns: ["target"],
     listSearchableFields: ["target.name"],
+    relationshipSources: bookingRelationshipSources,
     fields: [
       { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
       {
@@ -35,7 +40,7 @@ function createAllBookableItemsConfig(availableNow: string, freeLaterToday: stri
                 name={row.target.value.name}
                 globalId={row.target.globalId}
                 href={`/globalId/${row.target.globalId}`}
-                idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
+                idLinkLabel={openRecordLabel(row.target.globalId)}
                 size="xs"
               >
                 <InventoryLocationLink

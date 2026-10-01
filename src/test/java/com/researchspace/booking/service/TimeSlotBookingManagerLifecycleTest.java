@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -220,6 +221,18 @@ class TimeSlotBookingManagerLifecycleTest {
                     event ->
                         event instanceof TimeSlotBookingAuditEvent bookingEvent
                             && bookingEvent.action() == AuditAction.WRITE));
+    TimeSlotBooking retried =
+        manager
+            .updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
+                cancelled.getVersion(),
+                actor,
+                actor)
+            .orElseThrow();
+    assertSame(cancelled, retried);
+    verify(bookingDao, times(1)).saveAndFlush(any(TimeSlotBooking.class));
+    verify(events, times(1)).publishEvent(any(TimeSlotBookingAuditEvent.class));
     assertThrows(
         BookingStateTransitionException.class,
         () ->
