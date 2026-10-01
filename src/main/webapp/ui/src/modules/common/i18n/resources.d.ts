@@ -7263,24 +7263,44 @@ export default interface Resources {
       },
       "description": "Docker development booking fixture",
       "instruments": {
+        "aucklandPcrCycler": "Auckland PCR cycler",
+        "bookingAlerts": "Booking alerts test bench",
         "bookingCardArchived": "Booking card: Open (archived)",
         "bookingCardBook": "Booking card: Book",
         "bookingCardDisabled": "Booking card: Open (disabled)",
         "bookingCardSetup": "Booking card: Set up booking",
+        "busyCalendar": "Busy calendar instrument {0,number,000}",
+        "closedDayIncubator": "Closed-day incubator",
         "confocal": "Confocal microscope",
         "deletedLocationSequencer": "Deleted-location sequencer",
         "electronMicroscope": "Electron microscope",
         "flowCytometer": "Flow cytometer",
+        "honoluluDiffractometer": "Honolulu X-ray diffractometer",
+        "kolkataNmrSpectrometer": "Kolkata NMR spectrometer",
         "massSpectrometer": "Mass spectrometer",
         "noParentCentrifuge": "No-parent centrifuge",
         "restrictedLocationPlateReader": "Restricted-location plate reader"
       },
       "purposes": {
+        "auroraCalibration": "Aurora calibration session",
+        "beaconCellImaging": "Beacon cell imaging study",
+        "bookingAlertsOverlap": "Booking alerts overlap fixture",
+        "bookingAlertsPast": "Booking alerts past fixture",
+        "busyCalendar": "Busy calendar fixture",
         "calibrationRun": "Calibration run",
         "cellImaging": "Cell imaging",
         "cellSorting": "Cell sorting",
+        "closedDayBooking": "Booking on a day that is now closed",
+        "closedDayMaintenance": "Maintenance on a closed day",
+        "cometProteomics": "Comet proteomics analysis",
+        "crystalScreening": "Crystal screening",
+        "lateSpin": "Late spin until midnight",
+        "overlappingProteomicsRun": "Overlapping proteomics run",
         "overnightAnalysis": "Overnight analysis",
+        "pcrAmplification": "PCR amplification",
         "proteomicsRun": "Proteomics run",
+        "quarterHourNmr": "Quarter-hour NMR acquisition",
+        "twoDaySequencingRun": "Two-day sequencing run",
         "ultrastructureImaging": "Ultrastructure imaging"
       }
     },
@@ -7322,11 +7342,6 @@ export default interface Resources {
           }
         }
       }
-    },
-    "duration": {
-      "days": "{0, plural, one {# day} other {# days}}",
-      "hours": "{0, plural, one {# hour} other {# hours}}",
-      "minutes": "{0, plural, one {# minute} other {# minutes}}"
     },
     "errors": {
       "ajax": {
