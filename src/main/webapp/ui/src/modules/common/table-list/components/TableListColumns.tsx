@@ -5,31 +5,30 @@ import {
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
   type UniqueIdentifier,
   useDroppable,
-  useSensor,
-  useSensors,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  rectSortingStrategy,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { arrayMove, rectSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { Namespace } from "i18next";
 import { GripVerticalIcon, XIcon } from "lucide-react";
 import { type CSSProperties, type ReactNode, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { FieldName, ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
+import type {
+  CollectionTranslationKey,
+  FieldName,
+  ResolvedCollectionConfig,
+  ResolvedFieldConfig,
+} from "@/modules/common/collection/config";
 import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/labels";
-import type { RuntimeFieldDefinition } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
+import type {
+  RuntimeFieldCatalogForNamespace,
+  RuntimeFieldDefinition,
+} from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
+import { useTableListDragSensors } from "../hooks/dragSensors";
 import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
 
 type Section = "shown" | "hidden";
@@ -68,12 +67,15 @@ function ColumnSection<TDocument>({
   emptyLabel: string;
   children: ReactNode;
 }) {
+  const { i18n } = useTranslation<Namespace>("common");
   const { isOver, setNodeRef } = useDroppable({ id: sectionIds[name], data: { section: name } });
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
         <h3 className="text-xs font-semibold tracking-wide uppercase">{title}</h3>
-        <span className="text-xs text-muted-foreground">{fields.length}</span>
+        <span className="text-xs text-muted-foreground">
+          {new Intl.NumberFormat(i18n.resolvedLanguage ?? i18n.language, { useGrouping: false }).format(fields.length)}
+        </span>
       </div>
       <fieldset
         ref={setNodeRef}
@@ -156,7 +158,7 @@ function SortableColumn({
 function activeFieldLabel<TDocument>(
   fields: readonly ResolvedFieldConfig<TDocument>[],
   activeField: FieldName<TDocument>,
-  translate: (key: string) => string,
+  translate: (key: CollectionTranslationKey) => string,
 ): string {
   const field = fields.find((candidate) => candidate.name === activeField);
   return field ? fieldLabel(field, translate) : activeField;
@@ -176,14 +178,10 @@ export function TableListColumns<TDocument>({
   onChange: (fields: readonly FieldName<TDocument>[]) => void;
   onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
   runtimeFieldAuthScope?: string | number;
-  runtimeFieldDefinitions?: readonly {
-    namespace: string;
-    definitions: readonly RuntimeFieldDefinition[];
-  }[];
+  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
   onClose: () => void;
 }) {
-  const { i18n, t } = useTranslation("common");
-  const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
+  const { t } = useTranslation<Namespace>("common");
   const availableFields = config.fields.filter((field) => field.list !== false);
   const runtimeSources =
     onSelectRuntimeField === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.columnSelectable);
@@ -197,11 +195,7 @@ export function TableListColumns<TDocument>({
   const [activeField, setActiveField] = useState<FieldName<TDocument> | null>(null);
   const draft = activeField === null ? propsLayout : dragLayout;
   const origin = useRef(propsLayout);
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const sensors = useTableListDragSensors();
 
   const transfer = ({ active, over }: DragOverEvent) => {
     if (!over) return;
@@ -248,7 +242,7 @@ export function TableListColumns<TDocument>({
   const column = (fieldName: FieldName<TDocument>, section: Section) => {
     const field = availableFields.find((candidate) => candidate.name === fieldName);
     if (!field) return null;
-    const label = fieldOptionLabel(field, translate);
+    const label = fieldOptionLabel(field, t);
     return (
       <SortableColumn
         key={fieldName}
@@ -316,7 +310,7 @@ export function TableListColumns<TDocument>({
           {activeField ? (
             <Badge aria-hidden="true" variant="outline" className="h-6 gap-1.5 rounded-sm bg-background px-1.5 py-0">
               <GripVerticalIcon aria-hidden="true" className="size-3" />
-              <span>{activeFieldLabel(availableFields, activeField, translate)}</span>
+              <span>{activeFieldLabel(availableFields, activeField, t)}</span>
             </Badge>
           ) : null}
         </DragOverlay>

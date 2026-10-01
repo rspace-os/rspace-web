@@ -1,28 +1,21 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import type { Namespace } from "i18next";
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { FilterOperator, ResolvedCollectionConfig, SearchSelector } from "@/modules/common/collection/config";
+import type {
+  CollectionTranslationKey,
+  FilterOperator,
+  ResolvedCollectionConfig,
+  SearchSelector,
+} from "@/modules/common/collection/config";
 import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/labels";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
-import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
+import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
+import { useTableListDragSensors } from "../hooks/dragSensors";
 import { serializeRsqlExpression } from "../rsql";
 import type { FilterExpression } from "../types";
 import {
@@ -38,7 +31,7 @@ import {
 import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
 import { FilterSelect, type FilterSelectOption } from "./FilterSelect";
 import { FilterValueInput } from "./FilterValueInput";
-import { SortableFilterRow } from "./SortableFilterRow";
+import { SortableControlRow } from "./SortableControlRow";
 
 const operatorKeys: Record<FilterOperator, `tableList.filters.operators.${FilterOperator}`> = {
   equals: "tableList.filters.operators.equals",
@@ -72,13 +65,10 @@ export function TableListFilters<TDocument>({
   onShowColumn?: (field: SearchSelector<TDocument>, shown: boolean) => void;
   onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
   runtimeFieldAuthScope?: string | number;
-  runtimeFieldDefinitions?: readonly {
-    namespace: string;
-    definitions: readonly RuntimeFieldDefinition[];
-  }[];
+  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
   onClose: () => void;
 }) {
-  const { i18n, t } = useTranslation("common");
+  const { t } = useTranslation<Namespace>("common");
   // Filter-only fields must still be offered even though they are hidden from columns.
   const fields = config.fields.filter(
     (field) => field.capabilities.filterOperators.length > 0 && (field.list !== false || field.form === false),
@@ -99,21 +89,16 @@ export function TableListFilters<TDocument>({
       (node) => node.kind !== "comparison",
     ),
   );
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-  // A server-published target title is already display text. Only treat configured semantic keys
-  // as i18n keys; otherwise a composed label such as "Bookable item: Name" is misread as a
-  // namespace-qualified key and loses its relationship prefix.
-  const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
+  const sensors = useTableListDragSensors();
   const fieldOptions: FilterSelectOption[] = fields
     .filter((candidate) => candidate.origin?.namespace === undefined)
     .map((candidate) => ({
       value: candidate.name,
-      label: fieldOptionLabel(candidate, translate),
-      groupLabelKey: candidate.origin?.viaLabel || candidate.origin?.groupLabelKey || null,
+      label: fieldOptionLabel(candidate, t),
+      groupLabelKey: candidate.origin?.viaLabel
+        ? null
+        : ((candidate.origin?.groupLabelKey as CollectionTranslationKey | undefined) ?? null),
+      groupLabel: candidate.origin?.viaLabel || undefined,
     }));
   for (const group of runtimeSourceGroups) {
     fieldOptions.push({
@@ -123,7 +108,8 @@ export function TableListFilters<TDocument>({
         group.viaLabel === ""
           ? t("tableList.filters.customField.option")
           : t("tableList.filters.customField.optionVia", { via: group.viaLabel }),
-      groupLabelKey: group.viaLabel === "" ? "tableList.fieldGroups.customFields" : group.viaLabel,
+      groupLabelKey: group.viaLabel === "" ? "tableList.fieldGroups.customFields" : null,
+      groupLabel: group.viaLabel || undefined,
     });
   }
   const fieldSelectLabels = {
@@ -252,7 +238,7 @@ export function TableListFilters<TDocument>({
                           via: sourceGroup.viaLabel,
                         })
                   }
-                  chosenLabel={awaitingDefinition ? undefined : fieldLabel(field, translate)}
+                  chosenLabel={awaitingDefinition ? undefined : fieldLabel(field, t)}
                   chosenSelector={awaitingDefinition ? undefined : String(rule.field)}
                   known={runtimeFieldDefinitions ?? []}
                   authScope={runtimeFieldAuthScope}
@@ -264,7 +250,8 @@ export function TableListFilters<TDocument>({
                 />
               );
               return (
-                <SortableFilterRow
+                <SortableControlRow
+                  className="sm:col-span-full sm:grid-cols-subgrid"
                   key={rule.id}
                   id={rule.id}
                   moveLabel={t("tableList.actions.moveFilter", { number: index + 1 })}
@@ -315,7 +302,7 @@ export function TableListFilters<TDocument>({
                       {valueControl}
                     </div>
                   ) : null}
-                </SortableFilterRow>
+                </SortableControlRow>
               );
             })}
           </ol>

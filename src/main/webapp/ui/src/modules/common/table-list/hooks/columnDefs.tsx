@@ -1,4 +1,5 @@
 import { type ColumnDef, createColumnHelper } from "@tanstack/react-table";
+import type { Namespace } from "i18next";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
@@ -23,10 +24,9 @@ export function useTableListColumnDefs<TDocument extends Record<string, unknown>
   sortingEnabled: boolean;
   uiColumns: readonly TableListUiColumn<TDocument>[];
 }) {
-  const { i18n, t } = useTranslation("common");
+  const { i18n, t } = useTranslation<Namespace>("common");
   return useMemo(() => {
     const columnHelper = createColumnHelper<typeof tableListFeatures, TDocument>();
-    const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
     return [
       ...(hasSelection
         ? [
@@ -47,7 +47,7 @@ export function useTableListColumnDefs<TDocument extends Record<string, unknown>
         return columnHelper.accessor((row) => row[field.name], {
           id: field.name,
           header: () => {
-            return listConfig?.renderHeader ? listConfig.renderHeader({ config, field }) : fieldLabel(field, translate);
+            return listConfig?.renderHeader ? listConfig.renderHeader({ config, field }) : fieldLabel(field, t);
           },
           cell: ({ row }) => {
             const value = row.original[field.name];
@@ -74,7 +74,7 @@ export function useTableListColumnDefs<TDocument extends Record<string, unknown>
           meta: {
             labelKey: field.labelKey,
             label: field.label,
-            cardLabel: fieldLabel(field, translate),
+            cardLabel: fieldLabel(field, t),
             card: listConfig?.card,
             descriptionKey: listConfig?.descriptionKey,
             description: listConfig?.description,

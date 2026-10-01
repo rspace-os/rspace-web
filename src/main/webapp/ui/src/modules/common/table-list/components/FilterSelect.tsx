@@ -1,5 +1,7 @@
+import type { Namespace } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { CollectionTranslationKey } from "@/modules/common/collection/config";
 import {
   Combobox,
   ComboboxCollection,
@@ -16,7 +18,8 @@ export type FilterSelectOption = {
   value: string;
   label: string;
   selectedLabel?: string;
-  groupLabelKey: string | null;
+  groupLabelKey: CollectionTranslationKey | null;
+  groupLabel?: string;
 };
 
 type OptionGroup = {
@@ -38,16 +41,15 @@ export function FilterSelect({
   labels: { placeholder: string; noMatch: string; clear: string; trigger: string };
   onChange: (value: string) => void;
 }) {
-  const { i18n, t } = useTranslation("common");
+  const { t } = useTranslation<Namespace>("common");
   const [open, setOpen] = useState(false);
-  const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
 
   const byKey = new Map<string, OptionGroup & { items: FilterSelectOption[] }>();
   for (const option of options) {
-    const key = option.groupLabelKey ?? "";
+    const key = option.groupLabel ?? option.groupLabelKey ?? "";
     const group = byKey.get(key) ?? {
       key,
-      heading: option.groupLabelKey === null ? null : translate(option.groupLabelKey),
+      heading: option.groupLabel ?? (option.groupLabelKey === null ? null : t(option.groupLabelKey)),
       items: [],
     };
     group.items.push(option);

@@ -78,9 +78,9 @@ describe("Calendar page", () => {
     history.replace(`/booking/calendar?${params}`);
     render(<CalendarPageStory history={history} />);
     await expect.element(calendar.resourceSchedule).toBeVisible();
-    for (const layout of [calendar.timeGridLayout, calendar.agenda, calendar.resources]) {
-      await layout.click();
-      await expect.element(layout).toHaveAttribute("aria-pressed", "true");
+    for (const layout of ["Time grid", "Agenda", "By Item"] as const) {
+      await calendar.chooseView(layout);
+      await expect.element(calendar.viewMenu).toHaveAccessibleName(`View: ${layout} · Day`);
     }
     await expect
       .poll(() =>
@@ -99,7 +99,7 @@ describe("Calendar page", () => {
 
   test("filters Calendar events by target fields and target custom fields", async () => {
     render(<CalendarPageStory history={history} />);
-    await calendar.filters.click();
+    await calendar.openFilterPanel();
 
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
     const targetNameField = page.getByRole("combobox", { name: "Field for filter 1" });
@@ -168,7 +168,7 @@ describe("Calendar page", () => {
 
   test("hides cached events and blocks requests for an unavailable saved item field", async () => {
     render(<CalendarPageStory history={history} />);
-    await calendar.agenda.click();
+    await calendar.chooseView("Agenda");
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
     const count = bookingPageRequests.calendarBookingRequests.length;
     worker.use(
@@ -192,7 +192,7 @@ describe("Calendar page", () => {
       }),
     );
     render(<CalendarPageStory history={history} />);
-    await calendar.agenda.click();
+    await calendar.chooseView("Agenda");
     await expect.element(page.getByRole("alert")).toHaveTextContent("Booking events are unavailable.");
     await calendar.search.fill("Cell imaging");
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
@@ -227,7 +227,7 @@ describe("Calendar page", () => {
   test("fills each resource row with its timeline and places locations below IDs", async () => {
     render(<CalendarPageStory history={history} />);
     await expect
-      .element(page.getByRole("region", { name: "Resources", exact: true }))
+      .element(page.getByRole("region", { name: "By Item", exact: true }))
       .toHaveAttribute("aria-busy", "false");
     const scrollers = page.getByTestId("day-timeline-scroller");
     await expect.element(scrollers.first()).toBeVisible();
@@ -287,7 +287,7 @@ describe("Calendar page", () => {
 
   test("keeps icon-only configuration viewing available in the week resource card", async () => {
     render(<CalendarPageStory history={history} />);
-    await calendar.week.click();
+    await calendar.chooseView("Week");
 
     const view = calendar.resourceSchedule.getByRole("link", { name: "View configuration", exact: true }).first();
     await expect.element(view).toBeVisible();
@@ -311,14 +311,13 @@ describe("Calendar page", () => {
     await expect.element(calendar.reset).not.toBeInTheDocument();
 
     if (control === "date") await calendar.next.click();
-    if (control === "layout") await calendar.agenda.click();
-    if (control === "period") await calendar.week.click();
+    if (control === "layout") await calendar.chooseView("Agenda");
+    if (control === "period") await calendar.chooseView("Week");
     await expect.element(calendar.reset).toBeVisible();
     await calendar.reset.click();
 
-    await expect.element(calendar.resources).toHaveAttribute("aria-pressed", "true");
-    await expect.element(calendar.day).toHaveAttribute("aria-pressed", "true");
-    await expect.element(calendar.mine).toHaveAttribute("aria-pressed", "false");
+    await expect.element(calendar.viewMenu).toHaveAccessibleName("View: By Item · Day");
+    await expect.element(calendar.filters).toHaveAccessibleName("Filters, none applied");
     await expect.element(calendar.reset).not.toBeInTheDocument();
     await expect.poll(() => new URLSearchParams(history.location.search).has("date")).toBe(false);
     expect(new URLSearchParams(history.location.search).has("calendar-resources.q")).toBe(false);
@@ -336,21 +335,23 @@ describe("Calendar page", () => {
     await expect
       .poll(() => new URLSearchParams(history.location.search).get("calendar-resources.q"))
       .toBe("no matching event");
-    await calendar.mine.click();
-    await calendar.filters.click();
+    await calendar.toggleQuickFilter("My Bookings");
+    await calendar.openFilterPanel();
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
     await page.getByRole("combobox", { name: "Field for filter 1" }).fill("Purpose");
     await page.getByRole("option", { name: "Purpose", exact: true }).click();
     await page.getByRole("textbox", { name: "Value for filter 1" }).fill("no matching purpose");
     await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect.element(calendar.quickFilter("My Bookings")).toHaveAttribute("aria-pressed", "true");
     await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
-    await calendar.week.click();
-    await expect.element(calendar.week).toHaveAttribute("aria-pressed", "true");
+    await calendar.chooseView("Week");
+    await expect.element(calendar.viewMenu).toHaveAccessibleName("View: By Item · Week");
     const requestsBeforeReset = bookingPageRequests.calendarBookingRequests.length;
     await calendar.reset.click();
     await expect.element(calendar.search).toHaveValue("");
-    await expect.element(calendar.mine).toHaveAttribute("aria-pressed", "false");
-    await expect.element(calendar.day).toHaveAttribute("aria-pressed", "true");
+    await expect.element(calendar.removeMine).not.toBeInTheDocument();
+    await expect.element(calendar.quickFilter("My Bookings")).toHaveAttribute("aria-pressed", "false");
+    await expect.element(calendar.viewMenu).toHaveAccessibleName("View: By Item · Day");
     await expect.element(calendar.filters).toHaveAccessibleName("Filters, none applied");
     await expect.element(calendar.reset).not.toBeInTheDocument();
     expect(new URLSearchParams(history.location.search).has("calendar-resources.q")).toBe(false);
@@ -369,13 +370,7 @@ describe("Calendar page", () => {
       await expect.element(calendar.toolbar).toBeVisible();
       await document.fonts.ready;
       await expect.element(calendar.timeZone).not.toBeInTheDocument();
-      for (const control of [
-        calendar.dateControls,
-        calendar.displayControls,
-        calendar.search,
-        calendar.mine,
-        calendar.filters,
-      ]) {
+      for (const control of [calendar.dateControls, calendar.viewMenu, calendar.search, calendar.filters]) {
         expect(calendar.toolbar.element()).toContainElement(control.element());
       }
       for (const control of calendar.toolbar.getByRole("button").all()) {
@@ -384,26 +379,31 @@ describe("Calendar page", () => {
         expect(bounds.right).toBeLessThanOrEqual(width);
         expect(bounds.height).toBe(36);
       }
-      for (const name of ["Calendar period navigation", "Layout", "Period", "Booking event quick filters"]) {
-        expect(
-          calendar.toolbar.getByRole("group", { name, exact: true }).element().getBoundingClientRect().height,
-        ).toBe(36);
-      }
-      await calendar.timeGridLayout.click();
-      await calendar.month.click();
-      await expect.element(calendar.month).toHaveAttribute("aria-pressed", "true");
-      await calendar.resources.click();
-      await expect.element(calendar.week).toHaveAttribute("aria-pressed", "true");
-      await expect.element(calendar.month).toBeDisabled();
+      expect(
+        calendar.toolbar
+          .getByRole("group", { name: "Calendar period navigation", exact: true })
+          .element()
+          .getBoundingClientRect().height,
+      ).toBe(36);
+      await calendar.chooseView("Time grid");
+      await calendar.chooseView("Month");
+      await expect.element(calendar.viewMenu).toHaveAccessibleName("View: Time grid · Month");
+      await calendar.chooseView("By Item");
+      await expect.element(calendar.viewMenu).toHaveAccessibleName("View: By Item · Week");
+      // The menu stays open between choices, and explains the Month it cannot offer here.
+      await calendar.viewMenu.click();
+      await expect.element(calendar.viewOption("Month")).toHaveAttribute("aria-disabled", "true");
       await expect
-        .element(calendar.month)
+        .element(calendar.viewOption("Month"))
         .toHaveAccessibleDescription(
-          "Month isn't available in Resources. Use Time grid or Agenda for a month overview.",
+          "Month isn't available in the By Item view. Use Time grid or Agenda for a month overview.",
         );
-      await userEvent.keyboard("{Tab}{Enter}");
-      await expect.element(calendar.agenda).toHaveAttribute("aria-pressed", "true");
-      // Month fades from disabled to enabled when leaving Resources.
-      await expect.poll(() => getComputedStyle(calendar.month.element()).opacity).toBe("1");
+      await calendar.viewOption("Agenda").click();
+      await expect.element(calendar.viewOption("Agenda")).toHaveAttribute("aria-checked", "true");
+      await expect.element(calendar.viewOption("Month")).not.toHaveAttribute("aria-disabled", "true");
+      await userEvent.keyboard("{Escape}");
+      await expect.element(calendar.viewMenu).toHaveAccessibleName("View: Agenda · Week");
+      await expect.element(calendar.viewMenu).toHaveFocus();
       await expectNoAxeViolations();
     });
   });
@@ -439,7 +439,7 @@ describe("Calendar page", () => {
       await withViewport(width, async () => {
         render(<CalendarPageStory history={history} />);
         try {
-          await calendar.week.click();
+          await calendar.chooseView("Week");
           const pending = page.getByRole("region", { name: "Loading", exact: true });
           await expect.element(pending).toHaveAttribute("aria-busy", "true");
           const dateCount = 7;
@@ -450,7 +450,7 @@ describe("Calendar page", () => {
           const before = pending.element().getBoundingClientRect();
           await expectNoAxeViolations();
           resources.resolve();
-          const loaded = page.getByRole("region", { name: "Resources", exact: true });
+          const loaded = page.getByRole("region", { name: "By Item", exact: true });
           await expect.element(loaded.getByText("IN123", { exact: true })).toBeVisible();
           await expect.element(loaded).toHaveAttribute("aria-busy", "true");
           const rowsReady = loaded.element().getBoundingClientRect();
@@ -483,8 +483,8 @@ describe("Calendar page", () => {
       await withViewport(width, async () => {
         render(<CalendarPageStory history={history} />);
         try {
-          await calendar.timeGridLayout.click();
-          await calendar[view].click();
+          await calendar.chooseView("Time grid");
+          await calendar.chooseView(({ day: "Day", week: "Week", month: "Month" } as const)[view]);
           await expect.element(calendar.timeGrid).toHaveAttribute("aria-busy", "true");
           await document.fonts.ready;
           const before = calendar.timeGrid.element().getBoundingClientRect();
@@ -515,9 +515,9 @@ describe("Calendar page", () => {
     await withViewport(width, async () => {
       render(<CalendarPageStory history={history} />);
       try {
-        await calendar.resources.click();
-        await calendar.day.click();
-        const resources = page.getByRole("region", { name: "Resources", exact: true });
+        await calendar.chooseView("By Item");
+        await calendar.chooseView("Day");
+        const resources = page.getByRole("region", { name: "By Item", exact: true });
         await expect.element(resources.getByText("IN123", { exact: true })).toBeVisible();
         await expect.element(resources).toHaveAttribute("aria-busy", "true");
         await document.fonts.ready;
@@ -540,8 +540,8 @@ describe("Calendar page", () => {
 
   test("renders visible booking identities as user badges without leaking busy identities", async () => {
     render(<CalendarPageStory history={history} />);
-    await calendar.timeGridLayout.click();
-    await calendar.week.click();
+    await calendar.chooseView("Time grid");
+    await calendar.chooseView("Week");
 
     const visibleIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace (ada)", { exact: true });
     await expect.element(visibleIdentity).toBeVisible();
@@ -550,7 +550,7 @@ describe("Calendar page", () => {
       .element(calendar.event("Busy").getByText("Ada Lovelace (ada)", { exact: true }))
       .not.toBeInTheDocument();
 
-    await calendar.month.click();
+    await calendar.chooseView("Month");
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
     await expect
       .poll(() => {
@@ -576,11 +576,10 @@ describe("Calendar page", () => {
 
     await expect.element(calendar.heading).toBeVisible();
     await expect.element(calendar.resourceSchedule).toBeVisible();
-    await expect.element(calendar.resources).toHaveAttribute("aria-pressed", "true");
-    await expect.element(calendar.day).toHaveAttribute("aria-pressed", "true");
+    await expect.element(calendar.viewMenu).toHaveAccessibleName("View: By Item · Day");
     await expect.element(page.getByText("Mass spectrometer", { exact: true })).toBeVisible();
-    await calendar.week.click();
-    await calendar.timeGridLayout.click();
+    await calendar.chooseView("Week");
+    await calendar.chooseView("Time grid");
     await expect.element(calendar.timeGrid).toBeVisible();
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
     const compactIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace (ada)", { exact: true });
@@ -605,9 +604,9 @@ describe("Calendar page", () => {
     await expect.element(calendar.event("Electron microscope")).toBeVisible();
     await page.getByRole("button", { name: "Clear search" }).click();
 
-    await calendar.resources.click();
+    await calendar.chooseView("By Item");
     await expect.element(calendar.resourceSchedule).toBeVisible();
-    await calendar.day.click();
+    await calendar.chooseView("Day");
     await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(4);
     expect(
       bookingPageRequests.calendarBookingRequests.some((request) =>
@@ -616,21 +615,21 @@ describe("Calendar page", () => {
     ).toBe(true);
     await expect.poll(() => page.getByTestId("day-timeline-scroller").all().length).toBe(5);
 
-    await calendar.mine.click();
+    await calendar.toggleQuickFilter("My Bookings");
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
     await expect.element(calendar.event("Electron microscope")).not.toBeInTheDocument();
 
-    await calendar.agenda.click();
+    await calendar.chooseView("Agenda");
     await expect.element(calendar.bookingAgenda).toBeVisible();
-    await calendar.month.click();
+    await calendar.chooseView("Month");
     await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(7);
     await expectNoAxeViolations();
   });
 
   test("keeps a drag-created booking attached to its first resource and blocks a second drag", async () => {
     render(<CalendarPageStory history={history} />);
-    await calendar.resources.click();
-    await calendar.day.click();
+    await calendar.chooseView("By Item");
+    await calendar.chooseView("Day");
     await expect.poll(() => page.getByTestId("day-timeline-canvas").all().length).toBe(5);
     const canvases = calendar.resourceCanvases;
     await calendar.dragResourceSelection(0);
@@ -688,6 +687,38 @@ describe("Calendar page", () => {
     await expect.element(dialog.getByText("Electron microscope", { exact: true })).not.toBeInTheDocument();
   });
 
+  test("creates a booking from a Time grid drag when one bookable item is in scope", async () => {
+    history.replace("/booking/calendar?date=2026-08-17&target=IN123&layout=time-grid");
+    render(<CalendarPageStory history={history} />);
+    await expect.element(calendar.event("Confocal microscope")).toBeVisible();
+    await expect.element(calendar.timeGrid).toHaveAttribute("aria-busy", "false");
+    await expect.element(calendar.timeGridCanvas).not.toHaveAttribute("data-creation-disabled");
+
+    await calendar.dragTimeGridRange(12 * 60, 13 * 60 + 30);
+
+    const dialog = calendar.bookingDialog;
+    await expect.element(dialog).toBeVisible();
+    // The item comes from the Time grid's scope, so the form does not ask for one.
+    await expect.element(dialog.getByText("Bookable item", { exact: true })).not.toBeInTheDocument();
+    await expect.element(dialog.getByLabelText("Start time")).toHaveValue("12:00");
+    await expect.element(dialog.getByLabelText("End time")).toHaveValue("13:30");
+    // The draft is drawn on the grid it came from, and the grid takes no second drag while it is open.
+    await expect.element(calendar.timeGridCanvas.getByTestId("compact-booking-draft-marker")).toBeVisible();
+    await expect.element(calendar.timeGridCanvas).toHaveAttribute("data-creation-disabled", "true");
+  });
+
+  test("keeps the Time grid free of drag creation when several bookable items are in scope", async () => {
+    history.replace("/booking/calendar?date=2026-08-17&layout=time-grid");
+    render(<CalendarPageStory history={history} />);
+    await expect.element(calendar.event("Confocal microscope")).toBeVisible();
+    await expect.element(calendar.timeGrid).toHaveAttribute("aria-busy", "false");
+    await expect.element(calendar.timeGridCanvas).toHaveAttribute("data-creation-disabled", "true");
+
+    await calendar.dragTimeGridRange(12 * 60, 13 * 60);
+
+    await expect.element(calendar.bookingDialog).not.toBeInTheDocument();
+  });
+
   test("does not reject a drag across a repeated hour", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-01T00:00:00Z"));
@@ -731,8 +762,8 @@ describe("Calendar page", () => {
           }}
         />,
       );
-      await calendar.resources.click();
-      await calendar.day.click();
+      await calendar.chooseView("By Item");
+      await calendar.chooseView("Day");
       await expect.poll(() => calendar.resourceCanvases.length).toBe(1);
       const canvas = calendar.resourceCanvases[0];
       await expect.element(canvas).not.toHaveAttribute("data-creation-disabled", "true");
@@ -784,8 +815,8 @@ describe("Calendar page", () => {
 
     history.push("/booking/calendar?date=2026-08-17");
     await expect.element(calendar.heading).toBeVisible();
-    await calendar.resources.click();
-    await calendar.day.click();
+    await calendar.chooseView("By Item");
+    await calendar.chooseView("Day");
     await expect.poll(() => calendar.resourceCanvases.length).toBe(5);
 
     await calendar.dragResourceSelection(0);
@@ -794,8 +825,8 @@ describe("Calendar page", () => {
 
   test("starts a resource booking from the keyboard with a proposed free hour", async () => {
     render(<CalendarPageStory history={history} />);
-    await calendar.resources.click();
-    await calendar.day.click();
+    await calendar.chooseView("By Item");
+    await calendar.chooseView("Day");
     await expect.poll(() => calendar.resourceCanvases.length).toBe(5);
 
     const addForMassSpectrometer = page.getByRole("button", { name: "Add booking for Mass spectrometer" });
@@ -839,8 +870,8 @@ describe("Calendar page", () => {
       ),
     );
     render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
-    await calendar.resources.click();
-    await calendar.day.click();
+    await calendar.chooseView("By Item");
+    await calendar.chooseView("Day");
     await expect.poll(() => calendar.resourceCanvases.length).toBe(1);
 
     const add = page.getByRole("button", { name: "Add booking for Mass spectrometer", exact: true });
@@ -867,8 +898,8 @@ describe("Calendar page", () => {
       }),
     );
     render(<CalendarPageStory history={history} />);
-    await calendar.resources.click();
-    await calendar.day.click();
+    await calendar.chooseView("By Item");
+    await calendar.chooseView("Day");
     await expect.poll(() => calendar.resourceCanvases.length).toBe(5);
 
     await expect.element(page.getByRole("button", { name: "Add booking for Mass spectrometer" })).toBeDisabled();
