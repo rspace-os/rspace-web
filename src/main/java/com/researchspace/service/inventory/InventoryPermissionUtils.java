@@ -291,17 +291,23 @@ public class InventoryPermissionUtils {
   }
 
   public void assertUserCanTransferInventoryRecord(InventoryRecord record, User user) {
-    boolean canRead = canUserReadInventoryRecord(record, user);
+    assertUserCanTransferInventoryRecord(
+        record, user, isPiOrAdminOfRecordOwnerGroup(user, record.getOwner().getUsername()));
+  }
+
+  /** Checks transfer permission using group authority read under database locks. */
+  public void assertUserCanTransferInventoryRecord(
+      InventoryRecord record, User user, boolean hasCurrentGroupAuthority) {
+    boolean ownsRecord = user.getUsername().equals(record.getOwner().getUsername());
+    boolean hasTransferAuthority = ownsRecord || user.hasSysadminRole() || hasCurrentGroupAuthority;
+    boolean canRead = hasTransferAuthority || canUserReadInventoryRecord(record, user);
     if (!canRead) {
       throwNotFoundException(record.getId());
     }
     // can read, just can't transfer. we can show more useful message. A locked (default/system)
     // instrument template cannot be transferred by anyone (transfer does not consult
     // canUserEditInventoryRecord, so the lock is enforced explicitly here too).
-    String invRecOwner = record.getOwner().getUsername();
-    if (isLockedInstrumentTemplate(record)
-        || (!user.getUsername().equals(invRecOwner)
-            && !isPiOrAdminOfRecordOwnerGroup(user, invRecOwner))) {
+    if (isLockedInstrumentTemplate(record) || !hasTransferAuthority) {
       throw new IllegalArgumentException(
           record.getType()
               + " with id ["

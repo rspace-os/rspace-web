@@ -1,5 +1,8 @@
 package com.researchspace.api.v2.openapi;
 
+import com.researchspace.api.v2.controller.ApiV2Problem;
+import com.researchspace.api.v2.model.ApiV2AuditEvent;
+import com.researchspace.api.v2.model.ApiV2CountResult;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
@@ -9,6 +12,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.booking.service.BookingConfigurationTarget;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessPolicy;
@@ -91,6 +95,7 @@ public final class ApiV2OpenApiGenerator {
 
     addStandardSchemas(schemas);
     addResourceAccessSchemas(schemas);
+    ApiV2OpenApiSchemas.schemaFor(BookingConfigurationTarget.class, schemas);
 
     catalog
         .allSchemas()
@@ -120,6 +125,7 @@ public final class ApiV2OpenApiGenerator {
     catalog
         .routableResources()
         .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
+    addBookingDirectoryPaths(paths);
 
     schemas.replaceAll((name, schema) -> withNullableReferenceProperties(schema));
     Map<String, Object> components = new LinkedHashMap<>();
@@ -138,6 +144,10 @@ public final class ApiV2OpenApiGenerator {
                         .name(resource.resourceName())
                         .description(
                             "Operations on the " + resource.resourceName() + " collection.")));
+    tags.add(
+        new Tag()
+            .name("booking-directories")
+            .description("Search bounded Booking access principals and creation targets."));
     return new OpenAPI()
         .openapi("3.1.0")
         .info(
@@ -157,14 +167,8 @@ public final class ApiV2OpenApiGenerator {
         .components(Json31.mapper().convertValue(components, Components.class));
   }
 
-  private static Map<String, Object> privateNoStoreHeaders() {
-    return ordered(
-        "Cache-Control",
-        ordered(
-            "description",
-            "Prevents storage of caller-specific subscription state.",
-            "schema",
-            ordered("type", "string", "const", "private, no-store")));
+  private static void addBookingDirectoryPaths(Map<String, Object> paths) {
+    ApiV2OpenApiBookingPaths.addBookingDirectoryPaths(paths);
   }
 
   private void addPaths(

@@ -66,6 +66,9 @@ class JsonMessageSourceTest {
         "By accepting, you will be removed from the group 'Example Group':",
         "groups.view.removeMe.confirmText",
         "Example Group");
+    assertMessage(
+        "The event changed while it was being edited.",
+        "errors.api.v2.booking.concurrentModification");
   }
 
   @Test
