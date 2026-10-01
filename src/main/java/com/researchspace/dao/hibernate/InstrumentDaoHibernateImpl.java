@@ -6,10 +6,16 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
+import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.UserGroup;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
@@ -18,8 +24,12 @@ import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentReadSummary;
+import com.researchspace.model.resourceaccess.ResourceAudience;
+import jakarta.persistence.LockModeType;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +60,51 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   public InstrumentDaoHibernateImpl() {
     super(Instrument.class);
+  }
+
+  @Override
+  public Optional<Instrument> lockById(Long id) {
+    return getSession()
+        .createQuery(
+            "from Instrument instrument where instrument.id = :id and type(instrument) ="
+                + " Instrument",
+            Instrument.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public boolean hasLockedTransferAuthority(User subject, User owner) {
+    List<UserGroup> subjectMemberships =
+        getSession()
+            .createQuery(
+                "from UserGroup membership "
+                    + "where membership.user.id = :subjectId "
+                    + "and membership.roleInGroup in :transferRoles",
+                UserGroup.class)
+            .setParameter("subjectId", subject.getId())
+            .setParameterList("transferRoles", List.of(RoleInGroup.PI, RoleInGroup.RS_LAB_ADMIN))
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .getResultList();
+    if (subjectMemberships.isEmpty()) {
+      return false;
+    }
+    Set<Long> subjectGroupIds =
+        subjectMemberships.stream()
+            .map(membership -> membership.getGroup().getId())
+            .collect(Collectors.toSet());
+    List<UserGroup> ownerMemberships =
+        getSession()
+            .createQuery(
+                "from UserGroup membership "
+                    + "where membership.user.id = :ownerId and membership.group.id in :groupIds",
+                UserGroup.class)
+            .setParameter("ownerId", owner.getId())
+            .setParameterList("groupIds", subjectGroupIds)
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .getResultList();
+    return !ownerMemberships.isEmpty();
   }
 
   @Override
@@ -114,6 +169,136 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
+  public ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
+      String query, int page, int limit, User caller, Set<String> readableRoleKeys) {
+    if (!caller.hasSysadminRole() && readableRoleKeys.isEmpty()) {
+      return new ResourcePage<>(List.of(), 0);
+    }
+    List<String> groupMembers =
+        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(caller);
+    List<String> groupNames = caller.getGroups().stream().map(Group::getUniqueName).toList();
+    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(caller);
+    Set<Long> bookingGroupIds =
+        caller.getGroups().stream().map(Group::getId).collect(Collectors.toSet());
+    if (bookingGroupIds.isEmpty()) bookingGroupIds = Set.of(-1L);
+
+    String bookingAccess;
+    if (caller.hasSysadminRole()) {
+      bookingAccess = "1=1";
+    } else {
+      bookingAccess =
+          new StringBuilder(
+                  "exists (select assignment.id from ResourceRoleAssignment assignment where")
+              .append(
+                  " assignment.resourceAccess=configuration.resourceAccess and assignment.roleKey")
+              .append(" in (:readableRoleKeys) and (assignment.user.id=:bookingUserId or")
+              .append(" assignment.group.id in (:bookingGroupIds) or")
+              .append(" assignment.audienceKey=:bookingAudience))")
+              .toString();
+    }
+    String containerAccess =
+        readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
+    String nameFilter =
+        query == null || query.isBlank()
+            ? ""
+            : " lower(parent.editInfo.name) like :locationQuery escape '\\'";
+    String whereClause =
+        new StringBuilder("type(instrument)=Instrument and instrument.deleted=false ")
+            .append("and configuration.state=:configurationState and configuration.enabled=true ")
+            .append(
+                "and configuration.target.type=:targetType and"
+                    + " configuration.target.id=instrument.id ")
+            .append("and location.storedInstrument.id=instrument.id and parent.deleted=false and ")
+            .append(bookingAccess)
+            .append(" and ")
+            .append(containerAccess)
+            .append(query == null || query.isBlank() ? "" : " and " + nameFilter)
+            .toString();
+    String fromAndWhere =
+        new StringBuilder(" from BookingConfiguration configuration, Instrument instrument ")
+            .append("join instrument.parentLocation location join location.container parent ")
+            .append("where ")
+            .append(whereClause)
+            .toString();
+
+    Query<Long> countQuery =
+        getSession().createQuery("select count(distinct parent.id)" + fromAndWhere, Long.class);
+    Query<Object[]> pageQuery =
+        getSession()
+            .createQuery(
+                "select parent.id, parent.editInfo.name, parent.containerType"
+                    + fromAndWhere
+                    + " group by parent.id, parent.editInfo.name, parent.containerType"
+                    + " order by lower(parent.editInfo.name), parent.id",
+                Object[].class)
+            .setFirstResult((page - 1) * limit)
+            .setMaxResults(limit);
+    setBookingCatalogueLocationParameters(
+        countQuery,
+        caller,
+        readableRoleKeys,
+        bookingGroupIds,
+        groupMembers,
+        groupNames,
+        visibleOwners,
+        query);
+    setBookingCatalogueLocationParameters(
+        pageQuery,
+        caller,
+        readableRoleKeys,
+        bookingGroupIds,
+        groupMembers,
+        groupNames,
+        visibleOwners,
+        query);
+    long total = countQuery.getSingleResult();
+    List<InstrumentParentLocationSummary> locations =
+        pageQuery
+            .getResultStream()
+            .map(
+                row ->
+                    new InstrumentParentLocationSummary(
+                        (Long) row[0], (String) row[1], (ContainerType) row[2]))
+            .toList();
+    return new ResourcePage<>(locations, total);
+  }
+
+  protected String readableContainerPredicate(
+      User caller,
+      List<String> groupMembers,
+      List<String> groupNames,
+      List<String> visibleOwners,
+      String alias) {
+    return super.readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, alias);
+  }
+
+  private <T> void setBookingCatalogueLocationParameters(
+      Query<T> query,
+      User caller,
+      Set<String> readableRoleKeys,
+      Set<Long> bookingGroupIds,
+      List<String> groupMembers,
+      List<String> groupNames,
+      List<String> visibleOwners,
+      String locationQuery) {
+    query.setParameter("targetType", BookableTargetType.INSTRUMENT);
+    query.setParameter("configurationState", BookingConfigurationState.ACTIVE);
+    if (!caller.hasSysadminRole()) {
+      query
+          .setParameterList("readableRoleKeys", readableRoleKeys)
+          .setParameter("bookingUserId", caller.getId())
+          .setParameterList("bookingGroupIds", bookingGroupIds)
+          .setParameter("bookingAudience", ResourceAudience.ALL_USERS);
+    }
+    addQueryParams(null, caller, query, visibleOwners, groupMembers, groupNames);
+    if (locationQuery != null && !locationQuery.isBlank()) {
+      query.setParameter(
+          "locationQuery",
+          "%" + LikeEscaper.escape(locationQuery.trim().toLowerCase(Locale.ROOT)) + "%");
+    }
+  }
+
+  @Override
   public Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user) {
     if (instrumentIds.isEmpty()) {
       return Map.of();
@@ -160,6 +345,105 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         .setParameter("instrumentIds", instrumentIds)
         .getResultStream()
         .collect(Collectors.toMap(InstrumentNameRow::instrumentId, InstrumentNameRow::name));
+  }
+
+  @Override
+  public Map<Long, InstrumentReadSummary> getBookingSummaries(Set<Long> instrumentIds) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    return criteriaBuilderFactory()
+        .create(getSession(), InstrumentScalarRow.class)
+        .from(Instrument.class, "instrument")
+        .selectNew(InstrumentScalarRow.class)
+        .with("instrument.id")
+        .with("instrument.editInfo.name")
+        .with("instrument.deleted")
+        .end()
+        .whereExpression("type(instrument) = Instrument")
+        .whereExpression("instrument.id in :instrumentIds")
+        .setParameter("instrumentIds", instrumentIds)
+        .getResultStream()
+        .map(
+            row ->
+                new InstrumentReadSummary(
+                    row.instrumentId(), row.name(), row.deleted(), null, null, null))
+        .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
+  }
+
+  @Override
+  public Map<Long, Instrument> getBookingRelationshipTargets(Set<Long> instrumentIds) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    return getSession()
+        .createQuery(
+            "from Instrument instrument where type(instrument) = Instrument "
+                + "and instrument.id in (:instrumentIds)",
+            Instrument.class)
+        .setParameter("instrumentIds", instrumentIds)
+        .getResultStream()
+        .collect(Collectors.toMap(Instrument::getId, instrument -> instrument));
+  }
+
+  @Override
+  public List<Instrument> searchEligibleBookingTargets(String query, int limit, User subject) {
+    boolean byGlobalId = query.matches("(?i)IN[0-9]+");
+    String searchPredicate =
+        byGlobalId
+            ? "concat('IN', cast(instrument.id as string)) = :query"
+            : "lower(instrument.editInfo.name) like :query escape '\\'";
+    StringBuilder hql =
+        new StringBuilder("from Instrument instrument where type(instrument) = Instrument and")
+            .append(" instrument.deleted = false and ")
+            .append(searchPredicate)
+            .append(" and not exists (select configuration.id from")
+            .append(" BookingConfiguration configuration where configuration.target.type =")
+            .append(" :targetType and configuration.target.id = instrument.id)");
+    if (!subject.hasSysadminRole()) {
+      hql.append(" and instrument.owner.id = :subjectId");
+    }
+    hql.append(" order by lower(instrument.editInfo.name), instrument.id");
+    Query<Instrument> targetQuery =
+        getSession()
+            .createQuery(hql.toString(), Instrument.class)
+            .setParameter(
+                "query",
+                byGlobalId
+                    ? query.toUpperCase(Locale.ROOT)
+                    : "%" + LikeEscaper.escape(query.toLowerCase(Locale.ROOT)) + "%")
+            .setParameter(
+                "targetType", com.researchspace.model.booking.BookableTargetType.INSTRUMENT)
+            .setMaxResults(limit);
+    if (!subject.hasSysadminRole()) {
+      targetQuery.setParameter("subjectId", subject.getId());
+    }
+    return targetQuery.getResultList();
+  }
+
+  @Override
+  public Set<Long> searchBookingCatalogueTargetIds(String search, User subject) {
+    if (search == null || search.isBlank()) {
+      return Set.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(subject);
+    String hql =
+        "select distinct instrument.id from Instrument instrument "
+            + "left join instrument.parentLocation location "
+            + "left join location.container parent "
+            + "where type(instrument) = Instrument and instrument.deleted = false "
+            + "and (lower(instrument.editInfo.name) like :search escape '\\' "
+            + "or lower(instrument.editInfo.description) like :search escape '\\' "
+            + "or (location.storedInstrument.id = instrument.id and parent.deleted = false and "
+            + context.readableContainerPredicate(this, "parent")
+            + " and lower(parent.editInfo.name) like :search escape '\\'))";
+    Query<Long> query =
+        getSession()
+            .createQuery(hql, Long.class)
+            .setParameter(
+                "search", "%" + LikeEscaper.escape(search.trim().toLowerCase(Locale.ROOT)) + "%");
+    context.bind(query, null);
+    return Set.copyOf(query.getResultList());
   }
 
   @Override
