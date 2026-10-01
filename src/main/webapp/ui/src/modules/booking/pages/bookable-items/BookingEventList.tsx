@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import type { Booking } from "@/modules/booking/domain/booking";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
@@ -60,7 +61,14 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
               minWidth: 220,
               dependencies: ["end"],
               renderCell: ({ row }) => (
-                <time dateTime={row.start}>{formatter.formatRange(new Date(row.start), new Date(row.end))}</time>
+                <BookingInstrumentTimeTooltip
+                  start={row.start}
+                  end={row.end}
+                  displayTimeZone={timezone}
+                  instrumentTimeZone={row.timezone}
+                >
+                  <time dateTime={row.start}>{formatter.formatRange(new Date(row.start), new Date(row.end))}</time>
+                </BookingInstrumentTimeTooltip>
               ),
             },
           },
@@ -69,6 +77,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             name: "kind",
             type: "text",
             labelKey: "booking:bookableItemDetails.events.kind",
+            label: t("bookableItemDetails.events.kind"),
             list: {
               width: 180,
               renderCell: ({ row }) =>

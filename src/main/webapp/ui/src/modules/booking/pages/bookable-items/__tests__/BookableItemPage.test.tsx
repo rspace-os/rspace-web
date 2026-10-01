@@ -104,6 +104,7 @@ describe("BookableItemPage", () => {
     const maximum = await screen.findByRole("spinbutton", {
       name: "booking:bookableItemDetails.fields.maximumDuration",
     });
+    expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
     await user.clear(maximum);
     await user.type(maximum, "60");
     current = {

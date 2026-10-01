@@ -4,6 +4,8 @@ import static com.researchspace.core.util.MediaUtils.getExtension;
 import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 import static com.researchspace.model.preference.Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL;
 import static com.researchspace.model.preference.Preference.BROADCAST_REQUEST_BY_EMAIL;
+import static com.researchspace.model.preference.Preference.NOTIFICATION_BOOKING_CANCELLED_PREF;
+import static com.researchspace.model.preference.Preference.NOTIFICATION_BOOKING_CREATED_PREF;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_DELETED_PREF;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_EDITED_PREF;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_SHARED_PREF;
@@ -168,6 +170,8 @@ public class UserProfileController extends BaseController {
           NOTIFICATION_DOCUMENT_DELETED_PREF,
           NOTIFICATION_DOCUMENT_EDITED_PREF,
           NOTIFICATION_REQUEST_STATUS_CHANGE_PREF,
+          NOTIFICATION_BOOKING_CREATED_PREF,
+          NOTIFICATION_BOOKING_CANCELLED_PREF,
           PROCESS_FAILED_PREF,
           PROCESS_COMPLETED_PREF,
           BROADCAST_REQUEST_BY_EMAIL,

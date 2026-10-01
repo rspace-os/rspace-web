@@ -17,6 +17,7 @@ import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationCapabilities;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
@@ -32,6 +33,7 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
@@ -70,6 +72,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private final BookingItemPermissions itemPermissions;
   private final BookingCalendarSubscriptionDao calendarSubscriptions;
   private final TimeSlotBookingDao timeSlotBookings;
+  private final BookingNotificationService bookingNotificationService;
   private final BookingCalendarPermissionGateDao permissionGate;
 
   @Autowired
@@ -89,6 +92,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       @Qualifier("bookingCalendarSubscriptionDao")
           BookingCalendarSubscriptionDao calendarSubscriptions,
       @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings,
+      BookingNotificationService bookingNotificationService,
       BookingCalendarPermissionGateDao permissionGate) {
     this.auditDao = auditDao;
     this.bookingConfigurationDao = bookingConfigurationDao;
@@ -101,6 +105,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     this.itemPermissions = itemPermissions;
     this.calendarSubscriptions = calendarSubscriptions;
     this.timeSlotBookings = timeSlotBookings;
+    this.bookingNotificationService = bookingNotificationService;
     this.permissionGate = permissionGate;
   }
 
@@ -496,6 +501,11 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       booking.setState(BookingState.CANCELLED);
       booking.setUpdatedAt(timestamp);
       booking.setUpdatedBy(actor);
+      TimeSlotBooking saved = timeSlotBookings.saveAndFlush(booking);
+      if (booking.getKind() == BookingEventKind.BOOKING) {
+        bookingNotificationService.notify(
+            saved, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+      }
       events.publishEvent(
           new TimeSlotBookingAuditEvent(actor, subject, booking, AuditAction.WRITE));
     }

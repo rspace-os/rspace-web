@@ -1,4 +1,8 @@
 {
+  "bookingNotifications": {
+    "created": "Booking {0} was created for instrument {1} ({2}) from {3} to {4}.",
+    "cancelled": "Booking {0} for instrument {1} ({2}) was cancelled. It was scheduled from {3} to {4}."
+  },
   "bookingFixtures": {
     "description": "Docker development booking fixture",
     "instruments": {

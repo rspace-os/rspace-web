@@ -7,6 +7,9 @@ type BaseEvent = {
   id: string;
   startMinute: number;
   endMinute: number;
+  startInstant?: string;
+  endInstant?: string;
+  instrumentTimeZone?: string | null;
 };
 
 export type DayTimelineItem = {
