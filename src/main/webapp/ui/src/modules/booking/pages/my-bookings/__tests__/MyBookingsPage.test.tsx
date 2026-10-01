@@ -1,3 +1,5 @@
+import { HttpResponse, http } from "msw";
+import { currentUser } from "../../calendar/calendarFixtures";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -33,10 +35,10 @@ function renderPage(
   docs?: readonly unknown[],
 ) {
   const location = new URL(path, window.location.origin);
-  // useTableListQueryString checks the browser URL when deciding whether URL state or saved local
-  // state owns the initial view, so keep jsdom and the nuqs adapter on the same location.
-  window.history.replaceState({}, "", `${location.pathname}${location.search}`);
-  server.use(...bookingHandlers(onListRequest, onCountRequest, docs));
+  server.use(
+    http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+    ...bookingHandlers(onListRequest, onCountRequest, docs),
+  );
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
@@ -44,8 +46,9 @@ function renderPage(
     ["api-v2", "openapi", "bookings"],
     apiV2CollectionMetadataFromOpenApi(bookingsOpenApi, "bookings"),
   );
-  const syncWindowUrl = ({ queryString }: UrlUpdateEvent) => {
-    window.history.replaceState({}, "", `${location.pathname}${queryString}`);
+  let search = location.search;
+  const onUrlUpdate = ({ queryString }: UrlUpdateEvent) => {
+    search = queryString;
   };
   const root = createRootRoute({ component: Outlet });
   const pageRoute = createRoute({
@@ -65,23 +68,23 @@ function renderPage(
   render(
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={null}>
-        <NuqsTestingAdapter searchParams={location.search} hasMemory onUrlUpdate={syncWindowUrl}>
+        <NuqsTestingAdapter searchParams={location.search} hasMemory onUrlUpdate={onUrlUpdate}>
           <RouterProvider router={router as never} />
         </NuqsTestingAdapter>
       </Suspense>
     </QueryClientProvider>,
   );
+  return { searchParams: () => new URLSearchParams(search) };
 }
 
 beforeEach(() => {
   window.localStorage.clear();
-  window.history.replaceState({}, "", "/");
 });
 
 describe("My Bookings page", () => {
   it("keeps TableList URL state while replacing only the period scope", async () => {
     const requests: URL[] = [];
-    renderPage(initialPath, 84, (url) => requests.push(url));
+    const { searchParams } = renderPage(initialPath, 84, (url) => requests.push(url));
     const user = userEvent.setup();
 
     expect(await screen.findByRole("heading", { name: "Test user bookings" })).toHaveClass("text-2xl", "font-semibold");
@@ -101,12 +104,12 @@ describe("My Bookings page", () => {
     await waitFor(() =>
       expect(screen.getByRole("textbox", { name: "common:tableList.search.label" })).toHaveValue("confocal"),
     );
-    await waitFor(() => expect(new URLSearchParams(window.location.search).get("my-bookings.q")).toBe("confocal"));
-    const columnsBeforePeriodChange = new URLSearchParams(window.location.search).get("my-bookings.columns");
+    await waitFor(() => expect(searchParams().get("my-bookings.q")).toBe("confocal"));
+    const columnsBeforePeriodChange = searchParams().get("my-bookings.columns");
 
     await user.click(screen.getByRole("button", { name: "booking:myBookings.period.past" }));
-    await waitFor(() => expect(new URLSearchParams(window.location.search).get("period")).toBe("past"));
-    const parameters = new URLSearchParams(window.location.search);
+    await waitFor(() => expect(searchParams().get("period")).toBe("past"));
+    const parameters = searchParams();
     expect(parameters.get("my-bookings.q")).toBe("confocal");
     expect(parameters.get("my-bookings.where")).toBe("target.name=contains=scope");
     expect(parameters.get("my-bookings.columns")).toBe(columnsBeforePeriodChange);
@@ -118,8 +121,8 @@ describe("My Bookings page", () => {
     expect(pastWhere).toContain("state==CANCELLED");
 
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.resetToDefaults" }));
-    await waitFor(() => expect(new URLSearchParams(window.location.search).get("period")).toBe("past"));
-    const current = new URLSearchParams(window.location.search);
+    await waitFor(() => expect(searchParams().get("period")).toBe("past"));
+    const current = searchParams();
     expect(current.get("my-bookings.q")).toBeNull();
     expect(current.get("my-bookings.where")).toBeNull();
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("where")).toContain("end=le="));
@@ -174,12 +177,13 @@ describe("My Bookings page", () => {
     expect(await table.findByText(expectedStart)).toBeVisible();
   });
 
-  it("keeps a role-lost requester's target label read-only without item navigation", async () => {
+  it("shows an unknown item for a role-lost requester without item navigation", async () => {
     renderPage(initialPath, 84, undefined, undefined, [roleLostBooking]);
 
     const table = within(await screen.findByRole("table"));
-    expect(await table.findByText("Confocal microscope")).toBeVisible();
-    expect(table.getByText("IN123", { exact: true })).toBeVisible();
+    expect(await table.findByText("common:values.unknownItem")).toBeVisible();
+    expect(table.queryByText("Confocal microscope")).not.toBeInTheDocument();
+    expect(table.queryByText("IN123", { exact: true })).not.toBeInTheDocument();
     expect(table.getByRole("link", { name: "booking:myBookings.actions.viewDetails" })).toHaveAttribute(
       "href",
       "/booking/calendar/bookings/43",

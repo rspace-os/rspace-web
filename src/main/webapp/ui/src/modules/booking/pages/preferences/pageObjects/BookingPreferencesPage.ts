@@ -9,7 +9,7 @@ export class BookingPreferencesPage {
   readonly custom: Locator = page.getByRole("radio", { name: "Use Custom Timezone" });
   readonly customTimezone: Locator = page.getByRole("combobox", { name: "Custom timezone" });
   readonly save: Locator = page.getByRole("button", { name: "Save" });
+  readonly saved: Locator = page.getByRole("button", { name: "Saved" });
   readonly reset: Locator = page.getByRole("button", { name: "Reset to global defaults" });
-  readonly saved: Locator = page.getByText("Booking preferences saved.");
   readonly resetComplete: Locator = page.getByText("Global Booking defaults restored.");
 }

@@ -14,7 +14,7 @@ export { AtAGlanceWidget } from "./AtAGlanceWidget";
 export { DashboardQuickActions } from "./DashboardQuickActions";
 export { UpcomingBookingsWidget } from "./UpcomingBookingsWidget";
 
-const dashboardPagePadding = "space-y-8 p-4 sm:p-8";
+const dashboardPagePadding = "space-y-8 p-4 sm:px-8 sm:pb-8";
 
 function DashboardSkeleton() {
   const { t } = useTranslation("common");

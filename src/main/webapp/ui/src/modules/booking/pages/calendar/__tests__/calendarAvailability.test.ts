@@ -1,9 +1,16 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
+import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
-import { loadCalendarAvailability, loadDatedCalendarAvailability } from "../calendarAvailability";
+import {
+  loadCalendarAvailability,
+  loadDatedCalendarAvailability,
+  useCalendarAvailability,
+} from "../calendarAvailability";
 
 function envelope(docs: unknown[], page = 1, totalPages = 1, totalDocs = docs.length) {
   return {
@@ -83,6 +90,32 @@ const closureId = (globalId: string, startsAt: string, endsAt: string) =>
   `opening-hours:${globalId}:${new Date(startsAt).toISOString()}:${new Date(endsAt).toISOString()}`;
 
 describe("calendar availability", () => {
+  it("does not reuse another caller's booking intervals for the same date and items", async () => {
+    let requests = 0;
+    server.use(
+      http.get("/api/v2/bookings", () => {
+        requests += 1;
+        return HttpResponse.json(
+          envelope(requests === 1 ? [booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")] : []),
+        );
+      }),
+    );
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result, rerender } = renderHook(
+      ({ caller }) =>
+        useCalendarAvailability([{ globalId: "IN1", timezone: "UTC", ...schedule }], "2026-08-17", "token", caller),
+      { wrapper, initialProps: { caller: "first" } },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.get("IN1")?.some((entry) => entry.kind === "booking")).toBe(true);
+    rerender({ caller: "second" });
+    expect(result.current.data).toBeUndefined();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.get("IN1")?.some((entry) => entry.kind === "booking")).toBe(false);
+    expect(requests).toBe(2);
+  });
+
   it("classifies maintenance as a blockout while retaining its details and buffers", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
@@ -189,8 +222,9 @@ describe("calendar availability", () => {
     );
 
     const where = requestUrl?.searchParams.get("where") ?? "";
-    expect(where).toContain("start<2026-08-18T15:00:00Z");
-    expect(where).toContain("end>2026-08-17T07:00:00Z");
+    expect(where).toContain("start=lt=2026-08-18T15:00:00Z");
+    expect(where).toContain("end=gt=2026-08-17T07:00:00Z");
+    expect(where).not.toMatch(/start<|end>/);
     expect(result.get("IN1")).toEqual([
       sourced("booking:1", "booking", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
     ]);

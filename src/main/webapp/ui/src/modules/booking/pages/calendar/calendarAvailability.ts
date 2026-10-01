@@ -62,7 +62,7 @@ const PageSchema = v.object({
 });
 
 function bookingWhere(globalIds: readonly string[], start: string, end: string): string {
-  return `target=in=(${globalIds.join(",")});start<${end};end>${start};state==CONFIRMED`;
+  return `target=in=(${globalIds.join(",")});start=lt=${end};end=gt=${start};state==CONFIRMED`;
 }
 
 async function fetchPage(
@@ -238,7 +238,7 @@ async function loadAvailability(
     rowIntervalById.set(row.globalId, rowInterval);
   }
   for (const booking of bookings) {
-    if (booking.state !== "CONFIRMED") continue;
+    if (booking.state !== "CONFIRMED" || booking.target === null) continue;
     const rowInterval = rowIntervalById.get(booking.target.globalId);
     if (!rowInterval || (rowInterval.row.allowDoubleBooking && booking.kind === "BOOKING")) continue;
     const clipped = bookingInterval(booking, rowInterval.row, rowInterval.interval);
@@ -298,6 +298,7 @@ export function useCalendarAvailability(
   rows: readonly CalendarAvailabilityRow[],
   intervalOrDate: AbsoluteDisplayInterval | string,
   token: string,
+  authScope: string | number = token,
 ) {
   const interval =
     typeof intervalOrDate === "string"
@@ -315,7 +316,7 @@ export function useCalendarAvailability(
     ])
     .toSorted();
   return useQuery({
-    queryKey: ["api-v2", "bookings", "calendar-availability", sortedRows, interval.start, interval.end],
+    queryKey: ["api-v2", "bookings", "calendar-availability", sortedRows, interval.start, interval.end, authScope],
     queryFn: ({ signal }) => loadCalendarAvailability(rows, interval, token, signal),
     enabled: rows.length > 0 && token.length > 0,
     staleTime: 30_000,
