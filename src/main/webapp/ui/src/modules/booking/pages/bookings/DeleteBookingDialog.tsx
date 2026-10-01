@@ -26,6 +26,7 @@ type DeleteBookingDialogProps = {
   eventKind?: BookingEventKind;
   disabled?: boolean;
   iconOnly?: boolean;
+  triggerVariant?: "outline" | "destructive";
   onDeleted: () => void | Promise<void>;
 };
 
@@ -55,6 +56,7 @@ export function DeleteBookingDialog({
   eventKind = "BOOKING",
   disabled = false,
   iconOnly = false,
+  triggerVariant = "destructive",
   onDeleted,
 }: DeleteBookingDialogProps) {
   const { t } = useTranslation(["booking", "common"]);
@@ -107,7 +109,7 @@ export function DeleteBookingDialog({
           <TooltipTrigger render={<span className="inline-flex" tabIndex={-1} />}>
             <AlertDialogTrigger
               disabled={disabled || isDeleting}
-              render={<Button type="button" size="icon-lg" variant="destructive" aria-label={cancelLabel} />}
+              render={<Button type="button" size="icon-lg" variant={triggerVariant} aria-label={cancelLabel} />}
             >
               <CalendarX2Icon aria-hidden="true" />
             </AlertDialogTrigger>
@@ -117,7 +119,7 @@ export function DeleteBookingDialog({
       ) : (
         <AlertDialogTrigger
           disabled={disabled || isDeleting}
-          render={<Button type="button" size="sm" variant="destructive" />}
+          render={<Button type="button" size="sm" variant={triggerVariant} />}
         >
           {cancelLabel}
         </AlertDialogTrigger>

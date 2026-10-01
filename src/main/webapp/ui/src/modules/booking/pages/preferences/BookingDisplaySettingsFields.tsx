@@ -1,11 +1,12 @@
 import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
 import {
   type BookingDisplayPreferencesInput,
+  BookingDisplayPreferencesInputSchema,
   type BookingTimezoneMode,
   bookingTimeZoneOptions,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 
@@ -25,6 +26,10 @@ export function BookingDisplaySettingsFields({
   const { t } = useTranslation("booking");
   const id = useId();
   const timezoneListId = `${id}-timezones`;
+  const endTimeDescriptionId = `${id}-end-description`;
+  const errorId = `${id}-error`;
+  const validation = v.safeParse(BookingDisplayPreferencesInputSchema, value);
+  const errors = validation.success ? undefined : v.flatten(validation.issues).nested;
   const timezoneOptions = useMemo(
     () => bookingTimeZoneOptions(browserTimezone, institutionTimezone, value.customTimezone),
     [browserTimezone, institutionTimezone, value.customTimezone],
@@ -43,6 +48,8 @@ export function BookingDisplaySettingsFields({
               id={`${id}-start`}
               type="time"
               required
+              aria-invalid={Boolean(errors?.availabilityWindowStart)}
+              aria-describedby={errors?.availabilityWindowStart ? errorId : undefined}
               value={value.availabilityWindowStart}
               onChange={(event) => patch({ availabilityWindowStart: event.currentTarget.value })}
             />
@@ -52,19 +59,19 @@ export function BookingDisplaySettingsFields({
             <Input
               id={`${id}-end`}
               type="time"
-              required={value.availabilityWindowEnd !== "24:00"}
-              disabled={disabled || value.availabilityWindowEnd === "24:00"}
-              value={value.availabilityWindowEnd === "24:00" ? "" : value.availabilityWindowEnd}
-              onChange={(event) => patch({ availabilityWindowEnd: event.currentTarget.value })}
+              required
+              aria-invalid={Boolean(errors?.availabilityWindowEnd)}
+              aria-describedby={`${endTimeDescriptionId}${errors?.availabilityWindowEnd ? ` ${errorId}` : ""}`}
+              value={value.availabilityWindowEnd === "24:00" ? "00:00" : value.availabilityWindowEnd}
+              onChange={(event) =>
+                patch({
+                  availabilityWindowEnd: event.currentTarget.value === "00:00" ? "24:00" : event.currentTarget.value,
+                })
+              }
             />
-            <Label className="flex items-center gap-2 font-normal">
-              <Checkbox
-                checked={value.availabilityWindowEnd === "24:00"}
-                disabled={disabled}
-                onCheckedChange={(checked) => patch({ availabilityWindowEnd: checked ? "24:00" : "18:00" })}
-              />
+            <p id={endTimeDescriptionId} className="text-sm text-muted-foreground">
               {t("preferences.availabilityWindow.endOfDay")}
-            </Label>
+            </p>
           </div>
         </div>
       </fieldset>
@@ -100,6 +107,8 @@ export function BookingDisplaySettingsFields({
             id={`${id}-custom-timezone`}
             role="combobox"
             aria-expanded="false"
+            aria-invalid={Boolean(errors?.customTimezone)}
+            aria-describedby={errors?.customTimezone ? errorId : undefined}
             list={timezoneListId}
             value={value.customTimezone ?? ""}
             disabled={disabled || value.timezoneMode !== "CUSTOM"}
@@ -112,6 +121,11 @@ export function BookingDisplaySettingsFields({
           </datalist>
         </div>
       </fieldset>
+      {!validation.success ? (
+        <p id={errorId} role="alert" className="text-sm text-destructive">
+          {t("preferences.errors.invalid")}
+        </p>
+      ) : null}
     </div>
   );
 }
