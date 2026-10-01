@@ -16,6 +16,7 @@ describe("generated application routes", () => {
     ["/public/maintenanceInProgress", "/public/maintenanceInProgress/", "__root__"],
     ["/public/apiDocs", "/public/apiDocs/", "__root__"],
     ["/booking", "/booking/", "/booking"],
+    ["/booking/calendar", "/booking/calendar/", "/booking"],
     ["/booking/preferences", "/booking/preferences/", "/booking"],
     ["/booking/config/bookable-items", "/booking/config/bookable-items/", "/booking"],
     ["/booking/config/settings", "/booking/config/settings/", "/booking"],
@@ -31,6 +32,7 @@ describe("generated application routes", () => {
   });
 
   it.each([
+    ["/booking/calendar?date=2026-02-30&target=IN42", { date: undefined, target: "IN42" }],
     ["/booking/bookable-items/add?target=IN42", { target: "IN42" }],
     ["/booking/bookable-items/IN42?edit=true", { edit: true }],
   ])("attaches search validation to %s", async (path, search) => {
