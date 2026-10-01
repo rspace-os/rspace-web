@@ -80,7 +80,7 @@ export function CalendarFilterControls({
         onNext={() => onDateChange(shiftDate(date, view, 1))}
         onDateChange={onDateChange}
       />
-      <fieldset className="min-w-0">
+      <fieldset className="ml-auto min-w-0">
         <legend className="sr-only">{t("calendar.displayControls")}</legend>
         <div className="flex flex-wrap items-center gap-2">
           <SegmentedControl

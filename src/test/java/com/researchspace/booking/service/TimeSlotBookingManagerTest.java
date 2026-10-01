@@ -209,7 +209,7 @@ class TimeSlotBookingManagerTest {
         .thenReturn(Optional.of(configuration(4L, 12L, true)));
     for (String value : List.of("2025-11-30T23:55:00Z", "2025-12-01T00:00:00Z")) {
       assertThrows(
-          BookingWindowException.class,
+          BookingStartInPastException.class,
           () ->
               manager.createBooking(
                   new TimeSlotBookingManager.Create(
@@ -226,7 +226,7 @@ class TimeSlotBookingManagerTest {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     stubReadableBookingAndConfigurationLock(existing);
     assertThrows(
-        BookingWindowException.class,
+        BookingStartInPastException.class,
         () ->
             manager.updateBooking(
                 41L,
@@ -635,6 +635,18 @@ class TimeSlotBookingManagerTest {
                     event ->
                         event instanceof TimeSlotBookingAuditEvent bookingEvent
                             && bookingEvent.action() == AuditAction.WRITE));
+    TimeSlotBooking retried =
+        manager
+            .updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
+                cancelled.getVersion(),
+                actor,
+                actor)
+            .orElseThrow();
+    assertSame(cancelled, retried);
+    verify(bookingDao, times(1)).saveAndFlush(any(TimeSlotBooking.class));
+    verify(events, times(1)).publishEvent(any(TimeSlotBookingAuditEvent.class));
     assertThrows(
         BookingStateTransitionException.class,
         () ->

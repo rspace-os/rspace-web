@@ -3,8 +3,18 @@ import { act, renderHook } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import { upcomingBooking } from "@/modules/booking/pages/my-bookings/mocks/bookingMocks";
 import { bookingCreationProblemKey, isBookingCreationOutcomeUncertain, useCreateBooking } from "../useCreateBooking";
+
+it("maps a past start rejection separately from a reversed interval", () => {
+  expect(bookingCreationProblemKey(new ApiV2ProblemError(400, "errors.api.v2.booking.startInPast", "past"))).toBe(
+    "bookings.errors.startInPast",
+  );
+  expect(bookingCreationProblemKey(new ApiV2ProblemError(400, "errors.api.v2.booking.window", "window"))).toBe(
+    "bookings.errors.endAfterStart",
+  );
+});
 
 it("invalidates every booking view after creation, including the item list and availability index", async () => {
   server.use(http.post("/api/v2/bookings", () => HttpResponse.json(upcomingBooking)));
