@@ -5458,6 +5458,7 @@ components:
         - numericValue
         - unitId
     OperationOrigin:
+      type: object
       description: |
         A subsample an operation consumes, identified by its global id (`SS` prefix). A sample or
         container id is rejected.
@@ -5475,6 +5476,7 @@ components:
       required:
         - globalId
     OperationOriginWithAmount:
+      type: object
       description: |
         An origin of an operation that takes an amount from it.
 
@@ -5491,6 +5493,7 @@ components:
           required:
             - amountTaken
     CreatingOperationFields:
+      type: object
       description: |
         The fields shared by every operation that creates a sample: the sample's name, how many
         subsamples to create and how much each holds, and the optional template and documentation
@@ -5529,6 +5532,7 @@ components:
         - sampleName
         - eachAmount
     AliquotOperation:
+      type: object
       description: |
         Aliquot request. `count` is optional and defaults to 1; it may not exceed 100.
         `templateId` and `documentedByGlobalId` are optional.
@@ -5556,6 +5560,7 @@ components:
         templateId: 42
         documentedByGlobalId: SD99
     PassageOperation:
+      type: object
       description: |
         Passage request. The origin takes no `amountTaken`: this operation does not decrement it.
         `count` is optional and defaults to 1; it may not exceed 100.
@@ -5575,6 +5580,7 @@ components:
           numericValue: 5
           unitId: 3
     PoolOperation:
+      type: object
       description: |
         Pool request. Two or more origins, all holding the same measurement category. `count` is
         optional and defaults to 1; it may not exceed 100.
@@ -5653,6 +5659,7 @@ components:
           numericValue: 13
           unitId: 3
     DeriveOperation:
+      type: object
       description: |
         Derive request. `processName` names the process that produced the new material and
         appears in the generated provenance field. `count` is optional and defaults to 1; it may
@@ -5684,6 +5691,7 @@ components:
           numericValue: 1
           unitId: 3
     CryopreserveOperation:
+      type: object
       description: |
         Cryopreserve request. `storageTemp` is required and must be at or below -18 degrees
         Celsius. `cryomedium` is optional. `count` is optional and defaults to 1; it may not
@@ -5720,6 +5728,7 @@ components:
           numericValue: -80
           unitId: 8
     ReviveOperation:
+      type: object
       description: |
         Revive request. `storageTemp` is optional, defaults to 4 degrees Celsius, and must be
         between 4 and 120 degrees Celsius. `count` is optional and defaults to 1; it may not
@@ -5748,6 +5757,7 @@ components:
           numericValue: 4
           unitId: 8
     DestroyOperation:
+      type: object
       description: |
         Destroy request. The origin only: this operation creates no sample, so it takes no name,
         template or documentation target.
