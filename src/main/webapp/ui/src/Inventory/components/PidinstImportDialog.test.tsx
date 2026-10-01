@@ -274,7 +274,6 @@ describe("PidinstImportDialog", () => {
 
     const preview = screen.getByRole("region", { name: "inventory:pidinstImport.preview.title" });
     const landingPage = previewValue(preview, "inventory:pidinstImport.preview.landingPage");
-    // without a scheme, the href would open a page of this RSpace
     expect(landingPage).toHaveTextContent("www.example.org/lsm980");
     expect(within(landingPage).queryByRole("link")).not.toBeInTheDocument();
   });
@@ -642,7 +641,6 @@ describe("PidinstImportDialog", () => {
     await user.click(radioFor("Confocal Microscope"));
     await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
-    // the import still succeeds, still reports the new instrument and still shows the success toast
     expect(await screen.findByText("inventory:pidinstImport.importSuccess")).toBeVisible();
     expect(onImported).toHaveBeenCalledWith({ id: 77, globalId: "IN77" });
 

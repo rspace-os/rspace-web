@@ -1,6 +1,6 @@
-import { cleanup, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { useContext, useEffect } from "react";
-import { afterEach, describe, expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import Alerts from "../Alerts";
@@ -25,10 +25,6 @@ function ShowsWarningWithAWrappingMessage() {
   return null;
 }
 
-afterEach(() => {
-  cleanup();
-});
-
 describe("Alerts", () => {
   test("keeps the variant icon clear of the title when the message wraps", async () => {
     render(
@@ -40,7 +36,6 @@ describe("Alerts", () => {
     const title = toast.getByText("Some registry entries were not imported");
     await expect.element(title).toBeVisible();
 
-    // a wrapping message squeezed the icon's cell until the white icon touched the white title;
     // the icon is decorative and aria-hidden, so it is found by its MUI test id
     await expect
       .poll(() => {

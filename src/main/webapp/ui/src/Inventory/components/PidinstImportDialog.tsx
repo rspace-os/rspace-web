@@ -61,7 +61,6 @@ export type PidinstRecord = {
   commissioned?: string;
   decommissioned?: string;
   landingPage?: string;
-  /** The registry's entries for these two link fields, as the import reads them (RSDEV-1528). */
   measurementTechniques: ReadonlyArray<string>;
   calibrations: ReadonlyArray<string>;
   alternateIdentifier?: string;
@@ -93,10 +92,6 @@ type ImportedInstrumentResponse = {
   id: number;
   globalId: string;
   name: string;
-  /**
-   * Present only when the record carried a Measurement Technique or Calibration entry that could
-   * not be linked (RSDEV-1528). The server sends the reason as a code; the words are this dialog's.
-   */
   skippedRelatedIdentifiers?: ReadonlyArray<SkippedRelatedIdentifier>;
 };
 
@@ -167,21 +162,11 @@ function ExternalLink({ href }: { href: string }) {
   );
 }
 
-/** A registry value that is not an absolute http(s) address, e.g. a bare DOI, is no href. */
 const isWebAddress = (value: string): boolean =>
   URL.canParse(value) && ["http:", "https:"].includes(new URL(value).protocol);
 
 function Address({ value }: { value: string }) {
   return isWebAddress(value) ? <ExternalLink href={value} /> : value;
-}
-
-/** One per line: a record may carry several entries for one field. */
-function Addresses({ values }: { values: ReadonlyArray<string> }) {
-  return values.map((value) => (
-    <Box key={value} component="span" sx={{ display: "block" }}>
-      <Address value={value} />
-    </Box>
-  ));
 }
 
 function RecordPreview({ record }: { record: PidinstRecord }) {
@@ -252,12 +237,20 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
         )}
         {record.measurementTechniques.length > 0 && (
           <PreviewField label={t("pidinstImport.preview.measurementTechnique")}>
-            <Addresses values={record.measurementTechniques} />
+            <Stack component="span">
+              {record.measurementTechniques.map((value) => (
+                <Address key={value} value={value} />
+              ))}
+            </Stack>
           </PreviewField>
         )}
         {record.calibrations.length > 0 && (
           <PreviewField label={t("pidinstImport.preview.calibration")}>
-            <Addresses values={record.calibrations} />
+            <Stack component="span">
+              {record.calibrations.map((value) => (
+                <Address key={value} value={value} />
+              ))}
+            </Stack>
           </PreviewField>
         )}
         {record.alternateIdentifier && (
@@ -421,7 +414,6 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
         addAlert(
           mkAlert({
             variant: "warning",
-            // stays until dismissed: the user has to learn which entries the new instrument lacks
             isInfinite: true,
             title: t("pidinstImport.skipped.title"),
             message: t("pidinstImport.skipped.message", { count: skipped.length }),
