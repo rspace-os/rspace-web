@@ -1,10 +1,10 @@
+import { Menu as MenuPrimitive } from "@base-ui/react/menu";
+import { CalendarRangeIcon, CheckIcon, ChevronDownIcon, ListIcon, type LucideIcon, Rows3Icon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
 import { Button } from "@/modules/common/ui/button";
-import { ButtonGroup } from "@/modules/common/ui/button-group";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
-import { cn } from "@/modules/common/utils/cn";
+import { Menu, MenuContent, MenuSeparator, MenuTrigger } from "@/modules/common/ui/menu";
 import {
   type CalendarLayout,
   type CalendarView,
@@ -13,66 +13,133 @@ import {
   shiftDate,
 } from "./calendarLayoutUtils";
 
-function SegmentedControl<Option extends string>({
-  legend,
-  options,
+const layoutIcons: Record<CalendarLayout, LucideIcon> = {
+  "time-grid": CalendarRangeIcon,
+  resources: Rows3Icon,
+  agenda: ListIcon,
+};
+
+// Matches MenuItem in common/ui/menu.tsx, which wraps plain items only.
+const menuItemClassName =
+  "flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-highlighted:bg-muted data-disabled:pointer-events-none data-disabled:opacity-50";
+const menuGroupLabelClassName = "px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground";
+
+const isLayout = (value: unknown): value is CalendarLayout => calendarLayouts.some((layout) => layout === value);
+const isView = (value: unknown): value is CalendarView => calendarViews.some((view) => view === value);
+
+function RadioMenuItem({
   value,
-  isDisabled,
-  disabledReason,
-  optionLabel,
-  onChange,
+  disabled,
+  describedBy,
+  children,
 }: {
-  legend: string;
-  options: readonly Option[];
-  value: Option;
-  isDisabled?: (option: Option) => boolean;
-  /** Why a disabled option is unavailable; shown as a tooltip and exposed as its accessible description. */
-  disabledReason?: (option: Option) => string | undefined;
-  optionLabel: (option: Option) => string;
-  onChange: (option: Option) => void;
+  value: string;
+  disabled?: boolean;
+  describedBy?: string;
+  children: React.ReactNode;
 }) {
-  const reasonIdPrefix = React.useId();
   return (
-    <ButtonGroup aria-label={legend}>
-      {options.map((option, index) => {
-        const disabled = isDisabled?.(option) ?? false;
-        const reason = disabled ? disabledReason?.(option) : undefined;
-        const reasonId = `${reasonIdPrefix}-${option}-reason`;
-        const button = (
-          <Button
-            key={option}
-            type="button"
-            variant={value === option ? "secondary" : "outline"}
-            aria-pressed={value === option}
-            aria-describedby={reason ? reasonId : undefined}
-            disabled={disabled}
-            // The tooltip wrapper hides this button from the group's child selectors, so repeat their joins.
-            className={cn(
-              reason && index > 0 && "rounded-l-none border-l-0",
-              reason && index < options.length - 1 && "rounded-r-none",
-            )}
-            onClick={() => onChange(option)}
-          >
-            {optionLabel(option)}
-          </Button>
-        );
-        if (!reason) return button;
-        return (
-          <Tooltip key={option}>
-            {/* A disabled button receives no pointer events, so the wrapper opens the tooltip. */}
-            <TooltipTrigger render={<span className="inline-flex" />}>
-              {button}
-              <span id={reasonId} className="sr-only">
-                {reason}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="rounded-sm">
-              {reason}
-            </TooltipContent>
-          </Tooltip>
-        );
-      })}
-    </ButtonGroup>
+    <MenuPrimitive.RadioItem
+      value={value}
+      disabled={disabled}
+      aria-describedby={describedBy}
+      className={menuItemClassName}
+    >
+      <span className="flex size-4 shrink-0 items-center justify-center">
+        <MenuPrimitive.RadioItemIndicator>
+          <CheckIcon aria-hidden="true" className="size-4" />
+        </MenuPrimitive.RadioItemIndicator>
+      </span>
+      {children}
+    </MenuPrimitive.RadioItem>
+  );
+}
+
+/** One menu for the calendar's layout and period; it stays open so both can be chosen in turn. */
+function CalendarViewMenu({
+  view,
+  layout,
+  onViewChange,
+  onLayoutChange,
+}: {
+  view: CalendarView;
+  layout: CalendarLayout;
+  onViewChange: (view: CalendarView) => void;
+  onLayoutChange: (layout: CalendarLayout) => void;
+}) {
+  const { t } = useTranslation("booking");
+  const monthReasonId = React.useId();
+  const LayoutIcon = layoutIcons[layout];
+  const monthUnavailable = layout === "resources";
+  const summary = t("calendar.view.summary", {
+    layout: t(`calendar.layout.${layout}`),
+    period: t(`calendar.period.${view}`),
+  });
+  return (
+    <Menu>
+      {/* The name keeps the visible summary, so speech input can still target it by what it shows. */}
+      <MenuTrigger
+        render={<Button type="button" variant="outline" aria-label={t("calendar.view.trigger", { summary })} />}
+      >
+        <LayoutIcon aria-hidden="true" data-icon="inline-start" />
+        {summary}
+        <ChevronDownIcon aria-hidden="true" data-icon="inline-end" />
+      </MenuTrigger>
+      <MenuContent className="w-64">
+        <MenuPrimitive.RadioGroup
+          value={layout}
+          onValueChange={(value) => {
+            if (!isLayout(value)) return;
+            if (value === "resources" && view === "month") onViewChange("week");
+            onLayoutChange(value);
+          }}
+        >
+          <MenuPrimitive.GroupLabel className={menuGroupLabelClassName}>
+            {t("calendar.layout.legend")}
+          </MenuPrimitive.GroupLabel>
+          {calendarLayouts.map((option) => {
+            const Icon = layoutIcons[option];
+            return (
+              <RadioMenuItem key={option} value={option}>
+                <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
+                {t(`calendar.layout.${option}`)}
+              </RadioMenuItem>
+            );
+          })}
+        </MenuPrimitive.RadioGroup>
+        <MenuSeparator />
+        <MenuPrimitive.RadioGroup value={view} onValueChange={(value) => isView(value) && onViewChange(value)}>
+          <MenuPrimitive.GroupLabel className={menuGroupLabelClassName}>
+            {t("calendar.period.legend")}
+          </MenuPrimitive.GroupLabel>
+          {calendarViews.map((option) => {
+            const disabled = monthUnavailable && option === "month";
+            return (
+              <RadioMenuItem
+                key={option}
+                value={option}
+                disabled={disabled}
+                describedBy={disabled ? monthReasonId : undefined}
+              >
+                <span className="min-w-0">
+                  <span className="block">{t(`calendar.period.${option}`)}</span>
+                  {disabled ? (
+                    <span aria-hidden="true" className="block text-xs text-muted-foreground">
+                      {t("calendar.period.monthUnavailableShort")}
+                    </span>
+                  ) : null}
+                </span>
+              </RadioMenuItem>
+            );
+          })}
+        </MenuPrimitive.RadioGroup>
+        {monthUnavailable ? (
+          <span id={monthReasonId} className="sr-only">
+            {t("calendar.period.monthUnavailableInResources")}
+          </span>
+        ) : null}
+      </MenuContent>
+    </Menu>
   );
 }
 
@@ -113,30 +180,9 @@ export function CalendarFilterControls({
         onNext={() => onDateChange(shiftDate(date, view, 1))}
         onDateChange={onDateChange}
       />
-      <fieldset className="ml-auto min-w-0">
-        <legend className="sr-only">{t("calendar.displayControls")}</legend>
-        <div className="flex flex-wrap items-center gap-2">
-          <SegmentedControl
-            legend={t("calendar.layout.legend")}
-            options={calendarLayouts}
-            value={layout}
-            optionLabel={(option) => t(`calendar.layout.${option}`)}
-            onChange={(option) => {
-              if (option === "resources" && view === "month") onViewChange("week");
-              onLayoutChange(option);
-            }}
-          />
-          <SegmentedControl
-            legend={t("calendar.period.legend")}
-            options={calendarViews}
-            value={view}
-            isDisabled={(option) => layout === "resources" && option === "month"}
-            disabledReason={() => t("calendar.period.monthUnavailableInResources")}
-            optionLabel={(option) => t(`calendar.period.${option}`)}
-            onChange={onViewChange}
-          />
-        </div>
-      </fieldset>
+      <div className="ml-auto">
+        <CalendarViewMenu view={view} layout={layout} onViewChange={onViewChange} onLayoutChange={onLayoutChange} />
+      </div>
     </>
   );
 }
