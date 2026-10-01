@@ -235,7 +235,7 @@
             "type" : [ "string", "null" ]
           },
           "domain" : {
-            "enum" : [ "MESSAGING", "RECORD", "FOLDER", "NOTEBOOK", "MEDIA", "USER", "GROUP", "COMMUNITY", "FORM", "AUDIT", "INV_SAMPLE", "INV_SUBSAMPLE", "INV_CONTAINER", "INV_INSTRUMENT", "WORKSPACE", "UNKNOWN" ],
+            "enum" : [ "MESSAGING", "RECORD", "FOLDER", "NOTEBOOK", "MEDIA", "USER", "GROUP", "COMMUNITY", "FORM", "AUDIT", "INV_SAMPLE", "INV_SUBSAMPLE", "INV_CONTAINER", "INV_INSTRUMENT", "BOOKING", "WORKSPACE", "UNKNOWN" ],
             "type" : "string"
           },
           "eventId" : {
