@@ -374,6 +374,8 @@ class ApiV2BookingConfigurationResourceTest {
         List.of("dayOfWeek", "start", "end"),
         hours.fields().stream().map(FieldSchema::name).toList());
     assertTrue(hours.fields().stream().allMatch(FieldSchema::requiredOnCreate));
+    assertEquals(1, hours.writeConstraints().get("minItems"));
+    assertEquals(7, hours.writeConstraints().get("maxItems"));
     assertTrue(hours.filterOperators().isEmpty());
     assertFalse(hours.sortable());
     assertFalse(hours.nullable());
@@ -411,6 +413,20 @@ class ApiV2BookingConfigurationResourceTest {
     assertEquals(
         DocumentValidationException.Reason.UNKNOWN_FIELD,
         updateViolation(legacy).getViolations().get(0).reason());
+    JsonNode wrongKind = mapper.readTree("{\"openingHours\":1}");
+    JsonNode empty = mapper.readTree("{\"openingHours\":[]}");
+    assertEquals(
+        DocumentValidationException.Reason.WRONG_TYPE,
+        assertThrows(DocumentValidationException.class, () -> parseUpdate(wrongKind))
+            .getViolations()
+            .get(0)
+            .reason());
+    assertEquals(
+        DocumentValidationException.Reason.INVALID_VALUE,
+        assertThrows(DocumentValidationException.class, () -> parseUpdate(empty))
+            .getViolations()
+            .get(0)
+            .reason());
   }
 
   @Test
@@ -490,5 +506,24 @@ class ApiV2BookingConfigurationResourceTest {
         WriteOperation.UPDATE,
         "errors.api.v2.bookingConfiguration.patch",
         new AccessContext(null, Operation.UPDATE, "booking-configurations", 42L));
+  }
+
+  @Test
+  void parsesCompleteReplacementRowsAndSortsOnApplication() throws Exception {
+    ParsedDocument document =
+        parseUpdate(
+            mapper.readTree(
+                """
+                {"openingHours":[{"dayOfWeek":6,"start":"10:00","end":"16:00"},
+                                 {"dayOfWeek":1,"start":"00:00","end":"24:00"}]}
+                """));
+    BookingConfiguration configuration = new BookingConfiguration();
+    ApiV2BookingConfigurationResource.DESCRIPTION.apply(
+        configuration, document.values(), WriteOperation.UPDATE);
+    assertEquals(
+        List.of(
+            new BookingOpeningHoursEntry(1, "00:00", "24:00"),
+            new BookingOpeningHoursEntry(6, "10:00", "16:00")),
+        configuration.getOpeningHours());
   }
 }

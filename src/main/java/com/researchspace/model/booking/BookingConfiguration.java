@@ -146,6 +146,23 @@ public class BookingConfiguration implements Serializable {
       BookingSchedulingSettings.DEFAULT_OPENING_HOURS;
 
   @Getter(
+      onMethod_ = {
+        @Convert(converter = BookingOpenDaysConverter.class),
+        @Column(nullable = false, length = 64),
+        @AuditTrailProperty(name = "openDays")
+      })
+  private List<Integer> openDays = BookingSchedulingSettings.DEFAULT_OPEN_DAYS;
+
+  @Getter(
+      onMethod_ = {
+        @Convert(converter = BookingOpeningExceptionsConverter.class),
+        @Column(nullable = false, length = 1024),
+        @AuditTrailProperty(name = "openingExceptions")
+      })
+  private List<BookingOpeningException> openingExceptions =
+      BookingSchedulingSettings.DEFAULT_OPENING_EXCEPTIONS;
+
+  @Getter(
       onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferBeforeMinutes")})
   @Setter
   private long bufferBeforeMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
@@ -290,6 +307,34 @@ public class BookingConfiguration implements Serializable {
                 .sorted(
                     Comparator.nullsLast(
                         Comparator.comparingInt(BookingOpeningHoursEntry::dayOfWeek)))
+                .toList();
+  }
+
+  @Transient
+  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.openDays.invalid}")
+  public boolean isOpenDaysValid() {
+    return BookingSchedulingSettings.areOpenDaysValid(openDays);
+  }
+
+  @Transient
+  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.openingExceptions.invalid}")
+  public boolean isOpeningExceptionsValid() {
+    return BookingSchedulingSettings.areOpeningExceptionsValid(openingExceptions)
+        && BookingSchedulingSettings.areOpeningExceptionsOnOpenDays(openingExceptions, openDays);
+  }
+
+  /** Replaces the whole open-weekday selection, stored in ascending order. */
+  public void setOpenDays(List<Integer> openDays) {
+    this.openDays = openDays == null ? null : openDays.stream().sorted().toList();
+  }
+
+  /** Replaces all opening exceptions, stored in ascending weekday order. */
+  public void setOpeningExceptions(List<BookingOpeningException> openingExceptions) {
+    this.openingExceptions =
+        openingExceptions == null
+            ? null
+            : openingExceptions.stream()
+                .sorted(java.util.Comparator.comparingInt(BookingOpeningException::dayOfWeek))
                 .toList();
   }
 
