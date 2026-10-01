@@ -16,6 +16,7 @@ describe("generated application routes", () => {
     ["/public/maintenanceInProgress", "/public/maintenanceInProgress/", "__root__"],
     ["/public/apiDocs", "/public/apiDocs/", "__root__"],
     ["/booking", "/booking/", "/booking"],
+    ["/booking/all-items", "/booking/all-items/", "/booking"],
     ["/booking/calendar", "/booking/calendar/", "/booking"],
     ["/booking/calendar/bookings/add", "/booking/calendar/bookings/add/", "/booking"],
     ["/booking/calendar/bookings/41", "/booking/calendar/bookings/$id/", "/booking/calendar/bookings/$id"],
@@ -55,6 +56,7 @@ describe("generated application routes", () => {
     ["/booking/bookable-items/add?target=IN42", { target: "IN42" }],
     ["/booking/bookable-items/IN42?edit=true", { edit: true }],
     ["/booking/my-bookings?period=invalid", { period: "upcoming" }],
+    ["/booking/all-items?availability=available-now&page=2", { availability: "available-now", page: 2 }],
   ])("attaches search validation to %s", async (path, search) => {
     const router = routerAt(path);
     await router.load();
