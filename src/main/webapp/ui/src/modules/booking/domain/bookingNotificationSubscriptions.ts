@@ -3,11 +3,25 @@ import * as v from "valibot";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { requestBooking } from "./booking";
 
-export const BookingNotificationPreferencesSchema = v.strictObject({
+const bookingNotificationPreferenceEntries = {
   autoSubscribeOwnedItems: v.boolean(),
+  /** The same preference as the My Profile "booking created" notification toggle. */
+  notifyOnCreated: v.boolean(),
+  /** The same preference as the My Profile "booking cancelled" notification toggle. */
+  notifyOnCancelled: v.boolean(),
+};
+
+export const BookingNotificationPreferencesSchema = v.strictObject({
+  ...bookingNotificationPreferenceEntries,
+  /** Read-only: the global My Profile "Send notifications by email" preference. */
+  emailDelivery: v.boolean(),
 });
 
 export type BookingNotificationPreferences = v.InferOutput<typeof BookingNotificationPreferencesSchema>;
+
+export const BookingNotificationPreferencesInputSchema = v.strictObject(bookingNotificationPreferenceEntries);
+
+export type BookingNotificationPreferencesInput = v.InferOutput<typeof BookingNotificationPreferencesInputSchema>;
 
 export const BookingNotificationSubscriptionSchema = v.strictObject({
   configurationId: v.pipe(v.number(), v.integer()),
@@ -43,12 +57,18 @@ export async function fetchBookingNotificationPreferences(
 }
 
 export async function replaceBookingNotificationPreferences(
-  input: BookingNotificationPreferences,
+  input: BookingNotificationPreferencesInput,
   token: string,
 ): Promise<BookingNotificationPreferences> {
+  // The API rejects unknown fields, so send exactly the writable preferences.
+  const body = v.parse(BookingNotificationPreferencesInputSchema, {
+    autoSubscribeOwnedItems: input.autoSubscribeOwnedItems,
+    notifyOnCreated: input.notifyOnCreated,
+    notifyOnCancelled: input.notifyOnCancelled,
+  });
   return requestBooking(preferencesPath, token, BookingNotificationPreferencesSchema, {
     method: "PUT",
-    body: JSON.stringify(v.parse(BookingNotificationPreferencesSchema, input)),
+    body: JSON.stringify(body),
   });
 }
 
@@ -101,8 +121,11 @@ export function useReplaceBookingNotificationPreferences(subjectId: number) {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: BookingNotificationPreferences) => replaceBookingNotificationPreferences(input, token),
-    onSuccess: (preferences) =>
-      queryClient.setQueryData(bookingNotificationPreferencesQueryKey(subjectId), preferences),
+    mutationFn: (input: BookingNotificationPreferencesInput) => replaceBookingNotificationPreferences(input, token),
+    onSuccess: async (preferences) => {
+      queryClient.setQueryData(bookingNotificationPreferencesQueryKey(subjectId), preferences);
+      // Item subscriptions report the created/cancelled toggles as their effective state.
+      await queryClient.invalidateQueries({ queryKey: bookingNotificationSubscriptionsQueryKey.all(subjectId) });
+    },
   });
 }
