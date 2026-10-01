@@ -280,7 +280,7 @@
       "tableLabel": "booking search results"
     },
     "galaxy": {
-      "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
+      "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:<br/><strong>{format}</strong>",
       "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
       "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
       "chooseDataTitle": "Choose Data",
