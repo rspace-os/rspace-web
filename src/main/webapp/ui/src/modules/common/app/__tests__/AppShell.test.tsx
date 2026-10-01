@@ -37,6 +37,10 @@ vi.mock("@/modules/common/stores/userSessionStore", () => ({
   UserSessionBootstrap: () => null,
 }));
 
+vi.mock("@/featureFlags/FeatureFlagDevtoolsMount", () => ({
+  default: () => <output aria-label="Feature flag devtools" />,
+}));
+
 function testQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
@@ -85,10 +89,24 @@ function renderShell(initialPath: string) {
     },
     errorComponent: () => <p>{"Route failed"}</p>,
   });
+  const publicRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/public",
+    beforeLoad: () => ({ appBar: { currentPage: "rspace", authenticated: false } }),
+    component: () => null,
+  });
+  const withoutAppBarRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/without-app-bar",
+    beforeLoad: () => ({ appBar: false as const }),
+    component: () => null,
+  });
   const router = createRouter({
     context: {},
     routeTree: rootRoute.addChildren([
       plainRoute,
+      publicRoute,
+      withoutAppBarRoute,
       sidebarRoute.addChildren([
         createRoute({
           getParentRoute: () => sidebarRoute,
@@ -218,6 +236,12 @@ describe("route chrome", () => {
 });
 
 describe("route sidebar state", () => {
+  it.each(["/plain", "/public", "/without-app-bar"] as const)("mounts feature flag devtools on %s", async (path) => {
+    renderShell(path);
+
+    expect(await screen.findByRole("status", { name: "Feature flag devtools" })).toBeVisible();
+  });
+
   it("opens on entry and removes the empty sidebar when leaving", async () => {
     const router = renderShell("/plain");
     expect(await screen.findByText(plainRouteText)).toBeVisible();

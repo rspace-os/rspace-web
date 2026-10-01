@@ -32,6 +32,8 @@
     "storybook": "cd src/main/webapp/ui && storybook dev -p 6006",
     "storybook:build": "cd src/main/webapp/ui && storybook build",
     "storybook:test": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts",
+    "feature-flags:generate": "node scripts/generate-feature-flags.mjs",
+    "feature-flags:check": "node scripts/generate-feature-flags.mjs --check",
     "lint:routes": "ls-lint --config .ls-lint.yml --workdir src/main/webapp/ui/src/routes && cd src/main/webapp/ui && biome lint --only=style/useFilenamingConvention src/routes"
   },
   "devDependencies": {
@@ -88,6 +90,8 @@
     "vite-chunks-plugin": "0.1.1",
     "vitest": "4.1.11",
     "vitest-when": "0.10.0",
+    "eta": "4.6.0",
+    "jsonc-parser": "3.3.1",
     "@ls-lint/ls-lint": "2.3.1",
     "@tanstack/router-plugin": "1.168.20"
   },
@@ -177,7 +181,8 @@
     "tailwind-merge": "3.6.0",
     "tinymce": "8.8.2",
     "valibot": "1.4.2",
-    "zustand": "5.0.14"
+    "zustand": "5.0.14",
+    "@tanstack/react-devtools": "0.10.7"
   },
   "intent": {
     "skills": [
