@@ -43,11 +43,9 @@ public record ApiV2RelationshipTargetSpec<T, ID>(
     if (access.isDenied()) {
       return Map.of();
     }
-    if (access.constraintOrEmpty().isPresent()) {
-      throw new IllegalStateException(
-          "A target-only REST API v2 resource cannot enforce a read row constraint: "
-              + description.resourceName());
-    }
+    // The bounded loader applies the same row policy as this description. Keeping the constraint
+    // on the description is still required by relationship queries, which compile it into their
+    // correlated EXISTS predicate before filtering or pagination.
     return ApiV2ReadableTargetSupport.hideAuthorizationFailure(
         actor,
         description.resourceName(),
