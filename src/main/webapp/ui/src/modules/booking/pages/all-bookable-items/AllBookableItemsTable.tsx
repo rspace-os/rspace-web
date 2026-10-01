@@ -1,5 +1,13 @@
-import { Link } from "@tanstack/react-router";
-import { CalendarClockIcon, CalendarPlusIcon, Clock3Icon, EyeIcon, PlusIcon, SettingsIcon } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import {
+  CalendarClockIcon,
+  CalendarPlusIcon,
+  Clock3Icon,
+  EyeIcon,
+  PackageCheckIcon,
+  PlusIcon,
+  SettingsIcon,
+} from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
@@ -24,6 +32,7 @@ type AllBookableItemsTableProps = Omit<
   "config" | "invalidFilter" | "catalogue" | "runtimeFieldState" | "currentUser"
 > & {
   types?: readonly string[];
+  mine: boolean;
   tableProps: TableListProps<AllBookableItem>;
   setDate: (nextDate: string) => void;
   resetView: () => void;
@@ -46,12 +55,14 @@ export function AllBookableItemsTable({
   useQuickAvailability,
   availability,
   types,
+  mine,
   tableProps,
   setDate,
   resetView,
   setFilters,
 }: AllBookableItemsTableProps) {
   const { t } = useTranslation("booking");
+  const navigate = useNavigate({ from: "/booking/all-items/" });
   const rowActions = useMemo<TableListRowActions<AllBookableItem>>(
     () => ({
       id: "actions",
@@ -127,32 +138,48 @@ export function AllBookableItemsTable({
         onDateChange={setDate}
       />
     ),
-    hasChanges: selectedDate !== userToday || Boolean(types?.length),
-    buttons: (["available-now", "free-later-today"] as const).map((mode) => ({
-      id: mode,
-      label: (
-        <>
-          {quickFilterLabels[mode]}
-          <span aria-hidden="true" className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background">
-            {quickIndex.isError ? (
-              "—"
-            ) : quickIndex.data ? (
-              [...quickIndex.data.values()].filter(({ category }) => category === mode).length
-            ) : (
-              <Skeleton className="h-3 w-3" />
-            )}
-          </span>
-        </>
-      ),
-      icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
-      pressed: quickMode === mode,
-      disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
-      onClick: () =>
-        setFilters({
-          ...filters,
-          expression: withAvailability(filters.expression, quickMode === mode ? undefined : mode),
-        }),
-    })),
+    hasChanges: selectedDate !== userToday || Boolean(types?.length) || mine,
+    buttons: [
+      {
+        id: "mine",
+        label: t("allBookableItems.quickFilters.myItems"),
+        icon: <PackageCheckIcon aria-hidden="true" />,
+        pressed: mine,
+        onClick: () =>
+          void navigate({
+            search: (current) => ({ ...current, mine: mine ? undefined : true, page: undefined }),
+            replace: true,
+          }),
+      },
+      ...(["available-now", "free-later-today"] as const).map((mode) => ({
+        id: mode,
+        label: (
+          <>
+            {quickFilterLabels[mode]}
+            <span
+              aria-hidden="true"
+              className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background"
+            >
+              {quickIndex.isError ? (
+                "—"
+              ) : quickIndex.data ? (
+                [...quickIndex.data.values()].filter(({ category }) => category === mode).length
+              ) : (
+                <Skeleton className="h-3 w-3" />
+              )}
+            </span>
+          </>
+        ),
+        icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
+        pressed: quickMode === mode,
+        disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
+        onClick: () =>
+          setFilters({
+            ...filters,
+            expression: withAvailability(filters.expression, quickMode === mode ? undefined : mode),
+          }),
+      })),
+    ],
     onReset: resetView,
   };
 

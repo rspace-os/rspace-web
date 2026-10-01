@@ -175,5 +175,8 @@ describe("BookableItemPage", () => {
     expect(await screen.findByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.save" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "booking:bookableItemDetails.actions.archive" }),
+    ).not.toBeInTheDocument();
   });
 });

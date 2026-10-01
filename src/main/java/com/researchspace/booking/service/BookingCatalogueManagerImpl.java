@@ -72,6 +72,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      boolean ownedByCaller,
       int page,
       int limit,
       User caller) {
@@ -82,6 +83,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
         targetTypes,
         locationGlobalIds,
         capability,
+        ownedByCaller,
         page,
         limit,
         caller,
@@ -95,6 +97,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       ResourceRequest events,
       java.time.Instant start,
       java.time.Instant end,
+      boolean ownedByCaller,
       int page,
       int limit,
       User caller) {
@@ -105,6 +108,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
         List.of(),
         List.of(),
         null,
+        ownedByCaller,
         page,
         limit,
         caller,
@@ -118,6 +122,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      boolean ownedByCaller,
       int page,
       int limit,
       User caller,
@@ -142,6 +147,11 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
                   true,
                   capability == Capability.CREATE_BLOCKOUT,
                   "bookingConfiguration.target"));
+    }
+    if (ownedByCaller) {
+      restriction =
+          com.researchspace.booking.dao.BookingItemQuery.and(
+              restriction, itemQuery.ownedBy(caller, "bookingConfiguration.target"));
     }
     if (query != null && !query.isBlank()) {
       Set<Long> matchingTargetIds =
