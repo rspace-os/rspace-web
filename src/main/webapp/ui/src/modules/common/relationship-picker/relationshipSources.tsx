@@ -12,6 +12,7 @@ export type RelationshipOptionContext = {
   idLinkLabel: (globalId: string) => string;
   /** Renders each option on one line, for a picker in a narrow control such as a filter row. */
   compact?: boolean;
+  unavailableLabel?: (value: string) => string;
 };
 
 export type RelationshipSource = {
@@ -42,6 +43,15 @@ const InstrumentSchema = v.object({
   name: v.string(),
   globalId: v.string(),
 });
+
+/** Returns a positive JavaScript-safe database ID from a resource global ID. */
+export function databaseIdFromGlobalId(value: string, prefix: string): number | null {
+  const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`^${escapedPrefix}(\\d+)$`, "i").exec(value.trim());
+  if (!match) return null;
+  const id = Number(match[1]);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
 
 const instruments: RelationshipSource = {
   id: "instruments",
@@ -97,11 +107,6 @@ const instruments: RelationshipSource = {
     };
   },
 };
-
-function databaseIdFromGlobalId(value: string, prefix: string): number | null {
-  const match = new RegExp(`^${prefix}(\\d+)$`, "i").exec(value.trim());
-  return match ? Number(match[1]) : null;
-}
 
 const GranteeSchema = v.object({
   kind: v.picklist(["USER", "GROUP", "AUDIENCE"]),

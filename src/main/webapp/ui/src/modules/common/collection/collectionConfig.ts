@@ -1,5 +1,6 @@
 import type { FormStore } from "@formisch/react";
 import type { ComponentType, CSSProperties, ReactElement, ReactNode } from "react";
+import type { RelationshipSource } from "@/modules/common/relationship-picker/relationshipSources";
 
 export type FieldName<TDocument> = Extract<keyof TDocument, string>;
 
@@ -135,6 +136,7 @@ export type FieldOrigin = {
   stableId?: string;
   namespace?: string;
   viaLabel?: string;
+  runtimeValueType?: "text" | "number" | "date" | "time" | "radio" | "choice";
 };
 
 type BaseFieldConfig<
@@ -234,6 +236,7 @@ export type CollectionConfig<
     pluralKey: string;
     descriptionKey?: string;
   };
+  relationshipSources?: Readonly<Record<string, RelationshipSource>>;
   runtimeNamespaces?: readonly string[];
   fields: readonly FieldConfig<TDocument>[];
 };

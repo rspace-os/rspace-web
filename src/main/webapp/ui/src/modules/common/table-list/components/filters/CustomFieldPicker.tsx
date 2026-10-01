@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useDebounce from "@/hooks/ui/useDebounce";
@@ -9,7 +9,7 @@ import {
   type RuntimeFieldDefinition,
 } from "@/modules/common/table-list/adapters/apiV2/runtimeFieldCatalog";
 import {
-  Autocomplete,
+  Combobox,
   ComboboxContent,
   ComboboxEmpty,
   ComboboxInput,
@@ -51,18 +51,22 @@ type RuntimeFieldOption = {
 
 export function CustomFieldPicker({
   sources,
+  authScope,
   ariaLabel,
   hint,
   chosenLabel,
+  chosenSelector,
   known,
   onSelect,
   isDefinitionAvailable = () => true,
   fetchImpl,
 }: {
   sources: readonly RuntimeNamespaceSummary[];
+  authScope?: string | number;
   ariaLabel: string;
   hint?: string;
   chosenLabel: string | undefined;
+  chosenSelector?: string;
   known: readonly { namespace: string; definitions: readonly RuntimeFieldDefinition[] }[];
   onSelect: (namespace: string, definition: RuntimeFieldDefinition) => void;
   isDefinitionAvailable?: (definition: RuntimeFieldDefinition) => boolean;
@@ -70,16 +74,21 @@ export function CustomFieldPicker({
 }) {
   const { t } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const [input, setInput] = useState(chosenLabel ?? "");
-  const [term, setTerm] = useState(chosenLabel ?? "");
+  const [term, setTerm] = useState("");
   const [open, setOpen] = useState(false);
   const setSearchTerm = useDebounce(setTerm, 250);
   const narrowed = term.trim().length >= MINIMUM_TERM;
 
   const query = useQuery({
-    queryKey: ["api-v2", "runtime-fields", "search", sources.map((source) => source.namespace).join(","), term.trim()],
+    queryKey: [
+      "api-v2",
+      "runtime-fields",
+      "search",
+      authScope ?? token,
+      sources.map((source) => [source.namespace, source.catalog]),
+      term.trim(),
+    ],
     enabled: open && narrowed,
-    placeholderData: keepPreviousData,
     staleTime: 60_000,
     queryFn: async ({ signal }) => {
       const headers = new Headers();
@@ -106,28 +115,38 @@ export function CustomFieldPicker({
   const results = (narrowed ? (query.data ?? []) : loaded).filter(({ definition }) =>
     isDefinitionAvailable(definition),
   );
+  const selected =
+    [...loaded, ...results].find((item) => `${item.namespace}.${item.definition.id}` === chosenSelector) ?? null;
+  const optionLabel = ({ definition }: RuntimeFieldOption) =>
+    `${definition.label} (${definition.source.label || definition.type}${definition.source.label ? ` · ${definition.id}` : ""})`;
 
   return (
     <div className="min-w-0">
-      <Autocomplete
+      <Combobox
         items={results}
         filter={null}
         open={open}
         onOpenChange={setOpen}
-        value={input}
-        onValueChange={(next) => {
-          setInput(next);
-          setSearchTerm(next);
+        value={selected}
+        onInputValueChange={(next, { reason }) => {
+          if (reason === "input-change" || reason === "input-clear") setSearchTerm(next);
         }}
-        itemToStringValue={(item: RuntimeFieldOption) => item.definition.label}
-        openOnInputClick
+        onValueChange={(item: RuntimeFieldOption | null) => {
+          if (item) onSelect(item.namespace, item.definition);
+          setSearchTerm("");
+          setTerm("");
+        }}
+        itemToStringLabel={optionLabel}
+        isItemEqualToValue={(left, right) =>
+          left.namespace === right.namespace && left.definition.id === right.definition.id
+        }
       >
         <ComboboxInput
-          showTrigger={false}
+          triggerLabel={ariaLabel}
           aria-label={ariaLabel}
           aria-busy={query.isFetching || undefined}
           className="h-8 rounded-sm text-xs"
-          placeholder={t("tableList.filters.customField.searchPlaceholder")}
+          placeholder={chosenLabel ?? t("tableList.filters.customField.searchPlaceholder")}
         />
         <ComboboxContent>
           <ComboboxStatus>
@@ -148,19 +167,18 @@ export function CustomFieldPicker({
                 key={`${item.namespace}:${item.definition.id}`}
                 value={item}
                 className="flex-col items-start gap-0"
-                onClick={() => onSelect(item.namespace, item.definition)}
               >
                 <span className="block w-full truncate text-xs">{item.definition.label}</span>
                 <span className="block w-full truncate text-[11px] text-muted-foreground">
                   {item.definition.source.label === ""
-                    ? item.definition.id
+                    ? item.definition.type
                     : `${item.definition.source.label} · ${item.definition.id}`}
                 </span>
               </ComboboxItem>
             )}
           </ComboboxList>
         </ComboboxContent>
-      </Autocomplete>
+      </Combobox>
       {hint ? <p className="mt-1 text-[10px] text-muted-foreground">{hint}</p> : null}
     </div>
   );
