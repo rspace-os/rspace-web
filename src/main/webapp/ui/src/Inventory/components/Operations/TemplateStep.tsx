@@ -100,17 +100,6 @@ function TemplateStep({
     }
   };
 
-  // The Picker fires onAddition from an effect keyed on the callback's identity, so an unstable
-  // callback is an infinite render loop on selection; this ref keeps it stable.
-  const onPickTemplateRef = React.useRef(onPickTemplate);
-  React.useLayoutEffect(() => {
-    onPickTemplateRef.current = onPickTemplate;
-  });
-  const handlePickTemplate = React.useCallback(
-    (template: TemplateModel | null) => void onPickTemplateRef.current(template),
-    [],
-  );
-
   return (
     <Stack spacing={1}>
       {value.mode === "remembered" && value.templateName ? (
@@ -150,7 +139,7 @@ function TemplateStep({
       ) : null}
       {value.mode === "pick" ? (
         <WizardTemplatePicker
-          setTemplate={handlePickTemplate}
+          setTemplate={(template) => void onPickTemplate(template)}
           selectedTemplateId={value.templateId}
           selectedTemplateName={value.templateName}
         />
