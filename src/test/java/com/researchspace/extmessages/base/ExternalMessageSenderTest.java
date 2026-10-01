@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -42,6 +43,11 @@ public class ExternalMessageSenderTest {
 
   @AfterEach
   public void tearDown() throws Exception {}
+
+  @Test
+  public void postsJsonAsUtf8ByDefault() {
+    assertEquals(MediaType.APPLICATION_JSON, msteamsSender.createPostHeaders().getContentType());
+  }
 
   @Test
   public void testSendMessageApp() throws RestClientException, URISyntaxException {

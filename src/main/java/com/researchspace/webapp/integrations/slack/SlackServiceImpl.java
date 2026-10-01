@@ -126,7 +126,9 @@ public class SlackServiceImpl implements SlackService {
 
   private ResponseEntity<String> sendResponseToSlack(URI responseURI, String msg) {
     SlackMessage slackMessage = new SlackMessage(msg);
-    HttpEntity<String> requestEntity = new HttpEntity<>(slackMessage.toJSON());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    HttpEntity<String> requestEntity = new HttpEntity<>(slackMessage.toJSON(), headers);
     return restTemplate.postForEntity(responseURI, requestEntity, String.class);
   }
 
