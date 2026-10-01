@@ -8,7 +8,8 @@ export class BookingPreferencesPage {
   readonly institution: Locator = page.getByRole("radio", { name: /Use Institution Timezone/ });
   readonly custom: Locator = page.getByRole("radio", { name: "Use Custom Timezone" });
   readonly customTimezone: Locator = page.getByRole("combobox", { name: "Custom timezone" });
-  readonly save: Locator = page.getByRole("button", { name: "Save" });
+  // The display settings form comes before the Booking notifications section, which has its own Save.
+  readonly save: Locator = page.getByRole("button", { name: "Save" }).first();
   readonly saved: Locator = page.getByRole("button", { name: "Saved" });
   readonly reset: Locator = page.getByRole("button", { name: "Reset to global defaults" });
   readonly resetComplete: Locator = page.getByText("Global Booking defaults restored.");
