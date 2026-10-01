@@ -8,8 +8,10 @@ import { baseUiRichTextComponents } from "@/modules/common/i18n/TransRichText";
 import { UIStoreProvider } from "@/modules/common/stores/uiStore";
 import { TooltipProvider } from "@/modules/common/ui/tooltip";
 import { router } from "./router";
+import { withStaleOauthTokenRedirect } from "./staleOauthTokenRedirect";
 
 const queryClient = new QueryClient();
+globalThis.fetch = withStaleOauthTokenRedirect(globalThis.fetch);
 
 const appElement = document.getElementById("app");
 if (appElement) {

@@ -150,6 +150,9 @@ class ApiV2OpenApiContractMVCIT {
       "post, /api/v2/oauth/tokens",
       "get,  /api/v2/users/me",
       "get,  /api/v2/users/me/profile-image",
+      "get,  /api/v2/users/me/booking-preferences",
+      "put,  /api/v2/users/me/booking-preferences",
+      "delete, /api/v2/users/me/booking-preferences",
       "get,  /api/v2/booking-settings/access-grantees",
       "get,  /api/v2/booking-configuration-targets",
     })
