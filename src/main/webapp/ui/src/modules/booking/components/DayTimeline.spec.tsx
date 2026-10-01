@@ -31,6 +31,21 @@ describe("DayTimeline expanded cards", () => {
       .toEqual({ left: true, right: true, width: true });
   });
 
+  test("places the duration on the time line", async () => {
+    render(<DayTimelineStory />);
+    await timeline.open(LONG_ITEM_NAME);
+
+    const popup = timeline.popup("09:30–10:30");
+    const period = popup.getByRole("heading", { name: "09:30–10:30" });
+    const duration = popup.getByText(/1 hour/);
+    await expect.element(duration).toBeVisible();
+    const periodBox = period.element().getBoundingClientRect();
+    const durationBox = duration.element().getBoundingClientRect();
+    expect(duration.element().parentElement).toBe(period.element().parentElement);
+    expect(durationBox.left).toBeGreaterThanOrEqual(periodBox.right);
+    expect(durationBox.top).toBeLessThan(periodBox.bottom);
+  });
+
   test("keeps a sticky popup within the scroller when its trigger scrolls away", async () => {
     render(<DayTimelineStory />);
     await timeline.open(LONG_ITEM_NAME);
