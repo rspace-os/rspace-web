@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { onlineManager } from "@tanstack/react-query";
+import { act, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
@@ -8,6 +9,32 @@ import { config, emptyFilters, records } from "../fixtures/tableListFixtures";
 const disabledFeatures = { filtering: false, sorting: false, pagination: false, columns: false } as const;
 
 describe("TableList states", () => {
+  it("explains offline remote requests and clears the notice on reconnect without hiding cached rows", () => {
+    const props = {
+      queryString: false as const,
+      config,
+      rows: records,
+      getRowId: (row: (typeof records)[number]) => row.id,
+      features: disabledFeatures,
+    };
+    const { rerender } = render(<TableList {...props} clientSide={false} />);
+    try {
+      act(() => onlineManager.setOnline(false));
+      expect(screen.getByRole("status")).toHaveTextContent("common:tableList.offline");
+      expect(screen.getByRole("cell", { name: "Alpha" })).toBeVisible();
+      rerender(<TableList {...props} rows={[]} clientSide={false} status="loading" />);
+      expect(screen.getByText("common:tableList.offline")).toBeVisible();
+      act(() => onlineManager.setOnline(true));
+      expect(screen.queryByText("common:tableList.offline")).not.toBeInTheDocument();
+      expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "true");
+      act(() => onlineManager.setOnline(false));
+      rerender(<TableList {...props} clientSide={true} />);
+      expect(screen.queryByText("common:tableList.offline")).not.toBeInTheDocument();
+    } finally {
+      act(() => onlineManager.setOnline(true));
+    }
+  });
+
   it("renders loading, empty, and error states in card-only lists", () => {
     const commonProps = {
       queryString: false as const,

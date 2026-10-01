@@ -3,7 +3,6 @@ import * as React from "react";
 import { TZDate } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Calendar } from "@/modules/common/ui/calendar";
@@ -92,13 +91,5 @@ export function BookingDateControls({
         </PopoverContent>
       </Popover>
     </fieldset>
-  );
-}
-
-export function BookingTimeZoneBadge({ timeZone, label }: { timeZone: string; label: string }) {
-  return (
-    <Badge variant="outline" aria-label={label} className="h-9 shrink-0 rounded-sm bg-background px-2">
-      {timeZone}
-    </Badge>
   );
 }

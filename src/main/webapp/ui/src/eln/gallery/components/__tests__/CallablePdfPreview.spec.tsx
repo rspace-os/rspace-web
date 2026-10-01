@@ -37,7 +37,7 @@ const isFirefox = server.browser === "firefox";
  *
  * Gallery app-shell endpoints (preference*, property*, SVG assets, etc.) are
  * handled by galleryAppShellHandlers(); analyticsProperties is in the global
- * appShellHandlers() from browserSetup.ts.
+ * appShellHandlers() from browserMocks.ts.
  */
 
 /*

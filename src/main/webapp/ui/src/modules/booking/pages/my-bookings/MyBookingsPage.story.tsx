@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  createBrowserHistory,
+  createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
   Outlet,
+  type RouterHistory,
   RouterProvider,
 } from "@tanstack/react-router";
-import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -27,10 +28,13 @@ const storySearch = new URLSearchParams({
   "my-bookings.sort": "-start",
 });
 
-export function MyBookingsPageStory() {
-  if (window.location.pathname !== "/booking/my-bookings") {
-    window.history.replaceState({}, "", `/booking/my-bookings?${storySearch}`);
-  }
+export const myBookingsStoryUrl = `/booking/my-bookings?${storySearch}`;
+
+export function MyBookingsPageStory({
+  history = createMemoryHistory({ initialEntries: [myBookingsStoryUrl] }),
+}: {
+  history?: RouterHistory;
+} = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
@@ -38,7 +42,13 @@ export function MyBookingsPageStory() {
     ["api-v2", "openapi", "bookings"],
     apiV2CollectionMetadataFromOpenApi(bookingsOpenApi, "bookings"),
   );
-  const root = createRootRoute({ component: Outlet });
+  const root = createRootRoute({
+    component: () => (
+      <NuqsAdapter>
+        <Outlet />
+      </NuqsAdapter>
+    ),
+  });
   const bookingRoute = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
   const pageRoute = createRoute({
     getParentRoute: () => bookingRoute,
@@ -53,17 +63,15 @@ export function MyBookingsPageStory() {
         createBookingEventRouteTree(bookingRoute),
       ]),
     ]),
-    history: createBrowserHistory(),
+    history,
   });
   return (
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <BookingCreationStoreProvider>
-          <Suspense fallback={null}>
-            <RouterProvider router={router as never} />
-          </Suspense>
-        </BookingCreationStoreProvider>
-      </NuqsAdapter>
+      <BookingCreationStoreProvider>
+        <Suspense fallback={null}>
+          <RouterProvider router={router as never} />
+        </Suspense>
+      </BookingCreationStoreProvider>
     </QueryClientProvider>
   );
 }

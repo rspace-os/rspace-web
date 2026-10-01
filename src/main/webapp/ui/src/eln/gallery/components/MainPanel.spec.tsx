@@ -61,7 +61,7 @@ function uninstallClipboardStub(): void {
  *
  * Registered via `worker.use(...)`, which always takes priority over the
  * default `/gallery/getUploadedFiles` wildcard catch-all from
- * `galleryAppShellHandlers()` in browserSetup.ts, regardless of registration
+ * `galleryAppShellHandlers()` in browserMocks.ts, regardless of registration
  * order.
  */
 function outerFolderListingHandler() {
