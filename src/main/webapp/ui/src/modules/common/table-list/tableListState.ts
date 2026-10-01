@@ -63,11 +63,15 @@ export type RemoteTableListDataSource<TDocument> = {
   type: "remote";
   queryKey: readonly unknown[] | ((state: CollectionQueryState<TDocument>) => readonly unknown[]);
   fetch: CollectionFetcher<TDocument>;
+  /** Prevent requests while external filter definitions or restored state are unresolved. */
+  enabled?: boolean | ((state: CollectionQueryState<TDocument>) => boolean);
   staleTime?: number;
   gcTime?: number;
   retry?: boolean | number;
   refetchInterval?: number | false;
   keepPreviousData?: boolean;
+  /** Previous rows may only be reused within the same caller scope. */
+  dataScope?: string | number;
 };
 
 export type TableListDataSource<TDocument> =
@@ -183,7 +187,18 @@ export type TableListSelection<TDocument> = {
   renderActions: (context: TableListSelectionContext) => ReactNode;
 };
 
+export type TableListRestoredViewIssue = {
+  kind: "invalid" | "network";
+  encoded: string;
+  retry?: () => void;
+  remove: () => void;
+};
+
 export type TableListProps<TDocument extends Record<string, unknown>> = {
+  restoredViewIssue?: TableListRestoredViewIssue;
+  /** Adapter-owned persistence reader, mounted before query-string synchronization. */
+  stateSync?: ReactNode;
+  runtimeFieldAuthScope?: string | number;
   runtimeFieldDefinitions?: readonly {
     namespace: string;
     definitions: readonly RuntimeFieldDefinition[];
