@@ -221,6 +221,10 @@ describe("quantityExceedsOrigin", () => {
     expect(quantityExceedsOrigin({ numericValue: 0.3, unitId: 4 }, { numericValue: 400, unitId: 3 })).toBe(false);
   });
 
+  it("compares exactly across units, so taking an origin's whole 1.001 g as 1001 mg does not exceed it", () => {
+    expect(quantityExceedsOrigin({ numericValue: 1001, unitId: 6 }, { numericValue: 1.001, unitId: 7 })).toBe(false);
+  });
+
   it("does not flag an incomplete (unit-unset) or absent amount", () => {
     expect(quantityExceedsOrigin({ numericValue: 999, unitId: 0 }, { numericValue: 5, unitId: 3 })).toBe(false);
     expect(quantityExceedsOrigin(undefined, { numericValue: 5, unitId: 3 })).toBe(false);
