@@ -19,6 +19,9 @@ boundary from the supplied snapshot date, so clock movement cannot change either
 When `dateTo` is explicit and `dateFrom` is omitted, the lower boundary remains 183 days before
 the supplied `dateTo`.
 
+The Booking audit page combines text, date, and action filters on the server.
+Changing any applied filter resets pagination and discards the prior snapshot.
+
 Tail boundaries are read backward in 8 KiB blocks. This retains captured-size
 reads, file identity checks, append/rotation certification, and failure on an
 incomplete final line.

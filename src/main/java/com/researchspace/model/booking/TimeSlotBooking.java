@@ -1,6 +1,7 @@
 package com.researchspace.model.booking;
 
 import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
@@ -27,7 +28,7 @@ import org.hibernate.envers.RelationTargetAuditMode;
 /** One confirmed or cancelled booking occurrence for a configured target. */
 @Entity
 @Audited
-@AuditTrailData
+@AuditTrailData(auditDomain = AuditDomain.BOOKING)
 public class TimeSlotBooking implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;

@@ -1,5 +1,6 @@
 package com.researchspace.model.booking;
 
+import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
@@ -28,7 +29,7 @@ import org.hibernate.envers.Audited;
 /** Singleton global Booking defaults for scheduling creation and display preferences. */
 @Entity
 @Audited
-@AuditTrailData
+@AuditTrailData(auditDomain = AuditDomain.BOOKING)
 public class BookingConfigurationDefaults implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;

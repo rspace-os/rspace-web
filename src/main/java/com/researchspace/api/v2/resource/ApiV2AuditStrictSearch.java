@@ -351,7 +351,7 @@ public final class ApiV2AuditStrictSearch {
     }
     try {
       Instant timestamp = timestamp(matcher.group(1));
-      AuditDomain domain = AuditDomain.valueOf(matcher.group(2));
+      AuditDomain recordedDomain = AuditDomain.valueOf(matcher.group(2));
       String actionValue =
           "COPY".equalsIgnoreCase(matcher.group(3)) ? "DUPLICATE" : matcher.group(3);
       AuditAction action = AuditAction.valueOf(actionValue);
@@ -359,6 +359,8 @@ public final class ApiV2AuditStrictSearch {
       if (data == null) {
         throw failure(file, lineNumber);
       }
+      AuditDomain domain =
+          AuditDomain.normalizeLegacyBookingDomain(recordedDomain, data.getData().get("id"));
       HistoricData event =
           new HistoricData(domain, action, matcher.group(6), data, matcher.group(5));
       event.setTimestamp(Date.from(timestamp));
