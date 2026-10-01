@@ -273,6 +273,63 @@ class BookingConfigurationManagerTest {
   }
 
   @Test
+  void copiesDefaultOpenDaysAndExceptionsIndependentlyOnCreate() {
+    BookingConfigurationDefaults defaults = defaults(5, "09:00", "17:00", 0, 0, 0, false);
+    defaults.setOpenDays(List.of(1, 2, 3, 4, 5, 6));
+    defaults.setOpeningExceptions(
+        List.of(new com.researchspace.model.booking.BookingOpeningException(6, "10:00", "16:00")));
+    when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
+        .thenReturn(Optional.of(defaults));
+    when(dao.saveAndFlush(any(BookingConfiguration.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    List<BookingConfiguration> created =
+        manager.createConfigurations(
+            List.of(
+                new Create(true, "UTC", target(12L)),
+                new Create(
+                    true,
+                    "UTC",
+                    target(13L),
+                    new BookingSchedulingSettings.Patch(
+                        null, "08:00", null, List.of(1, 2), List.of(), null, null, null, null))),
+            actor,
+            actor);
+
+    assertEquals("09:00", created.get(0).getOpeningStart());
+    assertEquals(List.of(1, 2, 3, 4, 5, 6), created.get(0).getOpenDays());
+    assertEquals(defaults.getOpeningExceptions(), created.get(0).getOpeningExceptions());
+    assertEquals("08:00", created.get(1).getOpeningStart());
+    assertEquals(List.of(1, 2), created.get(1).getOpenDays());
+    assertEquals(List.of(), created.get(1).getOpeningExceptions());
+  }
+
+  @Test
+  void rejectsADefaultExceptionOnADayTheCreateCloses() {
+    BookingConfigurationDefaults defaults = defaults(5, "09:00", "17:00", 0, 0, 0, false);
+    defaults.setOpeningExceptions(
+        List.of(new com.researchspace.model.booking.BookingOpeningException(6, "10:00", "16:00")));
+    when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
+        .thenReturn(Optional.of(defaults));
+    Create closesSaturday =
+        new Create(
+            true,
+            "UTC",
+            target(12L),
+            new BookingSchedulingSettings.Patch(
+                null, null, null, List.of(1, 2, 3, 4, 5), null, null, null, null, null));
+
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () -> manager.createConfiguration(closesSaturday, actor, actor));
+
+    assertEquals(
+        InvalidBookingSchedulingSettingsException.Reason.OPENING_EXCEPTIONS, failure.reason());
+    verify(dao, never()).saveAndFlush(any(BookingConfiguration.class));
+  }
+
+  @Test
   void existingConfigurationsDoNotChangeWhenDefaultsChange() {
     when(dao.saveAndFlush(any(BookingConfiguration.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -296,7 +353,9 @@ class BookingConfigurationManagerTest {
 
   @Test
   void rejectsInvalidSchedulingSettingsBeforeSaving() {
-    assertFalse(BookingSchedulingSettings.areOpeningHoursValid("08:00", "24:00"));
+    assertTrue(BookingSchedulingSettings.areOpeningHoursValid("08:00", "24:00"));
+    assertFalse(BookingSchedulingSettings.areOpeningHoursValid("24:00", "24:00"));
+    assertFalse(BookingSchedulingSettings.areOpeningHoursValid("08:00", "00:00"));
     Create invalid =
         new Create(
             true,

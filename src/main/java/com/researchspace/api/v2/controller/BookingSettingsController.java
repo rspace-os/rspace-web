@@ -2,19 +2,25 @@ package com.researchspace.api.v2.controller;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
+import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingOpeningException;
+import com.researchspace.model.booking.BookingOpeningHoursCodec;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -28,6 +34,7 @@ import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.function.Function;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -71,6 +78,8 @@ public final class BookingSettingsController {
       long slotGranularityMinutes,
       String openingStart,
       String openingEnd,
+      List<Integer> openDays,
+      List<BookingOpeningException> openingExceptions,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
       long maxBookingDurationMinutes,
@@ -86,6 +95,8 @@ public final class BookingSettingsController {
           defaults.getSlotGranularityMinutes(),
           defaults.getOpeningStart(),
           defaults.getOpeningEnd(),
+          defaults.getOpenDays(),
+          defaults.getOpeningExceptions(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
           defaults.getMaxBookingDurationMinutes(),
@@ -102,6 +113,8 @@ public final class BookingSettingsController {
       long slotGranularityMinutes,
       String openingStart,
       String openingEnd,
+      List<Integer> openDays,
+      List<BookingOpeningException> openingExceptions,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
       long maxBookingDurationMinutes,
@@ -121,6 +134,8 @@ public final class BookingSettingsController {
           defaults.getSlotGranularityMinutes(),
           defaults.getOpeningStart(),
           defaults.getOpeningEnd(),
+          defaults.getOpenDays(),
+          defaults.getOpeningExceptions(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
           defaults.getMaxBookingDurationMinutes(),
@@ -148,6 +163,25 @@ public final class BookingSettingsController {
               regexp = "(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)",
               message = "{errors.api.v2.bookingConfiguration.openingHours.invalid}")
           String openingEnd,
+      @ArraySchema(
+              arraySchema =
+                  @Schema(
+                      description =
+                          "ISO weekdays (1 = Monday) to open; replaces the whole selection."),
+              schema = @Schema(type = "integer", minimum = "1", maximum = "7"),
+              minItems = 1,
+              maxItems = 7,
+              uniqueItems = true)
+          JsonNode openDays,
+      @ArraySchema(
+              arraySchema =
+                  @Schema(
+                      description =
+                          "Per-weekday hours that differ from the shared interval; each dayOfWeek"
+                              + " must be open. Replaces the whole list."),
+              schema = @Schema(implementation = BookingOpeningException.class),
+              maxItems = 7)
+          JsonNode openingExceptions,
       @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
           @Max(value = 10_080, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
           Long bufferBeforeMinutes,
@@ -192,15 +226,42 @@ public final class BookingSettingsController {
       }
     }
 
+    /**
+     * Decodes the two structured fields strictly, without Jackson's scalar coercion, so {@code
+     * "1"}, {@code 1.5} or {@code true} is never accepted as a weekday. Omitted and null both leave
+     * the stored value unchanged.
+     */
     BookingSchedulingSettings.Patch schedulingPatch() {
       return new BookingSchedulingSettings.Patch(
           slotGranularityMinutes,
           openingStart,
           openingEnd,
+          decode(
+              openDays,
+              BookingOpeningHoursCodec::openDays,
+              InvalidBookingSchedulingSettingsException.Reason.OPEN_DAYS),
+          decode(
+              openingExceptions,
+              BookingOpeningHoursCodec::openingExceptions,
+              InvalidBookingSchedulingSettingsException.Reason.OPENING_EXCEPTIONS),
           bufferBeforeMinutes,
           bufferAfterMinutes,
           maxBookingDurationMinutes,
           allowDoubleBooking);
+    }
+
+    private static <V> V decode(
+        JsonNode node,
+        Function<JsonNode, V> decoder,
+        InvalidBookingSchedulingSettingsException.Reason reason) {
+      if (node == null || node.isNull()) {
+        return null;
+      }
+      try {
+        return decoder.apply(node);
+      } catch (IllegalArgumentException ex) {
+        throw new InvalidBookingSchedulingSettingsException(reason);
+      }
     }
 
     BookingDisplaySettings.Patch displayPatch() {

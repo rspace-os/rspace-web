@@ -14,6 +14,7 @@ import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipInputForm;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.StructuredFieldType;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.CollectionMutationException;
 import java.util.ArrayList;
@@ -336,6 +337,9 @@ public final class ApiV2DocumentParser {
       return null;
     }
     try {
+      if (field.type() instanceof StructuredFieldType<?> structured) {
+        return structured.parse(node);
+      }
       return field.parse(node.asText());
     } catch (RuntimeException ex) {
       violations.add(new Violation(field.name(), Reason.INVALID_VALUE));
