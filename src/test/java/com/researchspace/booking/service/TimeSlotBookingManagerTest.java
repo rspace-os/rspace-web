@@ -23,7 +23,6 @@ import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -46,7 +45,7 @@ class TimeSlotBookingManagerTest {
   final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicy();
   final User actor = mock(User.class);
-  final ResourceAccessManager accessManager = mock(ResourceAccessManager.class);
+  final BookingItemPermissions accessManager = mock(BookingItemPermissions.class);
   final TimeSlotBookingManager manager =
       new TimeSlotBookingManagerImpl(
           bookingDao,
@@ -77,15 +76,16 @@ class TimeSlotBookingManagerTest {
                     ApiV2UserResource.DESCRIPTION)));
     when(bookingDao.saveAndFlush(any(TimeSlotBooking.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
-    when(accessManager.resolve(any(ResourceAccess.class), eq(actor))).thenReturn(ownerAccess());
-    when(accessManager.resolveForMutation(any(ResourceAccess.class), eq(actor)))
+    when(accessManager.resolveForMutation(any(BookingConfiguration.class), eq(actor)))
+        .thenReturn(ownerAccess());
+    when(accessManager.resolve(any(BookingConfiguration.class), eq(actor)))
         .thenReturn(ownerAccess());
     when(accessManager.resolveAll(any(), eq(actor)))
         .thenAnswer(
             invocation -> {
-              Collection<ResourceAccess> accesses = invocation.getArgument(0);
+              Collection<BookingConfiguration> accesses = invocation.getArgument(0);
               return accesses.stream()
-                  .collect(Collectors.toMap(ResourceAccess::getId, ignored -> ownerAccess()));
+                  .collect(Collectors.toMap(BookingConfiguration::getId, ignored -> ownerAccess()));
             });
   }
 

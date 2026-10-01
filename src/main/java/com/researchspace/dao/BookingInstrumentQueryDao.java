@@ -12,15 +12,21 @@ import java.util.Set;
 /** Booking-specific instrument queries; callers must retain an active transaction. */
 public interface BookingInstrumentQueryDao {
 
+  /** Scalar Inventory permission facts used when projecting Booking configuration access. */
+  record BookingItemAccess(String ownerUsername, boolean directEdit) {}
+
   /**
    * Returns one database-paginated page of immediate parent Containers that are both readable in
    * Inventory and attached to an active, enabled Booking configuration readable by the caller.
    */
   ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
-      String query, int page, int limit, User caller, Set<String> readableRoleKeys);
+      String query, int page, int limit, User caller);
 
   /** Returns only the safe scalar fields Booking may reveal, independent of Inventory sharing. */
   Map<Long, InstrumentReadSummary> getBookingSummaries(Set<Long> instrumentIds);
+
+  /** Returns readable concrete instruments and their direct Inventory edit permission. */
+  Map<Long, BookingItemAccess> getBookingItemAccess(Set<Long> instrumentIds, User user);
 
   /**
    * Returns concrete Instruments for Booking's safe relationship renderer, independent of Inventory

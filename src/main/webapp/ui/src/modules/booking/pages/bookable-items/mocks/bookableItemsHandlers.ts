@@ -1,6 +1,12 @@
 import { parse } from "@rsql/parser";
 import { HttpResponse, http, type RequestHandler } from "msw";
-import { apiV2CollectionResponse, apiV2ListResult } from "@/__tests__/mocks/apiV2CollectionMock";
+import {
+  apiV2CollectionResponse,
+  apiV2FilterProblem,
+  apiV2ListResult,
+  badRequest,
+  calendarEventFilterProblem,
+} from "@/__tests__/mocks/apiV2CollectionMock";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { bookableItemFixtures, sampleBookingEvents } from "./bookableItemFixtures";
 import { bookableItemsOpenApi } from "./bookableItemsOpenApi";
@@ -110,6 +116,12 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
       const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
       const target = url.searchParams.get("target");
       const where = url.searchParams.get("where");
+      // The catalogue parses `where` as booking-configurations does, and the calendar variant also
+      // takes an event filter.
+      const problem =
+        apiV2FilterProblem("booking-configurations", where) ??
+        (url.pathname.endsWith("/calendar") ? calendarEventFilterProblem(url.searchParams.get("eventWhere")) : null);
+      if (problem) return badRequest(problem);
       const filter = where ? parse(where) : null;
       const locations = url.searchParams.getAll("location");
       const page = Number(url.searchParams.get("page") ?? "1");
