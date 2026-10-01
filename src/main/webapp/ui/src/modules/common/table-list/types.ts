@@ -6,7 +6,7 @@ import type {
   SearchSelector,
   SortRule,
 } from "@/modules/common/collection/config";
-import type { RuntimeFieldDefinition } from "./api-v2/runtimeFieldCatalog";
+import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "./api-v2/runtimeFieldCatalog";
 import type { TableListAlertsApi } from "./components/TableListAlerts";
 
 export type FilterValue = string | number | boolean | Date | readonly (string | number | boolean | Date)[];
@@ -140,6 +140,13 @@ export type TableListFilterButtons = {
   controls?: ReactNode;
   /** Whether page-owned controls differ from their defaults and should enable the shared reset. */
   hasChanges?: boolean;
+  /**
+   * `buttons` (the default) shows each quick filter as a toolbar toggle. `menu` moves them into the Filters
+   * button's popover as switches, beside a link to the filter panel, and counts them in its badge; pages
+   * should then show which quick filters are on, because the toolbar no longer does. Without a filter
+   * panel, quick filters stay as toolbar buttons.
+   */
+  presentation?: "buttons" | "menu";
   buttons: readonly {
     id: string;
     label: ReactNode;
@@ -208,10 +215,7 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   /** Adapter-owned persistence reader, mounted before query-string synchronization. */
   stateSync?: ReactNode;
   runtimeFieldAuthScope?: string | number;
-  runtimeFieldDefinitions?: readonly {
-    namespace: string;
-    definitions: readonly RuntimeFieldDefinition[];
-  }[];
+  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
   onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
   config: ResolvedCollectionConfig<TDocument>;
   rows: readonly TDocument[];

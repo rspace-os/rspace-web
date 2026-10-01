@@ -1,3 +1,4 @@
+import type { i18n as I18n } from "i18next";
 import * as v from "valibot";
 import type {
   CollectionConfig,
@@ -7,7 +8,7 @@ import type {
 } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { isIdLikeField, isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
-import i18n from "@/modules/common/i18n";
+import appI18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
@@ -42,6 +43,7 @@ export type ApiV2CollectionDefinition<TDocument> = {
   translate?: (key: string, values?: Record<string, unknown>) => string;
   /** Formats multi-value cells as a list in this language. */
   language?: string;
+  i18n?: I18n;
 };
 
 function validateSearchSelectors<TDocument>(
@@ -77,10 +79,8 @@ export function createApiV2CollectionAdapter<TDocument>({
   documentSchema,
   metadata,
   runtimeFields = [],
-  translate = (key, values) =>
-    key === "common:tableList.error.customFieldColumnLimit"
-      ? i18n.t("common:tableList.error.customFieldColumnLimit", { limit: Number(values?.limit), lng: language })
-      : key,
+  i18n = appI18n,
+  translate,
   language,
 }: ApiV2CollectionDefinition<TDocument>): ApiV2CollectionAdapter<TDocument> {
   const allowedFields = new Set(metadata.fields);
@@ -98,6 +98,8 @@ export function createApiV2CollectionAdapter<TDocument>({
     metadata,
     runtimeFields,
     translate,
+    i18n,
+    language,
   });
   const relationshipNames = filterFields.sourceFields
     .filter((field) => field.type === "relationship")
@@ -169,7 +171,9 @@ export function createApiV2CollectionAdapter<TDocument>({
       collectionQueryParams(state, config, metadata, filterFields.virtualFields, projectableFields, {
         projection: runtimeProjection(state),
         selectors: catalogSelectors,
-        projectionLimitMessage: (limit) => translate("common:tableList.error.customFieldColumnLimit", { limit }),
+        projectionLimitMessage: (limit) =>
+          translate?.("common:tableList.error.customFieldColumnLimit", { limit }) ??
+          i18n.t("common:tableList.error.customFieldColumnLimit", { limit, lng: language }),
       }),
     // A request selects the visible fields only, so a response omits every other field. Validate the
     // same projection that the request asked for: an omitted selected field stays an error, and an
@@ -248,8 +252,8 @@ function targetValue<TDocument>(
   const fieldValue = value[targetField];
   if (typeof fieldValue === "boolean")
     return fieldValue
-      ? i18n.t("common:actions.yes", { lng: language })
-      : i18n.t("common:actions.no", { lng: language });
+      ? appI18n.t("common:actions.yes", { lng: language })
+      : appI18n.t("common:actions.no", { lng: language });
   if (typeof fieldValue === "number" && targetField !== "id" && !isIdLikeField(targetField))
     return formatNumber(fieldValue, language);
   return fieldValue === null || fieldValue === undefined ? "" : String(fieldValue);

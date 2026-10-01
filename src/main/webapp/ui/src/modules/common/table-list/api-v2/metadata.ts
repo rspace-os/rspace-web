@@ -1,16 +1,17 @@
+import { queryOptions } from "@tanstack/react-query";
 import type { GenericSchema, InferOutput } from "valibot";
 import type { FieldConfig, FieldName, SortRule } from "@/modules/common/collection/config";
+import { apiV2MetadataKey } from "@/modules/common/queries/apiV2QueryKeys";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { sortRuleFromToken } from "../utils/queryString";
 import { validateRuntimeFieldCatalogUrl } from "./runtimeFieldCatalog";
 import {
+  type ApiV2MetadataChild,
   type ApiV2ParsedFilterMetadata,
   type ApiV2ParsedSelector,
   type ApiV2RuntimeFieldNamespace,
   metadataAllowedFieldsSchema,
-  metadataChildrenSchema,
-  metadataChildSchema,
   metadataDocumentSchema,
   metadataFilterSchema,
   metadataLimitSchema,
@@ -78,19 +79,12 @@ function parseAt<TSchema extends GenericSchema>(schema: TSchema, input: unknown,
 }
 
 function declaredChildren(
-  input: unknown,
+  children: readonly ApiV2MetadataChild[],
   parent: string,
-  ancestors = new Set<unknown>(),
 ): FieldConfig<Record<string, unknown>>[] {
-  const names = new Set<string>();
-  return parseAt(metadataChildrenSchema, input, `${parent} child fields`).map((value, index) => {
-    const child = parseAt(metadataChildSchema, value, `${parent}[${index}]`);
+  return children.map((child) => {
     const { name, type: schema, writeConstraints, openApi } = child;
     const path = `${parent}.${name}`;
-    if (names.has(name)) throw new Error(`OpenAPI ${parent} has duplicate child field ${name}`);
-    names.add(name);
-    // Keep raw identities: Valibot returns parsed copies, while fields still hold the raw children.
-    if (ancestors.has(value)) throw new Error(`OpenAPI ${path} has cyclic child fields`);
     const common = {
       name,
       labelKey: name,
@@ -102,10 +96,11 @@ function declaredChildren(
       writeConstraints,
     };
     if (schema.jsonType === "array" || schema.jsonType === "object") {
+      if (child.fields.length === 0) throw new Error(`OpenAPI ${path} child fields: at least one child is required`);
       return {
         ...common,
         type: schema.jsonType,
-        fields: declaredChildren(child.fields, path, new Set(ancestors).add(value)),
+        fields: declaredChildren(child.fields, path),
         ...(schema.jsonType === "array" ? parseAt(metadataRowBoundsSchema, writeConstraints, path) : {}),
       };
     }
@@ -160,10 +155,10 @@ function runtimeFieldNamespaces(declared: unknown, resourceName: string): ApiV2R
     if (namespaces.has(namespace)) throw new Error(`Duplicate runtime field namespace ${namespace}`);
     namespaces.add(namespace);
     validateRuntimeFieldCatalogUrl(catalog);
-    if (namespace.split(".").at(-1) !== catalog.split("/").at(-1)) {
+    const parts = namespace.split(".");
+    if (parts.at(-1) !== catalog.split("/").at(-1)) {
       throw new Error(`Runtime field namespace ${namespace} does not match its catalog`);
     }
-    const parts = namespace.split(".");
     if ((parts.length === 1 && via !== "") || (parts.length === 2 && via !== parts[0])) {
       throw new Error(`Runtime field namespace ${namespace} has an unsupported relationship source`);
     }
@@ -202,11 +197,6 @@ export function apiV2CollectionMetadataFromOpenApi<TDocument>(
   );
   const fields = allowedFields[resourceName];
   if (fields === undefined) throw new Error(`OpenAPI has no allowed fields for ${resourceName}`);
-  for (const [name, selector] of Object.entries(selectors)) {
-    if (selector.picker && !/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
-      throw new Error(`OpenAPI filter selector ${name} has an invalid picker`);
-    }
-  }
   const item = operation.responses["200"].content["application/json"].schema.properties.docs.items;
   const component = item.$ref.slice("#/components/schemas/".length);
   const definition = root.components.schemas[component];
@@ -238,4 +228,17 @@ export async function fetchApiV2CollectionMetadata<TDocument>(
   if (!response.ok) throw new Error(`API V2 OpenAPI request failed with status ${response.status}`);
   const document: unknown = await response.json();
   return apiV2CollectionMetadataFromOpenApi<TDocument>(document, resourceName);
+}
+
+export function apiV2MetadataOptions<T>(
+  resource: string,
+  options: { fetch?: typeof globalThis.fetch; metadata?: ApiV2CollectionMetadata<T> } = {},
+) {
+  return queryOptions({
+    queryKey: apiV2MetadataKey(resource),
+    queryFn: ({ signal }) =>
+      options.metadata ?? fetchApiV2CollectionMetadata<T>(resource, { fetch: options.fetch, signal }),
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
 }
