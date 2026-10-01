@@ -1,4 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
+import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
 
 export type ZonedDayBounds = {
   start: string;
@@ -27,6 +29,12 @@ export type BookingWindowDraft = {
 
 export function parsePlainDate(value: string): Temporal.PlainDate {
   return Temporal.PlainDate.from(value);
+}
+
+/** Whether two timezone names are the same zone, such as `Etc/UTC` and the `UTC` a browser reports. */
+export function sameTimeZone(first: string, second: string): boolean {
+  const canonical = (timeZone: string) => new Intl.DateTimeFormat("en-US", { timeZone }).resolvedOptions().timeZone;
+  return first === second || canonical(first) === canonical(second);
 }
 
 export function isPlainDate(value: string): boolean {
@@ -225,7 +233,81 @@ export function wallClockInstant(
   return occurrence ? resolution[occurrence] : undefined;
 }
 
-export function formatAgendaPeriod(start: string, end: string, timezone: string, locale = "en-US"): string {
+/** The app language when Intl can format it, otherwise en-US; for words such as durations. */
+export function bookingLocale(): string {
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  try {
+    return language && Intl.DateTimeFormat.supportedLocalesOf([language]).length > 0 ? language : "en-US";
+  } catch {
+    return "en-US";
+  }
+}
+
+/**
+ * The browser's regional format, for numeric dates and times. Native date and time inputs always use it, so
+ * following it (rather than the app language) keeps "14:00" or "2:00 PM" consistent between inputs and cards.
+ */
+export function bookingDateTimeLocale(): string {
+  return new Intl.DateTimeFormat().resolvedOptions().locale;
+}
+
+/** The browser region's 12- or 24-hour clock, so times written in the app language still match native inputs. */
+export function bookingHourCycle(): Intl.DateTimeFormatOptions["hourCycle"] {
+  return new Intl.DateTimeFormat(bookingDateTimeLocale(), { hour: "numeric" }).resolvedOptions().hourCycle;
+}
+
+/** A wall-clock `HH:mm` time as the locale writes it, which is also how native time inputs display it. */
+export function formatWallClockTime(time: string, locale = bookingDateTimeLocale()): string {
+  const [hour, minute] = time.split(":").map(Number);
+  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", hour: "2-digit", minute: "2-digit" }).format(
+    Date.UTC(1970, 0, 1, hour, minute),
+  );
+}
+
+/** A plain `YYYY-MM-DD` date as the locale writes it, which is also how native date inputs display it. */
+export function formatPlainDate(date: string, locale = bookingDateTimeLocale()): string {
+  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", year: "numeric", month: "2-digit", day: "2-digit" }).format(
+    new Date(`${date}T12:00:00.000Z`),
+  );
+}
+
+/** A whole-minute duration in words, for example "2 hours" or "1 day, 30 minutes". */
+export function formatDurationMinutes(totalMinutes: number, locale = bookingLocale()): string {
+  const parts = (
+    [
+      ["day", Math.floor(totalMinutes / 1440)],
+      ["hour", Math.floor((totalMinutes % 1440) / 60)],
+      ["minute", totalMinutes % 60],
+    ] as const
+  ).filter(([, value]) => value > 0);
+  return formatList(
+    (parts.length > 0 ? parts : [["minute", 0] as const]).map(([unit, value]) =>
+      new Intl.NumberFormat(locale, { style: "unit", unit, unitDisplay: "long" }).format(value),
+    ),
+    locale,
+    { type: "unit", style: "long" },
+  );
+}
+
+/**
+ * A booking's start and end with the date, e.g. "Oct 8, 2026, 06:00 – 07:00", for sentences outside a dated list such
+ * as the cancel confirmation. Words follow the app language; the clock follows the browser region.
+ */
+export function formatBookingPeriod(start: string, end: string, timezone: string, locale = bookingLocale()): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    hourCycle: bookingHourCycle(),
+    timeZone: timezone,
+  }).formatRange(new Date(start), new Date(end));
+}
+
+export function formatAgendaPeriod(
+  start: string,
+  end: string,
+  timezone: string,
+  locale = bookingDateTimeLocale(),
+): string {
   const timeFormatter = new Intl.DateTimeFormat(locale, {
     timeZone: timezone,
     hour: "2-digit",

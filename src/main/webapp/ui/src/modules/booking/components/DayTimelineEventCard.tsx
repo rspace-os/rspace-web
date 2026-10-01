@@ -22,11 +22,20 @@ function EventIcon({ event }: { event: DayTimelineEvent }) {
   return null;
 }
 
+/*
+ * Content heights for a duration-sized card, including its 2px slot inset, 2px border and 8px padding:
+ * one title line (15px) and the time (14px) always fit a timeline card; the booker badge needs 22px more
+ * and a second title line 15px more. The badge goes first, so the item name and time stay readable.
+ */
+const BADGE_MIN_HEIGHT = 63;
+const TWO_LINE_TITLE_MIN_HEIGHT = 78;
+
 export function DayTimelineEventCard({
   event,
   date,
   timezone = "UTC",
   compactCards = true,
+  fitHeight,
   variant = "flow",
   expanded,
   onExpandedChange,
@@ -40,6 +49,8 @@ export function DayTimelineEventCard({
   date: string;
   timezone?: string;
   compactCards?: boolean;
+  /** The card's pixel height when a timeline sizes it by duration; short cards drop the badge, then title lines. */
+  fitHeight?: number;
   variant?: "timeline" | "flow";
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
@@ -58,6 +69,8 @@ export function DayTimelineEventCard({
   const isExpanded = expanded ?? internalExpanded;
   const setExpanded = onExpandedChange ?? setInternalExpanded;
   const title = event.kind === "blockout" || event.privacy === "full" ? event.title : t("dayTimeline.event.busy");
+  const twoLineTitle = !compactCards && (fitHeight === undefined || fitHeight >= TWO_LINE_TITLE_MIN_HEIGHT);
+  const showBadge = fitHeight === undefined || fitHeight >= BADGE_MIN_HEIGHT;
   const labelledTitle = event.kind === "booking" && event.privacy === "full" ? `${title} · ${event.bookedBy}` : title;
   const notes = event.kind === "booking" && event.privacy === "busy" ? undefined : event.notes;
   const exactPeriod = period(event, date, timezone);
@@ -139,11 +152,16 @@ export function DayTimelineEventCard({
       )}
     >
       <div className="min-w-0 pr-7">
-        <span className="flex min-w-0 items-center gap-1">
+        <span className={cn("flex min-w-0 gap-1", twoLineTitle ? "items-start" : "items-center")}>
           <EventIcon event={event} />
-          <span className="min-w-0 flex-1 truncate font-semibold">{title}</span>
+          <span
+            title={title}
+            className={cn("min-w-0 flex-1 font-semibold", twoLineTitle ? "line-clamp-2 break-words" : "truncate")}
+          >
+            {title}
+          </span>
         </span>
-        {event.kind === "booking" && event.privacy === "full" ? (
+        {event.kind === "booking" && event.privacy === "full" && showBadge ? (
           <UserBadge
             name={event.bookedBy}
             density="compact"

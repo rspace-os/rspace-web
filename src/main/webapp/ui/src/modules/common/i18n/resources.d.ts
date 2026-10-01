@@ -1338,9 +1338,9 @@ export default interface Resources {
         "notesCount": "{count, number}/1,000 characters",
         "occurrence": "Repeated local time",
         "openAllDay": "Open all day",
+        "openAllDayOnDate": "Open all day on this date",
         "openItem": "Open {globalId}",
         "openingHours": "Open: {start} - {end}",
-        "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})",
         "openingHoursOnDate": "Open on this date: {hours}",
         "previousItems": "Previous",
         "purpose": "Purpose",
@@ -1356,7 +1356,6 @@ export default interface Resources {
         "submitMaintenance": "Create maintenance event",
         "time": "Time",
         "timeSnapped": "Adjusted to {time} to match the {increment, number}-minute time increment.",
-        "timezone": "Times shown in {timezone}.",
         "type": "Booking type",
         "typeBlockout": "Maintenance",
         "typeBooking": "Booking"

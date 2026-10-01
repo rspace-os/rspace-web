@@ -2,12 +2,36 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/common/ui/collapsible";
 import { UserBadge } from "@/modules/common/ui/user-badge";
-import type { AuditRow } from "./bookableItemAudit";
-import { recordedValues } from "./bookableItemAudit";
+import type { AuditEventKind, AuditRow } from "./bookableItemAudit";
+import { auditEventKind, recordedValues } from "./bookableItemAudit";
+
+/** Booking terms for audit events, so a cancellation is not shown as a generic WRITE. */
+export function useAuditEventKindLabels(): Record<AuditEventKind, string> {
+  const { t } = useTranslation("booking");
+  return {
+    created: t("bookableItemDetails.audit.actions.created"),
+    changed: t("bookableItemDetails.audit.actions.changed"),
+    cancelled: t("bookableItemDetails.audit.actions.cancelled"),
+    deleted: t("bookableItemDetails.audit.actions.deleted"),
+    restored: t("bookableItemDetails.audit.actions.restored"),
+  };
+}
+
+function useAuditEventLabel(row: AuditRow): string {
+  const labels = useAuditEventKindLabels();
+  const kind = auditEventKind(row);
+  return kind === null ? row.action : labels[kind];
+}
+
+export function AuditActionBadge({ row }: { row: AuditRow }) {
+  const label = useAuditEventLabel(row);
+  return <Badge variant={auditEventKind(row) === "cancelled" ? "secondary" : "outline"}>{label}</Badge>;
+}
 
 export function RecordedValues({ row }: { row: AuditRow }) {
   const { t, i18n } = useTranslation("booking");
@@ -23,15 +47,29 @@ export function RecordedValues({ row }: { row: AuditRow }) {
     timezone: t("bookableItemDetails.audit.values.timezone"),
     openingStart: t("bookableItemDetails.audit.values.openingStart"),
     openingEnd: t("bookableItemDetails.audit.values.openingEnd"),
+    openDays: t("bookableItemDetails.audit.values.openDays"),
+    openingExceptions: t("bookableItemDetails.audit.values.openingExceptions"),
     slotGranularityMinutes: t("bookableItemDetails.audit.values.increment"),
     maxBookingDurationMinutes: t("bookableItemDetails.audit.values.maximumDuration"),
     bufferBeforeMinutes: t("bookableItemDetails.audit.values.bufferBefore"),
     bufferAfterMinutes: t("bookableItemDetails.audit.values.bufferAfter"),
     allowDoubleBooking: t("bookableItemDetails.audit.values.allowDoubleBooking"),
   };
+  const words = {
+    yes: t("bookableItemDetails.yes"),
+    no: t("bookableItemDetails.no"),
+    values: {
+      ACTIVE: t("bookableItems.states.active"),
+      ARCHIVED: t("bookableItemDetails.archived"),
+      CONFIRMED: t("bookings.details.confirmed"),
+      CANCELLED: t("bookings.details.cancelled"),
+      BOOKING: t("bookings.form.typeBooking"),
+      MAINTENANCE: t("bookings.form.typeBlockout"),
+    },
+  };
   return (
     <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
-      {recordedValues(row.payload, i18n.language).map(([label, value]) => (
+      {recordedValues(row.payload, i18n.language, words).map(([label, value]) => (
         <div className="contents" key={label}>
           <dt className="break-words text-muted-foreground">{labels[label] ?? label}</dt>
           <dd className="break-words">{value === "{}" ? t("bookableItemDetails.audit.values.empty") : value}</dd>
@@ -61,9 +99,12 @@ export function AuditTimestamp({ value }: { value: string }) {
   const { i18n } = useTranslation("booking");
   return (
     <time dateTime={value}>
-      {new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "long", timeZone: "UTC" }).format(
-        new Date(value),
-      )}
+      {new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: "medium",
+        timeStyle: "long",
+        hourCycle: bookingHourCycle(),
+        timeZone: "UTC",
+      }).format(new Date(value))}
     </time>
   );
 }
@@ -71,9 +112,10 @@ export function AuditTimestamp({ value }: { value: string }) {
 export function AuditEventItem({ row }: { row: AuditRow }) {
   const { t } = useTranslation(["booking", "common"]);
   const [open, setOpen] = useState(false);
+  const label = useAuditEventLabel(row);
   return (
     <li>
-      <article aria-label={row.description ?? row.action} className="overflow-hidden rounded-sm border bg-card">
+      <article aria-label={row.description ?? label} className="overflow-hidden rounded-sm border bg-card">
         <Collapsible open={open} onOpenChange={setOpen}>
           <div className="space-y-3 p-4">
             <div className="flex items-start justify-between gap-3">
@@ -91,7 +133,7 @@ export function AuditEventItem({ row }: { row: AuditRow }) {
               />
             </div>
             <div>
-              <Badge variant="outline">{row.action}</Badge>
+              <AuditActionBadge row={row} />
               {row.description === null || row.description === undefined ? null : (
                 <p className="mt-2 text-muted-foreground">{row.description}</p>
               )}

@@ -45,12 +45,12 @@ describe("VerticalDayTimeline", () => {
     await expect.element(timeline.endResizeHandle).toBeVisible();
     expect(timeline.moveHandle.element().getBoundingClientRect().height).toBeGreaterThanOrEqual(24);
     expect(timeline.endResizeHandle.element().getBoundingClientRect().height).toBeCloseTo(12);
-    await expect.element(page.getByText("02:00 +02:00", { exact: true })).toBeVisible();
-    await expect.element(page.getByText("02:00 +01:00", { exact: true })).toBeVisible();
+    await expect.element(page.getByText("02:00 AM +02:00", { exact: true })).toBeVisible();
+    await expect.element(page.getByText("02:00 AM +01:00", { exact: true })).toBeVisible();
 
     await timeline.moveDraftLaterByOneSlot();
 
-    await expect.element(timeline.draft).toHaveTextContent("02:05 +01:00–03:05 +01:00");
+    await expect.element(timeline.draft).toHaveTextContent("02:05 AM +01:00–03:05 AM +01:00");
   });
 
   test("uses controlled date navigation and provides a return to the draft day", async () => {
@@ -149,7 +149,7 @@ describe("VerticalDayTimeline", () => {
 
     await expect.element(timeline.endResizeHandle).toBeVisible();
     await timeline.endResizeHandle.click();
-    await expect.element(timeline.draft).toHaveTextContent("02:00 +01:00–04:00 +01:00");
+    await expect.element(timeline.draft).toHaveTextContent("02:00 AM +01:00–04:00 AM +01:00");
 
     const canvasBounds = timeline.canvas.element().getBoundingClientRect();
     const handleBounds = timeline.endResizeHandle.element().getBoundingClientRect();
@@ -163,7 +163,7 @@ describe("VerticalDayTimeline", () => {
       targetPosition,
     });
 
-    await expect.element(timeline.draft).toHaveTextContent("02:00 +01:00–04:05 +01:00");
+    await expect.element(timeline.draft).toHaveTextContent("02:00 AM +01:00–04:05 AM +01:00");
   });
 
   test("continues a native drag through overlapping bookings with a full-width draft", async () => {
@@ -225,14 +225,14 @@ describe("VerticalDayTimeline", () => {
 
     try {
       await dragDraftBy(120, 12);
-      await expect.element(timeline.draft).toHaveTextContent("09:00 +01:00–10:00 +01:00");
+      await expect.element(timeline.draft).toHaveTextContent("09:00 AM +01:00–10:00 AM +01:00");
 
       await dragDraftBy(5, 3);
     } finally {
       observer.disconnect();
     }
 
-    await expect.element(timeline.draft).toHaveTextContent("09:05 +01:00–10:05 +01:00");
+    await expect.element(timeline.draft).toHaveTextContent("09:05 AM +01:00–10:05 AM +01:00");
     const movedBounds = timeline.draft.element().getBoundingClientRect();
     expect(movedBounds.width).toBeGreaterThanOrEqual(canvasBounds.width * 0.9);
     expect(getComputedStyle(timeline.draft.element()).backgroundColor).toBe(backgroundColor);

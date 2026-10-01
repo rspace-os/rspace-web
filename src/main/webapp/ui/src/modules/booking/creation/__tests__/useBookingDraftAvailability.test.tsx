@@ -18,6 +18,8 @@ const target: BookableItemOption = {
   slotGranularityMinutes: 5,
   openingStart: "00:00",
   openingEnd: "24:00",
+  openDays: [1, 2, 3, 4, 5, 6, 7],
+  openingExceptions: [],
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -81,17 +83,20 @@ function formState({
   start = "2026-10-19T08:00:00Z",
   end = "2026-10-19T09:00:00Z",
   eventKind = "BOOKING",
+  meetsRules = true,
 }: {
   item?: BookableItemOption;
   value?: BookingWindowDraft;
   start?: string;
   end?: string;
   eventKind?: "BOOKING" | "MAINTENANCE";
+  meetsRules?: boolean;
 } = {}): BookingFormState {
   return {
     target: item,
     draft: value,
-    window: { start, end },
+    window: meetsRules ? { start, end } : undefined,
+    enteredWindow: { start, end },
     purpose: "Purpose",
     eventKind,
     dirty: true,
@@ -127,6 +132,32 @@ function renderAvailability({
 }
 
 describe("useBookingDraftAvailability", () => {
+  it("checks conflicts as soon as both endpoints are entered, before the item's rules are met", async () => {
+    server.use(
+      http.get("/api/v2/bookings", () =>
+        page([booking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
+      ),
+    );
+    const { result } = renderAvailability({ state: formState({ meetsRules: false }) });
+
+    await waitFor(() => expect(result.current.checking).toBe(false));
+    expect(result.current.conflicts).toHaveLength(1);
+    expect(result.current.blocksSubmission).toBe(true);
+  });
+
+  it("does not treat the item's closed hours as an overlap", async () => {
+    server.use(http.get("/api/v2/bookings", () => page([])));
+    // 08:00Z to 09:00Z is 10:00 to 11:00 in Berlin, after this item closes.
+    const { result } = renderAvailability({
+      state: formState({ item: { ...target, openingStart: "08:00", openingEnd: "09:00" }, meetsRules: false }),
+    });
+
+    await waitFor(() => expect(result.current.checking).toBe(false));
+    expect(result.current.violation).toBe(false);
+    expect(result.current.conflicts).toHaveLength(0);
+    expect(result.current.blocksSubmission).toBe(false);
+  });
+
   it("allows ordinary overlap with a warning when double booking is enabled", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>

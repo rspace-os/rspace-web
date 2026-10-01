@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
+import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { VerticalDayTimeline, type VerticalDayTimelineProps } from "./VerticalDayTimeline";
 import { VERTICAL_DAY_TIMELINE_EVENTS, VerticalDayTimelineStory } from "./VerticalDayTimeline.story";
@@ -23,7 +24,13 @@ const meta = {
     itemName: "Confocal microscope",
     events: VERTICAL_DAY_TIMELINE_EVENTS,
     schedule: { status: "success" },
-    scheduleWindow: { timezone: "Europe/Berlin", openingStart: "08:00", openingEnd: "18:00" },
+    scheduleWindow: {
+      timezone: "Europe/Berlin",
+      openingStart: "08:00",
+      openingEnd: "18:00",
+      openDays: ALL_ISO_WEEKDAYS,
+      openingExceptions: [],
+    },
   } satisfies Partial<VerticalDayTimelineProps>,
 } satisfies Meta<typeof VerticalDayTimeline>;
 

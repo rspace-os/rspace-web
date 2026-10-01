@@ -1,3 +1,5 @@
+import type { OpeningException } from "@/modules/booking/domain/bookingOpeningHours";
+
 export type BookableItemOption = {
   configurationId: number;
   targetId: number;
@@ -7,6 +9,8 @@ export type BookableItemOption = {
   slotGranularityMinutes: number;
   openingStart: string;
   openingEnd: string;
+  openDays: number[];
+  openingExceptions: OpeningException[];
   bufferBeforeMinutes: number;
   bufferAfterMinutes: number;
   maxBookingDurationMinutes: number;
@@ -43,6 +47,8 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     source.slotGranularityMinutes === undefined ||
     source.openingStart === undefined ||
     source.openingEnd === undefined ||
+    source.openDays === undefined ||
+    source.openingExceptions === undefined ||
     source.bufferBeforeMinutes === undefined ||
     source.bufferAfterMinutes === undefined ||
     source.maxBookingDurationMinutes === undefined ||
@@ -59,6 +65,8 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     slotGranularityMinutes: source.slotGranularityMinutes,
     openingStart: source.openingStart,
     openingEnd: source.openingEnd,
+    openDays: source.openDays,
+    openingExceptions: source.openingExceptions,
     bufferBeforeMinutes: source.bufferBeforeMinutes,
     bufferAfterMinutes: source.bufferAfterMinutes,
     maxBookingDurationMinutes: source.maxBookingDurationMinutes,

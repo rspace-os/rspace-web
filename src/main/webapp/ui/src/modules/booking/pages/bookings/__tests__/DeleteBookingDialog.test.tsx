@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
@@ -29,7 +29,12 @@ const cancelledBooking = {
   updatedAt: "2026-08-17T00:00:00Z",
 } as const;
 
-function renderDialog(onDeleted = vi.fn(), iconOnly = false, eventKind: "BOOKING" | "MAINTENANCE" = "BOOKING") {
+function renderDialog(
+  onDeleted = vi.fn(),
+  iconOnly = false,
+  eventKind: "BOOKING" | "MAINTENANCE" = "BOOKING",
+  extraProps: Partial<ComponentProps<typeof DeleteBookingDialog>> = {},
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const invalidate = vi.spyOn(queryClient, "invalidateQueries");
   const result = render(
@@ -42,6 +47,7 @@ function renderDialog(onDeleted = vi.fn(), iconOnly = false, eventKind: "BOOKING
       eventKind={eventKind}
       iconOnly={iconOnly}
       onDeleted={onDeleted}
+      {...extraProps}
     />,
     {
       wrapper: ({ children }: { children: ReactNode }) => (
@@ -75,7 +81,7 @@ describe("DeleteBookingDialog", () => {
 
     const trigger = screen.getByRole("button", { name: "booking:bookings.actions.cancel" });
     await user.click(trigger);
-    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookings.cancelDialog.keep" }));
 
     expect(requests).toBe(0);
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
@@ -99,7 +105,7 @@ describe("DeleteBookingDialog", () => {
     const { invalidate, onDeleted } = renderDialog();
     await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
     const confirm = screen.getByRole("button", { name: "booking:bookings.actions.cancel" });
-    const cancel = screen.getByRole("button", { name: "common:actions.cancel" });
+    const cancel = screen.getByRole("button", { name: "booking:bookings.cancelDialog.keep" });
     await user.click(confirm);
 
     expect(confirm).toBeDisabled();
@@ -161,7 +167,58 @@ describe("DeleteBookingDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "booking:bookings.details.cancelMaintenance" }));
 
-    expect(screen.getByRole("alertdialog")).toHaveTextContent("booking:bookings.details.cancelMaintenanceDescription");
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog).toHaveTextContent("booking:bookings.details.cancelMaintenanceDescription");
     expect(screen.getByRole("heading")).toHaveTextContent("booking:bookings.details.cancelMaintenanceTitle");
+    expect(within(dialog).getByRole("button", { name: "booking:bookings.cancelDialog.keepMaintenance" })).toBeVisible();
+    expect(within(dialog).getByRole("button", { name: "booking:bookings.details.cancelMaintenance" })).toBeVisible();
+  });
+
+  it("names the booking and period, and offers to keep the booking rather than a second Cancel", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog).toHaveTextContent("booking:bookings.cancelDialog.description");
+    expect(dialog).not.toHaveTextContent("booking:bookings.details.cancelDescription");
+    expect(within(dialog).getByRole("button", { name: "booking:bookings.cancelDialog.keep" })).toBeVisible();
+    expect(within(dialog).queryByRole("button", { name: "common:actions.cancel" })).not.toBeInTheDocument();
+  });
+
+  it("falls back to the generic description without an item name and period", async () => {
+    const user = userEvent.setup();
+    renderDialog(vi.fn(), false, "BOOKING", { itemName: "", period: "" });
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("booking:bookings.details.cancelDescription");
+  });
+
+  it("can be opened and closed by its caller without rendering a trigger", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    const { rerender } = renderDialog(vi.fn(), false, "BOOKING", { open: false, onOpenChange });
+
+    expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+    rerender(
+      <DeleteBookingDialog
+        bookingId={41}
+        bookingVersion={0}
+        itemName="Confocal microscope"
+        period="08:00–09:00"
+        token="token"
+        open
+        onOpenChange={onOpenChange}
+        onDeleted={vi.fn()}
+      />,
+    );
+    const dialog = await screen.findByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "booking:bookings.cancelDialog.keep" }));
+
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
   });
 });
