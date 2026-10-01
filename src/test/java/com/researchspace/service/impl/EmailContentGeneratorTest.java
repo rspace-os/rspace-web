@@ -139,9 +139,10 @@ class EmailContentGeneratorTest {
     originator.setFirstName("Actor <script>");
     var notification = TestFactory.createANotification(originator);
     notification.setNotificationType(type);
-    notification.setNotificationDataObject(
-        new com.researchspace.model.comms.data.OwnerBookingNotificationData(
-            "Microscope", "Pacific/Auckland"));
+    var data = new com.researchspace.model.comms.data.BookingNotificationData();
+    data.setInstrumentName("Microscope");
+    data.setEmailDisplayTimezone("Pacific/Auckland");
+    notification.setNotificationDataObject(data);
     EmailContent content =
         new CommunicationEmailContentGenerator(generator, "https://rspace.example")
             .generate(notification);
