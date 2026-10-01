@@ -114,13 +114,7 @@ public class InventoryRadioField extends InventoryEntityField {
     if (currentRadioDefId != null && !currentRadioDefId.equals(templateRadioDef.getId())) {
       ErrorList validationResult = templateRadioDef.validate(getData());
       if (validationResult.hasErrorMessages()) {
-        throw new IllegalStateException(
-            "Field ["
-                + getName()
-                + "] value ["
-                + getData()
-                + "] "
-                + "is invalid according to latest template field definition");
+        throw new FieldValueInvalidForLatestTemplateException(getName(), getData());
       }
       // switch to latest radio def
       setRadioDef(templateRadioDef);
