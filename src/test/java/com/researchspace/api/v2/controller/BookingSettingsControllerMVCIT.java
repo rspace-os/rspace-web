@@ -61,6 +61,8 @@ class BookingSettingsControllerMVCIT {
             originalSettings.slotGranularityMinutes(),
             originalSettings.openingStart(),
             originalSettings.openingEnd(),
+            originalSettings.openDays(),
+            originalSettings.openingExceptions(),
             originalSettings.bufferBeforeMinutes(),
             originalSettings.bufferAfterMinutes(),
             originalSettings.maxBookingDurationMinutes(),
@@ -94,6 +96,25 @@ class BookingSettingsControllerMVCIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body(version, true)))
         .andExpect(status().isForbidden());
+
+    BookingConfigurationDefaults before = settingsManager.getDefaults(sysadmin);
+    mockMvc
+        .perform(
+            patch("/api/v2/booking-settings/admin")
+                .header("apiKey", fixture.userKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"openDays":[1,6],
+                     "openingExceptions":[{"dayOfWeek":6,"start":"10:00","end":"16:00"}],
+                     "configurationVersion":%d}
+                    """
+                        .formatted(before.getConfigurationVersion())))
+        .andExpect(status().isForbidden());
+    BookingConfigurationDefaults after = settingsManager.getDefaults(sysadmin);
+    assertEquals(before.getConfigurationVersion(), after.getConfigurationVersion());
+    assertEquals(before.getOpenDays(), after.getOpenDays());
+    assertEquals(before.getOpeningExceptions(), after.getOpeningExceptions());
   }
 
   @Test
@@ -273,6 +294,90 @@ class BookingSettingsControllerMVCIT {
     assertEquals("09:00", persisted.availabilityWindowStart());
     assertEquals("17:00", persisted.availabilityWindowEnd());
     assertEquals("America/New_York", persisted.customTimezone());
+  }
+
+  @Test
+  void persistsOpenDaysAndExceptionsAndTreatsNullAsNoChange() throws Exception {
+    long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
+
+    mockMvc
+        .perform(
+            patch("/api/v2/booking-settings/admin")
+                .header("apiKey", fixture.sysadminKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"openDays":[6,1,2,3,4,5],
+                     "openingExceptions":[{"dayOfWeek":6,"start":"10:00","end":"16:00"}],
+                     "configurationVersion":%d}
+                    """
+                        .formatted(version)))
+        .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openDays[0]").value(1))
+        .andExpect(jsonPath("$.openDays[5]").value(6))
+        .andExpect(jsonPath("$.openingExceptions[0].dayOfWeek").value(6))
+        .andExpect(jsonPath("$.openingExceptions[0].start").value("10:00"));
+
+    mockMvc
+        .perform(
+            patch("/api/v2/booking-settings/admin")
+                .header("apiKey", fixture.sysadminKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"openDays":null,"openingExceptions":null,"configurationVersion":%d}
+                    """
+                        .formatted(version + 1)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openDays.length()").value(6))
+        .andExpect(jsonPath("$.openingExceptions.length()").value(1));
+    mockMvc
+        .perform(get("/api/v2/booking-settings").header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openDays.length()").value(6))
+        .andExpect(jsonPath("$.openingExceptions[0].end").value("16:00"));
+
+    BookingConfigurationDefaults persisted = settingsManager.getDefaults(sysadmin);
+    assertEquals(java.util.List.of(1, 2, 3, 4, 5, 6), persisted.getOpenDays());
+    assertEquals(1, persisted.getOpeningExceptions().size());
+  }
+
+  @Test
+  void rejectsCoercedOrInconsistentWeekdaysWithoutWriting() throws Exception {
+    BookingConfigurationDefaults before = settingsManager.getDefaults(sysadmin);
+    long version = before.getConfigurationVersion();
+
+    java.util.Map<String, String> rejected =
+        java.util.Map.of(
+            "{\"openDays\":[\"1\"],",
+            "errors.api.v2.bookingConfiguration.openDays.invalid",
+            "{\"openDays\":[1.5],",
+            "errors.api.v2.bookingConfiguration.openDays.invalid",
+            "{\"openDays\":[],",
+            "errors.api.v2.bookingConfiguration.openDays.invalid",
+            "{\"openDays\":[1,2],\"openingExceptions\":"
+                + "[{\"dayOfWeek\":3,\"start\":\"10:00\",\"end\":\"16:00\"}],",
+            "errors.api.v2.bookingConfiguration.openingExceptions.invalid",
+            "{\"openingExceptions\":[{\"dayOfWeek\":3,\"start\":\"10:00\",\"end\":\"16:00\","
+                + "\"extra\":1}],",
+            "errors.api.v2.bookingConfiguration.openingExceptions.invalid");
+    for (var entry : rejected.entrySet()) {
+      mockMvc
+          .perform(
+              patch("/api/v2/booking-settings/admin")
+                  .header("apiKey", fixture.sysadminKey())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(entry.getKey() + "\"configurationVersion\":" + version + "}"))
+          .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.code").value(entry.getValue()));
+    }
+
+    BookingConfigurationDefaults after = settingsManager.getDefaults(sysadmin);
+    assertEquals(version, after.getConfigurationVersion());
+    assertEquals(before.getOpenDays(), after.getOpenDays());
+    assertEquals(before.getOpeningExceptions(), after.getOpeningExceptions());
   }
 
   @Test

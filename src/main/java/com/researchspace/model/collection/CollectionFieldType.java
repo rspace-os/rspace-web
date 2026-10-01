@@ -1,5 +1,6 @@
 package com.researchspace.model.collection;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -18,8 +19,17 @@ public interface CollectionFieldType<V> {
     ARRAY
   }
 
-  /** Introspectable wire schema used by validation and generated API metadata. */
-  record Schema(String jsonType, String format, Integer maxLength) {
+  /**
+   * Introspectable wire schema used by validation and generated API metadata.
+   *
+   * @param structure additional JSON Schema keywords describing a structured value, such as {@code
+   *     items}; empty for scalars
+   */
+  record Schema(String jsonType, String format, Integer maxLength, Map<String, Object> structure) {
+
+    public Schema(String jsonType, String format, Integer maxLength) {
+      this(jsonType, format, maxLength, Map.of());
+    }
 
     public Schema {
       if (jsonType == null || jsonType.isBlank()) {
@@ -28,6 +38,10 @@ public interface CollectionFieldType<V> {
       if (maxLength != null && maxLength < 0) {
         throw new IllegalArgumentException("Maximum length must not be negative");
       }
+      structure =
+          structure == null || structure.isEmpty()
+              ? Map.of()
+              : java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(structure));
     }
   }
 

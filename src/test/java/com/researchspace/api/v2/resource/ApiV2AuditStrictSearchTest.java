@@ -387,6 +387,42 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void actorDirectoryHidesBookingEventsByOutsideUsersUnlessTheResourceBypassesIt()
+      throws IOException {
+    User itemManager = TestFactory.createAnyUser("item-manager");
+    UserManager users = Mockito.mock(UserManager.class);
+    Mockito.when(users.getViewableUsers(Mockito.eq(itemManager), Mockito.any()))
+        .thenReturn(new com.researchspace.core.util.SearchResultsImpl<User>(List.of(), 0, 0L));
+    write(
+        "RSLogs.txt",
+        "01 Jan 2026 12:00:00,000 - domain:BOOKING action:CREATE"
+            + " [{\"data\":{\"id\":\"bookings:41\"}}] outside-booker(Outside Booker)\n");
+    ApiV2AuditStrictSearch search =
+        new ApiV2AuditStrictSearch(
+            directory,
+            "RSLogs",
+            ZoneOffset.UTC,
+            new AuditTrailActorVisibility(users),
+            ReadObserver.NONE);
+
+    for (boolean bypass : new boolean[] {false, true}) {
+      List<AuditTrailSearchResult> results =
+          search.search(
+              new Request(
+                  FROM,
+                  TO,
+                  Set.of(AuditDomain.BOOKING),
+                  Set.of(),
+                  "bookings:41",
+                  Set.of(),
+                  itemManager,
+                  10,
+                  bypass));
+      assertEquals(bypass ? 1 : 0, results.size(), "bypass=" + bypass);
+    }
+  }
+
+  @Test
   void textSearchMatchesDecodedTargetAndPurposeValues() throws IOException {
     write(
         "RSLogs.txt",

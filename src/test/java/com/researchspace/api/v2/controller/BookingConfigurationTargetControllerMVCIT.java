@@ -72,6 +72,61 @@ class BookingConfigurationTargetControllerMVCIT {
   }
 
   @Test
+  void browsingWithoutAQueryKeepsOwnershipAndConfiguredTargetRestrictions() throws Exception {
+    User owner = fixture.user();
+    long later = fixture.instrument(owner, "zz " + fixture.marker() + "-later");
+    long earlier = fixture.instrument(owner, "aa " + fixture.marker() + "-earlier");
+    long somebodyElses = fixture.instrument(fixture.otherUser(), fixture.marker() + "-other");
+
+    for (String query : new String[] {null, "", "   "}) {
+      var request =
+          get("/api/v2/booking-configuration-targets")
+              .queryParam("limit", "50")
+              .header("apiKey", fixture.userKey());
+      if (query != null) {
+        request.queryParam("query", query);
+      }
+      mockMvc
+          .perform(request)
+          .andDo(BookingConfigurationTargetControllerMVCIT::failOnUnexpectedServerError)
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$[*].id", hasItem((int) earlier)))
+          .andExpect(jsonPath("$[*].id", hasItem((int) later)))
+          .andExpect(jsonPath("$[*].id", not(hasItem((int) somebodyElses))));
+    }
+    java.util.List<Integer> browsed =
+        com.jayway.jsonpath.JsonPath.read(
+            mockMvc
+                .perform(
+                    get("/api/v2/booking-configuration-targets")
+                        .queryParam("limit", "50")
+                        .header("apiKey", fixture.userKey()))
+                .andReturn()
+                .getResponse()
+                .getContentAsString(),
+            "$[*].id");
+    org.junit.jupiter.api.Assertions.assertTrue(
+        browsed.indexOf((int) earlier) < browsed.indexOf((int) later), browsed::toString);
+    mockMvc
+        .perform(
+            get("/api/v2/booking-configuration-targets")
+                .queryParam("limit", "1")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1));
+
+    fixture.bookingConfiguration(earlier, "UTC", fixture.userKey());
+    mockMvc
+        .perform(
+            get("/api/v2/booking-configuration-targets")
+                .queryParam("limit", "50")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[*].id", not(hasItem((int) earlier))))
+        .andExpect(jsonPath("$[*].id", hasItem((int) later)));
+  }
+
+  @Test
   void validatesAuthenticationQueryAndLimit() throws Exception {
     mockMvc
         .perform(get("/api/v2/booking-configuration-targets").queryParam("query", "ab"))
@@ -89,6 +144,15 @@ class BookingConfigurationTargetControllerMVCIT {
                 .queryParam("limit", "51")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isBadRequest());
+    mockMvc
+        .perform(
+            get("/api/v2/booking-configuration-targets")
+                .queryParam("limit", "0")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isBadRequest());
+    mockMvc
+        .perform(get("/api/v2/booking-configuration-targets"))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test

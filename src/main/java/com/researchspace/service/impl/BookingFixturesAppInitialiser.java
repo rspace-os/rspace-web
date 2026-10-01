@@ -477,7 +477,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     Date start = Date.from(date.atTime(startTime).atZone(zone).toInstant());
     LocalDate endDate = endTime.isAfter(startTime) ? date : date.plusDays(1);
     Date end = Date.from(endDate.atTime(endTime).atZone(zone).toInstant());
-    if (!bookingDao.overlaps(configuration.getId(), start, end, null)) {
+    if (bookingDao.findFirstOverlap(configuration.getId(), start, end, null).isEmpty()) {
       bookingManager.createBooking(
           new TimeSlotBookingManager.Create(target(instrument), start, end, purpose), owner, owner);
     }
