@@ -4,6 +4,11 @@ The REST API v2 item-audit endpoint reads the file-backed audit trail into a dai
 
 This is not a retention limit and does not change the legacy Activity API. It applies only to one REST API v2 resource-audit request.
 
+Resource scoping compares the decoded top-level audit `id` exactly. An adapter may
+declare trusted relationship fields with `relatedAuditIdentifierFields()` to include
+related events. Booking configuration audits use `bookingConfigurationId` for this
+purpose. Free text and nested IDs never establish audit access.
+
 The optional `search` parameter matches actor names, actions, descriptions, target IDs,
 and readable recorded values before pagination and the result ceiling. Matching is
 case-insensitive and treats the query as literal text. Unpublished audit fields are

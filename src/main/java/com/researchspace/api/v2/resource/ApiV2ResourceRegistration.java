@@ -140,6 +140,10 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return operations.relatedAuditFields();
   }
 
+  Set<String> relatedAuditIdentifierFields() {
+    return operations.relatedAuditIdentifierFields();
+  }
+
   boolean auditBypassesActorDirectory() {
     return operations.auditBypassesActorDirectory();
   }

@@ -372,7 +372,6 @@ public final class ApiV2AuditStrictSearch {
               timestamp,
               domain,
               action,
-              matcher.group(4),
               matcher.group(5),
               new AuditTrailSearchResult(event, timestamp.toEpochMilli())));
     } catch (DateTimeException | IllegalArgumentException ex) {
@@ -390,9 +389,19 @@ public final class ApiV2AuditStrictSearch {
         && line.timestamp().compareTo(request.toExclusive()) < 0
         && restricted.getDomains().contains(line.domain())
         && restricted.getActions().contains(line.action())
-        && (request.oid() == null || line.rawData().contains("\"" + request.oid() + "\""))
+        && identifierMatches(line, request)
         && actorMatches(restricted, line.username())
         && textMatches(line, request);
+  }
+
+  private static boolean identifierMatches(ParsedLine line, Request request) {
+    if (request.oid() == null) {
+      return true;
+    }
+    Map<String, Object> data = line.result().getEvent().getData().getData();
+    return request.oid().equals(data.get("id"))
+        || request.relatedIdentifierFields().stream()
+            .anyMatch(field -> request.oid().equals(data.get(field)));
   }
 
   private static boolean textMatches(ParsedLine line, Request request) {
@@ -565,7 +574,8 @@ public final class ApiV2AuditStrictSearch {
       int ceiling,
       boolean bypassActorDirectory,
       String search,
-      Set<String> searchableFields) {
+      Set<String> searchableFields,
+      Set<String> relatedIdentifierFields) {
 
     public Request(
         Instant fromInclusive,
@@ -587,6 +597,7 @@ public final class ApiV2AuditStrictSearch {
           ceiling,
           false,
           null,
+          Set.of(),
           Set.of());
     }
 
@@ -611,6 +622,7 @@ public final class ApiV2AuditStrictSearch {
           ceiling,
           bypassActorDirectory,
           null,
+          Set.of(),
           Set.of());
     }
 
@@ -636,6 +648,7 @@ public final class ApiV2AuditStrictSearch {
           ceiling,
           bypassActorDirectory,
           search,
+          Set.of(),
           Set.of());
     }
 
@@ -658,6 +671,7 @@ public final class ApiV2AuditStrictSearch {
       search = search == null ? null : search.trim().toLowerCase(Locale.ROOT);
       search = search == null || search.isBlank() ? null : search;
       searchableFields = Set.copyOf(searchableFields);
+      relatedIdentifierFields = Set.copyOf(relatedIdentifierFields);
     }
   }
 
@@ -690,7 +704,6 @@ public final class ApiV2AuditStrictSearch {
       Instant timestamp,
       AuditDomain domain,
       AuditAction action,
-      String rawData,
       String username,
       AuditTrailSearchResult result) {}
 

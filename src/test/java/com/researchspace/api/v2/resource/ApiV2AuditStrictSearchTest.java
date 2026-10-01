@@ -33,6 +33,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 class ApiV2AuditStrictSearchTest {
@@ -384,6 +386,39 @@ class ApiV2AuditStrictSearchTest {
     assertEquals(AuditAction.CREATE, results.get(0).getEvent().getAction());
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"bookings:41", "booking-configurations:12"})
+  void sameDomainEventsMustMatchTheDecodedTopLevelIdentifier(String identifier) throws IOException {
+    String unrelated =
+        event("01 Jan 2026 12:00:00,000", "bookings:42")
+            .replace("domain:UNKNOWN", "domain:BOOKING");
+    String purpose = unrelated.replace("\"name\":\"item\"", "\"purpose\":\"" + identifier + "\"");
+    String nested =
+        unrelated.replace("\"name\":\"item\"", "\"target\":{\"id\":\"" + identifier + "\"}");
+    String parent =
+        unrelated.replace("\"name\":\"item\"", "\"bookingConfigurationId\":\"" + identifier + "\"");
+    String direct =
+        event("01 Jan 2026 13:00:00,000", identifier.replace(":", "\\u003a"))
+            .replace("domain:UNKNOWN", "domain:BOOKING");
+    write("RSLogs.txt", purpose + "\n" + nested + "\n" + parent + "\n" + direct + "\n");
+    Request request =
+        new Request(
+            FROM,
+            TO,
+            Set.of(AuditDomain.BOOKING),
+            Set.of(AuditAction.CREATE),
+            identifier,
+            Set.of(),
+            sysadmin,
+            1,
+            true);
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 1).search(request);
+
+    assertEquals(1, results.size());
+    assertEquals(identifier, results.get(0).getEvent().getData().getData().get("id"));
+  }
+
   @Test
   void actorDirectoryHidesBookingEventsByOutsideUsersUnlessTheResourceBypassesIt()
       throws IOException {
@@ -498,7 +533,8 @@ class ApiV2AuditStrictSearchTest {
         ceiling,
         false,
         search,
-        searchableFields);
+        searchableFields,
+        Set.of());
   }
 
   private Path write(String filename, String content) throws IOException {

@@ -166,7 +166,8 @@ public final class ApiV2AuditLog {
                   searchableAuditFields(
                       resource.description(),
                       target.readableFields(),
-                      resource.relatedAuditFields())))
+                      resource.relatedAuditFields()),
+                  resource.relatedAuditIdentifierFields()))
           .stream()
           .map(
               result ->

@@ -29,14 +29,20 @@ import com.researchspace.model.collection.ApiV2ResourceField.AccessPreset;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.service.UserManager;
+import com.researchspace.service.audit.search.AuditTrailActorVisibility;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.ws.rs.NotFoundException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -47,6 +53,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 
 class ApiV2AuditLogTest {
@@ -101,12 +108,57 @@ class ApiV2AuditLogTest {
     verify(strictSearch).search(request.capture());
     query.getActions().clear();
     assertEquals("things:7", request.getValue().oid());
+    assertTrue(request.getValue().relatedIdentifierFields().isEmpty());
     assertEquals(Set.of(AuditDomain.RECORD), request.getValue().domains());
     assertEquals(Set.of(AuditAction.WRITE), request.getValue().actions());
     assertEquals("payloadmarker", request.getValue().search());
     assertEquals(Set.of("id", "name"), request.getValue().searchableFields());
     assertEquals(Instant.parse("2025-12-01T00:00:00Z"), request.getValue().fromInclusive());
     assertEquals(Instant.parse("2026-01-03T00:00:00Z"), request.getValue().toExclusive());
+  }
+
+  @Test
+  void aggregateAuditUsesOnlyItsExplicitParentIdentifierField(@TempDir Path logs) throws Exception {
+    when(operations.relatedAuditIdentifierFields()).thenReturn(Set.of("parentId"));
+    when(operations.relatedAuditFields()).thenReturn(Set.of("parentId", "purpose"));
+    when(operations.auditBypassesActorDirectory()).thenReturn(true);
+    String timestamp =
+        DateTimeFormatter.ofPattern("dd MMM uuuu HH:mm:ss,SSS", java.util.Locale.ENGLISH)
+            .withZone(ZoneId.systemDefault())
+            .format(Instant.parse("2026-01-02T12:00:00Z"));
+    String prefix = timestamp + " - domain:RECORD action:WRITE [{\"data\":{";
+    String suffix = "}}] outside-user(Outside User)\n";
+    Files.writeString(
+        logs.resolve("RSLogs.txt"),
+        prefix
+            + "\"id\":\"children:1\",\"parentId\":\"things:8\",\"purpose\":\"things:7\""
+            + suffix
+            + prefix
+            + "\"id\":\"children:2\",\"parentId\":\"things:7\",\"purpose\":\"Related\""
+            + suffix
+            + prefix
+            + "\"id\":\"children:3\",\"parentId\":{\"id\":\"things:7\"}"
+            + suffix
+            + prefix
+            + "\"id\":\"things:7\",\"name\":\"Direct\""
+            + suffix);
+    ApiV2AuditLog realAuditLog =
+        new ApiV2AuditLog(
+            new ApiV2AuditStrictSearch(
+                logs.toString(), new AuditTrailActorVisibility(mock(UserManager.class))),
+            Clock.fixed(NOW, ZoneOffset.UTC),
+            100);
+
+    var page = realAuditLog.search(resource, "7", rangeQuery(), actor);
+
+    assertEquals(2, page.totalDocs());
+    assertEquals(
+        Set.of("children:2", "things:7"),
+        page.docs().stream()
+            .map(ApiV2AuditEvent::target)
+            .collect(java.util.stream.Collectors.toSet()));
+    assertTrue(
+        page.docs().stream().anyMatch(event -> "Related".equals(event.payload().get("purpose"))));
   }
 
   @Test

@@ -195,6 +195,11 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
+  public Set<String> relatedAuditIdentifierFields() {
+    return Set.of("bookingConfigurationId");
+  }
+
+  @Override
   public boolean auditBypassesActorDirectory() {
     return true;
   }
