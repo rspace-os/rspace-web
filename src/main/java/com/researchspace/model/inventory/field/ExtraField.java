@@ -154,7 +154,6 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
 
   void copyProperties(ExtraField copy) {
     copy.setEditInfo(getEditInfo().shallowCopy());
-    copy.setData(getData());
     copy.setDeleted(isDeleted());
   }
 }
