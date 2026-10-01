@@ -5411,6 +5411,7 @@ components:
         - unitId
       oneOf:
         - title: Celsius
+          description: Celsius, whole degrees from -273 to -18.
           properties:
             unitId:
               enum:
@@ -5419,6 +5420,7 @@ components:
               minimum: -273
               maximum: -18
         - title: Kelvin
+          description: Kelvin, whole degrees from 0 to 255.
           properties:
             unitId:
               enum:
@@ -5427,6 +5429,7 @@ components:
               minimum: 0
               maximum: 255
         - title: Fahrenheit
+          description: Fahrenheit, whole degrees from -459 to -1.
           properties:
             unitId:
               enum:
@@ -5456,6 +5459,7 @@ components:
         - unitId
       oneOf:
         - title: Celsius
+          description: Celsius, whole degrees from 4 to 120.
           properties:
             unitId:
               enum:
@@ -5464,6 +5468,7 @@ components:
               minimum: 4
               maximum: 120
         - title: Kelvin
+          description: Kelvin, whole degrees from 278 to 393.
           properties:
             unitId:
               enum:
@@ -5472,6 +5477,7 @@ components:
               minimum: 278
               maximum: 393
         - title: Fahrenheit
+          description: Fahrenheit, whole degrees from 40 to 248.
           properties:
             unitId:
               enum:
@@ -5663,9 +5669,10 @@ components:
               items:
                 allOf:
                   - $ref: "#/components/schemas/OperationOrigin"
-                not:
-                  required:
-                    - amountTaken
+                properties:
+                  amountTaken:
+                    not: {}
+                    description: Must be absent. `takeAll` takes each origin's whole quantity.
             takeAll:
               type: boolean
               enum:
