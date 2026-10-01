@@ -133,6 +133,7 @@ class BookingAuditTrailTest {
             "Microscope",
             BookingConfigurationState.ARCHIVED,
             2,
+            1,
             4,
             Instant.parse("2026-09-01T12:00:00Z"));
 
@@ -154,6 +155,7 @@ class BookingAuditTrailTest {
             "Microscope",
             BookingConfigurationState.ARCHIVED,
             2,
+            1,
             4,
             Instant.parse("2026-09-01T12:00:00Z"));
 
