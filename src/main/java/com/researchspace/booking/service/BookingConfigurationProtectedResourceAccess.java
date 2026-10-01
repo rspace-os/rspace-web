@@ -7,8 +7,14 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessCallerCapabilities;
+import com.researchspace.service.resourceaccess.ResourceAccessCallerDocument;
+import com.researchspace.service.resourceaccess.ResourceAccessDocument;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -20,12 +26,15 @@ public class BookingConfigurationProtectedResourceAccess
 
   private final BookingConfigurationDao configurationDao;
   private final FeatureFlagManager featureFlags;
+  private final BookingItemPermissions permissions;
 
   public BookingConfigurationProtectedResourceAccess(
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
-      FeatureFlagManager featureFlags) {
+      FeatureFlagManager featureFlags,
+      BookingItemPermissions permissions) {
     this.configurationDao = configurationDao;
     this.featureFlags = featureFlags;
+    this.permissions = permissions;
   }
 
   @Override
@@ -35,22 +44,53 @@ public class BookingConfigurationProtectedResourceAccess
 
   @Override
   public Optional<BookingConfiguration> find(Long id) {
-    return configurationDao.getSafeNull(id);
+    return id == null ? Optional.empty() : configurationDao.getSafeNull(id);
   }
 
   @Override
   public Optional<BookingConfiguration> lock(Long id) {
-    return configurationDao.lockById(id);
+    return id == null ? Optional.empty() : configurationDao.lockById(id);
   }
 
   @Override
   public ResourceAccess access(BookingConfiguration resource) {
-    return resource.getResourceAccess();
+    return null;
+  }
+
+  @Override
+  public boolean isInherited(BookingConfiguration resource) {
+    return true;
+  }
+
+  @Override
+  public ResolvedResourceAccess resolveInherited(BookingConfiguration resource, User subject) {
+    return permissions.resolve(resource, subject);
+  }
+
+  @Override
+  public ResolvedResourceAccess resolveInheritedForMutation(
+      BookingConfiguration resource, User subject) {
+    return permissions.resolveForMutation(resource, subject);
+  }
+
+  @Override
+  public ResourceAccessDocument inheritedDocument(
+      BookingConfiguration resource, User subject, ResolvedResourceAccess resolved) {
+    ResourceAccessCallerDocument caller =
+        new ResourceAccessCallerDocument(
+            resolved.effectiveRole(),
+            resolved.roleSources(),
+            new ResourceAccessCallerCapabilities(false, false, false),
+            subject == null || subject.getId() == null
+                ? null
+                : ResourceGranteeKeys.user(subject.getId()));
+    return new ResourceAccessDocument(
+        BookingResourceRoleScheme.SCHEME_KEY, 0L, List.of(), caller, true);
   }
 
   @Override
   public String viewAccessCapability() {
-    return BookingResourceRoleScheme.MANAGE_ASSIGNMENTS;
+    return BookingResourceRoleScheme.READ_RESOURCE;
   }
 
   @Override

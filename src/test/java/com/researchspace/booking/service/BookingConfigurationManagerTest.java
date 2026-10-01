@@ -9,7 +9,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -23,9 +22,11 @@ import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.dao.AuditDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
@@ -34,8 +35,6 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingConfigurationState;
-import com.researchspace.model.booking.BookingDefaultAccessGrantee;
-import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
@@ -53,10 +52,7 @@ import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.JsonMessageSource;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessException;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Collections;
 import java.util.Date;
@@ -73,9 +69,12 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 class BookingConfigurationManagerTest {
+
+  private final AuditDao auditDao = mock(AuditDao.class);
 
   private final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
   private final BookingConfigurationDefaultsDao defaultsDao =
@@ -88,7 +87,7 @@ class BookingConfigurationManagerTest {
   private final User actor = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
-  private final ResourceAccessManager accessManager = mock(ResourceAccessManager.class);
+  private final BookingItemPermissions itemPermissions = mock(BookingItemPermissions.class);
   private final LocalValidatorFactoryBean validator = validator();
   private final BookingConfigurationManager manager =
       new BookingConfigurationManagerImpl(
@@ -99,13 +98,13 @@ class BookingConfigurationManagerTest {
           events,
           resourceRegistry,
           ApiV2BookingConfigurationResource.DESCRIPTION,
-          accessManager,
-          new MessageSourceUtils(new JsonMessageSource()),
+          itemPermissions,
           calendarSubscriptions,
           timeSlotBookings);
 
   @BeforeEach
   void setUp() {
+    ReflectionTestUtils.setField(manager, "auditDao", auditDao);
     when(actor.hasSysadminRole()).thenReturn(true);
     when(actor.isEnabled()).thenReturn(true);
     when(actor.getId()).thenReturn(1L);
@@ -130,13 +129,17 @@ class BookingConfigurationManagerTest {
                 BookingResourceRoleScheme.READ_RESOURCE,
                 BookingResourceRoleScheme.EDIT_CONFIGURATION),
             List.of());
-    when(accessManager.resolve(nullable(ResourceAccess.class), eq(actor))).thenReturn(ownerAccess);
-    when(accessManager.resolveAll(any(), eq(actor)))
+    when(itemPermissions.resolve(any(BookingConfiguration.class), eq(actor)))
+        .thenReturn(ownerAccess);
+    when(itemPermissions.resolveForMutation(any(BookingConfiguration.class), eq(actor)))
+        .thenReturn(ownerAccess);
+    when(itemPermissions.resolveAll(any(), eq(actor)))
         .thenAnswer(
             invocation -> {
-              List<ResourceAccess> accesses = invocation.getArgument(0);
+              List<BookingConfiguration> configurations = invocation.getArgument(0);
               Map<Long, ResolvedResourceAccess> result = new HashMap<>();
-              accesses.forEach(access -> result.put(access.getId(), ownerAccess));
+              configurations.forEach(
+                  configuration -> result.put(configuration.getId(), ownerAccess));
               return result;
             });
   }
@@ -151,6 +154,29 @@ class BookingConfigurationManagerTest {
     validator.setValidationMessageSource(new JsonMessageSource());
     validator.afterPropertiesSet();
     return validator;
+  }
+
+  @Test
+  void onlySysadminCanResolveDeletedConfigurationForAudit() {
+    BookingConfiguration deleted = configuration(42L, 11L);
+    when(auditDao.getNewestRevisionForEntity(BookingConfiguration.class, 42L))
+        .thenReturn(new AuditedEntity<>(deleted, 1));
+
+    assertEquals(Optional.of(deleted), manager.getConfigurationForAudit(42L, actor));
+    assertTrue(manager.getConfiguration(42L, actor).isEmpty());
+
+    when(actor.hasSysadminRole()).thenReturn(false);
+    assertTrue(manager.getConfigurationForAudit(42L, actor).isEmpty());
+    verify(auditDao, times(1)).getNewestRevisionForEntity(BookingConfiguration.class, 42L);
+  }
+
+  @Test
+  void auditDoesNotRecoverAnUnreadableLiveConfiguration() {
+    BookingConfiguration unreadable = configuration(42L, 11L);
+    when(dao.getSafeNull(42L)).thenReturn(Optional.of(unreadable));
+
+    assertTrue(manager.getConfigurationForAudit(42L, actor).isEmpty());
+    verify(auditDao, never()).getNewestRevisionForEntity(any(), any());
   }
 
   @Test
@@ -197,20 +223,7 @@ class BookingConfigurationManagerTest {
     assertEquals(5, created.getSlotGranularityMinutes());
     assertEquals("00:00", created.getOpeningStart());
     assertEquals("24:00", created.getOpeningEnd());
-    assertEquals(BookingResourceRoleScheme.SCHEME_KEY, created.getResourceAccess().getSchemeKey());
-    assertEquals(2, created.getResourceAccess().getAssignments().size());
-    assertTrue(
-        created.getResourceAccess().getAssignments().stream()
-            .anyMatch(
-                assignment ->
-                    assignment.getRoleKey().equals(BookingResourceRoleScheme.OWNER)
-                        && assignment.getGranteeKey().equals("user:1")));
-    assertTrue(
-        created.getResourceAccess().getAssignments().stream()
-            .anyMatch(
-                assignment ->
-                    assignment.getRoleKey().equals(BookingResourceRoleScheme.BOOKER)
-                        && assignment.getGranteeKey().equals("audience:all-users")));
+    assertEquals(null, created.getResourceAccess());
     verify(dao).saveAndFlush(created);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
@@ -381,6 +394,13 @@ class BookingConfigurationManagerTest {
     when(owner.getId()).thenReturn(2L);
     when(instrumentDao.lockById(12L)).thenReturn(Optional.of(instrument(12L, owner)));
     when(actor.hasSysadminRole()).thenReturn(false);
+    when(itemPermissions.resolveForMutation(any(BookingConfiguration.class), eq(actor)))
+        .thenReturn(ResolvedResourceAccess.none())
+        .thenReturn(
+            new ResolvedResourceAccess(
+                Optional.of(BookingResourceRoleScheme.OWNER),
+                Set.of(BookingResourceRoleScheme.EDIT_CONFIGURATION),
+                List.of()));
     assertThrows(
         AuthorizationException.class,
         () ->
@@ -406,6 +426,8 @@ class BookingConfigurationManagerTest {
     when(currentOwner.getId()).thenReturn(2L);
     Instrument staleRelationshipTarget = instrument(12L, formerOwner);
     Instrument lockedTarget = instrument(12L, currentOwner);
+    when(itemPermissions.resolveForMutation(any(BookingConfiguration.class), eq(formerOwner)))
+        .thenReturn(ResolvedResourceAccess.none());
     when(instrumentDao.lockById(12L)).thenReturn(Optional.of(lockedTarget));
 
     assertThrows(
@@ -735,29 +757,6 @@ class BookingConfigurationManagerTest {
     assertThrows(
         InvalidBookableTargetException.class,
         () -> manager.createConfiguration(new Create(true, "UTC", target), actor, actor));
-    verify(dao, never()).saveAndFlush(any());
-  }
-
-  @Test
-  void selectedDefaultsCannotCreateMoreThanOneHundredNamedAssignments() {
-    BookingConfigurationDefaults defaults = defaults(5, "00:00", "24:00", 0, 0, 0, false);
-    defaults.setDefaultSharedWith(BookingDefaultSharedWith.SELECTED);
-    for (long id = 2; id <= 101; id++) {
-      User selected = mock(User.class);
-      when(selected.getId()).thenReturn(id);
-      when(selected.getDisplayName()).thenReturn("Selected " + id);
-      when(selected.getUsername()).thenReturn("selected-" + id);
-      defaults.addSelectedAccessGrantee(BookingDefaultAccessGrantee.forUser(selected));
-    }
-    when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
-        .thenReturn(Optional.of(defaults));
-
-    ResourceAccessException error =
-        assertThrows(
-            ResourceAccessException.class,
-            () -> manager.createConfiguration(new Create(true, "UTC", target(12L)), actor, actor));
-
-    assertEquals(ResourceAccessException.Reason.ASSIGNMENT_LIMIT, error.reason());
     verify(dao, never()).saveAndFlush(any());
   }
 

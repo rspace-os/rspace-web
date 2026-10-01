@@ -184,6 +184,11 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
+  public Optional<BookingConfiguration> findByIdForAudit(Long id, User actor) {
+    return enabled(actor) ? manager.getConfigurationForAudit(id, actor) : Optional.empty();
+  }
+
+  @Override
   public Set<String> relatedAuditFields() {
     return Set.of("bookingConfigurationId", "start", "end", "kind", "state", "purpose", "deleted");
   }
