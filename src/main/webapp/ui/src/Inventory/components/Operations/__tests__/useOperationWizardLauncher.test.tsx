@@ -185,6 +185,30 @@ describe("useOperationWizardLauncher", () => {
     expect(screen.getByTestId("wizard")).toBeInTheDocument();
   });
 
+  it("takes the locks back as soon as its effects re-run, so Perform straight after a restart is still locked", async () => {
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    const serverLocks = fakeServerLocks(origin);
+    const onLaunched = vi.fn();
+    const onPerformed = vi.fn();
+    const ui = (mode: "visible" | "hidden") => (
+      <Activity mode={mode}>
+        <Workflow origin={origin} onLaunched={onLaunched} onPerformed={onPerformed} />
+      </Activity>
+    );
+    const { rerender } = render(ui("visible"));
+
+    await user.click(screen.getByRole("button", { name: "launch" }));
+    await waitFor(() => expect(onLaunched).toHaveBeenLastCalledWith(true));
+    rerender(ui("hidden"));
+    rerender(ui("visible"));
+
+    await waitFor(() => expect(serverLocks.size).toBe(1));
+    await user.click(await screen.findByRole("button", { name: "perform" }));
+    expect(onPerformed).toHaveBeenCalledWith(created);
+    expect(serverLocks.size).toBe(1);
+  });
+
   it("resolves false without opening or reporting a close when the lock is refused", async () => {
     const user = userEvent.setup();
     const { origin, acquire } = lockedOrigin();
