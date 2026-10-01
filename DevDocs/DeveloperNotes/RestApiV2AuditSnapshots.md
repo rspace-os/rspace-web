@@ -6,7 +6,8 @@ This is not a retention limit and does not change the legacy Activity API. It ap
 
 Resource scoping compares the decoded top-level audit `id` exactly. An adapter may
 declare trusted relationship fields with `relatedAuditIdentifierFields()` to include
-related events. Free text and nested IDs never establish audit access.
+related events. Booking configuration audits use `bookingConfigurationId` for this
+purpose. Free text and nested IDs never establish audit access.
 
 The optional `search` parameter matches actor names, actions, descriptions, target IDs,
 and readable recorded values before pagination and the result ceiling. Matching is
