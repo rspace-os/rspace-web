@@ -2,6 +2,7 @@ package com.researchspace.api.v2.controller;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
+import com.researchspace.booking.service.BookingNotificationSubscriptionManager.PreferenceChanges;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Preferences;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Status;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +32,14 @@ public class BookingNotificationSubscriptionController {
   private static final String SUBSCRIPTIONS = "/users/me/booking-notification-subscriptions";
   private static final String ITEM = "/booking-configurations/{id}/notification-subscription";
 
-  public record PreferenceReplacement(@NotNull Boolean autoSubscribeOwnedItems) {}
+  public record PreferenceReplacement(
+      @NotNull Boolean autoSubscribeOwnedItems,
+      @NotNull Boolean notifyOnCreated,
+      @NotNull Boolean notifyOnCancelled) {
+    PreferenceChanges changes() {
+      return new PreferenceChanges(autoSubscribeOwnedItems, notifyOnCreated, notifyOnCancelled);
+    }
+  }
 
   public record SubscriptionReplacement(@NotNull Boolean enabled, @NotNull @Min(-1) Long version) {}
 
@@ -53,9 +61,15 @@ public class BookingNotificationSubscriptionController {
   @GetMapping(PREFERENCES)
   @Operation(
       operationId = "getMyBookingNotificationPreferences",
-      summary = "Get the caller's default for new owned bookable instruments",
+      summary = "Get the caller's booking notification preferences",
+      description =
+          "Returns the default for new owned bookable instruments, the booking created and"
+              + " cancelled event preferences shared with My Profile, and the read-only effective"
+              + " My Profile email delivery preference.",
       responses = {
-        @ApiResponse(responseCode = "200", description = "Current automatic subscription default.")
+        @ApiResponse(
+            responseCode = "200",
+            description = "Current booking notification preferences.")
       })
   public Preferences preferences(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
@@ -65,15 +79,17 @@ public class BookingNotificationSubscriptionController {
   @PutMapping(value = PREFERENCES, consumes = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
       operationId = "replaceMyBookingNotificationPreferences",
-      summary = "Change the automatic subscription default without changing existing subscriptions",
+      summary = "Replace the caller's booking notification preferences",
+      description =
+          "Replaces the automatic subscription default and both booking event preferences. All"
+              + " three are required. Existing subscriptions and email delivery are unchanged.",
       responses = {
-        @ApiResponse(responseCode = "200", description = "Saved automatic subscription default.")
+        @ApiResponse(responseCode = "200", description = "Saved booking notification preferences.")
       })
   public Preferences replacePreferences(
       @Valid @RequestBody PreferenceReplacement body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    return manager.replacePreferences(
-        body.autoSubscribeOwnedItems(), caller.subject(), caller.actor());
+    return manager.replacePreferences(body.changes(), caller.subject(), caller.actor());
   }
 
   @GetMapping(ITEM)
