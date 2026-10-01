@@ -166,7 +166,7 @@ const isWebAddress = (value: string): boolean =>
   URL.canParse(value) && ["http:", "https:"].includes(new URL(value).protocol);
 
 function Address({ value }: { value: string }) {
-  return isWebAddress(value) ? <ExternalLink href={value} /> : value;
+  return isWebAddress(value) ? <ExternalLink href={value} /> : <span>{value}</span>;
 }
 
 function RecordPreview({ record }: { record: PidinstRecord }) {

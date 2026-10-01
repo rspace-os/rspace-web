@@ -42,7 +42,7 @@ const HITS = [
     commissioned: "2021-03-01",
     landingPage: "https://example.org/lsm980",
     measurementTechniques: ["https://other.researchspace.com/globalId/IC65536"],
-    calibrations: ["10.1000/calibration-certificate"],
+    calibrations: ["10.1000/calibration-certificate", "10.1000/calibration-report"],
     alternateIdentifier: "INV-0042",
     alreadyLinked: false,
   },
@@ -258,7 +258,9 @@ describe("PidinstImportDialog", () => {
       within(measurementTechnique).getByRole("link", { name: "https://other.researchspace.com/globalId/IC65536" }),
     ).toBeVisible();
     const calibration = previewValue(preview, "inventory:pidinstImport.preview.calibration");
-    expect(calibration).toHaveTextContent("10.1000/calibration-certificate");
+    // each in its own element: adjacent plain text in the column would run together on one line
+    expect(within(calibration).getByText("10.1000/calibration-certificate")).toBeVisible();
+    expect(within(calibration).getByText("10.1000/calibration-report")).toBeVisible();
     expect(within(calibration).queryByRole("link")).not.toBeInTheDocument();
   });
 
