@@ -5403,7 +5403,8 @@ components:
           default: 1
           description: >
             Number of subsamples to create, sent as a whole number. Defaults to 1. A numeric
-            string such as "2" is also accepted, and an empty string is treated as absent.
+            string such as "2" is also accepted, and an empty string is treated as absent. A
+            decimal point is rejected, even `1.0`.
         eachAmount:
           $ref: "#/components/schemas/Quantity"
         templateId:

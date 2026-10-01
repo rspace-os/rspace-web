@@ -73,20 +73,28 @@ class ApiInventoryOperationRequestsBeanValidationTest {
   }
 
   @Test
-  void aWholeCountWrittenWithADecimalPointOrExponentIsAccepted() {
-    for (String count : List.of("1.0", "2.000", "1e2")) {
+  void aCountWrittenWithADecimalPointIsRejectedEvenWhenWhole() {
+    for (String count : List.of("1.0", "2.000")) {
       ApiInventoryOperationRequests.Aliquot request = aliquot();
       request.setCount(new BigDecimal(count));
-      assertTrue(keysFor(request, "count").isEmpty(), count);
+      assertEquals(
+          Set.of("errors.inventory.operation.countNotWhole"), keysFor(request, "count"), count);
     }
   }
 
   @Test
-  void aCountOfOnePointZeroInJsonIsBoundAsOne() throws Exception {
+  void aWholeCountWrittenWithAnExponentIsAccepted() {
+    ApiInventoryOperationRequests.Aliquot request = aliquot();
+    request.setCount(new BigDecimal("1e2"));
+    assertTrue(keysFor(request, "count").isEmpty());
+  }
+
+  @Test
+  void aCountOfOnePointZeroInJsonIsRejectedAsNotWhole() throws Exception {
     ApiInventoryOperationRequests.Aliquot request =
         new com.fasterxml.jackson.databind.ObjectMapper()
             .readValue("{\"count\": 1.0}", ApiInventoryOperationRequests.Aliquot.class);
-    assertEquals(0, request.getCount().scale());
+    assertEquals(Set.of("errors.inventory.operation.countNotWhole"), keysFor(request, "count"));
   }
 
   @Test
