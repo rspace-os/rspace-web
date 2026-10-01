@@ -60,6 +60,7 @@ const appConfig = {
 };
 
 const defaultHandlers = [
+  http.get("/api/v2/feature-flags", () => HttpResponse.json(v2ListEnvelope([]))),
   http.get("/api/v2/users/me", () => HttpResponse.json(currentUserResponse)),
   http.get("/api/v2/config", () => HttpResponse.json(appConfig)),
   http.get("/api/v2/maintenances", () => HttpResponse.json(v2ListEnvelope([]))),

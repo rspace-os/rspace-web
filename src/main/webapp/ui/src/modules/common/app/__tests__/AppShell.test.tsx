@@ -9,10 +9,13 @@ import {
 } from "@tanstack/react-router";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { server } from "@/__tests__/mswServer";
 import type { AppBarConfig } from "@/modules/common/app/AppBar.types";
 import AppShell, { type AppBarRouteContext, RouteTransitionIndicator } from "@/modules/common/app/AppShell";
+import { queryKeys as authQueryKeys } from "@/modules/common/hooks/auth";
 import { viewTransitionQueryFilters, viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 import { useSidebar } from "@/modules/common/ui/sidebar";
 
@@ -149,12 +152,20 @@ function renderShell(initialPath: string) {
           }),
         ]),
       ]),
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: "/booking",
+        beforeLoad: () => ({ appBar: { currentPage: "booking" }, sidebar: renderTestSidebar }),
+        component: () => <p>{"Booking destination"}</p>,
+      }),
     ]),
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
+  const queryClient = testQueryClient();
+  queryClient.setQueryData(authQueryKeys.oauthToken(true), "test-token");
   render(
-    <QueryClientProvider client={testQueryClient()}>
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
@@ -163,6 +174,63 @@ function renderShell(initialPath: string) {
 
 beforeEach(() => {
   routerState.isLoading = false;
+});
+
+describe("disabled Booking shell", () => {
+  it.each([false, true, "unavailable"] as const)(
+    "waits for the actual flag, then gates both content and sidebar: %s",
+    async (enabled) => {
+      const flag = Promise.withResolvers<void>();
+      server.use(
+        http.get("/api/v2/feature-flags", async () => {
+          await flag.promise;
+          if (enabled === "unavailable") return new HttpResponse(null, { status: 403 });
+          return HttpResponse.json({
+            docs: [
+              { name: "bookingEnabled", value: enabled, baselineValue: enabled, source: "DEFAULT", canOverride: false },
+            ],
+            totalDocs: 1,
+            limit: 100,
+            page: 1,
+            pagingCounter: 1,
+            totalPages: 1,
+            hasPrevPage: false,
+            hasNextPage: false,
+            prevPage: null,
+            nextPage: null,
+          });
+        }),
+      );
+      const router = renderShell("/booking");
+      const navigate = vi.spyOn(router, "navigate").mockResolvedValue(undefined);
+      try {
+        expect(await screen.findByRole("status")).toHaveTextContent("common:loading");
+        expect(screen.queryByText("Booking destination")).not.toBeInTheDocument();
+        expect(screen.queryByRole("status", { name: "Route sidebar state" })).not.toBeInTheDocument();
+        expect(navigate).not.toHaveBeenCalled();
+        flag.resolve();
+        if (enabled === true) {
+          expect(await screen.findByText("Booking destination")).toBeVisible();
+          expect(screen.getByRole("status", { name: "Route sidebar state" })).toBeVisible();
+          expect(navigate).not.toHaveBeenCalled();
+        } else {
+          await waitFor(() =>
+            expect(navigate).toHaveBeenCalledWith({
+              from: "/booking",
+              href: "/workspace",
+              reloadDocument: true,
+              replace: true,
+            }),
+          );
+          expect(screen.queryByText("Booking destination")).not.toBeInTheDocument();
+          expect(screen.queryByRole("status", { name: "Route sidebar state" })).not.toBeInTheDocument();
+        }
+      } finally {
+        flag.resolve();
+        navigate.mockRestore();
+      }
+    },
+  );
 });
 
 describe("route chrome", () => {

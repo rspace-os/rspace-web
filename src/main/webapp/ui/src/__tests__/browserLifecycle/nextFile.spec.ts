@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 
 test("intercepts requests with the next file's own handler", { retry: 0 }, async () => {
