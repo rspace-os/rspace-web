@@ -325,7 +325,7 @@ describe("CalendarPage", () => {
     const nextPage = screen.getByRole("button", { name: "Next page" });
     expect(nextPage).toBeEnabled();
     await user.click(nextPage);
-    expect(await screen.findByText("No-event microscope 21")).toBeVisible();
+    await waitFor(() => expect(screen.getByText("No-event microscope 21")).toBeVisible());
     expect(catalogueRequests.at(-1)).toEqual({ q: "No-event", page: 2 });
   });
 

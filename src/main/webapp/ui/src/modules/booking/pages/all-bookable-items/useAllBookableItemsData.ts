@@ -30,6 +30,7 @@ type AllBookableItemsDataOptions = {
   date?: string;
   routeAvailability?: AvailabilityQuickFilter;
   target?: string;
+  mine: boolean;
   where?: string;
   q?: string;
   types?: readonly string[];
@@ -42,6 +43,7 @@ export function useAllBookableItemsData({
   date,
   routeAvailability,
   target,
+  mine,
   where,
   q,
   types,
@@ -122,7 +124,7 @@ export function useAllBookableItemsData({
     candidateWhere,
     !runtimeFilterBlocked,
     currentUser.id,
-    { q, types },
+    { q, types, mine },
   );
   const quickFilterPending = usesAvailability && quickIndex.isPending;
   const quickFilterError = usesAvailability && quickIndex.isError;
@@ -145,11 +147,12 @@ export function useAllBookableItemsData({
           filters.expression,
           q,
           types,
+          mine,
           availabilityIndexSignature,
           page,
           pageSize,
         ]
-      : ["api-v2", "booking-catalogue", "all-items", token, q, types, serverWhere, page, pageSize],
+      : ["api-v2", "booking-catalogue", "all-items", token, q, types, mine, serverWhere, page, pageSize],
     queryFn: ({ signal }) => {
       if (usesAvailability) {
         if (!filters.expression || !quickIndex.data) {
@@ -158,12 +161,12 @@ export function useAllBookableItemsData({
         return fetchAvailabilityFilteredCatalogue(
           filters.expression,
           quickIndex.data,
-          { q, types, page, pageSize },
+          { q, types, mine, page, pageSize },
           token,
           signal,
         );
       }
-      return fetchBookingCatalogue({ q, types, where: serverWhere, page, pageSize }, token, signal);
+      return fetchBookingCatalogue({ q, types, mine, where: serverWhere, page, pageSize }, token, signal);
     },
     enabled: !runtimeFilterBlocked && (!usesAvailability || quickIndex.data !== undefined),
     staleTime: 30_000,
