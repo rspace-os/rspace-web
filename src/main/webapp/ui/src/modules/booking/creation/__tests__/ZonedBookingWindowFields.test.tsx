@@ -1,9 +1,50 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
+import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 import { validateBookingWindow, ZonedBookingWindowFields } from "../ZonedBookingWindowFields";
 
 describe("ZonedBookingWindowFields", () => {
+  it.each(["compact", "comfortable"] as const)(
+    "keeps the %s date input focused while its date is replaced",
+    async (density) => {
+      const user = userEvent.setup();
+      function Form() {
+        const [value, setValue] = useState<BookingWindowDraft>({
+          startDate: "2026-08-17",
+          startTime: "09:00",
+          endDate: "2026-08-17",
+          endTime: "10:00",
+        });
+        return (
+          <ZonedBookingWindowFields
+            displayTimezone="Europe/Berlin"
+            schedulingTimezone="America/New_York"
+            slotGranularityMinutes={5}
+            maxBookingDurationMinutes={0}
+            openingStart="00:00"
+            openingEnd="24:00"
+            density={density}
+            value={value}
+            onChange={setValue}
+          />
+        );
+      }
+
+      render(<Form />);
+      const date = screen.getByLabelText(
+        density === "compact" ? "booking:bookings.form.date" : "booking:bookings.form.startDate",
+      );
+      await user.click(date);
+      fireEvent.change(date, { target: { value: "" } });
+      expect(date).toHaveFocus();
+      fireEvent.change(date, { target: { value: "2026-08-18" } });
+      expect(date).toHaveFocus();
+      expect(date).toHaveValue("2026-08-18");
+    },
+  );
+
   it("uses one date for both endpoints in compact mode", () => {
     const onChange = vi.fn();
     render(

@@ -50,6 +50,10 @@ turning callback identity changes into draft changes, so mutation errors remain 
 the input changes.
 Forms explicitly label the display timezone and render conflict times in that same timezone,
 including when the item's scheduling timezone differs.
+Booking date and time displays retain the user's selected display timezone. When a booking's
+instrument timezone differs from either that display timezone or the browser timezone, hovering
+or focusing its timing shows the instrument-local date and time, UTC offset, and IANA timezone.
+The booking read document supplies that timezone; a null or hidden timezone produces no tooltip.
 
 Global display defaults are stored on the audited `BookingConfigurationDefaults` singleton. The
 initial values are `08:00`–`18:00`, Browser mode, and no custom timezone. A user override is one
@@ -148,11 +152,12 @@ relevant capability is known.
 
 ## REST API compatibility
 
-The `timezone` field on `/api/v2/booking-configurations` is now read-only. It remains available in
-GET responses as the item's scheduling timezone, but create, patch, and bulk requests that include
-it receive the collection framework's normal `400 Bad Request` response. Public creates assign the
-JVM-backed institution timezone. This is an immediate breaking change; internal Java manager
-commands retain their timezone fields for fixtures and other trusted scheduling workflows.
+The `timezone` field on `/api/v2/booking-configurations` is the item's scheduling timezone. Single
+and bulk creates may set it to an IANA zone ID; blank or unknown zones receive `400 Bad Request`
+from the entity validation. Creates that omit it are assigned the JVM-backed institution timezone.
+It is immutable afterwards: patch and bulk-update requests that include it receive the collection
+framework's normal `400 Bad Request` response. The Add bookable item form offers it as a searchable
+select that defaults to the institution timezone; the edit form omits it.
 
 ## Item filters on the dashboard
 
