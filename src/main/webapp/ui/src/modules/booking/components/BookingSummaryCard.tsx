@@ -24,7 +24,7 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
   const purpose = isFullPrivacy ? booking.purpose : null;
   const target = booking.target;
   const itemName = target?.value.name ?? commonT("values.unknownItem");
-  const location = target?.value.parentContainerName;
+  const location = booking.location?.value.name;
   const canLinkToItem = isFullPrivacy && booking.canViewConfiguration && target !== null;
   const actionLabel = t("dashboard.agenda.viewDetailsFor", {
     name: itemName,

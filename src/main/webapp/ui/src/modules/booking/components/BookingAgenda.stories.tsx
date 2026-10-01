@@ -23,8 +23,6 @@ function booking(
           id: id + 100,
           name,
           deleted: false,
-          parentContainerName: location ?? null,
-          parentContainerGlobalId: null,
         },
         globalId: `IN${id + 100}`,
       }
@@ -33,6 +31,13 @@ function booking(
   return bookingListDocument({
     id,
     target,
+    location: location
+      ? {
+          relationTo: "booking-locations",
+          value: { id: id + 200, globalId: `IC${id + 200}`, name: location },
+          globalId: `IC${id + 200}`,
+        }
+      : null,
     start,
     end,
     privacy,

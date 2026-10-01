@@ -1,5 +1,7 @@
 package com.researchspace.booking.service;
 
+import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.OVERSIZED_MUTATION_LIMIT;
+import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.target;
 import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.defaults;
 import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.instrument;
 import static com.researchspace.testutils.BookingTestSchedules.hours;
@@ -103,7 +105,8 @@ final class BookingConfigurationManagerTestFixtures {
                     ApiV2BookingConfigurationResource.DESCRIPTION,
                     ApiV2BookingInstrumentResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,
-                    ApiV2UserResource.DESCRIPTION)));
+                    ApiV2UserResource.DESCRIPTION,
+                    com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION)));
     ResolvedResourceAccess ownerAccess =
         new ResolvedResourceAccess(
             Optional.of(BookingResourceRoleScheme.OWNER),

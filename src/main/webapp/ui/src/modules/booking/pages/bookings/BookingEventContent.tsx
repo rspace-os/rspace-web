@@ -143,10 +143,10 @@ export function BookingEventContent() {
               ) : undefined
             }
           >
-            {canViewItem && target.value.parentContainerName && target.value.parentContainerGlobalId ? (
+            {canViewItem && document.location ? (
               <InventoryLocationLink
-                name={target.value.parentContainerName}
-                globalId={target.value.parentContainerGlobalId}
+                name={document.location.value.name}
+                globalId={document.location.value.globalId}
                 compact
               />
             ) : null}

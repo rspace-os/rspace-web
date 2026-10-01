@@ -27,6 +27,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.booking.service.BookingBufferConflictException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
+import com.researchspace.booking.service.BookingLocationFilterManager;
 import com.researchspace.booking.service.BookingOverlapException;
 import com.researchspace.booking.service.ConflictingEvent;
 import com.researchspace.booking.service.TimeSlotBookingManager;
@@ -35,6 +36,7 @@ import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
+import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
@@ -77,7 +79,11 @@ class TimeSlotBookingResourceOperationsTest {
   private final FeatureFlagManager featureFlags = mock(FeatureFlagManager.class);
   private final TimeSlotBookingResourceOperations operations =
       new TimeSlotBookingResourceOperations(
-          manager, featureFlags, ApiV2TimeSlotBookingResource.DESCRIPTION);
+          manager,
+          featureFlags,
+          ApiV2TimeSlotBookingResource.DESCRIPTION,
+          // These requests name no location, which resolveLocations returns unchanged.
+          mock(BookingLocationFilterManager.class, invocation -> invocation.getArgument(0)));
   private final User actor = mock(User.class);
 
   @BeforeEach
@@ -317,7 +323,11 @@ class TimeSlotBookingResourceOperationsTest {
                         Long.class,
                         (ids, actor) -> Map.of()),
                     new ApiV2RelationshipTargetSpec<>(
-                        ApiV2UserResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of())))
+                        ApiV2UserResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of()),
+                    new ApiV2RelationshipTargetSpec<>(
+                        ApiV2BookingLocationResource.DESCRIPTION,
+                        Long.class,
+                        (ids, actor) -> Map.of())))
             .find("bookings")
             .orElseThrow();
 

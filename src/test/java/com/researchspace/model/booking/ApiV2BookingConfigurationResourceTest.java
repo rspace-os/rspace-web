@@ -116,7 +116,7 @@ class ApiV2BookingConfigurationResourceTest {
             .writableFields(WriteOperation.CREATE)
             .contains("timezone"));
     assertEquals(
-        List.of("target", "createdBy", "updatedBy"),
+        List.of("target", "location", "createdBy", "updatedBy"),
         ApiV2BookingConfigurationResource.DESCRIPTION.relationships().stream()
             .map(relationship -> relationship.name())
             .toList());
@@ -301,9 +301,16 @@ class ApiV2BookingConfigurationResourceTest {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setCreatedBy(creator);
     configuration.setUpdatedBy(updater);
+    ResourceRegistry registry =
+        new ResourceRegistry(
+            List.of(
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION,
+                ApiV2BookingInstrumentResource.DESCRIPTION,
+                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
 
     Map<String, Object> rendered =
-        new ResourceRenderer(REGISTRY)
+        new ResourceRenderer(registry)
             .render(
                 configuration,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
@@ -325,9 +332,16 @@ class ApiV2BookingConfigurationResourceTest {
     configuration.setId(7L);
     configuration.setTimeZone("UTC");
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
+    ResourceRegistry registry =
+        new ResourceRegistry(
+            List.of(
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION,
+                ApiV2BookingInstrumentResource.DESCRIPTION,
+                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
 
     Map<String, Object> rendered =
-        new ResourceRenderer(REGISTRY)
+        new ResourceRenderer(registry)
             .render(
                 configuration,
                 ApiV2BookingConfigurationResource.DESCRIPTION,

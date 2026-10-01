@@ -16,6 +16,14 @@
       "operators" : [ "!=", "==", "=exists=" ],
       "wildcards" : false
     },
+    "location" : {
+      "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+      "wildcards" : false
+    },
+    "location.value" : {
+      "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+      "wildcards" : false
+    },
     "privacy" : {
       "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
       "wildcards" : false
