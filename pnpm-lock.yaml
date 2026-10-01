@@ -247,6 +247,9 @@ importers:
       '@fontsource-variable/noto-sans-tc':
         specifier: 5.3.1
         version: 5.3.1
+      '@formisch/react':
+        specifier: 1.0.0-rc.0
+        version: 1.0.0-rc.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)(typescript@7.0.2)(valibot@1.4.2(typescript@7.0.2))
       '@fortawesome/fontawesome-svg-core':
         specifier: 7.3.1
         version: 7.3.1
@@ -1456,6 +1459,29 @@ packages:
 
   '@formatjs/icu-skeleton-parser@2.1.11':
     resolution: {integrity: sha512-j8cUmOJzVgkHuS0QiQ6ga76UIoLOFSAMWhs7aZJztH3aAdCOAE6vpC8KVvFB4cU10ON0y2/5oOVmPJ43s2lTwA==}
+
+  '@formisch/react@1.0.0-rc.0':
+    resolution: {integrity: sha512-KLYvwpg1MGubT3JutG/3S+iy7zktkDoLmI1Gl991ZKkKMTttyZBJC+gQet5UwOLTB7XDiuxQ3AaTQqs1o34a4w==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      '@types/typescript': '*'
+      '@types/valibot': '*'
+      react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      typescript: '>=5'
+      valibot: ^1.4.1
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+      '@types/typescript':
+        optional: true
+      '@types/valibot':
+        optional: true
+      typescript:
+        optional: true
 
   '@fortawesome/fontawesome-common-types@7.3.1':
     resolution: {integrity: sha512-k0C0sdHmZtAo6dRDtd1Z/qcpyHbL0CKsjV8seMY/21xGhY5Wsv0XRmiI/xEEH4y2c9b1+jvgNs/3EqhV27yUEA==}
@@ -9157,6 +9183,16 @@ snapshots:
       '@formatjs/icu-skeleton-parser': 2.1.11
 
   '@formatjs/icu-skeleton-parser@2.1.11': {}
+
+  '@formisch/react@1.0.0-rc.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)(typescript@7.0.2)(valibot@1.4.2(typescript@7.0.2))':
+    dependencies:
+      react: 19.2.8
+      react-dom: 19.2.8(@types/react@19.2.18)(react@19.2.8)
+      valibot: 1.4.2(typescript@7.0.2)
+    optionalDependencies:
+      '@types/react': 19.2.18
+      '@types/react-dom': 19.2.4(@types/react@19.2.18)
+      typescript: 7.0.2
 
   '@fortawesome/fontawesome-common-types@7.3.1': {}
 
