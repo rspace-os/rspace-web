@@ -5757,6 +5757,7 @@ components:
         The names of the fields an operation generates ("Is Part Of ...", "Disposed") are
         resolved when the operation runs, from the request's `Accept-Language` header, and stored
         in that language. Only `en-US` names ship today.
+      type: object
       properties:
         sample:
           nullable: true
@@ -5767,6 +5768,9 @@ components:
           description: Each origin subsample as it stands after the operation.
           items:
             $ref: "#/components/schemas/SubSample"
+      required:
+        - sample
+        - origins
     Error:
       description: Error object
       properties:
