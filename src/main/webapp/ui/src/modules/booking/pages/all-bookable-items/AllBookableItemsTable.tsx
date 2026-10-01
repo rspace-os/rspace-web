@@ -21,7 +21,7 @@ import type { useAllBookableItemsData } from "./useAllBookableItemsData";
 
 type AllBookableItemsTableProps = Omit<
   ReturnType<typeof useAllBookableItemsData>,
-  "config" | "invalidFilter" | "catalogue"
+  "config" | "invalidFilter" | "catalogue" | "runtimeFieldState" | "currentUser"
 > & {
   types?: readonly string[];
   tableProps: TableListProps<AllBookableItem>;
@@ -35,6 +35,7 @@ export function AllBookableItemsTable({
   userToday,
   selectedDate,
   filters,
+  runtimeFilterBlocked,
   quickMode,
   quickFilterLabels,
   bounds,
@@ -42,6 +43,7 @@ export function AllBookableItemsTable({
   quickFilterPending,
   quickFilterError,
   rows,
+  useQuickAvailability,
   availability,
   types,
   tableProps,
@@ -181,7 +183,7 @@ export function AllBookableItemsTable({
         {...tableProps}
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
-        rows={quickFilterPending || quickFilterError ? [] : rows}
+        rows={runtimeFilterBlocked || quickFilterPending || quickFilterError ? [] : rows}
         filterButtons={availabilityFilters}
         presentations={{ table: "wide", cards: "narrow" }}
         uiColumns={[
@@ -207,7 +209,7 @@ export function AllBookableItemsTable({
                   : {}),
               };
               const quickEntry = quickIndex.data?.get(target.globalId);
-              if (quickMode) {
+              if (quickMode || (useQuickAvailability && quickEntry)) {
                 if (!quickEntry) return t("calendar.availabilityUnavailable");
                 return (
                   <AvailabilityBar
@@ -223,7 +225,7 @@ export function AllBookableItemsTable({
                   />
                 );
               }
-              if (availability.isPending)
+              if ((useQuickAvailability && quickIndex.isPending) || availability.isPending)
                 return (
                   <div aria-busy="true">
                     <span role="status" className="sr-only">

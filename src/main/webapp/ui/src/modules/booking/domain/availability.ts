@@ -44,6 +44,31 @@ export type SourcedAvailabilityInterval = AvailabilityInterval & {
   source: AvailabilitySource;
 };
 
+export type BookingConflict = NonNullable<AvailabilitySource["booking"]> & {
+  start: string;
+  end: string;
+  timezone: string;
+};
+
+export function bookingConflicts(
+  intervals: readonly SourcedAvailabilityInterval[],
+  timezone: string,
+  excludedBookingId?: number,
+): BookingConflict[] {
+  const conflicts = new Map<number, BookingConflict>();
+  for (const interval of intervals) {
+    const booking = interval.source.booking;
+    if (!booking || booking.id === excludedBookingId || conflicts.has(booking.id)) continue;
+    conflicts.set(booking.id, {
+      ...booking,
+      start: interval.source.startsAt.toISOString(),
+      end: interval.source.endsAt.toISOString(),
+      timezone,
+    });
+  }
+  return [...conflicts.values()];
+}
+
 type AvailabilitySlice<T extends AvailabilityInterval = AvailabilityInterval> = AvailabilitySegment & {
   intervals: readonly T[];
 };
@@ -178,6 +203,8 @@ export type CalendarAvailabilityRow = OpeningSchedule & {
   allowDoubleBooking: boolean;
 };
 
+export type DatedCalendarAvailabilityRow = CalendarAvailabilityRow & { date: string };
+
 export function calendarAvailabilityRow(row: {
   globalId: string;
   timezone?: string;
@@ -311,4 +338,4 @@ function bookingInterval(
   );
 }
 
-export { availabilityEnvelope, bookingInterval, closedIntervals };
+export { availabilityEnvelope, bookingInterval, closedIntervals, sharedBufferGapMinutes };

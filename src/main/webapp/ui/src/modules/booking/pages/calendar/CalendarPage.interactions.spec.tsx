@@ -126,7 +126,7 @@ describe("Calendar page", () => {
     await card.getByLabelText("Start time").fill("12:00");
     await card.getByLabelText("End time").fill("13:00");
 
-    await expect.element(card.getByText("This period overlaps another booking or a maintenance event.")).toBeVisible();
+    await expect.element(card.getByText("This period overlaps:")).toBeVisible();
     await expect.element(save).toBeDisabled();
     expect(updatedPayload).toBeUndefined();
   });

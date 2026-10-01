@@ -88,10 +88,11 @@ export function BookableItemsContent() {
   const request = useMemo(
     () => ({
       token,
+      authScope: currentUser.id,
       depth: 1,
       projection: bookableItemsProjection,
     }),
-    [token],
+    [currentUser.id, token],
   );
   const table = useApiV2TableList({
     resourceName: "booking-configurations",
