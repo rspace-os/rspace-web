@@ -15,6 +15,7 @@ import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -107,9 +108,11 @@ function renderPage(initialEntry = "/booking/bookable-items/IN123") {
   });
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <RouterProvider router={router as never} />
-      </Suspense>
+      <BookingCreationStoreProvider>
+        <Suspense fallback={null}>
+          <RouterProvider router={router as never} />
+        </Suspense>
+      </BookingCreationStoreProvider>
     </QueryClientProvider>,
   );
   return { ...result, queryClient, router };
@@ -517,9 +520,9 @@ describe("BookableItemPage", () => {
   });
 
   it("keeps a caller without edit capability in view mode on the direct edit URL", async () => {
-    mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: false } } as ReturnType<
-      typeof useCurrentUserQuery
-    >);
+    mockedUseCurrentUserQuery.mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
     server.use(
       http.get("/api/v2/booking-configurations", () =>
         HttpResponse.json(envelope([{ ...configuration, ...bookerBookingAccess }], 2)),
@@ -585,9 +588,9 @@ describe("BookableItemPage", () => {
     const user = userEvent.setup();
     let lookupFails = true;
     let eventRequests = 0;
-    mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: false } } as ReturnType<
-      typeof useCurrentUserQuery
-    >);
+    mockedUseCurrentUserQuery.mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
     server.use(
       http.get("/api/v2/booking-configurations", () =>
         lookupFails ? HttpResponse.json(envelope([], 2)) : HttpResponse.json(envelope([configuration], 2)),
