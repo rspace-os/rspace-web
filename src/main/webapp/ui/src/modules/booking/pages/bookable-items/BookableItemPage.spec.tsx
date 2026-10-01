@@ -288,11 +288,16 @@ describe("BookableItemPage", () => {
     render(<BookableItemPageStory />);
 
     await expect.element(pageObj.heading).toBeVisible();
-    await expect.element(pageObj.detailsTab).toHaveAttribute("aria-selected", "true");
+    await expect.element(pageObj.bookingsTab).toHaveAttribute("aria-selected", "true");
+    await expect.element(page.getByRole("heading", { name: "Upcoming events" })).toBeVisible();
+    await expect.element(page.getByRole("heading", { name: "Past events" })).toBeVisible();
     expect(auditRequests).toBe(0);
     expect(window.location.pathname).toBe("/booking/bookable-items/IN123");
 
+    await pageObj.detailsTab.click();
+    await expect.element(pageObj.detailsTab).toHaveAttribute("aria-selected", "true");
     await expect.element(page.getByText("Booking rules")).toBeVisible();
+    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123/details");
 
     await pageObj.auditTab.click();
     await expect
@@ -316,9 +321,9 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.accessTab).toHaveAttribute("aria-selected", "true");
     await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123/access");
 
-    await pageObj.detailsTab.click();
-    await expect.element(pageObj.detailsTab).toHaveAttribute("aria-selected", "true");
-    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123/details");
+    await pageObj.bookingsTab.click();
+    await expect.element(pageObj.bookingsTab).toHaveAttribute("aria-selected", "true");
+    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123");
   });
 
   test.each([
@@ -367,19 +372,23 @@ describe("BookableItemPage", () => {
     render(<BookableItemPageStory />);
     await expect.element(pageObj.heading).toBeVisible();
 
+    expect(pageObj.bookingsTab.element().getAttribute("aria-controls")).toBe(pageObj.bookingsPanel.element().id);
     expect(pageObj.detailsTab.element().getAttribute("aria-controls")).toBe(pageObj.detailsPanel.element().id);
+    expect(pageObj.bookingsPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.bookingsTab.element().id);
     expect(pageObj.detailsPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.detailsTab.element().id);
 
-    await pageObj.detailsTab.click();
+    await pageObj.bookingsTab.click();
     await userEvent.keyboard("{ArrowRight}");
-    await expect.element(pageObj.auditTab).toHaveFocus();
+    await expect.element(pageObj.detailsTab).toHaveFocus();
     await userEvent.keyboard("{Enter}");
-    await expect.element(pageObj.auditTab).toHaveAttribute("aria-selected", "true");
+    await expect.element(pageObj.detailsTab).toHaveAttribute("aria-selected", "true");
+    await expect.element(page.getByRole("tabpanel", { name: "Bookings" })).not.toBeInTheDocument();
+    await expect.element(pageObj.detailsPanel).toBeVisible();
+
+    await pageObj.auditTab.click();
+    expect(pageObj.auditTab.element().getAttribute("aria-controls")).toBe(pageObj.auditPanel.element().id);
     await expect.element(pageObj.detailsPanel).not.toBeVisible();
     await expect.element(pageObj.auditPanel).toBeVisible();
-
-    expect(pageObj.auditTab.element().getAttribute("aria-controls")).toBe(pageObj.auditPanel.element().id);
-    expect(pageObj.auditPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.auditTab.element().id);
   });
 
   test("mounts the access editor at 320 CSS pixels with keyboard navigation and no overflow", async () => {
@@ -439,8 +448,8 @@ describe("BookableItemPage", () => {
     await userEvent.fill(pageObj.maximumDuration, "60");
     await pageObj.save.click();
 
+    await expect.element(pageObj.bookingsTab).toBeDisabled();
     await expect.element(pageObj.detailsTab).toBeDisabled();
-    await expect.element(pageObj.accessTab).toBeDisabled();
     await expect.element(pageObj.auditTab).toBeDisabled();
     await expect.element(page.getByRole("status")).toHaveTextContent("Saving booking configuration.");
     await expect.poll(() => releasePatch !== undefined).toBe(true);

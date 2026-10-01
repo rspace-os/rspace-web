@@ -1,6 +1,7 @@
 import AppsIcon from "@mui/icons-material/AppRegistration";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotebookIcon from "@mui/icons-material/AutoStories";
+import CalendarIcon from "@mui/icons-material/CalendarMonth";
 import MaintenanceIcon from "@mui/icons-material/Construction";
 import InfoIcon from "@mui/icons-material/Info";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
@@ -18,6 +19,7 @@ import Avatar from "@mui/material/Avatar";
 import Badge, { badgeClasses } from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
+import { amber } from "@mui/material/colors";
 import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import List from "@mui/material/List";
@@ -36,6 +38,8 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { Person } from "@/stores/definitions/Person";
@@ -289,10 +293,51 @@ const OrcidIcon = () => (
  * to mark the active tab; the AppBar maps each key to its translated label
  * (`appBar.sections.<key>.title`/`.subheader`).
  */
-const TAB_KEYS = ["workspace", "gallery", "inventory", "system", "myRSpace"] as const;
+const TAB_KEYS = ["workspace", "gallery", "inventory", "booking", "system", "myRSpace"] as const;
 export type TabKey = (typeof TAB_KEYS)[number];
 
 const isTabKey = (page: string): page is TabKey => TAB_KEYS.some((key) => key === page);
+
+type BookingNavigationItemProps = {
+  currentPage: string;
+  label: { title: string; subheader: string };
+  mobile?: boolean;
+  onNavigate?: () => void;
+};
+
+function BookingNavigationItem({
+  currentPage,
+  label,
+  mobile = false,
+  onNavigate,
+}: BookingNavigationItemProps): React.ReactNode {
+  const showBooking = useIsFeatureFlagEnabled(FEATURE_FLAGS.bookingEnabled);
+
+  if (!showBooking) return null;
+
+  if (!mobile) {
+    return (
+      <Link target="_self" aria-current={currentPage === "booking" ? "page" : false} href="/booking">
+        {label.title}
+      </Link>
+    );
+  }
+
+  return (
+    <AccentMenuItem
+      title={label.title}
+      avatar={<CalendarIcon />}
+      subheader={label.subheader}
+      foregroundColor="#000"
+      backgroundColor={amber[500]}
+      onClick={() => {
+        window.location.href = "/booking";
+        onNavigate?.();
+      }}
+      current={currentPage === "booking" ? "page" : false}
+    />
+  );
+}
 
 type GalleryAppBarArgs = {
   /**
@@ -385,6 +430,7 @@ function GalleryAppBar({
     workspace: { title: t("appBar.sections.workspace.title"), subheader: t("appBar.sections.workspace.subheader") },
     gallery: { title: t("appBar.sections.gallery.title"), subheader: t("appBar.sections.gallery.subheader") },
     inventory: { title: t("appBar.sections.inventory.title"), subheader: t("appBar.sections.inventory.subheader") },
+    booking: { title: t("appBar.sections.booking.title"), subheader: t("appBar.sections.booking.subheader") },
     myRSpace: { title: t("appBar.sections.myRSpace.title"), subheader: t("appBar.sections.myRSpace.subheader") },
     system: { title: t("appBar.sections.system.title"), subheader: t("appBar.sections.system.subheader") },
   };
@@ -508,6 +554,7 @@ function GalleryAppBar({
                 {sectionLabels.inventory.title}
               </Link>
             )}
+            <BookingNavigationItem currentPage={currentPage} label={sectionLabels.booking} />
             <Link
               target="_self"
               aria-current={currentPage === "myRSpace" ? "page" : false}
@@ -621,6 +668,12 @@ function GalleryAppBar({
                   current={currentPage === "inventory" ? "page" : false}
                 />
               )}
+              <BookingNavigationItem
+                currentPage={currentPage}
+                label={sectionLabels.booking}
+                mobile
+                onNavigate={handleAppMenuClose}
+              />
               <AccentMenuItem
                 title={sectionLabels.myRSpace.title}
                 avatar={<ProfileIcon />}
