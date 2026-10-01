@@ -18,7 +18,13 @@
       "bookingCardSetup": "Booking card: Set up booking",
       "bookingCardBook": "Booking card: Book",
       "bookingCardDisabled": "Booking card: Open (disabled)",
-      "bookingCardArchived": "Booking card: Open (archived)"
+      "bookingCardArchived": "Booking card: Open (archived)",
+      "bookingAlerts": "Booking alerts test bench",
+      "busyCalendar": "Busy calendar instrument {0,number,000}",
+      "aucklandPcrCycler": "Auckland PCR cycler",
+      "honoluluDiffractometer": "Honolulu X-ray diffractometer",
+      "kolkataNmrSpectrometer": "Kolkata NMR spectrometer",
+      "closedDayIncubator": "Closed-day incubator"
     },
     "containers": {
       "imagingLab": "Imaging lab",
@@ -33,7 +39,21 @@
       "ultrastructureImaging": "Ultrastructure imaging",
       "proteomicsRun": "Proteomics run",
       "cellSorting": "Cell sorting",
-      "overnightAnalysis": "Overnight analysis"
+      "overnightAnalysis": "Overnight analysis",
+      "busyCalendar": "Busy calendar fixture",
+      "auroraCalibration": "Aurora calibration session",
+      "beaconCellImaging": "Beacon cell imaging study",
+      "cometProteomics": "Comet proteomics analysis",
+      "bookingAlertsPast": "Booking alerts past fixture",
+      "bookingAlertsOverlap": "Booking alerts overlap fixture",
+      "overlappingProteomicsRun": "Overlapping proteomics run",
+      "lateSpin": "Late spin until midnight",
+      "twoDaySequencingRun": "Two-day sequencing run",
+      "pcrAmplification": "PCR amplification",
+      "crystalScreening": "Crystal screening",
+      "quarterHourNmr": "Quarter-hour NMR acquisition",
+      "closedDayBooking": "Booking on a day that is now closed",
+      "closedDayMaintenance": "Maintenance on a closed day"
     }
   }
 }

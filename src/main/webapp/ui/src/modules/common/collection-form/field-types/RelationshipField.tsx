@@ -142,7 +142,7 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
           onBlur={fieldApi.props.onBlur}
         />
         <ComboboxContent>
-          <ComboboxList>
+          <ComboboxList aria-label={label}>
             {(option: RelationshipOption) => (
               <ComboboxItem key={option.value} value={option}>
                 {option.content ?? option.label}
@@ -192,7 +192,7 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
         />
       </ComboboxChips>
       <ComboboxContent anchor={anchor}>
-        <ComboboxList>
+        <ComboboxList aria-label={label}>
           {(option: RelationshipOption) => (
             <ComboboxItem key={option.value} value={option}>
               {option.content ?? option.label}
