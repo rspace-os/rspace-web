@@ -5386,6 +5386,96 @@ components:
       required:
         - numericValue
         - unitId
+    CryoStorageTemperature:
+      type: object
+      description: |
+        Cryopreserve's storage temperature: at or below -18 degrees Celsius and not below absolute
+        zero, in whole degrees of the unit sent. Kelvin and Fahrenheit are converted to Celsius
+        before the bounds are checked, so the bounds are given per unit.
+      properties:
+        numericValue:
+          type: number
+          multipleOf: 1
+          description: Whole degrees, in the unit `unitId` names.
+        unitId:
+          type: integer
+          description: Celsius (8), Kelvin (9) or Fahrenheit (10).
+      required:
+        - numericValue
+        - unitId
+      oneOf:
+        - title: Celsius
+          properties:
+            unitId:
+              enum:
+                - 8
+            numericValue:
+              minimum: -273
+              maximum: -18
+        - title: Kelvin
+          properties:
+            unitId:
+              enum:
+                - 9
+            numericValue:
+              minimum: 0
+              maximum: 255
+        - title: Fahrenheit
+          properties:
+            unitId:
+              enum:
+                - 10
+            numericValue:
+              minimum: -459
+              maximum: -1
+      example:
+        numericValue: -80
+        unitId: 8
+    ReviveStorageTemperature:
+      type: object
+      description: |
+        Revive's storage temperature: from 4 to 120 degrees Celsius, in whole degrees of the unit
+        sent. Kelvin and Fahrenheit are converted to Celsius before the bounds are checked, so the
+        bounds are given per unit.
+      properties:
+        numericValue:
+          type: number
+          multipleOf: 1
+          description: Whole degrees, in the unit `unitId` names.
+        unitId:
+          type: integer
+          description: Celsius (8), Kelvin (9) or Fahrenheit (10).
+      required:
+        - numericValue
+        - unitId
+      oneOf:
+        - title: Celsius
+          properties:
+            unitId:
+              enum:
+                - 8
+            numericValue:
+              minimum: 4
+              maximum: 120
+        - title: Kelvin
+          properties:
+            unitId:
+              enum:
+                - 9
+            numericValue:
+              minimum: 278
+              maximum: 393
+        - title: Fahrenheit
+          properties:
+            unitId:
+              enum:
+                - 10
+            numericValue:
+              minimum: 40
+              maximum: 248
+      example:
+        numericValue: 4
+        unitId: 8
     OperationOrigin:
       type: object
       description: |
@@ -5637,7 +5727,7 @@ components:
                 The cryoprotectant the material is frozen in, stored as a Cryomedium field on the
                 new sample.
             storageTemp:
-              $ref: "#/components/schemas/Quantity"
+              $ref: "#/components/schemas/CryoStorageTemperature"
           required:
             - origin
             - storageTemp
@@ -5668,7 +5758,7 @@ components:
             origin:
               $ref: "#/components/schemas/OperationOriginWithAmount"
             storageTemp:
-              $ref: "#/components/schemas/Quantity"
+              $ref: "#/components/schemas/ReviveStorageTemperature"
           required:
             - origin
       example:
