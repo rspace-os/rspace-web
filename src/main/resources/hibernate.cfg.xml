@@ -137,6 +137,8 @@
 
         <mapping class="com.researchspace.model.inventory.Instrument"/>
         <mapping class="com.researchspace.model.inventory.InstrumentTemplate"/>
+        <mapping class="com.researchspace.model.resourceaccess.ResourceAccess"/>
+        <mapping class="com.researchspace.model.resourceaccess.ResourceRoleAssignment"/>
     
         <mapping class="com.researchspace.model.inventory.Container"/>
         <mapping class="com.researchspace.model.inventory.ContainerLocation"/>
