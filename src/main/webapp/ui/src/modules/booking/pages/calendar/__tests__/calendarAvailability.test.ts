@@ -46,6 +46,7 @@ const booking = (id: number, target: string, start: string, end: string) => ({
   purpose: `Purpose ${id}`,
   bookedBy: `User ${id}`,
   privacy: "full",
+  cancellationReason: null,
   canEdit: false,
   canCancel: false,
   createdAt: "2026-08-01T09:00:00Z",

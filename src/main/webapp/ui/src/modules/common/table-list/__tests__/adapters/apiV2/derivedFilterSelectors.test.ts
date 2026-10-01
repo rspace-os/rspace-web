@@ -1,6 +1,9 @@
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import type { SearchSelector } from "@/modules/common/collection/collectionConfig";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
+import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
 import { enrichApiV2FilterConfig } from "../../../adapters/apiV2/apiV2FilterFields";
 import { createApiV2CollectionAdapter } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
@@ -239,7 +242,10 @@ describe("filter selectors derived from published relationship targets", () => {
       pagination: { defaultLimit: 10, maximumLimit: 100 },
     };
     const translate = (key: string) =>
-      ({ "tableList.fields.createdBy": "Erstellt von", "tableList.fields.updatedBy": "Aktualisiert von" })[key] ?? key;
+      ({
+        "common:tableList.fields.createdBy": "Erstellt von",
+        "common:tableList.fields.updatedBy": "Aktualisiert von",
+      })[key] ?? key;
     const adapter = createApiV2CollectionAdapter<OwnerlessRecord>({
       translate,
       config: ownerlessConfig,
@@ -300,6 +306,63 @@ describe("filter selectors derived from published relationship targets", () => {
       enriched.fields.find((field) => String(field.name) === "updatedBy.username")?.capabilities.filterOperators,
     ).toEqual(["equals"]);
     expect(enriched.defaultColumns).toEqual(["title"]);
+  });
+
+  it("translates shared owner and target field labels through a page-scoped translator", async () => {
+    // A page such as All bookable items translates with its own namespace; the shared labels live in
+    // `common`, and the server publishes no titles for user fields.
+    const i18n = await createTestI18n({ common: commonEnglish, booking: bookingEnglish }, "booking");
+    const bookingT = i18n.getFixedT(null, "booking");
+    type Audited = { id: string };
+    const untitled = { operators: ["==", "=contains="] as const, wildcards: false, fieldType: "text" as const };
+    const auditedMetadata: ApiV2CollectionMetadata<Audited> = {
+      resourceName: "audited-records",
+      fields: ["id"],
+      sorting: { fields: [], default: [], maximumFields: 5 },
+      filtering: {
+        selectors: {
+          location: {
+            operators: ["==", "!=", "=in=", "=out="],
+            wildcards: false,
+            fieldType: "text",
+            picker: { resource: "booking-locations", identity: "globalId", globalIdPrefix: "IC" },
+          },
+        },
+        limits: metadata.filtering.limits,
+      },
+      relationshipFields: {
+        "createdBy.id": { ...untitled, fieldType: "number" },
+        "createdBy.firstName": untitled,
+        "updatedBy.email": untitled,
+        "updatedBy.createdAt": { ...untitled, fieldType: "dateTime" },
+      },
+      pagination: { defaultLimit: 10, maximumLimit: 100 },
+    };
+    const enriched = enrichApiV2FilterConfig<Audited>({
+      config: {
+        slug: "audited-records",
+        idField: "id",
+        labels: { singularKey: "a", pluralKey: "b" },
+        useAsTitle: "id",
+        defaultColumns: ["id"],
+        fields: [{ name: "id", labelKey: "id", type: "text" }],
+      },
+      metadata: auditedMetadata,
+      translate: (key) => String(bookingT(key as never)),
+    });
+    const label = (name: string) => enriched.fields.find((field) => String(field.name) === name)?.label;
+
+    expect(label("createdBy.id")).toBe("Created by \u2192 ID");
+    expect(label("createdBy.firstName")).toBe("Created by \u2192 First name");
+    expect(label("updatedBy.email")).toBe("Updated by \u2192 Email");
+    expect(label("updatedBy.createdAt")).toBe("Updated by \u2192 Created at");
+    expect(label("location")).toBe("Location");
+    expect(enriched.fields.find((field) => String(field.name) === "location")).toMatchObject({
+      type: "relationship",
+      relationTo: "booking-locations",
+      filterPicker: { resource: "booking-locations", identity: "globalId", globalIdPrefix: "IC" },
+    });
+    expect(enriched.fields.some((field) => field.label?.includes("tableList."))).toBe(false);
   });
 
   it("derives a filter-only identity relationship and its target fields from metadata", () => {

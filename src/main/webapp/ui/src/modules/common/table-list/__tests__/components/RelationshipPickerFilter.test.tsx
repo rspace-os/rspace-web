@@ -85,10 +85,9 @@ describe("relationship filter picker", () => {
     await user.type(screen.getByRole("combobox", { name: "common:tableList.filters.value" }), "Conf");
 
     const option = await screen.findByRole("option", { name: /Confocal microscope/ });
-    expect(within(option).getByRole("link", { name: "common:relationshipPicker.openRecord" })).toHaveAttribute(
-      "href",
-      "/globalId/IN123",
-    );
+    // Following a link from the listbox would leave the page and lose the unsaved filter.
+    expect(within(option).getByText("IN123")).toBeVisible();
+    expect(within(option).queryByRole("link")).not.toBeInTheDocument();
     await user.click(option);
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.applyFilters" }));
 

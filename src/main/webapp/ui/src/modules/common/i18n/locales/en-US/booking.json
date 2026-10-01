@@ -56,10 +56,9 @@
       "availableNow": "Available now",
       "availableNowDescription": "Free at this moment",
       "error": "Could not find available items.",
-      "freeLaterToday": "Busy now, free later",
+      "freeLaterToday": "Free later",
       "freeLaterTodayDescription": "Busy now, free again later today",
       "legend": "Quick filters",
-      "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
       "loading": "Finding bookable items…",
       "myItems": "Owned Items",
       "retry": "Retry",
@@ -317,6 +316,10 @@
     "minutes": "{count, plural, one {# minute} other {# minutes}}",
     "no": "No",
     "notAvailable": "Not available",
+    "notFound": {
+      "description": "This item has no booking configuration, or you do not have access to it.",
+      "title": "Bookable item not found"
+    },
     "openingHours": {
       "closed": "Closed",
       "everyDay": "Every day"
@@ -356,6 +359,7 @@
       "archive": "Archive",
       "delete": "Delete {item}",
       "deletePermanently": "Delete permanently",
+      "discardDraft": "Discard my changes and load the latest",
       "edit": "Edit {item}",
       "menu": "Actions for {item}",
       "repairAccess": "Repair access for {item}",
@@ -444,7 +448,7 @@
       "description": "Instruments from Inventory become bookable once someone who manages them adds booking rules. Access follows the instrument's Inventory sharing."
     },
     "singular": "Bookable item",
-    "staleEdit": "This configuration changed while you were editing. Your draft is preserved; review the server-changed fields below before saving again.",
+    "staleEdit": "Someone else changed this configuration while you were editing. Your changes are kept: save again to replace the latest version with them, or discard them to load the latest version.",
     "states": {
       "active": "Active"
     },
@@ -471,6 +475,10 @@
       "description": "Cancel the {itemName} booking for {period}? The cancelled event remains in the audit history.",
       "keep": "Keep booking",
       "keepMaintenance": "Keep maintenance event",
+      "maintenanceReasonHint": "The reason is saved with this maintenance event.",
+      "reasonCount": "{count, number}/500 characters",
+      "reasonHint": "The booker and subscribers will see this reason.",
+      "reasonLabel": "Cancellation reason (optional)",
       "title": "Cancel booking?"
     },
     "compact": {
@@ -492,6 +500,7 @@
       "bookedBy": "Booked by",
       "bookingCancelled": "Booking cancelled.",
       "cancelDescription": "The reserved time is released for others to book.",
+      "cancellationReason": "Cancellation reason",
       "cancelled": "Cancelled",
       "cancelMaintenance": "Cancel maintenance event",
       "cancelMaintenanceDescription": "The maintenance window is released and the slot becomes bookable again.",
@@ -529,6 +538,8 @@
       "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
       "bufferSummary": "This period is within the buffer time of:",
       "bufferUnknown": "Too close to another booking.",
+      "cancellationReasonLength": "The cancellation reason must be 500 characters or fewer.",
+      "cancellationReasonRequiresCancel": "A cancellation reason can only be provided when cancelling a booking.",
       "checkExistingBookings": "Check My Bookings",
       "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
       "deleteForbidden": "You no longer have permission to cancel this booking.",
@@ -548,7 +559,7 @@
       "nonexistentTime": "This local time does not occur in the selected time zone.",
       "notFound": "This booking was not found or is not visible.",
       "occurrenceRequired": "Select which occurrence of this local time to use.",
-      "openingHours": "This booking is outside the bookable item's opening hours.",
+      "openingHours": "The booking must remain within this bookable item's opening hours and cannot include a day on which it is closed.",
       "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
       "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
       "overlap": "This period overlaps another booking or a maintenance event.",
@@ -694,6 +705,10 @@
       "legend": "Calendar filters"
     },
     "grid": "Calendar grid",
+    "inlineEditor": {
+      "discardStaleEdit": "Discard my changes and load the latest",
+      "staleEdit": "Someone else changed this booking while you were editing. Your changes are kept: save again to apply them to the latest version, or discard them to load the latest version."
+    },
     "item": "Bookable item",
     "items": "Bookable items",
     "jumpToDate": "Jump to date",
@@ -711,6 +726,7 @@
       "legend": "Period",
       "month": "Month",
       "monthUnavailableInResources": "Month isn't available in Resources. Use Time grid or Agenda for a month overview.",
+      "monthUnavailableShort": "Not available in Resources",
       "week": "Week"
     },
     "periodNavigation": "Calendar period navigation",
@@ -719,7 +735,10 @@
     "quickFilters": {
       "legend": "Booking event quick filters",
       "mine": "My Bookings",
-      "myItems": "Owned Items"
+      "mineDescription": "Bookings you made",
+      "myItems": "Owned Items",
+      "myItemsDescription": "Bookings on items you own",
+      "remove": "Remove {filter} filter"
     },
     "resourceSchedule": "Resource booking schedule",
     "retry": "Retry",
@@ -733,9 +752,15 @@
     "today": "Today",
     "toolbar": "Calendar controls",
     "unavailable": "Booking events are unavailable.",
+    "view": {
+      "summary": "{layout} · {period}",
+      "trigger": "View: {summary}"
+    },
     "weekGrid": {
       "more": "+{count, number} more",
-      "moreLabel": "{count, plural, one {Show # more booking} other {Show # more bookings}} on {date}"
+      "moreCount": "{count, plural, one {# more booking} other {# more bookings}}",
+      "moreLabel": "{count, plural, one {Show # more booking} other {Show # more bookings}} on {date}",
+      "openDay": "Open day"
     },
     "windowEditor": {
       "end": "Change booking end time",
@@ -1032,7 +1057,7 @@
       },
       "save": "Save",
       "saved": "Notification preference saved.",
-      "saveError": "Your notification preference could not be saved. The last saved choice has been restored.",
+      "saveError": "Your notification preference could not be saved. Your changes have been kept. Please try again.",
       "saving": "Saving…",
       "title": "Booking notifications",
       "unsubscribeAll": "Unsubscribe from all instruments",
@@ -1086,6 +1111,13 @@
     },
     "resetComplete": "Global Booking defaults restored.",
     "saved": "Booking preferences saved.",
+    "timeFormat": {
+      "automatic": "Automatic ({example})",
+      "description": "Automatic follows the browser's regional format, and the app language's usual clock in emails. Time fields always use the browser's format.",
+      "legend": "Time format",
+      "twelveHour": "12-hour ({example})",
+      "twentyFourHour": "24-hour ({example})"
+    },
     "timezone": {
       "browser": "Use Browser Timezone ({timezone})",
       "custom": "Use Custom Timezone",
@@ -1104,6 +1136,7 @@
   },
   "settings": {
     "actions": {
+      "reload": "Discard changes and reload",
       "save": "Save settings"
     },
     "defaultSharing": {
@@ -1144,7 +1177,7 @@
       "buffer": "Enter a whole number from 0 to 10,080.",
       "granularity": "Choose 1, 5, 10, or 15 minutes.",
       "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
-      "openingHours": "Use an opening start before the end. Enter 00:00 to close at midnight.",
+      "openingHours": "Use an opening start before the end, or enter 00:00 as the end to close at midnight.",
       "save": "RSpace could not save the booking settings. Try again.",
       "stale": "These settings changed after you opened this page. Reload the page and try again."
     },
@@ -1163,6 +1196,11 @@
       "openingEndDescription": "Enter {midnight} to close at midnight (the end of the day).",
       "openingStart": "Opening start"
     },
+    "notPermitted": {
+      "action": "Open Booking preferences",
+      "description": "These institution-wide defaults are copied to new bookable items. You can still choose how Booking is displayed for you in Booking preferences.",
+      "title": "Only system administrators can change booking settings"
+    },
     "openingHours": {
       "confirmDay": "Confirm {day} hours",
       "discardDay": "Discard {day} changes",
@@ -1178,7 +1216,11 @@
       "useSharedDay": "Use shared hours on {day}"
     },
     "saved": "Booking settings saved.",
-    "title": "Booking Settings"
+    "title": "Booking Settings",
+    "unavailable": {
+      "description": "RSpace could not load the booking settings. Try again.",
+      "title": "Booking settings unavailable"
+    }
   },
   "sidebar": {
     "addBooking": "Add Booking",

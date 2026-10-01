@@ -712,7 +712,6 @@
     "enterSearchTerm": "Enter a search term",
     "failed": "Search is unavailable. Try again.",
     "openOptions": "Show matching records",
-    "openRecord": "Open record {globalId}",
     "remove": "Remove {item}",
     "restoreFailed": "Could not restore this saved selection. Try again.",
     "search": "Search by name or global ID",
@@ -1030,6 +1029,13 @@
       "resizeColumn": "Resize column",
       "sortBy": "Sort by {column}"
     },
+    "alerts": {
+      "dismiss": "Dismiss",
+      "label": "Recent changes",
+      "undo": "Undo",
+      "undoFailed": "This change could not be undone.",
+      "undoing": "Undoing…"
+    },
     "cardView": "{collection} cards",
     "columns": {
       "customised": "Columns, {count} of {total} shown",
@@ -1075,6 +1081,7 @@
     },
     "fields": {
       "createdBy": "Created by",
+      "location": "Location",
       "updatedBy": "Updated by"
     },
     "filters": {
@@ -1093,6 +1100,7 @@
         "searchLabelVia": "Search {via} custom fields for filter {number}",
         "searchPlaceholder": "Search custom fields by name or ID"
       },
+      "editFilters": "Edit filters",
       "field": "Field for filter {number}",
       "fieldSearch": {
         "clear": "Clear the field search",
@@ -1129,6 +1137,7 @@
         "placeholder": "Search operators",
         "trigger": "Show operators"
       },
+      "panelSummary": "{count, plural, =0 {No other filters} one {# other filter} other {# other filters}}",
       "placeholders": {
         "pattern": "Use * as a wildcard",
         "value": "Enter a value"
@@ -1184,6 +1193,18 @@
       "direction": "Direction for {column}",
       "empty": "Select a column header to add a sort rule.",
       "title": "Sort priority"
+    },
+    "targetFields": {
+      "createdAt": "Created at",
+      "deleted": "Deleted",
+      "email": "Email",
+      "firstName": "First name",
+      "globalId": "Global ID",
+      "id": "ID",
+      "lastName": "Last name",
+      "name": "Name",
+      "updatedAt": "Updated at",
+      "username": "Username"
     },
     "toolbar": {
       "columns": "Columns",

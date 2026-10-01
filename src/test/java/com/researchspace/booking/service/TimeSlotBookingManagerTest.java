@@ -96,7 +96,8 @@ class TimeSlotBookingManagerTest {
                     ApiV2BookingConfigurationResource.DESCRIPTION,
                     ApiV2BookingInstrumentResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,
-                    ApiV2UserResource.DESCRIPTION)));
+                    ApiV2UserResource.DESCRIPTION,
+                    com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION)));
     when(bookingDao.saveAndFlush(any(TimeSlotBooking.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(accessManager.resolveForMutation(any(BookingConfiguration.class), eq(actor)))
