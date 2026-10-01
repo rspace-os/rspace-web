@@ -172,6 +172,11 @@ class ApiV2ControllerAdviceTest {
         "errors.api.v2.notFound",
         "Not found detail");
     assertProblem(
+        advice.handleBookingCalendarNotFound(),
+        HttpStatus.NOT_FOUND,
+        "errors.api.v2.notFound",
+        "Not found detail");
+    assertProblem(
         advice.handleBadRequest(new ApiV2BadRequestException("errors.api.v2.select.mode")),
         HttpStatus.BAD_REQUEST,
         "errors.api.v2.select.mode",

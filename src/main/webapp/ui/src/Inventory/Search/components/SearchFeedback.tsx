@@ -25,7 +25,10 @@ function SearchFeedback(): React.ReactNode {
   const statusText = match<void, string>([
     [() => search.loading, t("search.feedback.loading")],
     [() => Boolean(search.fetcher.error), search.fetcher.error],
-    [() => Boolean(search.fetcher.query), t("search.feedback.results", { count: search.count })],
+    [
+      () => Boolean(search.fetcher.query) || search.fetcher.bookable !== null,
+      t("search.feedback.results", { count: search.count }),
+    ],
     [() => search.fetcher.resultType === "CONTAINER", t("search.feedback.topLevelContainers", { count: search.count })],
     [() => search.fetcher.resultType === "SAMPLE", t("search.feedback.samples", { count: search.count })],
     [() => search.fetcher.resultType === "SUBSAMPLE", t("search.feedback.subsamples", { count: search.count })],

@@ -21,7 +21,16 @@ export const TYPE_LABEL = {
   IMAGE: "Visual",
 };
 
-export type SearchModule = "BENCHES" | "TYPE" | "STATUS" | "OWNER" | "SCAN" | "TAG" | "SAVEDSEARCHES" | "SAVEDBASKETS";
+export type SearchModule =
+  | "BENCHES"
+  | "TYPE"
+  | "STATUS"
+  | "OWNER"
+  | "SCAN"
+  | "TAG"
+  | "SAVEDSEARCHES"
+  | "SAVEDBASKETS"
+  | "BOOKABLE";
 /*
  * Uses Set rather than RsSet as Set has a smaller memory footprint and the
  * extended functionality of RsSet is not needed.
@@ -172,6 +181,7 @@ export type CoreFetcherArgs = {
   ownedBy?: string | null;
   owner?: Person | null;
   deletedItems?: DeletedItems;
+  bookable?: boolean | null;
   benchOwner?: Person | null;
 };
 
@@ -277,6 +287,8 @@ export interface CoreFetcher {
    * Filter based on whether the items have been deleted or not
    */
   deletedItems: DeletedItems;
+  bookable: boolean | null;
+  setBookable(bookable: boolean | null): void;
   setDeletedItems(value: DeletedItems): void;
 
   /*
@@ -396,6 +408,7 @@ export interface Search {
   setOwner(user: Person | null, doSearch?: boolean): void;
   setBench(user: Person | null, doSearch?: boolean): void;
   setDeletedItems(deletedItems: DeletedItems, doSearch?: boolean): void;
+  setBookable(bookable: boolean | null, doSearch?: boolean): void;
   setParentGlobalId(parentGlobalId: GlobalId | null, doSearch?: boolean): void;
 
   /*
@@ -431,7 +444,11 @@ export interface Search {
   duplicateRecords(records: Array<InventoryRecord>): Promise<void>;
   restoreRecords(records: Array<InventoryRecord>): Promise<void>;
   splitRecord(copies: number, subsample: SubSample): Promise<void>;
-  transferRecords(username: Username, records: Array<InventoryRecord>): Promise<void>;
+  transferRecords(
+    username: Username,
+    records: Array<InventoryRecord>,
+    transferBookingConfigurationOwnership?: boolean,
+  ): Promise<void>;
   exportRecords(exportOptions: ExportOptions, records: Array<InventoryRecord>): Promise<void>;
 
   /*
@@ -447,6 +464,7 @@ export interface Search {
    * particular controls or particular options within those control.
    */
   readonly showStatusFilter: boolean;
+  readonly showBookableFilter: boolean;
   readonly showTypeFilter: boolean;
   readonly showOwnershipFilter: boolean;
   readonly showBenchFilter: boolean;
