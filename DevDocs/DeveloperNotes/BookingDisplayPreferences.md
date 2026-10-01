@@ -49,13 +49,13 @@ Keep new synchronized timeline callers on the shared scroll hook, not a per-scro
 React state update. Hour labels and day bounds are cached by date and timezone.
 
 Availability quick-filter counts load even when no filter is selected. They use today's preferred
-display interval: before it starts, an item with a free segment is “Free later today”; at or after
+display interval: before it starts, an item with a free segment is “Free later”; at or after
 its end, it matches neither filter. Loading these counts does not block the unfiltered catalogue.
-Candidate discovery uses the catalogue's Search, type and item-property predicates before applying
-the 1,000-item availability limit. Local availability comparisons become logical true when deriving
-that candidate predicate, preserving AND/OR grouping. Counts therefore describe the current item
-scope. Today's availability bars reuse the same booking intervals; other dates load their own
-intervals. Both event and availability caches are scoped to the caller.
+The server classifies items and counts them under the page's Search, type and item-property
+filters, so counts describe the current item scope and no request pages through the catalogue. See
+"Booking catalogue availability quick filters" in `RestApiV2Collections.md`. Availability bars load
+the booking intervals of the rows on the page only; under a quick filter they show today. Both
+event and availability caches are scoped to the caller.
 
 The preferences editor derives its initial input from the query cache. Once a user edits a field,
 it keeps that local draft across background refetches. Successful Save or Reset clears the draft
@@ -139,10 +139,13 @@ Pages own their main landmark; SidebarInset is only a layout container.
 
 The catalogue's master filter is the complete RSQL `where` URL parameter. Quick buttons replace
 only availability predicates; changing dates removes those predicates without discarding item or
-ID rules. Existing `target` and `availability` links remain readable. Availability predicates resolve
-to target-ID predicates before the request. `/api/v2/booking-catalogue?where=...` validates filters
-with the shared collection parser and intersects them with visibility and active-item constraints
-before database pagination. Do not fetch all catalogue pages to filter them in the browser.
+ID rules. Existing `target` and `availability` links remain readable. A top-level availability
+predicate is sent as the catalogue's `availability` parameter with today's window, and the server
+applies it before paging (see "Booking catalogue availability quick filters" in
+`RestApiV2Collections.md`); an availability predicate inside an OR group is reported as an
+unavailable restored filter. `/api/v2/booking-catalogue?where=...` validates filters with the
+shared collection parser and intersects them with visibility and active-item constraints before
+database pagination. Do not fetch all catalogue pages to filter them in the browser.
 
 Calendar has one Search input and separate Bookable items and Booking events filter groups.
 The groups combine with AND; each group retains its own nested AND/OR expression.

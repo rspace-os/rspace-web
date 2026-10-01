@@ -36,31 +36,13 @@ afterEach(() => {
 });
 
 describe("the All Bookable Items page", () => {
-  test("explains the quick-filter capacity limit without offering a futile retry", async () => {
-    let requests = 0;
-    worker.use(
-      http.get("/api/v2/booking-catalogue", ({ request }) => {
-        if (new URL(request.url).searchParams.get("limit") !== "100") return undefined;
-        requests += 1;
-        return HttpResponse.json({ items: [], total: 1001, page: 1, pageSize: 100, facets: { types: ["INSTRUMENT"] } });
-      }),
-    );
-    render(<AllBookableItemsStory history={history} />);
-    await expect
-      .element(page.getByRole("alert"))
-      .toHaveTextContent("Availability quick filters are unavailable for more than 1,000 items.");
-    await expect.element(page.getByRole("button", { name: "Retry", exact: true })).not.toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: /Available now/ })).toBeDisabled();
-    await expect.element(pageObj.detailsButton).toBeVisible();
-    expect(requests).toBe(1);
-  });
-
   test.each([390, 1440])("keeps the quick-filter toolbar and results width stable at %s px", async (width) => {
     const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     const response = Promise.withResolvers<void>();
     worker.use(
+      // Hold the quick-filtered table page, which the server filters before paging.
       http.get("/api/v2/booking-catalogue", async ({ request }) => {
-        if (new URL(request.url).searchParams.get("limit") !== "100") return undefined;
+        if (!new URL(request.url).searchParams.has("availability")) return undefined;
         await response.promise;
         return undefined;
       }),
@@ -306,7 +288,7 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.datePicker).toBeVisible();
     await expect
       .element(pageObj.filtersPanel.getByRole("combobox", { name: "Value for filter 1" }))
-      .toHaveValue("Busy now, free later");
+      .toHaveValue("Free later");
     await pageObj.filtersPanel.getByRole("button", { name: "Remove filter 1" }).click();
     await pageObj.filtersPanel.getByRole("button", { name: "Apply filters" }).click();
     await expect.poll(() => new URLSearchParams(history.location.search).get("where")).toBeNull();

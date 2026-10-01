@@ -81,14 +81,7 @@ const bookingConfigurationTargetSource: RelationshipSource = {
       value: instrument.globalId,
       label: instrument.name,
       content: (
-        <InventoryItem
-          name={instrument.name}
-          globalId={instrument.globalId}
-          href={`/globalId/${instrument.globalId}`}
-          idLinkLabel={context.idLinkLabel(instrument.globalId)}
-          compact={context.compact}
-          size="xs"
-        />
+        <InventoryItem name={instrument.name} globalId={instrument.globalId} compact={context.compact} size="xs" />
       ),
     };
   },

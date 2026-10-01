@@ -181,6 +181,25 @@ type AvailabilityRowInterval = {
   interval: AbsoluteDisplayInterval;
 };
 
+/**
+ * One row's busy time within `interval`: its closed periods, then each confirmed event on its target,
+ * widened by its buffers. Maintenance always counts; bookings do unless the row allows double booking.
+ */
+export function rowAvailabilityIntervals(
+  row: CalendarAvailabilityRow,
+  interval: AbsoluteDisplayInterval,
+  bookings: readonly Booking[],
+): SourcedAvailabilityInterval[] {
+  const intervals = closedIntervals(row, interval);
+  for (const booking of bookings) {
+    if (booking.state !== "CONFIRMED" || booking.target?.globalId !== row.globalId) continue;
+    if (row.allowDoubleBooking && booking.kind === "BOOKING") continue;
+    const clipped = bookingInterval(booking, row, interval);
+    if (clipped) intervals.push(clipped);
+  }
+  return intervals;
+}
+
 async function loadAvailability(
   rowIntervals: readonly AvailabilityRowInterval[],
   envelope: { start: string; end: string },
@@ -194,21 +213,19 @@ async function loadAvailability(
     token,
     signal,
   );
-  const result = new Map<string, SourcedAvailabilityInterval[]>();
-  const rowIntervalById = new Map<string, AvailabilityRowInterval>();
-  for (const rowInterval of rowIntervals) {
-    const { row, interval } = rowInterval;
-    result.set(row.globalId, closedIntervals(row, interval));
-    rowIntervalById.set(row.globalId, rowInterval);
-  }
+  const bookingsByTarget = new Map<string, Booking[]>();
   for (const booking of bookings) {
-    if (booking.state !== "CONFIRMED" || booking.target === null) continue;
-    const rowInterval = rowIntervalById.get(booking.target.globalId);
-    if (!rowInterval || (rowInterval.row.allowDoubleBooking && booking.kind === "BOOKING")) continue;
-    const clipped = bookingInterval(booking, rowInterval.row, rowInterval.interval);
-    if (clipped) result.get(rowInterval.row.globalId)?.push(clipped);
+    if (booking.target === null) continue;
+    const targetBookings = bookingsByTarget.get(booking.target.globalId);
+    if (targetBookings) targetBookings.push(booking);
+    else bookingsByTarget.set(booking.target.globalId, [booking]);
   }
-  return result;
+  return new Map(
+    rowIntervals.map(({ row, interval }) => [
+      row.globalId,
+      rowAvailabilityIntervals(row, interval, bookingsByTarget.get(row.globalId) ?? []),
+    ]),
+  );
 }
 
 export async function loadCalendarAvailability(

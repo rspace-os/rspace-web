@@ -24,7 +24,8 @@ class RsqlTargetFieldParserTest {
           List.of(
               ApiV2BookingConfigurationResource.DESCRIPTION,
               ApiV2BookingInstrumentResource.DESCRIPTION,
-              ApiV2UserResource.DESCRIPTION));
+              ApiV2UserResource.DESCRIPTION,
+              com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
 
   private final RsqlFilterParser withTargets =
       new RsqlFilterParser(ApiV2BookingConfigurationResource.DESCRIPTION, REGISTRY);
