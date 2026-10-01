@@ -115,7 +115,7 @@ export function selectOptionText(option: SelectOption): string {
   return "textValue" in option ? option.textValue : option.label;
 }
 
-export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "select" | "card"> & {
+export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "select" | "card" | "radio"> & {
   isOptionDisabled?: (option: SelectOption, data: Partial<TDocument>) => boolean;
 };
 
