@@ -1067,4 +1067,20 @@ class BookingConfigurationManagerTest {
     defaults.setAllowDoubleBooking(doubleBooking);
     return defaults;
   }
+
+  @Test
+  void rejectsAnEmptyReplacementBeforeSaving() {
+    Create invalid =
+        new Create(
+            true,
+            "UTC",
+            target(12L),
+            new BookingSchedulingSettings.Patch(null, List.of(), null, null, null, null));
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () -> manager.createConfiguration(invalid, actor, actor));
+    assertEquals(InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS, failure.reason());
+    verify(dao, never()).saveAndFlush(any(BookingConfiguration.class));
+  }
 }

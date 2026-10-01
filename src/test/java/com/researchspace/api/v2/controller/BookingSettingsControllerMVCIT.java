@@ -105,6 +105,24 @@ class BookingSettingsControllerMVCIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body(version, true)))
         .andExpect(status().isForbidden());
+
+    BookingConfigurationDefaults before = settingsManager.getDefaults(sysadmin);
+    mockMvc
+        .perform(
+            patch("/api/v2/booking-settings/admin")
+                .header("apiKey", fixture.userKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"openingHours":[{"dayOfWeek":1,"start":"09:00","end":"17:00"},
+                                      {"dayOfWeek":6,"start":"10:00","end":"16:00"}],
+                     "configurationVersion":%d}
+                    """
+                        .formatted(before.getConfigurationVersion())))
+        .andExpect(status().isForbidden());
+    BookingConfigurationDefaults after = settingsManager.getDefaults(sysadmin);
+    assertEquals(before.getConfigurationVersion(), after.getConfigurationVersion());
+    assertEquals(before.getOpeningHours(), after.getOpeningHours());
   }
 
   @Test
@@ -331,5 +349,85 @@ class BookingSettingsControllerMVCIT {
           "Unexpected server error: " + result.getResponse().getContentAsString(),
           result.getResolvedException());
     }
+  }
+
+  @Test
+  void validatesTheBoundRequestBeforeCallingTheManager() throws Exception {
+    long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
+
+    mockMvc
+        .perform(
+            patch("/api/v2/booking-settings/admin")
+                .header("apiKey", fixture.sysadminKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"slotGranularityMinutes":0,"configurationVersion":%d}
+                    """
+                        .formatted(version)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+  }
+
+  @Test
+  void persistsIndependentHoursAndTreatsNullAsNoChange() throws Exception {
+    long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
+    patchDefaults(
+            """
+            {"openingHours":[{"dayOfWeek":6,"start":"10:00","end":"16:00"},
+                             {"dayOfWeek":1,"start":"09:00","end":"17:00"}],
+             "configurationVersion":%d}
+            """
+                .formatted(version))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openingHours[0].dayOfWeek").value(1))
+        .andExpect(jsonPath("$.openingHours[1].start").value("10:00"));
+    BookingConfigurationDefaults changed = settingsManager.getDefaults(sysadmin);
+    patchDefaults(
+            "{\"openingHours\":null,\"configurationVersion\":%d}"
+                .formatted(changed.getConfigurationVersion()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openingHours.length()").value(2));
+    mockMvc
+        .perform(get("/api/v2/booking-settings").header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openingHours[1].end").value("16:00"))
+        .andExpect(jsonPath("$.openingStart").doesNotExist())
+        .andExpect(jsonPath("$.openDays").doesNotExist());
+    assertEquals(
+        changed.getOpeningHours(), settingsManager.getDefaults(sysadmin).getOpeningHours());
+  }
+
+  @Test
+  void rejectsCoercedOrInconsistentSchedulesWithoutWriting() throws Exception {
+    BookingConfigurationDefaults before = settingsManager.getDefaults(sysadmin);
+    long version = before.getConfigurationVersion();
+    for (String invalid :
+        java.util.List.of(
+            "[1]",
+            "[]",
+            "[{\"dayOfWeek\":\"1\",\"start\":\"09:00\",\"end\":\"17:00\"}]",
+            "[{\"dayOfWeek\":1.5,\"start\":\"09:00\",\"end\":\"17:00\"}]",
+            "[{\"dayOfWeek\":3,\"start\":\"10:00\",\"end\":\"16:00\",\"extra\":1}]",
+            "[{\"dayOfWeek\":3,\"start\":\"10:00\",\"end\":\"16:00\"},"
+                + "{\"dayOfWeek\":3,\"start\":\"09:00\",\"end\":\"17:00\"}]")) {
+      patchDefaults("{\"openingHours\":%s,\"configurationVersion\":%d}".formatted(invalid, version))
+          .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
+          .andExpect(status().isBadRequest())
+          .andExpect(
+              jsonPath("$.code").value("errors.api.v2.bookingConfiguration.openingHours.invalid"));
+    }
+    BookingConfigurationDefaults after = settingsManager.getDefaults(sysadmin);
+    assertEquals(version, after.getConfigurationVersion());
+    assertEquals(before.getOpeningHours(), after.getOpeningHours());
+  }
+
+  private org.springframework.test.web.servlet.ResultActions patchDefaults(String body)
+      throws Exception {
+    return mockMvc.perform(
+        patch("/api/v2/booking-settings/admin")
+            .header("apiKey", fixture.sysadminKey())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body));
   }
 }
