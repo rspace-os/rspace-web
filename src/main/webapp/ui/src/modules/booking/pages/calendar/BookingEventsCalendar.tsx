@@ -1,4 +1,4 @@
-import { CalendarCheck2Icon } from "lucide-react";
+import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
 import type * as React from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -77,6 +77,8 @@ export function BookingEventsCalendar({
   onEventFilterChange,
   mineOnly = false,
   onMineChange,
+  myItemsOnly = false,
+  onMyItemsChange,
   creationDisabled = false,
   onResourceRangeSelect,
 }: {
@@ -104,28 +106,22 @@ export function BookingEventsCalendar({
   resourceConfigurations?: readonly BookableItemOption[];
   resourceTableProps?: TableListProps<BookingConfiguration>;
   searchControl?: { value: string; onChange: (search: string) => void };
-  itemFilterConfig?: ResolvedCollectionConfig<BookingConfiguration>;
   eventFilterConfig: ResolvedCollectionConfig<BookingListDocument>;
   itemFilterExpression?: FilterExpression<BookingConfiguration> | null;
   eventFilterExpression?: FilterExpression<BookingListDocument> | null;
   itemFilterIssue?: CalendarFilterIssueState;
   eventFilterIssue?: CalendarFilterIssueState;
-  itemRuntimeFieldDefinitions?: readonly {
-    namespace: string;
-    definitions: readonly RuntimeFieldDefinition[];
-  }[];
   eventRuntimeFieldDefinitions?: readonly {
     namespace: string;
     definitions: readonly RuntimeFieldDefinition[];
   }[];
-  itemRuntimeFieldAuthScope?: string | number;
   eventRuntimeFieldAuthScope?: string | number;
-  onSelectItemRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
   onSelectEventRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
-  onItemFilterChange?: (expression: FilterExpression<BookingConfiguration> | null) => void;
   onEventFilterChange?: (expression: FilterExpression<BookingListDocument> | null) => void;
   mineOnly?: boolean;
   onMineChange?: (mineOnly: boolean) => void;
+  myItemsOnly?: boolean;
+  onMyItemsChange?: (myItemsOnly: boolean) => void;
   creationDisabled?: boolean;
   onResourceRangeSelect?: (
     resource: BookableItemOption,
@@ -155,8 +151,10 @@ export function BookingEventsCalendar({
   };
   const eventScopeIsFiltered =
     mineOnly ||
+    myItemsOnly ||
     (eventFiltering !== false &&
       (eventFiltering.value.search.trim() !== "" || eventFiltering.value.expression !== null));
+  const changeMyItems = (next: boolean) => onMyItemsChange?.(next);
   const filterControls = (
     <CalendarFilterControls
       date={date}
@@ -215,7 +213,9 @@ export function BookingEventsCalendar({
             view !== "day" ||
             layout !== "resources" ||
             itemFilterExpression !== null ||
-            eventFilterExpression !== null,
+            eventFilterExpression !== null ||
+            mineOnly ||
+            myItemsOnly,
           buttons: [
             {
               id: "mine",
@@ -224,9 +224,17 @@ export function BookingEventsCalendar({
               pressed: mineOnly,
               onClick: () => onMineChange?.(!mineOnly),
             },
+            {
+              id: "my-items",
+              label: t("calendar.quickFilters.myItems"),
+              icon: <PackageCheckIcon aria-hidden="true" />,
+              pressed: myItemsOnly,
+              onClick: () => changeMyItems(!myItemsOnly),
+            },
           ],
           onReset: () => {
             onMineChange?.(false);
+            changeMyItems(false);
             onControlsReset();
           },
         }}

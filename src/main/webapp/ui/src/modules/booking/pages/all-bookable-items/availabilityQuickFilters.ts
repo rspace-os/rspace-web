@@ -279,7 +279,7 @@ function serializeScopedFilter(filter: SimplifiedAvailabilityFilter, targetIds: 
 type CatalogueTargetScope = "where" | "parameter";
 
 function catalogueSearchForTargets(
-  search: Pick<BookingCatalogueSearch, "q" | "types">,
+  search: Pick<BookingCatalogueSearch, "q" | "types" | "mine">,
   filter: SimplifiedAvailabilityFilter,
   targetIds: readonly string[],
   scope: CatalogueTargetScope,
@@ -363,7 +363,7 @@ function availabilityTargetGroups(
     .toSorted(([left], [right]) => left.localeCompare(right));
 }
 
-function catalogueSearch(search: Pick<BookingCatalogueSearch, "q" | "types">, where: string | undefined) {
+function catalogueSearch(search: Pick<BookingCatalogueSearch, "q" | "types" | "mine">, where: string | undefined) {
   return { ...search, where, page: 1, pageSize: CATALOGUE_PAGE_SIZE };
 }
 
@@ -377,7 +377,7 @@ async function fetchResidualChunk(
   specializedFilter: SimplifiedAvailabilityFilter,
   baselineFilter: SimplifiedAvailabilityFilter,
   targetScope: CatalogueTargetScope,
-  search: Pick<BookingCatalogueSearch, "q" | "types">,
+  search: Pick<BookingCatalogueSearch, "q" | "types" | "mine">,
   token: string,
   signal: AbortSignal,
 ): Promise<ResidualChunk> {
@@ -426,7 +426,7 @@ async function mergeBaselineAndResiduals(
   firstBaselinePage: BookingCataloguePage,
   baselineWhere: string | undefined,
   residuals: readonly BookingCatalogueItem[],
-  search: Pick<BookingCatalogueSearch, "q" | "types">,
+  search: Pick<BookingCatalogueSearch, "q" | "types" | "mine">,
   page: number,
   pageSize: number,
   token: string,
@@ -485,7 +485,7 @@ async function mergeBaselineAndResiduals(
 export async function fetchAvailabilityFilteredCatalogue(
   expression: FilterExpression<AllBookableItem>,
   index: ReadonlyMap<string, AvailabilityQuickIndexEntry>,
-  search: Pick<BookingCatalogueSearch, "q" | "types"> & { page: number; pageSize: number },
+  search: Pick<BookingCatalogueSearch, "q" | "types" | "mine"> & { page: number; pageSize: number },
   token: string,
   signal: AbortSignal,
 ): Promise<BookingCataloguePage> {
@@ -598,7 +598,7 @@ type AvailabilityCandidate = Pick<
   | "maxBookingDurationMinutes"
   | "allowDoubleBooking"
 >;
-type CandidateSearch = { q?: string; types?: readonly string[] };
+type CandidateSearch = { q?: string; types?: readonly string[]; mine?: boolean };
 
 export class AvailabilityCandidateLimitError extends Error {
   constructor() {
@@ -688,6 +688,7 @@ export function useAvailabilityQuickFilterIndex(
       candidateWhere,
       search.q,
       search.types,
+      search.mine,
     ],
     queryFn: ({ signal }) => fetchAvailabilityCandidates(token, signal, candidateWhere, search),
     enabled: queryEnabled,

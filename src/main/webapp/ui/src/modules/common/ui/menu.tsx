@@ -2,7 +2,7 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { cn } from "@/modules/common/utils/cn";
 
 const menuItemClassName =
-  "flex cursor-default items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none data-highlighted:bg-muted data-disabled:pointer-events-none data-disabled:opacity-50";
+  "flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-highlighted:bg-muted data-disabled:pointer-events-none data-disabled:opacity-50";
 
 function Menu(props: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root {...props} />;
@@ -24,7 +24,7 @@ function MenuContent({
         <MenuPrimitive.Popup
           data-slot="menu-content"
           className={cn(
-            "w-72 rounded-sm border bg-popover p-2 text-popover-foreground shadow-lg outline-none",
+            "w-72 rounded-sm border bg-popover p-1 text-popover-foreground shadow-lg outline-none",
             className,
           )}
           {...props}
