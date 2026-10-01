@@ -1,29 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { type AvailabilityInterval, classifyCurrentDayAvailability } from "@/modules/booking/domain/availability";
 import {
-  assertBookingCataloguePage,
-  type BookingCatalogueItem,
-  BookingCatalogueRequestTooLargeError,
-  type BookingCatalogueSearch,
-  bookingCatalogueRequestFits,
-  catalogueItemAsConfiguration,
-  fetchAllBookingCataloguePages,
-  fetchBookingCatalogue,
-  fetchBookingCataloguePageWithinSafeBudget,
+  type CatalogueAvailability,
+  type CatalogueAvailabilityWindow,
+  fetchBookingCatalogueAvailabilityCounts,
 } from "@/modules/booking/domain/bookingCatalogue";
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
-import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
-import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
-import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
-import type { FilterExpression, FilterValue } from "@/modules/common/table-list/tableListState";
+import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
-import { loadCalendarAvailability } from "../calendar/calendarAvailability";
 
-type CurrentDayAvailability = ReturnType<typeof classifyCurrentDayAvailability>;
-type BookingCataloguePage = Awaited<ReturnType<typeof fetchAllBookingCataloguePages>>;
-
-export type AvailabilityQuickFilter = "available-now" | "free-later-today";
+export type AvailabilityQuickFilter = CatalogueAvailability;
 export type AllBookableItem = BookingConfiguration & { availability?: AvailabilityQuickFilter };
+
+type Comparison = Extract<FilterExpression<AllBookableItem>, { kind: "comparison" }>;
 
 export function hasAvailabilityFilter(expression: FilterExpression<AllBookableItem> | null): boolean {
   return (
@@ -32,29 +20,6 @@ export function hasAvailabilityFilter(expression: FilterExpression<AllBookableIt
       ? expression.field === "availability"
       : expression.children.some(hasAvailabilityFilter))
   );
-}
-
-/**
- * Derives the safe item-only predicate to use while loading availability candidates.
- *
- * Availability is computed locally, so its comparisons become `true`. A local
- * comparison in an OR branch makes that branch unrestricted; a local comparison
- * in an AND branch can simply be removed. Returning null means the candidate
- * request must remain unrestricted.
- */
-export function deriveAvailabilityCandidateFilter(
-  expression: FilterExpression<AllBookableItem> | null,
-): FilterExpression<AllBookableItem> | null {
-  if (!expression) return null;
-  if (expression.kind === "comparison") return expression.field === "availability" ? null : expression;
-
-  const children = expression.children.map(deriveAvailabilityCandidateFilter);
-  if (expression.kind === "or" && children.some((child) => child === null)) return null;
-
-  const remaining = children.filter((child): child is FilterExpression<AllBookableItem> => child !== null);
-  if (remaining.length === 0) return null;
-  if (remaining.length === 1) return remaining[0];
-  return { ...expression, children: remaining };
 }
 
 /** Replaces only availability predicates; other rules and their grouping remain intact. */
@@ -84,41 +49,10 @@ export function withAvailability(
     : rule;
 }
 
-/** Converts the derived availability field to ordinary server-side target predicates. */
-export function resolveAvailabilityFilters(
-  expression: FilterExpression<AllBookableItem> | null,
-  index: ReadonlyMap<string, AvailabilityQuickIndexEntry> | undefined,
-): FilterExpression<AllBookableItem> | null {
-  if (!expression) return null;
-  if (expression.kind !== "comparison")
-    return {
-      ...expression,
-      children: expression.children.map((child) => resolveAvailabilityFilters(child, index) ?? child),
-    };
-  if (expression.field !== "availability") return expression;
-  const ids = [...(index ?? [])].flatMap(([id, entry]) => (entry.category === expression.value ? [id] : []));
-  return ids.length > 0
-    ? { kind: "comparison", field: "target", operator: "in", value: ids }
-    : { kind: "comparison", field: "id", operator: "equals", value: 0 };
+function conjuncts(expression: FilterExpression<AllBookableItem>): FilterExpression<AllBookableItem>[] {
+  return expression.kind === "and" ? expression.children.flatMap(conjuncts) : [expression];
 }
 
-export type AvailabilityQuickIndexEntry = {
-  date: string;
-  bounds: AbsoluteDisplayInterval;
-  intervals: readonly AvailabilityInterval[];
-  category: CurrentDayAvailability;
-};
-
-type SimplifiedAvailabilityFilter = boolean | FilterExpression<AllBookableItem>;
-type AvailabilityComparison = Extract<FilterExpression<AllBookableItem>, { kind: "comparison" }>;
-
-const CATALOGUE_PAGE_SIZE = 100;
-const MAX_CATALOGUE_TARGETS_PER_BATCH = 500;
-const MAX_FILTER_ARGUMENTS = 1000;
-const MAX_FILTER_COMPARISONS = 50;
-const MAX_FILTER_NESTING = 10;
-const MAX_ENCODED_WHERE_BYTES = 32_768;
-const MAX_AVAILABILITY_CANDIDATES = 1000;
 const MATCHES_NOTHING: FilterExpression<AllBookableItem> = {
   kind: "comparison",
   field: "id",
@@ -126,623 +60,112 @@ const MATCHES_NOTHING: FilterExpression<AllBookableItem> = {
   value: 0,
 };
 
-class FilterRequestLimitError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "FilterRequestLimitError";
-  }
-}
+/** The item rules, and the one availability category, that the catalogue request carries. */
+export type ServerAvailabilityFilter =
+  | { supported: true; where: FilterExpression<AllBookableItem> | null; availability?: AvailabilityQuickFilter }
+  | { supported: false };
 
-class FilterNestingLimitError extends FilterRequestLimitError {
-  constructor() {
-    super("Booking catalogue filter exceeds the parser nesting limit");
-    this.name = "FilterNestingLimitError";
-  }
-}
-
-function throwIfAborted(signal: AbortSignal): void {
-  if (signal.aborted) throw signal.reason ?? new DOMException("The operation was aborted", "AbortError");
-}
-
-function simplifyAvailabilityFilter(
+/**
+ * Splits a filter into the catalogue's item rules and its `availability` parameter.
+ *
+ * The server applies one availability category as a conjunct, so availability rules must be
+ * top-level AND rules, which is all the filter builder writes. Different categories cannot hold at
+ * once, so they match nothing. An availability rule inside an OR group cannot be sent.
+ */
+export function serverAvailabilityFilter(
   expression: FilterExpression<AllBookableItem> | null,
-  availabilityMatches: (comparison: AvailabilityComparison) => boolean,
-): SimplifiedAvailabilityFilter {
-  if (!expression) return true;
-  if (expression.kind === "comparison") {
-    return expression.field === "availability" ? availabilityMatches(expression) : expression;
-  }
-  const children = expression.children.map((child) => simplifyAvailabilityFilter(child, availabilityMatches));
-  if (expression.kind === "and") {
-    if (children.includes(false)) return false;
-    const remaining = children.filter((child): child is FilterExpression<AllBookableItem> => child !== true);
-    if (remaining.length === 0) return true;
-    if (remaining.length === 1) return remaining[0];
-    return { ...expression, children: remaining };
-  }
-  if (children.includes(true)) return true;
-  const remaining = children.filter((child): child is FilterExpression<AllBookableItem> => child !== false);
-  if (remaining.length === 0) return false;
-  if (remaining.length === 1) return remaining[0];
-  return { ...expression, children: remaining };
-}
-
-function collectAvailabilityValues(expression: FilterExpression<AllBookableItem>, values: Set<FilterValue>): void {
-  if (expression.kind === "comparison") {
-    if (expression.field === "availability") values.add(expression.value);
-    return;
-  }
-  for (const child of expression.children) collectAvailabilityValues(child, values);
-}
-
-function filterExpression(filter: SimplifiedAvailabilityFilter): FilterExpression<AllBookableItem> | undefined {
-  if (filter === true) return undefined;
-  return filter === false ? MATCHES_NOTHING : filter;
-}
-
-function logicalFilterNesting(expression: FilterExpression<AllBookableItem>): number {
-  if (expression.kind === "comparison") return 0;
-  return 1 + Math.max(0, ...expression.children.map(logicalFilterNesting));
-}
-
-function serializedParenthesisNesting(where: string): number {
-  let depth = 0;
-  let maximum = 0;
-  let quote: "'" | '"' | undefined;
-  let escaped = false;
-  for (const character of where) {
-    if (escaped) {
-      escaped = false;
-    } else if (character === "\\") {
-      escaped = true;
-    } else if (quote) {
-      if (character === quote) quote = undefined;
-    } else if (character === "'" || character === '"') {
-      quote = character;
-    } else if (character === "(") {
-      depth += 1;
-      maximum = Math.max(maximum, depth);
-    } else if (character === ")") {
-      depth -= 1;
-    }
-  }
-  return maximum;
-}
-
-function assertFilterNesting(expression: FilterExpression<AllBookableItem>, where: string): void {
+): ServerAvailabilityFilter {
+  if (!expression || !hasAvailabilityFilter(expression)) return { supported: true, where: expression };
+  const rules = conjuncts(expression);
+  const availability = rules.filter(
+    (rule): rule is Comparison => rule.kind === "comparison" && rule.field === "availability",
+  );
+  if (rules.some((rule) => rule.kind !== "comparison" && hasAvailabilityFilter(rule))) return { supported: false };
+  const categories = new Set(availability.map((rule) => rule.value));
+  const [category] = categories;
   if (
-    logicalFilterNesting(expression) > MAX_FILTER_NESTING ||
-    serializedParenthesisNesting(where) > MAX_FILTER_NESTING
+    availability.some((rule) => rule.operator !== "equals") ||
+    (category !== "available-now" && category !== "free-later-today")
   ) {
-    throw new FilterNestingLimitError();
+    return { supported: false };
   }
-}
-
-function assertFilterRequestLimits(expression: FilterExpression<AllBookableItem>, where: string): void {
-  let comparisons = 0;
-  let argumentsCount = 0;
-  const count = (node: FilterExpression<AllBookableItem>): void => {
-    if (node.kind !== "comparison") {
-      for (const child of node.children) count(child);
-      return;
-    }
-    comparisons += 1;
-    argumentsCount +=
-      node.operator === "in" || node.operator === "notIn" ? (Array.isArray(node.value) ? node.value.length : 1) : 1;
-  };
-  count(expression);
-  if (comparisons > MAX_FILTER_COMPARISONS) {
-    throw new FilterRequestLimitError("Booking catalogue filter exceeds the parser comparison limit");
+  const where = withAvailability(expression, undefined);
+  if (categories.size > 1) {
+    return {
+      supported: true,
+      where: where ? { kind: "and", children: [...conjuncts(where), MATCHES_NOTHING] } : MATCHES_NOTHING,
+    };
   }
-  if (argumentsCount > MAX_FILTER_ARGUMENTS) {
-    throw new FilterRequestLimitError("Booking catalogue filter exceeds the parser argument limit");
-  }
-  assertFilterNesting(expression, where);
-  const encodedWhere = new URLSearchParams({ where }).toString().slice("where=".length);
-  if (new TextEncoder().encode(encodedWhere).length > MAX_ENCODED_WHERE_BYTES) {
-    throw new FilterRequestLimitError("Booking catalogue filter exceeds the encoded where limit");
-  }
+  return { supported: true, where, availability: category };
 }
 
-function serializeAvailabilityFilter(filter: SimplifiedAvailabilityFilter): string | undefined {
-  const expression = filterExpression(filter);
-  if (!expression) return undefined;
-  const where = serializeRsqlExpression(expression);
-  assertFilterRequestLimits(expression, where);
-  return where;
-}
-
-function restrictToTargets(
-  filter: SimplifiedAvailabilityFilter,
-  targetIds: readonly string[],
-): FilterExpression<AllBookableItem> {
-  const targetFilter: FilterExpression<AllBookableItem> = {
-    kind: "comparison",
-    field: "target",
-    operator: "in",
-    value: targetIds,
-  };
-  if (filter === true) return targetFilter;
-  return {
-    kind: "and",
-    children: [filter === false ? MATCHES_NOTHING : filter, targetFilter],
-  };
-}
-
-function serializeScopedFilter(filter: SimplifiedAvailabilityFilter, targetIds: readonly string[]): string {
-  const expression = restrictToTargets(filter, targetIds);
-  const where = serializeRsqlExpression(expression);
-  assertFilterRequestLimits(expression, where);
-  return where;
-}
-
-type CatalogueTargetScope = "where" | "parameter";
-
-function catalogueSearchForTargets(
-  search: Pick<BookingCatalogueSearch, "q" | "types" | "mine">,
-  filter: SimplifiedAvailabilityFilter,
-  targetIds: readonly string[],
-  scope: CatalogueTargetScope,
-) {
-  if (scope === "parameter") {
-    if (targetIds.length !== 1) {
-      throw new Error("Catalogue target parameter scope requires exactly one target");
-    }
-    const [targetId] = targetIds;
-    if (targetId === undefined || targetId.trim() === "") {
-      throw new Error("Catalogue target parameter scope requires a target ID");
-    }
-    return { ...catalogueSearch(search, serializeAvailabilityFilter(filter)), target: targetId };
-  }
-  return catalogueSearch(search, serializeScopedFilter(filter, targetIds));
-}
-
-function targetScopeForFilters(
-  filters: readonly SimplifiedAvailabilityFilter[],
-  targetId: string,
-): CatalogueTargetScope {
-  let nestingWouldExceedLimit = false;
-  for (const filter of filters) {
-    const expression = filterExpression(filter);
-    if (!expression) continue;
-    const where = serializeRsqlExpression(expression);
-    assertFilterNesting(expression, where);
-    try {
-      serializeScopedFilter(filter, [targetId]);
-    } catch (error) {
-      if (error instanceof FilterNestingLimitError) {
-        nestingWouldExceedLimit = true;
-      } else if (!(error instanceof FilterRequestLimitError)) {
-        throw error;
-      }
-    }
-  }
-  return nestingWouldExceedLimit ? "parameter" : "where";
-}
-
-function partitionCatalogueTargets(
-  targetIds: readonly string[],
-  fits: (targetIds: readonly string[]) => boolean,
-): readonly (readonly string[])[] {
-  const batches: string[][] = [];
-  let current: string[] = [];
-  for (const targetId of targetIds) {
-    const candidate = [...current, targetId];
-    if (current.length >= MAX_CATALOGUE_TARGETS_PER_BATCH || !fits(candidate)) {
-      if (current.length === 0) {
-        throw new Error("One target and its saved filter exceed the catalogue parser or request-size limits");
-      }
-      batches.push(current);
-      current = [targetId];
-      if (!fits(current)) {
-        throw new Error("One target and its saved filter exceed the catalogue parser or request-size limits");
-      }
-    } else {
-      current = candidate;
-    }
-  }
-  if (current.length > 0) batches.push(current);
-  return batches;
-}
-
-function availabilityTargetGroups(
-  expression: FilterExpression<AllBookableItem>,
-  index: ReadonlyMap<string, AvailabilityQuickIndexEntry>,
-): readonly (readonly [CurrentDayAvailability, readonly string[]])[] {
-  const values = new Set<FilterValue>();
-  collectAvailabilityValues(expression, values);
-  const groups = new Map<CurrentDayAvailability, string[]>();
-  for (const [targetId, entry] of index) {
-    if (!values.has(entry.category)) continue;
-    const group = groups.get(entry.category) ?? [];
-    group.push(targetId);
-    groups.set(entry.category, group);
-  }
-  return [...groups.entries()]
-    .map(([category, targetIds]) => [category, targetIds.toSorted()] as const)
-    .toSorted(([left], [right]) => left.localeCompare(right));
-}
-
-function catalogueSearch(search: Pick<BookingCatalogueSearch, "q" | "types" | "mine">, where: string | undefined) {
-  return { ...search, where, page: 1, pageSize: CATALOGUE_PAGE_SIZE };
-}
-
-type ResidualChunk = {
-  items: readonly BookingCatalogueItem[];
-  facets?: BookingCataloguePage["facets"];
+export type TodayAvailabilityWindow = CatalogueAvailabilityWindow & {
+  /** Today in the display time zone. */
+  date: string;
+  bounds: AbsoluteDisplayInterval;
 };
 
-async function fetchResidualChunk(
-  targetIds: readonly string[],
-  specializedFilter: SimplifiedAvailabilityFilter,
-  baselineFilter: SimplifiedAvailabilityFilter,
-  targetScope: CatalogueTargetScope,
-  search: Pick<BookingCatalogueSearch, "q" | "types" | "mine">,
-  token: string,
-  signal: AbortSignal,
-): Promise<ResidualChunk> {
-  throwIfAborted(signal);
-  const specializedSearch = catalogueSearchForTargets(search, specializedFilter, targetIds, targetScope);
-  const baselineSearch = catalogueSearchForTargets(search, baselineFilter, targetIds, targetScope);
-  try {
-    const specialized = await fetchAllBookingCataloguePages(specializedSearch, token, signal, targetIds.length);
-    const baseline = await fetchAllBookingCataloguePages(baselineSearch, token, signal, targetIds.length);
-    const baselineIds = new Set(baseline.items.map((item) => item.configurationId));
-    const residualById = new Map<number, BookingCatalogueItem>();
-    for (const item of specialized.items) {
-      if (!baselineIds.has(item.configurationId)) residualById.set(item.configurationId, item);
-    }
-    const items = [...residualById.values()];
-    return { items, facets: items.length > 0 ? specialized.facets : undefined };
-  } catch (error) {
-    if (!(error instanceof BookingCatalogueRequestTooLargeError)) throw error;
-    if (targetIds.length <= 1) {
-      throw new Error("A single-target booking catalogue request exceeds the safe request budget");
-    }
-    const midpoint = Math.ceil(targetIds.length / 2);
-    const left = await fetchResidualChunk(
-      targetIds.slice(0, midpoint),
-      specializedFilter,
-      baselineFilter,
-      targetScope,
-      search,
-      token,
-      signal,
-    );
-    const right = await fetchResidualChunk(
-      targetIds.slice(midpoint),
-      specializedFilter,
-      baselineFilter,
-      targetScope,
-      search,
-      token,
-      signal,
-    );
-    return { items: [...left.items, ...right.items], facets: left.facets ?? right.facets };
-  }
-}
-
-async function mergeBaselineAndResiduals(
-  firstBaselinePage: BookingCataloguePage,
-  baselineWhere: string | undefined,
-  residuals: readonly BookingCatalogueItem[],
-  search: Pick<BookingCatalogueSearch, "q" | "types" | "mine">,
-  page: number,
-  pageSize: number,
-  token: string,
-  signal: AbortSignal,
-): Promise<readonly BookingCatalogueItem[]> {
-  const offset = (page - 1) * pageSize;
-  if (!Number.isSafeInteger(offset)) throw new Error("Booking catalogue page offset is out of range");
-  const requestedEnd = offset + pageSize;
-  if (!Number.isSafeInteger(requestedEnd)) throw new Error("Booking catalogue page end is out of range");
-  const baselinePageCount = Math.ceil(firstBaselinePage.total / CATALOGUE_PAGE_SIZE);
-  let baselinePage = firstBaselinePage;
-  let baselinePageNumber = 1;
-  let baselineIndex = 0;
-  let residualIndex = 0;
-  let mergedRows = 0;
-  const result: BookingCatalogueItem[] = [];
-  while (mergedRows < requestedEnd) {
-    if (baselineIndex >= baselinePage.items.length && baselinePageNumber < baselinePageCount) {
-      baselinePageNumber += 1;
-      baselinePage = await fetchBookingCataloguePageWithinSafeBudget(
-        { ...catalogueSearch(search, baselineWhere), page: baselinePageNumber },
-        token,
-        signal,
-      );
-      assertBookingCataloguePage(baselinePage, baselinePageNumber, firstBaselinePage.total);
-      baselineIndex = 0;
-    }
-    const baselineItem = baselinePage.items[baselineIndex];
-    const residualItem = residuals[residualIndex];
-    if (!baselineItem && !residualItem) break;
-    let next: BookingCatalogueItem;
-    if (baselineItem && residualItem) {
-      if (baselineItem.configurationId <= residualItem.configurationId) {
-        next = baselineItem;
-        baselineIndex += 1;
-        if (baselineItem.configurationId === residualItem.configurationId) residualIndex += 1;
-      } else {
-        next = residualItem;
-        residualIndex += 1;
-      }
-    } else if (baselineItem) {
-      next = baselineItem;
-      baselineIndex += 1;
-    } else if (residualItem) {
-      next = residualItem;
-      residualIndex += 1;
-    } else {
-      break;
-    }
-    if (mergedRows >= offset) result.push(next);
-    mergedRows += 1;
-  }
-  return result;
-}
-
-export async function fetchAvailabilityFilteredCatalogue(
-  expression: FilterExpression<AllBookableItem>,
-  index: ReadonlyMap<string, AvailabilityQuickIndexEntry>,
-  search: Pick<BookingCatalogueSearch, "q" | "types" | "mine"> & { page: number; pageSize: number },
-  token: string,
-  signal: AbortSignal,
-): Promise<BookingCataloguePage> {
-  if (!hasAvailabilityFilter(expression)) {
-    throw new Error("Availability catalogue search requires an availability filter");
-  }
-  if (
-    !Number.isSafeInteger(search.page) ||
-    search.page < 1 ||
-    !Number.isSafeInteger(search.pageSize) ||
-    search.pageSize < 1 ||
-    search.pageSize > CATALOGUE_PAGE_SIZE
-  ) {
-    throw new Error("Booking catalogue page is out of range");
-  }
-  if (index.size > MAX_AVAILABILITY_CANDIDATES) {
-    throw new Error("Availability quick filters support at most 1,000 bookable items");
-  }
-  throwIfAborted(signal);
-
-  const originalWhere = serializeRsqlExpression(expression);
-  assertFilterNesting(expression, originalWhere);
-  const baselineFilter = simplifyAvailabilityFilter(expression, () => false);
-  const baselineWhere = serializeAvailabilityFilter(baselineFilter);
-  const firstBaselinePage = await fetchBookingCataloguePageWithinSafeBudget(
-    { ...catalogueSearch(search, baselineWhere), page: 1 },
-    token,
-    signal,
-  );
-  assertBookingCataloguePage(firstBaselinePage, 1);
-
-  const residualById = new Map<number, BookingCatalogueItem>();
-  let residualFacets: BookingCataloguePage["facets"] | undefined;
-  for (const [category, targetIds] of availabilityTargetGroups(expression, index)) {
-    const specializedFilter = simplifyAvailabilityFilter(expression, (comparison) => comparison.value === category);
-    if (specializedFilter === false) continue;
-    const firstTargetId = targetIds[0];
-    if (firstTargetId === undefined) throw new Error("Availability target group must not be empty");
-    const targetScope = targetScopeForFilters([specializedFilter, baselineFilter], firstTargetId);
-    const batches = partitionCatalogueTargets(targetIds, (batch) => {
-      if (targetScope === "parameter" && batch.length !== 1) return false;
-      try {
-        const specializedSearch = catalogueSearchForTargets(search, specializedFilter, batch, targetScope);
-        const scopedBaselineSearch = catalogueSearchForTargets(search, baselineFilter, batch, targetScope);
-        return (
-          bookingCatalogueRequestFits(specializedSearch, token) &&
-          bookingCatalogueRequestFits(scopedBaselineSearch, token)
-        );
-      } catch (error) {
-        if (error instanceof FilterRequestLimitError) return false;
-        throw error;
-      }
-    });
-    for (const batch of batches) {
-      throwIfAborted(signal);
-      const chunk = await fetchResidualChunk(
-        batch,
-        specializedFilter,
-        baselineFilter,
-        targetScope,
-        search,
-        token,
-        signal,
-      );
-      if (chunk.items.length > 0 && !residualFacets) residualFacets = chunk.facets;
-      for (const item of chunk.items) residualById.set(item.configurationId, item);
-      if (residualById.size > MAX_AVAILABILITY_CANDIDATES) {
-        throw new Error("Availability catalogue residual exceeded the 1,000-candidate bound");
-      }
-    }
-  }
-
-  const residuals = [...residualById.values()].toSorted((left, right) => left.configurationId - right.configurationId);
-  const total = firstBaselinePage.total + residuals.length;
-  if (!Number.isSafeInteger(total)) throw new Error("Booking catalogue total is out of range");
-  const offset = (search.page - 1) * search.pageSize;
-  if (!Number.isSafeInteger(offset)) throw new Error("Booking catalogue page offset is out of range");
-  const items =
-    offset >= total
-      ? []
-      : await mergeBaselineAndResiduals(
-          firstBaselinePage,
-          baselineWhere,
-          residuals,
-          search,
-          search.page,
-          search.pageSize,
-          token,
-          signal,
-        );
-  throwIfAborted(signal);
-  return {
-    ...firstBaselinePage,
-    items: [...items],
-    page: search.page,
-    pageSize: search.pageSize,
-    total,
-    facets: firstBaselinePage.total > 0 ? firstBaselinePage.facets : (residualFacets ?? firstBaselinePage.facets),
-  };
-}
-
-type AvailabilityCandidate = Pick<
-  BookingConfiguration,
-  | "target"
-  | "timezone"
-  | "slotGranularityMinutes"
-  | "openingHours"
-  | "bufferBeforeMinutes"
-  | "bufferAfterMinutes"
-  | "maxBookingDurationMinutes"
-  | "allowDoubleBooking"
->;
-type CandidateSearch = { q?: string; types?: readonly string[]; mine?: boolean };
-
-export class AvailabilityCandidateLimitError extends Error {
-  constructor() {
-    super("Availability quick filters support at most 1,000 bookable items");
-    this.name = "AvailabilityCandidateLimitError";
-  }
-}
-
-const now = () => new Date();
-export async function fetchAvailabilityCandidates(
-  token: string,
-  signal: AbortSignal,
-  candidateWhere?: string,
-  search: CandidateSearch = {},
-): Promise<readonly AvailabilityCandidate[]> {
-  const fetchPage = (page: number) =>
-    fetchBookingCatalogue({ ...search, where: candidateWhere, page, pageSize: 100 }, token, signal);
-  const first = await fetchPage(1);
-  if (first.total > 1000) throw new AvailabilityCandidateLimitError();
-  const candidates = [...first.items];
-  for (let page = 2; page <= Math.ceil(first.total / first.pageSize); page += 1) {
-    candidates.push(...(await fetchPage(page)).items);
-    if (candidates.length > 1000) throw new AvailabilityCandidateLimitError();
-  }
-  return candidates.map(catalogueItemAsConfiguration);
-}
-
-export async function loadAvailabilityQuickIndex(
-  candidates: readonly AvailabilityCandidate[],
-  current: Date,
+/**
+ * Today's availability window in the display time zone for the page clock's current minute. Quick
+ * filters always describe today, whatever date the page shows.
+ */
+export function todayAvailabilityWindow(
+  now: Date,
   displayTimeZone: string,
-  availabilityWindowStart: string,
-  availabilityWindowEnd: string,
-  token: string,
-  signal: AbortSignal,
-): Promise<ReadonlyMap<string, AvailabilityQuickIndexEntry>> {
-  const date = currentWallClock(current.toISOString(), displayTimeZone).date;
-  const bounds = displayInterval(date, displayTimeZone, availabilityWindowStart, availabilityWindowEnd);
-  const rows = candidates.flatMap((candidate) =>
-    candidate.target
-      ? [
-          {
-            globalId: candidate.target.globalId,
-            timezone: candidate.timezone,
-            openingHours: candidate.openingHours,
-            bufferBeforeMinutes: candidate.bufferBeforeMinutes,
-            bufferAfterMinutes: candidate.bufferAfterMinutes,
-            maxBookingDurationMinutes: candidate.maxBookingDurationMinutes,
-            allowDoubleBooking: candidate.allowDoubleBooking,
-          },
-        ]
-      : [],
-  );
-  const availability = await loadCalendarAvailability(rows, bounds, token, signal);
-  const index = new Map<string, AvailabilityQuickIndexEntry>();
-  for (const row of rows) {
-    const intervals = availability.get(row.globalId) ?? [];
-    index.set(row.globalId, {
-      date,
-      bounds,
-      intervals,
-      category: classifyCurrentDayAvailability(intervals, new Date(bounds.start), new Date(bounds.end), current),
-    });
-  }
-  return index;
+  windowStart: string,
+  windowEnd: string,
+): TodayAvailabilityWindow {
+  const date = currentWallClock(now.toISOString(), displayTimeZone).date;
+  const bounds = displayInterval(date, displayTimeZone, windowStart, windowEnd);
+  return { date, bounds, start: bounds.start, end: bounds.end, now: now.toISOString() };
 }
 
-export function useAvailabilityQuickFilterIndex(
+/**
+ * Keeps a query's previous result while only the last key element, the minute, changed, so rows
+ * and counts refresh each minute without flashing back to a loading state.
+ */
+export function keepAcrossMinutes(queryKey: readonly unknown[]) {
+  const scope = JSON.stringify(queryKey.slice(0, -1));
+  return <T>(previous: T | undefined, previousQuery?: { queryKey: readonly unknown[] }): T | undefined =>
+    previousQuery && JSON.stringify(previousQuery.queryKey.slice(0, -1)) === scope ? previous : undefined;
+}
+
+export type AvailabilityCountsSearch = {
+  q?: string;
+  types?: readonly string[];
+  mine?: boolean;
+  /** Item rules without availability. */
+  where?: string;
+};
+
+/** Both quick-filter counts from the server, refreshed each minute. */
+export function useAvailabilityCounts(
   token: string,
-  displayTimeZone = "UTC",
-  availabilityWindowStart = "00:00",
-  availabilityWindowEnd = "24:00",
-  clock: () => Date = now,
-  candidateWhere?: string,
+  authScope: string | number,
+  search: AvailabilityCountsSearch,
+  today: TodayAvailabilityWindow,
   enabled = true,
-  authScope: string | number = token,
-  search: CandidateSearch = {},
 ) {
-  const queryEnabled = enabled && token.length > 0;
-  const minute = useAlignedMinute(clock);
-  const candidates = useQuery({
-    queryKey: [
-      "api-v2",
-      "booking-catalogue",
-      "availability-candidates",
-      authScope,
-      candidateWhere,
-      search.q,
-      search.types,
-      search.mine,
-    ],
-    queryFn: ({ signal }) => fetchAvailabilityCandidates(token, signal, candidateWhere, search),
-    enabled: queryEnabled,
-    staleTime: 60_000,
-    retry: (failureCount, error) => !(error instanceof AvailabilityCandidateLimitError) && failureCount < 3,
+  const queryKey = [
+    "api-v2",
+    "bookings",
+    "booking-catalogue",
+    "availability-counts",
+    authScope,
+    token,
+    search.q,
+    search.types,
+    search.mine,
+    search.where,
+    today.start,
+    today.end,
+    today.now,
+  ] as const;
+  return useQuery({
+    queryKey,
+    queryFn: ({ signal }) => fetchBookingCatalogueAvailabilityCounts(search, today, token, signal),
+    enabled: enabled && token.length > 0,
+    staleTime: 30_000,
+    placeholderData: keepAcrossMinutes(queryKey),
   });
-  const signature = candidates.data
-    ?.flatMap((candidate) =>
-      candidate.target
-        ? [
-            [
-              candidate.target.globalId,
-              candidate.timezone,
-              JSON.stringify(candidate.openingHours),
-              candidate.bufferBeforeMinutes,
-              candidate.bufferAfterMinutes,
-              candidate.maxBookingDurationMinutes,
-              candidate.allowDoubleBooking,
-            ] as const,
-          ]
-        : [],
-    )
-    .toSorted(([left], [right]) => left.localeCompare(right));
-  const index = useQuery({
-    queryKey: [
-      "api-v2",
-      "bookings",
-      "availability-quick-index",
-      authScope,
-      signature,
-      minute,
-      displayTimeZone,
-      availabilityWindowStart,
-      availabilityWindowEnd,
-    ],
-    queryFn: ({ signal }) =>
-      loadAvailabilityQuickIndex(
-        candidates.data ?? [],
-        new Date(minute),
-        displayTimeZone,
-        availabilityWindowStart,
-        availabilityWindowEnd,
-        token,
-        signal,
-      ),
-    enabled: queryEnabled && candidates.isSuccess,
-    meta: viewTransitionQueryMeta,
-  });
-  return {
-    data: queryEnabled ? index.data : undefined,
-    now: new Date(minute),
-    isPending: queryEnabled && !candidates.isError && (candidates.isPending || index.isPending),
-    isError: queryEnabled && (candidates.isError || index.isError),
-    error: candidates.error ?? index.error,
-    refetch: candidates.isError ? candidates.refetch : index.refetch,
-  };
 }

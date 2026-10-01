@@ -788,7 +788,15 @@ describe("BookableItemPage", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    renderPage();
+    const { queryClient } = renderPage();
+    const catalogueQueryKeys = [
+      ["api-v2", "booking-catalogue", "picker"],
+      ["api-v2", "bookings", "booking-catalogue", "all-items", "token", 1],
+      ["api-v2", "bookings", "booking-catalogue", "availability-counts", 1],
+    ] as const;
+    for (const key of catalogueQueryKeys) queryClient.setQueryData(key, []);
+    const unrelatedBookingKey = ["api-v2", "bookings", "unrelated"] as const;
+    queryClient.setQueryData(unrelatedBookingKey, []);
 
     await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
@@ -810,6 +818,14 @@ describe("BookableItemPage", () => {
     expect(patches[0]).not.toHaveProperty("timezone");
     const editButton = await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" });
     expect(editButton).toHaveFocus();
+    await waitFor(() =>
+      expect(catalogueQueryKeys.map((key) => queryClient.getQueryState(key)?.isInvalidated)).toEqual([
+        true,
+        true,
+        true,
+      ]),
+    );
+    expect(queryClient.getQueryState(unrelatedBookingKey)?.isInvalidated).toBe(false);
   });
 
   it("cancels an edit without sending a request", async () => {

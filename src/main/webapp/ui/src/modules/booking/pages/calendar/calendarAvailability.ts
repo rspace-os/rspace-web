@@ -3,5 +3,6 @@ export {
   calendarAvailabilityRow,
   closedDayRanges,
   loadCalendarAvailability,
+  rowAvailabilityIntervals,
   useCalendarAvailability,
 } from "@/modules/booking/domain/availability";

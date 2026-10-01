@@ -27,6 +27,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.testutils.BookingResourceTestFixtures;
 import java.time.Clock;
 import java.time.Instant;
@@ -52,6 +53,10 @@ class BookingConfigurationResourceOperationsTest {
   private final BookingConfigurationResourceOperations operations =
       new BookingConfigurationResourceOperations(
           manager,
+          new com.researchspace.booking.service.BookingLocationFilterManagerImpl(
+              mock(com.researchspace.dao.InstrumentDao.class),
+              mock(InstrumentReadAccess.class),
+              mock(com.researchspace.booking.dao.BookingLocationQuery.class)),
           protectedResourceAccess,
           featureFlags,
           institutionClock,

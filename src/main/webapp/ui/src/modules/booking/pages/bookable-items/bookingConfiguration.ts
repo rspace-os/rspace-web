@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { createElement } from "react";
 import * as v from "valibot";
 import {
@@ -137,6 +138,14 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
 
 export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
 
+/** Refreshes both catalogue query families after a configuration changes. */
+export async function invalidateBookingCatalogueQueries(queryClient: QueryClient): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
+    queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "booking-catalogue"] }),
+  ]);
+}
+
 export async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
   const response = await fetch(`/api/v2/booking-configurations/${id}`, {
     method: "DELETE",
@@ -170,6 +179,7 @@ const bookingConfigurationReadParameters = {
   "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
 };
 
+/** The booking configuration API answered with an error status. */
 export class BookingConfigurationRequestError extends Error {
   constructor(readonly status: number) {
     super(`Booking configuration request failed with status ${status}`);
