@@ -146,8 +146,16 @@ export function DayTimeline({
   variant?: "detail" | "table-row";
   itemName?: string;
   expandedCardClassName?: string | ((event: DayTimelineEvent) => string | undefined);
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
+  renderEventActions?: (
+    event: Extract<DayTimelineEvent, { kind: "booking" }>,
+    period: string,
+    timelineEventElement?: HTMLElement | null,
+  ) => React.ReactNode;
+  renderBlockoutActions?: (
+    event: Extract<DayTimelineEvent, { kind: "blockout" }>,
+    period: string,
+    timelineEventElement?: HTMLElement | null,
+  ) => React.ReactNode;
   snapIncrementMinutes?: number;
   creationDisabled?: boolean;
   onRangeSelect?: (range: DayTimelineRange, trigger: HTMLElement) => void;
@@ -165,7 +173,7 @@ export function DayTimeline({
   const timeFormat = useBookingTimeFormat();
   const scrollerRef = React.useRef<HTMLElement>(null);
   const [collisionBoundary, setCollisionBoundary] = React.useState<HTMLElement | null>(null);
-  const [dragRange, setDragRange] = React.useState<{ from: number; to: number } | null>(null);
+  const [dragRange, setDragRange] = React.useState<{ from: number; to: number; pointerId: number } | null>(null);
   const [expandedEventId, setExpandedEventId] = React.useState<string | null>(null);
   const instanceId = React.useId();
   const headingId = `${instanceId}-heading`;
@@ -325,17 +333,25 @@ export function DayTimeline({
             data-hour-width={densityHourWidth}
             data-creation-disabled={creationDisabled || undefined}
             onPointerDown={(event) => {
-              if (!onRangeSelect || creationDisabled || !freeCanvas(event.target, event.currentTarget)) return;
+              if (
+                !onRangeSelect ||
+                creationDisabled ||
+                !event.isPrimary ||
+                event.button !== 0 ||
+                !freeCanvas(event.target, event.currentTarget)
+              )
+                return;
               const from = Math.min(dayMinutes - snapIncrementMinutes, minuteAt(event.clientX, event.currentTarget));
               if (event.nativeEvent.isTrusted) event.currentTarget.setPointerCapture(event.pointerId);
-              setDragRange({ from, to: from + snapIncrementMinutes });
+              setDragRange({ from, to: from + snapIncrementMinutes, pointerId: event.pointerId });
             }}
             onPointerMove={(event) => {
-              if (!dragRange || creationDisabled) return;
+              if (!dragRange || dragRange.pointerId !== event.pointerId || creationDisabled) return;
               setDragRange({ ...dragRange, to: minuteAt(event.clientX, event.currentTarget) });
             }}
             onPointerUp={(event) => {
-              if (!dragRange || !onRangeSelect || creationDisabled) {
+              if (!dragRange || dragRange.pointerId !== event.pointerId) return;
+              if (!onRangeSelect || creationDisabled) {
                 setDragRange(null);
                 return;
               }
@@ -345,7 +361,9 @@ export function DayTimeline({
               if (endMinute - startMinute < snapIncrementMinutes) return;
               onRangeSelect({ startMinute, endMinute }, scrollerRef.current ?? event.currentTarget);
             }}
-            onPointerCancel={() => setDragRange(null)}
+            onPointerCancel={(event) => {
+              if (dragRange?.pointerId === event.pointerId) setDragRange(null);
+            }}
           >
             <div className="pointer-events-none absolute inset-0" aria-hidden="true">
               {closedPeriods.map(({ startMinute, endMinute }) => {

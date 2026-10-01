@@ -1092,7 +1092,7 @@ describe("Calendar page", () => {
       await expect.element(itemInformation.getByText("Open", { exact: true })).toBeVisible();
       // Hours are in the viewer's timezone; the item's own are behind the globe button.
       await expect
-        .element(itemInformation.getByText(/^Every day: \d{2}:\d{2} [AP]M - \d{2}:\d{2} [AP]M$/))
+        .element(itemInformation.getByText(/^Every day: \d{2}:\d{2}\s[AP]M\s-\s\d{2}:\d{2}\s[AP]M$/))
         .toBeVisible();
       // The item's own hours are in the shared instrument-time tooltip, which the time's button also names.
       await itemInformation

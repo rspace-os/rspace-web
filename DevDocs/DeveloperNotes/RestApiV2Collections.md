@@ -1441,3 +1441,144 @@ its approved route to the client catalog allowlist.
 The existing 50-comparison budget covers direct, relationship, and runtime
 predicates together. Argument, nesting, LIKE, catalog-ID, page-size, and projection
 limits continue to apply independently; adding picker metadata does not raise them.
+
+### Booking cancellation reasons
+
+`PATCH /api/v2/bookings/{id}` accepts an optional `cancellationReason` with
+`state: "CANCELLED"`. It is trimmed, blank becomes null, and the maximum length is
+500 characters. A non-null normalized reason without cancellation is rejected with
+`errors.api.v2.booking.cancellationReason.requiresCancel`. The API field validator
+rejects overlong input with `errors.api.v2.booking.patch` and an `invalidParams`
+entry for `cancellationReason`; the manager also enforces the limit with
+`errors.api.v2.booking.cancellationReason.length`. Creation does not accept the field.
+
+The readable field is nullable and redacted to null for BUSY readers. It has no query
+capabilities. Clients with explicit field projections must include `cancellationReason`
+to display it. For example, with the current version in `If-Match`:
+
+```json
+{ "state": "CANCELLED", "cancellationReason": "Instrument needs recalibration" }
+```
+
+A repeated cancellation using the current version and the same normalized reason is a
+no-op; a different reason returns a state-transition conflict.
+
+A cancelled booking can be restored with `{ "state": "CONFIRMED" }` and its current version in
+`If-Match`. Restoring re-books the same slot under today's rules: the start must still be ahead,
+the bookable item must be enabled, and the slot must pass the current scheduling policy and be free
+of other bookings and buffers (the usual `overlap` and `buffer` conflicts, with `conflict`). No other
+field may change in the same request. The restore clears the cancellation reason, is audited as
+`WRITE`, and notifies subscribers with a "restored" message. My Bookings uses it for Undo.
+Replaying the original stale version after a successful cancellation uses the existing
+concurrency error contract. Refresh to inspect the saved result rather than automatically
+resubmitting with a newer version.
+
+### Booking people and "Location" filters
+
+Booking filters people by the scalar `requesterId` on `bookings` and the Calendar events, and by
+the Calendar's `bookedBy` text facet, which matches the requester's username, first name or last
+name. There is no people relationship or picker. `requesterId` renders only for an event shown in
+full, like `bookedBy` and `purpose`; a busy event renders `requesterId: null`.
+
+Filtering on a requester must not reveal who booked an event that the caller sees as busy. An
+event shows its requester when the caller can read its Inventory item or requested it.
+`BookingRequesterFilters` pairs every comparison whose selector starts with `requester`
+(`requesterId` and the Calendar's `requesterUsername`, `requesterFirstName` and
+`requesterLastName`) with that rule, so a busy event never matches a requester comparison,
+positive or negative. The caller's own events always satisfy the rule, so My Bookings'
+`requesterId==<own ID>` is unchanged. `TimeSlotBookingResourceOperations` applies the guard to
+list and count. `BookingCalendarQuery` applies it to the Calendar event filters, including the
+`bookedBy` facet, and to the Calendar `q` search over purpose and requester names. The read policy
+grants no busy-only rows today, and the guard does not depend on that. `ApiV2FilterExpansionMVCIT`
+checks it with the root policy removed.
+
+Location is a single-target relationship with a global-ID prefix, so it publishes a `picker` like
+`target` does. Clients derive the filter field, its operators, and its picker from metadata.
+
+`booking-configurations` declares a filter-only `location` relationship to `booking-locations`
+(`IC` prefix). The Calendar event filter description declares it too, because the Calendar reuses
+item filters as event filters. A bookable item's location is the immediate parent of its target
+Instrument. Booking does not store that parent, so `BookingLocationFilterManager` rewrites each
+`location` or `location.value` comparison in place, before the query compiles, into a
+`target.value` comparison. The rewritten comparison lists the configured Instruments stored
+directly in the named Containers that the caller can read, using Inventory's readable-Container
+rule. The Boolean structure of the filter is preserved. The relationship's ID property does not
+exist, so a query path that skipped the rewrite fails instead of matching the wrong rows. The
+following paths rewrite location filters:
+
+- `booking-configurations` list, count, bulk update, and bulk archive
+- `GET /api/v2/booking-catalogue`
+- the Calendar resources (`where`) and events (`eventWhere`, and the combined `where` of
+  `/api/v2/booking-calendar/events`)
+
+| Filter | Meaning |
+| --- | --- |
+| `location==IC12`, `location=in=(…)` | Items stored directly in these readable Containers |
+| `location!=IC12`, `location=out=(…)` | Readable items not stored in them |
+| `location=exists=true` / `false` | Items with / without a readable immediate parent |
+
+An unreadable Container contributes no items, exactly like one that does not exist, for rows and
+totals. Workbenches share the Container ID space, so `IC<workbench ID>` names a workbench, while
+`BE…` is rejected as an unsupported prefix. Responses render `location: null`; the catalogue item's
+`location` member carries the readable location.
+
+A location rule that is a top-level AND conjunct, which is every rule the filter builders write,
+lists no items. `BookingLocationFilterManager.resolveLocations(request, caller, targetPath)` turns
+it into a correlated predicate from `BookingLocationQuery`, applied as a trusted restriction: the
+target Instrument is readable, and it is (`==`, `=in=`, `=exists=true`) or is not (`!=`, `=out=`,
+`=exists=false`) stored directly in a non-deleted parent the caller may read, among the named
+Containers when the rule names some. Readability is the same readable-Container rule (the Container
+itself, or a non-deleted child readable without role visibility). The predicate has no size limit
+and matches the same rows as the listed form, including never matching an unreadable target. Its
+subquery and parameter names derive from `targetPath`, because the Calendar resources query can
+hold an item rule and an event rule at once. It applies to:
+
+- `GET /api/v2/booking-catalogue` and the item `where` of the Calendar resources, correlated
+  through `bookingConfiguration.target`
+- the Calendar resources `eventWhere`, correlated through the event subquery's
+  `calendarEvent.bookingConfiguration.target`
+- the combined `where` of `/api/v2/booking-calendar/events`, correlated through
+  `booking.bookingConfiguration.target`
+
+A location rule inside an OR group, and every `booking-configurations` list, count, bulk update and
+bulk archive filter, still lists the matching items, and one that would bind more than 10,000 items
+returns a complexity error. `BookingCatalogueControllerMVCIT` compares both forms of every operator
+on all three endpoints, for the owner and for a principal investigator who can read an item only
+through role visibility, inside a Container they cannot read.
+
+The location picker searches `GET /api/v2/booking-catalogue/locations`. It lists readable parent
+Containers and workbenches of active, enabled bookable items. `q` matches the name, or exactly
+one `IC` or `BE` global ID. The repeatable `globalId` parameter, at most 100 values, restores saved
+selections in one request. Unreadable and unknown IDs are omitted alike.
+
+### Booking catalogue availability quick filters
+
+The All bookable items quick filters are evaluated by the server. Both catalogue calls accept the
+catalogue's item filters (`q`, `target`, `where`, `type`, `location`, `capability`, `mine`) and the
+caller's availability window:
+
+| Parameter | Meaning |
+| --- | --- |
+| `availabilityStart`, `availabilityEnd` | Today's window `[start, end)` as instants, at most two days long |
+| `now` | The instant to classify; defaults to the server clock |
+
+The client derives the window from today's date and the availability-window preference in its
+display time zone, so the server applies no display wall-clock rule. `GET
+/api/v2/booking-catalogue?availability=available-now|free-later-today` returns only the items in
+that category, in catalogue order, with a matching `total`, and pages them like any other
+request. `GET /api/v2/booking-catalogue/availability-counts` returns
+`{ "availableNow": n, "freeLaterToday": m }` without rows. A missing window, a reversed or longer
+window, or another `availability` value is a 400 response.
+
+`BookingCurrentAvailability` classifies each item. Free time is the window's part inside the item's
+opening hours, evaluated per date in its scheduling time zone through
+`BookingSchedulingSettings.effectiveHours` (closed weekdays, per-day exceptions, a `24:00` close),
+less every confirmed, non-deleted event widened by the item's buffers. Maintenance always counts;
+bookings do unless the item allows double booking. Cancelled events never count. An item is
+available now when `now` is free inside the window, and free later today when it is busy now and
+free time follows before the window ends; before the window starts, any free time makes it free
+later. The categories are exclusive, and a window collapsed by daylight saving matches neither.
+Every event on a readable item is readable to the caller (`BookingEventReadAccess`), so the counts
+disclose nothing the bookings collection does not. The manager reads the scope in keyset batches of
+500 configurations, each with one event query, so no request lists the whole catalogue or binds more
+than one batch of IDs.

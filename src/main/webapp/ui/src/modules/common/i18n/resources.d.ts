@@ -1713,7 +1713,8 @@ export default interface Resources {
         "viewDetails": "View details"
       },
       "cancelled": {
-        "announcement": "Cancelled the {itemName} booking for {period}. It is now listed under Cancelled."
+        "alert": "Cancelled {itemName}, {period}.",
+        "undoFailed": "The booking could not be restored: {reason}"
       },
       "count": {
         "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
@@ -7278,7 +7279,9 @@ export default interface Resources {
     },
     "bookingNotifications": {
       "cancelled": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was cancelled. It was scheduled from {3} to {4}.",
-      "created": "Booking <a href=\"{5}\">{0}</a> was created for instrument <a href=\"{6}\">{1} ({2})</a> from {3} to {4}."
+      "cancelledWithReason": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was cancelled. It was scheduled from {3} to {4}. Reason: {7}",
+      "created": "Booking <a href=\"{5}\">{0}</a> was created for instrument <a href=\"{6}\">{1} ({2})</a> from {3} to {4}.",
+      "restored": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was restored. It is scheduled from {3} to {4}."
     }
   },
   "server.core": {
@@ -8292,7 +8295,10 @@ export default interface Resources {
         "csv": {
           "bookingActionArchived": "Archived",
           "bookingActionCancelled": "Cancelled",
+          "bookingActionChanged": "Changed",
+          "bookingActionCreated": "Created",
           "bookingActionPermanentlyDeleted": "Permanently deleted",
+          "bookingActionRestored": "Restored",
           "bookingType": "Booking",
           "commentGeneratedAt": "# audit trail download generated at {0}.",
           "exportedItemCount": "{0, plural, one {1 item} other {# items}} exported: {1}",
@@ -9199,13 +9205,16 @@ export default interface Resources {
         "archived": "Archived",
         "bookingActivityArea": "Bookings",
         "cancelled": "Cancelled",
+        "changed": "Changed",
+        "created": "Created",
         "itemsExported": "{0, plural, one {# item exported} other {# items exported}}",
         "itemsExportedAs": "Items exported as {0} to {1}",
         "itemsExportedWithConfiguration": "{0, plural, one {# item exported as {1} to {2}} other {# items exported as {1} to {2}}}",
         "movedFromTo": "from {0} ({1}) to {2} ({3})",
         "permanentlyDeleted": "Permanently deleted",
         "queryingAuditTable": "Querying audit table..",
-        "queryingAuditTrail": "Querying audit trail"
+        "queryingAuditTrail": "Querying audit trail",
+        "restored": "Restored"
       },
       "cloudGroup": {
         "emailAlreadyAdded": "You have already added an email.",

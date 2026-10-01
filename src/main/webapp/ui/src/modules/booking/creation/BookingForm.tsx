@@ -158,7 +158,6 @@ type BookingFormCommonProps = {
   onCancel?: () => void;
   onMoreOptions?: () => void;
   onStateChange?: (state: BookingFormState) => void;
-  onWindowAdjustmentApplied?: (draft: BookingWindowDraft, targetGlobalId?: string) => void;
   onDraftChange?: (draft: BookingWindowDraft, targetGlobalId?: string) => void;
   onTargetChange?: (target: BookableItemOption | undefined) => void;
   warning?: ReactNode;
@@ -260,7 +259,8 @@ export function BookingForm(props: BookingFormProps) {
   // unless the viewer picks another, optionally a separate one for the end. A picked zone keeps the entered wall clock,
   // so the instants move.
   const displayTimezone = props.displayTimezone ?? (editing ? fixedTarget?.timezone : initialTarget?.timezone) ?? "UTC";
-  const [target, setTarget] = useState<BookableItemOption | undefined>(editing ? fixedTarget : initialTarget);
+  const [selectedTarget, setSelectedTarget] = useState<BookableItemOption | undefined>(initialTarget);
+  const target = editing ? props.configuration : selectedTarget;
   const [timezoneChoice, setTimezoneChoice] = useState<string>();
   // Set only while the end has its own zone.
   const [endTimezoneChoice, setEndTimezoneChoice] = useState<string>();
@@ -309,31 +309,13 @@ export function BookingForm(props: BookingFormProps) {
     const next = convertDraft(adjustment, displayTimezone, formTimezones);
     setDraft((current) => (sameWindowDraft(next, current) ? current : next));
   }, [props.windowAdjustment, props.windowAdjustmentTarget, target?.globalId, displayTimezone, formTimezones]);
-  useEffect(() => {
-    const adjustment = props.windowAdjustment;
-    const adjustmentTarget = props.windowAdjustmentTarget ?? target?.globalId;
-    if (
-      adjustment &&
-      adjustment === appliedWindowAdjustment.current &&
-      adjustmentTarget === target?.globalId &&
-      sameWindowDraft(adjustment, displayDraft)
-    ) {
-      props.onWindowAdjustmentApplied?.(adjustment, adjustmentTarget);
-    }
-  }, [
-    displayDraft,
-    props.windowAdjustment,
-    props.windowAdjustmentTarget,
-    props.onWindowAdjustmentApplied,
-    target?.globalId,
-  ]);
   if (initialTarget !== previousInitialTarget) {
     setPreviousInitialTarget(initialTarget);
-    if (!editing && !target && initialTarget) {
+    if (!editing && !selectedTarget && initialTarget) {
       const date = currentWallClock(new Date().toISOString(), formTimezone).date;
       const seedDates = !draft.startDate && !initialDate;
       const nextDraft = seedDates ? { ...draft, startDate: date, endDate: date } : draft;
-      setTarget(initialTarget);
+      setSelectedTarget(initialTarget);
       setDraft(nextDraft);
       setInitialState({
         ...initialState,
@@ -360,7 +342,7 @@ export function BookingForm(props: BookingFormProps) {
   );
   const selectTarget = (next: BookableItemOption | undefined) => {
     props.onTargetChange?.(next);
-    setTarget(next);
+    setSelectedTarget(next);
     const today = currentWallClock(new Date().toISOString(), formTimezone).date;
     setDraft((current) => ({
       ...current,
@@ -407,7 +389,7 @@ export function BookingForm(props: BookingFormProps) {
   const notifyStateChange = useEffectEvent((state: BookingFormState) => props.onStateChange?.(state));
   useEffect(() => {
     notifyStateChange({ target, draft: displayDraft, window, enteredWindow, purpose: purposeValue, eventKind, dirty });
-  }, [dirty, displayDraft, enteredWindow, eventKind, purposeValue, target, window]);
+  }, [dirty, displayDraft, enteredWindow, eventKind, purposeValue, target, window, props.windowAdjustment]);
   const compact = props.density === "compact";
   const inline = props.layout === "inline";
   // The entered wall clock stays; a repeated-hour choice made for one zone means nothing in another.
@@ -575,7 +557,7 @@ export function BookingForm(props: BookingFormProps) {
               disabled: busy || props.submissionBlocked,
               onClick: () => void submit({ purpose: purposeValue }),
             },
-            { label: t("bookings.form.cancel"), onClick: props.onCancel, alwaysVisible: true },
+            { label: t("bookings.form.cancel"), onClick: props.onCancel, disabled: busy, alwaysVisible: true },
           ]}
         />
       ) : (

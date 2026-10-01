@@ -984,25 +984,36 @@ describe("BookableItemPage", () => {
     expect(screen.queryByText("booking:bookableItemDetails.fields.updatedAt")).not.toBeInTheDocument();
   });
 
-  it("reformats existing events after a configuration timezone refresh without refetching events", async () => {
-    let timezone = "UTC";
+  it("reformats existing events after a display timezone refresh without refetching events", async () => {
     let eventRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(envelope([{ ...configuration, timezone }], 2)),
-      ),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
       http.get("/api/v2/bookings", () => {
         eventRequests += 1;
         return HttpResponse.json(envelope([booking], 10));
       }),
     );
     const { queryClient } = renderPage();
+    act(() => {
+      queryClient.setQueryData(bookingDisplayPreferencesQueryKey, {
+        ...inheritedBrowserBookingPreferences,
+        timezoneMode: "CUSTOM",
+        customTimezone: "UTC",
+        overridden: true,
+      });
+    });
 
     const times = await screen.findAllByRole("time");
     const utcText = times[0].textContent;
     expect(eventRequests).toBe(2);
-    timezone = "Europe/Berlin";
-    await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] });
+    act(() => {
+      queryClient.setQueryData(bookingDisplayPreferencesQueryKey, {
+        ...inheritedBrowserBookingPreferences,
+        timezoneMode: "CUSTOM",
+        customTimezone: "Europe/Berlin",
+        overridden: true,
+      });
+    });
 
     await waitFor(() => expect(screen.getAllByRole("time")[0]).not.toHaveTextContent(utcText ?? ""));
     expect(eventRequests).toBe(2);

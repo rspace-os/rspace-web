@@ -130,6 +130,39 @@ class DashboardBookingNotificationMessagesTest {
   }
 
   @Test
+  void rerendersCancellationReasonFromStructuredData() {
+    LocaleContextHolder.setLocale(Locale.US);
+    DashboardController controller = new DashboardController();
+    UserManager userManager = mock(UserManager.class);
+    User recipient = mock(User.class);
+    BookingDisplayPreferencesManager preferences = mock(BookingDisplayPreferencesManager.class);
+    BookingNotificationData data = data("2026-01-02T03:04:05Z", "2026-01-02T04:04:05Z");
+    data.setCancellationReason("Needs <repair>");
+    Notification cancelled = bookingNotification(9L, "Stored message", data);
+    cancelled.setNotificationType(NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+
+    controller.setUserManager(userManager);
+    ReflectionTestUtils.setField(controller, "bookingDisplayPreferences", preferences);
+    ReflectionTestUtils.setField(
+        controller,
+        "bookingMessageFormatter",
+        new BookingNotificationMessageFormatter(
+            new JsonMessageSource(), "https://rspace.example.org"));
+    ReflectionTestUtils.setField(
+        controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
+    when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+
+    Map<Long, String> messages =
+        controller.bookingNotificationMessages(
+            List.of(cancelled), "recipient", mock(HttpSession.class), null);
+
+    assertTrue(messages.get(9L).contains("Reason: Needs &lt;repair&gt;"), messages.get(9L));
+    assertTrue(messages.get(9L).startsWith("Booking <a href=\"/booking/calendar/bookings/42\">"));
+    assertEquals("Stored message", cancelled.getNotificationMessage());
+  }
+
+  @Test
   void writesTimesWithTheBrowserRegionsClockAndTheAppLanguagesWords() {
     LocaleContextHolder.setLocale(Locale.US);
     DashboardController controller = new DashboardController();

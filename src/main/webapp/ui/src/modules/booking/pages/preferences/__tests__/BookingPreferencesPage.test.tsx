@@ -90,7 +90,9 @@ describe("BookingPreferencesPage", () => {
 
     const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
     expect(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" })).toBeChecked();
-    expect(screen.getByRole("combobox", { name: "booking:preferences.timezone.customLabel" })).toBeDisabled();
+    expect(
+      screen.queryByRole("combobox", { name: "booking:preferences.timezone.customLabel" }),
+    ).not.toBeInTheDocument();
     await user.clear(start);
     await user.type(start, "09:00");
     await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
@@ -155,6 +157,42 @@ describe("BookingPreferencesPage", () => {
       timeFormat: "H24",
     });
     expect(screen.getByRole("radio", { name: "booking:preferences.timeFormat.twentyFourHour" })).toBeChecked();
+  });
+
+  it("shows the custom timezone field only in Custom mode and restores the last custom zone", async () => {
+    const bodies: unknown[] = [];
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(customNewYorkBookingPreferences)),
+      http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
+        const body = await request.json();
+        bodies.push(body);
+        return HttpResponse.json({ ...customNewYorkBookingPreferences, ...(body as object), overridden: true });
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+    const customName = { name: "booking:preferences.timezone.customLabel" };
+
+    expect(await screen.findByRole("combobox", customName)).toHaveValue("America/New_York");
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" }));
+    expect(screen.queryByRole("combobox", customName)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.custom" }));
+    const custom = screen.getByRole("combobox", customName);
+    expect(custom).toHaveValue("America/New_York");
+    expect(custom).toBeEnabled();
+
+    // An invalid custom zone blocks Save; leaving Custom mode clears the error with the hidden field.
+    await user.clear(custom);
+    await user.type(custom, "Not/A-Timezone");
+    expect(custom).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toMatchObject({ timezoneMode: "INSTITUTION", customTimezone: null });
   });
 
   it("uses 00:00 for end of day while storing 24:00", async () => {
@@ -375,6 +413,32 @@ describe("BookingPreferencesPage", () => {
     expect(
       screen.queryByRole("region", { name: "booking:preferences.calendarSubscription.itemLinks.title" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps notification choices after a failed save and allows retrying", async () => {
+    const user = userEvent.setup();
+    let attempts = 0;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
+        attempts += 1;
+        return attempts === 1
+          ? HttpResponse.json({}, { status: 503 })
+          : HttpResponse.json({ ...((await request.json()) as object), emailDelivery: false });
+      }),
+    );
+    renderPage();
+    const on = await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" });
+    await user.click(on);
+    const save = screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" });
+    await user.click(save);
+    expect(await screen.findByText("booking:notificationSubscriptions.preferences.saveError")).toBeVisible();
+    expect(on).toBeChecked();
+    expect(save).toBeEnabled();
+    await user.click(save);
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    expect(attempts).toBe(2);
   });
 
   it("saves the owner auto-subscribe default and unsubscribes from existing instruments", async () => {

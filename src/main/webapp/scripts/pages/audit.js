@@ -177,6 +177,9 @@ function _convertAuditTrailResults (xhr){
      	result.timestamp = new Date(result.timestamp).toISOString();
 		result.event.displayAction = _getAuditDisplayAction(result.event);
 		result.event.resourceHref = _getAuditResourceHref(result.event);
+		// booking snapshots have no name; the server supplies one as displayName
+		var payload = result.event.data && result.event.data.data;
+		result.event.displayName = result.event.displayName || (payload && payload.name);
 		// booking details are formatted by the server; displayAction above still reads the raw description
 		if (result.event.details) {
 			result.event.description = result.event.description
@@ -228,9 +231,7 @@ function _getAuditDisplayAction(event) {
 	}
 	var payload = event.data && event.data.data;
 	var state = payload && payload.state;
-	var permanentDelete = action === "DELETE"
-		&& /(?:^|;)\s*permanent=true(?:;|$)/.test(event.description || "");
-	if (permanentDelete) {
+	if (_isPermanentDelete(event)) {
 		return RS.msg("legacyjs.audit.permanentlyDeleted");
 	}
 	if (action === "DELETE" && state === "ARCHIVED") {
@@ -239,7 +240,21 @@ function _getAuditDisplayAction(event) {
 	if (action === "WRITE" && state === "CANCELLED") {
 		return RS.msg("legacyjs.audit.cancelled");
 	}
+	if (action === "CREATE") {
+		return RS.msg("legacyjs.audit.created");
+	}
+	if (action === "WRITE") {
+		return RS.msg("legacyjs.audit.changed");
+	}
+	if (action === "RESTORE") {
+		return RS.msg("legacyjs.audit.restored");
+	}
 	return action;
+}
+
+function _isPermanentDelete(event) {
+	return event.action === "DELETE"
+		&& /(?:^|;)\s*permanent=true(?:;|$)/.test(event.description || "");
 }
 
 function _getAuditResourceHref(event) {
@@ -254,6 +269,10 @@ function _getAuditResourceHref(event) {
 	}
 	var configurationId = /^booking-configurations:([1-9][0-9]*)$/.exec(id);
 	if (configurationId && _isLongId(configurationId[1])) {
+		// a permanently deleted configuration's page no longer exists
+		if (_isPermanentDelete(event)) {
+			return null;
+		}
 		var target = payload.target;
 		var targetId = target && _positiveLongId(target.id);
 		if (target && target.type === "INSTRUMENT" && targetId) {

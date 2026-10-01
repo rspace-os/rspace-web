@@ -2,7 +2,7 @@ import { ChevronRight, LockKeyhole, Wrench } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { sameTimeZone, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
@@ -58,14 +58,22 @@ export function DayTimelineEventCard({
   collisionBoundary?: HTMLElement | null;
   expandedCardClassName?: string;
   portalContainer?: HTMLElement | null;
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
+  renderEventActions?: (
+    event: Extract<DayTimelineEvent, { kind: "booking" }>,
+    period: string,
+    timelineEventElement?: HTMLElement | null,
+  ) => React.ReactNode;
+  renderBlockoutActions?: (
+    event: Extract<DayTimelineEvent, { kind: "blockout" }>,
+    period: string,
+    timelineEventElement?: HTMLElement | null,
+  ) => React.ReactNode;
 }) {
   const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   const detailsId = `${React.useId()}-details`;
   const [internalExpanded, setInternalExpanded] = React.useState(false);
-  const compactCardRef = React.useRef<HTMLElement>(null);
+  const [timelineEventElement, setTimelineEventElement] = React.useState<HTMLElement | null>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const restoreFocusOnCloseRef = React.useRef(true);
   const isExpanded = expanded ?? internalExpanded;
@@ -84,9 +92,11 @@ export function DayTimelineEventCard({
   const timeline = variant === "timeline";
   const expandsInPlace = isBusy && isExpanded;
   const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // Aliases such as Asia/Calcutta and Asia/Kolkata are the same zone.
   const instrumentTimezoneDiffers =
-    Boolean(event.startInstant && event.instrumentTimeZone) &&
-    (event.instrumentTimeZone !== timezone || event.instrumentTimeZone !== browserTimezone);
+    Boolean(event.startInstant) &&
+    event.instrumentTimeZone != null &&
+    (!sameTimeZone(event.instrumentTimeZone, timezone) || !sameTimeZone(event.instrumentTimeZone, browserTimezone));
   const startDate = dateForMinute(date, timezone, event.startMinute);
   const endDate = dateForMinute(date, timezone, event.endMinute);
   const compactDate =
@@ -101,18 +111,13 @@ export function DayTimelineEventCard({
   React.useEffect(() => {
     if (!isBusy || !isExpanded) return;
     const closeOnOutsidePointer = (pointerEvent: PointerEvent) => {
-      if (pointerEvent.target instanceof Node && !compactCardRef.current?.contains(pointerEvent.target)) {
+      if (pointerEvent.target instanceof Node && !timelineEventElement?.contains(pointerEvent.target)) {
         setExpanded(false);
-        const openingAnother =
-          pointerEvent.target instanceof Element && pointerEvent.target.closest("[data-event-id]") !== null;
-        if (!openingAnother) {
-          requestAnimationFrame(() => triggerRef.current?.focus());
-        }
       }
     };
     document.addEventListener("pointerdown", closeOnOutsidePointer);
     return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
-  }, [isBusy, isExpanded, setExpanded]);
+  }, [isBusy, isExpanded, setExpanded, timelineEventElement]);
 
   const trigger = isBusy ? (
     <button
@@ -142,7 +147,7 @@ export function DayTimelineEventCard({
 
   const compactCard = (
     <article
-      ref={compactCardRef}
+      ref={setTimelineEventElement}
       aria-label={accessibleLabel}
       title={instrumentTimezoneDiffers ? undefined : title}
       className={cn(
@@ -218,7 +223,7 @@ export function DayTimelineEventCard({
       {isBusy ? (
         <div id={detailsId} hidden={!isExpanded} className="relative z-20 space-y-1 pt-1">
           <time className="block font-medium">{exactPeriod}</time>
-          {isExpanded ? renderEventActions?.(event, exactPeriod) : null}
+          {isExpanded ? renderEventActions?.(event, exactPeriod, timelineEventElement) : null}
         </div>
       ) : null}
       {event.startMinute < 0 && <span className="absolute inset-y-0 left-0 w-1 bg-current" aria-hidden="true" />}
@@ -243,10 +248,10 @@ export function DayTimelineEventCard({
           return;
         }
         if (!nextOpen) {
-          const destination =
-            eventDetails.event instanceof FocusEvent ? eventDetails.event.relatedTarget : eventDetails.event.target;
           restoreFocusOnCloseRef.current =
-            !(destination instanceof Element) || destination.closest("[data-event-id]") === null;
+            eventDetails.reason === "close-press" ||
+            eventDetails.reason === "escape-key" ||
+            eventDetails.reason === "trigger-press";
         }
         setExpanded(nextOpen);
       }}
@@ -279,6 +284,7 @@ export function DayTimelineEventCard({
           exactPeriod={exactPeriod}
           renderEventActions={renderEventActions}
           renderBlockoutActions={renderBlockoutActions}
+          eventAnchor={timelineEventElement}
         />
       </PopoverContent>
     </Popover>

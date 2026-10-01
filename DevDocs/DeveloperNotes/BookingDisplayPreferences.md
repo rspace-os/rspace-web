@@ -143,7 +143,11 @@ the subject owns the preference and the actor remains available for audit contex
 
 Booking preferences and the sysadmin Settings page edit these values, including the Time format
 radios (each labelled with an example time in that format), with the same
-`BookingDisplaySettingsFields`.
+`BookingDisplaySettingsFields`. The custom timezone field is rendered only while Custom is
+selected. Every other mode submits `customTimezone: null`, as the input schema requires, so the
+component keeps the last custom zone in memory and restores it when the user switches back to Custom
+before saving; Custom without a remembered zone starts at `UTC`. A hidden field has no validation
+error, so an invalid custom zone blocks Save only while Custom is selected.
 
 ## Loading layouts
 
@@ -212,6 +216,14 @@ Before mounting the Booking shell or sidebar, AppShell waits for feature flags. 
 unavailable Booking flags redirect to `/workspace` without issuing Booking queries.
 When Booking is enabled, the Inventory sidebar links to `/booking`; the legacy global AppBar
 does not include a separate Booking link.
+The Booking sidebar's Administration group lists Settings for sysadmins and Bookable Items for
+users who can read at least one booking configuration or set up an eligible instrument
+(`useCanOpenBookableItemsAdministration`: a one-row configurations count and the Add form's blank
+target browse, both cached for 10 minutes); with neither, the group is omitted. The Bookable Items
+page hides Add until an eligible target exists. Settings renders a not-permitted state for
+non-sysadmins without calling its sysadmin-only API. The Settings and bookable item queries do not
+retry permanent 4xx answers (`pages/queryRetry.ts`), so a missing or unreadable item shows its
+not-found state at once; network failures and 5xx responses keep the default three retries.
 Calendar, catalogue, and add-booking routes ignore malformed date parameters (including
 non-string values) and use their normal display-timezone defaults.
 

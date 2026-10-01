@@ -3,6 +3,7 @@ package com.researchspace.service.audit.search;
 import com.researchspace.core.util.BasicPaginationCriteria;
 import com.researchspace.core.util.IPagination;
 import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditDomain;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -147,6 +148,22 @@ public class LogLineParserTest {
         AuditDomain.UNKNOWN, parser.parseLine(nestedIdentifier, dateFormat).getDomain());
     Assertions.assertEquals(
         AuditDomain.UNKNOWN, parser.parseLine(malformedIdentifier, dateFormat).getDomain());
+  }
+
+  @Test
+  public void preservesMultilineBookingCancellationReasonsInJsonSnapshots() throws ParseException {
+    String line =
+        "01 Jan 2026 12:00:00,000 - domain:BOOKING action:WRITE"
+            + " [{\"data\":{\"id\":\"bookings:41\","
+            + "\"state\":\"CANCELLED\","
+            + "\"cancellationReason\":\"First line\\nSecond line\"}}]"
+            + " alice(Alice Example)";
+
+    LogLine parsed = parser.parseLine(line, dateFormat);
+
+    Assertions.assertEquals(
+        "First line\nSecond line",
+        AuditData.fromJson(parsed.getData()).getData().get("cancellationReason"));
   }
 
   @Test

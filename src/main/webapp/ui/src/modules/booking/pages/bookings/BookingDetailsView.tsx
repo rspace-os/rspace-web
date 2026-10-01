@@ -63,6 +63,16 @@ export function BookingDetailsView() {
         </span>
       ),
     ],
+    ...(booking.state === "CANCELLED" && booking.cancellationReason
+      ? ([
+          [
+            t("bookings.details.cancellationReason"),
+            <span key="cancellation-reason" className="whitespace-pre-line">
+              {booking.cancellationReason}
+            </span>,
+          ],
+        ] as Array<[string, ReactNode]>)
+      : []),
   ];
 
   return (

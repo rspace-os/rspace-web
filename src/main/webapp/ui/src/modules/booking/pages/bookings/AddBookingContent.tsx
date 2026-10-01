@@ -1,11 +1,10 @@
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingDayTimelineAside } from "@/modules/booking/creation/BookingDayTimelineAside";
 import { BookingForm, type BookingFormState, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
-import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { bookingCreationDraftFromHistoryState } from "@/modules/booking/creation/bookingCreationDraft";
 import { useBookingDraftAvailability } from "@/modules/booking/creation/useBookingDraftAvailability";
 import { useBookingTimelineDraft } from "@/modules/booking/creation/useBookingTimelineDraft";
@@ -30,8 +29,10 @@ export function AddBookingContent() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
   const initialTarget = useBookableItem(search.target, token);
-  const [selectedTarget, setSelectedTarget] = useState<BookableItemOption>();
   const draftBridge = useBookingTimelineDraft();
+  const formContainerRef = useRef<HTMLDivElement>(null);
+  // Before the form reports its first state, use the asynchronously loaded query target. Afterwards the bridge owns it.
+  const selectedTarget = draftBridge.formState ? draftBridge.formState.target : initialTarget.data;
   const initialDate = transferredDraft?.window.startDate ?? search.date ?? todayInTimeZone(preferences.timeZone);
   const initialWindow = transferredDraft?.window ?? {
     startDate: initialDate,
@@ -44,19 +45,14 @@ export function AddBookingContent() {
   const updatePageState = useCallback(
     (state: BookingFormState) => {
       draftBridge.onStateChange(state);
-      setSelectedTarget(state.target);
       if (!mutation.isError || isBookingCreationOutcomeUncertain(mutation.error)) return;
       resetMutation();
     },
     [draftBridge.onStateChange, mutation.error, mutation.isError, resetMutation],
   );
-  const updateTarget = useCallback(
-    (target: BookableItemOption | undefined) => {
-      draftBridge.onTargetChange();
-      setSelectedTarget(target);
-    },
-    [draftBridge.onTargetChange],
-  );
+  const updateTarget = useCallback(() => {
+    draftBridge.onTargetChange();
+  }, [draftBridge.onTargetChange]);
   const availability = useBookingDraftAvailability({
     formState: draftBridge.formState,
     displayTimezone: preferences.timeZone,
@@ -85,7 +81,7 @@ export function AddBookingContent() {
       )}
       <div className="@container">
         <div className="grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_30rem]">
-          <div className="min-w-0 space-y-6">
+          <div ref={formContainerRef} className="min-w-0 space-y-6">
             <BookingForm
               mode="add"
               displayTimezone={preferences.timeZone}
@@ -128,7 +124,6 @@ export function AddBookingContent() {
               showMobileItemInformation
               showRulesSummary={false}
               onStateChange={updatePageState}
-              onWindowAdjustmentApplied={draftBridge.onWindowAdjustmentApplied}
               onDraftChange={draftBridge.onDraftChange}
               onTargetChange={updateTarget}
               windowAdjustment={draftBridge.windowAdjustment}
@@ -146,6 +141,7 @@ export function AddBookingContent() {
                 />
               </div>
               <BookingDayTimelineAside
+                formContainerRef={formContainerRef}
                 target={selectedTarget}
                 draft={draftBridge.draft ?? initialWindow}
                 timezone={preferences.timeZone}

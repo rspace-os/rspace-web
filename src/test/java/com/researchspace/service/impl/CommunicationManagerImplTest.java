@@ -10,10 +10,12 @@ import static org.mockito.Mockito.when;
 import com.researchspace.dao.CommunicationDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
+import com.researchspace.model.UserPreference;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.service.Broadcaster;
 import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.IMessageAndNotificationTracker;
@@ -161,6 +163,32 @@ public class CommunicationManagerImplTest {
 
     verify(broadcaster1).broadcast(any(Communication.class));
     verify(notificnTracker).changeUserNotificationCount(recipient.getId(), 1);
+  }
+
+  @Test
+  public void notificationEventPreferenceOverrideOnlyBypassesEventPreference() {
+    User originator = TestFactory.createAnyUser("originator");
+    User recipient = TestFactory.createAnyUser("recipient");
+    recipient.setId(1L);
+    recipient.setPreference(
+        new UserPreference(
+            Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, recipient, Boolean.FALSE.toString()));
+    when(userDao.getUserByUsername(originator.getUsername())).thenReturn(originator);
+    mgr.setBroadcasters(Collections.singletonList(broadcaster1));
+
+    NotificationConfig config =
+        NotificationConfig.builder()
+            .notificationType(NotificationType.NOTIFICATION_BOOKING_CANCELLED)
+            .broadcast(true)
+            .policyOverride(CommunicationNotifyPolicy.ALWAYS_NOTIFY)
+            .notificationEventPreferenceOverride(true)
+            .notificationTargetsOverride(new HashSet<>(Set.of(recipient)))
+            .build();
+
+    mgr.notify(originator, null, config, "message");
+
+    verify(commDao).save(any(Notification.class));
+    verify(broadcaster1).broadcast(any(Communication.class));
   }
 
   @Test

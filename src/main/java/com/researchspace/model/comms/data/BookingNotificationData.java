@@ -13,4 +13,8 @@ public class BookingNotificationData extends NotificationData {
   private String instrumentGlobalIdentifier;
   private String startTime;
   private String endTime;
+  private String cancellationReason;
+
+  /** A cancelled booking returned to its slot; formatted as "restored" under the created type. */
+  private boolean restored;
 }

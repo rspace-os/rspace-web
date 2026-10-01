@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -77,6 +77,7 @@ function scheduleBooking({ id, targetId, name }: { id: number; targetId: string;
     kind: "BOOKING",
     privacy: "full",
     purpose: "Private purpose",
+    cancellationReason: null,
     bookedBy: "Ada Lovelace",
     canEdit: false,
     canCancel: false,
@@ -89,25 +90,55 @@ function pageWith(booking: ReturnType<typeof scheduleBooking>) {
   return HttpResponse.json({ docs: [booking], totalDocs: 1, totalPages: 1, page: 1, hasNextPage: false });
 }
 
+function AsideWithForm({
+  selectedTarget,
+  selectedDraft,
+  timezone,
+  onChange,
+}: {
+  selectedTarget?: BookableItemOption;
+  selectedDraft?: BookingWindowDraft;
+  timezone: string;
+  onChange: (next: BookingWindowDraft) => void;
+}) {
+  const formContainerRef = useRef<HTMLDivElement>(null);
+  return (
+    <div className="@container">
+      <div ref={formContainerRef}>
+        <form aria-hidden="true" />
+      </div>
+      <BookingDayTimelineAside
+        target={selectedTarget}
+        formContainerRef={formContainerRef}
+        draft={selectedDraft ?? draft}
+        timezone={timezone}
+        token="test-token"
+        onChange={onChange}
+      />
+    </div>
+  );
+}
+
 function asideTree({
   client,
   selectedTarget = target,
   selectedDraft = draft,
+  timezone = "Europe/Berlin",
   onChange = ignoreChange,
 }: {
   client: QueryClient;
   selectedTarget?: BookableItemOption | undefined;
   selectedDraft?: BookingWindowDraft;
+  timezone?: string;
   onChange?: (next: BookingWindowDraft) => void;
 }) {
   return (
     <QueryClientProvider client={client}>
       <Suspense fallback={null}>
-        <BookingDayTimelineAside
-          target={selectedTarget}
-          draft={selectedDraft}
-          timezone="Europe/Berlin"
-          token="test-token"
+        <AsideWithForm
+          selectedTarget={selectedTarget}
+          selectedDraft={selectedDraft}
+          timezone={timezone}
           onChange={onChange}
         />
       </Suspense>
@@ -126,11 +157,10 @@ function StatefullyControlledAside({
   return (
     <QueryClientProvider client={client}>
       <Suspense fallback={null}>
-        <BookingDayTimelineAside
-          target={target}
-          draft={currentDraft}
+        <AsideWithForm
+          selectedTarget={target}
+          selectedDraft={currentDraft}
           timezone="Europe/Berlin"
-          token="test-token"
           onChange={(next) => {
             onChange(next);
             setCurrentDraft(next);
@@ -178,6 +208,17 @@ describe("BookingDayTimelineAside acceptance", () => {
         .getAllByTestId("vertical-day-timeline-closed-hours")
         .map((segment) => ({ top: segment.style.top, height: segment.style.height })),
     ).toEqual(expected);
+  });
+
+  it.each([
+    ["the item's zone for a viewer zone that is its alias", "Asia/Calcutta", "Asia/Kolkata"],
+    ["the viewer's zone when it differs from the item's", "Europe/Berlin", "Europe/Berlin"],
+  ])("names %s in the schedule heading", async (_, timezone, expected) => {
+    server.use(http.get("/api/v2/bookings", () => emptyPage()));
+    render(asideTree({ client: queryClient(), selectedTarget: { ...target, timezone: "Asia/Kolkata" }, timezone }));
+
+    await expectVisibleOccurrence("booking:dayTimeline.vertical.empty");
+    expect(screen.getAllByText(`${expected} · Confocal microscope`)[0]).toBeInTheDocument();
   });
 
   it("keeps the loading state visible until the day schedule resolves", async () => {

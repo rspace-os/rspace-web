@@ -25,6 +25,8 @@ import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.booking.service.BookingBufferConflictException;
+import com.researchspace.booking.service.BookingCancellationReasonLengthException;
+import com.researchspace.booking.service.BookingCancellationReasonRequiresCancelException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingOverlapException;
 import com.researchspace.booking.service.ConflictingEvent;
@@ -227,6 +229,42 @@ class TimeSlotBookingResourceOperationsTest {
     verify(manager)
         .updateBooking(
             41L, new TimeSlotBookingManager.Patch(null, end(), true, "", null), actor, actor);
+  }
+
+  @Test
+  void translatesCancellationReasonAndExposesItsValidationErrors() {
+    ParsedDocument patch =
+        ParsedDocument.update(
+            Map.of(
+                "state",
+                BookingState.CANCELLED,
+                "cancellationReason",
+                "Instrument needs recalibration"));
+    operations.update(41L, patch, ApiV2Caller.direct(actor));
+    verify(manager)
+        .updateBooking(
+            41L,
+            new TimeSlotBookingManager.Patch(
+                null, null, false, null, BookingState.CANCELLED, "Instrument needs recalibration"),
+            actor,
+            actor);
+
+    var spec = operations.timeSlotBookingApiV2Resource();
+    assertEquals(
+        HttpStatus.BAD_REQUEST,
+        translate(spec, ResourceOperation.UPDATE, new BookingCancellationReasonLengthException())
+            .status());
+    assertEquals(
+        "errors.api.v2.booking.cancellationReason.length",
+        translate(spec, ResourceOperation.UPDATE, new BookingCancellationReasonLengthException())
+            .errorCode());
+    assertEquals(
+        "errors.api.v2.booking.cancellationReason.requiresCancel",
+        translate(
+                spec,
+                ResourceOperation.UPDATE,
+                new BookingCancellationReasonRequiresCancelException())
+            .errorCode());
   }
 
   @Test
