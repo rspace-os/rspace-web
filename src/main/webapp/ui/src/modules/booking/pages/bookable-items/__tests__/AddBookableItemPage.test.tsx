@@ -33,7 +33,7 @@ const settings = {
   availabilityWindowEnd: "18:00",
   timezoneMode: "BROWSER",
   customTimezone: null,
-  institutionTimezone: "UTC",
+  institutionTimezone: "Etc/UTC",
 };
 
 function collectionPage(docs: readonly unknown[]) {
@@ -178,6 +178,12 @@ describe("AddBookableItemPage", () => {
 
     await expectAccessible(container);
 
+    const timezone = screen.getByRole("combobox", { name: "booking:bookableItems.fields.timezone" });
+    expect(timezone).toHaveValue("Etc/UTC");
+    await user.clear(timezone);
+    await user.type(timezone, "Europe/Berl");
+    await user.click(await screen.findByRole("option", { name: "Europe/Berlin" }));
+
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
@@ -185,6 +191,7 @@ describe("AddBookableItemPage", () => {
     expect(requestBody).toEqual({
       target: { relationTo: "booking-instruments", value: 123 },
       enabled: true,
+      timezone: "Europe/Berlin",
       slotGranularityMinutes: 5,
       openingHours: settings.openingHours,
       bufferBeforeMinutes: 0,

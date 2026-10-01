@@ -5,6 +5,7 @@ import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
+import { BookingInstrumentTimeTooltip } from "./BookingInstrumentTimeTooltip";
 import {
   type DayTimelineEvent,
   dateForMinute,
@@ -65,6 +66,10 @@ export function DayTimelineEventCard({
   const isBusy = event.kind === "booking" && event.privacy === "busy";
   const timeline = variant === "timeline";
   const expandsInPlace = isBusy && isExpanded;
+  const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const instrumentTimezoneDiffers =
+    Boolean(event.startInstant && event.instrumentTimeZone) &&
+    (event.instrumentTimeZone !== timezone || event.instrumentTimeZone !== browserTimezone);
   const startDate = dateForMinute(date, timezone, event.startMinute);
   const endDate = dateForMinute(date, timezone, event.endMinute);
   const compactDate =
@@ -90,11 +95,37 @@ export function DayTimelineEventCard({
     return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
   }, [isBusy, isExpanded, setExpanded]);
 
+  const trigger = isBusy ? (
+    <button
+      ref={triggerRef}
+      type="button"
+      aria-controls={detailsId}
+      aria-expanded={isExpanded}
+      aria-label={toggleLabel}
+      className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
+      onClick={() => setExpanded(!isExpanded)}
+      onKeyDown={(keyboardEvent) => {
+        if (keyboardEvent.key !== "Escape" || !isExpanded) return;
+        keyboardEvent.preventDefault();
+        setExpanded(false);
+        keyboardEvent.currentTarget.focus();
+      }}
+    />
+  ) : (
+    <PopoverTrigger
+      ref={triggerRef}
+      aria-controls={detailsId}
+      aria-expanded={isExpanded}
+      aria-label={toggleLabel}
+      className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
+    />
+  );
+
   const compactCard = (
     <article
       ref={compactCardRef}
       aria-label={accessibleLabel}
-      title={title}
+      title={instrumentTimezoneDiffers ? undefined : title}
       className={cn(
         "group flex w-full cursor-pointer flex-col items-stretch justify-start gap-0 overflow-hidden rounded-sm border px-1.5 py-1 text-xs leading-tight shadow-sm",
         timeline ? "absolute inset-y-0 left-0" : "relative min-h-12",
@@ -138,30 +169,16 @@ export function DayTimelineEventCard({
           <span className="block truncate text-[11px]">{exactPeriod}</span>
         )}
       </time>
-      {isBusy ? (
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-controls={detailsId}
-          aria-expanded={isExpanded}
-          aria-label={toggleLabel}
-          className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
-          onClick={() => setExpanded(!isExpanded)}
-          onKeyDown={(keyboardEvent) => {
-            if (keyboardEvent.key !== "Escape" || !isExpanded) return;
-            keyboardEvent.preventDefault();
-            setExpanded(false);
-            keyboardEvent.currentTarget.focus();
-          }}
+      {event.startInstant ? (
+        <BookingInstrumentTimeTooltip
+          start={event.startInstant}
+          end={event.endInstant}
+          displayTimeZone={timezone}
+          instrumentTimeZone={event.instrumentTimeZone}
+          trigger={trigger}
         />
       ) : (
-        <PopoverTrigger
-          ref={triggerRef}
-          aria-controls={detailsId}
-          aria-expanded={isExpanded}
-          aria-label={toggleLabel}
-          className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
-        />
+        trigger
       )}
       <span
         aria-hidden="true"

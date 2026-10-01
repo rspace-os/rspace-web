@@ -283,6 +283,8 @@
       }
     },
     "message": {
+      "bookingCancelled": "A booking on an instrument I own is cancelled",
+      "bookingCreated": "A booking is created on an instrument I own",
       "delivery": {
         "label": "Preferred delivery method"
       },

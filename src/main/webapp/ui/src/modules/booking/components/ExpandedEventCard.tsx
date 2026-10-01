@@ -6,6 +6,7 @@ import { PopoverClose, PopoverDescription, PopoverTitle } from "@/modules/common
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
+import { BookingInstrumentTimeTooltip } from "./BookingInstrumentTimeTooltip";
 import {
   type DayTimelineEvent,
   dateForMinute,
@@ -40,6 +41,19 @@ export function ExpandedEventCard({
   const spansMultipleDates = startDate !== endDate;
   const labelledTitle = event.kind === "booking" ? `${event.title} · ${event.bookedBy}` : event.title;
   const duration = Math.max(0, event.endMinute - event.startMinute);
+  const instrumentTime = (instant: string | undefined, children: React.ReactNode, end?: string) =>
+    instant ? (
+      <BookingInstrumentTimeTooltip
+        start={instant}
+        end={end}
+        displayTimeZone={timezone}
+        instrumentTimeZone={event.instrumentTimeZone}
+      >
+        {children}
+      </BookingInstrumentTimeTooltip>
+    ) : (
+      children
+    );
   const actions =
     event.kind === "booking" ? renderEventActions?.(event, exactPeriod) : renderBlockoutActions?.(event, exactPeriod);
 
@@ -74,10 +88,13 @@ export function ExpandedEventCard({
               </dt>
               <dd>
                 <time dateTime={`${startDate}T${formatMinute(date, timezone, event.startMinute)}`}>
-                  {t("dayTimeline.expanded.dateTime", {
-                    date: formatDayDate(startDate),
-                    time: formatMinuteWithDayOffset(date, timezone, event.startMinute),
-                  })}
+                  {instrumentTime(
+                    event.startInstant,
+                    t("dayTimeline.expanded.dateTime", {
+                      date: formatDayDate(startDate),
+                      time: formatMinuteWithDayOffset(date, timezone, event.startMinute),
+                    }),
+                  )}
                 </time>
               </dd>
               <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>
@@ -85,16 +102,19 @@ export function ExpandedEventCard({
               </dt>
               <dd>
                 <time dateTime={`${endDate}T${formatMinute(date, timezone, event.endMinute)}`}>
-                  {t("dayTimeline.expanded.dateTime", {
-                    date: formatDayDate(endDate),
-                    time: formatMinuteWithDayOffset(date, timezone, event.endMinute),
-                  })}
+                  {instrumentTime(
+                    event.endInstant,
+                    t("dayTimeline.expanded.dateTime", {
+                      date: formatDayDate(endDate),
+                      time: formatMinuteWithDayOffset(date, timezone, event.endMinute),
+                    }),
+                  )}
                 </time>
               </dd>
             </dl>
           ) : (
             <time dateTime={startDate} className="mt-1.5 block text-xs leading-4">
-              {formatDayDate(startDate)}
+              {instrumentTime(event.startInstant, formatDayDate(startDate), event.endInstant)}
             </time>
           )}
         </div>
