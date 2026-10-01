@@ -154,6 +154,9 @@ export function resolveCollectionConfig<
     // API adapters add a field for a published relationship selector. A form-only resolution has
     // no API metadata, so the adapter validates the target field when it creates its configuration.
     if (!field && String(name).includes(".")) continue;
+    // Global IDs are searched as exact relationship-root matches by API adapters, not as text
+    // contains comparisons on the target's virtual field.
+    if (String(name).endsWith(".globalId")) continue;
     if (!field?.capabilities.filterOperators.includes("contains")) {
       throw new Error(`Searchable field does not support contains: ${name}`);
     }
