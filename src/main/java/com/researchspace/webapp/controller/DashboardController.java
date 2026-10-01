@@ -1,5 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import com.researchspace.booking.config.BookingTimeConfig;
+import com.researchspace.booking.service.BookingDisplayPreferencesManager;
+import com.researchspace.booking.service.BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences;
+import com.researchspace.booking.service.BookingNotificationMessageFormatter;
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.PaginationObject;
@@ -14,6 +18,8 @@ import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageOrRequestView;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.Notification;
+import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.model.dtos.MessageTypeFilter;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.model.field.ErrorList;
@@ -22,13 +28,26 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.RSpaceRequestManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.session.SessionAttributeUtils;
+import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
+import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,17 +61,22 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping("/dashboard")
 public class DashboardController extends BaseController {
 
+  private static final Logger log = LoggerFactory.getLogger(DashboardController.class);
+
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
   private @Autowired RSpaceRequestManager reqStatusUpdateMgr;
   private @Autowired CommunicationManager commService;
   private @Autowired IMessageAndNotificationTracker tracker;
+  private @Autowired BookingDisplayPreferencesManager bookingDisplayPreferences;
+  private @Autowired BookingNotificationMessageFormatter bookingMessageFormatter;
+  private @Autowired @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock;
 
   @GetMapping
-  public String dashboard(Model model, Principal principal) {
+  public String dashboard(Model model, Principal principal, HttpSession session) {
     PaginationCriteria<CommunicationTarget> pgCrit =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
     doMessageListingAndPrepareView(model, principal, pgCrit);
-    doNotificationListingAndPrepareView(model, principal, pgCrit);
+    doNotificationListingAndPrepareView(model, principal, pgCrit, session);
     User user = getUserByUsername(principal.getName());
     setPublicationAllowed(model, user);
     return "dashboard/dashboard";
@@ -254,13 +278,19 @@ public class DashboardController extends BaseController {
    */
   @GetMapping("/ajax/listNotifications")
   public String listNotifications(
-      Model model, Principal principal, PaginationCriteria<CommunicationTarget> pgCrit) {
-    doNotificationListingAndPrepareView(model, principal, pgCrit);
+      Model model,
+      Principal principal,
+      PaginationCriteria<CommunicationTarget> pgCrit,
+      HttpSession session) {
+    doNotificationListingAndPrepareView(model, principal, pgCrit, session);
     return "dashboard/notifications_ajax";
   }
 
   private void doNotificationListingAndPrepareView(
-      Model model, Principal principal, PaginationCriteria<CommunicationTarget> pgCrit) {
+      Model model,
+      Principal principal,
+      PaginationCriteria<CommunicationTarget> pgCrit,
+      HttpSession session) {
     configurePagination(pgCrit);
     Date timeOfListing = new Date();
     ISearchResults<Notification> notificns =
@@ -274,10 +304,74 @@ public class DashboardController extends BaseController {
 
     model.addAttribute("paginationList", paginationList);
     model.addAttribute("notificationList", notificns.getResults());
+    model.addAttribute(
+        "bookingNotificationMessages",
+        bookingNotificationMessages(notificns.getResults(), principal.getName(), session));
     // this is a timestamp on the search; any subsequent request from the
     // client to delete all notifications will only delete those earlier
     // than this date,
     model.addAttribute("timeOfListing", timeOfListing.getTime());
+  }
+
+  Map<Long, String> bookingNotificationMessages(
+      List<Notification> notifications, String username, HttpSession session) {
+    if (notifications.stream()
+        .noneMatch(
+            notification ->
+                BookingNotificationMessageFormatter.isBookingNotification(
+                    notification.getNotificationType()))) {
+      return Map.of();
+    }
+
+    ZoneId institutionZone = institutionClock.getZone();
+    ZoneId browserZone = browserZone(session);
+    User recipient = getUserByUsername(username);
+    ResolvedBookingDisplayPreferences preferences =
+        bookingDisplayPreferences.getForNotificationRecipient(recipient).orElse(null);
+    ZoneId displayZone =
+        BookingNotificationMessageFormatter.zoneFor(preferences, browserZone, institutionZone);
+    Map<Long, String> messages = new HashMap<>();
+    Locale locale = LocaleContextHolder.getLocale();
+    for (Notification notification : notifications) {
+      NotificationType type = notification.getNotificationType();
+      if (!BookingNotificationMessageFormatter.isBookingNotification(type)) {
+        continue;
+      }
+      try {
+        if (notification.getNotificationDataObject() instanceof BookingNotificationData data) {
+          messages.put(
+              notification.getId(),
+              bookingMessageFormatter.format(type, data, displayZone, locale));
+        } else {
+          messages.put(
+              notification.getId(),
+              bookingMessageFormatter.formatLegacy(
+                  type, notification.getNotificationMessage(), displayZone, locale));
+        }
+      } catch (RuntimeException ex) {
+        log.warn(
+            "Could not format booking notification [{}]; using its stored message",
+            notification.getId(),
+            ex);
+        messages.put(
+            notification.getId(),
+            bookingMessageFormatter.formatLegacy(
+                type, notification.getNotificationMessage(), displayZone, locale));
+      }
+    }
+    return messages;
+  }
+
+  private ZoneId browserZone(HttpSession session) {
+    Object sessionTimezone = session.getAttribute(SessionAttributeUtils.TIMEZONE);
+    if (!(sessionTimezone instanceof TimeZone timeZone)) {
+      return null;
+    }
+    try {
+      return ZoneId.of(timeZone.getID());
+    } catch (DateTimeException ex) {
+      return null;
+    }
   }
 
   /**

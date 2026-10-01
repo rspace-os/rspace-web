@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   CalendarClockIcon,
@@ -9,12 +9,16 @@ import {
   PlusIcon,
   SettingsIcon,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
 import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  bookingNotificationSubscriptionsQueryKey,
+  updateBookingNotificationSubscriptions,
+} from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
@@ -52,6 +56,7 @@ import {
   useAvailabilityQuickFilterIndex,
   withAvailability,
 } from "./availabilityQuickFilters";
+import { BookingNotificationBulkActions } from "./BookingNotificationBulkActions";
 
 function createAllBookableItemsConfig(
   availableNow: string,
@@ -165,6 +170,14 @@ export type AllBookableItemsContentProps = {
 };
 
 export function AllBookableItemsContent({ clock = currentDate }: AllBookableItemsContentProps = {}) {
+  const { data: currentUser } = useCurrentUserQuery();
+  return <AllBookableItemsContentForUser key={currentUser.id} subjectId={currentUser.id} clock={clock} />;
+}
+
+function AllBookableItemsContentForUser({
+  clock = currentDate,
+  subjectId,
+}: AllBookableItemsContentProps & { subjectId: number }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const sourceConfig = useMemo(
@@ -189,12 +202,14 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
   } = useSearch({ from: "/booking/all-items" });
   const navigate = useNavigate({ from: "/booking/all-items" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const { data: currentUser } = useCurrentUserQuery();
+  const queryClient = useQueryClient();
+  const [selectedNotificationIds, setSelectedNotificationIds] = useState<ReadonlySet<string>>(new Set());
+  const [notificationFeedback, setNotificationFeedback] = useState<{ enabled: boolean; count: number }>();
   const runtimeSelectors = useMemo(() => (where ? rsqlSelectors(where) : []), [where]);
   const runtimeFieldState = useApiV2RuntimeFields<AllBookableItem>({
     resourceName: "booking-configurations",
     selectors: runtimeSelectors,
-    request: { token, authScope: currentUser.id },
+    request: { token, authScope: subjectId },
   });
   const config = useMemo(
     () =>
@@ -250,7 +265,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     clock,
     candidateWhere,
     !runtimeFilterBlocked,
-    currentUser.id,
+    subjectId,
     { q, types, mine },
   );
   const quickFilterPending = usesAvailability && quickIndex.isPending;
@@ -299,6 +314,16 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     staleTime: 30_000,
   });
   const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  const notificationSubscriptionMutation = useMutation({
+    mutationFn: ({ configurationIds, enabled }: { configurationIds: readonly number[]; enabled: boolean }) =>
+      updateBookingNotificationSubscriptions(configurationIds, enabled, token),
+    onMutate: () => setNotificationFeedback(undefined),
+    onSuccess: async (subscriptions, variables) => {
+      setSelectedNotificationIds(new Set());
+      setNotificationFeedback({ enabled: variables.enabled, count: subscriptions.length });
+      await queryClient.invalidateQueries({ queryKey: bookingNotificationSubscriptionsQueryKey.all(subjectId) });
+    },
+  });
   const availabilityRows = rows.flatMap((row) => {
     if (!row.target) return [];
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
@@ -312,10 +337,11 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     quickMode || useQuickAvailability ? [] : availabilityRows,
     bounds,
     token,
-    currentUser.id,
+    subjectId,
   );
 
   const setDate = (nextDate: string) => {
+    setSelectedNotificationIds(new Set());
     const remaining = withAvailability(filters.expression, undefined);
     void navigate({
       search: (current) => ({
@@ -329,7 +355,8 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       replace: true,
     });
   };
-  const resetView = () =>
+  const resetView = () => {
+    setSelectedNotificationIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -344,12 +371,14 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       }),
       replace: true,
     });
+  };
   const setFilters = (next: FilterState<AllBookableItem>) => {
     const nextWhere = next.expression ? serializeRsqlExpression(next.expression) : undefined;
     const nextSearch = next.search || undefined;
     if (nextSearch === q && nextWhere === where && !target && !routeAvailability && page === 1) {
       return;
     }
+    setSelectedNotificationIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -363,11 +392,13 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       replace: true,
     });
   };
-  const removeRestoredViewIssue = () =>
+  const removeRestoredViewIssue = () => {
+    setSelectedNotificationIds(new Set());
     void navigate({
       search: (current) => ({ ...current, where: undefined, page: undefined }),
       replace: true,
     });
+  };
   const restoredViewIssue = runtimeFieldState.error
     ? {
         kind: "network" as const,
@@ -399,7 +430,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     restoredViewIssue,
     onSelectRuntimeField: runtimeFieldState.selectRuntimeField,
     runtimeFieldDefinitions: runtimeFieldState.runtimeFields,
-    runtimeFieldAuthScope: currentUser.id,
+    runtimeFieldAuthScope: subjectId,
     queryString: false,
     features: {
       filtering: {
@@ -414,6 +445,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
         onChange: (nextPage) => {
           const nextPageNumber = nextPage.pageSize === pageSize ? nextPage.pageIndex + 1 : 1;
           if (nextPageNumber === page && nextPage.pageSize === pageSize) return;
+          setSelectedNotificationIds(new Set());
           void navigate({
             search: (current) => ({
               ...current,
@@ -423,6 +455,26 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
             replace: true,
           });
         },
+      },
+    },
+    selection: {
+      value: selectedNotificationIds,
+      onChange: setSelectedNotificationIds,
+      disabled: notificationSubscriptionMutation.isPending,
+      maximumCount: 100,
+      getRowLabel: (row) => row.target?.value.name ?? commonT("values.unknownItem"),
+      renderActions: (selection) => {
+        const selectedConfigurationIds = [...selection.selectedRowIds].map(Number);
+        return (
+          <BookingNotificationBulkActions
+            selection={selection}
+            selectedConfigurationIds={selectedConfigurationIds}
+            pending={notificationSubscriptionMutation.isPending}
+            onAction={(configurationIds, enabled) =>
+              notificationSubscriptionMutation.mutateAsync({ configurationIds, enabled })
+            }
+          />
+        );
       },
     },
   };
@@ -509,11 +561,13 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
         label: t("allBookableItems.quickFilters.myItems"),
         icon: <PackageCheckIcon aria-hidden="true" />,
         pressed: mine,
-        onClick: () =>
+        onClick: () => {
+          setSelectedNotificationIds(new Set());
           void navigate({
             search: (current) => ({ ...current, mine: mine ? undefined : true, page: undefined }),
             replace: true,
-          }),
+          });
+        },
       },
       ...(["available-now", "free-later-today"] as const).map((mode) => ({
         id: mode,
@@ -569,6 +623,16 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
             </Button>
           )}
         </div>
+      ) : null}
+      {notificationFeedback ? (
+        <p role="status" className="text-sm text-primary">
+          {t(
+            notificationFeedback.enabled
+              ? "notificationSubscriptions.bulk.subscribedCount"
+              : "notificationSubscriptions.bulk.unsubscribedCount",
+            { count: notificationFeedback.count },
+          )}
+        </p>
       ) : null}
       <TableList
         {...tableProps}
