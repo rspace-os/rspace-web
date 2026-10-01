@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { featureFlagQueryKeys } from "@/featureFlags/queries";
+import { disabledFeatureFlags } from "@/featureFlags/schema";
 import { queryKeys as authQueryKeys } from "@/modules/common/hooks/auth";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
@@ -59,6 +61,7 @@ export function AppBarStory() {
     deploymentHelpEmail: null,
   });
   queryClient.setQueryData(nextMaintenanceQueryKeys.next(), null);
+  queryClient.setQueryData(featureFlagQueryKeys.flags(), disabledFeatureFlags());
 
   const rootRoute = createRootRoute({ component: AppBarRoute });
   const router = createRouter({
