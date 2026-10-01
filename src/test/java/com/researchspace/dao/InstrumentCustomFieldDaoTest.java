@@ -2,6 +2,7 @@ package com.researchspace.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
@@ -29,6 +30,7 @@ import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +76,7 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
     return instrumentReadAccess.check(new AccessContext(user, Operation.READ, "instruments"));
   }
 
-  private void instrumentFromTemplate(
+  private Instrument instrumentFromTemplate(
       User owner, ApiInstrumentTemplate template, String name, String value) {
     ApiInstrument request = new ApiInstrument();
     request.setName(name);
@@ -85,6 +87,7 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
       field.setFieldData(value);
     }
     instrumentDao.save(instrument);
+    return instrument;
   }
 
   private ResolvedRuntimeField definitionOf(User actor, ApiInstrumentTemplate template) {
@@ -170,6 +173,36 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
         List.of("Cold store", "Zero store"),
         matches(filter(field, Operator.LESS_THAN_OR_EQUAL, 0d), owner));
     assertEquals(List.of("Zero store"), matches(filter(field, Operator.EQUAL, 0d), owner));
+  }
+
+  @Test
+  public void numericFiltersDoNotRoundValuesThatRuntimeProjectionRejects() {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrumentTemplate template = numericTemplate(owner);
+    Instrument tooSmall = instrumentFromTemplate(owner, template, "Too small", "1e-31");
+    Instrument minimumScale = instrumentFromTemplate(owner, template, "Minimum scale", "1e-30");
+    Instrument trailingZeros =
+        instrumentFromTemplate(
+            owner, template, "Trailing zeros", "1.0000000000000000000000000000000");
+    instrumentFromTemplate(owner, template, "Zero", "0");
+    legacyValue(owner, template, "Line break", "1\n");
+    ResolvedRuntimeField field = definitionOf(owner, template);
+
+    assertEquals(List.of("Zero"), matches(filter(field, Operator.EQUAL, 0d), owner));
+    assertEquals(
+        List.of("Minimum scale"),
+        matches(filter(field, Operator.EQUAL, new BigDecimal("1e-30")), owner));
+    assertEquals(
+        List.of("Trailing zeros"), matches(filter(field, Operator.EQUAL, BigDecimal.ONE), owner));
+
+    Map<Object, Map<String, Object>> values =
+        customFields.values(
+            List.of(tooSmall, minimumScale, trailingZeros), Set.of(field.id()), owner);
+    assertNull(values.get(tooSmall.getId()).get(field.id()));
+    assertEquals(new BigDecimal("1e-30"), values.get(minimumScale.getId()).get(field.id()));
+    assertEquals(
+        new BigDecimal("1.0000000000000000000000000000000"),
+        values.get(trailingZeros.getId()).get(field.id()));
   }
 
   @Test

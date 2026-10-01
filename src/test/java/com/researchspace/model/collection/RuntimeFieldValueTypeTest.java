@@ -10,8 +10,14 @@ import org.junit.jupiter.api.Test;
 class RuntimeFieldValueTypeTest {
   @Test
   void parsesNumbersWithThePrecisionSupportedByTheSqlPredicate() {
+    assertEquals(new BigDecimal("1e-30"), RuntimeFieldValueType.NUMBER.parse("1e-30"));
     assertEquals(
         new BigDecimal("0.00000000001"), RuntimeFieldValueType.NUMBER.parse("0.00000000001"));
+    assertEquals(
+        new BigDecimal("1.0000000000000000000000000000000"),
+        RuntimeFieldValueType.NUMBER.parse("1.0000000000000000000000000000000"));
+    assertThrows(IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("1e-31"));
+    assertThrows(IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("1\n"));
     assertThrows(
         IllegalArgumentException.class,
         () -> RuntimeFieldValueType.NUMBER.parse("0.0000000000000000000000000000001"));

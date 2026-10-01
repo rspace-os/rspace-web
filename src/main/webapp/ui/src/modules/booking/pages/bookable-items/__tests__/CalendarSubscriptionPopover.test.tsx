@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import { calendarSubscriptionQueryKey } from "../bookableItemCalendarSubscription";
 import { CalendarSubscriptionPopover } from "../CalendarSubscriptionPopover";
 
 const path = "/api/v2/booking-configurations/7/calendar-subscription";
@@ -20,9 +21,12 @@ function renderPopover(archived = false) {
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return render(<CalendarSubscriptionPopover configurationId={7} token="oauth" archived={archived} />, {
-    wrapper: Wrapper,
-  });
+  return {
+    ...render(<CalendarSubscriptionPopover configurationId={7} token="oauth" archived={archived} />, {
+      wrapper: Wrapper,
+    }),
+    queryClient,
+  };
 }
 
 describe("CalendarSubscriptionPopover", () => {
@@ -238,6 +242,61 @@ describe("CalendarSubscriptionPopover", () => {
       ).toHaveValue(urlFor("r")),
     );
     expect(rotations).toEqual(['"current"']);
+  });
+
+  it("keeps a rotated link when an older status request returns afterward", async () => {
+    const user = userEvent.setup();
+    const staleResponse = Promise.withResolvers<Response>();
+    const staleReadStarted = Promise.withResolvers<void>();
+    const staleReadReturned = Promise.withResolvers<void>();
+    let gets = 0;
+    server.use(
+      http.get(path, async () => {
+        gets += 1;
+        if (gets === 2) {
+          staleReadStarted.resolve();
+          const response = await staleResponse.promise;
+          staleReadReturned.resolve();
+          return response;
+        }
+        return HttpResponse.json(
+          { active: true, updatedAt, subscriptionUrl: urlFor("b") },
+          { headers: { ETag: '"current"' } },
+        );
+      }),
+      http.post(`${path}/rotate`, () =>
+        HttpResponse.json(
+          { active: true, updatedAt, subscriptionUrl: urlFor("r") },
+          { headers: { ETag: '"rotated"' } },
+        ),
+      ),
+    );
+    const { queryClient } = renderPopover();
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
+    const linkField = await screen.findByRole("textbox", {
+      name: "booking:bookableItemDetails.calendarSubscription.copyPrompt",
+    });
+    expect(linkField).toHaveValue(urlFor("b"));
+
+    const statusRefresh = queryClient.refetchQueries({ queryKey: calendarSubscriptionQueryKey(7), exact: true });
+    await staleReadStarted.promise;
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.replace" }));
+    await user.click(
+      screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.replaceConfirm" }),
+    );
+    await waitFor(() => expect(linkField).toHaveValue(urlFor("r")));
+
+    staleResponse.resolve(
+      HttpResponse.json({ active: true, updatedAt, subscriptionUrl: urlFor("b") }, { headers: { ETag: '"current"' } }),
+    );
+    await Promise.all([statusRefresh, staleReadReturned.promise]);
+    expect(queryClient.getQueryData(calendarSubscriptionQueryKey(7))).toMatchObject({
+      subscriptionUrl: urlFor("r"),
+      etag: '"rotated"',
+    });
+    expect(
+      screen.getByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
+    ).toHaveValue(urlFor("r"));
   });
 
   it("shows the current link when a replace conflicts", async () => {

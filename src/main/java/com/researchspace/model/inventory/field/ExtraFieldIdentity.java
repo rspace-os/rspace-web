@@ -99,9 +99,12 @@ public final class ExtraFieldIdentity {
     if (published == null || name == null || name.isEmpty()) {
       return null;
     }
-    return ID_PREFIX
-        + published.code
-        + HexFormat.of().formatHex(name.getBytes(StandardCharsets.UTF_8));
+    return ID_PREFIX + published.code + encodeName(name);
+  }
+
+  /** The lowercase UTF-8 hex form used when matching a name in SQL without collation folding. */
+  public static String encodeName(String name) {
+    return HexFormat.of().formatHex(name.getBytes(StandardCharsets.UTF_8));
   }
 
   public static Definition decode(String id) {

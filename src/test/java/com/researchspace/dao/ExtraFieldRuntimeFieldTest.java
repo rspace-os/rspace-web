@@ -2,6 +2,7 @@ package com.researchspace.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
@@ -31,6 +32,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -183,6 +185,32 @@ public class ExtraFieldRuntimeFieldTest extends SpringTransactionalTest {
 
     assertEquals(List.of("Confocal"), matches(owner, sensor, Operator.EQUAL, "摂氏 4 °C"));
     assertEquals(List.of("Centrifuge"), matches(owner, sensor, Operator.CONTAINS, "ïve"));
+  }
+
+  @Test
+  public void preservesCaseDistinctNamesAcrossDiscoveryHydrationFilteringAndProjection() {
+    User owner = createInitAndLoginAnyUser();
+    Instrument upper = instrumentWith(owner, "Capital", "Power", "shared", false);
+    Instrument lower = instrumentWith(owner, "Lowercase", "power", "shared", false);
+    RuntimeFieldDefinition capital = definition(owner, "Power", RuntimeFieldValueType.TEXT);
+    RuntimeFieldDefinition lowercase = definition(owner, "power", RuntimeFieldValueType.TEXT);
+
+    assertNotEquals(capital.id(), lowercase.id());
+    assertEquals(
+        Set.of(capital.id(), lowercase.id()),
+        extraFields
+            .discover(owner, RuntimeFieldCatalogQuery.byIds(Set.of(capital.id(), lowercase.id())))
+            .fields()
+            .stream()
+            .map(RuntimeFieldDefinition::id)
+            .collect(Collectors.toSet()));
+    assertEquals(
+        List.of("Capital"), matches(owner, resolve(owner, capital), Operator.EQUAL, "shared"));
+
+    Map<Object, Map<String, Object>> values =
+        extraFields.values(List.of(upper, lower), Set.of(capital.id(), lowercase.id()), owner);
+    assertEquals(Map.of(capital.id(), "shared"), values.get(upper.getId()));
+    assertEquals(Map.of(lowercase.id(), "shared"), values.get(lower.getId()));
   }
 
   @Test

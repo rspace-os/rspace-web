@@ -7,7 +7,9 @@ import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.RuntimeFieldBinding;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 
 /** Correlates runtime values and enforces presence semantics independently of value comparison. */
@@ -50,8 +52,15 @@ final class RsqlRuntimeFieldCompiler {
     binding
         .match()
         .forEach(
-            (property, value) ->
-                conjuncts.add(valueAlias + "." + property + " = :" + state.add(value)));
+            (property, value) -> {
+              String path = valueAlias + "." + property;
+              Object matchValue = value;
+              if (value instanceof String text) {
+                path = "LOWER(FUNCTION('HEX', " + path + "))";
+                matchValue = HexFormat.of().formatHex(text.getBytes(StandardCharsets.UTF_8));
+              }
+              conjuncts.add(path + " = :" + state.add(matchValue));
+            });
     boolean negated =
         operator == Operator.EXISTS && !Boolean.TRUE.equals(comparison.values().get(0));
     String valuePath = valueAlias + "." + binding.valueProperty();

@@ -10,6 +10,7 @@ import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity;
 import com.researchspace.model.inventory.field.ExtraFieldIdentity.PublishedType;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,13 +35,15 @@ import org.springframework.stereotype.Repository;
 @Repository("extraFieldDao")
 public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
 
-  public record DefinitionProjection(String name, Object entityType) {}
+  /** The hex identity remains selected so SQL DISTINCT preserves exact names under DB collation. */
+  public record DefinitionProjection(String name, Object entityType, String nameIdentity) {}
 
   public record ValueProjection(Long parentId, String name, Object entityType, String value) {}
 
   private static final String FIELD_ALIAS = "extraField";
   private static final String PARENT_ALIAS = "extraFieldParent";
   private static final String NAME = FIELD_ALIAS + ".editInfo.name";
+  private static final String NAME_IDENTITY = "LOWER(FUNCTION('HEX', " + NAME + "))";
   private static final String VALUE = FIELD_ALIAS + ".editInfo.description";
 
   @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
@@ -67,6 +70,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
             .selectNew(DefinitionProjection.class)
             .with(NAME)
             .with("TYPE(" + FIELD_ALIAS + ")")
+            .with(NAME_IDENTITY)
             .end()
             .distinct()
             .whereExpression(FIELD_ALIAS + ".deleted = false")
@@ -85,16 +89,20 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     }
     parent.end();
     if (hydrating) {
-      query.whereExpression(NAME + " in :names");
+      query.whereExpression(NAME_IDENTITY + " in :nameIdentities");
     } else if (search != null) {
       query.whereExpression("lower(" + NAME + ") like :nameSearch escape '!'");
     }
-    query.orderByAsc(NAME);
+    query.orderByAsc(NAME_IDENTITY);
     query.orderByAsc("TYPE(" + FIELD_ALIAS + ")");
     bind(query, access);
     if (hydrating) {
       query.setParameter(
-          "names", wanted.stream().map(ExtraFieldRow::name).collect(Collectors.toSet()));
+          "nameIdentities",
+          wanted.stream()
+              .map(ExtraFieldRow::name)
+              .map(ExtraFieldIdentity::encodeName)
+              .collect(Collectors.toSet()));
     } else if (search != null) {
       query.setParameter("nameSearch", "%" + LikeEscaper.escape(search) + "%");
     }
@@ -138,10 +146,14 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
             .end()
             .whereExpression(FIELD_ALIAS + ".deleted = false")
             .whereExpression(parent + ".id in :parentIds")
-            .whereExpression(NAME + " in :names")
+            .whereExpression(NAME_IDENTITY + " in :nameIdentities")
             .setParameter("parentIds", parentIds);
     query.setParameter(
-        "names", definitions.stream().map(ExtraFieldRow::name).collect(Collectors.toSet()));
+        "nameIdentities",
+        definitions.stream()
+            .map(ExtraFieldRow::name)
+            .map(ExtraFieldIdentity::encodeName)
+            .collect(Collectors.toSet()));
     for (ValueProjection projection : query.getResultList()) {
       FieldType type = typeOf(projection.entityType());
       if (type == null) {

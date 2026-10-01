@@ -51,7 +51,10 @@ export function UserCalendarSubscription({ token }: { token: string }) {
       // A fresh link supersedes any earlier replace conflict.
       rotate.reset();
     },
-    onSuccess: (created) => queryClient.setQueryData(userCalendarSubscriptionQueryKey, created),
+    onSuccess: async (created) => {
+      await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
+      queryClient.setQueryData(userCalendarSubscriptionQueryKey, created);
+    },
   });
   const rotate = useMutation({
     mutationFn: () => {
@@ -60,7 +63,10 @@ export function UserCalendarSubscription({ token }: { token: string }) {
     },
     retry: false,
     onMutate: resetCopy,
-    onSuccess: (rotated) => queryClient.setQueryData(userCalendarSubscriptionQueryKey, rotated),
+    onSuccess: async (rotated) => {
+      await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
+      queryClient.setQueryData(userCalendarSubscriptionQueryKey, rotated);
+    },
     onError: (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 409) {
         void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
@@ -71,7 +77,8 @@ export function UserCalendarSubscription({ token }: { token: string }) {
   const revoke = useMutation({
     mutationFn: () => revokeUserCalendarSubscription(token),
     retry: false,
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
       resetCopy();
       rotate.reset();
       void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });

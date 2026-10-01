@@ -752,6 +752,9 @@ Instruments publish two:
   round-trips through an RSQL selector, a comma-separated `ids` list and a URL path without
   escaping. Clients treat it as opaque and display `label`.
 
+  Discovery, saved-view hydration and projection preserve exact names, and a runtime-field filter
+  resolves its selector by exact name, including case, independently of database collation.
+
   The encoding is not about character sets: RSQL parses UTF-8 in both values and selectors, so a
   field named `温度計` holding `摂氏 4 °C` filters like any other. It is about punctuation. A
   selector ends at a space, `,`, `=`, `;`, `(` or `"`, and a name typed by a user routinely

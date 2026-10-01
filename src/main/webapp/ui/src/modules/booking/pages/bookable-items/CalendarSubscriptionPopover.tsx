@@ -74,7 +74,8 @@ export function CalendarSubscriptionPopover({
       // A fresh link supersedes any earlier replace conflict.
       rotateMutation.reset();
     },
-    onSuccess: (created) => {
+    onSuccess: async (created) => {
+      await queryClient.cancelQueries({ queryKey, exact: true });
       queryClient.setQueryData(queryKey, created);
       linksChanged();
       setFocusGoogle(true);
@@ -84,7 +85,8 @@ export function CalendarSubscriptionPopover({
     mutationFn: (etag: string) => rotateCalendarSubscription(configurationId, token, etag),
     retry: false,
     onMutate: resetCopy,
-    onSuccess: (rotated) => {
+    onSuccess: async (rotated) => {
+      await queryClient.cancelQueries({ queryKey, exact: true });
       queryClient.setQueryData(queryKey, rotated);
       linksChanged();
       setConfirming(null);
@@ -99,6 +101,7 @@ export function CalendarSubscriptionPopover({
     retry: false,
     onMutate: resetCopy,
     onSuccess: async () => {
+      await queryClient.cancelQueries({ queryKey, exact: true });
       setConfirming(null);
       linksChanged();
       await status.refetch();

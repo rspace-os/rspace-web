@@ -23,7 +23,8 @@ import java.util.Objects;
  * @param parentIdProperty property of that entity pointing at the collection row's ID
  * @param valueProperty property of that entity holding the stored value
  * @param match further equality conditions identifying this definition's rows, such as the
- *     definition ID and a not-deleted flag
+ *     definition ID and a not-deleted flag. String-valued conditions compare exact UTF-8 identity,
+ *     independently of database collation; other values use their normal database equality.
  */
 public record RuntimeFieldBinding(
     Class<?> valueEntityType,

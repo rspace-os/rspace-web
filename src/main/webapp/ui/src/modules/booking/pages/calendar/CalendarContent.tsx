@@ -431,6 +431,7 @@ export function CalendarContent() {
       type: "remote",
       queryKey: (state) => [
         "api-v2",
+        "bookings",
         "booking-catalogue",
         "calendar",
         token,
