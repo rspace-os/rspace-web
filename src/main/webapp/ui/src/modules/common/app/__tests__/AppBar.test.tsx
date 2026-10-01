@@ -94,6 +94,7 @@ const maintenanceEnvelope = (docs: Array<Record<string, unknown>>) => ({
 });
 
 const defaultHandlers = [
+  http.get("/api/v2/feature-flags", () => HttpResponse.json(maintenanceEnvelope([]))),
   http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
   http.get("/api/v2/config", () => HttpResponse.json(appConfig)),
   http.get("/api/v2/maintenances", () => HttpResponse.json(maintenanceEnvelope([]))),
