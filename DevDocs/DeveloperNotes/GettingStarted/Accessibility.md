@@ -607,6 +607,26 @@ options that the page/dialog supports as without it it is not apparent that
 this capability is provided. The app bar also provides a consistent place to access the help functionality, a key part of basic compliance with WCAG 2.2.
 
 
+### High contrast in the new design system
+
+The new design system responds to both `prefers-contrast: more` and
+`forced-colors: active`. The first setting increases the contrast of the RSpace
+palette. The second setting lets the browser replace that palette with the
+user's system colours.
+
+When you add or change a design-system component:
+
+* Do not use `ring-*` as the only focus indicator. Forced colours remove the
+  box shadow that implements a ring.
+* Do not communicate state through `background-color` alone. In forced colours,
+  different backgrounds can become the same system colour.
+* Use a real border for a floating panel. `MenuContent` is the reference
+  implementation.
+* Give virtual focus, such as focus managed with `aria-activedescendant`, its own
+  visible cue. The focused DOM element's outline cannot identify the active
+  descendant.
+
+
 ### DialogBoundary
 
 We sometimes wish to display elements floating above open dialogs, such as alert
