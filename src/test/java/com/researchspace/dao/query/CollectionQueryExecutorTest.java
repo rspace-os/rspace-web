@@ -1,14 +1,21 @@
 package com.researchspace.dao.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.blazebit.persistence.CriteriaBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
+import com.blazebit.persistence.MultipleSubqueryInitiator;
 import com.blazebit.persistence.PagedList;
 import com.blazebit.persistence.PaginatedCriteriaBuilder;
+import com.blazebit.persistence.SubqueryBuilder;
+import com.blazebit.persistence.SubqueryInitiator;
+import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
+import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
@@ -20,6 +27,7 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.Sort;
 import java.util.List;
+import java.util.Map;
 import org.hibernate.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -121,6 +129,45 @@ class CollectionQueryExecutorTest {
         widgets, executor.listById(factory, session, request(null, List.of(), 1, 20), 1000));
     verify(query).orderByAsc("item.entityId");
     verify(query).setMaxResults(1000);
+  }
+
+  @Test
+  void recursivelyBuildsNestedExistsSubqueriesThroughBlaze() {
+    SubqueryBuilder<?> outerBuilder = erasedMock(SubqueryBuilder.class);
+    SubqueryInitiator<?> outerSubquery = erasedMock(SubqueryInitiator.class);
+    MultipleSubqueryInitiator<?> outerInitiator = erasedMock(MultipleSubqueryInitiator.class);
+    SubqueryBuilder<?> innerBuilder = erasedMock(SubqueryBuilder.class);
+    SubqueryInitiator<?> innerSubquery = erasedMock(SubqueryInitiator.class);
+    MultipleSubqueryInitiator<?> innerInitiator = erasedMock(MultipleSubqueryInitiator.class);
+    PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
+    PagedList<Widget> page = erasedMock(PagedList.class);
+
+    doReturn(outerInitiator).when(query).whereExpressionSubqueries("EXISTS outerSub");
+    doReturn(outerSubquery).when(outerInitiator).with("outerSub");
+    doReturn(outerBuilder).when(outerSubquery).from(Widget.class, "outer");
+    doReturn(outerBuilder).when(outerBuilder).select("1");
+    doReturn(innerInitiator).when(outerBuilder).whereExpressionSubqueries("EXISTS innerSub");
+    doReturn(innerSubquery).when(innerInitiator).with("innerSub");
+    doReturn(innerBuilder).when(innerSubquery).from(Widget.class, "inner");
+    doReturn(innerBuilder).when(innerBuilder).select("1");
+    when(query.page(0, 1)).thenReturn(paginated);
+    when(paginated.getResultList()).thenReturn(page);
+    when(page.getTotalSize()).thenReturn(1L);
+
+    Subquery nested = new Subquery(Widget.class, "inner", "inner.entityId = outer.entityId");
+    Subquery outer =
+        new Subquery(Widget.class, "outer", "EXISTS innerSub", Map.of("innerSub", nested));
+    Predicate restriction =
+        new Predicate("EXISTS outerSub", Map.of("nestedParam", 7L), Map.of("outerSub", outer));
+
+    assertEquals(
+        1L, executor.count(factory, session, request(null, List.of(), 1, 20), restriction));
+
+    verify(query).whereExpressionSubqueries("EXISTS outerSub");
+    verify(outerBuilder).whereExpressionSubqueries("EXISTS innerSub");
+    verify(outerBuilder, never()).whereExpression("EXISTS innerSub");
+    verify(innerBuilder).whereExpression("inner.entityId = outer.entityId");
+    verify(query).setParameter("nestedParam", 7L);
   }
 
   private static ResourceRequest request(

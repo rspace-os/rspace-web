@@ -17,13 +17,21 @@ import java.util.function.BiFunction;
 public record ApiV2RelationshipTargetSpec<T, ID>(
     CollectionDescription<T> description,
     Class<ID> idType,
-    BiFunction<Set<ID>, User, Map<ID, T>> findReadableByIds)
+    BiFunction<Set<ID>, User, Map<ID, T>> findReadableByIds,
+    String runtimeFieldSourceResource)
     implements ApiV2ReadableResourceTarget {
 
   public ApiV2RelationshipTargetSpec {
     Objects.requireNonNull(description, "Resource description");
     Objects.requireNonNull(idType, "ID type");
     Objects.requireNonNull(findReadableByIds, "Readable resource batch lookup");
+  }
+
+  public ApiV2RelationshipTargetSpec(
+      CollectionDescription<T> description,
+      Class<ID> idType,
+      BiFunction<Set<ID>, User, Map<ID, T>> findReadableByIds) {
+    this(description, idType, findReadableByIds, null);
   }
 
   @Override
@@ -34,11 +42,9 @@ public record ApiV2RelationshipTargetSpec<T, ID>(
     if (access.isDenied()) {
       return Map.of();
     }
-    if (access.constraintOrEmpty().isPresent()) {
-      throw new IllegalStateException(
-          "A target-only REST API v2 resource cannot enforce a read row constraint: "
-              + description.resourceName());
-    }
+    // The bounded loader applies the same row policy as this description. Keeping the constraint
+    // on the description is still required by relationship queries, which compile it into their
+    // correlated EXISTS predicate before filtering or pagination.
     return ApiV2ReadableTargetSupport.hideAuthorizationFailure(
             actor,
             description.resourceName(),
