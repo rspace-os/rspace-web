@@ -188,6 +188,10 @@ class ApiV2OpenApiGeneratorTest {
 
     Map<String, Object> schemas = schemas(document);
     assertTrue(schemas.containsKey("ResourceAccessDocument"));
+    Map<String, Object> accessDocument = objectMap(schemas.get("ResourceAccessDocument"));
+    assertEquals(
+        "boolean",
+        objectMap(objectMap(accessDocument.get("properties")).get("inherited")).get("type"));
     assertTrue(schemas.containsKey("ResourceAccessReplacement"));
     assertTrue(schemas.containsKey("BookingConfigurationTarget"));
     Map<String, Object> readProperties =

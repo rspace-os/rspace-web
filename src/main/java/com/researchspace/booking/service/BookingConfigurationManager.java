@@ -57,11 +57,23 @@ public interface BookingConfigurationManager {
   /** Returns one page selected by a parsed collection request. */
   ResourcePage<BookingConfiguration> getConfigurations(ResourceRequest request, User actor);
 
+  /** Reads a Calendar page with its correlated event restriction applied to rows and total. */
+  ResourcePage<BookingConfiguration> getConfigurations(
+      ResourceRequest request,
+      User actor,
+      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction);
+
   /** Counts configurations selected by a parsed collection request. */
   long countConfigurations(ResourceRequest request, User actor);
 
   /** Finds one configuration without throwing when it is absent. */
   Optional<BookingConfiguration> getConfiguration(Long id, User actor);
+
+  /**
+   * Finds a readable configuration for audit, including its last retained revision for a sysadmin
+   * after permanent deletion. Ordinary reads and former owners cannot recover deleted resources.
+   */
+  Optional<BookingConfiguration> getConfigurationForAudit(Long id, User actor);
 
   /** Creates as {@code subject}, retaining the originating {@code actor} for audit. */
   BookingConfiguration createConfiguration(Create create, User subject, User actor);

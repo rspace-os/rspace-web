@@ -26,7 +26,6 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.persistence.OptimisticLockException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -64,13 +63,14 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   private static final String INACTIVE_USER_ETAG = "\"inactive\"";
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+  private final BookingCalendarCreationTransaction creationTransaction;
   private final BookingCalendarSubscriptionDao subscriptionDao;
   private final UserBookingCalendarSubscriptionDao userSubscriptionDao;
   private final BookingConfigurationDao configurationDao;
   private final TimeSlotBookingManager bookingManager;
   private final InstrumentDao instrumentDao;
   private final FeatureFlagManager featureFlags;
-  private final ResourceAccessManager accessManager;
+  private final BookingItemPermissions accessManager;
   private final BookingCalendarFeedGenerator generator;
   private final BookingCalendarProperties limits;
   private final URI serverBaseUrl;
@@ -86,8 +86,9 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       TimeSlotBookingManager bookingManager,
       InstrumentDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
+      BookingCalendarCreationTransaction creationTransaction,
       BookingCalendarProperties limits,
       IPropertyHolder properties) {
     this(
@@ -99,6 +100,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         featureFlags,
         accessManager,
         generator,
+        creationTransaction,
         limits,
         properties,
         () -> SecureStringUtils.getURLSafeSecureRandomString(32));
@@ -111,11 +113,13 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       TimeSlotBookingManager bookingManager,
       InstrumentDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
+      BookingCalendarCreationTransaction creationTransaction,
       BookingCalendarProperties limits,
       IPropertyHolder properties,
       Supplier<String> tokenSupplier) {
+    this.creationTransaction = creationTransaction;
     this.subscriptionDao = subscriptionDao;
     this.userSubscriptionDao = userSubscriptionDao;
     this.configurationDao = configurationDao;
@@ -156,12 +160,21 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   public Created createOrRotate(
       Long configurationId, User subject, User actor, String expectedEtag) {
     requirePersonalCaller(subject, actor);
+    return creationTransaction.create(
+        subject.getId(),
+        freshSubject -> createOrRotateInTransaction(configurationId, freshSubject, expectedEtag));
+  }
+
+  private Created createOrRotateInTransaction(
+      Long configurationId, User subject, String expectedEtag) {
     requireFeatureMutation(subject);
     BookingConfiguration configuration =
         configurationDao
             .lockById(configurationId)
             .orElseThrow(BookingCalendarNotFoundException::new);
-    requireCapability(
+    // The configuration lock is acquired before resolveForMutation takes the shared permission
+    // fence; this is the lock order used by all booking mutations.
+    requireMutationCapability(
         configuration, subject, BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION);
     if (configuration.getState() == BookingConfigurationState.ARCHIVED) {
       throw new BookingConfigurationLifecycleException();
@@ -194,7 +207,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         "Booking calendar subscription {} by actor [{}] for subject [{}], configuration [{}],"
             + " subscription [{}]",
         action,
-        actor.getUsername(),
+        subject.getUsername(),
         subject.getUsername(),
         configurationId,
         saved.getId());
@@ -541,15 +554,13 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private boolean hasCapability(
       BookingConfiguration configuration, User subject, String capability) {
-    ResolvedResourceAccess access =
-        accessManager.resolve(configuration.getResourceAccess(), subject);
+    ResolvedResourceAccess access = accessManager.resolve(configuration, subject);
     return access.hasCapability(capability);
   }
 
   private void requireMutationCapability(
       BookingConfiguration configuration, User subject, String capability) {
-    ResolvedResourceAccess access =
-        accessManager.resolve(configuration.getResourceAccess(), subject);
+    ResolvedResourceAccess access = accessManager.resolveForMutation(configuration, subject);
     if (!access.hasCapability(BookingResourceRoleScheme.READ_RESOURCE)) {
       throw new BookingCalendarNotFoundException();
     }
