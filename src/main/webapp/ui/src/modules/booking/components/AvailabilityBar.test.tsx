@@ -365,7 +365,7 @@ describe("AvailabilityBar", () => {
 
     await user.click(await screen.findByRole("button"));
     const dialog = await screen.findByRole("dialog");
-    const disclosure = within(dialog).getByLabelText("Show details for Maintenance blockout, 09:00–10:00");
+    const disclosure = within(dialog).getByLabelText("Show details for Maintenance, 09:00–10:00");
     await user.click(disclosure);
 
     expect(within(dialog).getByText("Created by")).toBeVisible();
@@ -400,7 +400,7 @@ describe("AvailabilityBar", () => {
     await user.click(screen.getByRole("button"));
     const dialog = await screen.findByRole("dialog");
 
-    expect(within(dialog).getByText("Maintenance blockout")).toBeVisible();
+    expect(within(dialog).getByText("Maintenance")).toBeVisible();
     expect(screen.queryByText("Private maintenance actor")).not.toBeInTheDocument();
     expect(screen.queryByText("Private maintenance reason")).not.toBeInTheDocument();
   });

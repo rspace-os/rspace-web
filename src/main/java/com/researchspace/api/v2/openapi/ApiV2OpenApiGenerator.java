@@ -185,7 +185,7 @@ public final class ApiV2OpenApiGenerator {
                 "format",
                 "uri",
                 "description",
-                "The current subscription URL, or null when inactive or awaiting migration."));
+                "The current subscription URL, or null when inactive."));
     schemas.put(
         "BookingCalendarSubscriptionStatus",
         ordered(
@@ -206,7 +206,7 @@ public final class ApiV2OpenApiGenerator {
             "format",
             "uri",
             "description",
-            "The newly issued subscription URL."));
+            "The caller's current subscription URL."));
     schemas.put(
         "BookingCalendarSubscriptionCreated",
         ordered(
@@ -235,6 +235,7 @@ public final class ApiV2OpenApiGenerator {
             calendarSubscriptionOperation("post"),
             "delete",
             calendarSubscriptionOperation("delete")));
+    paths.put(path + "/rotate", ordered("post", calendarSubscriptionOperation("rotate")));
   }
 
   private static void addCalendarFilePath(Map<String, Object> paths) {
@@ -292,30 +293,37 @@ public final class ApiV2OpenApiGenerator {
   }
 
   private static Map<String, Object> calendarSubscriptionOperation(String method) {
-    boolean get = "get".equals(method);
-    boolean post = "post".equals(method);
     Map<String, Object> operation = new LinkedHashMap<>();
-    operation.put(
-        "operationId",
-        get
-            ? "getBookingCalendarSubscription"
-            : post
-                ? "createOrReplaceBookingCalendarSubscription"
-                : "revokeBookingCalendarSubscription");
-    operation.put(
-        "summary",
-        get
-            ? "Get calendar subscription status"
-            : post
-                ? "Create or replace a calendar subscription"
-                : "Revoke a calendar subscription");
-    operation.put(
-        "description",
-        get
-            ? "Returns the caller's current subscription URL when one exists."
-            : post
-                ? "Replaces any active credential and returns the new subscription URL."
-                : "Revokes only the caller's subscription for this bookable item.");
+    switch (method) {
+      case "get" -> {
+        operation.put("operationId", "getBookingCalendarSubscription");
+        operation.put("summary", "Get calendar subscription status");
+        operation.put(
+            "description", "Returns the caller's current subscription URL when one exists.");
+      }
+      case "post" -> {
+        operation.put("operationId", "createBookingCalendarSubscription");
+        operation.put("summary", "Create a calendar subscription");
+        operation.put(
+            "description",
+            "Returns the caller's existing subscription URL unchanged, or issues one when none"
+                + " exists. Repeating the request is safe.");
+      }
+      case "rotate" -> {
+        operation.put("operationId", "rotateBookingCalendarSubscription");
+        operation.put("summary", "Replace a calendar subscription URL");
+        operation.put(
+            "description",
+            "Issues a new subscription URL when If-Match carries the current status ETag."
+                + " Calendars using the old URL stop updating.");
+      }
+      default -> {
+        operation.put("operationId", "revokeBookingCalendarSubscription");
+        operation.put("summary", "Revoke a calendar subscription");
+        operation.put(
+            "description", "Revokes only the caller's subscription for this bookable item.");
+      }
+    }
     operation.put("tags", List.of("booking-calendar-subscriptions"));
     operation.put(
         "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
@@ -323,8 +331,8 @@ public final class ApiV2OpenApiGenerator {
         "x-rspace-access",
         ordered(
             "description",
-            "Authenticated active callers with Booking enabled; status and creation also require"
-                + " read access to the bookable item.",
+            "Authenticated active callers with Booking enabled and read access to the"
+                + " bookable item.",
             "denialReasonCodes",
             List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
     List<Map<String, Object>> parameters = new ArrayList<>();
@@ -335,7 +343,7 @@ public final class ApiV2OpenApiGenerator {
             true,
             ordered("type", "integer", "format", "int64"),
             "Booking configuration identifier."));
-    if (post) {
+    if ("rotate".equals(method)) {
       parameters.add(
           parameter(
               "If-Match",
@@ -345,43 +353,69 @@ public final class ApiV2OpenApiGenerator {
               "Strong ETag from the latest subscription status."));
     }
     operation.put("parameters", parameters);
-    operation.put("responses", calendarSubscriptionResponses(get, post));
+    operation.put("responses", calendarSubscriptionResponses(method));
     operation.put(
         "x-rspace-operation",
-        get ? "CALENDAR_STATUS" : post ? "CALENDAR_CREATE" : "CALENDAR_REVOKE");
+        switch (method) {
+          case "get" -> "CALENDAR_STATUS";
+          case "post" -> "CALENDAR_CREATE";
+          case "rotate" -> "CALENDAR_ROTATE";
+          default -> "CALENDAR_REVOKE";
+        });
     return operation;
   }
 
-  private static Map<String, Object> calendarSubscriptionResponses(boolean get, boolean post) {
+  private static Map<String, Object> calendarSubscriptionResponses(String method) {
     Map<String, Object> responses = new LinkedHashMap<>();
-    if (get || post) {
-      responses.put(
-          "200",
-          subscriptionDocument(
-              get ? "Current subscription status and URL." : "New subscription URL.",
-              get ? "BookingCalendarSubscriptionStatus" : "BookingCalendarSubscriptionCreated"));
-    } else {
+    if ("delete".equals(method)) {
       responses.put(
           "204",
           ordered(
               "description", "The subscription is inactive.", "headers", privateNoStoreHeaders()));
+    } else {
+      boolean get = "get".equals(method);
+      String schema =
+          get ? "BookingCalendarSubscriptionStatus" : "BookingCalendarSubscriptionCreated";
+      responses.put(
+          "200",
+          subscriptionDocument(
+              switch (method) {
+                case "get" -> "Current subscription status and URL.";
+                case "post" -> "The existing subscription URL, unchanged.";
+                default -> "The new subscription URL.";
+              },
+              schema));
+      if ("post".equals(method)) {
+        responses.put("201", subscriptionDocument("A newly issued subscription URL.", schema));
+      }
+    }
+    if ("rotate".equals(method)) {
+      responses.put("400", responseRef("BadRequest"));
     }
     responses.put("401", responseRef("Unauthenticated"));
     responses.put("403", responseRef("Forbidden"));
     responses.put("404", responseRef("NotFound"));
     responses.put("406", responseRef("NotAcceptable"));
-    if (post) {
-      responses.put("400", responseRef("BadRequest"));
+    if ("post".equals(method)) {
       responses.put(
           "409",
           problemResponse(
-              "The bookable item is archived or the subscription changed since it was read.",
+              "The bookable item is archived.",
+              409,
+              "errors.api.v2.bookingConfiguration.lifecycleConflict"));
+    }
+    if ("rotate".equals(method)) {
+      responses.put(
+          "409",
+          problemResponse(
+              "The bookable item is archived or the subscription is missing or changed since it was"
+                  + " read.",
               409,
               Map.of(
                   "errors.api.v2.bookingConfiguration.lifecycleConflict",
                   "The bookable item is archived.",
                   "errors.api.v2.bookingCalendar.subscriptionConflict",
-                  "The subscription changed since it was read.")));
+                  "The subscription is missing or changed since it was read.")));
       responses.put(
           "428",
           problemResponse(

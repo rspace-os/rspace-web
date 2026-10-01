@@ -145,8 +145,14 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
             put(DEFAULTS)
                 .header("apiKey", key)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"autoSubscribeOwnedItems\":false}"))
-        .andExpect(status().isOk());
+                .content(
+                    "{\"autoSubscribeOwnedItems\":false,\"notifyOnCreated\":true,"
+                        + "\"notifyOnCancelled\":false}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.autoSubscribeOwnedItems").value(false))
+        .andExpect(jsonPath("$.notifyOnCreated").value(true))
+        .andExpect(jsonPath("$.notifyOnCancelled").value(false))
+        .andExpect(jsonPath("$.emailDelivery").isBoolean());
     long second =
         fixture.bookingConfiguration(fixture.instrument(fixture.user(), "New instrument"), "UTC");
     String json =
@@ -187,6 +193,11 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
                     JacksonUtil.toJson(
                         Map.of("configurationIds", List.of(first, second), "enabled", true))))
         .andExpect(status().isOk());
+    // The event choices are the My Profile preferences that gate each item's delivery.
+    mockMvc
+        .perform(get(itemPath(first)).header("apiKey", key))
+        .andExpect(jsonPath("$.createdEnabled").value(true))
+        .andExpect(jsonPath("$.cancelledEnabled").value(false));
     mockMvc.perform(delete(SUBSCRIPTIONS).header("apiKey", key)).andExpect(status().isOk());
     mockMvc
         .perform(get(itemPath(first)).header("apiKey", key))
@@ -196,7 +207,16 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
         .andExpect(jsonPath("$.enabled").value(false));
     mockMvc
         .perform(get(DEFAULTS).header("apiKey", key))
-        .andExpect(jsonPath("$.autoSubscribeOwnedItems").value(false));
+        .andExpect(jsonPath("$.autoSubscribeOwnedItems").value(false))
+        .andExpect(jsonPath("$.notifyOnCreated").value(true))
+        .andExpect(jsonPath("$.notifyOnCancelled").value(false));
+    mockMvc
+        .perform(
+            put(DEFAULTS)
+                .header("apiKey", key)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"autoSubscribeOwnedItems\":false}"))
+        .andExpect(status().isBadRequest());
   }
 
   private void setBookingEnabled(boolean enabled) {

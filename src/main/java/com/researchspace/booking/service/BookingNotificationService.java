@@ -71,11 +71,13 @@ public class BookingNotificationService {
       config.setNotificationData(data);
       config.setNotificationEventPreferenceOverride(recipient.requester());
 
+      // The saved message is the email body, so its links must be absolute. In-app lists
+      // re-format the structured data with root-relative links at display time.
       communicationManager.notify(
           actor,
           null,
           config,
-          messageFormatter.format(
+          messageFormatter.formatForEmail(
               notificationType, data, recipient.displayZone(), LocaleContextHolder.getLocale()));
     }
   }
