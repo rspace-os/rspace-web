@@ -5,6 +5,7 @@ import {
   validMaximumBookingDuration,
 } from "@/modules/booking/configuration/schedulingSettings";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import i18n from "@/modules/common/i18n";
@@ -283,6 +284,7 @@ export async function fetchBookingOwnershipCandidates(
 
 export const bookingConfigurationConfig = {
   slug: "bookable-items",
+  relationshipSources: bookingRelationshipSources,
   idField: "id",
   labels: {
     singularKey: "booking:bookableItems.singular",

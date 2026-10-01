@@ -16,8 +16,12 @@ import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Panel, useBookingEvent } from "./BookingEventPage";
 
-function editable(booking: BookingDetails): booking is BookingDetails & { canEdit: true; state: "CONFIRMED" } {
-  return booking.canEdit && booking.state === "CONFIRMED";
+function editable(booking: BookingDetails): booking is BookingDetails & {
+  canEdit: true;
+  state: "CONFIRMED";
+  target: NonNullable<BookingDetails["target"]>;
+} {
+  return booking.canEdit && booking.state === "CONFIRMED" && booking.target !== null;
 }
 
 function errorKey(
@@ -25,6 +29,7 @@ function errorKey(
 ):
   | "bookings.errors.generic"
   | "bookings.errors.endAfterStart"
+  | "bookings.errors.startInPast"
   | "bookings.errors.duration"
   | "bookings.errors.maximumDuration"
   | "bookings.errors.overlap"
@@ -35,6 +40,7 @@ function errorKey(
   | "bookings.errors.noLongerEditable" {
   if (!(error instanceof ApiV2ProblemError)) return "bookings.errors.generic";
   if (error.code === "errors.api.v2.booking.window") return "bookings.errors.endAfterStart";
+  if (error.code === "errors.api.v2.booking.startInPast") return "bookings.errors.startInPast";
   if (error.code === "errors.api.v2.booking.duration") return "bookings.errors.duration";
   if (error.code === "errors.api.v2.booking.maximumDuration") return "bookings.errors.maximumDuration";
   if (error.code === "errors.api.v2.booking.overlap") return "bookings.errors.overlap";
@@ -70,15 +76,13 @@ export default function BookingInlineEditForm() {
     requestAnimationFrame(() => editButtonRef.current?.focus());
   }, [base.id, editButtonRef, navigate]);
   const mutation = useMutation({
-    mutationFn: (submission: BookingFormSubmission) => {
+    mutationFn: async (submission: BookingFormSubmission) => {
       const patch: BookingUpdate = {
         ...(submission.window.start !== base.start ? { start: submission.window.start } : {}),
         ...(submission.window.end !== base.end ? { end: submission.window.end } : {}),
         ...(submission.purpose !== base.purpose ? { purpose: submission.purpose } : {}),
       };
-      return Object.keys(patch).length === 0
-        ? Promise.resolve(base)
-        : updateBooking(base.id, base.version, patch, token);
+      if (Object.keys(patch).length !== 0) await updateBooking(base.id, base.version, patch, token);
     },
     onSuccess: async () => {
       await refreshBooking();
