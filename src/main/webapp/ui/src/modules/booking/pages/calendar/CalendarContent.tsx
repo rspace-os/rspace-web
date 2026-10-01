@@ -1,4 +1,4 @@
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -97,8 +97,9 @@ function filterIssue<TDocument>({
 
 export function CalendarContent() {
   const { t } = useTranslation("booking");
-  const { date } = useSearch({ from: "/booking/calendar" });
+  const { date, target } = useSearch({ from: "/booking/calendar" });
   const navigate = useNavigate({ from: "/booking/calendar" });
+  const location = useLocation();
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
@@ -108,6 +109,7 @@ export function CalendarContent() {
   const [layout, setLayout] = React.useState<CalendarLayout>("resources");
   const [resettingControls, setResettingControls] = React.useState(false);
   const [mineOnly, setMineOnly] = React.useState(false);
+  const [myItemsOnly, setMyItemsOnly] = React.useState(false);
   const preferences = useBookingDisplayPreferences();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
@@ -205,26 +207,57 @@ export function CalendarContent() {
     () => andFilters([eventExpression, requesterFilter]),
     [eventExpression, requesterFilter],
   );
+  const targetItemExpression = React.useMemo(
+    () =>
+      target
+        ? ({
+            kind: "comparison",
+            field: "target",
+            operator: "equals",
+            value: target,
+          } satisfies FilterExpression<BookingConfiguration>)
+        : null,
+    [target],
+  );
+  const targetEventExpression = React.useMemo(
+    () =>
+      target
+        ? ({
+            kind: "comparison",
+            field: "target",
+            operator: "equals",
+            value: target,
+          } satisfies FilterExpression<BookingListDocument>)
+        : null,
+    [target],
+  );
   const calendarEventExpression = React.useMemo(
     () =>
       andFilters<BookingListDocument>([
         scopedEventExpression,
+        targetEventExpression,
         itemExpression === null ? null : retypeFilter<BookingConfiguration, BookingListDocument>(itemExpression),
       ]),
-    [itemExpression, scopedEventExpression],
+    [itemExpression, scopedEventExpression, targetEventExpression],
   );
-  const itemWhereParameter = itemExpression ? serializeRsqlExpression(itemExpression) : undefined;
+  const resourceItemExpression = React.useMemo(
+    () => andFilters([itemExpression, targetItemExpression]),
+    [itemExpression, targetItemExpression],
+  );
+  const itemWhereParameter = resourceItemExpression ? serializeRsqlExpression(resourceItemExpression) : undefined;
   const eventWhereParameter = scopedEventExpression ? serializeRsqlExpression(scopedEventExpression) : undefined;
   const calendarEventWhereParameter = calendarEventExpression
     ? serializeRsqlExpression(calendarEventExpression)
     : undefined;
   const filterScopeSignature = [
     calendarSearch,
+    target ?? "",
     itemWhereParameter ?? "",
     eventWhereParameter ?? "",
     calendarStart,
     calendarEnd,
     mineOnly,
+    myItemsOnly,
   ].join("|");
   const previousFilterScope = React.useRef(filterScopeSignature);
   const resourceScopeReady = previousFilterScope.current === filterScopeSignature;
@@ -246,6 +279,8 @@ export function CalendarContent() {
         itemWhereParameter,
         eventWhereParameter,
         calendarSearch,
+        myItemsOnly,
+        target,
         filtersBlocked,
       ],
       keepPreviousData: true,
@@ -259,6 +294,7 @@ export function CalendarContent() {
             calendarStart,
             calendarEnd,
             eventWhere: eventWhereParameter,
+            mine: myItemsOnly,
             page: state.page.pageIndex + 1,
             pageSize: state.page.pageSize,
           },
@@ -303,7 +339,7 @@ export function CalendarContent() {
     targetGlobalIds: layout === "resources" ? resourceTargetIds : undefined,
     enabled: calendarQueryReady && (layout !== "resources" || resourceTableReady),
     authScope: currentUser.id,
-    scope: { where: calendarEventWhereParameter, q: calendarSearch },
+    scope: { where: calendarEventWhereParameter, q: calendarSearch, mine: myItemsOnly },
   });
   // Display filters must not change the events used to propose a free booking window.
   // Without an event filter/Search this uses the display query's cache, avoiding a second request.
@@ -319,9 +355,6 @@ export function CalendarContent() {
   });
   const displayReady = calendarQueryReady;
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
-  const onItemFiltersChange = (expression: FilterExpression<BookingConfiguration> | null) => {
-    void setItemWhere(expression ? serializeRsqlExpression(expression) : null);
-  };
   const onEventFiltersChange = (expression: FilterExpression<BookingListDocument> | null) => {
     void setEventWhere(expression ? serializeRsqlExpression(expression) : null);
   };
@@ -346,19 +379,14 @@ export function CalendarContent() {
       resourceTableProps={
         filtersBlocked ? { ...resourceTable.tableProps, rows: [], status: "idle" } : resourceTable.tableProps
       }
-      itemFilterConfig={itemConfig}
       eventFilterConfig={eventConfig}
       itemFilterExpression={itemExpression}
       eventFilterExpression={eventExpression}
       itemFilterIssue={itemIssue}
       eventFilterIssue={eventIssue}
-      itemRuntimeFieldDefinitions={itemRuntimeFields.runtimeFields}
       eventRuntimeFieldDefinitions={eventRuntimeFields.runtimeFields}
-      itemRuntimeFieldAuthScope={itemRuntimeFields.scope}
       eventRuntimeFieldAuthScope={eventRuntimeFields.scope}
-      onSelectItemRuntimeField={itemRuntimeFields.selectRuntimeField}
       onSelectEventRuntimeField={eventRuntimeFields.selectRuntimeField}
-      onItemFilterChange={onItemFiltersChange}
       onEventFilterChange={onEventFiltersChange}
       searchControl={{
         value: calendarSearch,
@@ -367,6 +395,11 @@ export function CalendarContent() {
       mineOnly={mineOnly}
       onMineChange={(next) => {
         setMineOnly(next);
+        resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
+      }}
+      myItemsOnly={myItemsOnly}
+      onMyItemsChange={(next) => {
+        setMyItemsOnly(next);
         resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
       }}
       isLoading={
@@ -382,16 +415,19 @@ export function CalendarContent() {
           void events.refetch();
         }
       }}
-      onDateChange={(nextDate) =>
-        void navigate({ search: (current) => ({ ...current, date: nextDate }), replace: true })
-      }
+      onDateChange={(nextDate) => {
+        const search = new URLSearchParams(location.searchStr);
+        search.set("date", nextDate);
+        void navigate({ to: `${location.pathname}?${search.toString()}`, replace: true });
+      }}
       onControlsReset={async () => {
         // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
         setResettingControls(true);
         try {
-          await navigate({ search: (current) => ({ ...current, date: undefined }), replace: true });
+          await navigate({ search: (current) => ({ ...current, date: undefined, target: undefined }), replace: true });
           await Promise.all([setCalendarSearch(null), setItemWhere(null), setEventWhere(null)]);
           setMineOnly(false);
+          setMyItemsOnly(false);
           resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
           React.startTransition(() => {
             setView("day");
