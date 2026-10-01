@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import { resourceAccessQueries } from "@/modules/common/resource-access/resourceAccess";
 import { type ResourceAccessAdapter, ResourceAccessEditor } from "../ResourceAccessEditor";
 
 const adapter: ResourceAccessAdapter = {
@@ -129,6 +130,52 @@ describe("ResourceAccessEditor", () => {
     }
     expect(await screen.findByRole("alert")).toHaveTextContent("common:resourceAccess.loadError");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it.each([401, 403, 404])("hides cached assignments after a same-token %i denial", async (status) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const queryKey = resourceAccessQueries.document("test-collections", 9, "", [null, null]).queryKey;
+    let accessRequests = 0;
+    server.use(
+      http.get("/api/v2/test-collections/9/access", () => {
+        accessRequests += 1;
+        if (accessRequests === 1 || accessRequests === 4) return HttpResponse.json(document(3, [owner, second]));
+        return new HttpResponse(null, { status: accessRequests === 2 ? status : 503 });
+      }),
+    );
+
+    render(
+      <QueryClientProvider client={client}>
+        <ResourceAccessEditor resource="test-collections" resourceId={9} token="token" adapter={adapter} />
+      </QueryClientProvider>,
+    );
+
+    await screen.findByRole("table");
+    expect(table().getByText("Ada Owner")).toBeVisible();
+    await act(async () => {
+      await client.refetchQueries({ queryKey, type: "active" });
+    });
+
+    expect(accessRequests).toBe(2);
+    expect(await screen.findByRole("alert")).toHaveTextContent("common:resourceAccess.loadError");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ada Owner")).not.toBeInTheDocument();
+
+    await act(async () => {
+      await client.refetchQueries({ queryKey, type: "active" });
+    });
+    expect(accessRequests).toBe(3);
+    expect(screen.getByRole("alert")).toHaveTextContent("common:resourceAccess.loadError");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ada Owner")).not.toBeInTheDocument();
+
+    await act(async () => {
+      await client.refetchQueries({ queryKey, type: "active" });
+    });
+    expect(accessRequests).toBe(4);
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(table().getByText("Ada Owner")).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("renders assignments without any mutation controls in read-only mode", async () => {
@@ -394,7 +441,7 @@ describe("ResourceAccessEditor", () => {
     await screen.findByRole("table");
     await user.click(row("Bob Steward").getByRole("button", { name: "common:resourceAccess.removeNamed" }));
     current = document(4, [owner, second, remote]);
-    await act(() => client.refetchQueries({ queryKey: ["api-v2", "test-collections", 9, "access"] }));
+    await act(() => client.refetchQueries({ queryKey: resourceAccessQueries.access("test-collections", 9) }));
     expect(row("Bob Steward").getByText("common:resourceAccess.staged.removed")).toBeInTheDocument();
     const save = screen.getByRole("button", { name: "common:resourceAccess.saveChanges" });
     await user.click(save);
@@ -403,7 +450,7 @@ describe("ResourceAccessEditor", () => {
     expect(table().getByText("Remote reader")).toBeInTheDocument();
 
     current = document(5, [owner, second, { ...remote, role: "CONTRIBUTOR" }]);
-    await act(() => client.refetchQueries({ queryKey: ["api-v2", "test-collections", 9, "access"] }));
+    await act(() => client.refetchQueries({ queryKey: resourceAccessQueries.access("test-collections", 9) }));
     await user.click(save);
     await waitFor(() => expect(requests).toHaveLength(2));
     expect(requests[1].headers.get("If-Match")).toBe('"4"');

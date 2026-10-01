@@ -24,7 +24,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     pageSize = 20,
   } = useSearch({ from: "/booking/all-items/" });
   const navigate = useNavigate({ from: "/booking/all-items/" });
-  const { config, invalidFilter, catalogue, ...data } = useAllBookableItemsData({
+  const { config, invalidFilter, catalogue, runtimeFieldState, currentUser, ...data } = useAllBookableItemsData({
     clock,
     date,
     routeAvailability,
@@ -84,20 +84,43 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       replace: true,
     });
   };
+  const removeRestoredViewIssue = () =>
+    void navigate({
+      search: (current) => ({ ...current, where: undefined, page: undefined }),
+      replace: true,
+    });
+  const restoredViewIssue = runtimeFieldState.error
+    ? {
+        kind: "network" as const,
+        encoded: where ?? "",
+        retry: () => void runtimeFieldState.retry(),
+        remove: removeRestoredViewIssue,
+      }
+    : !runtimeFieldState.pending && (runtimeFieldState.missing.length > 0 || invalidFilter)
+      ? { kind: "invalid" as const, encoded: where ?? "", remove: removeRestoredViewIssue }
+      : undefined;
   const tableProps: TableListProps<AllBookableItem> = {
     config,
     rows,
     getRowId: (row) => String(row.id),
     clientSide: false,
     status:
-      invalidFilter || quickFilterError || catalogue.isError
+      runtimeFieldState.error !== null ||
+      runtimeFieldState.missing.length > 0 ||
+      invalidFilter ||
+      quickFilterError ||
+      catalogue.isError
         ? "error"
-        : quickFilterPending || catalogue.isPending
+        : runtimeFieldState.pending || quickFilterPending || catalogue.isPending
           ? "loading"
           : catalogue.isFetching
             ? "refreshing"
             : "idle",
-    error: quickFilterError ? undefined : catalogue.error,
+    error: runtimeFieldState.error ?? (quickFilterError ? undefined : catalogue.error),
+    restoredViewIssue,
+    onSelectRuntimeField: runtimeFieldState.selectRuntimeField,
+    runtimeFieldDefinitions: runtimeFieldState.runtimeFields,
+    runtimeFieldAuthScope: currentUser.id,
     queryString: false,
     features: {
       filtering: {

@@ -15,7 +15,6 @@ export function CalendarContent() {
     layout,
     setLayout,
     setResettingControls,
-    setEventScopeIsFiltered,
     preferences,
     beginCreation,
     creationActive,
@@ -24,6 +23,24 @@ export function CalendarContent() {
     resourceConfigurations,
     events,
     resourceTargets,
+    blockingEvents,
+    displayReady,
+    eventConfig,
+    eventExpression,
+    eventIssue,
+    eventRuntimeFields,
+    filtersBlocked,
+    itemConfig,
+    itemExpression,
+    itemIssue,
+    itemRuntimeFields,
+    mineOnly,
+    onEventFiltersChange,
+    onItemFiltersChange,
+    onSearchChange,
+    setEventWhere,
+    setItemWhere,
+    setMineOnly,
   } = useCalendarContentData();
 
   return (
@@ -34,17 +51,44 @@ export function CalendarContent() {
       timezone={preferences.timeZone}
       availabilityStartMinute={preferences.availabilityWindow.startMinute}
       availabilityEndMinute={preferences.availabilityWindow.endMinute}
-      events={events.data ?? []}
-      resources={resourceTargets}
+      events={displayReady ? (events.data ?? []) : []}
+      blockingEvents={blockingEvents.data ?? []}
+      availabilityError={layout === "resources" && view === "day" && blockingEvents.isError}
+      onRetryAvailability={() => void blockingEvents.refetch()}
+      resources={filtersBlocked ? [] : resourceTargets}
       resourceConfigurations={resourceConfigurations}
-      resourceTableProps={resourceTable.tableProps}
+      resourceTableProps={
+        filtersBlocked ? { ...resourceTable.tableProps, rows: [], status: "idle" } : resourceTable.tableProps
+      }
+      itemFilterConfig={itemConfig}
+      eventFilterConfig={eventConfig}
+      itemFilterExpression={itemExpression}
+      eventFilterExpression={eventExpression}
+      itemFilterIssue={itemIssue}
+      eventFilterIssue={eventIssue}
+      itemRuntimeFieldDefinitions={itemRuntimeFields.runtimeFields}
+      eventRuntimeFieldDefinitions={eventRuntimeFields.runtimeFields}
+      itemRuntimeFieldAuthScope={itemRuntimeFields.scope}
+      eventRuntimeFieldAuthScope={eventRuntimeFields.scope}
+      onSelectItemRuntimeField={itemRuntimeFields.selectRuntimeField}
+      onSelectEventRuntimeField={eventRuntimeFields.selectRuntimeField}
+      onItemFilterChange={onItemFiltersChange}
+      onEventFilterChange={onEventFiltersChange}
       searchControl={{
         value: calendarSearch,
-        onChange: (search) => void setCalendarSearch(search || null),
+        onChange: onSearchChange,
       }}
-      onEventScopeChange={setEventScopeIsFiltered}
       currentUserId={currentUser.id}
-      isLoading={events.isPending && resourceTable.tableProps.status !== "error"}
+      mineOnly={mineOnly}
+      onMineChange={(next) => {
+        setMineOnly(next);
+        resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
+      }}
+      isLoading={
+        itemRuntimeFields.pending ||
+        eventRuntimeFields.pending ||
+        (displayReady && events.isPending && resourceTable.tableProps.status !== "error")
+      }
       isError={events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")}
       onRetry={() => {
         if (layout === "resources" && resourceTable.tableProps.status === "error") {
@@ -61,6 +105,9 @@ export function CalendarContent() {
         setResettingControls(true);
         try {
           await navigate({ search: (current) => ({ ...current, date: undefined }), replace: true });
+          await Promise.all([setCalendarSearch(null), setItemWhere(null), setEventWhere(null)]);
+          setMineOnly(false);
+          resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
           React.startTransition(() => {
             setView("day");
             setLayout("resources");
@@ -74,7 +121,9 @@ export function CalendarContent() {
       creationAction={
         <BookingCreationButtonGroup ownerId="calendar-toolbar" initialDate={selectedDate} size="default" />
       }
-      creationDisabled={creationActive}
+      creationDisabled={
+        creationActive || !displayReady || (view === "day" && (blockingEvents.isPending || blockingEvents.isError))
+      }
       onResourceRangeSelect={(resource, range, trigger) => {
         const window = wallClockDraftFromInstants(
           dayMinuteToZonedTime(selectedDate, preferences.timeZone, range.startMinute).toInstant().toString(),

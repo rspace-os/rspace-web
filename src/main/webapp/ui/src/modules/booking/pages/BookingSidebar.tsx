@@ -2,7 +2,6 @@ import { Link, linkOptions } from "@tanstack/react-router";
 import {
   CalendarIcon,
   CalendarPlusIcon,
-  CheckSquareIcon,
   ChevronRightIcon,
   LayoutDashboardIcon,
   LibraryBigIcon,
@@ -68,7 +67,6 @@ const items = (today: string) =>
         { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> },
       ],
     },
-    { key: "approvalQueue", icon: CheckSquareIcon },
   ] as const;
 
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
@@ -87,7 +85,6 @@ export function BookingSidebar() {
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
     bookableItems: t("sidebar.bookableItems"),
-    approvalQueue: t("sidebar.approvalQueue"),
   };
   const visibleItems = currentUser.hasSysAdminRole
     ? sidebarItems

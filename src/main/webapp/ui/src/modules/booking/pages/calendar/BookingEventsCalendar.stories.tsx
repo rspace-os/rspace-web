@@ -1,23 +1,51 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import * as React from "react";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
+import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import { busyBooking, otherBooking, ownBooking } from "../mocks/bookingCalendarFixtures";
+import { bookingTarget, busyBooking, otherBooking, ownBooking } from "../mocks/bookingCalendarFixtures";
 import { BookingEventsCalendar, type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
+
+const storyEvents: readonly BookingListDocument[] = [
+  ownBooking,
+  { ...otherBooking, start: "2026-08-17T12:00:00Z", end: "2026-08-17T13:30:00Z" },
+  { ...busyBooking, start: "2026-08-19T09:00:00Z", end: "2026-08-19T11:00:00Z" },
+  {
+    ...ownBooking,
+    id: 44,
+    target: bookingTarget(125, "Flow cytometer"),
+    start: "2026-08-21T13:00:00Z",
+    end: "2026-08-21T15:00:00Z",
+    purpose: "Cell sorting",
+  },
+];
 
 function InteractiveCalendar() {
   const [date, setDate] = React.useState("2026-08-17");
   const [view, setView] = React.useState<CalendarView>("week");
   const [layout, setLayout] = React.useState<CalendarLayout>("time-grid");
+  const [search, setSearch] = React.useState("");
+  const [mineOnly, setMineOnly] = React.useState(false);
+  // The page asks the server to filter; the story filters its fixture so Search and My calendar visibly work.
+  const events = storyEvents.filter(
+    (event) =>
+      (!mineOnly || event.requesterId === 1) &&
+      [event.target?.value.name, event.purpose, event.bookedBy].some((value) =>
+        value?.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
+      ),
+  );
   return (
     <BookingEventsCalendar
       date={date}
       view={view}
       layout={layout}
       timezone="Europe/Berlin"
-      events={[ownBooking, otherBooking, busyBooking]}
+      events={events}
       currentUserId={1}
+      searchControl={{ value: search, onChange: setSearch }}
+      mineOnly={mineOnly}
+      onMineChange={setMineOnly}
       isLoading={false}
       isError={false}
       onRetry={() => undefined}
@@ -26,6 +54,8 @@ function InteractiveCalendar() {
         setDate(todayInTimeZone("Europe/Berlin"));
         setView("day");
         setLayout("resources");
+        setSearch("");
+        setMineOnly(false);
       }}
       onViewChange={setView}
       onLayoutChange={setLayout}
@@ -58,9 +88,13 @@ export const Interactive: Story = {
     const canvas = within(canvasElement);
     const search = await canvas.findByRole("textbox", { name: "Search Calendar" });
     await userEvent.type(search, "Grace");
-    expect(canvas.queryByRole("button", { name: /Show details for Confocal microscope/ })).not.toBeInTheDocument();
+    // Search is debounced, as it is for the server-filtered page.
+    await waitFor(() =>
+      expect(canvas.queryByRole("button", { name: /Show details for Confocal microscope/ })).not.toBeInTheDocument(),
+    );
     expect(canvas.getByRole("button", { name: /Show details for Electron microscope/ })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Clear search" }));
+    expect(await canvas.findByRole("button", { name: /Show details for Confocal microscope/ })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Month" }));
     expect(canvas.getByRole("button", { name: "Month" })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(canvas.getByRole("button", { name: "Resources" }));
