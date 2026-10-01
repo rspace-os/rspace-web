@@ -14,9 +14,9 @@
 		<tr>
 			<td>{{timestamp}}</td>
 			<td>{{event.fullName}}</td>
-			<td>{{event.action}}</td>
+			<td>{{event.displayAction}}</td>
 			<td>{{event.domain}}</td>
-			<td><a href="/globalId/{{event.data.data.id}}">{{event.data.data.id}}</a></td>
+			<td>{{#event.resourceHref}}<a href="{{event.resourceHref}}">{{event.data.data.id}}</a>{{/event.resourceHref}}{{^event.resourceHref}}{{event.data.data.id}}{{/event.resourceHref}}</td>
 			<td>{{event.data.data.name}}</td>
 			<td>{{event.description}}</td>
 		</tr>
@@ -29,9 +29,9 @@
 		<tr>
 			<td>{{timestamp}}</td>
 			<td>{{event.fullName}}</td>
-			<td>{{event.action}}</td>
+			<td>{{event.displayAction}}</td>
 			<td>{{event.domain}}</td>
-			<td><a href="/globalId/{{event.data.data.id}}">{{event.data.data.id}}</a></td>
+			<td>{{#event.resourceHref}}<a href="{{event.resourceHref}}">{{event.data.data.id}}</a>{{/event.resourceHref}}{{^event.resourceHref}}{{event.data.data.id}}{{/event.resourceHref}}</td>
 			<td>{{event.data.data.name}}</td>
 			<td>{{event.description}}</td>
 		</tr>
@@ -52,6 +52,7 @@
 		<legend>Select activity areas to audit:</legend>
 		<input class="domainsInput" aria-label="ELN" checked type="checkbox" name="domains" value="ELN"> ELN
 		<input class="domainsInput" aria-label="Inventory" checked type="checkbox" name="domains" value="INV"> Inventory
+		<input class="domainsInput" aria-label="{{bookingActivityArea}}" checked type="checkbox" name="domains" value="BOOKING"> {{bookingActivityArea}}
 		<input class="domainsInput" aria-label="Other" checked type="checkbox" name="domains" value="OTHER"> Other
 	</fieldset>   
 	<button class="remover" style="height:19px; width:19px;padding:0px !important;" id="remover1" name="x1">X</button>
