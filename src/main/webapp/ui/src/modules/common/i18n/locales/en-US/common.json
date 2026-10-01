@@ -163,6 +163,10 @@
     "published": "Published",
     "release": "Release",
     "sections": {
+      "booking": {
+        "subheader": "Reserve instruments and equipment",
+        "title": "Booking"
+      },
       "gallery": {
         "subheader": "Your files in RSpace and connected filestores",
         "title": "Gallery"

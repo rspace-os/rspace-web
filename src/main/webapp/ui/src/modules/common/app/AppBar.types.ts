@@ -1,4 +1,12 @@
-export type AppBarPage = "workspace" | "gallery" | "inventory" | "system" | "myRSpace" | "aboutRSpace" | "rspace";
+export type AppBarPage =
+  | "workspace"
+  | "gallery"
+  | "inventory"
+  | "system"
+  | "myRSpace"
+  | "aboutRSpace"
+  | "booking"
+  | "rspace";
 
 import type { MakeRouteMatchUnion } from "@tanstack/react-router";
 import type { ReactNode } from "react";
