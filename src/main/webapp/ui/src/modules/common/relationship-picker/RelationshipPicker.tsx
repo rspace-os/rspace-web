@@ -133,7 +133,6 @@ export function RelationshipPicker({
   const showsOptions = hasSearchTerm || browseWhenEmpty;
   const labels = useMemo(
     () => ({
-      idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }),
       unavailableLabel: (value: string) => t("relationshipPicker.unavailable", { value }),
       failedLabel: () => t("relationshipPicker.restoreFailed"),
       compact,

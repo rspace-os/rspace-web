@@ -78,7 +78,7 @@ export async function mutateBookableItems(
   if (!response.ok) throw new Error(`Bulk booking ${action} failed with status ${response.status}`);
 }
 
-async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+export async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
   const response = await fetch(`/api/v2/booking-configurations/${id}`, {
     method: "DELETE",
     headers: {
@@ -104,7 +104,7 @@ async function restoreBookingConfiguration(id: number, version: number, token: s
   if (!response.ok) throw await parseApiV2Problem(response);
 }
 
-async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+export async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
   const response = await fetch(`/api/v2/booking-configurations/${id}?permanent=true`, {
     method: "DELETE",
     headers: {
