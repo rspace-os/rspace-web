@@ -1,7 +1,7 @@
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
-import { enrichApiV2FilterConfig } from "../../../adapters/apiV2/apiV2FilterFields";
+import { createApiV2FilterFields, enrichApiV2FilterConfig } from "../../../adapters/apiV2/apiV2FilterFields";
 import { createApiV2CollectionAdapter, staleRuntimeFields } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import { apiV2CollectionRequestParams } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
 import type { RuntimeFieldDefinition } from "../../../adapters/apiV2/runtimeFieldCatalog";
@@ -44,7 +44,7 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
   runtimeFields: [
     {
       namespace: "customFields",
-      catalog: "/api/v2/instruments/custom-fields",
+      catalog: "/api/v2/instruments/fields/customFields",
       responseField: "customFields",
       filterable: true,
       columnSelectable: true,
@@ -112,7 +112,7 @@ describe("runtime custom fields", () => {
       {
         namespace: "customFields",
         viaLabel: "",
-        catalog: "/api/v2/instruments/custom-fields",
+        catalog: "/api/v2/instruments/fields/customFields",
         maximumLimit: 200,
         filterable: true,
         columnSelectable: true,
@@ -359,6 +359,27 @@ describe("runtime custom fields", () => {
     expect(staleRuntimeFields(["name", "customFields.SF104", "customFields.SF999"], built)).toEqual([
       "customFields.SF999",
     ]);
+  });
+
+  it("rejects a runtime selector that shadows published collection metadata", () => {
+    const withShadow: ApiV2CollectionMetadata<Instrument> = {
+      ...metadata,
+      filtering: {
+        ...metadata.filtering,
+        selectors: {
+          ...metadata.filtering.selectors,
+          "customFields.SF104": { operators: ["=="], wildcards: false, fieldType: "text" },
+        },
+      },
+    };
+
+    expect(() =>
+      createApiV2FilterFields({
+        config,
+        metadata: withShadow,
+        runtimeFields: [{ namespace: "customFields", definitions: [definition()] }],
+      }),
+    ).toThrow("Runtime field selector shadows an existing selector: customFields.SF104");
   });
 
   it("leaves a collection with no runtime namespace untouched", () => {

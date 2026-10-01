@@ -38,6 +38,61 @@ const statusRecords: readonly StatusRecord[] = [
 ];
 
 describe("TableList filters", () => {
+  it("groups related fields and their custom-field picker and defaults new selections to equals", async () => {
+    const user = userEvent.setup();
+    const relatedConfig = {
+      ...config,
+      fields: config.fields.map((field) =>
+        field.name === "owner"
+          ? {
+              ...field,
+              label: "Bookable item → Name",
+              origin: {
+                kind: "relationshipTarget" as const,
+                viaLabel: "Bookable item",
+                groupLabelKey: "tableList.fieldGroups.relationshipFields",
+              },
+            }
+          : field,
+      ),
+      runtimeSources: [
+        {
+          namespace: "target.extraFields",
+          viaLabel: "Bookable item",
+          catalog: "/api/v2/instruments/fields/extraFields",
+          maximumLimit: 200,
+          filterable: true,
+          columnSelectable: false,
+        },
+      ],
+    };
+    const onApply = vi.fn();
+    render(
+      <TableListFilters
+        config={relatedConfig}
+        expression={{ kind: "comparison", field: "owner", operator: "contains", value: "Microscope" }}
+        onApply={onApply}
+        onSelectRuntimeField={vi.fn()}
+        onClose={() => undefined}
+      />,
+    );
+    expect(screen.getByRole("combobox", { name: "common:tableList.filters.operator" })).toHaveValue(
+      "common:tableList.filters.operators.contains",
+    );
+    await user.click(screen.getByRole("combobox", { name: "common:tableList.filters.field" }));
+    const group = screen.getByRole("group", { name: "Bookable item" });
+    expect(within(group).getByRole("option", { name: "Bookable item → Name" })).toBeVisible();
+    expect(within(group).getByRole("option", { name: "common:tableList.filters.customField.option" })).toBeVisible();
+    await user.click(within(group).getByRole("option", { name: "Bookable item → Name" }));
+    expect(screen.getByRole("combobox", { name: "common:tableList.filters.operator" })).toHaveValue(
+      "common:tableList.filters.operators.equals",
+    );
+    await chooseFilterField(user, "common:tableList.examples.fields.title");
+    expect(screen.getByRole("combobox", { name: "common:tableList.filters.operator" })).toHaveValue(
+      "common:tableList.filters.operators.contains",
+    );
+  });
+
   it("preserves nested Boolean groups when applying editable comparisons", async () => {
     const user = userEvent.setup();
     const onApply = vi.fn();
