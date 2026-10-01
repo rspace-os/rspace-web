@@ -39,6 +39,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   rows,
   getRowId,
   features,
+  onReset,
   clientSide,
   status = "idle",
   error,
@@ -139,6 +140,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
                   hideFilterPanel={hideFilterPanel}
                   onPanelChange={setActivePanel}
                   onReset={() => setActivePanel(null)}
+                  resetView={onReset}
                 />
                 <TableListControlPanel
                   onSelectRuntimeField={onSelectRuntimeField}
