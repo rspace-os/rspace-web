@@ -15,7 +15,8 @@ const MOCK_PROBE_URL = `http://localhost:${MOCK_PORT}/e2e-health`;
 const HEADLESS = env.headless;
 
 const CLOUD_SPECS = "**/specs/cloud/**/*.e2e.ts";
-const BROWSER_PROJECTS = new Set(["chromium", "firefox", "webkit", "mobile"]);
+// Every other project ignores the cloud specs, so a newly added project is safe by default.
+const CLOUD_SPECS_ALLOWED = new Set(["cloud", "setup", "api"]);
 
 const PW_LOG = env.playwrightLog;
 if (PW_LOG === "trace") {
@@ -149,5 +150,5 @@ export default defineConfig<E2EOptions>({
   ]
     .filter(({ name }) => name !== "cloud" || E2E_BROWSER === "cloud")
     .filter(({ name }) => !E2E_BROWSER || name === E2E_BROWSER || (name === "setup" && E2E_BROWSER !== "api"))
-    .map((project) => (BROWSER_PROJECTS.has(project.name) ? { ...project, testIgnore: CLOUD_SPECS } : project)),
+    .map((project) => (CLOUD_SPECS_ALLOWED.has(project.name) ? project : { ...project, testIgnore: CLOUD_SPECS })),
 });

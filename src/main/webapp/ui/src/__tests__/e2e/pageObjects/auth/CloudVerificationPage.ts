@@ -4,8 +4,8 @@ import type { Locator, Page } from "@playwright/test";
 export class CloudVerificationPage {
   constructor(private readonly page: Page) {}
 
-  get heading(): Locator {
-    return this.page.getByRole("heading", { level: 2 });
+  heading(name: string): Locator {
+    return this.page.getByRole("heading", { level: 2, name, exact: true });
   }
 
   async activateAccount(link: string): Promise<void> {

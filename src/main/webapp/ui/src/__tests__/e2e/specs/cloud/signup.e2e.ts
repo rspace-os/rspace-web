@@ -23,7 +23,7 @@ test.describe("Community signup", () => {
         affiliation,
         acceptTerms: true,
       });
-      await expect(visitor.verification.heading).toHaveText("Sign Up Requested");
+      await expect(visitor.verification.heading("Sign Up Requested")).toBeVisible();
     });
 
     await test.step("Then I cannot log in until I confirm my email", async () => {
@@ -34,11 +34,12 @@ test.describe("Community signup", () => {
       );
     });
 
-    const activationLink = await clientMailpit.waitForLink(email, "Welcome to RSpace", "/cloud/verifysignup?token=");
+    const activationLink = await test.step("read the activation link from the email", () =>
+      clientMailpit.waitForLink(email, "Welcome to RSpace", "/cloud/verifysignup?token="));
 
     await test.step("When I activate my account from the welcome email", async () => {
       await visitor.verification.activateAccount(activationLink);
-      await expect(visitor.verification.heading).toHaveText("Completed!");
+      await expect(visitor.verification.heading("Completed!")).toBeVisible();
     });
 
     await test.step("Then I can log in to the Workspace", async () => {
@@ -49,7 +50,7 @@ test.describe("Community signup", () => {
 
     await test.step("And the activation link cannot be reused", async () => {
       await visitor.page.goto(activationLink);
-      await expect(visitor.page).toHaveTitle(/Account Activation Failed/);
+      await expect(visitor.verification.heading("There was a problem with this link!")).toBeVisible();
     });
 
     await test.step("And the directory lists me with the affiliation I signed up with", async () => {

@@ -16,15 +16,12 @@ test.describe("Community group invitations", () => {
     await test.step("Given I create a group inviting a new email address", async () => {
       await pi.createGroup.open();
       await pi.createGroup.createGroup({ name: groupName, inviteNewEmails: [inviteeEmail] });
-      await expect(pi.createGroup.resultAlert).toHaveText(`${groupName} group created successfully!`);
+      await expect(pi.createGroup.resultAlert(groupName)).toHaveText(`${groupName} group created successfully!`);
     });
 
     const invitee = await flowCloudVisitor();
-    const inviteLink = await clientMailpit.waitForLink(
-      inviteeEmail,
-      "Join Group Invitation - Research Space",
-      "/signup?token=",
-    );
+    const inviteLink = await test.step("read the invite link from the email", () =>
+      clientMailpit.waitForLink(inviteeEmail, "Join Group Invitation - Research Space", "/signup?token="));
 
     await test.step("When the invitee signs up from the emailed link", async () => {
       await invitee.signup.openWithInviteLink(inviteLink);
@@ -38,7 +35,7 @@ test.describe("Community group invitations", () => {
         acceptTerms: true,
       });
       // The invite already proves the address, so no activation email is needed.
-      await expect(invitee.page).toHaveTitle(/Account Activation Complete/);
+      await expect(invitee.verification.heading("Completed!")).toBeVisible();
     });
 
     await test.step("And accepts the group invitation after logging in", async () => {
@@ -69,7 +66,7 @@ test.describe("Community group invitations", () => {
         nominatedPiEmail: nominatedPi.email,
         inviteExistingEmails: [member.email],
       });
-      await expect(creator.createGroup.resultAlert).toHaveText(
+      await expect(creator.createGroup.resultAlert(groupName)).toHaveText(
         `Group creation request for ${groupName} sent successfully`,
       );
     });
