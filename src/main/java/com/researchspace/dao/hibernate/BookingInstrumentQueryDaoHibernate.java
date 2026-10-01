@@ -163,14 +163,17 @@ public class BookingInstrumentQueryDaoHibernate extends InventoryDaoHibernate<In
 
   @Override
   public List<Instrument> searchEligibleBookingTargets(String query, int limit, User subject) {
-    boolean byGlobalId = query.matches("(?i)IN[0-9]+");
+    boolean browse = query == null || query.isBlank();
+    boolean byGlobalId = !browse && query.matches("(?i)IN[0-9]+");
     String searchPredicate =
-        byGlobalId
-            ? "concat('IN', cast(instrument.id as string)) = :query"
-            : "lower(instrument.editInfo.name) like :query escape '!'";
+        browse
+            ? ""
+            : byGlobalId
+                ? " and concat('IN', cast(instrument.id as string)) = :query"
+                : " and lower(instrument.editInfo.name) like :query escape '!'";
     StringBuilder hql =
         new StringBuilder("from Instrument instrument where type(instrument) = Instrument and")
-            .append(" instrument.deleted = false and ")
+            .append(" instrument.deleted = false")
             .append(searchPredicate)
             .append(" and not exists (select configuration.id from")
             .append(" BookingConfiguration configuration where configuration.target.type =")
@@ -183,12 +186,15 @@ public class BookingInstrumentQueryDaoHibernate extends InventoryDaoHibernate<In
         getSession()
             .createQuery(hql.toString(), Instrument.class)
             .setParameter(
-                "query",
-                byGlobalId
-                    ? query.toUpperCase(Locale.ROOT)
-                    : "%" + LikeEscaper.escape(query.toLowerCase(Locale.ROOT)) + "%")
-            .setParameter("targetType", BookableTargetType.INSTRUMENT)
+                "targetType", com.researchspace.model.booking.BookableTargetType.INSTRUMENT)
             .setMaxResults(limit);
+    if (!browse) {
+      targetQuery.setParameter(
+          "query",
+          byGlobalId
+              ? query.toUpperCase(Locale.ROOT)
+              : "%" + LikeEscaper.escape(query.toLowerCase(Locale.ROOT)) + "%");
+    }
     if (!subject.hasSysadminRole()) {
       targetQuery.setParameter("subjectId", subject.getId());
     }
