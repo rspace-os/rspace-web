@@ -66,23 +66,40 @@ public class BookingNotificationSubscriptionManagerImpl
   @Transactional(readOnly = true)
   public Preferences getPreferences(User subject, User actor) {
     requireAccess(subject, actor);
-    return new Preferences(
-        autoSubscribe(subject), preferenceEnabled(subject, Preference.BOOKING_NOTIFY_OWN_ACTIONS));
+    return preferences(subject);
   }
 
   @Override
-  public Preferences replacePreferences(
-      boolean autoSubscribeOwnedItems, boolean notifyOwnActions, User subject, User actor) {
+  public Preferences replacePreferences(PreferenceChanges changes, User subject, User actor) {
     requireAccess(subject, actor);
-    userManager.setPreference(
+    java.util.Objects.requireNonNull(changes, "Booking notification preference changes");
+    setPreference(
+        subject,
         Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS,
-        Boolean.toString(autoSubscribeOwnedItems),
-        subject.getUsername());
-    userManager.setPreference(
-        Preference.BOOKING_NOTIFY_OWN_ACTIONS,
-        Boolean.toString(notifyOwnActions),
-        subject.getUsername());
-    return new Preferences(autoSubscribeOwnedItems, notifyOwnActions);
+        changes.autoSubscribeOwnedItems());
+    setPreference(subject, Preference.BOOKING_NOTIFY_OWN_ACTIONS, changes.notifyOwnActions());
+    setPreference(subject, Preference.NOTIFICATION_BOOKING_CREATED_PREF, changes.notifyOnCreated());
+    setPreference(
+        subject, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, changes.notifyOnCancelled());
+    return new Preferences(
+        changes.autoSubscribeOwnedItems(),
+        changes.notifyOwnActions(),
+        changes.notifyOnCreated(),
+        changes.notifyOnCancelled(),
+        preferenceEnabled(subject, Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL));
+  }
+
+  private Preferences preferences(User subject) {
+    return new Preferences(
+        autoSubscribe(subject),
+        preferenceEnabled(subject, Preference.BOOKING_NOTIFY_OWN_ACTIONS),
+        preferenceEnabled(subject, Preference.NOTIFICATION_BOOKING_CREATED_PREF),
+        preferenceEnabled(subject, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF),
+        preferenceEnabled(subject, Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL));
+  }
+
+  private void setPreference(User subject, Preference preference, boolean value) {
+    userManager.setPreference(preference, Boolean.toString(value), subject.getUsername());
   }
 
   @Override
@@ -289,17 +306,8 @@ public class BookingNotificationSubscriptionManagerImpl
   }
 
   private void requireAccess(User subject, User actor) {
-    if (subject == null
-        || actor == null
-        || !subject.isEnabled()
-        || !actor.isEnabled()
-        || subject.isAccountLocked()
-        || actor.isAccountLocked()) {
+    if (!BookingUserAccess.hasAccess(featureFlags, subject, actor)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
-    }
-    if (!featureFlags.isFeatureFlagEnabled(
-        com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED, subject)) {
-      throw new NotFoundException();
     }
   }
 
