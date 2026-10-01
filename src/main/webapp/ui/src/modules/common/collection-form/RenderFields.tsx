@@ -33,7 +33,7 @@ function ConditionalGroup<TDocument>({
   condition: GroupCondition<TDocument>;
   form: FormStore;
 }) {
-  // ponytail: formisch 1.0.0-rc.0 only tracks reads inside a component that called one of its hooks,
+  // ponytail: formisch 1.1.0 only tracks reads inside a component that called one of its hooks,
   // and its types require a non-empty path. The empty path resolves to the root store, which is a
   // valid field store at runtime, so this subscribes to the whole form. Switch to a public
   // form-level subscription if formisch exports one.
