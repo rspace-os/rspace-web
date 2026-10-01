@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { InventoryLocationLink } from "@/modules/common/ui/inventory-item";
@@ -14,6 +15,7 @@ export function BookableItemFactsAside({
   displayTimeZone: string;
 }) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const headingId = useId();
   const target = configuration.target;
 
@@ -61,7 +63,7 @@ export function BookableItemFactsAside({
                     {new Intl.DateTimeFormat(i18n.language, {
                       dateStyle: "medium",
                       timeStyle: "short",
-                      hourCycle: bookingHourCycle(),
+                      hourCycle: bookingHourCycle(timeFormat),
                       timeZone: displayTimeZone,
                     }).format(new Date(configuration.createdAt))}
                   </time>

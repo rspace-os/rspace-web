@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -16,6 +17,7 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingEventKind;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.comms.data.BookingNotificationData;
@@ -75,9 +77,15 @@ class BookingNotificationServiceTest {
     Instrument instrument = instrument("<Mic & scope>");
     TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, actor);
     when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
+    List<BookingNotificationRecipient> recipients =
+        List.of(
+            new BookingNotificationRecipient(
+                recipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC));
     when(recipientReader.selectRecipients(INSTRUMENT_ID, notificationType, actor.getId()))
-        .thenReturn(
-            List.of(new BookingNotificationRecipient(recipient, ZoneId.of("Europe/Berlin"))));
+        .thenReturn(recipients);
+    when(recipientReader.selectRecipients(
+            INSTRUMENT_ID, notificationType, actor.getId(), actor.getId()))
+        .thenReturn(recipients);
 
     service.notify(booking, actor, notificationType);
 
@@ -99,6 +107,7 @@ class BookingNotificationServiceTest {
     assertEquals("IN12", data.getInstrumentGlobalIdentifier());
     assertEquals("2026-01-02T03:04:05Z", data.getStartTime());
     assertEquals("2026-01-02T04:04:05Z", data.getEndTime());
+    assertFalse(config.getValue().isNotificationEventPreferenceOverride());
     // The saved message is also the email body, so it links with absolute URLs.
     String bookingLink =
         "<a href=\"https://rspace.example.org/booking/calendar/bookings/42\">42</a>";
@@ -124,7 +133,7 @@ class BookingNotificationServiceTest {
   }
 
   @Test
-  void sendsSeparateMessagesUsingEachSelectedRecipientsZone() {
+  void sendsSeparateMessagesUsingEachSelectedRecipientsZoneAndClock() {
     User actor = user(1L, "actor");
     User berlinRecipient = user(2L, "berlinRecipient");
     User losAngelesRecipient = user(3L, "losAngelesRecipient");
@@ -134,9 +143,10 @@ class BookingNotificationServiceTest {
             INSTRUMENT_ID, NotificationType.NOTIFICATION_BOOKING_CREATED, actor.getId()))
         .thenReturn(
             List.of(
-                new BookingNotificationRecipient(berlinRecipient, ZoneId.of("Europe/Berlin")),
                 new BookingNotificationRecipient(
-                    losAngelesRecipient, ZoneId.of("America/Los_Angeles"))));
+                    berlinRecipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC),
+                new BookingNotificationRecipient(
+                    losAngelesRecipient, ZoneId.of("America/Los_Angeles"), BookingTimeFormat.H24)));
 
     service.notify(
         booking(BOOKING_ID, BookingEventKind.BOOKING, actor),
@@ -155,8 +165,41 @@ class BookingNotificationServiceTest {
         configs.getAllValues().get(1).getNotificationTargetsOverride());
     assertTrue(messages.getAllValues().get(0).contains("Jan 2, 2026, 4:04 AM"));
     assertTrue(messages.getAllValues().get(0).contains("Europe/Berlin, UTC+01:00"));
-    assertTrue(messages.getAllValues().get(1).contains("Jan 1, 2026, 7:04 PM"));
+    assertTrue(
+        messages.getAllValues().get(1).contains("Jan 1, 2026, 19:04"),
+        messages.getAllValues().get(1));
     assertTrue(messages.getAllValues().get(1).contains("America/Los_Angeles, UTC-08:00"));
+  }
+
+  @Test
+  void addsCancellationReasonAndPreferenceOverrideForARequesterCancelledBySomeoneElse() {
+    User actor = user(1L, "owner");
+    User requester = user(2L, "requester");
+    Instrument instrument = instrument("Microscope");
+    TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, requester);
+    booking.setCancellationReason("Needs <repair>");
+    when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
+    when(recipientReader.selectRecipients(
+            INSTRUMENT_ID,
+            NotificationType.NOTIFICATION_BOOKING_CANCELLED,
+            actor.getId(),
+            requester.getId()))
+        .thenReturn(
+            List.of(
+                new BookingNotificationRecipient(
+                    requester, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC)));
+
+    service.notify(booking, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+
+    ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
+    ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
+    verify(communicationManager).notify(eq(actor), isNull(), config.capture(), message.capture());
+    assertTrue(config.getValue().isNotificationEventPreferenceOverride());
+    assertEquals(
+        "Needs <repair>",
+        ((BookingNotificationData) config.getValue().getNotificationData())
+            .getCancellationReason());
+    assertTrue(message.getValue().contains("Reason: Needs &lt;repair&gt;"), message.getValue());
   }
 
   @Test
@@ -201,7 +244,7 @@ class BookingNotificationServiceTest {
         actor,
         NotificationType.NOTIFICATION_BOOKING_CREATED);
 
-    verify(recipientReader, never()).selectRecipients(any(), any(), any());
+    verify(recipientReader, never()).selectRecipients(any(), any(), any(), any());
     verify(communicationManager, never()).notify(any(), any(), any(), any());
   }
 

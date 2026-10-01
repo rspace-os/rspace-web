@@ -11,6 +11,7 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.CommunicationTarget;
@@ -324,8 +325,8 @@ public class DashboardController extends BaseController {
 
   /**
    * Renders booking notifications for the recipient's display zone, in the app language but with
-   * the 12- or 24-hour clock of the browser region named by {@code acceptLanguage}, as the booking
-   * pages do.
+   * the recipient's explicit Booking time format or, for Automatic, the 12- or 24-hour clock of the
+   * browser region named by {@code acceptLanguage}, as the booking pages do.
    */
   Map<Long, String> bookingNotificationMessages(
       List<Notification> notifications,
@@ -350,6 +351,7 @@ public class DashboardController extends BaseController {
     Map<Long, String> messages = new HashMap<>();
     Locale locale = LocaleContextHolder.getLocale();
     Locale regionalLocale = BookingNotificationMessageFormatter.regionalLocaleFrom(acceptLanguage);
+    BookingTimeFormat timeFormat = preferences == null ? null : preferences.timeFormat();
     for (Notification notification : notifications) {
       NotificationType type = notification.getNotificationType();
       if (!BookingNotificationMessageFormatter.isBookingNotification(type)) {
@@ -359,7 +361,8 @@ public class DashboardController extends BaseController {
         if (notification.getNotificationDataObject() instanceof BookingNotificationData data) {
           messages.put(
               notification.getId(),
-              bookingMessageFormatter.format(type, data, displayZone, locale, regionalLocale));
+              bookingMessageFormatter.format(
+                  type, data, displayZone, locale, regionalLocale, timeFormat));
         } else {
           messages.put(
               notification.getId(),
@@ -368,7 +371,8 @@ public class DashboardController extends BaseController {
                   notification.getNotificationMessage(),
                   displayZone,
                   locale,
-                  regionalLocale));
+                  regionalLocale,
+                  timeFormat));
         }
       } catch (RuntimeException ex) {
         log.warn(
@@ -378,7 +382,12 @@ public class DashboardController extends BaseController {
         messages.put(
             notification.getId(),
             bookingMessageFormatter.formatLegacy(
-                type, notification.getNotificationMessage(), displayZone, locale, regionalLocale));
+                type,
+                notification.getNotificationMessage(),
+                displayZone,
+                locale,
+                regionalLocale,
+                timeFormat));
       }
     }
     return messages;

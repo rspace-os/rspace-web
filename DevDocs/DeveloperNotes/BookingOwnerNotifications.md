@@ -8,7 +8,8 @@ They use `NOTIFICATION_BOOKING_CREATED_PREF` and
 `BookingNotificationService` notifies enabled subscribers with current instrument read access
 after a booking is saved or cancelled, including archive-triggered cancellations. Maintenance,
 ordinary edits, repeated cancellations, deleted instruments, and the recipient's own actions
-do not generate notifications. Owners can subscribe automatically; other readers opt in.
+do not generate notifications. Restoring a cancelled booking uses the creation type, and so the
+creation switch, with a "was restored" message (`BookingNotificationData.restored`). Owners can subscribe automatically; other readers opt in.
 See [Booking notification subscriptions](BookingNotificationSubscriptions.md) for eligibility,
 selection timing, and per-user settings.
 
@@ -22,6 +23,12 @@ message used by email follows Custom or Institution mode; Browser mode falls bac
 because email delivery has no browser session. The time offset appears with the zone so repeated
 local times at a DST transition remain distinct. Email delivery also respects
 `BROADCAST_NOTIFICATIONS_BY_EMAIL`.
+
+The dashboard writes these times in the app language with the 12- or 24-hour clock of the
+browser's region, as the Booking pages do. It takes the region from the primary `Accept-Language`
+locale, because `LocaleFilter` replaces the request locale with the app language, and formats with
+ICU, because java.time ignores the Unicode `hc` keyword. Email has no browser, so the stored
+message keeps the app language's own clock.
 
 Older notification rows have no structured data. The dashboard reformats their final ISO interval
 only when both trailing values match the booking message shape. Existing rows remain readable and

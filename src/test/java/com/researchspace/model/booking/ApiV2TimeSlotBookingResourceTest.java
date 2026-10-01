@@ -33,11 +33,17 @@ class ApiV2TimeSlotBookingResourceTest {
         List.copyOf(
             ApiV2TimeSlotBookingResource.DESCRIPTION.writableFields(WriteOperation.CREATE)));
     assertEquals(
-        List.of("start", "end", "state", "purpose"),
+        List.of("start", "end", "state", "cancellationReason", "purpose"),
         List.copyOf(
             ApiV2TimeSlotBookingResource.DESCRIPTION.writableFields(WriteOperation.UPDATE)));
     for (String privateField :
-        List.of("bookedBy", "createdBy", "privacy", "canEdit", "canViewConfiguration")) {
+        List.of(
+            "bookedBy",
+            "createdBy",
+            "privacy",
+            "canEdit",
+            "canViewConfiguration",
+            "cancellationReason")) {
       assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField(privateField).sortable());
       assertFalse(
           ApiV2TimeSlotBookingResource.DESCRIPTION
@@ -58,6 +64,14 @@ class ApiV2TimeSlotBookingResourceTest {
         ApiV2TimeSlotBookingResource.calendarFilterDescription(
             com.researchspace.model.collection.AccessFunction.authenticated());
     new RsqlFilterParser(calendar).parse("timezone==UTC");
+    // "Booked by" is the only people filter; item filters reused as event filters may name a
+    // location, which the Booking services resolve before compiling.
+    assertEquals(
+        List.of("target"),
+        ApiV2TimeSlotBookingResource.DESCRIPTION.relationships().stream()
+            .map(relationship -> relationship.name())
+            .toList());
+    new RsqlFilterParser(calendar).parse("requesterId==42;location==IC12");
     new RsqlFilterParser(calendar)
         .parse(
             "purpose=contains=scope;bookedBy=contains=ada;privacy==full;"
@@ -130,22 +144,49 @@ class ApiV2TimeSlotBookingResourceTest {
     TimeSlotBooking booking = booking(requester);
     booking.setCreatedBy(requester);
 
+    requester.setId(42L);
     Map<String, Object> busy = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
     assertEquals("busy", busy.get("privacy"));
     assertNull(busy.get("purpose"));
+    assertNull(busy.get("cancellationReason"));
     assertNull(busy.get("bookedBy"));
+    // A busy event does not name its requester by ID either.
+    assertTrue(busy.containsKey("requesterId"));
+    assertNull(busy.get("requesterId"));
     assertEquals(false, busy.get("canViewConfiguration"));
     assertEquals("Secret", booking.getPurpose());
+    var calendar =
+        ApiV2TimeSlotBookingResource.calendarFilterDescription(
+            com.researchspace.model.collection.AccessFunction.authenticated());
+    Map<String, Object> busyFacets = calendar.toDocument(booking);
+    for (String field :
+        List.of("requesterId", "requesterUsername", "requesterFirstName", "requesterLastName")) {
+      assertNull(busyFacets.get(field), field);
+    }
 
     booking.prepareView(BookingPrivacy.FULL, true, true);
     Map<String, Object> full = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
     assertEquals("full", full.get("privacy"));
+    assertEquals(42L, full.get("requesterId"));
+    assertEquals("ada", calendar.toDocument(booking).get("requesterUsername"));
     assertEquals("Secret", full.get("purpose"));
+    booking.setCancellationReason("Needs recalibration");
+    full = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
+    assertEquals("Needs recalibration", full.get("cancellationReason"));
     assertEquals("Ada Lovelace (ada)", full.get("bookedBy"));
     assertEquals("Ada Lovelace (ada)", full.get("createdBy"));
     assertEquals("BOOKING", full.get("kind"));
     assertEquals(true, full.get("canEdit"));
     assertEquals(true, full.get("canViewConfiguration"));
+  }
+
+  @Test
+  void recordsTheBookedItemInTheAuditSnapshot() {
+    TimeSlotBooking booking = booking(new User("ada"));
+    assertEquals(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), booking.getAuditTarget());
+    booking.setBookingConfiguration(null);
+    assertNull(booking.getAuditTarget());
   }
 
   @Test

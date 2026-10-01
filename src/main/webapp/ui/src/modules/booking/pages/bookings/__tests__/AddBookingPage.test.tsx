@@ -101,6 +101,7 @@ const createdBooking = {
   state: "CONFIRMED",
   kind: "BOOKING",
   privacy: "full",
+  cancellationReason: null,
   purpose: null,
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,

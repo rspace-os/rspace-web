@@ -2,24 +2,34 @@ package com.researchspace.api.v2.contract;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.booking.dao.BookingCalendarQuery;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.service.BookingResourceRoleScheme;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingRequesterFilters;
+import com.researchspace.model.booking.BookingState;
+import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.model.inventory.field.ExtraField;
@@ -29,11 +39,14 @@ import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -71,6 +84,9 @@ class ApiV2FilterExpansionMVCIT {
   @Autowired private PlatformTransactionManager transactionManager;
   @Autowired private SessionFactory sessionFactory;
   @Autowired private ApiV2ResourceCatalog catalog;
+  @Autowired private com.researchspace.booking.dao.TimeSlotBookingDao timeSlotBookingDao;
+  @Autowired private com.researchspace.dao.ContainerDao containerDao;
+  @Autowired private BookingCalendarQuery calendarQuery;
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
@@ -78,6 +94,7 @@ class ApiV2FilterExpansionMVCIT {
   private Statistics statistics;
   private final List<Long> configurationIds = new ArrayList<>();
   private final List<CreatedInstrument> instruments = new ArrayList<>();
+  private final List<Long> eventsOfThisTest = new ArrayList<>();
   private User owner;
   private User inaccessibleOwner;
   private String ownerKey;
@@ -145,6 +162,114 @@ class ApiV2FilterExpansionMVCIT {
     assertListAndCount(
         scoped, "target.relationTo==booking-instruments", Set.of(matchingConfig, otherConfig));
     assertBadRequest("id=in=(" + join(scoped) + ");target==XX" + matchingTarget);
+
+    // Location: the immediate parent Container, matched only where the caller may read it. An
+    // unreadable Container behaves exactly like one that does not exist, for rows and totals.
+    ApiContainer room = fixture.container(owner, "cold room " + fixture.marker());
+    long locatedTarget = fixture.instrumentIn(owner, "located " + fixture.marker(), room);
+    ApiContainer privateRoom = fixture.container(inaccessibleOwner, "vault " + fixture.marker());
+    long hiddenTarget =
+        fixture.instrumentIn(inaccessibleOwner, "vaulted " + fixture.marker(), privateRoom);
+    makePrivate(hiddenTarget);
+    makeContainerPrivate(privateRoom.getId());
+    long locatedConfig = configuration(locatedTarget, owner);
+    long hiddenConfig = configuration(hiddenTarget, owner);
+    List<Long> located =
+        List.of(matchingConfig, otherConfig, inaccessibleConfig, locatedConfig, hiddenConfig);
+    String missing = "IC90000000000000";
+    long workbench = parentId(matchingTarget);
+
+    assertListAndCount(located, "location==IC" + room.getId(), Set.of(locatedConfig));
+    assertListAndCount(located, "location.value==" + room.getId(), Set.of(locatedConfig));
+    assertListAndCount(located, "location==IC" + privateRoom.getId(), Set.of());
+    assertListAndCount(located, "location==" + missing, Set.of());
+    Set<Long> readable = Set.of(matchingConfig, otherConfig, locatedConfig);
+    assertListAndCount(located, "location!=IC" + privateRoom.getId(), readable);
+    assertListAndCount(located, "location!=" + missing, readable);
+    assertListAndCount(
+        located,
+        "location=in=(IC" + room.getId() + ",IC" + privateRoom.getId() + ")",
+        Set.of(locatedConfig));
+    // A workbench shares the Container ID space, so IC plus its ID names it too.
+    assertListAndCount(located, "location==IC" + workbench, Set.of(matchingConfig, otherConfig));
+    assertListAndCount(located, "location=exists=true", readable);
+    assertListAndCount(located, "location=exists=false", Set.of());
+    assertBadRequest("id=in=(" + join(located) + ");location==BE" + workbench);
+    assertLocations("globalId=IC" + privateRoom.getId(), List.of());
+    assertLocations("q=vault " + fixture.marker(), List.of());
+    assertLocations("q=IC" + privateRoom.getId(), List.of());
+    assertLocations("globalId=IC" + room.getId(), List.of("IC" + room.getId()));
+    assertLocations("q=BE" + workbench, List.of("BE" + workbench));
+  }
+
+  @Test
+  @DisplayName("requester fields and filters name nobody on an event shown only as busy")
+  void requesterFieldsAndFiltersSkipBusyEvents() throws Exception {
+    // The owner reads the requester's items through a lab group; the stranger shares nothing.
+    User requester = fixture.otherUser();
+    User stranger = fixture.thirdUser();
+    owner = fixture.makeOwnerRoleVisibleTo(owner, requester);
+    Instant start = alignedStart();
+    Instant end = start.plus(1, ChronoUnit.HOURS);
+    long ownItem = instrument(owner, "own " + fixture.marker());
+    long sharedItem = instrument(requester, "shared " + fixture.marker());
+    long strangerItem = instrument(stranger, "stranger " + fixture.marker());
+    makePrivate(strangerItem);
+    fixture.bookingConfiguration(ownItem, "UTC", ownerKey);
+    fixture.bookingConfiguration(sharedItem, "UTC", fixture.otherUserKey());
+    fixture.bookingConfiguration(strangerItem, "UTC", fixture.thirdUserKey());
+    long ownBooking = fixture.booking(ownItem, start, end, ownerKey);
+    long sharedBooking = fixture.booking(sharedItem, start, end, fixture.otherUserKey());
+    long strangerBooking = fixture.booking(strangerItem, start, end, fixture.thirdUserKey());
+    transactions.executeWithoutResult(
+        ignored -> {
+          TimeSlotBooking booking = timeSlotBookingDao.get(strangerBooking);
+          booking.setState(BookingState.CANCELLED);
+          booking.setCancellationReason("Instrument needs recalibration");
+        });
+    List<Long> scoped = List.of(ownBooking, sharedBooking, strangerBooking);
+    eventsOfThisTest.addAll(scoped);
+
+    // Events shown in full name their requester; My Bookings filters by the caller's own ID.
+    JsonNode shared = bookingDocument(sharedBooking);
+    assertEquals("full", shared.path("privacy").asText(), shared.toString());
+    assertEquals(requester.getId(), shared.path("requesterId").asLong(), shared.toString());
+    assertBookings(scoped, "requesterId==" + owner.getId(), Set.of(ownBooking));
+    assertBookings(scoped, "requesterId==" + requester.getId(), Set.of(sharedBooking));
+    assertBookings(scoped, "requesterId==" + stranger.getId(), Set.of());
+    assertBookings(scoped, "requesterId!=" + stranger.getId(), Set.of(ownBooking, sharedBooking));
+
+    // The Calendar event filters, its booked-by facet and its Search follow the same rule.
+    assertCalendarEvents(start, end, "requesterId==" + owner.getId(), null, Set.of(ownBooking));
+    assertCalendarEvents(start, end, "requesterId==" + stranger.getId(), null, Set.of());
+    assertCalendarEvents(
+        start, end, "requesterUsername=contains=" + stranger.getUsername(), null, Set.of());
+    assertCalendarEvents(
+        start, end, "bookedBy=contains=" + requester.getUsername(), null, Set.of(sharedBooking));
+    assertCalendarEvents(start, end, "bookedBy=contains=" + stranger.getUsername(), null, Set.of());
+    assertCalendarEvents(start, end, null, stranger.getUsername(), Set.of());
+    assertCalendarEvents(start, end, null, requester.getUsername(), Set.of(sharedBooking));
+
+    // A busy-only event is one the caller may read without seeing its requester. The read policy
+    // grants none today, so omit it to stand in for one: the stranger's event renders no requester,
+    // and the guarded comparisons skip it, which the bare comparisons match.
+    String ids = "id=in=(" + join(scoped) + ")";
+    Map<String, Object> busy = directBookingDocument(strangerBooking);
+    assertEquals("busy", busy.get("privacy"));
+    assertTrue(busy.containsKey("requesterId"), busy.toString());
+    assertNull(busy.get("requesterId"), busy.toString());
+    assertNull(busy.get("bookedBy"), busy.toString());
+    assertNull(busy.get("cancellationReason"), busy.toString());
+    String byStranger = "requesterId==" + stranger.getId();
+    assertEquals(Set.of(strangerBooking), directBookings(ids + ";" + byStranger, false));
+    assertEquals(Set.of(), directBookings(ids + ";" + byStranger, true));
+    assertEquals(Set.of(ownBooking), directBookings(ids + ";requesterId==" + owner.getId(), true));
+    String strangerName = "requesterUsername=contains=" + stranger.getUsername();
+    assertEquals(Set.of(strangerBooking), directCalendarEvents(scoped, strangerName, false));
+    assertEquals(Set.of(), directCalendarEvents(scoped, strangerName, true));
+    assertEquals(Set.of(), directCalendarEvents(scoped, byStranger, true));
+    assertEquals(
+        Set.of(ownBooking), directCalendarEvents(scoped, "requesterId==" + owner.getId(), true));
   }
 
   @Test
@@ -403,6 +528,198 @@ class ApiV2FilterExpansionMVCIT {
     assertEquals(expected, actual, "direct query result set for " + filter);
     assertEquals(expected.size(), page.total(), "direct page count for " + filter);
     assertEquals(expected.size(), count, "direct count for " + filter);
+  }
+
+  private void assertBookings(List<Long> scopedIds, String filter, Set<Long> expected)
+      throws Exception {
+    String where = "id=in=(" + join(scopedIds) + ");" + filter;
+    MvcResult listed =
+        mockMvc
+            .perform(
+                get("/api/v2/bookings")
+                    .header("apiKey", ownerKey)
+                    .param("where", where)
+                    .param("limit", "100")
+                    .param("fields[bookings]", "id"))
+            .andReturn();
+    assertEquals(200, listed.getResponse().getStatus(), listed.getResponse().getContentAsString());
+    JsonNode listBody = OBJECT_MAPPER.readTree(listed.getResponse().getContentAsString());
+    Set<Long> actual = new HashSet<>();
+    listBody.path("docs").forEach(document -> actual.add(document.path("id").asLong()));
+    MvcResult counted =
+        mockMvc
+            .perform(get("/api/v2/bookings/count").header("apiKey", ownerKey).param("where", where))
+            .andReturn();
+    assertEquals(
+        200, counted.getResponse().getStatus(), counted.getResponse().getContentAsString());
+    JsonNode countBody = OBJECT_MAPPER.readTree(counted.getResponse().getContentAsString());
+    assertAll(
+        "booking filter results for " + where,
+        () -> assertEquals(expected, actual, "list result set"),
+        () -> assertEquals(expected.size(), listBody.path("totalDocs").asLong(), "list total"),
+        () -> assertEquals(expected.size(), countBody.path("totalDocs").asLong(), "count total"));
+  }
+
+  private void assertCalendarEvents(
+      Instant start, Instant end, String where, String search, Set<Long> expected)
+      throws Exception {
+    var request =
+        get("/api/v2/booking-calendar/events")
+            .header("apiKey", ownerKey)
+            .param("start", start.minus(1, ChronoUnit.HOURS).toString())
+            .param("end", end.plus(1, ChronoUnit.HOURS).toString())
+            .param("limit", "100");
+    if (where != null) {
+      request.param("where", where);
+    }
+    if (search != null) {
+      request.param("q", search);
+    }
+    MvcResult result = mockMvc.perform(request).andReturn();
+    assertEquals(200, result.getResponse().getStatus(), result.getResponse().getContentAsString());
+    JsonNode body = OBJECT_MAPPER.readTree(result.getResponse().getContentAsString());
+    Set<Long> actual = new HashSet<>();
+    body.path("docs").forEach(document -> actual.add(document.path("id").asLong()));
+    // Other tests may have events in the same window; only this test's events are compared.
+    actual.retainAll(Set.copyOf(eventsOfThisTest));
+    assertEquals(expected, actual, "calendar events for where=" + where + " q=" + search);
+  }
+
+  private JsonNode bookingDocument(long id) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/api/v2/bookings")
+                    .header("apiKey", ownerKey)
+                    .param("where", "id==" + id)
+                    .param("fields[bookings]", "id,privacy,requesterId"))
+            .andReturn();
+    assertEquals(200, result.getResponse().getStatus(), result.getResponse().getContentAsString());
+    JsonNode docs = OBJECT_MAPPER.readTree(result.getResponse().getContentAsString()).path("docs");
+    assertEquals(1, docs.size(), docs.toString());
+    return docs.get(0);
+  }
+
+  private void assertLocations(String query, List<String> expectedGlobalIds) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/api/v2/booking-catalogue/locations?" + query.replace(" ", "%20"))
+                    .header("apiKey", ownerKey))
+            .andReturn();
+    assertEquals(200, result.getResponse().getStatus(), result.getResponse().getContentAsString());
+    JsonNode body = OBJECT_MAPPER.readTree(result.getResponse().getContentAsString());
+    List<String> actual = new ArrayList<>();
+    body.path("items").forEach(item -> actual.add(item.path("globalId").asText()));
+    assertEquals(expectedGlobalIds, actual, "locations for " + query);
+    assertEquals(expectedGlobalIds.size(), body.path("total").asLong(), "location total");
+  }
+
+  /** Lists events without the root read policy, with or without the requester guard. */
+  private Set<Long> directBookings(String where, boolean guarded) {
+    var registration = catalog.find("bookings").orElseThrow();
+    ResourceRequest parsed =
+        ApiV2ResourceRequestParser.filtered(
+            where,
+            registration.description(),
+            catalog.registry(),
+            registration.runtimeFieldContext(owner, catalog::runtimeFieldsOf));
+    FilterExpression filter =
+        guarded
+            ? BookingRequesterFilters.visibleRequestersOnly(parsed.filter(), owner.getId())
+            : parsed.filter();
+    ResourceRequest request =
+        new ResourceRequest(
+            filter,
+            null,
+            parsed.sort(),
+            new ResourceRequest.Page(1, 100),
+            parsed.fieldSelections(),
+            parsed.includes(),
+            parsed.runtime());
+    var targetAccess = RelationshipReadAccess.forActor(catalog.registry(), owner);
+    return transactions
+        .execute(ignored -> timeSlotBookingDao.getReadableResources(request, targetAccess))
+        .resources()
+        .stream()
+        .map(TimeSlotBooking::getId)
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  /** Renders one event loaded without the root read policy and without a prepared full view. */
+  private Map<String, Object> directBookingDocument(long id) {
+    var targetAccess = RelationshipReadAccess.forActor(catalog.registry(), owner);
+    return transactions.execute(
+        ignored ->
+            ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(
+                timeSlotBookingDao.findReadableById(id, targetAccess).orElseThrow()));
+  }
+
+  /**
+   * Lists events without the root read policy under a Calendar event filter, either as the Calendar
+   * compiles it or as the bare comparison.
+   */
+  private Set<Long> directCalendarEvents(List<Long> scopedIds, String where, boolean guarded) {
+    var registration = catalog.find("bookings").orElseThrow();
+    var runtime = registration.runtimeFieldContext(owner, catalog::runtimeFieldsOf);
+    var calendar =
+        ApiV2TimeSlotBookingResource.calendarFilterDescription(
+            registration.description().accessPolicy().readAccess());
+    ResourceRequest filter =
+        ApiV2ResourceRequestParser.filtered(where, calendar, catalog.registry(), runtime);
+    ResourceRequest scope =
+        ApiV2ResourceRequestParser.filtered(
+            "id=in=(" + join(scopedIds) + ")",
+            registration.description(),
+            catalog.registry(),
+            runtime);
+    ResourceRequest request =
+        new ResourceRequest(
+            scope.filter(),
+            null,
+            scope.sort(),
+            new ResourceRequest.Page(1, 100),
+            scope.fieldSelections(),
+            scope.includes(),
+            scope.runtime());
+    var targetAccess = RelationshipReadAccess.forActor(catalog.registry(), owner);
+    return transactions
+        .execute(
+            ignored ->
+                timeSlotBookingDao.getCalendarResources(
+                    request,
+                    targetAccess,
+                    guarded
+                        ? calendarQuery.eventFilter(filter, null, owner)
+                        : new RsqlCollectionQuery(calendar, "booking", "bareCalendarFilter")
+                            .translate(filter.filter(), targetAccess, filter.runtime())))
+        .resources()
+        .stream()
+        .map(TimeSlotBooking::getId)
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  private long parentId(long instrumentId) {
+    return transactions.execute(
+        ignored ->
+            instrumentDao
+                .getParentLocationSummaries(Set.of(instrumentId))
+                .get(instrumentId)
+                .containerId());
+  }
+
+  private void makeContainerPrivate(long containerId) {
+    transactions.executeWithoutResult(
+        ignored -> {
+          Container container = containerDao.get(containerId);
+          container.setSharingMode(InventorySharingMode.OWNER_ONLY);
+          containerDao.save(container);
+        });
+  }
+
+  private static Instant alignedStart() {
+    Instant candidate = Instant.now().plus(7, ChronoUnit.DAYS);
+    return Instant.ofEpochSecond(((candidate.getEpochSecond() + 299) / 300) * 300);
   }
 
   private void assertBadRequest(String where) throws Exception {

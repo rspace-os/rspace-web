@@ -249,7 +249,6 @@ export default function BookingInlineEditForm() {
               submissionBlocked={blocked}
               windowAdjustment={draftBridge.windowAdjustment}
               windowAdjustmentTarget={draftBridge.windowAdjustmentTarget}
-              onWindowAdjustmentApplied={draftBridge.onWindowAdjustmentApplied}
               onDraftChange={draftBridge.onDraftChange}
               onStateChange={handleStateChange}
               onSubmit={(submission) => mutation.mutateAsync(submission)}
@@ -266,6 +265,7 @@ export default function BookingInlineEditForm() {
         <div className="@4xl:col-start-2 @4xl:row-start-2">
           <BookingDayTimelineAside
             target={configuration.data}
+            formContainerRef={panelRef}
             draft={draftBridge.draft ?? originalDraft}
             timezone={displayTimeZone}
             token={token}

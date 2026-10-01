@@ -3,6 +3,10 @@ import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { CompactBookingCreationDialog } from "@/modules/booking/creation/CompactBookingCreationDialog";
+import {
+  BookingTimeFormatProvider,
+  useBookingDisplayPreferences,
+} from "@/modules/booking/domain/bookingDisplayPreferences";
 import i18n from "@/modules/common/i18n";
 import {
   SidebarGroup,
@@ -27,16 +31,19 @@ export function createBookingIndexRoute<TParentRoute extends AnyRoute>(bookingRo
 }
 
 export default function BookingPage() {
+  const preferences = useBookingDisplayPreferences();
   return (
-    <BookingCreationStoreProvider>
-      <div className="mx-auto w-full max-w-7xl">
-        <BookingBreadcrumbs />
-        <Outlet />
-      </div>
-      <Suspense fallback={null}>
-        <CompactBookingCreationDialog />
-      </Suspense>
-    </BookingCreationStoreProvider>
+    <BookingTimeFormatProvider timeFormat={preferences.timeFormat}>
+      <BookingCreationStoreProvider>
+        <div className="mx-auto w-full max-w-7xl">
+          <BookingBreadcrumbs />
+          <Outlet />
+        </div>
+        <Suspense fallback={null}>
+          <CompactBookingCreationDialog />
+        </Suspense>
+      </BookingCreationStoreProvider>
+    </BookingTimeFormatProvider>
   );
 }
 

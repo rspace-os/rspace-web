@@ -7,7 +7,7 @@ import {
   OpenDaysSchema,
   OpeningExceptionsSchema,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { type BookingTimeFormat, bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
@@ -190,6 +190,8 @@ function parsedArray(value: unknown): unknown {
 
 /** Open days as weekday names, and each exception as `Weekday HH:mm–HH:mm`; otherwise undefined. */
 function openingValue(key: string, value: unknown, locale: string): string | undefined {
+  // A midnight close is stored as 24:00 and shown as 00:00, as everywhere else.
+  if (key === "openingEnd" && value === "24:00") return "00:00";
   if (key === "openDays") {
     const days = v.safeParse(OpenDaysSchema, parsedArray(value));
     if (days.success)
@@ -249,29 +251,32 @@ export function recordedValues(
   payload: AuditEvent["payload"],
   locale: string,
   words?: RecordedValueWords,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): Array<[string, string]> {
   const dateFormat = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "long",
-    hourCycle: bookingHourCycle(),
+    hourCycle: bookingHourCycle(timeFormat),
     timeZone: "UTC",
   });
-  return Object.entries(payload).map(([key, value]) => {
-    if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
-      const date = new Date(value);
-      if (Number.isFinite(date.getTime())) return [key, dateFormat.format(date)];
-    }
-    const opening = openingValue(key, value, locale);
-    if (opening !== undefined) return [key, opening];
-    const word = words && wordValue(key, value, words);
-    if (word !== undefined) return [key, word];
-    return [
-      key,
-      value === null || value === undefined
-        ? "—"
-        : typeof value === "object"
-          ? JSON.stringify(value)
-          : String(value as string | number | boolean),
-    ];
-  });
+  return Object.entries(payload)
+    .filter(([key, value]) => !(key === "cancellationReason" && value === null))
+    .map(([key, value]) => {
+      if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
+        const date = new Date(value);
+        if (Number.isFinite(date.getTime())) return [key, dateFormat.format(date)];
+      }
+      const opening = openingValue(key, value, locale);
+      if (opening !== undefined) return [key, opening];
+      const word = words && wordValue(key, value, words);
+      if (word !== undefined) return [key, word];
+      return [
+        key,
+        value === null || value === undefined
+          ? "—"
+          : typeof value === "object"
+            ? JSON.stringify(value)
+            : String(value as string | number | boolean),
+      ];
+    });
 }

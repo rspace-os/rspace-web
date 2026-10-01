@@ -461,7 +461,8 @@ public class CommunicationManagerImpl implements CommunicationManager {
     toNotify.remove(originator);
     Set<User> toRemove = new HashSet<>();
     for (User u : toNotify) {
-      if (!u.wantsNotificationFor(config.getNotificationType())) {
+      if (!config.isNotificationEventPreferenceOverride()
+          && !u.wantsNotificationFor(config.getNotificationType())) {
         toRemove.add(u);
       }
     }

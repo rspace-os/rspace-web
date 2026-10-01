@@ -10,6 +10,8 @@ import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.service.BookingBufferConflictException;
+import com.researchspace.booking.service.BookingCancellationReasonLengthException;
+import com.researchspace.booking.service.BookingCancellationReasonRequiresCancelException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingDurationException;
 import com.researchspace.booking.service.BookingOverlapException;
@@ -136,6 +138,16 @@ public final class TimeSlotBookingResourceOperations
                         "errors.api.v2.booking.state.transition",
                         "The requested state transition is invalid."),
                     mapping(
+                        BookingCancellationReasonLengthException.class,
+                        HttpStatus.BAD_REQUEST,
+                        "errors.api.v2.booking.cancellationReason.length",
+                        "The cancellation reason must not exceed 500 characters."),
+                    mapping(
+                        BookingCancellationReasonRequiresCancelException.class,
+                        HttpStatus.BAD_REQUEST,
+                        "errors.api.v2.booking.cancellationReason.requiresCancel",
+                        "A cancellation reason can only be supplied when cancelling a booking."),
+                    mapping(
                         BookingConcurrentModificationException.class,
                         HttpStatus.PRECONDITION_FAILED,
                         "errors.api.v2.booking.concurrentModification",
@@ -174,6 +186,14 @@ public final class TimeSlotBookingResourceOperations
                         "2026-10-25T09:00:00Z",
                         "purpose",
                         "Image plate 4"))
+                .build(),
+            ResourceOperation.UPDATE,
+            OpenApiOperationDocumentation.builder()
+                .description("Updates or cancels one booking.")
+                .requestExample(
+                    Map.of(
+                        "state", "CANCELLED",
+                        "cancellationReason", "Instrument needs recalibration"))
                 .build()),
         Map.of(ResourceOperation.CREATE, createErrors, ResourceOperation.UPDATE, updateErrors),
         com.researchspace.model.collection.CollectionMutationLimits.DEFAULT);
@@ -285,7 +305,8 @@ public final class TimeSlotBookingResourceOperations
         value(document, "end", Date.class),
         document.changed("purpose"),
         value(document, "purpose", String.class),
-        value(document, "state", BookingState.class));
+        value(document, "state", BookingState.class),
+        value(document, "cancellationReason", String.class));
   }
 
   private ResolvedBookableTarget target(ParsedDocument document) {
