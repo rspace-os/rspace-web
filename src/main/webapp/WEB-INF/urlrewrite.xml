@@ -170,6 +170,14 @@
         <to>/newApp/index.jsp</to>
     </rule>
     <rule>
+        <from>/booking</from>
+        <to>/newApp/index.jsp</to>
+    </rule>
+    <rule>
+        <from>/booking/**</from>
+        <to>/newApp/index.jsp</to>
+    </rule>
+    <rule>
         <from>/public/maintenanceInProgress</from>
         <to>/newApp/index.jsp</to>
     </rule>
