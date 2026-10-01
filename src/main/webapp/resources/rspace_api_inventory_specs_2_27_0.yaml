@@ -5407,16 +5407,6 @@ components:
               $ref: "#/components/schemas/OperationAmount"
           required:
             - amountTaken
-    PoolOrigin:
-      description: |
-        An origin of a Pool, otherwise as `OperationOriginWithAmount`. `amountTaken` is required
-        unless the request sets `takeAll`, in which case it must be absent: a pool either takes
-        chosen amounts or pours every origin out completely.
-      allOf:
-        - $ref: "#/components/schemas/OperationOrigin"
-        - properties:
-            amountTaken:
-              $ref: "#/components/schemas/OperationAmount"
     CreatingOperationFields:
       description: |
         The fields shared by every operation that creates a sample: the sample's name, how many
@@ -5505,7 +5495,14 @@ components:
         Pool request. Two or more origins, all holding the same measurement category. `count` is
         optional and defaults to 1; it may not exceed 100.
 
-        Either every origin carries its own `amountTaken`, or `takeAll` is true and none does.
+        A request has one of two shapes: `PoolByAmounts`, where every origin carries its own
+        `amountTaken`, or `PoolTakeAll`, where `takeAll` is true and no origin carries one.
+      oneOf:
+        - $ref: "#/components/schemas/PoolByAmounts"
+        - $ref: "#/components/schemas/PoolTakeAll"
+    PoolByAmounts:
+      type: object
+      description: A Pool that takes a chosen amount from each origin. `takeAll` is absent or false.
       allOf:
         - $ref: "#/components/schemas/CreatingOperationFields"
         - properties:
@@ -5514,12 +5511,11 @@ components:
               minItems: 2
               maxItems: 100
               items:
-                $ref: "#/components/schemas/PoolOrigin"
+                $ref: "#/components/schemas/OperationOriginWithAmount"
             takeAll:
               type: boolean
-              description: >
-                Pool every origin's whole remaining quantity, read when the operation runs,
-                leaving each of them empty. No origin may then carry an `amountTaken`.
+              enum:
+                - false
           required:
             - origins
       example:
@@ -5532,6 +5528,41 @@ components:
             amountTaken:
               numericValue: 8
               unitId: 3
+        sampleName: Pooled lysate
+        count: 1
+        eachAmount:
+          numericValue: 13
+          unitId: 3
+    PoolTakeAll:
+      type: object
+      description: |
+        A Pool that takes every origin's whole remaining quantity, read when the operation runs,
+        leaving each of them empty. No origin may carry an `amountTaken`.
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origins:
+              type: array
+              minItems: 2
+              maxItems: 100
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/OperationOrigin"
+                not:
+                  required:
+                    - amountTaken
+            takeAll:
+              type: boolean
+              enum:
+                - true
+          required:
+            - origins
+            - takeAll
+      example:
+        origins:
+          - globalId: SS1234
+          - globalId: SS5678
+        takeAll: true
         sampleName: Pooled lysate
         count: 1
         eachAmount:
