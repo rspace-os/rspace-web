@@ -42,6 +42,9 @@ and CSV export show a non-null reason as free text, preserving line breaks and l
 date-looking text unchanged. Null reasons are omitted. Repeated cancellation with the
 current version and the same normalized reason writes no new audit event.
 
+Booking audit events unwrap Hibernate proxies before leaving the transaction so
+archive-triggered cancellations retain the entity's annotated audit fields.
+
 The Description column of a booking event starts with the recorded snapshot as
 `Label: value` pairs, using the item audit history's labels (open days as
 weekday names, a closing midnight as `00:00`, instants such as booking start

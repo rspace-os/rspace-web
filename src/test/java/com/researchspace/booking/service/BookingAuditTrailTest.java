@@ -25,6 +25,11 @@ import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.testutils.TestFactory;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.Set;
+import org.hibernate.bytecode.internal.bytebuddy.ByteBuddyState;
+import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.proxy.pojo.bytebuddy.ByteBuddyProxyFactory;
+import org.hibernate.proxy.pojo.bytebuddy.ByteBuddyProxyHelper;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.transaction.event.TransactionPhase;
@@ -187,6 +192,57 @@ class BookingAuditTrailTest {
     assertEquals(
         "Instrument needs recalibration\nBefore next run",
         parsed.getData().get("cancellationReason"));
+  }
+
+  @Test
+  void initializedHibernateProxyRetainsBookingCancellationAuditDetails() throws Exception {
+    HistoryDAO historyDao = mock(HistoryDAO.class);
+    AuditTrailImpl auditTrail = new AuditTrailImpl();
+    auditTrail.setHistoryDao(historyDao);
+    BookingAuditTrail listener = new BookingAuditTrail(auditTrail);
+    User actor = TestFactory.createAnyUser("sysadmin");
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setId(7L);
+    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
+    TimeSlotBooking booking = new TimeSlotBooking();
+    booking.setId(42L);
+    booking.setBookingConfiguration(configuration);
+    booking.setState(com.researchspace.model.booking.BookingState.CANCELLED);
+    booking.setCancellationReason("Instrument needs recalibration");
+    booking.setStartTime(java.util.Date.from(Instant.parse("2026-10-05T09:00:00Z")));
+    booking.setEndTime(java.util.Date.from(Instant.parse("2026-10-05T10:00:00Z")));
+
+    // The archive DAO returns initialized getReference proxies, not entity instances.
+    ByteBuddyProxyFactory factory =
+        new ByteBuddyProxyFactory(new ByteBuddyProxyHelper(new ByteBuddyState()));
+    factory.postInstantiate(
+        TimeSlotBooking.class.getName(),
+        TimeSlotBooking.class,
+        Set.of(HibernateProxy.class),
+        TimeSlotBooking.class.getMethod("getId"),
+        TimeSlotBooking.class.getMethod("setId", Long.class),
+        null);
+    HibernateProxy proxy = factory.getProxy(42L, null);
+    proxy.getHibernateLazyInitializer().setImplementation(booking);
+
+    listener.timeSlotBookingChanged(
+        new TimeSlotBookingAuditEvent(actor, actor, (TimeSlotBooking) proxy, AuditAction.WRITE));
+
+    ArgumentCaptor<Iterable<HistoricData>> records = ArgumentCaptor.forClass(Iterable.class);
+    verify(historyDao).save(records.capture());
+    HistoricData record = records.getValue().iterator().next();
+    AuditData parsed = AuditData.fromJson(record.getData().toJson());
+    assertEquals(AuditDomain.BOOKING, record.getDomain());
+    assertEquals(AuditAction.WRITE, record.getAction());
+    assertEquals("bookings:42", parsed.getData().get("id"));
+    assertEquals("booking-configurations:7", parsed.getData().get("bookingConfigurationId"));
+    assertEquals("CANCELLED", parsed.getData().get("state"));
+    assertEquals("BOOKING", parsed.getData().get("kind"));
+    assertEquals("Instrument needs recalibration", parsed.getData().get("cancellationReason"));
+    assertTrue(parsed.getData().containsKey("start"));
+    assertTrue(parsed.getData().containsKey("end"));
+    assertTrue(
+        record.getData().toJson().contains("\"target\":{\"type\":\"INSTRUMENT\",\"id\":12}"));
   }
 
   @Test
