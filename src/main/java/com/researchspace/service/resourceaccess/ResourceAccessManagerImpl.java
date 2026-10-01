@@ -273,6 +273,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     T protectedEntity =
         withConcurrentLockMapping(() -> resource.lock(command.resourceId()))
             .orElseThrow(() -> failure(ResourceAccessException.Reason.NOT_FOUND));
+    requireIndependent(resource, protectedEntity, subject);
     ResourceAccess access = resource.access(protectedEntity);
     ResourceAccessDao.AuthorizationFacts authorizationFacts =
         withConcurrentLockMapping(() -> gateway.lockAuthorizationFacts(access, subject));
@@ -381,6 +382,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     T protectedEntity =
         withConcurrentLockMapping(() -> resource.lock(id))
             .orElseThrow(() -> failure(ResourceAccessException.Reason.NOT_FOUND));
+    requireIndependent(resource, protectedEntity, subject);
     ResourceAccess access = resource.access(protectedEntity);
     ResourceAccessDao.AuthorizationFacts authorizationFacts =
         withConcurrentLockMapping(() -> gateway.lockAuthorizationFacts(access, subject));
@@ -675,6 +677,14 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   private static void requireRead(ResolvedResourceAccess resolved) {
     if (!resolved.hasCapability(ResourceRoleScheme.READ_RESOURCE_CAPABILITY)) {
       throw failure(ResourceAccessException.Reason.NOT_FOUND);
+    }
+  }
+
+  private static <T, ID> void requireIndependent(
+      ProtectedResourceAccess<T, ID> resource, T protectedEntity, User subject) {
+    if (resource.isInherited(protectedEntity)) {
+      requireRead(resource.resolveInheritedForMutation(protectedEntity, subject));
+      throw failure(ResourceAccessException.Reason.INHERITED_READ_ONLY);
     }
   }
 

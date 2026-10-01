@@ -189,7 +189,8 @@ public class ApiV2ControllerAdvice {
   @ExceptionHandler(ResourceAccessException.class)
   public ResponseEntity<ApiV2Problem> handleResourceAccess(
       ResourceAccessException ex, HttpServletRequest request) {
-    if (ex.reason() == ResourceAccessException.Reason.FORBIDDEN
+    if ((ex.reason() == ResourceAccessException.Reason.FORBIDDEN
+            || ex.reason() == ResourceAccessException.Reason.INHERITED_READ_ONLY)
         && ("PUT".equals(request.getMethod()) || "DELETE".equals(request.getMethod()))) {
       ApiV2Caller caller = ApiV2Caller.from(request);
       SECURITY_LOG.warn(
@@ -204,7 +205,7 @@ public class ApiV2ControllerAdvice {
     HttpStatus status =
         switch (ex.reason()) {
           case NOT_FOUND -> HttpStatus.NOT_FOUND;
-          case FORBIDDEN -> HttpStatus.FORBIDDEN;
+          case FORBIDDEN, INHERITED_READ_ONLY -> HttpStatus.FORBIDDEN;
           case OWNER_REQUIRED, SELF_REMOVAL_REQUIRES_LEAVE -> HttpStatus.CONFLICT;
           case STALE -> HttpStatus.PRECONDITION_FAILED;
           case INVALID_GRANTEE, INVALID_ROLE, DUPLICATE_GRANTEE, ASSIGNMENT_LIMIT ->

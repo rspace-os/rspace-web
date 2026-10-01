@@ -13,11 +13,9 @@ import com.researchspace.model.booking.BookableItemCalendarSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
-import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.util.Date;
@@ -40,7 +38,7 @@ class BookingCalendarManagerTest {
       TimeSlotBookingManager bookingManager,
       BookingInstrumentQueryDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
       BookingCalendarCreationTransaction creationTransaction) {
     IPropertyHolder properties = mock(IPropertyHolder.class);
@@ -70,8 +68,6 @@ class BookingCalendarManagerTest {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(CONFIGURATION_ID);
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 101L));
-    configuration.setResourceAccess(
-        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, owner, new Date()));
     return configuration;
   }
 

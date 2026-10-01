@@ -37,7 +37,6 @@ import com.researchspace.model.booking.UserBookingCalendarSubscription;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -62,7 +61,7 @@ class BookingCalendarManagerFeedTest {
   private UserBookingCalendarSubscriptionDao userSubscriptionDao;
   private TimeSlotBookingManager bookingManager;
   private FeatureFlagManager featureFlags;
-  private ResourceAccessManager accessManager;
+  private BookingItemPermissions accessManager;
   private BookingCalendarFeedGenerator generator;
   private BookingCalendarCreationTransaction creationTransaction;
   private BookingInstrumentQueryDao instrumentDao;
@@ -78,14 +77,14 @@ class BookingCalendarManagerFeedTest {
     bookingManager = mock(TimeSlotBookingManager.class);
     instrumentDao = mock(BookingInstrumentQueryDao.class);
     featureFlags = mock(FeatureFlagManager.class);
-    accessManager = mock(ResourceAccessManager.class);
+    accessManager = mock(BookingItemPermissions.class);
     generator = mock(BookingCalendarFeedGenerator.class);
     creationTransaction = mock(BookingCalendarCreationTransaction.class);
 
     owner = createOwner();
     configuration = createConfiguration(owner);
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(true);
-    when(accessManager.resolve(configuration.getResourceAccess(), owner)).thenReturn(ownerAccess());
+    when(accessManager.resolve(configuration, owner)).thenReturn(ownerAccess());
     manager =
         createManager(
             subscriptionDao,
@@ -253,12 +252,11 @@ class BookingCalendarManagerFeedTest {
   void downloadIsUnavailableWithoutReadAccessOrForAnUnconfirmedBooking() {
     TimeSlotBooking booking = confirmedBooking();
     stubDownload(booking, "Microscope", "UTC");
-    when(accessManager.resolve(configuration.getResourceAccess(), owner))
-        .thenReturn(ResolvedResourceAccess.none());
+    when(accessManager.resolve(configuration, owner)).thenReturn(ResolvedResourceAccess.none());
 
     assertTrue(manager.download(BOOKING_ID, owner, Locale.ENGLISH).isEmpty());
 
-    when(accessManager.resolve(configuration.getResourceAccess(), owner)).thenReturn(ownerAccess());
+    when(accessManager.resolve(configuration, owner)).thenReturn(ownerAccess());
     booking.setState(BookingState.CANCELLED);
     assertTrue(manager.download(BOOKING_ID, owner, Locale.ENGLISH).isEmpty());
 
