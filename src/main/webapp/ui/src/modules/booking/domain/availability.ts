@@ -36,6 +36,7 @@ export type AvailabilitySource = {
     purpose: string | null;
     bookedBy: string | null;
     createdBy?: string | null;
+    instrumentTimeZone?: string | null;
   };
 };
 
@@ -48,6 +49,7 @@ export type BookingConflict = NonNullable<AvailabilitySource["booking"]> & {
   start: string;
   end: string;
   timezone: string;
+  instrumentTimeZone?: string | null;
 };
 
 export function bookingConflicts(
@@ -64,6 +66,7 @@ export function bookingConflicts(
       start: interval.source.startsAt.toISOString(),
       end: interval.source.endsAt.toISOString(),
       timezone,
+      instrumentTimeZone: booking.instrumentTimeZone ?? null,
     });
   }
   return [...conflicts.values()];
@@ -274,6 +277,7 @@ function sourcedInterval(
               purpose: booking.purpose,
               bookedBy: booking.bookedBy,
               createdBy: booking.createdBy,
+              instrumentTimeZone: booking.timezone,
             },
           }
         : {}),
