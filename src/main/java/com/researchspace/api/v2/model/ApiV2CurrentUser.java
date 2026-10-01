@@ -112,6 +112,12 @@ public record ApiV2CurrentUser(
               nullable = true)
           String serverKey) {}
 
+  @Schema(
+      requiredProperties = {
+        "canUseDevtools",
+        "canOverrideFeatureFlags",
+        "canChangeFeatureFlagBaselines"
+      })
   public record Session(
       @Schema(
               requiredMode = Schema.RequiredMode.REQUIRED,
@@ -123,5 +129,14 @@ public record ApiV2CurrentUser(
               format = "date-time",
               nullable = true,
               example = "2026-08-01T20:00:00Z")
-          String lastSession) {}
+          String lastSession,
+      @Schema(
+              description = "Whether the feature-flag developer tools are available.")
+          boolean canUseDevtools,
+      @Schema(
+              description = "Whether the user may override feature flags.")
+          boolean canOverrideFeatureFlags,
+      @Schema(
+              description = "Whether the user may change feature-flag baselines.")
+          boolean canChangeFeatureFlagBaselines) {}
 }

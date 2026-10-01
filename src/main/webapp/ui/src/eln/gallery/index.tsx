@@ -9,6 +9,7 @@ import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router";
 import axios from "@/common/axios";
+import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 import Alerts from "../../components/Alerts/Alerts";
@@ -620,6 +621,7 @@ export function Gallery() {
                 </ErrorBoundary>
               </LandmarksProvider>
             </Analytics>
+            <FeatureFlagDevtoolsMount />
           </QueryClientProvider>
         </Alerts>
       </ThemeProvider>
@@ -629,7 +631,8 @@ export function Gallery() {
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
-  if (domContainer) {
+  if (domContainer && domContainer.dataset.reactRootMounted !== "true") {
+    domContainer.dataset.reactRootMounted = "true";
     window.scrollTo(0, 1);
 
     const root = createRoot(domContainer);
