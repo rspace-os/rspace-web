@@ -16,6 +16,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
@@ -35,6 +36,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class UsersV2ControllerTest {
 
   private final ContainerApiManager containerApiManager = mock(ContainerApiManager.class);
+  private final FeatureFlagManager featureFlagManager = mock(FeatureFlagManager.class);
   private final UserExternalIdResolver externalIdResolver = mock(UserExternalIdResolver.class);
   private final UserProfileManager userProfileManager = mock(UserProfileManager.class);
   private final SystemPropertyPermissionManager propertyPermissionManager =
@@ -52,6 +54,7 @@ class UsersV2ControllerTest {
   private UsersV2Controller newController() {
     return new UsersV2Controller(
         containerApiManager,
+        featureFlagManager,
         externalIdResolver,
         userProfileManager,
         propertyPermissionManager,
@@ -93,6 +96,9 @@ class UsersV2ControllerTest {
         .thenReturn(false);
     when(properties.isLiveChatEnabled()).thenReturn(true);
     when(properties.getLiveChatServerKey()).thenReturn("chat-key");
+    when(featureFlagManager.canUseDevtools(user)).thenReturn(true);
+    when(featureFlagManager.canOverrideFeatureFlags(user)).thenReturn(false);
+    when(featureFlagManager.canChangeFeatureFlagBaselines(user)).thenReturn(false);
     mockMvc
         .perform(
             get("/api/v2/users/me")
@@ -117,7 +123,10 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.livechat.enabled").value(true))
         .andExpect(jsonPath("$.livechat.serverKey").value("chat-key"))
         .andExpect(jsonPath("$.session.operatedAs").value(false))
-        .andExpect(jsonPath("$.session.lastSession").value("2026-07-15T08:30:00Z"));
+        .andExpect(jsonPath("$.session.lastSession").value("2026-07-15T08:30:00Z"))
+        .andExpect(jsonPath("$.session.canUseDevtools").value(true))
+        .andExpect(jsonPath("$.session.canOverrideFeatureFlags").value(false))
+        .andExpect(jsonPath("$.session.canChangeFeatureFlagBaselines").value(false));
   }
 
   @Test
@@ -196,7 +205,7 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.length()").value(15))
         .andExpect(jsonPath("$.orcid.length()").value(2))
         .andExpect(jsonPath("$.capabilities.length()").value(3))
-        .andExpect(jsonPath("$.session.length()").value(2))
+        .andExpect(jsonPath("$.session.length()").value(5))
         .andExpect(jsonPath("$.id").value(321))
         .andExpect(jsonPath("$.username").value("ordinary"))
         .andExpect(jsonPath("$.email").value("ordinary@example.com"))
@@ -214,7 +223,10 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.capabilities.canPublish").value(false))
         .andExpect(jsonPath("$.capabilities.canViewSystem").value(false))
         .andExpect(jsonPath("$.session.operatedAs").value(false))
-        .andExpect(jsonPath("$.session.lastSession").isEmpty());
+        .andExpect(jsonPath("$.session.lastSession").isEmpty())
+        .andExpect(jsonPath("$.session.canUseDevtools").value(false))
+        .andExpect(jsonPath("$.session.canOverrideFeatureFlags").value(false))
+        .andExpect(jsonPath("$.session.canChangeFeatureFlagBaselines").value(false));
   }
 
   @Test
