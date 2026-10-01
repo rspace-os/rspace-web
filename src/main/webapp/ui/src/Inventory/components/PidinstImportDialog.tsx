@@ -327,14 +327,26 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
     return provider;
   };
 
-  const skippedReason = (entry: SkippedRelatedIdentifier): string => {
-    if (entry.reason === "NOT_AVAILABLE") return t("pidinstImport.skipped.reasons.notAvailable");
+  const skippedReason = (entry: SkippedRelatedIdentifier): React.ReactNode => {
+    const address = <Address value={entry.address} />;
+    if (entry.reason === "NOT_AVAILABLE")
+      return <TransRichText i18nKey="inventory:pidinstImport.skipped.reasons.notAvailable" components={{ address }} />;
     if (entry.reason === "OTHER_SERVER")
-      return entry.host
-        ? t("pidinstImport.skipped.reasons.otherServer", { host: entry.host })
-        : t("pidinstImport.skipped.reasons.notAnAddressHere");
+      return entry.host ? (
+        <TransRichText
+          i18nKey="inventory:pidinstImport.skipped.reasons.otherServer"
+          values={{ host: entry.host }}
+          components={{ address }}
+        />
+      ) : (
+        <TransRichText i18nKey="inventory:pidinstImport.skipped.reasons.notAnAddressHere" components={{ address }} />
+      );
     // a reason this dialog has no words for: the code itself beats a wrong sentence (as providerLabel)
-    return entry.reason;
+    return (
+      <>
+        {entry.reason} {address}
+      </>
+    );
   };
 
   async function runSearch() {
@@ -416,11 +428,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
             details: skipped.map((entry) => ({
               variant: "warning",
               title: entry.field,
-              help: (
-                <>
-                  {skippedReason(entry)} <Address value={entry.address} />
-                </>
-              ),
+              help: skippedReason(entry),
             })),
           }),
         );

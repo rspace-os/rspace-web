@@ -650,10 +650,8 @@ describe("PidinstImportDialog", () => {
     await user.click(within(warning).getByRole("button", { name: /detailsToggleLabel/ }));
     expect(within(warning).getByText("Measurement technique")).toBeVisible();
     expect(within(warning).getByText(/pidinstImport\.skipped\.reasons\.otherServer/)).toBeVisible();
-    expect(within(warning).getByRole("link", { name: SKIPPED[0].address })).toHaveAttribute("href", SKIPPED[0].address);
     expect(within(warning).getByText("Calibration")).toBeVisible();
     expect(within(warning).getByText(/pidinstImport\.skipped\.reasons\.notAvailable/)).toBeVisible();
-    expect(within(warning).getByRole("link", { name: SKIPPED[1].address })).toHaveAttribute("href", SKIPPED[1].address);
 
     // persistence is a property of the alert, not of the DOM: the store keeps an infinite alert
     // until it is dismissed, so it is pinned on what the dialog asked for
@@ -676,9 +674,15 @@ describe("PidinstImportDialog", () => {
     expect(mkAlertMock).not.toHaveBeenCalledWith(expect.objectContaining({ variant: "warning" }));
   });
 
-  test("names the other server in the reason", async () => {
+  test("puts each entry's address where the reason's sentence places it, as a link only for a web address", async () => {
     const user = userEvent.setup();
-    stubEndpoints({ importReply: [201, { ...CREATED_INSTRUMENT, skippedRelatedIdentifiers: [SKIPPED[0]] }] });
+    const notWebAddresses = [
+      { field: "Calibration", reason: "OTHER_SERVER", address: "10.1000/manual" },
+      { field: "Calibration", reason: "OTHER_SERVER", address: "javascript:alert(1)" },
+    ];
+    stubEndpoints({
+      importReply: [201, { ...CREATED_INSTRUMENT, skippedRelatedIdentifiers: [...SKIPPED, ...notWebAddresses] }],
+    });
     await renderOpenDialog(
       await wrapWithRealI18n(<PidinstImportDialogStory />, {
         resources: { common: commonEn, inventory: inventoryEn },
@@ -693,37 +697,21 @@ describe("PidinstImportDialog", () => {
 
     const warning = await screen.findByRole("alert", { name: /Some registry entries were not imported/ });
     await user.click(within(warning).getByRole("button", { name: /sub-message/ }));
-    // the argument has to reach the sentence: a dropped placeholder ships "another server ()"
-    expect(within(warning).getByText(/It points at another server \(other\.researchspace\.com\)\./)).toBeVisible();
-  });
-
-  test("shows an address that is not a web address as text, not as a link", async () => {
-    const user = userEvent.setup();
-    stubEndpoints({
-      importReply: [
-        201,
-        {
-          ...CREATED_INSTRUMENT,
-          skippedRelatedIdentifiers: [
-            { field: "Calibration", reason: "OTHER_SERVER", address: "10.1000/manual" },
-            { field: "Measurement technique", reason: "OTHER_SERVER", address: "javascript:alert(1)" },
-          ],
-        },
-      ],
-    });
-    await renderOpenDialog();
-    await search(user, "microscope");
-    await user.click(radioFor("Confocal Microscope"));
-    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
-
-    const warning = await screen.findByRole("alert", { name: /pidinstImport\.skipped\.title/ });
-    await user.click(within(warning).getByRole("button", { name: /detailsToggleLabel/ }));
-    // a bare DOI as an href would open a page of this RSpace that does not exist
-    expect(within(warning).getByText(/10\.1000\/manual/)).toBeVisible();
-    expect(within(warning).getByText(/javascript:alert\(1\)/)).toBeVisible();
-    expect(within(warning).queryByRole("link")).toBeNull();
-    // neither has a host, so neither may read "another server ()"
-    expect(within(warning).getAllByText(/pidinstImport\.skipped\.reasons\.notAnAddressHere/)).toHaveLength(2);
+    // real English, because cimode renders neither the placeholders nor the address inside them
+    const [otherServer, notAvailable, doi, script] = within(warning).getAllByRole("alert");
+    expect(otherServer).toHaveTextContent(
+      `It points at another server (other.researchspace.com): ${SKIPPED[0].address}`,
+    );
+    expect(within(otherServer).getByRole("link", { name: SKIPPED[0].address })).toHaveAttribute(
+      "href",
+      SKIPPED[0].address,
+    );
+    expect(notAvailable).toHaveTextContent(`The item it points at is not available to you: ${SKIPPED[1].address}`);
+    expect(within(notAvailable).getByRole("link", { name: SKIPPED[1].address })).toBeVisible();
+    expect(doi).toHaveTextContent("It is not the address of an item in this RSpace: 10.1000/manual");
+    expect(script).toHaveTextContent("It is not the address of an item in this RSpace: javascript:alert(1)");
+    expect(within(doi).queryByRole("link")).toBeNull();
+    expect(within(script).queryByRole("link")).toBeNull();
   });
 
   test("names a reason it has no words for by its code rather than by a wrong sentence", async () => {
