@@ -117,6 +117,25 @@ public class LocaleFilterTest {
   }
 
   @Test
+  public void testApiV2SetsLocaleHeaders() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/api/v2/maintenances");
+    request.addHeader(HttpHeaders.ACCEPT_LANGUAGE, "en-US");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(
+        request,
+        response,
+        (wrappedRequest, wrappedResponse) -> {
+          assertEquals(EN_US, wrappedRequest.getLocale());
+          assertEquals(EN_US, LocaleContextHolder.getLocale());
+        });
+
+    assertEquals("en-US", response.getHeader(HttpHeaders.CONTENT_LANGUAGE));
+    assertEquals(HttpHeaders.ACCEPT_LANGUAGE, response.getHeader(HttpHeaders.VARY));
+  }
+
+  @Test
   public void testJstlLocaleIsSet() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
 
