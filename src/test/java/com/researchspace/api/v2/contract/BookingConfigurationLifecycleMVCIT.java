@@ -62,6 +62,13 @@ class BookingConfigurationLifecycleMVCIT {
             .andReturn();
 
     long bookingId = createBooking(instrumentId);
+    mockMvc
+        .perform(
+            post(configurationPath + "/calendar-subscription")
+                .header("apiKey", fixture.userKey())
+                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(true));
 
     mockMvc
         .perform(
@@ -131,6 +138,17 @@ class BookingConfigurationLifecycleMVCIT {
         .perform(get(configurationPath).header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.state").value("ARCHIVED"));
+    mockMvc
+        .perform(
+            get(configurationPath + "/calendar-subscription").header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(false));
+    mockMvc
+        .perform(
+            post(configurationPath + "/calendar-subscription")
+                .header("apiKey", fixture.userKey())
+                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
+        .andExpect(status().isConflict());
     mockMvc
         .perform(
             patch(configurationPath)

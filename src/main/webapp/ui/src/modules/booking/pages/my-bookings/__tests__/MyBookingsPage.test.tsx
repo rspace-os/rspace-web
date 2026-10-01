@@ -193,6 +193,13 @@ describe("My Bookings page", () => {
     expect(screen.queryByRole("button", { name: "booking:calendar.file.accessibleLabel" })).not.toBeInTheDocument();
   });
 
+  it("offers a calendar file for a confirmed booking the requester can still read", async () => {
+    renderPage();
+
+    const table = within(await screen.findByRole("table"));
+    expect(await table.findByRole("button", { name: "booking:calendar.file.accessibleLabel" })).toBeVisible();
+  });
+
   it("keeps icon-only page actions accessible by name", async () => {
     renderPage();
 
@@ -201,12 +208,14 @@ describe("My Bookings page", () => {
     const viewDetails = (await screen.findAllByRole("link", { name: "booking:myBookings.actions.viewDetails" }))[0];
     const table = within(screen.getByRole("table"));
     const edit = table.getByRole("link", { name: "booking:myBookings.actions.edit" });
+    const calendarFile = table.getByRole("button", { name: "booking:calendar.file.accessibleLabel" });
     const cancel = table.getByRole("button", { name: "booking:bookings.actions.cancel" });
 
     expect(within(upcoming).queryByText("booking:myBookings.period.upcoming")).not.toBeInTheDocument();
     expect(within(past).queryByText("booking:myBookings.period.past")).not.toBeInTheDocument();
     expect(within(viewDetails).queryByText("booking:myBookings.actions.viewDetails")).not.toBeInTheDocument();
     expect(within(edit).queryByText("booking:myBookings.actions.edit")).not.toBeInTheDocument();
+    expect(within(calendarFile).queryByText("booking:calendar.file.label")).not.toBeInTheDocument();
     expect(within(cancel).queryByText("booking:bookings.actions.cancel")).not.toBeInTheDocument();
   });
 
