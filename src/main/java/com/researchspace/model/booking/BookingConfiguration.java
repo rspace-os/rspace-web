@@ -1,6 +1,7 @@
 package com.researchspace.model.booking;
 
 import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
@@ -39,9 +40,7 @@ import org.hibernate.envers.RelationTargetAuditMode;
 /** Scalar booking settings for one future bookable target. */
 @Entity
 @Audited
-// TODO: Set auditDomain = AuditDomain.BOOKING once rspace-audit defines that domain and this
-// project updates its pinned dependency.
-@AuditTrailData
+@AuditTrailData(auditDomain = AuditDomain.BOOKING)
 public class BookingConfiguration implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
