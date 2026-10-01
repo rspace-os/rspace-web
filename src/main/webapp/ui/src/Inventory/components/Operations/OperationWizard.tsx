@@ -42,7 +42,12 @@ import {
   resolveProcessName,
   usesAmountModes,
 } from "./operations";
-import { describeOperationError, type OperationResult, performOperation, sampleNameAvailable } from "./operationsApi";
+import {
+  type OperationResult,
+  performOperation,
+  sampleNameAvailable,
+  useDescribeOperationError,
+} from "./operationsApi";
 import {
   amountIsStorable,
   amountTakenExceedsOrigin,
@@ -165,6 +170,7 @@ function OperationWizard({
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
   const resolveLabel = resolveLabelFrom(t);
+  const describeOperationError = useDescribeOperationError();
   const origin = representativeOrigin(origins);
   // Derived via categoryOfUnit rather than SubSampleModel.quantityCategory: that getter throws when
   // the (localStorage-backed) unit store has no entry for the id, which is every id before GET
@@ -650,7 +656,7 @@ function OperationWizard({
     } catch (error) {
       // The error's `message` for a rejected request is just "Errors detected: 1"; the actual reason
       // lives in the field-scoped errors array, which describeOperationError reads instead.
-      const reasons = describeOperationError(error, operation, resolveLabel, t("operations.wizard.failed"));
+      const reasons = describeOperationError(error, operation);
       setPerformError(reasons);
       getRootStore().uiStore.addAlert(
         mkAlert({ title: t("operations.wizard.failed"), message: reasons.join("\n"), variant: "error" }),

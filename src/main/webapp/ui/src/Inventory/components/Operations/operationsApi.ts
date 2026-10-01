@@ -1,8 +1,9 @@
+import { useTranslation } from "react-i18next";
 import ApiService from "@/common/InvApiService";
 import { getApiErrorDetails } from "@/util/error";
 import type { FacadeRequest } from "./buildOperationRequest";
 import type { InventoryOperation } from "./operations";
-import type { ResolveLabel } from "./types";
+import { type ResolveLabel, resolveLabelFrom } from "./types";
 
 export type OperationResult = { id: number; globalId: string; name: string };
 
@@ -31,7 +32,7 @@ const BARE_KEY_PREFIX = /^([A-Za-z_]\w*):\s*/;
  * wizard shows it. Anything else (an origin error under "origins[0].amountTaken", a 409, a bare
  * message) is left to getApiErrorDetails. Returns one entry per reason.
  */
-export function describeOperationError(
+function describeOperationError(
   error: unknown,
   operation: InventoryOperation,
   resolveLabel: ResolveLabel,
@@ -52,6 +53,13 @@ export function describeOperationError(
       reason: detail.slice(match[0].length),
     });
   });
+}
+
+/** Binds describeOperationError to the inventory catalog, with its failure message as the fallback. */
+export function useDescribeOperationError(): (error: unknown, operation: InventoryOperation) => Array<string> {
+  const { t } = useTranslation("inventory");
+  const resolveLabel = resolveLabelFrom(t);
+  return (error, operation) => describeOperationError(error, operation, resolveLabel, t("operations.wizard.failed"));
 }
 
 /**
