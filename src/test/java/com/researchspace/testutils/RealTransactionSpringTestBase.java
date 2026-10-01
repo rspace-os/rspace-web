@@ -23,6 +23,7 @@ import com.researchspace.core.testutil.InvokableWithResult;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.AuditDaoIT;
 import com.researchspace.dao.SampleTemplateDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatChemistryFile;
@@ -131,6 +132,7 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
   protected @Autowired EcatImageAnnotationManager imgAnnotationMgr;
   protected @Autowired IPermissionUtils permissionUtils;
   protected @Autowired SampleTemplateDao sampleTemplateDao;
+  protected @Autowired UserDao userDao;
   protected @Autowired RoleManager roleMgr;
   protected @Autowired RecordDeletionManager recordDeletionMgr;
   protected @Autowired RecordSigningManager signingManager;

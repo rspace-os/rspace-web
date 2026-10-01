@@ -23,6 +23,7 @@ import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.RemoteLicenseService;
+import com.researchspace.service.impl.BookingFixturesAppInitialiser;
 import com.researchspace.service.impl.CommunicationManagerImpl;
 import com.researchspace.service.impl.DeveloperGroupSetup;
 import com.researchspace.service.impl.DummyConversionService;
@@ -135,6 +136,7 @@ public class TestAppConfig extends BaseConfig {
     // must be before devGrpSetup
     inits.add(sampleTemplateAppInitialiser());
     inits.add(devGrpSetup());
+    inits.add(bookingFixtures());
     inits.add(integrationsHandlerInitialisor());
     inits.add(dBDataIntegrityChecker);
     inits.add(systemConfigurationUpdater());
@@ -148,6 +150,11 @@ public class TestAppConfig extends BaseConfig {
   @Bean
   public IApplicationInitialisor devGrpSetup() {
     return new DeveloperGroupSetup();
+  }
+
+  @Bean
+  public IApplicationInitialisor bookingFixtures() {
+    return new BookingFixturesAppInitialiser();
   }
 
   @Bean

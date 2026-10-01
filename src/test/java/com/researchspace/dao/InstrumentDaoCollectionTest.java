@@ -8,6 +8,7 @@ import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.inventory.model.ApiV2ContainerResource;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -259,5 +260,18 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
 
     assertEquals("Summary scope", summary.name());
     assertFalse(summary.deleted());
+  }
+
+  @Test
+  public void locksAndReadsCurrentGroupTransferAuthority() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    User ordinaryMember = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
+    initialiseContentWithEmptyContent(pi, owner, ordinaryMember);
+    Group group = createGroup(getRandomAlphabeticString("transferGroup"), pi);
+    addUsersToGroup(pi, group, owner, ordinaryMember);
+
+    assertTrue(instrumentDao.hasLockedTransferAuthority(pi, owner));
+    assertFalse(instrumentDao.hasLockedTransferAuthority(ordinaryMember, owner));
   }
 }

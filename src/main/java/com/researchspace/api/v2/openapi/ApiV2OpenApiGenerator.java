@@ -140,6 +140,10 @@ public final class ApiV2OpenApiGenerator {
                         .name(resource.resourceName())
                         .description(
                             "Operations on the " + resource.resourceName() + " collection.")));
+    tags.add(
+        new Tag()
+            .name("booking-directories")
+            .description("Search bounded Booking access principals and creation targets."));
     return new OpenAPI()
         .openapi("3.1.0")
         .info(
@@ -157,16 +161,6 @@ public final class ApiV2OpenApiGenerator {
         .tags(tags)
         .paths(Json31.mapper().convertValue(paths, Paths.class))
         .components(Json31.mapper().convertValue(components, Components.class));
-  }
-
-  private static Map<String, Object> privateNoStoreHeaders() {
-    return ordered(
-        "Cache-Control",
-        ordered(
-            "description",
-            "Prevents storage of caller-specific subscription state.",
-            "schema",
-            ordered("type", "string", "const", "private, no-store")));
   }
 
   private void addPaths(

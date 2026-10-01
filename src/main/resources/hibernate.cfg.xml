@@ -139,6 +139,10 @@
 
         <mapping class="com.researchspace.model.inventory.Instrument"/>
         <mapping class="com.researchspace.model.inventory.InstrumentTemplate"/>
+        <mapping class="com.researchspace.model.booking.BookingDefaultAccessGrantee"/>
+        <mapping class="com.researchspace.model.booking.BookingConfiguration"/>
+        <mapping class="com.researchspace.model.booking.BookingConfigurationDefaults"/>
+        <mapping class="com.researchspace.model.booking.TimeSlotBooking"/>
         <mapping class="com.researchspace.model.resourceaccess.ResourceAccess"/>
         <mapping class="com.researchspace.model.resourceaccess.ResourceRoleAssignment"/>
     

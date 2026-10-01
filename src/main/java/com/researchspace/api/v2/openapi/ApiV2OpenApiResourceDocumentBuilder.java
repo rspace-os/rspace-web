@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
+import io.swagger.v3.oas.models.OpenAPI;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
@@ -61,8 +62,8 @@ final class ApiV2OpenApiResourceDocumentBuilder {
 
   static void addStandardSchemas(Map<String, Object> schemas) {
     ApiV2OpenApiSchemas.schemaFor(ApiV2Problem.class, schemas);
-    ApiV2OpenApiSchemas.schemaFor(ApiV2AuditEvent.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ApiV2CountResult.class, schemas);
+    ApiV2OpenApiSchemas.schemaFor(ApiV2AuditEvent.class, schemas);
   }
 
   private static Map<String, Object> referenceSchema(ResourceSchema resource) {
