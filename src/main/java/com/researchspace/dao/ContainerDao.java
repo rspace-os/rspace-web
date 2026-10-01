@@ -8,6 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import java.util.List;
+import java.util.Set;
 
 /** For DAO operations on Inventory Container. */
 public interface ContainerDao extends GenericDao<Container, Long> {
@@ -65,4 +66,7 @@ public interface ContainerDao extends GenericDao<Container, Long> {
   Long getWorkbenchIdForUser(User user);
 
   List<Container> getAllUsingImage(FileProperty fileProperty);
+
+  /** Returns the requested active container IDs that the actor may read. */
+  Set<Long> getReadableActiveContainerIds(Set<Long> containerIds, User actor);
 }
