@@ -48,6 +48,8 @@ const configuration = {
   slotGranularityMinutes: 5,
   openingStart: "08:00",
   openingEnd: "17:30",
+  openDays: [1, 2, 3, 4, 5, 6, 7],
+  openingExceptions: [],
   bufferBeforeMinutes: 5,
   bufferAfterMinutes: 15,
   maxBookingDurationMinutes: 0,
@@ -735,6 +737,131 @@ describe("BookableItemPage", () => {
     expect(patched).toBe(false);
   });
 
+  describe("weekly opening hours", () => {
+    const withExceptions = {
+      ...configuration,
+      openDays: [1, 2, 3, 4, 5, 6],
+      openingExceptions: [{ dayOfWeek: 6, start: "10:00", end: "16:00" }],
+    };
+    function serve(current: typeof configuration | typeof withExceptions = configuration) {
+      const patches: Record<string, unknown>[] = [];
+      server.use(
+        http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([current], 2))),
+        http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+        http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
+          patches.push((await request.json()) as Record<string, unknown>);
+          return new HttpResponse(null, { status: 204 });
+        }),
+      );
+      return patches;
+    }
+    const dayRow = (day: string) => {
+      const list = screen.getByRole("list", { name: "booking:settings.openingHours.hoursByDay" });
+      const row = within(list)
+        .getAllByRole("listitem")
+        .find((item) => within(item).queryByText(day, { exact: true }));
+      if (!row) throw new Error(`No ${day} row`);
+      return row;
+    };
+    const save = () => screen.getByRole("button", { name: "booking:bookableItems.actions.save" });
+    const cancel = () =>
+      within(screen.getByRole("tabpanel")).getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" });
+    async function openEditor(user: ReturnType<typeof userEvent.setup>) {
+      await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
+      await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
+      return screen.findByRole("group", { name: "booking:settings.openingHours.openOn" });
+    }
+
+    it("reads out every weekday with exception ranges in bold and closed days marked", async () => {
+      const user = userEvent.setup();
+      serve(withExceptions);
+      renderPage();
+
+      await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
+      const panel = screen.getByRole("tabpanel");
+      expect(within(panel).getByText("10:00\u201316:00").tagName).toBe("STRONG");
+      expect(within(panel).getAllByText("08:00\u201317:30")).toHaveLength(5);
+      expect(within(panel).getByText("Sunday").nextElementSibling).toHaveTextContent(
+        "booking:bookableItemDetails.openingHours.closed",
+      );
+      expect(within(panel).getByText("UTC")).toBeVisible();
+    });
+
+    it("blocks Save while a day edit is pending and restores everything on Cancel", async () => {
+      const user = userEvent.setup();
+      const patches = serve(withExceptions);
+      renderPage();
+
+      const days = await openEditor(user);
+      // A saved exception opens the day list, which omits the closed Sunday.
+      expect(within(dayRow("Saturday")).getByText("10:00\u201316:00")).toHaveClass("font-bold");
+      expect(screen.queryByText("Sunday", { selector: "li span" })).not.toBeInTheDocument();
+
+      await user.click(within(dayRow("Monday")).getByRole("button", { name: "booking:settings.openingHours.editDay" }));
+      expect(save()).toBeDisabled();
+      await user.click(
+        within(dayRow("Monday")).getByRole("button", { name: "booking:settings.openingHours.confirmDay" }),
+      );
+      // Confirming unchanged hours leaves nothing to save.
+      expect(save()).toBeDisabled();
+
+      await user.click(within(days).getByRole("checkbox", { name: "Sunday" }));
+      expect(save()).toBeEnabled();
+      expect(within(dayRow("Sunday")).getByText("08:00\u201317:30")).toHaveClass("text-muted-foreground");
+      await user.click(screen.getByRole("button", { name: "booking:settings.openingHours.useSameHours" }));
+      await user.click(screen.getByRole("button", { name: "booking:settings.openingHours.setDifferentHours" }));
+      expect(within(dayRow("Saturday")).getByText("08:00\u201317:30")).toHaveClass("text-muted-foreground");
+      await user.click(
+        within(dayRow("Tuesday")).getByRole("button", { name: "booking:settings.openingHours.editDay" }),
+      );
+      expect(save()).toBeDisabled();
+
+      await user.click(cancel());
+      expect(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" })).toHaveFocus();
+      expect(screen.getByText("10:00\u201316:00").tagName).toBe("STRONG");
+      expect(patches).toHaveLength(0);
+
+      // Reopening edit starts without drafts, from the saved selections and exception.
+      const reopenedDays = await openEditor(user);
+      expect(within(reopenedDays).getByRole("checkbox", { name: "Sunday" })).not.toBeChecked();
+      expect(within(dayRow("Saturday")).getByText("10:00\u201316:00")).toHaveClass("font-bold");
+      expect(
+        within(dayRow("Tuesday")).queryByRole("button", { name: "booking:settings.openingHours.confirmDay" }),
+      ).not.toBeInTheDocument();
+      expect(save()).toBeDisabled();
+    });
+
+    it("drops the exception of a day unchecked before saving", async () => {
+      const user = userEvent.setup();
+      const patches = serve(withExceptions);
+      renderPage();
+
+      const days = await openEditor(user);
+      await user.click(within(days).getByRole("checkbox", { name: "Saturday" }));
+      await user.click(save());
+
+      await waitFor(() => expect(patches).toHaveLength(1));
+      expect(patches[0]).toMatchObject({ openDays: [1, 2, 3, 4, 5], openingExceptions: [] });
+    });
+
+    it("restores an unchecked day's exception after a failed save", async () => {
+      const user = userEvent.setup();
+      serve(withExceptions);
+      server.use(
+        http.patch("/api/v2/booking-configurations/7", () => HttpResponse.json({ status: 412 }, { status: 412 })),
+      );
+      renderPage();
+
+      const days = await openEditor(user);
+      await user.click(within(days).getByRole("checkbox", { name: "Saturday" }));
+      await user.click(save());
+      expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.staleEdit");
+
+      await user.click(within(days).getByRole("checkbox", { name: "Saturday" }));
+      expect(within(dayRow("Saturday")).getByText("10:00–16:00")).toHaveClass("font-bold");
+    });
+  });
+
   it("keeps calendar status lazy and exposes the trigger to an ordinary readable user", async () => {
     let statusRequests = 0;
     let createRequests = 0;
@@ -813,53 +940,6 @@ describe("BookableItemPage", () => {
     expect(
       screen.queryByRole("button", { name: "booking:bookableItemDetails.actions.archive" }),
     ).not.toBeInTheDocument();
-  });
-
-  it("loads the audit trail only once its tab is opened", async () => {
-    const user = userEvent.setup();
-    let auditRequests = 0;
-    server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
-      http.get("/api/v2/booking-configurations/7/audit", () => {
-        auditRequests += 1;
-        return HttpResponse.json({
-          ...envelope(
-            [
-              {
-                eventId: "a".repeat(64),
-                timestamp: "2026-08-25T10:42:18Z",
-                username: "morgan.ellis",
-                fullName: "Morgan Ellis",
-                domain: "RECORD",
-                action: "WRITE",
-                description: "Updated booking configuration IN123",
-                payload: { enabled: true, maxBookingDurationMinutes: 240 },
-              },
-            ],
-            20,
-          ),
-          snapshotDate: "2026-08-25",
-          snapshotFingerprint: "b".repeat(64),
-        });
-      }),
-    );
-    renderPage();
-
-    await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.audit" });
-    expect(auditRequests).toBe(0);
-
-    await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.audit" }));
-
-    const item = await screen.findByRole("article", { name: "Updated booking configuration IN123" });
-    expect(within(item).getByText("Morgan Ellis (morgan.ellis)")).toBeVisible();
-    expect(within(item).getByText("WRITE")).toBeVisible();
-    expect(
-      within(item).queryByText("booking:bookableItemDetails.audit.values.maximumDuration"),
-    ).not.toBeInTheDocument();
-    await user.click(within(item).getByRole("button", { name: "common:actions.expand" }));
-    expect(within(item).getByText("booking:bookableItemDetails.audit.values.maximumDuration")).toBeVisible();
-    await waitFor(() => expect(auditRequests).toBe(1));
   });
 
   it("does not request events for an invalid lookup and offers a working retry", async () => {

@@ -1,13 +1,14 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
+import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 
 vi.unmock("react-i18next");
 
 const { renderWithRealI18n } = await import("@/__tests__/helpers/realI18n");
-const { BookingCalendarFileButton } = await import("./BookingCalendarFileButton");
+const { BookingCalendarFileButton, useBookingCalendarFileDownload } = await import("./BookingCalendarFileButton");
 
 const resources = {
   booking: {
@@ -101,6 +102,51 @@ describe("BookingCalendarFileButton", () => {
     );
     expect(saved).toEqual({ url: "blob:calendar", download: "confocal-microscope-IN9-2026-09-12.ics" });
     expect(revoked).toEqual(["blob:calendar"]);
+  });
+
+  it("keeps announcing after the control that started the download unmounts", async () => {
+    server.use(
+      http.get(PATH, () =>
+        HttpResponse.text(CALENDAR, {
+          headers: {
+            "Content-Type": "text/calendar;charset=UTF-8",
+            "Content-Disposition": 'attachment; filename="confocal-microscope.ics"',
+          },
+        }),
+      ),
+    );
+    // Stands in for a menu item, which unmounts as soon as its menu closes.
+    function ClosingMenuItem() {
+      const [open, setOpen] = useState(true);
+      const { download, announcements } = useBookingCalendarFileDownload({
+        bookingId: 12,
+        itemName: "Confocal microscope",
+        period: "12 Sep 2026, 10:00–12:00",
+        token: "token",
+      });
+      return (
+        <>
+          {open ? (
+            <button
+              type="button"
+              aria-label="Download"
+              onClick={() => {
+                setOpen(false);
+                void download();
+              }}
+            />
+          ) : null}
+          {announcements}
+        </>
+      );
+    }
+    await renderWithRealI18n(<ClosingMenuItem />, { resources, defaultNS: "booking" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Download" }));
+
+    expect(screen.queryByRole("button", { name: "Download" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent("Downloaded confocal-microscope.ics");
+    expect(saved).toEqual({ url: "blob:calendar", download: "confocal-microscope.ics" });
   });
 
   it("reports a failure without saving anything", async () => {

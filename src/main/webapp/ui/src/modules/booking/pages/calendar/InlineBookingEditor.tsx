@@ -9,15 +9,19 @@ import {
   type EditableBooking,
 } from "@/modules/booking/creation/BookingForm";
 import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
-import { bookingProblemKey } from "@/modules/booking/creation/useCreateBooking";
+import {
+  bookingProblemFeedback,
+  isBookingConflictError,
+  withBookingProblemConflict,
+} from "@/modules/booking/creation/useCreateBooking";
 import { bookingConflicts } from "@/modules/booking/domain/availability";
 import {
   ApiV2ProblemError,
   type BookingListDocument,
   type BookingUpdate,
-  isBookingOverlapError,
   updateBooking,
 } from "@/modules/booking/domain/booking";
+import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
@@ -37,6 +41,7 @@ export function InlineBookingEditor({
   onClose: () => void;
 }) {
   const { t } = useTranslation(["booking", "common"]);
+  const { t: bookingT } = useTranslation("booking");
   const queryClient = useQueryClient();
   const configuration = useBookableItemConfiguration(event.target.globalId, token);
   const [formState, setFormState] = React.useState<BookingFormState | null>(null);
@@ -81,24 +86,26 @@ export function InlineBookingEditor({
     },
     [mutation.isError, resetMutation],
   );
+  // Checked as soon as both endpoints are entered, before the item's rules are met.
+  const enteredWindow = formState?.enteredWindow;
   const intervalChanged = Boolean(
-    formState?.window && (formState.window.start !== event.start || formState.window.end !== event.end),
+    enteredWindow && (enteredWindow.start !== event.start || enteredWindow.end !== event.end),
   );
   const availabilityRow = configuration.data
     ? calendarAvailabilityRow({
         ...configuration.data,
-        openingStart: event.kind === "MAINTENANCE" ? "00:00" : configuration.data.openingStart,
-        openingEnd: event.kind === "MAINTENANCE" ? "24:00" : configuration.data.openingEnd,
+        // Opening hours are the form's own check, so closed time must not read as an overlap here.
+        ...ALWAYS_OPEN,
         // Fetch overlaps even when the configuration permits double booking so the form can explain them.
         allowDoubleBooking: false,
       })
     : undefined;
-  const availabilityInterval = formState?.window
+  const availabilityInterval = enteredWindow
     ? {
-        ...formState.window,
+        ...enteredWindow,
         date: formState.draft.startDate,
         timeZone: configuration.data?.timezone ?? timezone,
-        elapsedMinutes: (Date.parse(formState.window.end) - Date.parse(formState.window.start)) / 60_000,
+        elapsedMinutes: (Date.parse(enteredWindow.end) - Date.parse(enteredWindow.start)) / 60_000,
       }
     : { start: "", end: "", date: "", timeZone: timezone, elapsedMinutes: 0 };
   const availability = useCalendarAvailability(
@@ -151,6 +158,11 @@ export function InlineBookingEditor({
     : undefined;
   const timelineDraft =
     windowAdjustment ?? formState?.draft ?? wallClockDraftFromInstants(event.start, event.end, timezone);
+  // A buffer rejection needs its own sentence; a server-named overlap is listed alongside the local conflicts.
+  const problem = bookingProblemFeedback(mutation.error, bookingT, {
+    displayTimezone: timezone,
+    target: configuration.data,
+  });
   return (
     <>
       {timelineDate && timelineEventElement ? (
@@ -177,15 +189,16 @@ export function InlineBookingEditor({
           token={token}
           pending={mutation.isPending}
           error={
-            availabilityViolation && conflicts.length === 0
+            problem.message ??
+            (!mutation.error && availabilityViolation && conflicts.length === 0
               ? t("bookings.errors.overlap")
-              : mutation.error
-                ? t(bookingProblemKey(mutation.error))
-                : undefined
+              : undefined)
           }
-          conflicts={conflicts}
-          conflictSeverity={configuration.data.allowDoubleBooking && !maintenanceConflict ? "warning" : "error"}
-          submissionBlocked={checkingAvailability || conflictBlocksSubmission || isBookingOverlapError(mutation.error)}
+          conflicts={withBookingProblemConflict(conflicts, problem.conflict)}
+          conflictSeverity={
+            problem.conflict || !configuration.data.allowDoubleBooking || maintenanceConflict ? "error" : "warning"
+          }
+          submissionBlocked={checkingAvailability || conflictBlocksSubmission || isBookingConflictError(mutation.error)}
           windowAdjustment={windowAdjustment}
           onStateChange={clearMutationErrorOnChange}
           onCancel={() => {

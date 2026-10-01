@@ -8,7 +8,7 @@ import { useBookableItemConfiguration } from "@/modules/booking/creation/Bookabl
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import { ApiV2ProblemError, BookingUnavailableError, fetchBooking } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
+import { currentWallClock, formatAgendaPeriod, formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { Badge } from "@/modules/common/ui/badge";
@@ -170,7 +170,7 @@ export function BookingEventContent() {
               bookingId={document.id}
               bookingVersion={document.version}
               itemName={eventName}
-              period={period}
+              period={formatBookingPeriod(document.start, document.end, preferences.timeZone)}
               token={token}
               eventKind={document.kind}
               onDeleted={() => {
@@ -183,7 +183,12 @@ export function BookingEventContent() {
 
       {editing && bookingItem.data ? (
         <div className="@4xl:hidden">
-          <BookingItemInformationCard as="section" item={bookingItem.data} displayTimezone={preferences.timeZone} />
+          <BookingItemInformationCard
+            as="section"
+            item={bookingItem.data}
+            displayTimezone={preferences.timeZone}
+            date={currentWallClock(document.start, preferences.timeZone).date}
+          />
         </div>
       ) : null}
 
@@ -202,7 +207,11 @@ export function BookingEventContent() {
         <div className={editing ? "grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_30rem]" : eventColumnsClassName}>
           {editing && bookingItem.data ? (
             <div className="hidden @4xl:col-start-2 @4xl:row-start-1 @4xl:block">
-              <BookingItemInformationCard item={bookingItem.data} displayTimezone={preferences.timeZone} />
+              <BookingItemInformationCard
+                item={bookingItem.data}
+                displayTimezone={preferences.timeZone}
+                date={currentWallClock(document.start, preferences.timeZone).date}
+              />
             </div>
           ) : null}
           <Outlet />

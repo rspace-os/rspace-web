@@ -29,12 +29,17 @@ const event = {
   domain: "RECORD",
   action: "WRITE",
   description: "Updated booking configuration IN123",
-  payload: { enabled: true, bookingConfigurationId: "booking-configurations:7" },
+  payload: {
+    enabled: true,
+    bookingConfigurationId: "booking-configurations:7",
+    openDays: [1, 6],
+    openingExceptions: [{ dayOfWeek: 6, start: "10:00", end: "16:00" }],
+  },
   target: "bookings:41",
 };
 
 function auditPage(
-  docs = [event],
+  docs: readonly object[] = [event],
   options: { page?: number; totalPages?: number; hasPrevPage?: boolean; hasNextPage?: boolean } = {},
 ) {
   const page = options.page ?? 1;
@@ -129,7 +134,66 @@ describe("BookableItemAuditLog", () => {
     );
     expect(within(item).getByText("booking:bookableItemDetails.audit.fields.values")).toBeVisible();
     expect(within(item).getByText("booking:bookableItemDetails.audit.values.enabled")).toBeVisible();
+    expect(
+      within(item).getByText("booking:bookableItemDetails.audit.values.openDays").nextElementSibling,
+    ).toHaveTextContent("Monday, Saturday");
+    expect(
+      within(item).getByText("booking:bookableItemDetails.audit.values.openingExceptions").nextElementSibling,
+    ).toHaveTextContent("Saturday 10:00\u201316:00");
     await expectAccessible(container);
+  });
+
+  it("offers only Booking actions in Booking terms and labels a cancellation", async () => {
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", () =>
+        HttpResponse.json(
+          auditPage([
+            { ...event, eventId: "c".repeat(64), description: "Cancelled booking 41", payload: { state: "CANCELLED" } },
+            { ...event, eventId: "d".repeat(64), description: "Edited booking 41", payload: { state: "CONFIRMED" } },
+            { ...event, eventId: "e".repeat(64), action: "CREATE", description: "Created booking 41" },
+          ]),
+        ),
+      ),
+    );
+    const { container } = renderAudit();
+
+    const cancelled = await screen.findByRole("article", { name: "Cancelled booking 41" });
+    expect(within(cancelled).getByText("booking:bookableItemDetails.audit.actions.cancelled")).toBeVisible();
+    expect(within(cancelled).queryByText("WRITE")).not.toBeInTheDocument();
+    const edited = screen.getByRole("article", { name: "Edited booking 41" });
+    expect(within(edited).getByText("booking:bookableItemDetails.audit.actions.changed")).toBeVisible();
+    const created = screen.getByRole("article", { name: "Created booking 41" });
+    expect(within(created).getByText("booking:bookableItemDetails.audit.actions.created")).toBeVisible();
+
+    const filter = screen.getByRole("combobox", { name: "booking:bookableItemDetails.audit.fields.action" });
+    expect(
+      within(filter)
+        .getAllByRole("option")
+        .map((option) => [(option as HTMLOptionElement).value, option.textContent]),
+    ).toEqual([
+      ["", "booking:bookableItemDetails.audit.allActions"],
+      ["CREATE", "booking:bookableItemDetails.audit.actions.created"],
+      ["WRITE", "booking:bookableItemDetails.audit.actions.changedOrCancelled"],
+      ["DELETE", "booking:bookableItemDetails.audit.actions.deleted"],
+      ["RESTORE", "booking:bookableItemDetails.audit.actions.restored"],
+    ]);
+    await expectAccessible(container);
+  });
+
+  it("explains the daily update when a range reaching today has no recorded changes yet", async () => {
+    // The server snapshot is the previous completed UTC day, so the default range ending today reaches past it.
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", () =>
+        HttpResponse.json({ ...auditPage([]), snapshotDate: yesterday }),
+      ),
+    );
+    renderAudit();
+
+    expect(await screen.findByText("booking:bookableItemDetails.audit.emptyThroughSnapshot")).toBeVisible();
+    expect(screen.queryByText("booking:bookableItemDetails.audit.emptyStable")).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:bookableItemDetails.audit.empty")).not.toBeInTheDocument();
+    expect(screen.getByText("booking:bookableItemDetails.audit.resultsThrough")).toBeVisible();
   });
 
   it("sends free-text searches to the audit endpoint before paging", async () => {

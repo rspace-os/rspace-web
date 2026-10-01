@@ -28,6 +28,8 @@ const target: BookableItemOption = {
   slotGranularityMinutes: 5,
   openingStart: "06:00",
   openingEnd: "22:00",
+  openDays: [1, 2, 3, 4, 5, 6, 7],
+  openingExceptions: [],
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -146,6 +148,38 @@ async function expectVisibleOccurrence(text: string) {
 }
 
 describe("BookingDayTimelineAside acceptance", () => {
+  it.each([
+    [
+      "the shared hours",
+      target,
+      [
+        { top: "0px", height: "336px" },
+        { top: "1232px", height: "112px" },
+      ],
+    ],
+    [
+      "a weekday exception",
+      { ...target, openingExceptions: [{ dayOfWeek: 1, start: "10:00", end: "12:00" }] },
+      [
+        { top: "0px", height: "560px" },
+        { top: "672px", height: "672px" },
+      ],
+    ],
+    ["a closed weekday", { ...target, openDays: [2, 3, 4, 5, 6, 7] }, [{ top: "0px", height: "1344px" }]],
+  ])("shades the closed periods of %s on the draft day", async (_, selectedTarget, expected) => {
+    server.use(http.get("/api/v2/bookings", () => emptyPage()));
+    render(asideTree({ client: queryClient(), selectedTarget }));
+
+    await expectVisibleOccurrence("booking:dayTimeline.vertical.empty");
+    // 2026-08-17 is a Monday; the timeline is 56 px per hour.
+    const canvas = screen.getAllByTestId("vertical-day-timeline-canvas")[0];
+    expect(
+      within(canvas)
+        .getAllByTestId("vertical-day-timeline-closed-hours")
+        .map((segment) => ({ top: segment.style.top, height: segment.style.height })),
+    ).toEqual(expected);
+  });
+
   it("keeps the loading state visible until the day schedule resolves", async () => {
     const request = deferred<Response>();
     let requests = 0;

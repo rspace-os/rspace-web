@@ -3,16 +3,25 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
+import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import { validMaximumBookingDuration, validOpeningHours } from "@/modules/booking/configuration/schedulingSettings";
+import {
+  DEFAULT_SCHEDULING_SETTINGS,
+  SchedulingSettingsSchema,
+  validMaximumBookingDuration,
+  validOpeningHours,
+} from "@/modules/booking/configuration/schedulingSettings";
+import type { OpeningException } from "@/modules/booking/domain/bookingOpeningHours";
 import BookingSettingsPage from "../BookingSettingsPage";
 
 const settings = {
   slotGranularityMinutes: 5,
   openingStart: "08:00",
   openingEnd: "18:00",
+  openDays: [1, 2, 3, 4, 5, 6, 7],
+  openingExceptions: [] as OpeningException[],
   bufferBeforeMinutes: 3,
   bufferAfterMinutes: 7,
   maxBookingDurationMinutes: 0,
@@ -66,9 +75,57 @@ describe("BookingSettingsPage", () => {
     expect(doubleBooking).toBeChecked();
   });
 
-  it("reserves 24:00 for the full-day interval", () => {
+  it("allows closing at 24:00 after any valid start", () => {
     expect(validOpeningHours("00:00", "24:00")).toBe(true);
-    expect(validOpeningHours("08:00", "24:00")).toBe(false);
+    expect(validOpeningHours("08:00", "24:00")).toBe(true);
+    expect(validOpeningHours("24:00", "24:00")).toBe(false);
+  });
+
+  it("defaults to every weekday open with no exceptions", () => {
+    expect(DEFAULT_SCHEDULING_SETTINGS).toMatchObject({ openDays: [1, 2, 3, 4, 5, 6, 7], openingExceptions: [] });
+    expect(v.safeParse(SchedulingSettingsSchema, DEFAULT_SCHEDULING_SETTINGS).success).toBe(true);
+  });
+
+  it.each([
+    ["no open days", { openDays: [] }, "openDays"],
+    ["duplicate open days", { openDays: [1, 1] }, "openDays"],
+    ["an out-of-range open day", { openDays: [8] }, "openDays.0"],
+    [
+      "duplicate exception days",
+      {
+        openingExceptions: [
+          { dayOfWeek: 2, start: "10:00", end: "16:00" },
+          { dayOfWeek: 2, start: "11:00", end: "15:00" },
+        ],
+      },
+      "openingExceptions",
+    ],
+    [
+      "a reversed exception",
+      { openingExceptions: [{ dayOfWeek: 2, start: "16:00", end: "10:00" }] },
+      "openingExceptions",
+    ],
+  ])("rejects scheduling settings with %s", (_, overrides, path) => {
+    const result = v.safeParse(SchedulingSettingsSchema, { ...DEFAULT_SCHEDULING_SETTINGS, ...overrides });
+    expect(result.success).toBe(false);
+    expect(result.issues?.map((issue) => v.getDotPath(issue))).toEqual([path]);
+  });
+
+  it("accepts 24:00 in an exception after a non-midnight start", () => {
+    const result = v.safeParse(SchedulingSettingsSchema, {
+      ...DEFAULT_SCHEDULING_SETTINGS,
+      openingExceptions: [{ dayOfWeek: 2, start: "08:00", end: "24:00" }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("drops an exception on a closed day from the submitted settings", () => {
+    const output = v.parse(SchedulingSettingsSchema, {
+      ...DEFAULT_SCHEDULING_SETTINGS,
+      openDays: [1],
+      openingExceptions: [{ dayOfWeek: 2, start: "10:00", end: "16:00" }],
+    });
+    expect(output.openingExceptions).toEqual([]);
   });
 
   it("shows full-day closing as 00:00 while preserving the 24:00 API value", async () => {
@@ -174,6 +231,8 @@ describe("BookingSettingsPage", () => {
       slotGranularityMinutes: 5,
       openingStart: "08:00",
       openingEnd: "18:00",
+      openDays: [1, 2, 3, 4, 5, 6, 7],
+      openingExceptions: [],
       bufferBeforeMinutes: 3,
       bufferAfterMinutes: 7,
       maxBookingDurationMinutes: 0,
@@ -246,5 +305,192 @@ describe("BookingSettingsPage", () => {
 
     expect(await screen.findByText("booking:settings.errors.stale")).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeEnabled();
+  });
+
+  describe("weekly opening hours", () => {
+    function serve(initial: typeof settings = settings) {
+      const submitted: Record<string, unknown>[] = [];
+      server.use(
+        oauthTokenHandler(true),
+        http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(initial)),
+        http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+          const body = (await request.json()) as Record<string, unknown>;
+          submitted.push(body);
+          return HttpResponse.json({ ...initial, ...body, configurationVersion: initial.configurationVersion + 1 });
+        }),
+      );
+      return submitted;
+    }
+    const hoursList = () => screen.getByRole("list", { name: "booking:settings.openingHours.hoursByDay" });
+    const dayRow = (day: string) => {
+      const row = within(hoursList())
+        .getAllByRole("listitem")
+        .find((item) => within(item).queryByText(day, { exact: true }));
+      if (!row) throw new Error(`No ${day} row`);
+      return row;
+    };
+    const setHours = async (user: ReturnType<typeof userEvent.setup>, day: string, start: string, end: string) => {
+      const group = within(dayRow(day)).getByRole("group", { name: day });
+      const opens = within(group).getByLabelText("booking:settings.fields.openingStart");
+      const closes = within(group).getByLabelText("booking:settings.fields.openingEnd");
+      await user.clear(opens);
+      await user.type(opens, start);
+      await user.clear(closes);
+      await user.type(closes, end);
+    };
+    const save = () => screen.getByRole("button", { name: "booking:settings.actions.save" });
+
+    it("starts with every day selected, one shared pair and the day list closed", async () => {
+      serve();
+      renderPage();
+
+      const days = await screen.findByRole("group", { name: "booking:settings.openingHours.openOn" });
+      const checkboxes = within(days).getAllByRole("checkbox");
+      expect(checkboxes.map((checkbox) => checkbox.getAttribute("aria-checked"))).toEqual(Array(7).fill("true"));
+      expect(within(days).getByRole("checkbox", { name: "Monday" })).toBeChecked();
+      expect(screen.getByLabelText("booking:settings.fields.openingStart")).toHaveValue("08:00");
+      expect(screen.getByLabelText("booking:settings.fields.openingEnd")).toHaveValue("18:00");
+      expect(screen.getByText("booking:settings.fields.openingEndDescription")).toBeVisible();
+      expect(screen.queryByRole("list", { name: "booking:settings.openingHours.hoursByDay" })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "booking:settings.openingHours.setDifferentHours" })).toBeVisible();
+    });
+
+    it("edits, confirms, discards and reverts one day's exception", async () => {
+      const user = userEvent.setup();
+      const submitted = serve();
+      renderPage();
+
+      await user.click(await screen.findByRole("button", { name: "booking:settings.openingHours.setDifferentHours" }));
+      expect(within(dayRow("Tuesday")).getByText("08:00\u201318:00")).toHaveClass("text-muted-foreground");
+
+      // The pencil prefills the shared hours, and keyboard focus stays on the first icon button.
+      const pencil = within(dayRow("Tuesday")).getByRole("button", { name: "booking:settings.openingHours.editDay" });
+      await user.click(pencil);
+      const tuesdayHours = within(dayRow("Tuesday")).getByRole("group", { name: "Tuesday" });
+      expect(within(tuesdayHours).getByLabelText("booking:settings.fields.openingStart")).toHaveValue("08:00");
+      expect(within(tuesdayHours).getByLabelText("booking:settings.fields.openingEnd")).toHaveValue("18:00");
+      expect(pencil).toHaveFocus();
+      expect(pencil).toHaveAccessibleName("booking:settings.openingHours.confirmDay");
+
+      await setHours(user, "Tuesday", "16:00", "10:00");
+      expect(
+        within(dayRow("Tuesday")).getByRole("button", { name: "booking:settings.openingHours.confirmDay" }),
+      ).toBeDisabled();
+      expect(within(dayRow("Tuesday")).getByText("booking:settings.errors.openingHours")).toBeVisible();
+      expect(screen.getByText("booking:settings.openingHours.errors.pendingDraft")).toBeVisible();
+
+      await setHours(user, "Tuesday", "10:00", "16:00");
+      await user.click(
+        within(dayRow("Tuesday")).getByRole("button", { name: "booking:settings.openingHours.confirmDay" }),
+      );
+      expect(within(dayRow("Tuesday")).getByText("10:00\u201316:00")).toHaveClass("font-bold");
+      expect(
+        within(dayRow("Tuesday")).getByRole("button", { name: "booking:settings.openingHours.useSharedDay" }),
+      ).toBeVisible();
+      expect(
+        within(dayRow("Tuesday")).getByRole("button", { name: "booking:settings.openingHours.editDay" }),
+      ).toHaveFocus();
+      expect(save()).toBeEnabled();
+
+      // A pending draft blocks saving until it is discarded, which restores the earlier exception.
+      await user.click(
+        within(dayRow("Tuesday")).getByRole("button", { name: "booking:settings.openingHours.editDay" }),
+      );
+      await setHours(user, "Tuesday", "11:00", "12:00");
+      expect(save()).toBeDisabled();
+      await user.click(
+        within(dayRow("Tuesday")).getByRole("button", { name: "booking:settings.openingHours.discardDay" }),
+      );
+      expect(within(dayRow("Tuesday")).getByText("10:00\u201316:00")).toHaveClass("font-bold");
+      expect(save()).toBeEnabled();
+
+      await user.click(
+        within(dayRow("Wednesday")).getByRole("button", { name: "booking:settings.openingHours.editDay" }),
+      );
+      await user.click(
+        within(dayRow("Wednesday")).getByRole("button", { name: "booking:settings.openingHours.confirmDay" }),
+      );
+      expect(within(dayRow("Wednesday")).getByText("08:00\u201318:00")).toHaveClass("text-muted-foreground");
+      expect(
+        within(dayRow("Wednesday")).queryByRole("button", { name: "booking:settings.openingHours.useSharedDay" }),
+      ).not.toBeInTheDocument();
+
+      // Changing the shared hours moves every day without an exception.
+      await user.clear(screen.getAllByLabelText("booking:settings.fields.openingStart")[0]);
+      await user.type(screen.getAllByLabelText("booking:settings.fields.openingStart")[0], "09:00");
+      expect(within(dayRow("Wednesday")).getByText("09:00\u201318:00")).toBeVisible();
+      expect(within(dayRow("Tuesday")).getByText("10:00\u201316:00")).toBeVisible();
+
+      await user.click(save());
+      await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
+      expect(submitted.at(-1)).toMatchObject({
+        openingStart: "09:00",
+        openDays: [1, 2, 3, 4, 5, 6, 7],
+        openingExceptions: [{ dayOfWeek: 2, start: "10:00", end: "16:00" }],
+      });
+    });
+
+    it("reverts one exception and clears all of them with the same hours every day", async () => {
+      const user = userEvent.setup();
+      const submitted = serve({
+        ...settings,
+        openingExceptions: [
+          { dayOfWeek: 5, start: "09:00", end: "14:00" },
+          { dayOfWeek: 6, start: "10:00", end: "16:00" },
+        ],
+      });
+      renderPage();
+
+      // A saved exception opens the day list.
+      expect(await screen.findByRole("list", { name: "booking:settings.openingHours.hoursByDay" })).toBeVisible();
+      await user.click(
+        within(dayRow("Friday")).getByRole("button", { name: "booking:settings.openingHours.useSharedDay" }),
+      );
+      expect(within(dayRow("Friday")).getByText("08:00\u201318:00")).toHaveClass("text-muted-foreground");
+      expect(within(dayRow("Saturday")).getByText("10:00\u201316:00")).toHaveClass("font-bold");
+
+      await user.click(within(dayRow("Monday")).getByRole("button", { name: "booking:settings.openingHours.editDay" }));
+      await user.click(screen.getByRole("button", { name: "booking:settings.openingHours.useSameHours" }));
+      expect(screen.queryByRole("list", { name: "booking:settings.openingHours.hoursByDay" })).not.toBeInTheDocument();
+      expect(save()).toBeEnabled();
+
+      await user.click(save());
+      await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
+      expect(submitted.at(-1)).toMatchObject({ openingExceptions: [] });
+    });
+
+    it("keeps an unchecked day's exception for a re-check but drops it on save", async () => {
+      const user = userEvent.setup();
+      const submitted = serve({
+        ...settings,
+        openingExceptions: [{ dayOfWeek: 6, start: "10:00", end: "16:00" }],
+      });
+      renderPage();
+
+      const days = await screen.findByRole("group", { name: "booking:settings.openingHours.openOn" });
+      await user.click(within(days).getByRole("checkbox", { name: "Saturday" }));
+      expect(within(hoursList()).queryByText("Saturday", { exact: true })).not.toBeInTheDocument();
+      await user.click(within(days).getByRole("checkbox", { name: "Saturday" }));
+      expect(within(dayRow("Saturday")).getByText("10:00\u201316:00")).toHaveClass("font-bold");
+
+      await user.click(within(days).getByRole("checkbox", { name: "Saturday" }));
+      await user.click(save());
+      await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
+      expect(submitted.at(-1)).toMatchObject({ openDays: [1, 2, 3, 4, 5, 7], openingExceptions: [] });
+    });
+
+    it("blocks saving with no day selected", async () => {
+      const user = userEvent.setup();
+      const submitted = serve();
+      renderPage();
+
+      const days = await screen.findByRole("group", { name: "booking:settings.openingHours.openOn" });
+      for (const checkbox of within(days).getAllByRole("checkbox")) await user.click(checkbox);
+
+      expect(screen.getByText("booking:settings.openingHours.errors.noDays")).toBeVisible();
+      expect(days).toHaveAccessibleDescription("booking:settings.openingHours.errors.noDays");
+      expect(save()).toBeDisabled();
+      expect(submitted).toHaveLength(0);
+    });
   });
 });

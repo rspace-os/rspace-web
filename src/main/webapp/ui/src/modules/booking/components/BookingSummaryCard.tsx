@@ -74,7 +74,7 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
       ? [
           {
             id: "purpose",
-            label: t("myBookings.fields.purpose"),
+            label: booking.kind === "MAINTENANCE" ? t("bookings.form.notes") : t("myBookings.fields.purpose"),
             value: (
               <span title={purpose ?? undefined} className="block whitespace-normal break-words">
                 {purpose || t("bookings.details.noneProvided")}

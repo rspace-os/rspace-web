@@ -2,11 +2,22 @@ import { type FormStore, getInput, useField } from "@formisch/react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { OpeningHoursEditor } from "@/modules/booking/configuration/OpeningHoursEditor";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import {
   type BookingDisplayPreferencesInput,
   BookingDisplayPreferencesInputSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  ALL_ISO_WEEKDAYS,
+  finalizeOpeningExceptions,
+  MAX_BOOKING_DURATION_MINUTES,
+  OpenDaysSchema,
+  OpeningExceptionsSchema,
+  validOpeningExceptions,
+  validOpeningHours,
+  WALL_TIME,
+} from "@/modules/booking/domain/bookingOpeningHours";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -18,22 +29,24 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/modules/commo
 import { Input } from "@/modules/common/ui/input";
 
 export const MAX_BUFFER_MINUTES = 10_080;
-export const MAX_BOOKING_DURATION_MINUTES = 527_040;
+export { finalizeOpeningExceptions, MAX_BOOKING_DURATION_MINUTES, validOpeningExceptions, validOpeningHours };
 export const schedulingSettingsFieldNames = [
   "slotGranularityMinutes",
   "openingStart",
   "openingEnd",
+  "openDays",
+  "openingExceptions",
   "bufferBeforeMinutes",
   "bufferAfterMinutes",
   "maxBookingDurationMinutes",
   "allowDoubleBooking",
 ] as const;
-const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
-
 export const schedulingSettingsEntries = {
   slotGranularityMinutes: v.picklist([1, 5, 10, 15]),
   openingStart: v.pipe(v.string(), v.regex(WALL_TIME)),
   openingEnd: v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]),
+  openDays: OpenDaysSchema,
+  openingExceptions: OpeningExceptionsSchema,
   bufferBeforeMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
   bufferAfterMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
   maxBookingDurationMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BOOKING_DURATION_MINUTES)),
@@ -45,6 +58,13 @@ export const SchedulingSettingsSchema = v.pipe(
   v.forward(
     v.check((settings) => validOpeningHours(settings.openingStart, settings.openingEnd)),
     ["openingEnd"],
+  ),
+  // The form keeps a day's exception while the day is unchecked, so re-checking it restores the exception even
+  // after a failed save; the submitted output drops it.
+  v.transform(finalizeOpeningExceptions),
+  v.forward(
+    v.check((settings) => validOpeningExceptions(settings)),
+    ["openingExceptions"],
   ),
   v.forward(
     v.check((settings) =>
@@ -66,6 +86,10 @@ export const BookingSettingsSchema = v.pipe(
   v.forward(
     v.check((settings) => validOpeningHours(settings.openingStart, settings.openingEnd)),
     ["openingEnd"],
+  ),
+  v.forward(
+    v.check((settings) => validOpeningExceptions(settings)),
+    ["openingExceptions"],
   ),
   v.forward(
     v.check((settings) =>
@@ -101,6 +125,10 @@ export const BookingAdminSettingsSchema = v.pipe(
     ["openingEnd"],
   ),
   v.forward(
+    v.check((settings) => validOpeningExceptions(settings)),
+    ["openingExceptions"],
+  ),
+  v.forward(
     v.check((settings) =>
       validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings.slotGranularityMinutes),
     ),
@@ -119,17 +147,13 @@ export const DEFAULT_SCHEDULING_SETTINGS: SchedulingSettings = {
   slotGranularityMinutes: 5,
   openingStart: "00:00",
   openingEnd: "24:00",
+  openDays: [...ALL_ISO_WEEKDAYS],
+  openingExceptions: [],
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
 };
-
-export function validOpeningHours(start: string, end: string): boolean {
-  if (!WALL_TIME.test(start)) return false;
-  if (end === "24:00") return start === "00:00";
-  return WALL_TIME.test(end) && start < end;
-}
 
 export function validMaximumBookingDuration(maximumMinutes: number, granularityMinutes: number): boolean {
   return (
@@ -191,37 +215,36 @@ function numberInput(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
-/** Scheduling controls shared by add-item, edit-item, and global-default forms. */
+/**
+ * Scheduling controls shared by add-item, edit-item, and global-default forms. `onSaveBlockedChange` reports an
+ * unconfirmed opening-hours day edit or an empty day selection; the owning form disables saving while it is true.
+ */
 export function SchedulingSettingsFields({
   form,
   disabled = false,
   layout = "stacked",
+  onSaveBlockedChange,
 }: {
   form: FormStore;
   disabled?: boolean;
   layout?: "stacked" | "inline";
+  onSaveBlockedChange?: (blocked: boolean) => void;
 }) {
   const { t } = useTranslation("booking");
   const id = useId();
   const granularity = useField(form, { path: ["slotGranularityMinutes"] });
-  const openingStart = useField(form, { path: ["openingStart"] });
-  const openingEnd = useField(form, { path: ["openingEnd"] });
   const bufferBefore = useField(form, { path: ["bufferBeforeMinutes"] });
   const bufferAfter = useField(form, { path: ["bufferAfterMinutes"] });
   const maximumDuration = useField(form, { path: ["maxBookingDurationMinutes"] });
   const allowDoubleBooking = useField(form, { path: ["allowDoubleBooking"] });
   const values = getInput(form) as Partial<SchedulingSettings>;
   const mixedBuffers = values.bufferBeforeMinutes !== values.bufferAfterMinutes;
-  const openingInvalid =
-    Boolean(values.openingStart && values.openingEnd) &&
-    !validOpeningHours(values.openingStart ?? "", values.openingEnd ?? "");
   const maximumDurationInvalid =
     values.maxBookingDurationMinutes !== undefined &&
     values.slotGranularityMinutes !== undefined &&
     !validMaximumBookingDuration(values.maxBookingDurationMinutes, values.slotGranularityMinutes);
 
   if (layout === "inline") {
-    const openingErrorId = `${id}-opening-error`;
     const granularityErrorId = `${id}-granularity-error`;
     const bufferBeforeErrorId = `${id}-buffer-before-error`;
     const bufferAfterErrorId = `${id}-buffer-after-error`;
@@ -230,67 +253,18 @@ export function SchedulingSettingsFields({
     const granularityInvalid = Boolean(granularity.errors?.length);
     const bufferBeforeInvalid = Boolean(bufferBefore.errors?.length);
     const bufferAfterInvalid = Boolean(bufferAfter.errors?.length);
-    const openingStartInvalid = openingInvalid || Boolean(openingStart.errors?.length);
-    const openingEndInvalid = openingInvalid || Boolean(openingEnd.errors?.length);
 
     return (
       <div className={RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME}>
         <fieldset className={`${RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME} gap-y-4`}>
           <legend className="sr-only">{t("settings.fields.legend")}</legend>
 
-          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
-            <FieldLabel htmlFor={`${id}-opening-start`}>{t("bookableItemDetails.fields.openingHours")}</FieldLabel>
-            <div className="space-y-3">
-              <div className="grid gap-3 @sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor={`${id}-opening-start`}>{t("settings.fields.openingStart")}</FieldLabel>
-                  <Input
-                    id={`${id}-opening-start`}
-                    type="time"
-                    step={60}
-                    required
-                    disabled={disabled}
-                    value={typeof openingStart.input === "string" ? openingStart.input : ""}
-                    ref={openingStart.props.ref}
-                    onFocus={openingStart.props.onFocus}
-                    onBlur={openingStart.props.onBlur}
-                    aria-invalid={openingStartInvalid || undefined}
-                    aria-describedby={openingStartInvalid ? openingErrorId : undefined}
-                    onChange={(event) => openingStart.onChange(event.currentTarget.value)}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor={`${id}-opening-end`}>{t("settings.fields.openingEnd")}</FieldLabel>
-                  <Input
-                    id={`${id}-opening-end`}
-                    type="time"
-                    step={60}
-                    required
-                    disabled={disabled}
-                    value={
-                      openingEnd.input === "24:00"
-                        ? "00:00"
-                        : typeof openingEnd.input === "string"
-                          ? openingEnd.input
-                          : ""
-                    }
-                    ref={openingEnd.props.ref}
-                    onFocus={openingEnd.props.onFocus}
-                    onBlur={openingEnd.props.onBlur}
-                    aria-invalid={openingEndInvalid || undefined}
-                    aria-describedby={openingEndInvalid ? openingErrorId : undefined}
-                    onChange={(event) =>
-                      openingEnd.onChange(event.currentTarget.value === "00:00" ? "24:00" : event.currentTarget.value)
-                    }
-                  />
-                  <FieldDescription>{t("settings.fields.openingEndDescription")}</FieldDescription>
-                </Field>
-              </div>
-              {openingStartInvalid || openingEndInvalid ? (
-                <FieldError id={openingErrorId}>{t("settings.errors.openingHours")}</FieldError>
-              ) : null}
-            </div>
-          </div>
+          <OpeningHoursEditor
+            form={form}
+            disabled={disabled}
+            layout="inline"
+            onSaveBlockedChange={onSaveBlockedChange}
+          />
 
           <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
             <FieldLabel htmlFor={`${id}-granularity`}>{t("bookableItemDetails.fields.granularity")}</FieldLabel>
@@ -442,44 +416,7 @@ export function SchedulingSettingsFields({
           ))}
         </select>
       </Field>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field>
-          <FieldLabel htmlFor={`${id}-opening-start`}>{t("settings.fields.openingStart")}</FieldLabel>
-          <Input
-            id={`${id}-opening-start`}
-            type="time"
-            step={60}
-            required
-            disabled={disabled}
-            value={typeof openingStart.input === "string" ? openingStart.input : ""}
-            ref={openingStart.props.ref}
-            onFocus={openingStart.props.onFocus}
-            onBlur={openingStart.props.onBlur}
-            onChange={(event) => openingStart.onChange(event.currentTarget.value)}
-          />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor={`${id}-opening-end`}>{t("settings.fields.openingEnd")}</FieldLabel>
-          <Input
-            id={`${id}-opening-end`}
-            type="time"
-            step={60}
-            required
-            disabled={disabled}
-            value={
-              openingEnd.input === "24:00" ? "00:00" : typeof openingEnd.input === "string" ? openingEnd.input : ""
-            }
-            ref={openingEnd.props.ref}
-            onFocus={openingEnd.props.onFocus}
-            onBlur={openingEnd.props.onBlur}
-            onChange={(event) =>
-              openingEnd.onChange(event.currentTarget.value === "00:00" ? "24:00" : event.currentTarget.value)
-            }
-          />
-          <FieldDescription>{t("settings.fields.openingEndDescription")}</FieldDescription>
-        </Field>
-      </div>
-      {openingInvalid ? <FieldError>{t("settings.errors.openingHours")}</FieldError> : null}
+      <OpeningHoursEditor form={form} disabled={disabled} layout="stacked" onSaveBlockedChange={onSaveBlockedChange} />
       <Field>
         <FieldLabel htmlFor={`${id}-buffer`}>{t("settings.fields.buffer")}</FieldLabel>
         <Input

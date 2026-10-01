@@ -9,19 +9,19 @@ import {
   verticalTimelineRangeToDraft,
 } from "@/modules/booking/creation/verticalTimelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
+import { type OpeningSchedule, openingIntervals } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
   type BookingWindowDraft,
   currentWallClock,
   dayMinuteToZonedTime,
-  displayInterval,
   instantToDayMinute,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader } from "@/modules/common/ui/card";
 import { cn } from "@/modules/common/utils/cn";
-import { type DayTimelineEvent, formatMinuteWithDayOffset } from "./DayTimelineEvent";
+import { CLOSED_HOURS_CLASS_NAME, type DayTimelineEvent, formatMinuteWithDayOffset } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import { layoutVerticalTimelineEvents } from "./verticalTimelineLayout";
 
@@ -35,7 +35,7 @@ const MOVE_HANDLE_MINIMUM_HEIGHT = 44;
 type IsoRange = { start: string; end: string };
 type AdjustmentEdge = "move" | "start" | "end";
 type Direction = "previous" | "next";
-export type VerticalDayTimelineScheduleWindow = { timezone: string; openingStart: string; openingEnd: string };
+export type VerticalDayTimelineScheduleWindow = OpeningSchedule & { timezone: string };
 
 export type VerticalDayTimelineSchedule =
   | { status: "no-target" }
@@ -83,28 +83,12 @@ function openingSegments(
   scheduleWindow: VerticalDayTimelineScheduleWindow | undefined,
 ): Array<{ startMinute: number; endMinute: number }> {
   if (!scheduleWindow) return [];
-  const displayBounds = zonedDayBounds(date, displayTimezone);
-  const firstScheduleDate = addCalendarDays(currentWallClock(displayBounds.start, scheduleWindow.timezone).date, -1);
-  const lastScheduleDate = addCalendarDays(currentWallClock(displayBounds.end, scheduleWindow.timezone).date, 1);
-  const intervals: Array<{ startMinute: number; endMinute: number }> = [];
-  for (let day = firstScheduleDate; day <= lastScheduleDate; day = addCalendarDays(day, 1)) {
-    const interval = displayInterval(
-      day,
-      scheduleWindow.timezone,
-      scheduleWindow.openingStart,
-      scheduleWindow.openingEnd,
-    );
-    const start =
-      Temporal.Instant.compare(interval.start, displayBounds.start) < 0 ? displayBounds.start : interval.start;
-    const end = Temporal.Instant.compare(interval.end, displayBounds.end) > 0 ? displayBounds.end : interval.end;
-    if (Temporal.Instant.compare(start, end) < 0) {
-      intervals.push({
-        startMinute: instantToDayMinute(start, date, displayTimezone),
-        endMinute: instantToDayMinute(end, date, displayTimezone),
-      });
-    }
-  }
-  return intervals.toSorted((left, right) => left.startMinute - right.startMinute);
+  return openingIntervals(scheduleWindow, scheduleWindow.timezone, zonedDayBounds(date, displayTimezone)).map(
+    (opening) => ({
+      startMinute: instantToDayMinute(opening.start, date, displayTimezone),
+      endMinute: instantToDayMinute(opening.end, date, displayTimezone),
+    }),
+  );
 }
 
 function closedSegments(open: readonly { startMinute: number; endMinute: number }[], dayMinutes: number) {
@@ -402,6 +386,8 @@ export function VerticalDayTimeline({
       scheduleWindow?.timezone ?? "",
       scheduleWindow?.openingStart ?? "",
       scheduleWindow?.openingEnd ?? "",
+      scheduleWindow?.openDays.join(",") ?? "",
+      JSON.stringify(scheduleWindow?.openingExceptions ?? []),
     ].join("|");
     const draftKey = `${contextKey}|draft`;
     if (editingRange && resolvedDraftDay === date && lastAutoScrollContext.current !== draftKey) {
@@ -609,7 +595,7 @@ export function VerticalDayTimeline({
                       <div
                         key={`closed-${index}`}
                         data-testid="vertical-day-timeline-closed-hours"
-                        className="absolute inset-x-0 bg-muted/35"
+                        className={`absolute inset-x-0 ${CLOSED_HOURS_CLASS_NAME}`}
                         style={{
                           top: segment.startMinute * (PIXELS_PER_HOUR / 60),
                           height: (segment.endMinute - segment.startMinute) * (PIXELS_PER_HOUR / 60),
@@ -646,6 +632,7 @@ export function VerticalDayTimeline({
                                   date={date}
                                   timezone={timezone}
                                   compactCards={false}
+                                  fitHeight={height}
                                   variant="timeline"
                                   expanded={expandedEventId === event.id}
                                   onExpandedChange={(expanded) => openDetails(event.id, expanded)}
