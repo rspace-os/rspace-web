@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
@@ -49,6 +50,8 @@ final class BookingConfigurationManagerTestFixtures {
   final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
   final BookingConfigurationDefaultsDao defaultsDao = mock(BookingConfigurationDefaultsDao.class);
   final InstrumentDao instrumentDao = mock(InstrumentDao.class);
+  final BookingCalendarSubscriptionDao calendarSubscriptions =
+      mock(BookingCalendarSubscriptionDao.class);
   final TimeSlotBookingDao timeSlotBookings = mock(TimeSlotBookingDao.class);
 
   final User actor = mock(User.class);
@@ -67,6 +70,7 @@ final class BookingConfigurationManagerTestFixtures {
           ApiV2BookingConfigurationResource.DESCRIPTION,
           accessManager,
           new MessageSourceUtils(new JsonMessageSource()),
+          calendarSubscriptions,
           timeSlotBookings);
 
   void setUp() {
