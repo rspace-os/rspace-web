@@ -103,6 +103,27 @@ export function currentWallClock(
   };
 }
 
+/** Booking endpoints align to local scheduling-zone minutes, not display-zone coordinates. */
+export function isBookingInstantAlignedToGranularity(
+  instant: string,
+  timezone: string,
+  granularityMinutes: number,
+): boolean {
+  if (!Number.isInteger(granularityMinutes) || granularityMinutes <= 0) return false;
+  try {
+    const time = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone);
+    return (
+      time.second === 0 &&
+      time.millisecond === 0 &&
+      time.microsecond === 0 &&
+      time.nanosecond === 0 &&
+      (time.hour * 60 + time.minute) % granularityMinutes === 0
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function instantToWallClockMinute(instant: string, date: string, timezone: string): number {
   const wallClock = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone).toPlainDateTime();
   const midnight = parsePlainDate(date).toPlainDateTime("00:00");
