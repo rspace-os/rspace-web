@@ -21,6 +21,7 @@ export function allBookableItemsSearch(search: Record<string, unknown>) {
     ...dateSearch,
     ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
     ...(availability ? { availability } : {}),
+    ...(search.mine === true || search.mine === "true" ? { mine: true } : {}),
     ...(typeof search.where === "string" && search.where.trim() ? { where: search.where } : {}),
     ...(typeof search.q === "string" && search.q.trim() ? { q: search.q.slice(0, 255) } : {}),
     ...(types.length > 0 ? { types } : {}),
