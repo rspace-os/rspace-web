@@ -1,9 +1,18 @@
 import { useIsFetching } from "@tanstack/react-query";
-import { CatchBoundary, HeadContent, Outlet, useMatches, useRouter, useRouterState } from "@tanstack/react-router";
+import {
+  CatchBoundary,
+  HeadContent,
+  Navigate,
+  Outlet,
+  useMatches,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
+import { useFeatureFlags } from "@/featureFlags/queries";
 import { navigationProgressQueryFilters } from "@/modules/common/queries/navigationProgress";
 import { UserSessionBootstrap } from "@/modules/common/stores/userSessionStore";
 import {
@@ -66,7 +75,33 @@ export default function AppShell() {
       ),
   });
   const appBarConfig: AppBarConfig | false = context.appBar ?? { currentPage: "rspace" };
-  const renderSidebar = context.sidebar;
+  return appBarConfig !== false && appBarConfig.currentPage === "booking" ? (
+    <React.Suspense fallback={<p role="status">{t("loading")}</p>}>
+      <BookingAppShell appBarConfig={appBarConfig} renderSidebar={context.sidebar} />
+    </React.Suspense>
+  ) : (
+    <LoadedAppShell appBarConfig={appBarConfig} renderSidebar={context.sidebar} />
+  );
+}
+
+type LoadedAppShellProps = {
+  appBarConfig: AppBarConfig | false;
+  renderSidebar: AppBarRouteContext["sidebar"];
+};
+
+function BookingAppShell(props: LoadedAppShellProps) {
+  const { t } = useTranslation("common");
+  const flags = useFeatureFlags();
+  // Gate the entire shell: the Booking sidebar also fetches booking preferences.
+  if (flags.isPlaceholderData && !flags.isError) return <p role="status">{t("loading")}</p>;
+  if (!flags.data?.flags.bookingEnabled.value || flags.isError) {
+    return <Navigate from="/booking" href="/workspace" reloadDocument replace />;
+  }
+  return <LoadedAppShell {...props} />;
+}
+
+function LoadedAppShell({ appBarConfig, renderSidebar }: LoadedAppShellProps) {
+  const { t } = useTranslation("common");
 
   const appBarProps = appBarConfig !== false && {
     ...appBarConfig,
