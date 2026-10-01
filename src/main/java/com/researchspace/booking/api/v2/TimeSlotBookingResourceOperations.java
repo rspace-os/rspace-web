@@ -3,12 +3,14 @@ package com.researchspace.booking.api.v2;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
+import com.researchspace.booking.service.BookingBufferConflictException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingDurationException;
 import com.researchspace.booking.service.BookingOverlapException;
@@ -17,6 +19,7 @@ import com.researchspace.booking.service.BookingStartInPastException;
 import com.researchspace.booking.service.BookingStateTransitionException;
 import com.researchspace.booking.service.BookingTargetUnavailableException;
 import com.researchspace.booking.service.BookingWindowException;
+import com.researchspace.booking.service.ConflictingEvent;
 import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.booking.service.TimeSlotBookingManager.Create;
 import com.researchspace.booking.service.TimeSlotBookingManager.Patch;
@@ -33,6 +36,7 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
 import jakarta.ws.rs.NotFoundException;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -104,7 +108,24 @@ public final class TimeSlotBookingResourceOperations
                 BookingOverlapException.class,
                 HttpStatus.CONFLICT,
                 "errors.api.v2.booking.overlap",
-                "The interval overlaps another booking."));
+                "The interval overlaps another booking or maintenance event. The problem's"
+                    + " conflict member identifies the first such event.",
+                ignored -> new Object[0],
+                exception ->
+                    ApiV2Problem.Extensions.bookingConflict(conflict(exception.conflict()))),
+            ApiV2ErrorMapping.of(
+                BookingBufferConflictException.class,
+                HttpStatus.CONFLICT,
+                "errors.api.v2.booking.buffer",
+                "The interval is free but falls inside the buffer around another booking or"
+                    + " maintenance event. The problem's conflict, bufferBeforeMinutes, and"
+                    + " bufferAfterMinutes members describe it.",
+                ignored -> new Object[0],
+                exception ->
+                    ApiV2Problem.Extensions.bookingBuffer(
+                        conflict(exception.conflict()),
+                        exception.bufferBeforeMinutes(),
+                        exception.bufferAfterMinutes())));
     List<ApiV2ErrorMapping> updateErrors =
         java.util.stream.Stream.concat(
                 commonErrors.stream(),
@@ -207,6 +228,16 @@ public final class TimeSlotBookingResourceOperations
     manager.requireCanViewAudit(booking, subject);
   }
 
+  /**
+   * The booking's audit capability is already checked by {@link #requireAuditAccess}. People who
+   * book an item often share no group with its managers, so the user-directory filter would hide
+   * events that the configuration audit shows.
+   */
+  @Override
+  public boolean auditBypassesActorDirectory() {
+    return true;
+  }
+
   @Override
   public TimeSlotBooking create(ParsedDocument document, ApiV2Caller caller) {
     requireEnabled(caller.subject());
@@ -267,5 +298,13 @@ public final class TimeSlotBookingResourceOperations
     if (!enabled(subject)) {
       throw new NotFoundException();
     }
+  }
+
+  private static ApiV2Problem.BookingConflict conflict(ConflictingEvent event) {
+    return new ApiV2Problem.BookingConflict(
+        event.id(),
+        event.kind().name(),
+        DateTimeFormatter.ISO_INSTANT.format(event.start()),
+        DateTimeFormatter.ISO_INSTANT.format(event.end()));
   }
 }

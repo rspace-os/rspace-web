@@ -84,7 +84,7 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   }
 
   @Override
-  public boolean overlaps(
+  public Optional<TimeSlotBooking> findFirstOverlap(
       Long configurationId,
       Date start,
       Date end,
@@ -98,7 +98,8 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
                     + " and deleted = false and state = :state and startTime < :end"
                     + " and endTime > :start"
                     + " and kind in :kinds"
-                    + exclusion,
+                    + exclusion
+                    + " order by startTime, id",
                 TimeSlotBooking.class)
             .setLockMode(LockModeType.PESSIMISTIC_WRITE)
             .setMaxResults(1)
@@ -110,7 +111,7 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
     if (excludedBookingId != null) {
       query.setParameter("excludedId", excludedBookingId);
     }
-    return !query.getResultList().isEmpty();
+    return query.getResultList().stream().findFirst();
   }
 
   @Override

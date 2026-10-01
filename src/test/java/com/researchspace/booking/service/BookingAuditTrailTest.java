@@ -177,6 +177,10 @@ class BookingAuditTrailTest {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(42L);
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 7L));
+    configuration.setOpenDays(java.util.List.of(1, 6));
+    configuration.setOpeningExceptions(
+        java.util.List.of(
+            new com.researchspace.model.booking.BookingOpeningException(6, "10:00", "16:00")));
 
     SavedRecord saved =
         savedRecord(
@@ -186,6 +190,11 @@ class BookingAuditTrailTest {
     String json = saved.historicData().getData().toJson();
     AuditData parsed = saved.data();
     assertTrue(json.contains("\"target\":{\"type\":\"INSTRUMENT\",\"id\":7}"), json);
+    assertTrue(json.contains("\"openDays\":[1,6]"), json);
+    assertTrue(
+        json.contains(
+            "\"openingExceptions\":[{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\"}]"),
+        json);
     assertEquals("booking-configurations:42", parsed.getData().get("id"));
     assertTrue(parsed.getData().get("target").toString().contains("INSTRUMENT"));
     assertEquals(AuditDomain.BOOKING, saved.historicData().getDomain());
