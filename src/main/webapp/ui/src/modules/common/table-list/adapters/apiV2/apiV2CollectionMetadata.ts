@@ -1,4 +1,11 @@
-import type { FieldConfig, FieldName, SortRule } from "@/modules/common/collection/collectionConfig";
+import type {
+  FieldConfig,
+  FieldName,
+  RelationshipFilterPicker,
+  SortRule,
+} from "@/modules/common/collection/collectionConfig";
+
+import { validateRuntimeFieldCatalogUrl } from "./runtimeFieldCatalog";
 
 export type ApiV2FilterOperator =
   | "=="
@@ -68,6 +75,7 @@ export type ApiV2CollectionMetadata<TDocument> = {
             wildcards: boolean;
             title?: string;
             fieldType?: ApiV2PrimitiveFieldType | null;
+            picker?: RelationshipFilterPicker;
           }
         >
       >
@@ -81,6 +89,7 @@ export type ApiV2CollectionMetadata<TDocument> = {
         operators: readonly ApiV2FilterOperator[];
         wildcards: boolean;
         title?: string;
+        viaTitle?: string;
         fieldType: ApiV2PrimitiveFieldType | null;
       }
     >
@@ -267,6 +276,28 @@ function primitiveFieldType(schema: unknown): ApiV2PrimitiveFieldType | null {
   return type === "object" || type === "array" ? null : "text";
 }
 
+function relationshipPicker(value: unknown, selector: string): RelationshipFilterPicker | undefined {
+  if (value === undefined) return undefined;
+  const picker = object(value, `picker for ${selector}`);
+  if (
+    !/^[A-Za-z][A-Za-z0-9_]*$/.test(selector) ||
+    typeof picker.resource !== "string" ||
+    !/^[a-z][a-z0-9-]*$/.test(picker.resource) ||
+    picker.identity !== "globalId" ||
+    typeof picker.globalIdPrefix !== "string" ||
+    !/^[A-Z]+$/.test(picker.globalIdPrefix)
+  )
+    throw new Error(`OpenAPI filter selector ${selector} has an invalid picker`);
+  return { resource: picker.resource, identity: "globalId", globalIdPrefix: picker.globalIdPrefix };
+}
+
+function validateSelectorName(name: string, role: string): void {
+  const parts = name.split(".");
+  if (parts.length > 2 || parts.some((part) => !/^[A-Za-z][A-Za-z0-9_-]*$/.test(part))) {
+    throw new Error(`OpenAPI ${role} ${name} must have at most one relationship hop`);
+  }
+}
+
 function relationshipFields(
   whereParameter: Record<string, unknown>,
 ): NonNullable<ApiV2CollectionMetadata<unknown>["relationshipFields"]> {
@@ -274,9 +305,19 @@ function relationshipFields(
   if (declared === undefined) return {};
   const fields: Record<
     string,
-    { operators: ApiV2FilterOperator[]; wildcards: boolean; title?: string; fieldType: ApiV2PrimitiveFieldType | null }
+    {
+      operators: ApiV2FilterOperator[];
+      wildcards: boolean;
+      title?: string;
+      viaTitle?: string;
+      fieldType: ApiV2PrimitiveFieldType | null;
+    }
   > = {};
   for (const [name, input] of Object.entries(object(declared, "relationship fields"))) {
+    validateSelectorName(name, "relationship field");
+    if (!name.includes(".")) {
+      throw new Error(`OpenAPI relationship field ${name} must have one hop`);
+    }
     const descriptor = object(input, `relationship field ${name}`);
     const operators = strings(descriptor.operators, `operators for ${name}`);
     if (operators.some((operator) => !filterOperators.has(operator as ApiV2FilterOperator))) {
@@ -287,6 +328,7 @@ function relationshipFields(
       wildcards: descriptor.wildcards === true,
       fieldType: primitiveFieldType(descriptor.schema),
       ...(typeof descriptor.title === "string" ? { title: descriptor.title } : {}),
+      ...(typeof descriptor.viaTitle === "string" ? { viaTitle: descriptor.viaTitle } : {}),
     };
   }
   return fields;
@@ -296,6 +338,7 @@ function runtimeFieldNamespaces(whereParameter: Record<string, unknown>): ApiV2R
   const declared = whereParameter["x-rspace-runtime-fields"];
   if (declared === undefined) return [];
   if (!Array.isArray(declared)) throw new Error("OpenAPI runtime fields must be an array");
+  const namespaces = new Set<string>();
   return declared.map((input) => {
     const descriptor = object(input, "runtime field namespace");
     const namespace = descriptor.namespace;
@@ -303,7 +346,37 @@ function runtimeFieldNamespaces(whereParameter: Record<string, unknown>): ApiV2R
     const responseField = descriptor.responseField;
     if (typeof namespace !== "string" || namespace === "") throw new Error("Runtime field namespace must be a string");
     if (typeof catalog !== "string" || catalog === "") throw new Error("Runtime field catalog must be a URL");
+    validateRuntimeFieldCatalogUrl(catalog);
     if (typeof responseField !== "string") throw new Error("Runtime field response field must be a string");
+    const parts = namespace.split(".");
+    const terminal = parts.at(-1);
+    if (
+      parts.length > 2 ||
+      parts.some((part) => !/^[A-Za-z][A-Za-z0-9_-]*$/.test(part)) ||
+      (terminal !== "customFields" && terminal !== "extraFields")
+    ) {
+      throw new Error(`Runtime field namespace ${namespace} must name one supported field catalog`);
+    }
+    const catalogTerminal = catalog.endsWith("/customFields")
+      ? "customFields"
+      : catalog.endsWith("/extraFields")
+        ? "extraFields"
+        : "";
+    if (catalogTerminal !== terminal) {
+      throw new Error(`Runtime field namespace ${namespace} does not match its catalog`);
+    }
+    const via = typeof descriptor.via === "string" ? descriptor.via : "";
+    const viaResource = typeof descriptor.viaResource === "string" ? descriptor.viaResource : "";
+    if (
+      (descriptor.via !== undefined && typeof descriptor.via !== "string") ||
+      (descriptor.viaResource !== undefined && typeof descriptor.viaResource !== "string") ||
+      (parts.length === 1 && (via !== "" || viaResource !== "")) ||
+      (parts.length === 2 && (via !== parts[0] || !/^[a-z][a-z0-9-]*$/.test(viaResource)))
+    ) {
+      throw new Error(`Runtime field namespace ${namespace} has an unsupported relationship source`);
+    }
+    if (namespaces.has(namespace)) throw new Error(`Duplicate runtime field namespace ${namespace}`);
+    namespaces.add(namespace);
     return {
       namespace,
       catalog,
@@ -354,15 +427,19 @@ export function apiV2CollectionMetadataFromOpenApi<TDocument>(
       wildcards: boolean;
       title?: string;
       fieldType: ApiV2PrimitiveFieldType | null;
+      picker?: RelationshipFilterPicker;
     }
   > = {};
   for (const [name, input] of Object.entries(selectorInput)) {
+    validateSelectorName(name, "filter selector");
     const selector = object(input, `filter selector ${name}`);
     const operators = strings(selector.operators, `operators for ${name}`);
     if (operators.some((operator) => !filterOperators.has(operator as ApiV2FilterOperator))) {
       throw new Error(`OpenAPI filter selector ${name} has an unknown operator`);
     }
+    const picker = relationshipPicker(selector.picker, name);
     selectors[name] = {
+      ...(picker === undefined ? {} : { picker }),
       operators: operators as ApiV2FilterOperator[],
       wildcards: selector.wildcards === true,
       fieldType: primitiveFieldType(selector.schema),

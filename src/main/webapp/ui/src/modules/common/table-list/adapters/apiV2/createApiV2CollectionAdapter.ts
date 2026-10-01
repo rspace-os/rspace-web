@@ -99,27 +99,42 @@ export function createApiV2CollectionAdapter<TDocument>({
     }
   }
   validateSearchSelectors(sourceConfig, metadata);
-  const relationships = new Map(
-    sourceConfig.fields.filter((field) => field.type === "relationship").map((field) => [String(field.name), field]),
-  );
   const filterFields = createApiV2FilterFields({
     config: sourceConfig,
     metadata,
     runtimeFields,
     translate,
   });
-  const relationshipFields = new Set(filterFields.relationshipFields.map(({ field }) => field.name));
+  const relationships = new Map(
+    filterFields.sourceFields
+      .filter((field) => field.type === "relationship")
+      .map((field) => [String(field.name), field]),
+  );
+  const projectableRelationships = new Set(
+    filterFields.sourceFields
+      .filter((field) => field.type === "relationship" && field.name in documentSchema.entries)
+      .map((field) => field.name),
+  );
+  const relationshipFields = new Set(
+    filterFields.relationshipFields
+      .filter(({ owner }) => projectableRelationships.has(owner))
+      .map(({ field }) => field.name),
+  );
   const runtimeSelectors = filterFields.runtimeSelectors;
   const projectableFields = new Set(Object.keys(documentSchema.entries) as FieldName<TDocument>[]);
   const fields: FieldConfig<TDocument>[] = [
     ...filterFields.sourceFields,
-    ...filterFields.relationshipFields.map(({ field, owner, targetField }) => ({
-      ...field,
-      list: {
-        dependencies: [owner],
-        renderCell: ({ row }: { row: TDocument }) => targetValue(row, owner, targetField),
-      },
-    })),
+    ...filterFields.relationshipFields.map(({ field, owner, targetField }) =>
+      projectableRelationships.has(owner)
+        ? {
+            ...field,
+            list: {
+              dependencies: [owner],
+              renderCell: ({ row }: { row: TDocument }) => targetValue(row, owner, targetField),
+            },
+          }
+        : { ...field, list: false as const },
+    ),
     ...filterFields.runtimeFields.map(({ field, namespace, responseField, definition }) => ({
       ...field,
       list: namespace.columnSelectable

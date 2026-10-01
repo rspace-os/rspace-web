@@ -65,10 +65,18 @@ export type RuntimeFieldCatalogRequest = {
   headers?: HeadersInit;
 };
 
+/** Application-owned routes, including catalogs delegated by target-only resources. */
+export function validateRuntimeFieldCatalogUrl(catalog: string): void {
+  if (catalog !== "/api/v2/instruments/fields/customFields" && catalog !== "/api/v2/instruments/fields/extraFields") {
+    throw new Error("Unsupported runtime field catalog route");
+  }
+}
+
 export async function fetchRuntimeFieldCatalog(
   namespace: Pick<ApiV2RuntimeFieldNamespace, "catalog">,
   request: RuntimeFieldCatalogRequest = {},
 ): Promise<RuntimeFieldCatalogPage> {
+  validateRuntimeFieldCatalogUrl(namespace.catalog);
   const headers = new Headers(request.headers);
   headers.set("X-Requested-With", "XMLHttpRequest");
   const parameters = new URLSearchParams();
@@ -79,7 +87,7 @@ export async function fetchRuntimeFieldCatalog(
   const query = parameters.toString();
   const response = await (request.fetch ?? globalThis.fetch)(
     query === "" ? namespace.catalog : `${namespace.catalog}?${query}`,
-    { headers, signal: request.signal },
+    { headers, signal: request.signal, redirect: "error" },
   );
   if (!response.ok) throw new Error(`Runtime field catalog request failed with status ${response.status}`);
   const body: unknown = await response.json();

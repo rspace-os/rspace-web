@@ -21,11 +21,16 @@ const referenceSchema = v.object({
   ),
 });
 const validId = (value: string) => databaseIdFromGlobalId(value, "IN") !== null;
+const canonicalId = (value: string) => {
+  const id = databaseIdFromGlobalId(value, "IN");
+  return id === null ? null : `IN${id}`;
+};
 
 /** Booking access owns discovery and reference resolution through configurations. */
 export const bookingInstrumentSource: RelationshipSource = {
   id: "booking-instruments",
   globalIdPrefix: "IN",
+  normalizeValue: canonicalId,
   ownsValue: validId,
   search: async (term, token, signal) => {
     const value = term.trim();
@@ -54,6 +59,30 @@ export const bookingInstrumentSource: RelationshipSource = {
     if (!response.ok) throw new Error(`Booking reference request failed (${response.status})`);
     const target = parseOrThrow(referenceSchema, await response.json()).docs[0]?.target;
     return target ? { ...target.value, globalId: target.globalId } : null;
+  },
+  batchSize: 100,
+  resolveMany: async (values, token, signal) => {
+    const targets = [...new Set(values.map(canonicalId).filter((value): value is string => value !== null))];
+    if (targets.length === 0) return {};
+    const parameters = new URLSearchParams({
+      where: `target=in=(${targets.join(",")})`,
+      limit: String(Math.min(targets.length, 100)),
+      depth: "1",
+      "fields[booking-configurations]": "id,target",
+    });
+    const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+      headers: bookingApiV2Headers(token ?? ""),
+      signal,
+    });
+    if (!response.ok) throw new Error(`Booking reference request failed (${response.status})`);
+    const documents = parseOrThrow(referenceSchema, await response.json()).docs;
+    const requested = new Set(targets);
+    return Object.fromEntries(
+      documents.flatMap(({ target }) => {
+        const key = canonicalId(target.globalId);
+        return key !== null && requested.has(key) ? [[key, { ...target.value, globalId: key }]] : [];
+      }),
+    );
   },
   toOption: (document, context) => {
     const target = parseOrThrow(targetSchema, document);

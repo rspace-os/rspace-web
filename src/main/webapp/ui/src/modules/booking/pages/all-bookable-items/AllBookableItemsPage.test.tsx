@@ -181,6 +181,45 @@ describe("AllBookableItemsPage", () => {
     });
   });
 
+  it("searches and filters the catalogue by Inventory instrument name", async () => {
+    const user = userEvent.setup();
+    const catalogueRequests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        const url = new URL(request.url);
+        catalogueRequests.push(url);
+        return HttpResponse.json({
+          ...candidatePage(bookableItemFixtures),
+          pageSize: Number(url.searchParams.get("limit")),
+        });
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    await renderPage();
+
+    await user.type(await screen.findByRole("textbox", { name: "Search All Bookable Items" }), "confocal");
+    await waitFor(() =>
+      expect(catalogueRequests.some((request) => request.searchParams.get("q") === "confocal")).toBe(true),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Filters, none applied" }));
+    await user.click(screen.getByRole("button", { name: "Add filter" }));
+    await user.click(screen.getByRole("combobox", { name: "Field for filter 1" }));
+    await user.click(await screen.findByRole("option", { name: "Bookable item → Instrument name" }));
+    await user.click(screen.getByRole("combobox", { name: "Operator for filter 1" }));
+    await user.click(screen.getByRole("option", { name: "contains" }));
+    await user.type(screen.getByRole("textbox", { name: "Value for filter 1" }), "confocal");
+    await user.click(screen.getByRole("button", { name: "Apply filters" }));
+
+    await waitFor(() =>
+      expect(
+        catalogueRequests.some((request) => request.searchParams.get("where") === "target.name=contains=confocal"),
+      ).toBe(true),
+    );
+  });
+
   it("shares today's booking request between availability counts and bars", async () => {
     const bookings = vi.fn(() => HttpResponse.json({ ...collectionPage([]), hasNextPage: false }));
     server.use(
