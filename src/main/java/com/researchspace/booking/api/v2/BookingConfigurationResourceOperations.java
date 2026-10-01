@@ -125,27 +125,24 @@ public final class BookingConfigurationResourceOperations
                     "Creates booking configuration for an instrument. Each instrument may have "
                         + "only one booking configuration.")
                 .requestExample(
-                    Map.of(
-                        "enabled",
-                        true,
-                        "slotGranularityMinutes",
-                        5,
-                        "openingHours",
-                        List.of(Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00")),
-                        "bufferBeforeMinutes",
-                        15,
-                        "bufferAfterMinutes",
-                        15,
-                        "maxBookingDurationMinutes",
-                        120,
-                        "allowDoubleBooking",
-                        false,
-                        "target",
-                        Map.of(
-                            "relationTo",
-                            com.researchspace.inventory.model.ApiV2InstrumentResource.RESOURCE_NAME,
-                            "value",
-                            123)))
+                    Map.ofEntries(
+                        Map.entry("enabled", true),
+                        Map.entry("slotGranularityMinutes", 5),
+                        Map.entry(
+                            "openingHours",
+                            List.of(
+                                Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 2, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 3, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 4, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 5, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 6, "start", "10:00", "end", "16:00"))),
+                        Map.entry("bufferBeforeMinutes", 15),
+                        Map.entry("bufferAfterMinutes", 15),
+                        Map.entry("maxBookingDurationMinutes", 120),
+                        Map.entry("allowDoubleBooking", false),
+                        Map.entry(
+                            "target", Map.of("relationTo", com.researchspace.inventory.model.ApiV2InstrumentResource.RESOURCE_NAME, "value", 123))))
                 .build()),
         Map.of(
             ResourceOperation.CREATE,
