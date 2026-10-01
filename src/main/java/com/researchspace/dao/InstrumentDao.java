@@ -19,6 +19,9 @@ import java.util.Set;
 /** For DAO operations specific to Inventory {@link Instrument} (not templates). */
 public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
 
+  /** Scalar Inventory permission facts used when projecting Booking configuration access. */
+  record BookingItemAccess(String ownerUsername, boolean directEdit) {}
+
   /**
    * Returns a paginated list of instruments visible to the given user, excluding instrument
    * templates. When {@code searchTerm} is non-blank, results are filtered to records whose name
@@ -54,7 +57,7 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
    * Inventory and attached to an active, enabled Booking configuration readable by the caller.
    */
   ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
-      String query, int page, int limit, User caller, Set<String> readableRoleKeys);
+      String query, int page, int limit, User caller);
 
   /** Returns readable active instrument scalars for relationship expansion. */
   Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user);
@@ -64,6 +67,9 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
 
   /** Returns only the safe scalar fields Booking may reveal, independent of Inventory sharing. */
   Map<Long, InstrumentReadSummary> getBookingSummaries(Set<Long> instrumentIds);
+
+  /** Returns readable concrete instruments and their direct Inventory edit permission. */
+  Map<Long, BookingItemAccess> getBookingItemAccess(Set<Long> instrumentIds, User user);
 
   /**
    * Returns concrete Instruments for Booking's safe relationship renderer, independent of Inventory

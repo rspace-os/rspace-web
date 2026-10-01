@@ -3,29 +3,22 @@ package com.researchspace.booking.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
-import com.researchspace.dao.resourceaccess.ResourceAccessDao;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
-import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
-import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.JsonMessageSource;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
-import java.util.List;
+import com.researchspace.service.resourceaccess.ResourceAccessException;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -36,10 +29,9 @@ class BookingConfigurationDefaultsManagerTest {
 
   private final BookingConfigurationDefaultsDao dao = mock(BookingConfigurationDefaultsDao.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-  private final ResourceAccessDao resourceAccessDao = mock(ResourceAccessDao.class);
   private final LocalValidatorFactoryBean validator = validator();
   private final BookingConfigurationDefaultsManager manager =
-      new BookingConfigurationDefaultsManagerImpl(dao, resourceAccessDao, validator, events);
+      new BookingConfigurationDefaultsManagerImpl(dao, validator, events);
 
   @AfterEach
   void closeValidators() {
@@ -168,178 +160,23 @@ class BookingConfigurationDefaultsManagerTest {
   }
 
   @Test
-  void resolvesAndReplacesSelectedDefaultGranteesServerSide() {
+  void rejectsIndependentDefaultSharingModeEvenWithoutSelectedGrantees() {
     User sysadmin = sysadmin();
-    User selected = mock(User.class);
-    when(selected.getId()).thenReturn(42L);
-    when(selected.getDisplayName()).thenReturn("Ada Lovelace");
-    when(selected.getUsername()).thenReturn("ada");
-    BookingConfigurationDefaults defaults = defaults();
-    when(dao.lockSingleton()).thenReturn(Optional.of(defaults));
-    when(dao.saveAndFlush(defaults)).thenReturn(defaults);
-    ResourceRoleAssignment selectedBooker =
-        ResourceRoleAssignment.forUser(BookingResourceRoleScheme.BOOKER, selected);
-    when(resourceAccessDao.resolveAvailable("user:42", BookingResourceRoleScheme.BOOKER))
-        .thenReturn(selectedBooker);
+    ResourceAccessException error =
+        assertThrows(
+            ResourceAccessException.class,
+            () ->
+                manager.updateDefaults(
+                    BookingSchedulingSettings.Patch.empty(),
+                    BookingDisplaySettings.Patch.empty(),
+                    BookingDefaultSharedWith.ONLY_ME,
+                    null,
+                    0,
+                    sysadmin,
+                    sysadmin));
 
-    BookingConfigurationDefaults updated =
-        manager.updateDefaults(
-            BookingSchedulingSettings.Patch.empty(),
-            BookingDisplaySettings.Patch.empty(),
-            BookingDefaultSharedWith.SELECTED,
-            List.of("user:42"),
-            0,
-            sysadmin,
-            sysadmin);
-
-    assertEquals(BookingDefaultSharedWith.SELECTED, updated.getDefaultSharedWith());
-    assertEquals(
-        List.of("user:42"),
-        updated.getSelectedAccessGrantees().stream()
-            .map(BookingDefaultAccessGrantee::getGranteeKey)
-            .toList());
-  }
-
-  @Test
-  void rejectsContradictoryEmptyDuplicateAndUnavailableSelections() {
-    User sysadmin = sysadmin();
-    BookingConfigurationDefaults defaults = defaults();
-    when(dao.lockSingleton()).thenReturn(Optional.of(defaults));
-
-    assertThrows(
-        InvalidBookingDefaultSharingException.class,
-        () ->
-            manager.updateDefaults(
-                BookingSchedulingSettings.Patch.empty(),
-                BookingDisplaySettings.Patch.empty(),
-                BookingDefaultSharedWith.SELECTED,
-                List.of(),
-                0,
-                sysadmin,
-                sysadmin));
-    assertThrows(
-        InvalidBookingDefaultSharingException.class,
-        () ->
-            manager.updateDefaults(
-                BookingSchedulingSettings.Patch.empty(),
-                BookingDisplaySettings.Patch.empty(),
-                BookingDefaultSharedWith.ONLY_ME,
-                List.of("user:42"),
-                0,
-                sysadmin,
-                sysadmin));
-    assertThrows(
-        InvalidBookingDefaultSharingException.class,
-        () ->
-            manager.updateDefaults(
-                BookingSchedulingSettings.Patch.empty(),
-                BookingDisplaySettings.Patch.empty(),
-                BookingDefaultSharedWith.SELECTED,
-                List.of("user:42", "user:42"),
-                0,
-                sysadmin,
-                sysadmin));
-    assertThrows(
-        InvalidBookingDefaultSharingException.class,
-        () ->
-            manager.updateDefaults(
-                BookingSchedulingSettings.Patch.empty(),
-                BookingDisplaySettings.Patch.empty(),
-                BookingDefaultSharedWith.SELECTED,
-                List.of("user:999"),
-                0,
-                sysadmin,
-                sysadmin));
-  }
-
-  @Test
-  void capsSelectedDefaultsBelowTheNamedAssignmentLimitToReserveOwner() {
-    User sysadmin = sysadmin();
-    BookingConfigurationDefaults defaults = defaults();
-    when(dao.lockSingleton()).thenReturn(Optional.of(defaults));
-    when(dao.saveAndFlush(defaults)).thenReturn(defaults);
-
-    List<String> tooManyKeys =
-        IntStream.rangeClosed(1, ResourceAccessManager.MAX_NAMED_ASSIGNMENTS)
-            .mapToObj(id -> "user:" + id)
-            .toList();
-    assertThrows(
-        InvalidBookingDefaultSharingException.class,
-        () ->
-            manager.updateDefaults(
-                BookingSchedulingSettings.Patch.empty(),
-                BookingDisplaySettings.Patch.empty(),
-                BookingDefaultSharedWith.SELECTED,
-                tooManyKeys,
-                0,
-                sysadmin,
-                sysadmin));
-    verify(dao, never()).saveAndFlush(any());
-    verifyNoInteractions(resourceAccessDao);
-
-    List<String> validKeys =
-        tooManyKeys.subList(0, ResourceAccessManager.MAX_NAMED_ASSIGNMENTS - 1);
-    for (int id = 1; id < ResourceAccessManager.MAX_NAMED_ASSIGNMENTS; id++) {
-      User selected = mock(User.class);
-      when(selected.getId()).thenReturn((long) id);
-      when(selected.getDisplayName()).thenReturn("User " + id);
-      when(selected.getUsername()).thenReturn("user" + id);
-      ResourceRoleAssignment assignment =
-          ResourceRoleAssignment.forUser(BookingResourceRoleScheme.BOOKER, selected);
-      when(resourceAccessDao.resolveAvailable("user:" + id, BookingResourceRoleScheme.BOOKER))
-          .thenReturn(assignment);
-    }
-
-    BookingConfigurationDefaults updated =
-        manager.updateDefaults(
-            BookingSchedulingSettings.Patch.empty(),
-            BookingDisplaySettings.Patch.empty(),
-            BookingDefaultSharedWith.SELECTED,
-            validKeys,
-            0,
-            sysadmin,
-            sysadmin);
-
-    assertEquals(
-        ResourceAccessManager.MAX_NAMED_ASSIGNMENTS - 1,
-        updated.getSelectedAccessGrantees().size());
-    verify(dao).saveAndFlush(defaults);
-  }
-
-  @Test
-  void retainsAnExistingSelectionWithoutReResolvingAndClearsItForOnlyMe() {
-    User sysadmin = sysadmin();
-    User selected = mock(User.class);
-    when(selected.getId()).thenReturn(42L);
-    when(selected.getDisplayName()).thenReturn("Ada Lovelace");
-    when(selected.getUsername()).thenReturn("ada");
-    BookingConfigurationDefaults defaults = defaults();
-    defaults.setDefaultSharedWith(BookingDefaultSharedWith.SELECTED);
-    defaults.addSelectedAccessGrantee(BookingDefaultAccessGrantee.forUser(selected));
-    when(dao.lockSingleton()).thenReturn(Optional.of(defaults));
-    when(dao.saveAndFlush(defaults)).thenReturn(defaults);
-
-    manager.updateDefaults(
-        BookingSchedulingSettings.Patch.empty(),
-        BookingDisplaySettings.Patch.empty(),
-        BookingDefaultSharedWith.SELECTED,
-        List.of("user:42"),
-        0,
-        sysadmin,
-        sysadmin);
-    verify(resourceAccessDao, never())
-        .resolveAvailable("user:42", BookingResourceRoleScheme.BOOKER);
-
-    manager.updateDefaults(
-        BookingSchedulingSettings.Patch.empty(),
-        BookingDisplaySettings.Patch.empty(),
-        BookingDefaultSharedWith.ONLY_ME,
-        null,
-        0,
-        sysadmin,
-        sysadmin);
-    assertEquals(BookingDefaultSharedWith.ONLY_ME, defaults.getDefaultSharedWith());
-    assertTrue(defaults.getSelectedAccessGrantees().isEmpty());
+    assertEquals(ResourceAccessException.Reason.INHERITED_READ_ONLY, error.reason());
+    verify(dao, never()).lockSingleton();
   }
 
   private static User sysadmin() {

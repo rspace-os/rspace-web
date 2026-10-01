@@ -202,7 +202,8 @@ public class ApiV2ControllerAdvice {
   @ExceptionHandler(ResourceAccessException.class)
   public ResponseEntity<ApiV2Problem> handleResourceAccess(
       ResourceAccessException ex, HttpServletRequest request) {
-    if (ex.reason() == ResourceAccessException.Reason.FORBIDDEN
+    if ((ex.reason() == ResourceAccessException.Reason.FORBIDDEN
+            || ex.reason() == ResourceAccessException.Reason.INHERITED_READ_ONLY)
         && ("PUT".equals(request.getMethod()) || "DELETE".equals(request.getMethod()))) {
       ApiV2Caller caller = ApiV2Caller.from(request);
       SECURITY_LOG.warn(
@@ -217,6 +218,8 @@ public class ApiV2ControllerAdvice {
     return switch (ex.reason()) {
       case NOT_FOUND -> problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
       case FORBIDDEN -> problem(HttpStatus.FORBIDDEN, "errors.api.v2.resourceAccess.forbidden");
+      case INHERITED_READ_ONLY ->
+          problem(HttpStatus.FORBIDDEN, "errors.api.v2.resourceAccess.inheritedReadOnly");
       case OWNER_REQUIRED ->
           problem(HttpStatus.CONFLICT, "errors.api.v2.resourceAccess.ownerRequired");
       case STALE -> problem(HttpStatus.PRECONDITION_FAILED, "errors.api.v2.resourceAccess.stale");
