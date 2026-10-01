@@ -3,8 +3,11 @@ import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
+import { createApiV2FilterFields } from "@/modules/common/table-list/adapters/apiV2/apiV2FilterFields";
 import { parseTableViewState } from "@/modules/common/table-list/tableViewState";
 import {
+  type BookingConfiguration,
   BookingConfigurationInputSchema,
   BookingConfigurationUpdateInputSchema,
   bookingConfigurationConfig,
@@ -12,7 +15,25 @@ import {
   fetchBookingConfigurationByTarget,
   fetchBookingConfigurationDetailsByTarget,
 } from "../bookingConfiguration";
-import { collectionPage } from "../mocks/bookableItemsMocks";
+import { bookableItemsOpenApi, collectionPage } from "../mocks/bookableItemsMocks";
+
+it("offers no operators for openingHours and no removed schedule fields through API metadata", () => {
+  const metadata = apiV2CollectionMetadataFromOpenApi<BookingConfiguration>(
+    bookableItemsOpenApi,
+    "booking-configurations",
+  );
+  const filters = createApiV2FilterFields({ config: bookingConfigurationConfig, metadata });
+  const hours = filters.sourceFields.find((field) => field.name === "openingHours");
+  expect(hours).toMatchObject({
+    type: "array",
+    capabilities: { filterOperators: [], sortable: false },
+  });
+  for (const field of ["openingStart", "openingEnd", "openDays", "openingExceptions"]) {
+    expect(filters.fields.map(({ name }) => name)).not.toContain(field);
+    expect(metadata.fields).not.toContain(field);
+    expect(metadata.filtering.selectors).not.toHaveProperty(field);
+  }
+});
 
 it.each(["openingStart", "openingEnd", "openDays", "openingExceptions"])(
   "does not restore the removed schedule field %s from a saved view",

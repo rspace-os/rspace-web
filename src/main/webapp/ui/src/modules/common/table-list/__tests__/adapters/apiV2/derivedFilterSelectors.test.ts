@@ -602,6 +602,56 @@ describe("filter selectors derived from published relationship targets", () => {
     expect(params.get("where")).toBe("target.name=contains=in2,target==IN2");
   });
 
+  it("keeps the validated legacy IN search when picker metadata names an unavailable source", () => {
+    const selectors = {
+      ...metadata.filtering.selectors,
+      target: {
+        operators: ["=="] as const,
+        wildcards: false,
+        fieldType: "text" as const,
+        picker: { resource: "retired-instruments", identity: "globalId" as const, globalIdPrefix: "IN" },
+      },
+    };
+    const searchable = adapterWithSearch(["target.name", "target.globalId"], {
+      ...metadata,
+      filtering: { ...metadata.filtering, selectors },
+    });
+
+    const params = searchable.toSearchParams({
+      filters: { search: "in2", expression: null },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 10 },
+      visibleFields: ["target"] as never,
+    });
+
+    expect(params.get("where")).toBe("target.name=contains=in2,target==IN2");
+  });
+
+  it("does not use an incompatible source's declared prefix as a target identity", () => {
+    const selectors = {
+      ...metadata.filtering.selectors,
+      target: {
+        operators: ["=="] as const,
+        wildcards: false,
+        fieldType: "text" as const,
+        picker: { resource: "instruments", identity: "globalId" as const, globalIdPrefix: "XX" },
+      },
+    };
+    const searchable = adapterWithSearch(["target.name", "target.globalId"], {
+      ...metadata,
+      filtering: { ...metadata.filtering, selectors },
+    });
+
+    const params = searchable.toSearchParams({
+      filters: { search: "XX2", expression: null },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 10 },
+      visibleFields: ["target"] as never,
+    });
+
+    expect(params.get("where")).toBe("target.name=contains=XX2");
+  });
+
   it("keeps an out-of-range instrument identifier as plain text", () => {
     const searchable = adapterWithSearch(["target.name", "target.globalId"]);
     const params = searchable.toSearchParams({
