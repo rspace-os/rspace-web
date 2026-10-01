@@ -633,6 +633,13 @@ class InventoryOperationsApiControllerTest {
   }
 
   @Test
+  void aTemplateConformanceErrorOnTheBuiltSamplesFieldsIsReportedUnderTemplateId() {
+    assertEquals("templateId", facadeField("newSample.fields", true));
+    assertEquals("templateId", facadeField("newSample.fields[2]", false));
+    assertEquals("templateId", facadeField("newSample.fields[0].content", true));
+  }
+
+  @Test
   void aCoreRejectionIsRenamedToTheFieldTheCallerSent() throws Exception {
     ApiInventoryOperationPost built = new ApiInventoryOperationPost();
     BeanPropertyBindingResult coreErrors = new BeanPropertyBindingResult(built, "request");

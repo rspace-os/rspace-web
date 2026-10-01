@@ -347,6 +347,36 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   }
 
   @Test
+  public void anEmptyMandatoryTemplateFieldIsRejectedUnderTemplateId() throws Exception {
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Integer unitId = origin.getQuantity().getUnitId();
+    ApiSampleTemplate template = createSampleTemplateWithMandatoryFields(anyUser);
+
+    MvcResult result =
+        post(
+                "derive",
+                deriveJson(
+                    origin,
+                    quantityJson("0.6", unitId),
+                    "Mandatory field left empty",
+                    1,
+                    quantityJson("0.5", template.getDefaultUnitId()),
+                    ",\"templateId\":" + template.getId()))
+            .andExpect(status().isBadRequest())
+            .andReturn();
+    List<String> errors = getErrorFromJsonResponseBody(result, ApiError.class).getErrors();
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith("templateId:")),
+        () -> "expected templateId, got " + errors);
+    assertTrue(
+        errors.stream().noneMatch(message -> message.startsWith("newSample.")),
+        () -> "a server-built path leaked: " + errors);
+
+    assertQuantityUnchanged(origin);
+  }
+
+  @Test
   public void aRenameSavedAfterAnOperationLeavesTheDeductionStanding() throws Exception {
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     java.math.BigDecimal beforeOperation = origin.getQuantity().getNumericValue();
