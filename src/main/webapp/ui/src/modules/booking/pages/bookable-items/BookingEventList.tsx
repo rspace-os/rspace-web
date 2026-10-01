@@ -1,12 +1,13 @@
+import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Booking } from "@/modules/booking/domain/booking";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { TableList } from "@/modules/common/table-list/TableList";
+import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import { useTableList } from "@/modules/common/table-list/useTableList";
-import { Button } from "@/modules/common/ui/button";
+import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { type BookingEventPeriod, fetchBookableItemEvents } from "./bookableItemEvents";
@@ -144,6 +145,39 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
     queryString: false,
     reserveEmptyRows: false,
   });
+  const rowActions = useMemo<TableListRowActions<Booking>>(
+    () => ({
+      id: "actions",
+      label: t("calendar.actions.label"),
+      width: 220,
+      minWidth: 180,
+      renderCell: ({ row }) => (
+        <div className="flex gap-2">
+          {row.privacy === "full" ? (
+            <Link
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+              to="/booking/calendar/bookings/$id"
+              params={{ id: String(row.id) }}
+            >
+              {t("calendar.actions.viewDetails")}
+            </Link>
+          ) : null}
+          {row.canEdit ? (
+            <Link
+              className={buttonVariants({ size: "sm" })}
+              to="/booking/calendar/bookings/$id/edit"
+              params={{ id: String(row.id) }}
+            >
+              {t("bookableItemDetails.events.edit")}
+            </Link>
+          ) : null}
+        </div>
+      ),
+      renderInteraction: () => null,
+    }),
+    [t],
+  );
+
   if (table.tableProps.status === "error") {
     return (
       <Empty className="border">
@@ -164,6 +198,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       hideHeader
       emptyDescription={t("bookableItemDetails.events.empty")}
       presentations={{ table: "wide", cards: "narrow" }}
+      rowActions={rowActions}
     />
   );
 }
