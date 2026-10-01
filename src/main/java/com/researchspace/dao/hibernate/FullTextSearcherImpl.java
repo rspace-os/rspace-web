@@ -59,6 +59,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.SessionFactory;
 import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.mapper.orm.Search;
@@ -417,6 +418,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
             .filter(this::isNotSubSampleOfTemplate)
             .filter(this::isNotWorkbench)
             .filter(rec -> isMatchingTemplateOption(rec, srchConfigInput.getSearchType()))
+            .filter(rec -> isMatchingBookableOption(rec, srchConfigInput))
             .collect(Collectors.toList());
     finalHits = limitToRecordsWithGlobalId(finalHits, srchConfigInput.getLimitResultsToGlobalIds());
 
@@ -426,6 +428,17 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
             srchConfig.getPaginationCriteria().getPageNumber().intValue(),
             finalHits.size());
     return repaginateResults(srchConfig, searchResults);
+  }
+
+  private boolean isMatchingBookableOption(
+      InventoryRecord record, InventorySearchConfig searchConfig) {
+    if (searchConfig.getBookable() == null) {
+      return true;
+    }
+    boolean bookable =
+        record instanceof com.researchspace.model.inventory.Instrument
+            && searchConfig.getBookableInstrumentIds().contains(record.getId());
+    return searchConfig.getBookable() == bookable;
   }
 
   @Autowired private InventoryRecordRetriever invRecRetriever;
@@ -439,6 +452,9 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       return null;
     }
     String query = srchConfigInput.getOriginalSearchQuery();
+    if (StringUtils.isBlank(query)) {
+      return List.of();
+    }
 
     List<InventoryRecord> hits = new ArrayList<>();
     // add global id match

@@ -111,6 +111,12 @@ When you see Jetty report the app has started, open the URL printed by
 `rspace-dev up` (e.g. `http://localhost:8080`). Log in with `user1a` /
 `user1234`, or `sysadmin1` / `sysWisc23!`.
 
+The Docker stack enables Booking and seeds `user1a` with four bookable
+instruments and six bookings for the following calendar date, so all new bookings
+start in the future even when the stack starts late in the day. The startup seed is
+idempotent, so restarts add only fixtures that are missing or no longer cover
+the following date.
+
 Subsequent `up`s reuse the existing database and are much faster.
 
 To run the Playwright suite against local third-party integration mocks, enable

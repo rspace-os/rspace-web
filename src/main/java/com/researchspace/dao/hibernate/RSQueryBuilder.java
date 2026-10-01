@@ -74,7 +74,7 @@ class RSQueryBuilder {
     String srchTerm = "";
     if (cfg.getTermList().size() > 0) {
       srchTerm = cfg.getAllTerms().get(0).text();
-    } else {
+    } else if (cfg.getBookable() == null) {
       throw new SearchQueryParseException(
           new Exception("A search term is missing in the search config object"));
     }
@@ -85,7 +85,10 @@ class RSQueryBuilder {
     try {
       switch (cfg.getSearchStrategy()) {
         case IFullTextSearcher.ALL_LUCENE_SEARCH_STRATEGY:
-          predicate = createShouldPredicate(f, cfg.getAllTerms());
+          predicate =
+              cfg.getTermList().isEmpty()
+                  ? f.matchAll().toPredicate()
+                  : createShouldPredicate(f, cfg.getAllTerms());
           break;
 
         case IFullTextSearcher.ADVANCED_LUCENE_SEARCH_STRATEGY:
@@ -112,11 +115,30 @@ class RSQueryBuilder {
       predicate = addUserFilterInPredicate(cfg, f, predicate);
       predicate = addRecordFilterInPredicate(cfg, f, predicate);
       predicate = addParentIdFilterInPredicate(cfg, f, predicate);
+      predicate = addBookableFilterInPredicate(cfg, f, predicate);
     } catch (RuntimeException ex) {
       log.warn("Could not generate lucene query! : " + ex.getMessage());
       predicate = null;
     }
     return predicate;
+  }
+
+  private SearchPredicate addBookableFilterInPredicate(
+      LuceneSrchCfg cfg, SearchPredicateFactory f, SearchPredicate predicate) {
+    if (cfg.getBookable() == null) {
+      return predicate;
+    }
+    Set<Long> bookableIds = cfg.getBookableInstrumentIds();
+    if (bookableIds.isEmpty()) {
+      return cfg.getBookable()
+          ? f.bool().must(predicate).mustNot(f.matchAll()).toPredicate()
+          : predicate;
+    }
+    SearchPredicate bookableIdsPredicate =
+        f.terms().field("id_sort").matchingAny(bookableIds).toPredicate();
+    return cfg.getBookable()
+        ? f.bool().must(predicate).must(bookableIdsPredicate).toPredicate()
+        : f.bool().must(predicate).mustNot(bookableIdsPredicate).toPredicate();
   }
 
   /**
