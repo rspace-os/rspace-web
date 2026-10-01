@@ -4,6 +4,7 @@ import { omit } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DropdownButton from "../../../components/DropdownButton";
 import TagsCombobox from "../../../components/Tags/TagsCombobox";
 import NavigateContext from "../../../stores/contexts/Navigate";
@@ -14,6 +15,7 @@ import type { SavedSearch } from "../../../stores/stores/SearchStore";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
 import PeopleField from "../../components/Inputs/PeopleField";
+import BookableFilter from "./BookableFilter";
 import SavedList from "./SavedList";
 import StatusFilter from "./StatusFilter";
 import TypeFilter from "./TypeFilter";
@@ -54,6 +56,7 @@ const Panel = ({ anchorEl, children, onClose }: PanelProps) => (
 export type SavedItem = SavedSearch | BasketModel;
 
 function SearchParameterControls(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore } = useStores();
   const { search } = useContext(SearchContext);
   const { useNavigate } = useContext(NavigateContext);
@@ -61,6 +64,7 @@ function SearchParameterControls(): React.ReactNode {
 
   const [typeDropdown, setTypeDropdown] = useState<HTMLElement | null>(null);
   const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(null);
+  const [bookableDropdown, setBookableDropdown] = useState<HTMLElement | null>(null);
   const [ownerDropdown, setOwnerDropdown] = useState<HTMLElement | null>(null);
   const [benchDropdown, setBenchDropdown] = useState<HTMLElement | null>(null);
   const [savedSearchesDropdown, setSavedSearchesDropdown] = useState<HTMLElement | null>(null);
@@ -139,6 +143,20 @@ function SearchParameterControls(): React.ReactNode {
           onClose={(status) => {
             setStatusDropdown(null);
             if (search.fetcher.deletedItems !== status) search.setDeletedItems(status);
+          }}
+        />
+      </DropdownButton>
+      <DropdownButton
+        name={t("search.controls.bookable.label")}
+        onClick={({ target }) => setBookableDropdown(target as HTMLElement)}
+        disabled={!search.showBookableFilter}
+      >
+        <BookableFilter
+          anchorEl={bookableDropdown}
+          current={search.fetcher.bookable}
+          onClose={(bookable) => {
+            setBookableDropdown(null);
+            if (search.fetcher.bookable !== bookable) search.setBookable(bookable);
           }}
         />
       </DropdownButton>

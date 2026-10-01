@@ -15,7 +15,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import type { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { bookerBookingAccess, collectionPage } from "../mocks/bookableItemsMocks";
 import { configuration, mockedUseCurrentUserQuery, renderPage, setupPage } from "./bookableItemPageTestUtils";
 
@@ -97,6 +97,46 @@ describe("BookableItemPage", () => {
       within(screen.getByRole("group", { name: "Tuesday" })).getByLabelText("booking:settings.fields.openingStart"),
     ).toHaveValue("10:00");
     expect(screen.getByRole("checkbox", { name: "Sunday" })).not.toBeChecked();
+  });
+
+  it("keeps calendar status lazy and exposes the trigger to an ordinary readable user", async () => {
+    let statusRequests = 0;
+    let createRequests = 0;
+    vi.mocked(useCurrentUserQuery).mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
+      http.get("/api/v2/booking-configurations/7/calendar-subscription", () => {
+        statusRequests += 1;
+        return HttpResponse.json(
+          { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: '"inactive"' } },
+        );
+      }),
+      http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
+        createRequests += 1;
+        return HttpResponse.json(
+          {
+            active: true,
+            updatedAt: "2026-08-27T12:00:00.000Z",
+            subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
+          },
+          { headers: { ETag: '"current"' } },
+        );
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+    const trigger = await screen.findByRole("button", {
+      name: "booking:bookableItemDetails.calendarSubscription.trigger",
+    });
+    expect(statusRequests).toBe(0);
+    await user.click(trigger);
+    await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" });
+    expect(statusRequests).toBe(1);
+    expect(createRequests).toBe(1);
   });
 
   it("keeps the editor and draft open when PATCH fails", async () => {

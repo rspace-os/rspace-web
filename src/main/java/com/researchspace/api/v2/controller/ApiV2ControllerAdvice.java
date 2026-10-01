@@ -158,6 +158,16 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
   }
 
+  @ExceptionHandler(BookingCalendarNotFoundException.class)
+  public ResponseEntity<ApiV2Problem> handleBookingCalendarNotFound() {
+    return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
+  }
+
+  @ExceptionHandler(UserSubscriptionConflictException.class)
+  public ResponseEntity<ApiV2Problem> handleUserSubscriptionConflict() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingCalendar.subscriptionConflict");
+  }
+
   @ExceptionHandler(ThrottlingException.class)
   public ResponseEntity<ApiV2Problem> handleThrottling() {
     return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
