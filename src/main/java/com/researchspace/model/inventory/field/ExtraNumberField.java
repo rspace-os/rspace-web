@@ -5,6 +5,9 @@ import com.researchspace.model.field.FieldType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
@@ -17,6 +20,9 @@ public class ExtraNumberField extends ExtraField {
 
   private static final long serialVersionUID = 616794358851234028L;
   private static final String DEFAULT_NAME = "Numeric data";
+  private static final String INVALID_NUMBER_MESSAGE = "errors.inventory.field.numberInvalid";
+  private static final ResourceBundle VALIDATION_MESSAGES =
+      ResourceBundle.getBundle("ValidationMessages", Locale.ENGLISH);
 
   public ExtraNumberField() {
     setName(DEFAULT_NAME);
@@ -48,7 +54,7 @@ public class ExtraNumberField extends ExtraField {
       try {
         RuntimeFieldValueType.parseNumber(data);
       } catch (IllegalArgumentException nfe) {
-        return "'" + data + "' cannot be parsed into number";
+        return MessageFormat.format(VALIDATION_MESSAGES.getString(INVALID_NUMBER_MESSAGE), data);
       }
     }
     return null;
