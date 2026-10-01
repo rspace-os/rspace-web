@@ -289,7 +289,7 @@ const OrcidIcon = () => (
  * to mark the active tab; the AppBar maps each key to its translated label
  * (`appBar.sections.<key>.title`/`.subheader`).
  */
-const TAB_KEYS = ["workspace", "gallery", "inventory", "system", "myRSpace"] as const;
+const TAB_KEYS = ["workspace", "gallery", "inventory", "booking", "system", "myRSpace"] as const;
 export type TabKey = (typeof TAB_KEYS)[number];
 
 const isTabKey = (page: string): page is TabKey => TAB_KEYS.some((key) => key === page);
@@ -385,6 +385,7 @@ function GalleryAppBar({
     workspace: { title: t("appBar.sections.workspace.title"), subheader: t("appBar.sections.workspace.subheader") },
     gallery: { title: t("appBar.sections.gallery.title"), subheader: t("appBar.sections.gallery.subheader") },
     inventory: { title: t("appBar.sections.inventory.title"), subheader: t("appBar.sections.inventory.subheader") },
+    booking: { title: t("appBar.sections.booking.title"), subheader: t("appBar.sections.booking.subheader") },
     myRSpace: { title: t("appBar.sections.myRSpace.title"), subheader: t("appBar.sections.myRSpace.subheader") },
     system: { title: t("appBar.sections.system.title"), subheader: t("appBar.sections.system.subheader") },
   };
