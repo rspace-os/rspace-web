@@ -1,7 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderHook } from "@testing-library/react";
+import type React from "react";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import common from "@/modules/common/i18n/locales/en-US/common.json";
+import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 import type { InventoryOperation } from "../operations";
 import { operations } from "../operations";
-import { describeOperationError, performOperation, sampleNameAvailable } from "../operationsApi";
+import { performOperation, sampleNameAvailable, useDescribeOperationError } from "../operationsApi";
 
 function operationNamed(key: string): InventoryOperation {
   const operation = operations.find((o) => o.key === key);
@@ -74,53 +79,39 @@ describe("performOperation", () => {
   });
 });
 
-describe("describeOperationError", () => {
+describe("useDescribeOperationError", () => {
   const operation = {
     key: "aliquot",
     inputs: [{ key: "sampleName", type: "text", labelKey: "operations.fields.sampleName" }],
     effect: { links: [] },
   } as unknown as InventoryOperation;
-  const resolveLabel = (key: string, params?: Record<string, unknown>): string => {
-    if (key === "operations.fields.sampleName") return "Sample name";
-    if (key === "operations.wizard.fieldReason") return `${String(params?.label)}: ${String(params?.reason)}`;
-    if (key === "operations.wizard.originIndex") return `${String(params?.reason)} [ORIGIN ${String(params?.index)}]`;
-    return key;
-  };
+  let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
+  beforeAll(async () => {
+    InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
+  });
+  const describeError = (error: unknown, op: InventoryOperation = operation): Array<string> =>
+    renderHook(() => useDescribeOperationError(), { wrapper: InEnglish }).result.current(error, op);
   const rejectedWith = (first: string) => ({ response: { data: { message: "Errors detected: 1", errors: [first] } } });
 
   it("words an error on a declared input with the input's label instead of its bare key", () => {
-    expect(
-      describeOperationError(
-        rejectedWith("sampleName: Required by this operation."),
-        operation,
-        resolveLabel,
-        "failed",
-      ),
-    ).toEqual(["Sample name: Required by this operation."]);
+    expect(describeError(rejectedWith("sampleName: Required by this operation."))).toEqual([
+      "New sample name: Required by this operation.",
+    ]);
   });
 
   it("strips a dotted origin path but keeps which origin it was, through the catalog", () => {
     expect(
-      describeOperationError(
-        rejectedWith("origins[0].amountTaken: Cannot take more from an origin than it currently holds"),
-        operation,
-        resolveLabel,
-        "failed",
-      ),
-    ).toEqual(["Cannot take more from an origin than it currently holds [ORIGIN 1]"]);
+      describeError(rejectedWith("origins[0].amountTaken: Cannot take more from an origin than it currently holds")),
+    ).toEqual(["Cannot take more from an origin than it currently holds (origin 1)"]);
   });
 
   it("leaves a leading word that is not one of the operation's inputs alone", () => {
-    expect(describeOperationError(rejectedWith("Warning: stock is low"), operation, resolveLabel, "failed")).toEqual([
-      "Warning: stock is low",
-    ]);
+    expect(describeError(rejectedWith("Warning: stock is low"))).toEqual(["Warning: stock is low"]);
   });
 
   it("falls back to the response message when there is no field-scoped error", () => {
     const conflict = { response: { data: { message: "The subsample's quantity changed", errors: [""] } } };
-    expect(describeOperationError(conflict, operation, resolveLabel, "failed")).toEqual([
-      "The subsample's quantity changed",
-    ]);
+    expect(describeError(conflict)).toEqual(["The subsample's quantity changed"]);
   });
 
   it("strips a dotted `inputs.<key>` path to the bare reason, without the input's label", () => {
@@ -128,11 +119,9 @@ describe("describeOperationError", () => {
       ...operation,
       inputs: [...operation.inputs, { key: "count", type: "integer", labelKey: "operations.fields.count" }],
     } as unknown as InventoryOperation;
-    const labels = (key: string, params?: Record<string, unknown>): string =>
-      key === "operations.fields.count" ? "Number of subsamples" : resolveLabel(key, params);
-    expect(
-      describeOperationError(rejectedWith("inputs.count: must be at most 100"), withCount, labels, "failed"),
-    ).toEqual(["must be at most 100"]);
+    expect(describeError(rejectedWith("inputs.count: must be at most 100"), withCount)).toEqual([
+      "must be at most 100",
+    ]);
   });
 
   it("returns every rejection separately, each worded for its own field or origin", () => {
@@ -144,24 +133,19 @@ describe("describeOperationError", () => {
         },
       },
     };
-    expect(describeOperationError(twoErrors, operation, resolveLabel, "failed")).toEqual([
-      "Too much [ORIGIN 1]",
-      "Sample name: Required by this operation.",
-    ]);
+    expect(describeError(twoErrors)).toEqual(["Too much (origin 1)", "New sample name: Required by this operation."]);
   });
 
   it("reports a network failure (no response at all) by the error's own message", () => {
-    expect(describeOperationError(new Error("Network Error"), operation, resolveLabel, "failed")).toEqual([
-      "Network Error",
-    ]);
+    expect(describeError(new Error("Network Error"))).toEqual(["Network Error"]);
   });
 
   it("reports a 404 by its message body, like any response without a field-scoped error", () => {
     const notFound = { response: { status: 404, data: { message: "Origin SS100 was not found", errors: [""] } } };
-    expect(describeOperationError(notFound, operation, resolveLabel, "failed")).toEqual(["Origin SS100 was not found"]);
+    expect(describeError(notFound)).toEqual(["Origin SS100 was not found"]);
   });
 
-  it("uses the fallback when there is nothing to describe at all", () => {
-    expect(describeOperationError(undefined, operation, resolveLabel, "failed")).toEqual(["failed"]);
+  it("uses the catalog's failure message when there is nothing to describe at all", () => {
+    expect(describeError(undefined)).toEqual(["The operation could not be completed"]);
   });
 });
