@@ -1,7 +1,17 @@
-import { BellIcon, FlaskConicalIcon, ImageIcon, NotebookIcon, SettingsIcon, UserIcon } from "lucide-react";
+import {
+  BellIcon,
+  CalendarIcon,
+  FlaskConicalIcon,
+  ImageIcon,
+  NotebookIcon,
+  SettingsIcon,
+  UserIcon,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import RSpaceLogo from "@/assets/branding/rspace/logo.svg";
 import RSpaceLogoTight from "@/assets/branding/rspace/logo-tight.svg";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import { useCurrentUserEventSync, useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { buttonVariants } from "@/modules/common/ui/button";
 import AccessibilityTips from "./AccessibilityTips";
@@ -42,6 +52,7 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
   const { data: appConfig } = useAppConfigQuery();
   const { data: nextMaintenance } = useNextMaintenanceQuery();
   const config = appConfig ?? DEFAULT_APP_CONFIG;
+  const showBooking = useIsFeatureFlagEnabled(FEATURE_FLAGS.bookingEnabled);
   const navItems: NavItem[] = [
     {
       id: "workspace",
@@ -69,6 +80,16 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
       description: t("appBar.sections.inventory.subheader"),
       icon: <FlaskConicalIcon />,
       iconClassName: "text-green-500",
+    },
+    {
+      id: "booking",
+      label: t("appBar.sections.booking.title"),
+      href: "/booking",
+      routerTo: "/booking",
+      isVisible: showBooking,
+      description: t("appBar.sections.booking.subheader"),
+      icon: <CalendarIcon />,
+      iconClassName: "text-amber-500",
     },
     {
       id: "myRSpace",
