@@ -1,6 +1,7 @@
 import { Form, useField, useForm } from "@formisch/react";
 import { Link } from "@tanstack/react-router";
 import { CheckIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
@@ -92,11 +93,18 @@ type BookingFormCommonProps = {
   layout?: "stacked" | "inline";
   formId?: string;
   windowAdjustment?: BookingWindowDraft;
+  windowAdjustmentTarget?: string;
   showMobileItemInformation?: boolean;
   showRulesSummary?: boolean;
   onCancel?: () => void;
   onMoreOptions?: () => void;
   onStateChange?: (state: BookingFormState) => void;
+  onWindowAdjustmentApplied?: (draft: BookingWindowDraft, targetGlobalId?: string) => void;
+  onDraftChange?: (draft: BookingWindowDraft, targetGlobalId?: string) => void;
+  onTargetChange?: (target: BookableItemOption | undefined) => void;
+  warning?: ReactNode;
+  /** Extra fields rendered directly after the date and time fields, for example a Repeat control. */
+  afterWindowFields?: ReactNode;
   onSubmit: (submission: BookingFormSubmission) => Promise<unknown>;
 };
 
@@ -180,9 +188,23 @@ export function BookingForm(props: BookingFormProps) {
   useEffect(() => {
     const adjustment = props.windowAdjustment;
     if (!adjustment || adjustment === appliedWindowAdjustment.current) return;
+    const adjustmentTarget = props.windowAdjustmentTarget ?? target?.globalId;
+    if (adjustmentTarget !== target?.globalId) return;
     appliedWindowAdjustment.current = adjustment;
     setDraft((current) => (sameWindowDraft(adjustment, current) ? current : adjustment));
-  }, [props.windowAdjustment]);
+  }, [props.windowAdjustment, props.windowAdjustmentTarget, target?.globalId]);
+  useEffect(() => {
+    const adjustment = props.windowAdjustment;
+    const adjustmentTarget = props.windowAdjustmentTarget ?? target?.globalId;
+    if (
+      adjustment &&
+      adjustment === appliedWindowAdjustment.current &&
+      adjustmentTarget === target?.globalId &&
+      sameWindowDraft(adjustment, draft)
+    ) {
+      props.onWindowAdjustmentApplied?.(adjustment, adjustmentTarget);
+    }
+  }, [draft, props.windowAdjustment, props.windowAdjustmentTarget, props.onWindowAdjustmentApplied, target?.globalId]);
   if (initialTarget !== previousInitialTarget) {
     setPreviousInitialTarget(initialTarget);
     if (!editing && !target && initialTarget) {
@@ -215,6 +237,7 @@ export function BookingForm(props: BookingFormProps) {
   );
   const window = validation?.window;
   const selectTarget = (next: BookableItemOption | undefined) => {
+    props.onTargetChange?.(next);
     setTarget(next);
     setDraft((current) => ({
       ...current,
@@ -295,7 +318,10 @@ export function BookingForm(props: BookingFormProps) {
       openingHours={target?.openingHours ?? []}
       enforceOpeningHours={Boolean(target) && eventKind !== "MAINTENANCE"}
       value={draft}
-      onChange={setDraft}
+      onChange={(next) => {
+        props.onDraftChange?.(next, target?.globalId);
+        setDraft(next);
+      }}
       allowPolicyMismatch={allowPolicyMismatch}
       originalValue={originalDraft}
       disabled={busy}
@@ -396,7 +422,9 @@ export function BookingForm(props: BookingFormProps) {
           </p>
         )}
         {bookingInPast && <FieldError id={pastStartErrorId}>{t("bookings.warnings.past")}</FieldError>}
+        {props.afterWindowFields}
         <BookingFormAlerts
+          warning={props.warning}
           error={props.error}
           conflicts={props.conflicts}
           displayTimezone={displayTimezone}
