@@ -255,6 +255,7 @@ jobs:
             -Denvironment=drop-recreate-db \
             -Dspring.profiles.active=run \
             -DreactDevMode=false \
+            -DfeatureFlags.properties.location="$GITHUB_WORKSPACE/.github/e2e-feature-flags.properties" \
             -Dchemistry.provider=indigo \
             -Dchemistry.service.url=http://localhost:8090 \
             -Demail.enabled=true \
