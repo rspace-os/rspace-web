@@ -52,7 +52,7 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
   runtimeFields: [
     {
       namespace: "customFields",
-      catalog: "/api/v2/instruments/custom-fields",
+      catalog: "/api/v2/instruments/fields/customFields",
       responseField: "customFields",
       filterable: true,
       columnSelectable: true,
@@ -135,7 +135,7 @@ const params = (rule: string) => new URLSearchParams({ "instruments.where": rule
 afterEach(() => window.localStorage.clear());
 
 describe("API v2 saved views", () => {
-  it("rehydrates a selected definition when its catalogue changes", async () => {
+  it("blocks rehydration when a catalogue changes to an unapproved URL", async () => {
     const user = userEvent.setup();
     const catalogRequests = vi.fn();
     server.use(
@@ -173,7 +173,7 @@ describe("API v2 saved views", () => {
           <button type="button" onClick={() => setReplacement(true)}>
             {"Change catalogue"}
           </button>
-          <output>{fields.missing.join(",")}</output>
+          <output>{fields.error ? "catalog error" : fields.missing.join(",")}</output>
         </>
       );
     }
@@ -185,8 +185,8 @@ describe("API v2 saved views", () => {
     await user.click(await screen.findByRole("button", { name: "Select definition" }));
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
     await user.click(screen.getByRole("button", { name: "Change catalogue" }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("customFields.SF104"));
-    expect(catalogRequests).toHaveBeenCalledOnce();
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("catalog error"));
+    expect(catalogRequests).not.toHaveBeenCalled();
   });
 
   it("does not erase stored rules while navigation hydrates an unavailable field", async () => {
@@ -199,7 +199,7 @@ describe("API v2 saved views", () => {
     });
     server.use(
       collectionHandler(requests),
-      http.get("/api/v2/instruments/custom-fields", async ({ request }) => {
+      http.get("/api/v2/instruments/fields/customFields", async ({ request }) => {
         if (new URL(request.url).searchParams.get("ids") === "SF999") {
           requestedMissing();
           await pending;
@@ -284,7 +284,7 @@ describe("API v2 saved views", () => {
     const second = "customFields.SF108==cold";
     server.use(
       collectionHandler(requests),
-      http.get("/api/v2/instruments/custom-fields", ({ request }) => {
+      http.get("/api/v2/instruments/fields/customFields", ({ request }) => {
         const id = new URL(request.url).searchParams.get("ids") ?? "";
         return catalog([definition({ id, selector: `customFields.${id}` })]);
       }),
@@ -324,7 +324,7 @@ describe("API v2 saved views", () => {
     let fieldRequests = 0;
     server.use(
       collectionHandler(requests),
-      http.get("/api/v2/instruments/custom-fields", () => {
+      http.get("/api/v2/instruments/fields/customFields", () => {
         fieldRequests += 1;
         return catalog(fieldRequests === 1 ? [definition()] : []);
       }),
@@ -361,7 +361,7 @@ describe("API v2 saved views", () => {
     );
     server.use(
       collectionHandler(requests),
-      http.get("/api/v2/instruments/custom-fields", () => catalog()),
+      http.get("/api/v2/instruments/fields/customFields", () => catalog()),
     );
     render(
       <Providers>
@@ -382,7 +382,7 @@ describe("API v2 saved views", () => {
     const requested = vi.fn();
     server.use(
       collectionHandler(requests),
-      http.get("/api/v2/instruments/custom-fields", async () => {
+      http.get("/api/v2/instruments/fields/customFields", async () => {
         requested();
         await pending;
         return catalog();
@@ -405,7 +405,7 @@ describe("API v2 saved views", () => {
     const requests: string[] = [];
     server.use(
       collectionHandler(requests),
-      http.get("/api/v2/instruments/custom-fields", () => catalog([])),
+      http.get("/api/v2/instruments/fields/customFields", () => catalog([])),
     );
     render(
       <Providers searchParams={params(where)}>
@@ -425,7 +425,9 @@ describe("API v2 saved views", () => {
     let fail = true;
     server.use(
       collectionHandler(requests),
-      http.get("/api/v2/instruments/custom-fields", () => (fail ? new HttpResponse(null, { status: 503 }) : catalog())),
+      http.get("/api/v2/instruments/fields/customFields", () =>
+        fail ? new HttpResponse(null, { status: 503 }) : catalog(),
+      ),
     );
     render(
       <Providers searchParams={params(where)}>

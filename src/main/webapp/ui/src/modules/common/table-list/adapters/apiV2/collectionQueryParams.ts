@@ -1,4 +1,6 @@
 import type { FieldName, ResolvedCollectionConfig, SearchSelector } from "@/modules/common/collection/collectionConfig";
+import type { RelationshipSource } from "@/modules/common/relationship-picker/relationshipSources";
+import { relationshipSources as builtInRelationshipSources } from "@/modules/common/relationship-picker/relationshipSources";
 import type { CollectionQueryState, FilterExpression } from "../../tableListState";
 import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
 import { serializeRsql } from "./rsql/serializeRsql";
@@ -20,8 +22,65 @@ function supportedGlobalId(value: string): string | null {
   return value.toUpperCase();
 }
 
+function compatiblePickerSource<TDocument>(
+  config: ResolvedCollectionConfig<TDocument>,
+  resource: string,
+  prefix: string,
+): RelationshipSource | undefined {
+  const sources = { ...builtInRelationshipSources, ...config.relationshipSources };
+  const source = sources[resource];
+  if (!source || source.globalIdPrefix !== prefix) {
+    return undefined;
+  }
+  return source;
+}
+
+function normalizePickerValue(value: unknown, source: RelationshipSource, field: string): string {
+  if (typeof value !== "string") throw new Error(`Relationship filter value must be a string: ${field}`);
+  const normalized = source.normalizeValue ? source.normalizeValue(value) : source.ownsValue(value) ? value : null;
+  if (normalized === null || normalized === "" || !source.ownsValue(normalized)) {
+    throw new Error(`Invalid relationship filter value: ${field}`);
+  }
+  return normalized;
+}
+
+function normalizePickerExpression<TDocument>(
+  expression: FilterExpression<TDocument>,
+  config: ResolvedCollectionConfig<TDocument>,
+  metadata: ApiV2CollectionMetadata<TDocument>,
+  depth = 1,
+): FilterExpression<TDocument> {
+  if (depth > metadata.filtering.limits.maximumNesting) throw new Error("Filter nesting limit exceeded");
+  if (expression.kind !== "comparison") {
+    return {
+      kind: expression.kind,
+      children: expression.children.map((child) => normalizePickerExpression(child, config, metadata, depth + 1)),
+    };
+  }
+  if (expression.operator === "exists") return expression;
+  const picker = metadata.filtering.selectors[String(expression.field)]?.picker;
+  if (!picker) return expression;
+  const source = compatiblePickerSource(config, picker.resource, picker.globalIdPrefix);
+  // An unavailable or mismatched source keeps the existing typed filter path usable.
+  if (!source) return expression;
+  if (expression.operator === "in" || expression.operator === "notIn") {
+    return {
+      ...expression,
+      value: Array.isArray(expression.value)
+        ? expression.value.map((value) => normalizePickerValue(value, source, String(expression.field)))
+        : expression.value,
+    };
+  }
+  if (expression.operator !== "equals" && expression.operator !== "notEquals") return expression;
+  return {
+    ...expression,
+    value: normalizePickerValue(expression.value, source, String(expression.field)),
+  };
+}
+
 function searchExpression<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,
+  metadata: ApiV2CollectionMetadata<TDocument>,
   search: string,
 ): FilterExpression<TDocument> | null {
   const value = search.trim();
@@ -34,9 +93,26 @@ function searchExpression<TDocument>(
       children.push({ kind: "comparison", field, operator: "contains", value });
       continue;
     }
-    const globalId = supportedGlobalId(value);
-    if (globalId === null) continue;
     const relationship = selector.slice(0, selector.lastIndexOf(".")) as SearchSelector<TDocument>;
+    const picker = metadata.filtering.selectors[String(relationship)]?.picker;
+    const source = picker ? compatiblePickerSource(config, picker.resource, picker.globalIdPrefix) : undefined;
+    const normalized = source
+      ? source.normalizeValue
+        ? source.normalizeValue(value)
+        : source.ownsValue(value)
+          ? value
+          : null
+      : null;
+    const globalId = source
+      ? normalized !== null && source.ownsValue(normalized)
+        ? normalized
+        : null
+      : picker
+        ? picker.globalIdPrefix === "IN"
+          ? supportedGlobalId(value)
+          : null
+        : supportedGlobalId(value);
+    if (globalId === null) continue;
     children.push({ kind: "comparison", field: relationship, operator: "equals", value: globalId });
   }
   if (children.length === 0) return null;
@@ -110,11 +186,14 @@ export function collectionQueryParams<TDocument>(
     params.set("sort", state.sorting.map((rule) => `${rule.direction === "desc" ? "-" : ""}${rule.field}`).join(","));
   }
 
-  const search = searchExpression(config, state.filters.search);
+  const search = searchExpression(config, metadata, state.filters.search);
+  const filters = state.filters.expression
+    ? normalizePickerExpression(state.filters.expression, config, metadata)
+    : null;
   const expression =
-    search && state.filters.expression
-      ? ({ kind: "and", children: [search, state.filters.expression] } satisfies FilterExpression<TDocument>)
-      : (search ?? state.filters.expression);
+    search && filters
+      ? ({ kind: "and", children: [search, filters] } satisfies FilterExpression<TDocument>)
+      : (search ?? filters);
   if (expression)
     params.set(
       "where",

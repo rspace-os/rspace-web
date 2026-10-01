@@ -128,6 +128,32 @@ function primitiveField<TDocument>(
   }
 }
 
+function derivedIdentityFields<TDocument>(
+  sourceConfig: CollectionConfig<TDocument>,
+  metadata: ApiV2CollectionMetadata<TDocument>,
+  translate: (key: string) => string,
+): FieldConfig<TDocument>[] {
+  const declared = new Set(sourceConfig.fields.map((field) => String(field.name)));
+  return Object.entries(metadata.filtering.selectors).flatMap(([selector, published]) => {
+    const picker = published?.picker;
+    if (!picker || selector.includes(".") || declared.has(selector)) return [];
+
+    const name = selector as FieldName<TDocument>;
+    const base: FieldConfig<TDocument> = {
+      name,
+      labelKey: selector,
+      label: published.title ?? translate(selector),
+      type: "relationship",
+      relationTo: picker.resource,
+      hasMany: false,
+      filterPicker: picker,
+      list: false,
+      form: false,
+    };
+    return [{ ...base, capabilities: capabilitiesForSelector(base, metadata, published) }];
+  });
+}
+
 function derivedTargetFields<TDocument>(
   sourceConfig: CollectionConfig<TDocument>,
   metadata: ApiV2CollectionMetadata<TDocument>,
@@ -141,13 +167,22 @@ function derivedTargetFields<TDocument>(
   );
   return Object.entries(metadata.relationshipFields ?? {}).flatMap(([selector, published]) => {
     const dot = selector.indexOf(".");
-    const relationship = relationships.get(selector.slice(0, dot));
+    const ownerName = selector.slice(0, dot);
+    const relationship = relationships.get(ownerName);
     const targetField = selector.slice(dot + 1);
-    if (declared.has(selector) || !relationship || published.fieldType === null) return [];
+    if (declared.has(selector) || published.fieldType === null) return [];
 
     const name = selector as FieldName<TDocument>;
-    const owner = relationship.name;
-    const viaLabel = fieldLabel(relationship, translate);
+    const owner = (relationship?.name ?? ownerName) as FieldName<TDocument>;
+    const viaLabel = relationship
+      ? fieldLabel(relationship, translate)
+      : ownerName === "createdBy"
+        ? translate("tableList.fields.createdBy")
+        : ownerName === "updatedBy"
+          ? translate("tableList.fields.updatedBy")
+          : published.viaTitle?.trim()
+            ? published.viaTitle
+            : ownerName;
     const common = {
       name,
       labelKey: selector,
@@ -238,27 +273,49 @@ export function createApiV2FilterFields<TDocument>({
   translate = (key) => key,
   localFields = [],
 }: ApiV2FilterFieldsDefinition<TDocument>): ApiV2FilterFields<TDocument> {
-  const sourceFields = sourceConfig.fields.map((field) => {
+  const configuredSourceFields = sourceConfig.fields.map((field) => {
     const selector =
       metadata.filtering.selectors[String(field.name)] ?? metadata.relationshipFields?.[String(field.name)];
     if (localFields.includes(field.name)) return field;
+    const picker = metadata.filtering.selectors[String(field.name)]?.picker;
     return {
       ...field,
+      ...(picker === undefined ? {} : { filterPicker: picker }),
       capabilities: capabilitiesForSelector(field, metadata, selector),
     };
   });
-  const relationshipFields = derivedTargetFields(sourceConfig, metadata, translate);
+  const identityFields = derivedIdentityFields(sourceConfig, metadata, translate);
+  const sourceFields = [...configuredSourceFields, ...identityFields];
+  const identityConfig: CollectionConfig<TDocument> = {
+    ...sourceConfig,
+    fields: [...sourceConfig.fields, ...identityFields],
+  };
+  const relationshipFields = derivedTargetFields(identityConfig, metadata, translate);
   const runtimeDerivedFields = derivedRuntimeFields(
     metadata,
     runtimeFields,
-    relationshipLabels(sourceConfig, translate),
+    relationshipLabels(identityConfig, translate),
   );
+  const occupiedNames = new Set([
+    ...sourceConfig.fields.map((field) => String(field.name)),
+    ...Object.keys(metadata.filtering.selectors),
+    ...Object.keys(metadata.relationshipFields ?? {}),
+  ]);
+  const runtimeNames = new Set<string>();
+  for (const { field } of runtimeDerivedFields) {
+    const name = String(field.name);
+    if (occupiedNames.has(name) || runtimeNames.has(name)) {
+      throw new Error(`Runtime field selector shadows an existing selector: ${name}`);
+    }
+    runtimeNames.add(name);
+  }
   const runtimeSelectors = new Map(
     runtimeDerivedFields.map(
       ({ field, operators, supportsWildcards }) => [field.name, { operators, supportsWildcards }] as const,
     ),
   );
   const virtualFields = new Set<FieldName<TDocument>>([
+    ...identityFields.map((field) => field.name),
     ...relationshipFields.map(({ field }) => field.name),
     ...runtimeSelectors.keys(),
   ]);
@@ -273,7 +330,7 @@ export function createApiV2FilterFields<TDocument>({
     .map((namespace) => ({
       namespace: namespace.namespace,
       viaLabel:
-        namespace.via === "" ? "" : (relationshipLabels(sourceConfig, translate).get(namespace.via) ?? namespace.via),
+        namespace.via === "" ? "" : (relationshipLabels(identityConfig, translate).get(namespace.via) ?? namespace.via),
       catalog: namespace.catalog,
       maximumLimit: namespace.catalogMaximumLimit,
       filterable: namespace.filterable,

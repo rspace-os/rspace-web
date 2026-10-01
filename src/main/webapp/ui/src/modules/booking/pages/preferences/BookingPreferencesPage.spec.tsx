@@ -18,6 +18,9 @@ function registerHandlers() {
   worker.use(
     ...bookingPagesHandlers(),
     http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(stored)),
+    http.get("/api/v2/users/me/booking-notification-preferences", () =>
+      HttpResponse.json({ autoSubscribeOwnedItems: true }),
+    ),
     http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
       stored = {
         ...inheritedBrowserBookingPreferences,
@@ -30,11 +33,6 @@ function registerHandlers() {
       stored = inheritedBrowserBookingPreferences;
       return new HttpResponse(null, { status: 204 });
     }),
-    http.get("/api/v2/users/me/booking-notification-preferences", () =>
-      HttpResponse.json({
-        autoSubscribeOwnedItems: true,
-      }),
-    ),
   );
 }
 
