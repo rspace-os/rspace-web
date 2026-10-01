@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
@@ -73,6 +74,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private final CollectionDescription<BookingConfiguration> description;
   private final ResourceAccessManager accessManager;
   private final MessageSourceUtils messages;
+  private final BookingCalendarSubscriptionDao calendarSubscriptions;
   private final TimeSlotBookingDao timeSlotBookings;
 
   public BookingConfigurationManagerImpl(
@@ -88,6 +90,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
           CollectionDescription<BookingConfiguration> description,
       ResourceAccessManager accessManager,
       MessageSourceUtils messages,
+      @Qualifier("bookingCalendarSubscriptionDao")
+          BookingCalendarSubscriptionDao calendarSubscriptions,
       @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings) {
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.defaultsDao = defaultsDao;
@@ -98,6 +102,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     this.description = description;
     this.accessManager = accessManager;
     this.messages = messages;
+    this.calendarSubscriptions = calendarSubscriptions;
     this.timeSlotBookings = timeSlotBookings;
   }
 
@@ -365,6 +370,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
             .map(Instrument::getName)
             .orElse("Unavailable target");
     int bookingCount = timeSlotBookings.removeAllByConfigurationId(id);
+    int subscriptionCount = calendarSubscriptions.deleteByConfigurationId(id);
     BookingConfigurationPermanentDeleteSnapshot snapshot =
         new BookingConfigurationPermanentDeleteSnapshot(
             id,
@@ -373,6 +379,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
             targetName,
             configuration.getState(),
             bookingCount,
+            subscriptionCount,
             assignmentCount,
             Instant.now());
     bookingConfigurationDao.removeConfigurationAndAccess(configuration);
@@ -520,6 +527,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
           new TimeSlotBookingAuditEvent(actor, subject, booking, AuditAction.WRITE));
     }
     configuration.setState(BookingConfigurationState.ARCHIVED);
+    calendarSubscriptions.deleteByConfigurationId(configuration.getId());
     touchAudit(configuration, actor, timestamp);
     return save(configuration);
   }

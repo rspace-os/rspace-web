@@ -922,6 +922,26 @@ export default interface Resources {
           "tooWide": "Choose a period of no more than 183 days."
         }
       },
+      "calendarSubscription": {
+        "appPrompt": "Add to your calendar app:",
+        "apple": "Apple",
+        "archivedUnavailable": "New calendar links cannot be generated while this booking configuration is archived.",
+        "close": "Close",
+        "copied": "Copied",
+        "copy": "Copy link",
+        "copyError": "The link could not be copied. Select and copy it manually.",
+        "copyPrompt": "Or copy the calendar link below:",
+        "description": "Subscribe to this bookable item's read-only calendar.",
+        "generateError": "The calendar link could not be generated. Try again.",
+        "generating": "Generating calendar link.",
+        "google": "Google Calendar",
+        "loading": "Loading calendar status.",
+        "other": "Other",
+        "retry": "Retry",
+        "statusError": "Calendar subscription status could not be loaded.",
+        "title": "Add to your calendar",
+        "trigger": "Add to calendar"
+      },
       "cancelEdit": "Cancel",
       "disabled": "Disabled",
       "edit": "Edit configuration",
@@ -1264,13 +1284,12 @@ export default interface Resources {
       "displayControls": "Calendar display controls",
       "event": "Booking event",
       "feed": {
-        "booked": "Booked",
         "bookedBy": "Booked by: {0}",
+        "booking": "Booking",
         "busy": "Busy",
         "createdBy": "Created by: {0}",
-        "downloadTitle": "{0} - RSpace Booking",
-        "itemSummary": "{0} — {1}",
-        "maintenance": "Maintenance blockout",
+        "itemSummary": "{0} - {1}",
+        "maintenance": "Maintenance",
         "myBookings": "My RSpace bookings",
         "purpose": "Purpose: {0}"
       },
@@ -1409,6 +1428,24 @@ export default interface Resources {
         "endOfDay": "End of day (24:00)",
         "legend": "Default availability window",
         "start": "Start time"
+      },
+      "calendarSubscription": {
+        "apple": "Apple",
+        "changeError": "The calendar subscription could not be changed. Try again.",
+        "copied": "Copied",
+        "copy": "Copy link",
+        "copyError": "The link could not be copied. Select and copy it manually.",
+        "copyPrompt": "Calendar subscription link",
+        "create": "Create calendar subscription",
+        "description": "Subscribe to your confirmed RSpace bookings across all bookable items. The private link updates automatically in your calendar app.",
+        "google": "Google Calendar",
+        "loading": "Loading calendar subscription.",
+        "other": "Other",
+        "replace": "Replace private link",
+        "retry": "Retry",
+        "revoke": "Disconnect calendar",
+        "statusError": "The calendar subscription could not be loaded.",
+        "title": "My booking calendar"
       },
       "description": "Choose how Booking dates, times, forms, and availability are displayed. These settings do not change an item's opening hours.",
       "errors": {
@@ -3739,7 +3776,8 @@ export default interface Resources {
           "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item. <strong>This action can only be undone by the recipient or their PI.</strong>",
           "recipientLabel": "Recipient",
           "recipientSearchHint": "If the desired recipient cannot be found in this list, try searching for their name or username.",
-          "title": "Transfer Ownership"
+          "title": "Transfer Ownership",
+          "transferBookingConfigurationOwnership": "Also transfer Booking configuration ownership"
         },
         "disabled": {
           "noPermission": "{count, plural, one {You do not have permission to transfer this item.} other {You do not have permission to transfer these items.}}",
@@ -5061,7 +5099,8 @@ export default interface Resources {
     "peopleField": {
       "errors": {
         "couldNotGetGroupMembers": "Could not get group members."
-      }
+      },
+      "loading": "Loading people"
     },
     "permalink": {
       "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -5487,6 +5526,12 @@ export default interface Resources {
         }
       },
       "controls": {
+        "bookable": {
+          "any": "Any",
+          "label": "Bookable",
+          "no": "Not bookable",
+          "yes": "Bookable"
+        },
         "nameDialog": {
           "duplicateName": "This name is already taken. Please modify it.",
           "helperText": "Please enter a unique name, no longer than 32 characters.",
@@ -5586,6 +5631,7 @@ export default interface Resources {
       "parameterChips": {
         "basket": "Basket: {basket}",
         "benchOwner": "Bench Owner: {owner}",
+        "bookable": "Bookable: {value}",
         "contentsOf": "Contents of: {globalId}",
         "owner": "Owner: {owner}",
         "status": "Status: {status}",
@@ -6675,6 +6721,10 @@ export default interface Resources {
               "unavailable": "The selected target is not available for booking."
             },
             "window": "Start time must be in the future and end time must be after start time."
+          },
+          "bookingCalendar": {
+            "ifMatchRequired": "The current calendar subscription version is required.",
+            "subscriptionConflict": "The calendar subscription changed. Refresh it and try again."
           },
           "bookingConfiguration": {
             "buffer": {
