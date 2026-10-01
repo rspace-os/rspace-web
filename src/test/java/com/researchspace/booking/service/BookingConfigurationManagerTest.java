@@ -18,6 +18,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
@@ -89,6 +90,8 @@ class BookingConfigurationManagerTest {
   private final BookingConfigurationDefaultsDao defaultsDao =
       mock(BookingConfigurationDefaultsDao.class);
   private final InstrumentDao instrumentDao = mock(InstrumentDao.class);
+  private final BookingCalendarSubscriptionDao calendarSubscriptions =
+      mock(BookingCalendarSubscriptionDao.class);
   private final TimeSlotBookingDao timeSlotBookings = mock(TimeSlotBookingDao.class);
 
   private final User actor = mock(User.class);
@@ -107,6 +110,7 @@ class BookingConfigurationManagerTest {
           ApiV2BookingConfigurationResource.DESCRIPTION,
           accessManager,
           new MessageSourceUtils(new JsonMessageSource()),
+          calendarSubscriptions,
           timeSlotBookings);
 
   @BeforeEach
@@ -499,6 +503,7 @@ class BookingConfigurationManagerTest {
     assertSame(actor, second.getUpdatedBy());
     verify(dao).saveAndFlush(configuration);
     verify(dao, never()).remove(any());
+    verify(calendarSubscriptions).deleteByConfigurationId(42L);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
     verify(events, times(2))
         .publishEvent(
@@ -519,6 +524,7 @@ class BookingConfigurationManagerTest {
 
     verify(dao, never()).saveAndFlush(any());
     verify(dao, never()).remove(any());
+    verify(calendarSubscriptions, never()).deleteByConfigurationId(any());
     verify(events, never()).publishEvent(any());
   }
 
@@ -545,6 +551,7 @@ class BookingConfigurationManagerTest {
 
     assertEquals(BookingConfigurationState.ACTIVE, restored.getState());
     assertTrue(restored.isEnabled());
+    verify(calendarSubscriptions, never()).deleteByConfigurationId(any());
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 
@@ -619,6 +626,8 @@ class BookingConfigurationManagerTest {
     assertEquals(3L, alreadyArchived.getConfigurationVersion());
     verify(dao).saveAndFlush(active);
     verify(dao, never()).saveAndFlush(alreadyArchived);
+    verify(calendarSubscriptions).deleteByConfigurationId(41L);
+    verify(calendarSubscriptions, never()).deleteByConfigurationId(42L);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 
@@ -649,10 +658,12 @@ class BookingConfigurationManagerTest {
     configuration.setConfigurationVersion(7L);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
     when(timeSlotBookings.removeAllByConfigurationId(42L)).thenReturn(3);
+    when(calendarSubscriptions.deleteByConfigurationId(42L)).thenReturn(2);
 
     assertEquals(42L, manager.permanentlyDeleteConfiguration(42L, 7L, actor, actor).orElseThrow());
 
     verify(timeSlotBookings).removeAllByConfigurationId(42L);
+    verify(calendarSubscriptions).deleteByConfigurationId(42L);
     verify(dao).removeConfigurationAndAccess(configuration);
     verify(events).publishEvent(any(BookingConfigurationPermanentDeleteAuditEvent.class));
   }
