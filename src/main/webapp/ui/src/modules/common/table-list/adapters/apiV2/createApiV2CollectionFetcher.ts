@@ -8,6 +8,8 @@ export type ApiV2CollectionFetchOptions<TDocument> = {
   endpoint?: string;
   depth?: number;
   token?: string | (() => string | Promise<string>);
+  /** Effective caller identity. Required when a token callback can change callers. */
+  authScope?: string | number;
   headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
   fetch?: typeof globalThis.fetch;
   projection?: ApiV2CollectionProjection<TDocument>;

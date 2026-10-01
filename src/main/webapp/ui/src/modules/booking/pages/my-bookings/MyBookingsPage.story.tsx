@@ -24,7 +24,7 @@ const storySearch = new URLSearchParams({
   period: "upcoming",
   "my-bookings.q": "confocal",
   "my-bookings.where": "target.name=contains=scope",
-  "my-bookings.columns": '{ "fields": ["target", "start", "end", "purpose", "timezone"] }',
+  "my-bookings.columns": '{ "fields": ["target", "start", "end", "purpose"] }',
   "my-bookings.sort": "-start",
 });
 
