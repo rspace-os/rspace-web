@@ -224,6 +224,62 @@ class BookingNotificationSubscriptionManagerTest {
     inOrder.verify(subscriptions).unsubscribeEnabledForUser(eq(owner.getId()), any());
   }
 
+  @Test
+  void preferencesExposeTheSharedProfileEventChoicesAndEffectiveEmailDelivery() {
+    when(userManager.getPreferenceForUser(owner, Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS))
+        .thenReturn(preference(Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS, true));
+    when(userManager.getPreferenceForUser(owner, Preference.NOTIFICATION_BOOKING_CREATED_PREF))
+        .thenReturn(preference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, false));
+    when(userManager.getPreferenceForUser(owner, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF))
+        .thenReturn(preference(Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true));
+    when(userManager.getPreferenceForUser(owner, Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL))
+        .thenReturn(preference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, false));
+
+    assertEquals(
+        new BookingNotificationSubscriptionManager.Preferences(true, false, true, false),
+        manager.getPreferences(owner, actor));
+  }
+
+  @Test
+  void replacingPreferencesWritesTheProfileEventChoicesButNotEmailDelivery() {
+    when(userManager.getPreferenceForUser(owner, Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL))
+        .thenReturn(preference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, true));
+
+    BookingNotificationSubscriptionManager.Preferences saved =
+        manager.replacePreferences(
+            new BookingNotificationSubscriptionManager.PreferenceChanges(false, true, false),
+            owner,
+            actor);
+
+    assertEquals(
+        new BookingNotificationSubscriptionManager.Preferences(false, true, false, true), saved);
+    verify(userManager)
+        .setPreference(
+            Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS, "false", owner.getUsername());
+    verify(userManager)
+        .setPreference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, "true", owner.getUsername());
+    verify(userManager)
+        .setPreference(
+            Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, "false", owner.getUsername());
+    verify(userManager, never())
+        .setPreference(eq(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL), any(), any());
+    verify(subscriptions, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void preferencesRequireBookingForTheSubject() {
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(false);
+
+    assertThrows(
+        org.apache.shiro.authz.AuthorizationException.class,
+        () ->
+            manager.replacePreferences(
+                new BookingNotificationSubscriptionManager.PreferenceChanges(true, true, true),
+                owner,
+                actor));
+    verify(userManager, never()).setPreference(any(), any(), any());
+  }
+
   private static ResolvedResourceAccess readableAccess() {
     return new ResolvedResourceAccess(
         Optional.of(BookingResourceRoleScheme.VIEWER),

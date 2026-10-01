@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.constraints.Positive;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,7 +34,7 @@ public class BookingCalendarSubscriptionController {
     }
   }
 
-  /** One-time creation response containing the newly issued subscription URL. */
+  /** Create or rotate response containing the caller's current subscription URL. */
   public record CreatedDocument(boolean active, String updatedAt, String subscriptionUrl) {
 
     static CreatedDocument from(BookingCalendarManager.Created created) {
@@ -75,10 +76,33 @@ public class BookingCalendarSubscriptionController {
 
   @PostMapping
   @Operation(
-      operationId = "createOrReplaceBookingCalendarSubscription",
-      summary = "Create or replace a calendar subscription",
+      operationId = "createBookingCalendarSubscription",
+      summary = "Create a calendar subscription",
       description =
-          "Requires the current status ETag in If-Match and returns a new subscription URL.",
+          "Returns the caller's existing subscription URL unchanged, or issues one when none"
+              + " exists. Repeating the request is safe. Use the rotate operation to replace a"
+              + " URL.",
+      responses = {
+        @ApiResponse(responseCode = "200", description = "The existing subscription URL."),
+        @ApiResponse(responseCode = "201", description = "A newly issued subscription URL."),
+        @ApiResponse(responseCode = "401", description = "Authentication is required."),
+        @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
+        @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
+        @ApiResponse(responseCode = "409", description = "The item is archived.")
+      })
+  public ResponseEntity<CreatedDocument> create(
+      @PathVariable @Positive(message = "{errors.api.v2.invalidRequest}") Long configurationId,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    return createdResponse(manager.create(configurationId, caller.subject(), caller.actor()));
+  }
+
+  @PostMapping("/rotate")
+  @Operation(
+      operationId = "rotateBookingCalendarSubscription",
+      summary = "Replace a calendar subscription URL",
+      description =
+          "Requires the current status ETag in If-Match. Issues a new URL; calendars using the old"
+              + " one stop updating.",
       responses = {
         @ApiResponse(responseCode = "200", description = "The new subscription URL."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
@@ -86,19 +110,26 @@ public class BookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
         @ApiResponse(
             responseCode = "409",
-            description = "The item is archived or the subscription changed."),
+            description = "The item is archived, or the subscription is missing or changed."),
         @ApiResponse(responseCode = "428", description = "If-Match is required.")
       })
-  public ResponseEntity<CreatedDocument> createOrReplace(
+  public ResponseEntity<CreatedDocument> rotate(
       @PathVariable @Positive(message = "{errors.api.v2.invalidRequest}") Long configurationId,
       @RequestHeader(name = "If-Match", required = false) String ifMatch,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     String expectedEtag =
         ApiV2ConditionalRequest.parseStrongEtag(
             ifMatch, "errors.api.v2.bookingCalendar.ifMatchRequired");
-    BookingCalendarManager.Created created =
-        manager.createOrRotate(configurationId, caller.subject(), caller.actor(), expectedEtag);
-    return ResponseEntity.ok().eTag(created.status().etag()).body(CreatedDocument.from(created));
+    BookingCalendarManager.Created rotated =
+        manager.rotate(configurationId, caller.subject(), caller.actor(), expectedEtag);
+    return ResponseEntity.ok().eTag(rotated.status().etag()).body(CreatedDocument.from(rotated));
+  }
+
+  /** 201 when the link was issued by this request, 200 when an existing link was returned. */
+  static ResponseEntity<CreatedDocument> createdResponse(BookingCalendarManager.Created created) {
+    return ResponseEntity.status(created.newlyIssued() ? HttpStatus.CREATED : HttpStatus.OK)
+        .eTag(created.status().etag())
+        .body(CreatedDocument.from(created));
   }
 
   @DeleteMapping

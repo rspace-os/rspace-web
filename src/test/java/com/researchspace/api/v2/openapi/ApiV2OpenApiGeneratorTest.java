@@ -266,8 +266,26 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "getBookingCalendarSubscription", objectMap(management.get("get")).get("operationId"));
     assertEquals(
-        "createOrReplaceBookingCalendarSubscription",
-        objectMap(management.get("post")).get("operationId"));
+        "createBookingCalendarSubscription", objectMap(management.get("post")).get("operationId"));
+    assertEquals(
+        Set.of("200", "201", "401", "403", "404", "406", "409", "429", "500"),
+        objectMap(objectMap(management.get("post")).get("responses")).keySet());
+    Map<String, Object> rotate =
+        objectMap(
+            objectMap(
+                    paths.get(
+                        "/api/v2/booking-configurations/{configurationId}/calendar-subscription/rotate"))
+                .get("post"));
+    assertEquals("rotateBookingCalendarSubscription", rotate.get("operationId"));
+    assertTrue(
+        objectMapList(rotate.get("parameters")).stream()
+            .anyMatch(
+                parameter ->
+                    parameter.get("name").equals("If-Match")
+                        && Boolean.TRUE.equals(parameter.get("required"))));
+    assertEquals(
+        Set.of("200", "400", "401", "403", "404", "406", "409", "428", "429", "500"),
+        objectMap(rotate.get("responses")).keySet());
     assertEquals(
         "revokeBookingCalendarSubscription",
         objectMap(management.get("delete")).get("operationId"));
