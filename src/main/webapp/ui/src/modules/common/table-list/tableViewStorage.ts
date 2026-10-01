@@ -11,9 +11,25 @@ export function tableViewStorageKey(tableId: string): string {
   return `rspace.tableList.${tableId}.view`;
 }
 
+export function readStoredTableView(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function removeStoredTableView(key: string): void {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Browser privacy settings must not prevent the table from loading.
+  }
+}
+
 export function storedTableViewSelectors(key: string): readonly string[] {
   try {
-    const serialized = window.localStorage.getItem(key);
+    const serialized = readStoredTableView(key);
     if (serialized === null) return [];
     const state: unknown = JSON.parse(serialized);
     if (typeof state !== "object" || state === null) return [];
@@ -46,10 +62,10 @@ export function loadStoredTableView<TDocument>(
   stale?: StaleViewFields,
 ): TableViewValues<TDocument> | null {
   try {
-    const serialized = window.localStorage.getItem(key);
+    const serialized = readStoredTableView(key);
     if (serialized === null) return null;
     const values = parseTableViewState(serialized, config, stale);
-    if (values === null) window.localStorage.removeItem(key);
+    if (values === null) removeStoredTableView(key);
     return values;
   } catch {
     // Browser privacy settings must not prevent the table from loading.
@@ -64,7 +80,7 @@ export function saveStoredTableView<TDocument>(
 ): void {
   try {
     const serialized = serializeTableViewState(values, config);
-    if (serialized === null) window.localStorage.removeItem(key);
+    if (serialized === null) removeStoredTableView(key);
     else window.localStorage.setItem(key, serialized);
   } catch {
     // Browser privacy settings and storage quotas must not affect the table.

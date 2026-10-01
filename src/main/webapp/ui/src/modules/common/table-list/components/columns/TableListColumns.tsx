@@ -167,12 +167,14 @@ export function TableListColumns<TDocument>({
   onChange,
   onSelectRuntimeField,
   runtimeFieldDefinitions,
+  runtimeFieldAuthScope,
   onClose,
 }: {
   config: ResolvedCollectionConfig<TDocument>;
   visibleFields: readonly FieldName<TDocument>[];
   onChange: (fields: readonly FieldName<TDocument>[]) => void;
   onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
+  runtimeFieldAuthScope?: string | number;
   runtimeFieldDefinitions?: readonly {
     namespace: string;
     definitions: readonly RuntimeFieldDefinition[];
@@ -346,6 +348,7 @@ export function TableListColumns<TDocument>({
               }
               chosenLabel={undefined}
               known={runtimeFieldDefinitions ?? []}
+              authScope={runtimeFieldAuthScope}
               isDefinitionAvailable={(definition) => definition.columnSelectable}
               onSelect={(namespace, definition) => {
                 onSelectRuntimeField(namespace, definition);

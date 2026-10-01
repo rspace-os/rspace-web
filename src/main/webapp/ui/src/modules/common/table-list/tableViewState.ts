@@ -8,6 +8,11 @@ export type TableViewState = {
   search: string | null;
   where: string | null;
   columns: string | null;
+  /**
+   * The configured default columns when `columns` was saved. A default added to the configuration later is
+   * missing from this list, so loading shows it instead of silently hiding it behind the saved selection.
+   */
+  defaults?: string;
   sort: string | null;
 };
 
@@ -26,14 +31,16 @@ export function serializeTableViewState<TDocument>(
   values: TableViewValues<TDocument>,
   config: ResolvedCollectionConfig<TDocument>,
 ): string | null {
+  const columns =
+    serializeColumns(values.columns) === serializeColumns(config.defaultColumns)
+      ? null
+      : serializeColumns(values.columns);
   const state: TableViewState = {
     v: 1,
     search: values.search || null,
     where: values.where === null ? null : serializeRsqlExpression(values.where),
-    columns:
-      serializeColumns(values.columns) === serializeColumns(config.defaultColumns)
-        ? null
-        : serializeColumns(values.columns),
+    columns,
+    ...(columns === null ? {} : { defaults: serializeColumns(config.defaultColumns) }),
     sort:
       serializeSorting(values.sort) === serializeSorting(config.defaultSort ?? [])
         ? null
@@ -62,6 +69,7 @@ export function parseTableViewState<TDocument>(
       !(typeof state.search === "string" || state.search === null) ||
       !(typeof state.where === "string" || state.where === null) ||
       !(typeof state.columns === "string" || state.columns === null) ||
+      !(state.defaults === undefined || typeof state.defaults === "string") ||
       !(typeof state.sort === "string" || state.sort === null)
     ) {
       return null;
@@ -69,10 +77,7 @@ export function parseTableViewState<TDocument>(
     return {
       search: state.search,
       where: state.where === null ? null : parseRsqlExpression(state.where, config, stale),
-      columns:
-        state.columns === null
-          ? config.defaultColumns
-          : (parseColumns(state.columns, config, stale) ?? config.defaultColumns),
+      columns: savedColumns(state.columns, state.defaults, config, stale),
       sort:
         state.sort === null
           ? (config.defaultSort ?? [])
@@ -80,5 +85,38 @@ export function parseTableViewState<TDocument>(
     };
   } catch {
     return null;
+  }
+}
+
+/**
+ * A saved column selection plus any default column added to the configuration since it was saved, each placed
+ * after the default that precedes it. Views saved before `defaults` was recorded gain every missing default once.
+ */
+function savedColumns<TDocument>(
+  columns: string | null,
+  defaults: string | undefined,
+  config: ResolvedCollectionConfig<TDocument>,
+  stale?: StaleViewFields,
+): readonly FieldName<TDocument>[] {
+  if (columns === null) return config.defaultColumns;
+  const saved = parseColumns(columns, config, stale);
+  if (saved === null) return config.defaultColumns;
+  const seen = new Set<string>(defaults === undefined ? [] : columnNames(defaults));
+  const merged = [...saved];
+  config.defaultColumns.forEach((column, index) => {
+    if (seen.has(column) || merged.includes(column)) return;
+    const previous = config.defaultColumns.slice(0, index).findLast((candidate) => merged.includes(candidate));
+    merged.splice(previous === undefined ? 0 : merged.indexOf(previous) + 1, 0, column);
+  });
+  return merged;
+}
+
+function columnNames(serialized: string): readonly string[] {
+  try {
+    const value: unknown = JSON.parse(serialized);
+    const raw = isRecord(value) ? value.fields : value;
+    return Array.isArray(raw) ? raw.filter((name): name is string => typeof name === "string") : [];
+  } catch {
+    return [];
   }
 }

@@ -122,6 +122,7 @@ describe("table-list persisted view state", () => {
           search: null,
           where: "removedField==value",
           columns: JSON.stringify({ fields: ["title", "score"] }),
+          defaults: JSON.stringify({ fields: config.defaultColumns }),
           sort: "removedField",
         }),
         config,
@@ -135,12 +136,53 @@ describe("table-list persisted view state", () => {
   });
 });
 
+describe("a saved column selection when the configured defaults change", () => {
+  const view = (fields: readonly string[], defaults?: readonly string[]) =>
+    JSON.stringify({
+      v: 1,
+      search: null,
+      where: null,
+      columns: JSON.stringify({ fields }),
+      ...(defaults ? { defaults: JSON.stringify({ fields: defaults }) } : {}),
+      sort: null,
+    });
+
+  it("records the defaults it was saved against", () => {
+    const serialized = serializeTableViewState(
+      { search: null, where: null, columns: ["title", "score"], sort: config.defaultSort ?? [] },
+      config,
+    );
+
+    expect(JSON.parse(serialized as string).defaults).toBe(JSON.stringify({ fields: config.defaultColumns }));
+  });
+
+  it("shows a default column added since the view was saved, after the default before it", () => {
+    // The view predates "score" becoming a default, so the saved selection never chose to hide it.
+    const values = parseTableViewState(view(["title", "enabled"], ["title", "owner", "enabled", "modifiedAt"]), config);
+
+    expect(values?.columns).toEqual(["title", "score", "enabled"]);
+  });
+
+  it("keeps a default hidden that the user removed after seeing it", () => {
+    const values = parseTableViewState(view(["title", "score"], config.defaultColumns), config);
+
+    expect(values?.columns).toEqual(["title", "score"]);
+  });
+
+  it("gives a view saved before defaults were recorded every missing default once", () => {
+    const values = parseTableViewState(view(["title", "score"]), config);
+
+    expect(values?.columns).toEqual(["title", "owner", "score", "enabled", "modifiedAt"]);
+  });
+});
+
 describe("a saved view naming a field that no longer exists", () => {
   const saved = JSON.stringify({
     v: 1,
     search: null,
     where: 'owner=="Ada";customFields.SF104=="BSL-2"',
     columns: JSON.stringify(["title", "customFields.SF104", "score"]),
+    defaults: JSON.stringify({ fields: config.defaultColumns }),
     sort: null,
   });
   const stale = (dropped: string[]) => ({
