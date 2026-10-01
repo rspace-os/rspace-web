@@ -242,7 +242,14 @@ public enum Preference {
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING,
-      "userProfile.message.bookingCancelled");
+      "userProfile.message.bookingCancelled"),
+
+  /** Whether newly bookable or newly owned instruments are subscribed by default. */
+  BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS(
+      Boolean.TRUE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.UI,
+      "userProfile.message.bookingAutoSubscribe");
 
   private String defaultValue;
   private SettingsType prefType;

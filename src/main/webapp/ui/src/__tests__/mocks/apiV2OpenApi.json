@@ -357,6 +357,9 @@
           "canManageAssignments" : {
             "type" : "boolean"
           },
+          "canManageNotificationSubscription" : {
+            "type" : "boolean"
+          },
           "canManageOwnBookings" : {
             "type" : "boolean"
           },

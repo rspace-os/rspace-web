@@ -30,6 +30,11 @@ function registerHandlers() {
       stored = inheritedBrowserBookingPreferences;
       return new HttpResponse(null, { status: 204 });
     }),
+    http.get("/api/v2/users/me/booking-notification-preferences", () =>
+      HttpResponse.json({
+        autoSubscribeOwnedItems: true,
+      }),
+    ),
   );
 }
 
