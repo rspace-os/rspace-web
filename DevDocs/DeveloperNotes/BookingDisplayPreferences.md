@@ -153,6 +153,43 @@ not arbitrary content: dense calendars and long lists can still grow. Loading
 markup must not contain previous-resource data or enable controls before the
 relevant capability is known.
 
+## Vertical schedule beside booking forms
+
+The add and edit forms compose the same `VerticalDayTimeline` through
+`BookingDayTimelineAside`. The timeline owns visual day presentation and
+temporary drag state; `BookingForm` remains the owner of the committed booking
+window. `useBookingTimelineDraft` bridges completed adjustments back to the form
+and prevents submission until the matching adjustment is acknowledged. Keep
+that bridge shared when adding another form consumer.
+
+The browsed-day query uses raw confirmed bookings from `fetchDayBookings`.
+Availability checks stay in the owning page and cover the entire committed
+draft, independently of the browsed date or whether the narrow-layout schedule
+sheet is open. On narrow layouts, a floating Day schedule button appears at
+the right edge while the form is in view and opens a right-side sheet. Its tab
+stays attached to the sheet's left edge as it slides in and out, and closes the
+sheet when pressed. The wide layout keeps
+the timeline below the item information card. Opening the
+sheet does not start a second day-schedule query. Do not use padded
+availability intervals as visual event durations.
+Both fetch paths retain the projection, authorization scope and pagination cap;
+an incomplete schedule is an error, never evidence that an instrument is free.
+
+Existing events use deterministic overlap lanes. The draft spans the event
+area, with an opaque theme-derived tint that stays unchanged during gestures.
+The presentation follows the Codex Vertical Day Timeline: a compact card with
+a centered date between previous/next buttons, timezone and instrument context,
+continuous hour lines and thin
+draft resize edges. The full zoned day remains scrollable at 56 pixels per hour;
+it is not restricted to the prototype's sample hours. Short intervals remain
+editable through the booking form's date and time fields. The item information
+card appears above the timeline on wide add and edit layouts.
+An Event details disclosure below the grid keeps very short or crowded events
+inspectable without a second calendar view. Pointer and keyboard
+adjustments share scheduling-zone slot calculations while positions
+use elapsed time in the display zone. Cancelling a gesture or losing pointer
+capture discards its preview without changing the form.
+
 ## REST API compatibility
 
 The `timezone` field on `/api/v2/booking-configurations` is the item's scheduling timezone. Single

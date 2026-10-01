@@ -1,11 +1,20 @@
+import { QueryClient } from "@tanstack/react-query";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { currentUser } from "@/modules/booking/pages/calendar/calendarFixtures";
 import { institutionBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
+import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { BookingDashboardPageStory } from "./BookingDashboardPage.story";
-import { bookingDashboardHandlers, dashboardBookings } from "./mocks/bookingDashboardMocks";
+import {
+  bookingDashboardHandlers,
+  dashboardBooking,
+  dashboardBookings,
+  dashboardCollectionResponse,
+} from "./mocks/bookingDashboardMocks";
 import { BookingDashboardPageObject } from "./pageObjects/BookingDashboardPage";
 
 const dashboard = new BookingDashboardPageObject();
@@ -59,6 +68,165 @@ describe("Booking dashboard", () => {
     await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
     await expect.element(dashboard.upcomingInstrument("Instrument 104")).toBeVisible();
     await expect.element(dashboard.upcomingInstrument("Instrument 200")).not.toBeInTheDocument();
+    await expect.element(dashboard.upcomingViewAll).toHaveAttribute("href", "/booking/my-bookings?period=upcoming");
+    await dashboard.upcomingDisclosure("Instrument 100").click();
+    await expect
+      .element(dashboard.upcomingDetailsLink("Instrument 100"))
+      .toHaveAttribute("href", "/booking/calendar/bookings/100");
+  });
+
+  test("keeps agenda expansion across a delayed minute refresh and error, then prunes a removed booking", async () => {
+    vi.setSystemTime(new Date("2026-08-18T00:30:00.000Z"));
+    let triggerMinute: (() => void) | undefined;
+    const realSetTimeout = globalThis.setTimeout;
+    const heldMinuteTimeouts: ReturnType<typeof setTimeout>[] = [];
+    const timerSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation((handler, delay, ...args) => {
+      if (typeof handler === "function" && delay !== undefined && delay > 50_000 && delay <= 60_000) {
+        // Hold the hook's scheduled callback until the booking is open.
+        triggerMinute = () => handler(...args);
+        const heldTimeout = realSetTimeout(() => {}, 60 * 60 * 1000);
+        heldMinuteTimeouts.push(heldTimeout);
+        return heldTimeout;
+      }
+      return realSetTimeout(handler, delay, ...args);
+    });
+    registerHandlers({ docs: [dashboardBooking(100, 18)] });
+
+    let releaseDelayedResponse: () => void = () => {};
+    const delayedResponse = new Promise<void>((resolve) => {
+      releaseDelayedResponse = resolve;
+    });
+    const expandedBooking = dashboardBooking(100, 18);
+    const replacementBooking = dashboardBooking(101, 18);
+    let upcomingAttempt = 0;
+    worker.use(
+      http.get("/api/v2/bookings", async ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        if (url.searchParams.get("limit") !== "5") {
+          return HttpResponse.json(dashboardCollectionResponse(dashboardBookings));
+        }
+
+        upcomingAttempt += 1;
+        if (upcomingAttempt === 1) {
+          return HttpResponse.json(dashboardCollectionResponse([expandedBooking]));
+        }
+        if (upcomingAttempt === 2) {
+          await delayedResponse;
+          return HttpResponse.json(dashboardCollectionResponse([expandedBooking]));
+        }
+        if (upcomingAttempt === 3) return new HttpResponse(null, { status: 503 });
+        if (upcomingAttempt === 4) {
+          return HttpResponse.json(dashboardCollectionResponse([expandedBooking]));
+        }
+        if (upcomingAttempt === 5) {
+          return HttpResponse.json(dashboardCollectionResponse([replacementBooking]));
+        }
+        return HttpResponse.json(dashboardCollectionResponse([expandedBooking]));
+      }),
+    );
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    try {
+      render(<BookingDashboardPageStory history={history} queryClient={queryClient} />);
+      await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
+      await expect.element(dashboard.upcomingDisclosure("Instrument 100")).toBeVisible();
+      await dashboard.upcomingDisclosure("Instrument 100").click();
+      await expect.element(dashboard.upcomingDetailsLink("Instrument 100")).toBeVisible();
+
+      expect(triggerMinute).toBeDefined();
+      vi.setSystemTime(new Date("2026-08-18T00:31:00.100Z"));
+      act(() => triggerMinute?.());
+      await expect.poll(() => upcomingAttempt).toBe(2);
+      await expect.element(dashboard.upcomingLoading).toBeVisible();
+      await expect.element(dashboard.upcomingDetailsLink("Instrument 100")).not.toBeInTheDocument();
+
+      releaseDelayedResponse();
+      await expect.element(dashboard.upcomingDetailsLink("Instrument 100")).toBeVisible();
+
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "dashboard", "upcoming"] });
+      await expect.element(dashboard.upcomingError).toBeVisible();
+      await dashboard.upcomingRetry.click();
+      await expect.element(dashboard.upcomingDetailsLink("Instrument 100")).toBeVisible();
+
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "dashboard", "upcoming"] });
+      await expect.element(dashboard.upcomingInstrument("Instrument 101")).toBeVisible();
+      await expect.element(dashboard.upcomingDisclosure("Instrument 101")).toBeVisible();
+      await expect.element(dashboard.upcomingInstrument("Instrument 100")).not.toBeInTheDocument();
+      await expect
+        .poll(() => dashboard.upcomingDisclosure("Instrument 101").element().parentElement?.hasAttribute("open"))
+        .toBe(false);
+
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "dashboard", "upcoming"] });
+      await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
+      await expect.element(dashboard.upcomingDisclosure("Instrument 100")).toBeVisible();
+      await expect
+        .poll(() => dashboard.upcomingDisclosure("Instrument 100").element().parentElement?.hasAttribute("open"))
+        .toBe(false);
+    } finally {
+      releaseDelayedResponse();
+      timerSpy.mockRestore();
+      heldMinuteTimeouts.forEach(clearTimeout);
+    }
+  });
+
+  test("resets expanded bookings when the requester changes", async () => {
+    registerHandlers();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<BookingDashboardPageStory history={history} queryClient={queryClient} />);
+
+    await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
+    await expect.element(dashboard.upcomingDisclosure("Instrument 100")).toBeVisible();
+    await dashboard.upcomingDisclosure("Instrument 100").click();
+    await expect.element(dashboard.upcomingDetailsLink("Instrument 100")).toBeVisible();
+
+    queryClient.setQueryData(currentUserQueryKeys.me(), { ...currentUser, id: currentUser.id + 1 });
+    await expect
+      .poll(() =>
+        requests.some((url) => url.searchParams.get("where")?.includes(`requesterId==${currentUser.id + 1};`)),
+      )
+      .toBe(true);
+    await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
+    await expect.element(dashboard.upcomingDisclosure("Instrument 100")).toBeVisible();
+    await expect
+      .poll(() => dashboard.upcomingDisclosure("Instrument 100").element().parentElement?.hasAttribute("open"))
+      .toBe(false);
+    await expect
+      .poll(() =>
+        requests.some((url) => url.searchParams.get("where")?.includes(`requesterId==${currentUser.id + 1};`)),
+      )
+      .toBe(true);
+  });
+
+  test("keeps deliberately populated busy-booking purpose private in the upcoming agenda", async () => {
+    const fullBooking = dashboardBooking(700, 18, {
+      target: {
+        relationTo: "booking-instruments",
+        value: { id: 700, name: "Private full booking", deleted: false },
+        globalId: "IN700",
+      },
+      purpose: "Private purpose",
+    });
+    const busyBooking = dashboardBooking(701, 18, {
+      target: {
+        relationTo: "booking-instruments",
+        value: { id: 701, name: "Private busy booking", deleted: false },
+        globalId: "IN701",
+      },
+      privacy: "busy",
+      purpose: "Must stay hidden",
+      canViewConfiguration: false,
+    });
+    registerHandlers({ docs: [fullBooking, busyBooking] });
+    render(<BookingDashboardPageStory history={history} />);
+
+    await expect.element(dashboard.upcomingInstrument("Private full booking")).toBeVisible();
+    await expect.element(dashboard.upcomingDisclosure("Private full booking")).toBeVisible();
+    await dashboard.upcomingDisclosure("Private full booking").click();
+    await expect.element(dashboard.upcomingDetailsLink("Private full booking")).toBeVisible();
+    await expect.element(dashboard.upcomingDisclosure("Private busy booking")).toBeVisible();
+    await dashboard.upcomingDisclosure("Private busy booking").click();
+    await expect.element(dashboard.upcomingPurpose("Must stay hidden")).not.toBeInTheDocument();
   });
 
   test("updates today's links and calendar highlight after midnight", async () => {
@@ -122,10 +290,14 @@ describe("Booking dashboard", () => {
 
     await dashboard.calendarDay("Thursday, August 20, 2026").click();
     await expect.element(dashboard.range).toHaveTextContent("1–5 of 12");
+    const pagerTop = () => dashboard.next.element().getBoundingClientRect().top;
+    const fullPagePagerTop = pagerTop();
     await dashboard.next.click();
     await expect.element(dashboard.range).toHaveTextContent("6–10 of 12");
     await dashboard.next.click();
     await expect.element(dashboard.range).toHaveTextContent("11–12 of 12");
+    // The two-booking last page keeps a full page's height, so the pager stays under the pointer.
+    expect(Math.abs(pagerTop() - fullPagePagerTop)).toBeLessThanOrEqual(1);
     await expect.element(dashboard.next).toBeDisabled();
     await expect.element(dashboard.previous).toBeEnabled();
     expect(dashboard.popup.getByRole("button").all()).toHaveLength(2);
@@ -186,18 +358,41 @@ describe("Booking dashboard", () => {
       await expect.element(day19).toBeVisible();
       // The preceding hover test leaves the physical pointer over a booked day.
       await dashboard.heading.hover();
-      await expect.element(dashboard.popup).not.toBeInTheDocument();
+      await closePopup();
       day18.element().focus();
       await expect.element(day18).toHaveFocus();
       await userEvent.keyboard("{ArrowRight}");
       await expect.element(day19).toHaveFocus();
       await userEvent.keyboard(key);
       await expect.element(dashboard.popup).toBeVisible();
+      await expect.element(dashboard.popup).toHaveFocus();
       await userEvent.keyboard("{Escape}");
       await expect.element(dashboard.popup).not.toBeInTheDocument();
       expect(document.activeElement).toBe(day19.element());
     },
   );
+
+  test.each(["{Enter}", "{Space}"])("keeps a hover-opened day open with %s and moves focus into it", async (key) => {
+    render(<BookingDashboardPageStory history={history} />);
+
+    const day18 = dashboard.calendarDay("Tuesday, August 18, 2026");
+    const day19 = dashboard.calendarDay("Wednesday, August 19, 2026");
+    await expect.element(day19).toBeVisible();
+    await day19.hover();
+    await expect.element(dashboard.popup).toHaveAccessibleName("Wednesday, August 19, 2026");
+    // Base UI keeps a hover-opened popover open for a click in its first 500 ms and toggles it closed
+    // after that. A keyboard user presses the key later, so wait out that window.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    day18.element().focus();
+    await userEvent.keyboard("{ArrowRight}");
+    await expect.element(day19).toHaveFocus();
+    await userEvent.keyboard(key);
+    await expect.element(dashboard.popup).toHaveFocus();
+    await expect.element(dashboard.popup).toHaveAccessibleName("Wednesday, August 19, 2026");
+    await userEvent.keyboard("{Escape}");
+    await expect.element(dashboard.popup).not.toBeInTheDocument();
+    await expect.element(day19).toHaveFocus();
+  });
 
   test("keeps the mobile popup in the viewport and the pager in a stable position", async () => {
     const originalViewport = { width: window.innerWidth, height: window.innerHeight };
