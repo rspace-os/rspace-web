@@ -82,11 +82,17 @@ function validateSearchSelectors<TDocument>(
   if (selectors.length > limit) throw new Error(`Search field limit exceeded: maximum ${limit}`);
   for (const name of selectors) {
     const selector = String(name);
-    const published = metadata.filtering.selectors[selector];
+    const published = metadata.filtering.selectors[selector] ?? metadata.relationshipFields?.[selector];
     if (!published) throw new Error(`Searchable field is not filterable: ${selector}`);
     const targetField = selector.slice(selector.indexOf(".") + 1);
     if (selector.includes(".") && (targetField === "value" || targetField === "relationTo")) {
       throw new Error(`Relationship wire field is not searchable: ${selector}`);
+    }
+    if (targetField === "globalId") {
+      if (published.fieldType !== undefined && published.fieldType !== "text") {
+        throw new Error(`Searchable field must be text: ${selector}`);
+      }
+      continue;
     }
     if (!published.operators.includes("=contains=")) {
       throw new Error(`Searchable field does not support contains: ${selector}`);
