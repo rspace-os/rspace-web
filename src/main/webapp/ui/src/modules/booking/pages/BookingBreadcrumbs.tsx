@@ -40,9 +40,14 @@ export function BookingBreadcrumbs() {
       </Link>
     ),
   };
+  // Bookable items is the Administration page every user can reach; Settings is sysadmin-only.
   const administration: BreadcrumbItem = {
     key: "administration",
-    content: <span className="text-muted-foreground">{t("sidebar.administration")}</span>,
+    content: (
+      <Link to="/booking/config/bookable-items" className={breadcrumbLinkClassName}>
+        {t("sidebar.administration")}
+      </Link>
+    ),
   };
   const bookableItems: BreadcrumbItem = {
     key: "bookable-items",

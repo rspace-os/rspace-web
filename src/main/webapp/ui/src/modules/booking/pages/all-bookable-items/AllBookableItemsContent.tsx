@@ -17,6 +17,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     date,
     availability: routeAvailability,
     target,
+    mine = false,
     where,
     q,
     types,
@@ -29,6 +30,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     date,
     routeAvailability,
     target,
+    mine,
     where,
     q,
     types,
@@ -58,6 +60,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
         date: undefined,
         availability: undefined,
         target: undefined,
+        mine: undefined,
         where: undefined,
         q: undefined,
         types: undefined,
@@ -152,6 +155,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     <AllBookableItemsTable
       {...data}
       types={types}
+      mine={mine}
       tableProps={tableProps}
       setDate={setDate}
       resetView={resetView}

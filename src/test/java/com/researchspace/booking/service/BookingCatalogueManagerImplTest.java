@@ -99,7 +99,11 @@ class BookingCatalogueManagerImplTest {
 
     BookingCatalogueManager.Page result =
         search(
-            ResourceRequest.unpaged(null), BookingCatalogueManager.Capability.CREATE_BOOKING, 3, 7);
+            ResourceRequest.unpaged(null),
+            BookingCatalogueManager.Capability.CREATE_BOOKING,
+            false,
+            3,
+            7);
 
     assertEquals(3, result.page());
     assertEquals(7, result.pageSize());
@@ -131,7 +135,11 @@ class BookingCatalogueManagerImplTest {
 
     BookingCatalogueManager.Page result =
         search(
-            ResourceRequest.unpaged(null), BookingCatalogueManager.Capability.CREATE_BOOKING, 4, 9);
+            ResourceRequest.unpaged(null),
+            BookingCatalogueManager.Capability.CREATE_BOOKING,
+            false,
+            4,
+            9);
 
     assertEquals(List.of(), result.items());
     assertEquals(4, result.page());
@@ -167,7 +175,7 @@ class BookingCatalogueManagerImplTest {
         .thenReturn(new ResourcePage<>(List.of(), 0));
     when(bookingInstruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
 
-    search(request, null, 3, 7);
+    search(request, null, false, 3, 7);
 
     ArgumentCaptor<ResourceRequest> captured = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(configurations).getConfigurations(captured.capture(), same(caller));
@@ -185,9 +193,30 @@ class BookingCatalogueManagerImplTest {
     assertInstanceOf(FilterExpression.And.class, restrictions.children().get(1));
   }
 
+  @Test
+  void appliesCallerOwnershipBeforePaging() {
+    RsqlCollectionQuery.Predicate ownership =
+        new RsqlCollectionQuery.Predicate("EXISTS ownedBookingItem", Map.of("owner", caller));
+    when(itemQuery.ownedBy(caller, "bookingConfiguration.target")).thenReturn(ownership);
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), same(ownership)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
+    when(bookingInstruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
+    when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
+
+    search(ResourceRequest.unpaged(null), null, true, 2, 20);
+
+    verify(configurations)
+        .getConfigurations(any(ResourceRequest.class), same(caller), same(ownership));
+  }
+
   private BookingCatalogueManager.Page search(
-      ResourceRequest request, BookingCatalogueManager.Capability capability, int page, int size) {
+      ResourceRequest request,
+      BookingCatalogueManager.Capability capability,
+      boolean mine,
+      int page,
+      int size) {
     return manager.search(
-        null, null, request, List.of(), List.of(), capability, page, size, caller);
+        null, null, request, List.of(), List.of(), capability, mine, page, size, caller);
   }
 }
