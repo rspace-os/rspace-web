@@ -3,7 +3,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import {
@@ -11,7 +12,7 @@ import {
   bookableItemsHandlers,
   bookableItemsOpenApi,
 } from "../../bookable-items/mocks/bookableItemsMocks";
-import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { busyBooking, collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { bookingsOpenApi } from "../../my-bookings/mocks/bookingMocks";
 import { restoreCalendarScrollTo, setupCalendarBookableItems, setupCalendarScrollTo } from "./calendarPageTestUtils";
 import { renderCalendar } from "./calendarTestHarness";
@@ -20,10 +21,18 @@ beforeAll(() => setupCalendarScrollTo());
 beforeEach(() => setupCalendarBookableItems());
 afterAll(() => restoreCalendarScrollTo());
 
+/** Chooses a layout in the View menu, then closes it; an open menu makes the rest of the page inert. */
+async function chooseLayout(user: ReturnType<typeof userEvent.setup>, layout: string) {
+  await user.click(await screen.findByRole("button", { name: /^View: / }));
+  await user.click(await screen.findByRole("menuitemradio", { name: layout }));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+}
+
 describe("CalendarPage", () => {
   it.each(
     ["network", "server"].flatMap((failure) =>
-      ["Agenda", "Time grid", "Resources"].map((layout) => ({ failure, layout })),
+      ["Agenda", "Time grid", "By Item"].map((layout) => ({ failure, layout })),
     ),
   )(
     "preserves and saves the $layout draft after a lost $failure response moves the booking to another day",
@@ -65,7 +74,7 @@ describe("CalendarPage", () => {
         }),
       );
       const { queryClient } = await renderCalendar();
-      await user.click(await screen.findByRole("button", { name: layout }));
+      await chooseLayout(user, layout);
       await user.click(await screen.findByRole("button", { name: /Show details for Confocal microscope/ }));
       const card = screen.getByRole("dialog");
       await user.click(within(card).getByRole("button", { name: "Edit" }));
@@ -134,7 +143,7 @@ describe("CalendarPage", () => {
       }),
     );
     await renderCalendar();
-    await user.click(await screen.findByRole("button", { name: "Agenda" }));
+    await chooseLayout(user, "Agenda");
     await user.click(await screen.findByRole("button", { name: /Show details for Confocal microscope/ }));
     const card = screen.getByRole("dialog");
     await user.click(within(card).getByRole("button", { name: "Edit" }));
@@ -168,7 +177,7 @@ describe("CalendarPage", () => {
       }),
     );
     await renderCalendar();
-    await user.click(await screen.findByRole("button", { name: "Agenda" }));
+    await chooseLayout(user, "Agenda");
     await user.click(await screen.findByRole("button", { name: /Show details for Confocal microscope/ }));
     const card = screen.getByRole("dialog");
     await user.click(within(card).getByRole("button", { name: "Edit" }));
@@ -213,6 +222,86 @@ describe("CalendarPage", () => {
     expect(save).toBeDisabled();
   });
 
+  it("keeps an inline edit through a stale-version rejection and saves it against the refreshed version", async () => {
+    let serverBooking: BookingListDocument = ownBooking;
+    const saves: { ifMatch: string | null; payload: unknown }[] = [];
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([serverBooking]))),
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        const ifMatch = request.headers.get("If-Match");
+        const payload = (await request.json()) as Partial<BookingListDocument>;
+        saves.push({ ifMatch, payload });
+        if (ifMatch !== `"${serverBooking.version}"`) {
+          return HttpResponse.json(
+            { status: 412, code: "errors.api.v2.preconditionFailed", detail: "private server detail" },
+            { status: 412 },
+          );
+        }
+        serverBooking = { ...serverBooking, ...payload, version: serverBooking.version + 1 };
+        return HttpResponse.json({ ...serverBooking, cancellationReason: null });
+      }),
+    );
+    const user = userEvent.setup();
+    await renderCalendar();
+
+    await user.click((await screen.findAllByRole("button", { name: /^Show details for Confocal microscope/ }))[0]);
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+    await user.type(await screen.findByRole("textbox", { name: "Purpose" }), " updated");
+    // Someone else edits the booking before this save reaches the server.
+    serverBooking = { ...serverBooking, purpose: "Changed elsewhere", version: 1 };
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Someone else changed this booking while you were editing. Your changes are kept");
+    expect(alert).not.toHaveTextContent("private server detail");
+    await waitFor(() => expect(alert).toHaveFocus());
+    expect(screen.getByRole("textbox", { name: "Purpose" })).toHaveValue("Cell imaging updated");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled());
+
+    // The explanation lasts while the draft is edited further; it is not the save's transient error.
+    await user.type(screen.getByRole("textbox", { name: "Purpose" }), "!");
+    expect(screen.getByRole("alert")).toHaveTextContent("Someone else changed this booking while you were editing.");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => expect(saves.map(({ ifMatch }) => ifMatch)).toEqual(['"0"', '"1"']));
+    expect(saves[1].payload).toEqual({ purpose: "Cell imaging updated!" });
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Purpose" })).not.toBeInTheDocument());
+  });
+
+  it("shows the matching purpose on collapsed Agenda cards while a search is applied", async () => {
+    const auroraBooking: BookingListDocument = { ...ownBooking, purpose: "Spring Aurora imaging run" };
+    const otherPurpose: BookingListDocument = {
+      ...ownBooking,
+      id: 46,
+      start: "2026-08-18T08:00:00Z",
+      end: "2026-08-18T09:00:00Z",
+      purpose: "Calibration",
+    };
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () =>
+        HttpResponse.json(collectionResponse([auroraBooking, otherPurpose, busyBooking])),
+      ),
+    );
+    const user = userEvent.setup();
+    await renderCalendar("/booking/calendar?date=2026-08-17&layout=agenda&view=week&calendar-resources.q=aurora");
+
+    const agenda = await screen.findByRole("region", { name: "Booking agenda" });
+    const highlight = await within(agenda).findByText("Aurora", { selector: "mark" });
+    expect(highlight.closest("[data-calendar-search-match]")).toHaveTextContent("PurposeSpring Aurora imaging run");
+    // Only the card whose purpose matched shows it; the others keep their purpose (or busy state) hidden.
+    expect(within(agenda).getAllByRole("article")).toHaveLength(3);
+    expect(agenda.querySelectorAll("[data-calendar-search-match]")).toHaveLength(1);
+    expect(within(agenda).queryByText("Calibration")).not.toBeInTheDocument();
+
+    await user.clear(screen.getByRole("textbox", { name: "Search Calendar" }));
+    await waitFor(() => expect(agenda.querySelectorAll("[data-calendar-search-match]")).toHaveLength(0));
+    expect(within(agenda).queryByText(/Spring Aurora imaging run/)).not.toBeInTheDocument();
+  });
+
   it("uses one search for calendar events and bookable items", async () => {
     const catalogueSearches: string[] = [];
     server.use(
@@ -237,7 +326,7 @@ describe("CalendarPage", () => {
     await user.type(screen.getByRole("textbox", { name: "Search Calendar" }), "Mass");
 
     expect(screen.getByRole("button", { name: "Jump to date" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Time grid" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "View: By Item · Day" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
     await waitFor(() => expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument());
     expect(await screen.findByText("Mass spectrometer")).toBeVisible();
