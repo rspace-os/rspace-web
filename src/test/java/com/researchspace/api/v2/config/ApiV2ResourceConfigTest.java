@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.controller.ApiV2CrudController;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
@@ -51,10 +50,12 @@ import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import io.swagger.v3.core.util.Json31;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
@@ -109,12 +110,42 @@ class ApiV2ResourceConfigTest {
       assertEquals("target", request.runtime().relationshipFor("target.customFields.SF1"));
 
       var document =
-          new ObjectMapper()
-              .valueToTree(new ApiV2OpenApiGenerator(catalog, "Test", "2").generate());
-      String metadata = document.toString();
-      assertTrue(metadata.contains("target.customFields"));
-      assertTrue(metadata.contains("target.extraFields"));
-      assertTrue(metadata.contains("/api/v2/instruments/fields/customFields"));
+          Json31.mapper().valueToTree(new ApiV2OpenApiGenerator(catalog, "Test", "2").generate());
+      var bookingList = document.path("paths").path("/api/v2/booking-configurations").path("get");
+      var parameters = bookingList.path("parameters");
+      var where =
+          StreamSupport.stream(parameters.spliterator(), false)
+              .filter(parameter -> "where".equals(parameter.path("name").asText()))
+              .findFirst()
+              .orElseThrow();
+      var targetPicker =
+          where.path("x-rspace-filter").path("selectors").path("target").path("picker");
+      assertEquals("instruments", targetPicker.path("resource").asText());
+      assertEquals("globalId", targetPicker.path("identity").asText());
+      assertEquals("IN", targetPicker.path("globalIdPrefix").asText());
+
+      var runtimeFields = where.path("x-rspace-runtime-fields");
+      var targetCustomFields =
+          StreamSupport.stream(runtimeFields.spliterator(), false)
+              .filter(
+                  namespaceMetadata ->
+                      "target.customFields".equals(namespaceMetadata.path("namespace").asText()))
+              .findFirst()
+              .orElseThrow();
+      assertEquals("instruments", targetCustomFields.path("viaResource").asText());
+      assertEquals(
+          "/api/v2/instruments/fields/customFields",
+          targetCustomFields.path("catalog").asText());
+      assertEquals(
+          "/api/v2/instruments/fields/extraFields",
+          StreamSupport.stream(runtimeFields.spliterator(), false)
+              .filter(
+                  namespaceMetadata ->
+                      "target.extraFields".equals(namespaceMetadata.path("namespace").asText()))
+              .findFirst()
+              .orElseThrow()
+              .path("catalog")
+              .asText());
     }
   }
 
