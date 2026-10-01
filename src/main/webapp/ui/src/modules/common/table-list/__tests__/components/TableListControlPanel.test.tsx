@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { queryKeys } from "@/modules/common/hooks/auth";
 import type { RuntimeFieldDefinition } from "../../adapters/apiV2/runtimeFieldCatalog";
+import { TableListControlPanel } from "../../components/TableListControlPanel";
 import { TableList } from "../../TableList";
 import type { TableListFeatures } from "../../tableListState";
 import { config, emptyFilters, records, type TestRecord } from "../fixtures/tableListFixtures";
@@ -28,6 +29,19 @@ function renderWithColumns(columns: readonly (typeof config)["defaultColumns"][n
 }
 
 describe("TableList control panel", () => {
+  it("does not leave an empty panel bar when the active feature is disabled", () => {
+    const { container } = render(
+      <TableListControlPanel
+        activePanel="filters"
+        config={config}
+        features={{ filtering: false, sorting: false, pagination: false, columns: false }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it("searches custom and extra fields together and preserves the selected namespace", async () => {
     const user = userEvent.setup();
     const onColumnsChange = vi.fn();

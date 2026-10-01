@@ -12,19 +12,27 @@ export function TableListControlPanel<TDocument>({
   features,
   onSelectRuntimeField,
   runtimeFieldDefinitions,
+  runtimeFieldAuthScope,
   onClose,
 }: {
   activePanel: ControlPanel | null;
   config: ResolvedCollectionConfig<TDocument>;
   features: TableListFeatures<TDocument>;
   onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
+  runtimeFieldAuthScope?: string | number;
   runtimeFieldDefinitions?: readonly {
     namespace: string;
     definitions: readonly RuntimeFieldDefinition[];
   }[];
   onClose: () => void;
 }) {
-  if (!activePanel) return null;
+  if (
+    !activePanel ||
+    (activePanel === "filters" && features.filtering === false) ||
+    (activePanel === "columns" && features.columns === false) ||
+    (activePanel === "sorting" && features.sorting === false)
+  )
+    return null;
 
   return (
     <div className="border-b py-3">
@@ -51,6 +59,7 @@ export function TableListControlPanel<TDocument>({
           }
           onSelectRuntimeField={onSelectRuntimeField}
           runtimeFieldDefinitions={runtimeFieldDefinitions}
+          runtimeFieldAuthScope={runtimeFieldAuthScope}
           onApply={(expression) => {
             features.filtering !== false && features.filtering.onChange({ ...features.filtering.value, expression });
             if (features.pagination !== false)
@@ -67,6 +76,7 @@ export function TableListControlPanel<TDocument>({
           onChange={features.columns.onChange}
           onSelectRuntimeField={onSelectRuntimeField}
           runtimeFieldDefinitions={runtimeFieldDefinitions}
+          runtimeFieldAuthScope={runtimeFieldAuthScope}
           onClose={onClose}
         />
       ) : null}
