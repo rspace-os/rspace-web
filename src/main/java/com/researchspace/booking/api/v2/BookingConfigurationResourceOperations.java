@@ -120,23 +120,24 @@ public final class BookingConfigurationResourceOperations
                     "Creates booking configuration for an instrument. Each instrument may have "
                         + "only one booking configuration.")
                 .requestExample(
-                    Map.of(
-                        "enabled",
-                        true,
-                        "slotGranularityMinutes",
-                        5,
-                        "openingHours",
-                        List.of(Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00")),
-                        "bufferBeforeMinutes",
-                        15,
-                        "bufferAfterMinutes",
-                        15,
-                        "maxBookingDurationMinutes",
-                        120,
-                        "allowDoubleBooking",
-                        false,
-                        "target",
-                        Map.of("relationTo", "booking-instruments", "value", 123)))
+                    Map.ofEntries(
+                        Map.entry("enabled", true),
+                        Map.entry("slotGranularityMinutes", 5),
+                        Map.entry(
+                            "openingHours",
+                            List.of(
+                                Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 2, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 3, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 4, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 5, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 6, "start", "10:00", "end", "16:00"))),
+                        Map.entry("bufferBeforeMinutes", 15),
+                        Map.entry("bufferAfterMinutes", 15),
+                        Map.entry("maxBookingDurationMinutes", 120),
+                        Map.entry("allowDoubleBooking", false),
+                        Map.entry(
+                            "target", Map.of("relationTo", "booking-instruments", "value", 123))))
                 .build()),
         Map.of(
             ResourceOperation.CREATE,
@@ -329,7 +330,7 @@ public final class BookingConfigurationResourceOperations
   private static BookingSchedulingSettings.Patch schedulingPatch(ParsedDocument document) {
     return new BookingSchedulingSettings.Patch(
         value(document, "slotGranularityMinutes", Long.class),
-        openingHours(document),
+        list(document, "openingHours", BookingOpeningHoursEntry.class),
         value(document, "bufferBeforeMinutes", Long.class),
         value(document, "bufferAfterMinutes", Long.class),
         value(document, "maxBookingDurationMinutes", Long.class),
@@ -351,14 +352,12 @@ public final class BookingConfigurationResourceOperations
     return new ResolvedBookableTarget(new BookableTargetReference(type, id), entity);
   }
 
-  private static List<BookingOpeningHoursEntry> openingHours(ParsedDocument document) {
-    Object value = document.values().get("openingHours");
-    return value == null
-        ? null
-        : List.class.cast(value).stream().map(BookingOpeningHoursEntry.class::cast).toList();
-  }
-
   private static <T> T value(ParsedDocument document, String field, Class<T> type) {
     return type.cast(document.values().get(field));
+  }
+
+  private static <E> List<E> list(ParsedDocument document, String field, Class<E> elementType) {
+    List<?> values = (List<?>) document.values().get(field);
+    return values == null ? null : values.stream().map(elementType::cast).toList();
   }
 }

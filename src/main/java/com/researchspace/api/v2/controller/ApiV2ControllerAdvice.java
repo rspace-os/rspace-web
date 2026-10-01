@@ -25,12 +25,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
@@ -186,7 +188,23 @@ public class ApiV2ControllerAdvice {
 
   @ExceptionHandler(BookingPolicyException.class)
   public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
-    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+    String code = ex.reason().errorCode();
+    if (ex.maximumDurationMinutes().isEmpty()) {
+      return problem(HttpStatus.BAD_REQUEST, code);
+    }
+    long maximumMinutes = ex.maximumDurationMinutes().getAsLong();
+    Locale locale = LocaleContextHolder.getLocale();
+    String detail =
+        messages.getMessage(
+            code,
+            new Object[] {BookingDurationWords.format(maximumMinutes, messages, locale)},
+            locale);
+    return ApiV2Problem.response(
+        HttpStatus.BAD_REQUEST,
+        detail,
+        code,
+        detail,
+        ApiV2Problem.Extensions.maximumDuration(maximumMinutes));
   }
 
   @ExceptionHandler(BookingConfigurationLifecycleException.class)
@@ -202,7 +220,7 @@ public class ApiV2ControllerAdvice {
   @ExceptionHandler(ApiV2ResourceException.class)
   public ResponseEntity<ApiV2Problem> handleResourceException(ApiV2ResourceException ex) {
     String detail = messages.getMessage(ex.errorCode(), ex.arguments());
-    return ApiV2Problem.response(ex.status(), detail, ex.errorCode(), detail);
+    return ApiV2Problem.response(ex.status(), detail, ex.errorCode(), detail, ex.extensions());
   }
 
   @ExceptionHandler(ResourceAccessException.class)

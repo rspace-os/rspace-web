@@ -5,6 +5,8 @@ public final class InvalidBookingSchedulingSettingsException extends RuntimeExce
   public enum Reason {
     GRANULARITY("errors.api.v2.bookingConfiguration.granularity.invalid"),
     OPENING_HOURS("errors.api.v2.bookingConfiguration.openingHours.invalid"),
+    OPEN_DAYS("errors.api.v2.bookingConfiguration.openDays.invalid"),
+    OPENING_EXCEPTIONS("errors.api.v2.bookingConfiguration.openingExceptions.invalid"),
     BUFFER("errors.api.v2.bookingConfiguration.buffer.invalid"),
     MAXIMUM_DURATION("errors.api.v2.bookingConfiguration.maximumDuration.invalid");
 
