@@ -13,6 +13,8 @@ export type RelationshipOptionContext = {
   /** Renders each option on one line, for a picker in a narrow control such as a filter row. */
   compact?: boolean;
   unavailableLabel?: (value: string) => string;
+  /** Generic, non-sensitive restore failure message for saved values. */
+  failedLabel?: (value: string) => string;
 };
 
 export type RelationshipSource = {
@@ -22,10 +24,23 @@ export type RelationshipSource = {
   resourceName?: string;
   /** Global-ID prefix owned by this resource, used to recognize a pasted global ID. */
   globalIdPrefix?: string;
+  /** Converts a source-owned value to its canonical form, or rejects it when it is malformed. */
+  normalizeValue?: (value: string) => string | null;
   /** Searches this source. The source owns its URL, scope, and query encoding. */
   search: (term: string, token: string | undefined, signal: AbortSignal) => Promise<readonly unknown[]>;
   /** Resolves a stored value when a picker is restored without a prior search. */
   resolve?: (value: string, token: string | undefined, signal: AbortSignal) => Promise<unknown | null>;
+  /**
+   * Resolves canonical source values in bounded batches. Return documents keyed by canonical value;
+   * omitted keys and null values both mean the value is unavailable. Keep batchSize at or below 100.
+   */
+  resolveMany?: (
+    values: readonly string[],
+    token: string | undefined,
+    signal: AbortSignal,
+  ) => Promise<Readonly<Record<string, unknown | null>>>;
+  /** Maximum values passed to resolveMany, capped at 100 by the picker. */
+  batchSize?: number;
   /** Returns whether a stored value belongs to this source. */
   ownsValue: (value: string) => boolean;
   /** Validates one source document and renders it as a selectable option. */
@@ -36,6 +51,8 @@ export type RelationshipOptionWithSource = RelationshipOption & {
   sourceId: string;
   /** Original validated source document, available to consumers needing domain metadata. */
   sourceDocument?: unknown;
+  /** Safe state when a saved value could not be restored; the original value remains in `value`. */
+  restoreStatus?: "loading" | "missing" | "failed" | "invalid" | "unknown" | "unresolved";
 };
 
 const InstrumentSchema = v.object({
@@ -57,6 +74,10 @@ const instruments: RelationshipSource = {
   id: "instruments",
   resourceName: "instruments",
   globalIdPrefix: "IN",
+  normalizeValue: (value) => {
+    const id = databaseIdFromGlobalId(value, "IN");
+    return id === null ? null : `IN${id}`;
+  },
   search: async (term, token, signal) => {
     const value = term.trim();
     const id = databaseIdFromGlobalId(value, "IN");
@@ -87,6 +108,41 @@ const instruments: RelationshipSource = {
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`Relationship option request failed with status ${response.status}`);
     return response.json();
+  },
+  batchSize: 100,
+  resolveMany: async (values, token, signal) => {
+    const ids = [...new Set(values.map((value) => databaseIdFromGlobalId(value, "IN")))].filter(
+      (id): id is number => id !== null,
+    );
+    if (ids.length === 0) return {};
+    const params = new URLSearchParams({
+      page: "1",
+      limit: String(Math.min(ids.length, 100)),
+      where: `id=in=(${ids.join(",")})`,
+      "fields[instruments]": "id,name,globalId",
+    });
+    const response = await fetch(`/api/v2/instruments?${params}`, {
+      headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      signal,
+    });
+    if (!response.ok) throw new Error(`Relationship option request failed with status ${response.status}`);
+    const body: unknown = await response.json();
+    if (!v.is(v.object({ docs: v.array(v.unknown()) }), body)) {
+      throw new Error("Relationship option response has an invalid envelope");
+    }
+    const requested = new Set(ids.map((id) => `IN${id}`));
+    const instruments = body.docs.map((document) => {
+      const instrument = parseOrThrow(InstrumentSchema, document);
+      if (databaseIdFromGlobalId(instrument.globalId, "IN") !== instrument.id) {
+        throw new Error("Relationship option response contains an invalid instrument");
+      }
+      return instrument;
+    });
+    return Object.fromEntries(
+      instruments
+        .filter((instrument) => requested.has(`IN${instrument.id}`))
+        .map((instrument) => [`IN${instrument.id}`, instrument]),
+    );
   },
   ownsValue: (value) => databaseIdFromGlobalId(value, "IN") !== null,
   toOption: (document, context) => {
