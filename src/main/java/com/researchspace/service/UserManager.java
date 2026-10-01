@@ -8,6 +8,8 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
@@ -381,4 +383,26 @@ public interface UserManager extends GenericManager<User, Long> {
    * @throws IllegalStateException if the original user is not a sysadmin ROLE
    */
   User getOriginalUserForOperateAs(User subject);
+
+  /**
+   * A page of users matching a REST API v2 collection request.
+   *
+   * @param request already narrowed by {@code ApiV2UserResource}'s access policy, so an ordinary
+   *     caller's request carries an {@code id} constraint limiting it to their own row
+   */
+  ResourcePage<User> getUsers(ResourceRequest request, User actor);
+
+  /** Total users matching a REST API v2 collection request. */
+  long countUsers(ResourceRequest request, User actor);
+
+  /** Returns a REST API v2 user row only when the actor may read it. */
+  Optional<User> getUserResource(Long id, User actor);
+
+  /**
+   * A user by id, empty when there is none.
+   *
+   * <p>{@link #get} throws {@code ObjectRetrievalFailureException} on a missing row, which a REST
+   * caller would see as a 500 rather than a 404.
+   */
+  Optional<User> getOptional(Long id);
 }
