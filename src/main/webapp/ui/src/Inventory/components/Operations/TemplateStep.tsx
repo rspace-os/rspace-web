@@ -103,15 +103,9 @@ function TemplateStep({
   return (
     <Stack spacing={1}>
       {value.mode === "remembered" && value.templateName ? (
-        <Alert severity="info" data-testid="SelectedTemplateName">
-          {t("operations.template.selectedLabel", { name: value.templateName })}
-        </Alert>
+        <Alert severity="info">{t("operations.template.selectedLabel", { name: value.templateName })}</Alert>
       ) : null}
-      {rememberedTemplateError ? (
-        <Alert severity="warning" data-testid="RememberedTemplateError">
-          {rememberedTemplateError}
-        </Alert>
-      ) : null}
+      {rememberedTemplateError ? <Alert severity="warning">{rememberedTemplateError}</Alert> : null}
       <Typography variant="body2" id={descriptionId}>
         {t("operations.template.description")}
       </Typography>
