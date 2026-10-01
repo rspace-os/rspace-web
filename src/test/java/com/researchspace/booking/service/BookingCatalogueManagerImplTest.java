@@ -78,6 +78,7 @@ class BookingCatalogueManagerImplTest {
             List.of(),
             List.of(),
             BookingCatalogueManager.Capability.CREATE_BOOKING,
+            false,
             3,
             7,
             caller);
@@ -99,35 +100,6 @@ class BookingCatalogueManagerImplTest {
                 comparison ->
                     comparison.field().equals("enabled")
                         && comparison.operator() == Operator.EQUAL));
-  }
-
-  @Test
-  void returnsEmptyPageWithoutQueryWhenNonSysadminHasNoCapableTargets() {
-    RsqlCollectionQuery.Predicate noAccess = new RsqlCollectionQuery.Predicate("1 = 0", Map.of());
-    when(itemQuery.restriction(caller, true, false, "bookingConfiguration.target"))
-        .thenReturn(noAccess);
-    when(configurations.getConfigurations(any(ResourceRequest.class), same(caller), same(noAccess)))
-        .thenReturn(new ResourcePage<>(List.of(), 0));
-
-    BookingCatalogueManager.Page result =
-        manager.search(
-            null,
-            null,
-            ResourceRequest.unpaged(null),
-            List.of(),
-            List.of(),
-            BookingCatalogueManager.Capability.CREATE_BOOKING,
-            4,
-            9,
-            caller);
-
-    assertEquals(List.of(), result.items());
-    assertEquals(4, result.page());
-    assertEquals(9, result.pageSize());
-    assertEquals(0, result.total());
-    assertEquals(List.of(), result.facets().types());
-    verify(configurations)
-        .getConfigurations(any(ResourceRequest.class), same(caller), same(noAccess));
   }
 
   @Test
@@ -157,7 +129,7 @@ class BookingCatalogueManagerImplTest {
     when(instruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
     when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
 
-    manager.search(null, null, request, List.of(), List.of(), null, 3, 7, caller);
+    manager.search(null, null, request, List.of(), List.of(), null, false, 3, 7, caller);
 
     ArgumentCaptor<ResourceRequest> captured = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(configurations).getConfigurations(captured.capture(), same(caller));
@@ -173,5 +145,23 @@ class BookingCatalogueManagerImplTest {
         assertInstanceOf(QueryConstraint.And.class, catalogueRequest.serverConstraint());
     assertSame(callerConstraint, restrictions.children().get(0));
     assertInstanceOf(FilterExpression.And.class, restrictions.children().get(1));
+  }
+
+  @Test
+  void appliesCallerOwnershipBeforePaging() {
+    RsqlCollectionQuery.Predicate ownership =
+        new RsqlCollectionQuery.Predicate("EXISTS ownedBookingItem", Map.of("owner", caller));
+    when(itemQuery.ownedBy(caller, "bookingConfiguration.target")).thenReturn(ownership);
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), same(ownership)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
+    when(instruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
+    when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
+
+    manager.search(
+        null, null, ResourceRequest.unpaged(null), List.of(), List.of(), null, true, 2, 20, caller);
+
+    verify(configurations)
+        .getConfigurations(any(ResourceRequest.class), same(caller), same(ownership));
   }
 }

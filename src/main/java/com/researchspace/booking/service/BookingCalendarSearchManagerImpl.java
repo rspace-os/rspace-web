@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.booking.dao.BookingCalendarQuery;
+import com.researchspace.booking.dao.BookingItemQuery;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ResourcePage;
@@ -17,19 +18,29 @@ import org.springframework.stereotype.Service;
 public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchManager {
   private final TimeSlotBookingManager bookings;
   private final BookingCalendarQuery query;
+  private final BookingItemQuery itemQuery;
   private final FeatureFlagManager flags;
 
   public BookingCalendarSearchManagerImpl(
-      TimeSlotBookingManager bookings, BookingCalendarQuery query, FeatureFlagManager flags) {
+      TimeSlotBookingManager bookings,
+      BookingCalendarQuery query,
+      BookingItemQuery itemQuery,
+      FeatureFlagManager flags) {
     this.bookings = bookings;
     this.query = query;
+    this.itemQuery = itemQuery;
     this.flags = flags;
   }
 
   /** Returns one visible event page under the complete item, event, interval and search scope. */
   @Override
   public ResourcePage<TimeSlotBooking> events(
-      ResourceRequest request, Instant start, Instant end, String text, User caller) {
+      ResourceRequest request,
+      Instant start,
+      Instant end,
+      String text,
+      boolean ownedByCaller,
+      User caller) {
     if (!flags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)) throw new NotFoundException();
     ResourceRequest unfiltered =
         new ResourceRequest(
@@ -43,6 +54,10 @@ public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchMa
     return bookings.getBookings(
         unfiltered.restrict(BookingCalendarQuery.interval(start, end)),
         caller,
-        query.eventFilter(request, text, caller));
+        BookingItemQuery.and(
+            query.eventFilter(request, text, caller),
+            ownedByCaller
+                ? itemQuery.ownedBy(caller, "booking.bookingConfiguration.target")
+                : null));
   }
 }

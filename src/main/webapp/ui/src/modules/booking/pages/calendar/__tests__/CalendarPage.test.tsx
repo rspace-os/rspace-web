@@ -33,6 +33,35 @@ afterAll(() => {
 });
 
 describe("CalendarPage", () => {
+  it("filters calendar resources and events to Owned Items", async () => {
+    const catalogueRequests: URL[] = [];
+    const eventRequests: URL[] = [];
+    server.use(
+      http.get("/api/v2/openapi.json", () =>
+        HttpResponse.json({ paths: { ...bookableItemsOpenApi.paths, ...bookingsOpenApi.paths } }),
+      ),
+      ...bookableItemsHandlers((request) => {
+        const url = new URL(request.url);
+        if (url.pathname === "/api/v2/booking-catalogue/calendar") catalogueRequests.push(url);
+      }),
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", ({ request }) => {
+        eventRequests.push(new URL(request.url));
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+    const user = userEvent.setup();
+    await renderCalendar();
+
+    await user.click(await screen.findByRole("button", { name: "Owned Items" }));
+
+    await waitFor(() => {
+      expect(catalogueRequests.at(-1)?.searchParams.get("mine")).toBe("true");
+      expect(eventRequests.some((request) => request.searchParams.get("mine") === "true")).toBe(true);
+    });
+  });
+
   it("shows every bookable item by default when the period has no bookings", async () => {
     server.use(
       oauthTokenHandler(true),
@@ -47,6 +76,17 @@ describe("CalendarPage", () => {
     expect(screen.getByRole("button", { name: "Day" })).toHaveAttribute("aria-pressed", "true");
     expect(await screen.findByText("Mass spectrometer")).toBeVisible();
     expect(screen.queryByText("No records found")).not.toBeInTheDocument();
+  });
+
+  it("hides item filter controls and keeps Calendar controls available", async () => {
+    await renderCalendar();
+    expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /^Bookable items(?:,|$)/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Filters(?:$|,)/ })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "Search Calendar" })).toBeVisible();
+    for (const name of ["Jump to date", "Time grid", "Day", "Resources", "My Bookings", "Owned Items"]) {
+      expect(screen.getByRole("button", { name: new RegExp(`^${name}$`) })).toBeVisible();
+    }
   });
 
   it("offers a retry when booking events cannot be loaded", async () => {
@@ -244,7 +284,7 @@ describe("CalendarPage", () => {
     const nextPage = screen.getByRole("button", { name: "Next page" });
     expect(nextPage).toBeEnabled();
     await user.click(nextPage);
-    expect(await screen.findByText("No-event microscope 21")).toBeVisible();
+    await waitFor(() => expect(screen.getByText("No-event microscope 21")).toBeVisible());
     expect(catalogueRequests.at(-1)).toEqual({ q: "No-event", page: 2 });
   });
 

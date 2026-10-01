@@ -21,7 +21,7 @@ export class CalendarPage {
   readonly day: Locator = page.getByRole("button", { name: "Day", exact: true });
   readonly week: Locator = page.getByRole("button", { name: "Week", exact: true });
   readonly month: Locator = page.getByRole("button", { name: "Month", exact: true });
-  readonly mine: Locator = page.getByRole("button", { name: "My calendar" });
+  readonly mine: Locator = page.getByRole("button", { name: "My Bookings" });
   readonly previous: Locator = this.toolbar.getByRole("button", { name: /^Previous / });
   readonly next: Locator = this.toolbar.getByRole("button", { name: /^Next / });
   readonly newBooking: Locator = page.getByRole("button", { name: "New Booking" });
