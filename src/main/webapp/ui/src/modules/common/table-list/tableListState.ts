@@ -138,6 +138,8 @@ export type TableListFilterButtons = {
   buttons: readonly {
     id: string;
     label: ReactNode;
+    /** Explains what the button filters; shown as a tooltip and exposed via aria-describedby. */
+    description?: string;
     icon?: ReactNode;
     pressed: boolean;
     disabled?: boolean;
