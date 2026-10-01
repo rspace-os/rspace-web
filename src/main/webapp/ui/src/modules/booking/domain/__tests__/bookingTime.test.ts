@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { resolveBookingWindow } from "../../creation/ZonedBookingWindowFields";
 import {
   addCalendarDays,
   broadUtcEnvelope,
@@ -142,5 +143,25 @@ describe("bookingTime", () => {
     const period = formatAgendaPeriod("2026-08-18T08:00:00Z", "2026-08-18T09:00:00Z", "Europe/Berlin", "en-GB");
 
     expect(period.match(/GMT\+2/g)).toHaveLength(1);
+  });
+
+  test("drafts selected timeline ranges as a forward booking window", () => {
+    for (const [date, timezone] of [
+      ["2026-03-29", "Europe/Berlin"],
+      ["2026-10-25", "Europe/Berlin"],
+      ["2026-02-10", "UTC"],
+    ] as const) {
+      const minutes = zonedDayBounds(date, timezone).elapsedMinutes;
+      for (let start = 0; start < minutes; start += 5) {
+        const end = Math.min(minutes, start + 60);
+        if (end <= start) continue;
+        const draft = wallClockDraftFromInstants(
+          dayMinuteToZonedTime(date, timezone, start).toInstant().toString(),
+          dayMinuteToZonedTime(date, timezone, end).toInstant().toString(),
+          timezone,
+        );
+        expect(resolveBookingWindow(draft, timezone).orderInvalid, `${date} ${timezone} ${start}-${end}`).toBe(false);
+      }
+    }
   });
 });

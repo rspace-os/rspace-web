@@ -4,6 +4,7 @@ import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import {
   bookableItemDetailsHandlers,
   bookableItemsHandlers,
+  bookableItemsOpenApi,
   sampleBookingEvents,
 } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import {
@@ -14,6 +15,7 @@ import {
   ownBooking,
 } from "@/modules/booking/pages/calendar/__tests__/calendarTestHarness";
 import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calendarEvents";
+import { bookingsOpenApi } from "../my-bookings/mocks/bookingMocks";
 
 export const availabilityBookingFields = BOOKING_READ_FIELDS;
 export const calendarBookingFields = CALENDAR_BOOKING_FIELDS;
@@ -68,11 +70,33 @@ export function resetBookingPageRequests(): void {
 
 export function bookingPagesHandlers(): RequestHandler[] {
   return [
+    http.get("/api/v2/openapi.json", () =>
+      HttpResponse.json({
+        ...bookableItemsOpenApi,
+        paths: { ...bookableItemsOpenApi.paths, ...bookingsOpenApi.paths },
+      }),
+    ),
     oauthTokenHandler(true),
     http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
     ...bookableItemDetailsHandlers(),
     ...bookableItemsHandlers((request) => {
       bookingPageRequests.collectionQueries.push(decodeURIComponent(new URL(request.url).search));
+    }),
+
+    http.get("/api/v2/booking-calendar/events", ({ request }) => {
+      const url = new URL(request.url);
+      bookingPageRequests.calendarBookingRequests.push(url);
+      const q = url.searchParams.get("q")?.toLowerCase();
+      const where = url.searchParams.get("where") ?? "";
+      const docs = [ownBooking, otherBooking, busyBooking].filter(
+        (event) =>
+          (!q ||
+            [event.purpose, event.bookedBy, event.target?.value.name, event.target?.globalId].some((value) =>
+              value?.toLowerCase().includes(q),
+            )) &&
+          (!where.includes("requesterId==1") || event.requesterId === 1),
+      );
+      return HttpResponse.json(collectionResponse(docs));
     }),
     http.get("/api/v2/bookings", ({ request }) => {
       const url = new URL(request.url);

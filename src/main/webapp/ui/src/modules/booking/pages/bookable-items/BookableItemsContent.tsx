@@ -1,22 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { PlusIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import * as v from "valibot";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
-import {
-  TableList,
-  type TableListFilterButtons,
-  type TableListRowActions,
-} from "@/modules/common/table-list/TableList";
-import type { FilterExpression } from "@/modules/common/table-list/tableListState";
-import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
+import { buttonVariants } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import { ArchiveBookableItemDialog } from "./ArchiveBookableItemDialog";
 import { BookableItemActionTriggers } from "./BookableItemActionTriggers";
@@ -44,51 +38,11 @@ const bookableItemsProjection = {
     "effectiveRole",
     "roleSources",
     "capabilities",
-    "ownerHealth",
     "state",
   ],
 } as const;
 
 const maximumBookableItemsSelection = 1000;
-const maximumOwnerAttentionCandidates = 1000;
-
-const OwnerAttentionPageSchema = v.object({
-  docs: v.array(
-    v.object({
-      id: v.number(),
-      ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.boolean() })),
-    }),
-  ),
-  totalDocs: v.number(),
-  totalPages: v.number(),
-});
-
-async function fetchOwnerAttentionPage(page: number, token: string, signal: AbortSignal) {
-  const search = new URLSearchParams({
-    page: String(page),
-    limit: "100",
-    "fields[booking-configurations]": "id,ownerHealth",
-  });
-  const response = await fetch(`/api/v2/booking-configurations?${search}`, {
-    headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
-    signal,
-  });
-  if (!response.ok) throw new Error(`Owner-health request failed with status ${response.status}`);
-  return v.parse(OwnerAttentionPageSchema, await response.json());
-}
-
-async function fetchOwnerAttentionIds(token: string, signal: AbortSignal): Promise<ReadonlySet<number>> {
-  const first = await fetchOwnerAttentionPage(1, token, signal);
-  if (first.totalDocs > maximumOwnerAttentionCandidates) {
-    throw new Error(`Owner-health filtering supports at most ${maximumOwnerAttentionCandidates} bookable items`);
-  }
-  const documents = [...first.docs];
-  for (let page = 2; page <= first.totalPages; page += 1) {
-    documents.push(...(await fetchOwnerAttentionPage(page, token, signal)).docs);
-  }
-  return new Set(documents.flatMap(({ id, ownerHealth }) => (ownerHealth?.hasEffectiveOwner === false ? [id] : [])));
-}
-
 type BookableItemsBulkMutation = {
   action: BookableItemsBulkAction;
   selectedRowIds: readonly string[];
@@ -169,28 +123,14 @@ export function BookableItemsContent() {
   const queryClient = useQueryClient();
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
-  const [ownerAttentionOnly, setOwnerAttentionOnly] = useState(false);
-  const ownerAttention = useQuery({
-    queryKey: ["api-v2", "booking-configurations", "owner-attention"],
-    queryFn: ({ signal }) => fetchOwnerAttentionIds(token, signal),
-    enabled: ownerAttentionOnly && token.length > 0,
-    staleTime: 60_000,
-  });
-  const ownerAttentionFilter = useMemo<FilterExpression<BookingConfigurationRow> | undefined>(() => {
-    if (!ownerAttentionOnly || !ownerAttention.data) return undefined;
-    const ids = [...ownerAttention.data];
-    return ids.length > 0
-      ? { kind: "comparison", field: "id", operator: "in", value: ids }
-      : { kind: "comparison", field: "id", operator: "equals", value: -1 };
-  }, [ownerAttention.data, ownerAttentionOnly]);
   const request = useMemo(
     () => ({
       token,
+      authScope: currentUser.id,
       depth: 1,
       projection: bookableItemsProjection,
-      ...(ownerAttentionFilter ? { baseFilter: ownerAttentionFilter } : {}),
     }),
-    [ownerAttentionFilter, token],
+    [currentUser.id, token],
   );
   const table = useApiV2TableList({
     resourceName: "booking-configurations",
@@ -288,42 +228,9 @@ export function BookableItemsContent() {
     }),
     [directSysadmin, onArchive, onChanged, onPermanentDelete, onRestore, t],
   );
-  const ownerAttentionButtons: TableListFilterButtons = {
-    legend: t("bookableItems.ownerHealth.filters"),
-    buttons: [
-      {
-        id: "owner-attention",
-        label: t("bookableItems.ownerHealth.filter"),
-        pressed: ownerAttentionOnly,
-        count: ownerAttention.data?.size,
-        onClick: () => {
-          setSelectedRowIds(new Set());
-          setOwnerAttentionOnly((current) => !current);
-        },
-      },
-    ],
-    onReset: () => setOwnerAttentionOnly(false),
-  };
-  const displayedRows =
-    ownerAttentionOnly && ownerAttention.data
-      ? table.tableProps.rows.filter((row) => ownerAttention.data.has(row.id))
-      : table.tableProps.rows;
 
   return (
     <main className="p-4 sm:p-8">
-      {ownerAttentionOnly && ownerAttention.isPending && table.tableProps.status !== "error" ? (
-        <p role="status" className="sr-only">
-          {t("bookableItems.ownerHealth.loading")}
-        </p>
-      ) : null}
-      {ownerAttentionOnly && ownerAttention.isError ? (
-        <div role="alert" className="mb-3 flex items-center gap-3">
-          <span>{t("bookableItems.ownerHealth.error")}</span>
-          <Button type="button" variant="outline" onClick={() => void ownerAttention.refetch()}>
-            {t("common:actions.retry")}
-          </Button>
-        </div>
-      ) : null}
       {restoreMutation.isError ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
           {t(lifecycleErrorKey(restoreMutation.error, "bookableItems.lifecycleErrors.restore"))}
@@ -332,16 +239,7 @@ export function BookableItemsContent() {
       <TableList
         {...table.tableProps}
         headingClassName="text-2xl font-semibold"
-        status={
-          table.tableProps.status === "error" || (ownerAttentionOnly && ownerAttention.isError)
-            ? "error"
-            : ownerAttentionOnly && ownerAttention.isPending
-              ? "loading"
-              : table.tableProps.status
-        }
-        rows={ownerAttentionOnly && (ownerAttention.isPending || ownerAttention.isError) ? [] : displayedRows}
         rowActions={rowActions}
-        filterButtons={ownerAttentionButtons}
         selection={{
           value: selectedRowIds,
           onChange: onSelectionChange,

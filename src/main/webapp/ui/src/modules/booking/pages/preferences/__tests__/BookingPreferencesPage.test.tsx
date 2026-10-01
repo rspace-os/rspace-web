@@ -57,10 +57,12 @@ describe("BookingPreferencesPage", () => {
 
   it("saves one complete preference and replaces the shared query cache", async () => {
     let body: unknown;
+    let writes = 0;
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
+        writes += 1;
         body = await request.json();
         return HttpResponse.json({
           ...inheritedBrowserBookingPreferences,
@@ -80,7 +82,12 @@ describe("BookingPreferencesPage", () => {
     await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
     await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.saved");
+    const saveButton = screen.getByRole("button", { name: "booking:preferences.actions.saved" });
+    await waitFor(() => expect(saveButton).toHaveClass("bg-emerald-600"));
+    expect(saveButton).toBeDisabled();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await user.click(saveButton);
+    expect(writes).toBe(1);
     expect(body).toEqual({
       availabilityWindowStart: "09:00",
       availabilityWindowEnd: "18:00",
@@ -95,6 +102,46 @@ describe("BookingPreferencesPage", () => {
       }),
     );
     await expectAccessible(container);
+  });
+
+  it("uses 00:00 for end of day while storing 24:00", async () => {
+    let body: unknown;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () =>
+        HttpResponse.json({ ...inheritedBrowserBookingPreferences, availabilityWindowEnd: "24:00" }),
+      ),
+      http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({
+          ...inheritedBrowserBookingPreferences,
+          ...(body as object),
+          overridden: true,
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    const end = await screen.findByLabelText("booking:preferences.availabilityWindow.end");
+    expect(end).toHaveValue("00:00");
+    expect(end).toHaveAccessibleDescription("booking:preferences.availabilityWindow.endOfDay");
+    expect(
+      screen.queryByRole("checkbox", { name: "booking:preferences.availabilityWindow.endOfDay" }),
+    ).not.toBeInTheDocument();
+
+    const start = screen.getByLabelText("booking:preferences.availabilityWindow.start");
+    await user.clear(start);
+    await user.type(start, "09:00");
+    await user.clear(end);
+    await user.type(end, "00:00");
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+
+    const saveButton = screen.getByRole("button", { name: "booking:preferences.actions.saved" });
+    await waitFor(() => expect(saveButton).toHaveClass("bg-emerald-600"));
+    expect(saveButton).toBeDisabled();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(body).toMatchObject({ availabilityWindowEnd: "24:00" });
   });
 
   it("resets an override and immediately caches the current global document", async () => {

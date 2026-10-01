@@ -88,6 +88,9 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
 
 type CatalogueSearch = {
   q?: string;
+  calendarStart?: string;
+  calendarEnd?: string;
+  eventWhere?: string;
   where?: string;
   target?: string;
   capability?: "CREATE_BOOKING" | "CREATE_BLOCKOUT";
@@ -116,7 +119,11 @@ export async function fetchBookingCatalogue(
   if (search.capability) parameters.set("capability", search.capability);
   appendAll(parameters, "type", search.types);
   appendAll(parameters, "location", search.locations);
-  const response = await fetch(`/api/v2/booking-catalogue?${parameters}`, {
+  if (search.calendarStart) parameters.set("calendarStart", search.calendarStart);
+  if (search.calendarEnd) parameters.set("calendarEnd", search.calendarEnd);
+  if (search.eventWhere) parameters.set("eventWhere", search.eventWhere);
+  const endpoint = search.calendarStart ? "/api/v2/booking-catalogue/calendar" : "/api/v2/booking-catalogue";
+  const response = await fetch(`${endpoint}?${parameters}`, {
     headers: bookingApiV2Headers(token),
     signal,
   });
