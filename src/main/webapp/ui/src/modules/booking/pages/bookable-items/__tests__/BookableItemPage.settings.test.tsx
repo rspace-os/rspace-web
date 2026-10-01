@@ -72,7 +72,9 @@ describe("BookableItemPage", () => {
     await user.type(mondayStart, "09:00");
     await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
     await user.click(screen.getByRole("checkbox", { name: "Sunday" }));
-    await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }));
+    await user.click(
+      within(screen.getByRole("tabpanel")).getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }),
+    );
 
     expect(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" })).toHaveFocus();
     expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();

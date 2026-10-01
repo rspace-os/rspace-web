@@ -1,9 +1,12 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
 import type { TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterState } from "@/modules/common/table-list/tableListState";
 import { AllBookableItemsTable } from "./AllBookableItemsTable";
 import { type AllBookableItem, hasAvailabilityFilter, withAvailability } from "./availabilityQuickFilters";
+import { BookingNotificationBulkActions } from "./BookingNotificationBulkActions";
 import { useAllBookableItemsData } from "./useAllBookableItemsData";
 
 const currentDate = () => new Date();
@@ -13,6 +16,15 @@ export type AllBookableItemsContentProps = {
 };
 
 export function AllBookableItemsContent({ clock = currentDate }: AllBookableItemsContentProps = {}) {
+  const { data: currentUser } = useCurrentUserQuery();
+  return <AllBookableItemsContentForUser key={currentUser.id} subjectId={currentUser.id} clock={clock} />;
+}
+
+function AllBookableItemsContentForUser({
+  clock = currentDate,
+  subjectId,
+}: AllBookableItemsContentProps & { subjectId: number }) {
+  const { t: commonT } = useTranslation("common");
   const {
     date,
     availability: routeAvailability,
@@ -25,12 +37,22 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     pageSize = 20,
   } = useSearch({ from: "/booking/all-items/" });
   const navigate = useNavigate({ from: "/booking/all-items/" });
-  const { config, invalidFilter, catalogue, runtimeFieldState, currentUser, ...data } = useAllBookableItemsData({
+  const {
+    config,
+    invalidFilter,
+    catalogue,
+    runtimeFieldState,
+    selectedNotificationIds,
+    setSelectedNotificationIds,
+    notificationSubscriptionMutation,
+    ...data
+  } = useAllBookableItemsData({
     clock,
     date,
     routeAvailability,
     target,
     mine,
+    subjectId,
     where,
     q,
     types,
@@ -40,6 +62,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
   const { filters, userToday, rows, quickFilterError, quickFilterPending } = data;
 
   const setDate = (nextDate: string) => {
+    setSelectedNotificationIds(new Set());
     const remaining = withAvailability(filters.expression, undefined);
     void navigate({
       search: (current) => ({
@@ -53,7 +76,8 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       replace: true,
     });
   };
-  const resetView = () =>
+  const resetView = () => {
+    setSelectedNotificationIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -68,12 +92,14 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       }),
       replace: true,
     });
+  };
   const setFilters = (next: FilterState<AllBookableItem>) => {
     const nextWhere = next.expression ? serializeRsqlExpression(next.expression) : undefined;
     const nextSearch = next.search || undefined;
     if (nextSearch === q && nextWhere === where && !target && !routeAvailability && page === 1) {
       return;
     }
+    setSelectedNotificationIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -87,11 +113,13 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       replace: true,
     });
   };
-  const removeRestoredViewIssue = () =>
+  const removeRestoredViewIssue = () => {
+    setSelectedNotificationIds(new Set());
     void navigate({
       search: (current) => ({ ...current, where: undefined, page: undefined }),
       replace: true,
     });
+  };
   const restoredViewIssue = runtimeFieldState.error
     ? {
         kind: "network" as const,
@@ -123,7 +151,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     restoredViewIssue,
     onSelectRuntimeField: runtimeFieldState.selectRuntimeField,
     runtimeFieldDefinitions: runtimeFieldState.runtimeFields,
-    runtimeFieldAuthScope: currentUser.id,
+    runtimeFieldAuthScope: subjectId,
     queryString: false,
     features: {
       filtering: {
@@ -138,6 +166,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
         onChange: (nextPage) => {
           const nextPageNumber = nextPage.pageSize === pageSize ? nextPage.pageIndex + 1 : 1;
           if (nextPageNumber === page && nextPage.pageSize === pageSize) return;
+          setSelectedNotificationIds(new Set());
           void navigate({
             search: (current) => ({
               ...current,
@@ -149,6 +178,26 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
         },
       },
     },
+    selection: {
+      value: selectedNotificationIds,
+      onChange: setSelectedNotificationIds,
+      disabled: notificationSubscriptionMutation.isPending,
+      maximumCount: 100,
+      getRowLabel: (row) => row.target?.value.name ?? commonT("values.unknownItem"),
+      renderActions: (selection) => {
+        const selectedConfigurationIds = [...selection.selectedRowIds].map(Number);
+        return (
+          <BookingNotificationBulkActions
+            selection={selection}
+            selectedConfigurationIds={selectedConfigurationIds}
+            pending={notificationSubscriptionMutation.isPending}
+            onAction={(configurationIds, enabled) =>
+              notificationSubscriptionMutation.mutateAsync({ configurationIds, enabled })
+            }
+          />
+        );
+      },
+    },
   };
 
   return (
@@ -156,6 +205,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       {...data}
       types={types}
       mine={mine}
+      setSelectedNotificationIds={setSelectedNotificationIds}
       tableProps={tableProps}
       setDate={setDate}
       resetView={resetView}
