@@ -4,6 +4,7 @@ import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.booking.service.BookingConfigurationTargetManager;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,16 +13,20 @@ import org.springframework.context.annotation.Configuration;
 public class BookingInstrumentRelationshipOperations {
 
   private final BookingConfigurationTargetManager targetManager;
+  private final InstrumentReadAccess instrumentReadAccess;
 
-  public BookingInstrumentRelationshipOperations(BookingConfigurationTargetManager targetManager) {
+  public BookingInstrumentRelationshipOperations(
+      BookingConfigurationTargetManager targetManager, InstrumentReadAccess instrumentReadAccess) {
     this.targetManager = targetManager;
+    this.instrumentReadAccess = instrumentReadAccess;
   }
 
   @Bean
   ApiV2RelationshipTargetSpec<Instrument, Long> bookingInstrumentRelationshipResource() {
     return new ApiV2RelationshipTargetSpec<>(
-        ApiV2BookingInstrumentResource.DESCRIPTION,
+        ApiV2BookingInstrumentResource.description(instrumentReadAccess),
         Long.class,
-        (ids, ignored) -> targetManager.resolveRelationshipTargets(ids));
+        (ids, caller) -> targetManager.resolveRelationshipTargets(ids, caller),
+        "instruments");
   }
 }

@@ -167,7 +167,12 @@ public class TimeSlotBooking implements Serializable {
     this.updatedAt = copy(updatedAt);
   }
 
-  /** Prepares the safe response values for the current actor without changing persisted data. */
+  /**
+   * Prepares the safe response values for the current actor without changing persisted data.
+   *
+   * <p>When the configuration is not readable, the booking may still be visible to its requester,
+   * but target and configuration-derived getters return redacted values.
+   */
   public void prepareView(
       BookingPrivacy privacy, boolean canEdit, boolean canCancel, boolean canViewConfiguration) {
     preparedPrivacy = privacy == null ? BookingPrivacy.BUSY : privacy;
@@ -209,6 +214,20 @@ public class TimeSlotBooking implements Serializable {
   @Transient
   public String getTimeZone() {
     return bookingConfiguration == null ? null : bookingConfiguration.getTimeZone();
+  }
+
+  /** Returns the target configuration's timezone only when its current permission is visible. */
+  @Transient
+  public String getVisibleTimeZone() {
+    return preparedCanViewConfiguration ? getTimeZone() : null;
+  }
+
+  /** Returns the target reference only when its current permission is visible. */
+  @Transient
+  public BookableTargetReference getVisibleTarget() {
+    return preparedCanViewConfiguration && bookingConfiguration != null
+        ? bookingConfiguration.getTarget()
+        : null;
   }
 
   /** Returns purpose only when the manager prepared a full response. */

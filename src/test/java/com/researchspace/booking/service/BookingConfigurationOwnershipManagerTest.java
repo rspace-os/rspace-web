@@ -31,6 +31,21 @@ class BookingConfigurationOwnershipManagerTest {
   private final User actor = mock(User.class);
 
   @Test
+  void inheritedConfigurationFollowsItemOwnershipWithoutAnAclWrite() {
+    BookableTargetReference target =
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setState(BookingConfigurationState.ARCHIVED);
+    when(configurationDao.findByTarget(target)).thenReturn(Optional.of(configuration));
+    when(protectedAccess.isInherited(configuration)).thenReturn(true);
+
+    manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor);
+
+    verify(configurationDao, never()).lockByTarget(target);
+    org.mockito.Mockito.verifyNoInteractions(accessManager);
+  }
+
+  @Test
   void unconfiguredInstrumentNeedsNoBookingMutation() {
     BookableTargetReference target =
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
