@@ -16,7 +16,32 @@ public interface ProtectedResourceAccess<T, ID> {
 
   Optional<T> lock(ID id);
 
+  /** Returns the persisted access aggregate for independently managed resources. */
   ResourceAccess access(T resource);
+
+  /** Whether this resource derives access from another permission source. */
+  default boolean isInherited(T resource) {
+    return false;
+  }
+
+  /** Resolves the effective access for an inherited resource and subject. */
+  default ResolvedResourceAccess resolveInherited(T resource, User subject) {
+    return ResolvedResourceAccess.none();
+  }
+
+  /**
+   * Resolves inherited access for a write, allowing resources to refresh mutable permission facts.
+   */
+  default ResolvedResourceAccess resolveInheritedForMutation(T resource, User subject) {
+    return resolveInherited(resource, subject);
+  }
+
+  /** Builds the access document for an inherited resource after it has been authorized. */
+  default ResourceAccessDocument inheritedDocument(
+      T resource, User subject, ResolvedResourceAccess resolved) {
+    throw new UnsupportedOperationException(
+        "Inherited access requires an inheritedDocument implementation");
+  }
 
   /** Domain object whose existing identifier is used for access-change audit entries. */
   default Object auditTarget(T resource) {
