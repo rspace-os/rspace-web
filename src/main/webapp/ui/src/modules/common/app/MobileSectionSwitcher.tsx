@@ -30,7 +30,7 @@ export default function MobileSectionSwitcher({
           {visibleNavItems.map((item) => (
             <MenuLinkItem
               key={item.id}
-              render={<Link {...navLinkProps(item)} viewTransition={Boolean(item.routerTo)} />}
+              render={<Link {...navLinkProps(item)} />}
               aria-current={currentPage === item.id ? "page" : undefined}
               className={itemClasses}
             >

@@ -17,7 +17,6 @@ export default function MainNavigation({
         <Link
           key={item.id}
           {...navLinkProps(item)}
-          viewTransition={Boolean(item.routerTo)}
           aria-current={currentPage === item.id ? "page" : undefined}
           className="rounded-sm px-2 py-1 text-sm text-muted-foreground hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-foreground"
         >
