@@ -221,12 +221,12 @@ describe("the All Bookable Items page", () => {
   test("shows the fixture maintenance blockout", async () => {
     render(<AllBookableItemsStory history={history} />);
 
-    const slice = pageObj.availabilitySlice("Confocal microscope", 1, "Blocked out", ".*10:00.*11:00.*");
+    const slice = pageObj.availabilitySlice("Confocal microscope", 1, "Unavailable", ".*10:00.*11:00.*");
     await slice.hover();
 
     await expect.element(pageObj.availabilityDetails).toBeVisible();
-    await pageObj.availabilityDetails.getByLabelText(/^Show details for Maintenance blockout,/).click();
-    await expect.element(pageObj.availabilityDetails.getByText("Maintenance blockout", { exact: true })).toBeVisible();
+    await pageObj.availabilityDetails.getByLabelText(/^Show details for Maintenance,/).click();
+    await expect.element(pageObj.availabilityDetails.getByText("Maintenance", { exact: true })).toBeVisible();
     await expect
       .element(pageObj.availabilityDetails.getByText("Outside opening hours", { exact: true }))
       .not.toBeInTheDocument();
@@ -236,11 +236,9 @@ describe("the All Bookable Items page", () => {
 
     await pageObj.heading.hover();
     await expect.element(pageObj.availabilityDetails).not.toBeInTheDocument();
-    await pageObj.availabilitySlice("Confocal microscope", 1, "Blocked out", ".*15:00.*18:00.*").hover();
+    await pageObj.availabilitySlice("Confocal microscope", 1, "Unavailable", ".*15:00.*18:00.*").hover();
     await expect.element(pageObj.availabilityDetails.getByText("Outside opening hours", { exact: true })).toBeVisible();
-    await expect
-      .element(pageObj.availabilityDetails.getByText("Maintenance blockout", { exact: true }))
-      .not.toBeInTheDocument();
+    await expect.element(pageObj.availabilityDetails.getByText("Maintenance", { exact: true })).not.toBeInTheDocument();
   });
 
   test("opens slice details from keyboard focus and restores focus after Escape", async () => {
@@ -308,7 +306,7 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.datePicker).toBeVisible();
     await expect
       .element(pageObj.filtersPanel.getByRole("combobox", { name: "Value for filter 1" }))
-      .toHaveValue("Free later today");
+      .toHaveValue("Busy now, free later");
     await pageObj.filtersPanel.getByRole("button", { name: "Remove filter 1" }).click();
     await pageObj.filtersPanel.getByRole("button", { name: "Apply filters" }).click();
     await expect.poll(() => new URLSearchParams(history.location.search).get("where")).toBeNull();

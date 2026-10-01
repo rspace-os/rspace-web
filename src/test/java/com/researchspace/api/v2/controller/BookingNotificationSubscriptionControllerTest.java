@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.controller;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
+import com.researchspace.booking.service.BookingNotificationSubscriptionManager.PreferenceChanges;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Preferences;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Status;
 import com.researchspace.model.User;
@@ -24,6 +26,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class BookingNotificationSubscriptionControllerTest {
@@ -46,26 +49,45 @@ class BookingNotificationSubscriptionControllerTest {
   }
 
   @Test
-  void routesDefaultToEffectiveSubjectAndRetainsActor() throws Exception {
-    when(manager.replacePreferences(false, subject, actor)).thenReturn(new Preferences(false));
+  void routesPreferencesToEffectiveSubjectAndRetainsActor() throws Exception {
+    PreferenceChanges changes = new PreferenceChanges(false, true, false);
+    when(manager.replacePreferences(changes, subject, actor))
+        .thenReturn(new Preferences(false, true, false, true));
     mvc.perform(
             put(DEFAULTS)
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"autoSubscribeOwnedItems\":false}"))
+                .content(
+                    "{\"autoSubscribeOwnedItems\":false,\"notifyOnCreated\":true,"
+                        + "\"notifyOnCancelled\":false}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.autoSubscribeOwnedItems").value(false));
-    verify(manager).replacePreferences(false, subject, actor);
+        .andExpectAll(preferencesShape());
+    verify(manager).replacePreferences(changes, subject, actor);
+  }
+
+  @Test
+  void readsPreferencesInTheirPublicShape() throws Exception {
+    when(manager.getPreferences(subject, actor))
+        .thenReturn(new Preferences(false, true, false, true));
+    mvc.perform(get(DEFAULTS).requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller))
+        .andExpect(status().isOk())
+        .andExpectAll(preferencesShape());
   }
 
   @ParameterizedTest
   @ValueSource(
       strings = {
         "{}",
-        "{\"autoSubscribeOwnedItems\":null}",
-        "{\"autoSubscribeOwnedItems\":\"false\"}",
-        "{\"autoSubscribeOwnedItems\":0}",
-        "{\"autoSubscribeOwnedItems\":true,\"userId\":99}"
+        "{\"autoSubscribeOwnedItems\":false,\"notifyOnCreated\":true}",
+        "{\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":null,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":\"false\",\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":false,\"notifyOnCreated\":1,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":false,\"notifyOnCreated\":true,\"notifyOnCancelled\":\"no\"}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true,"
+            + "\"userId\":99}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true,"
+            + "\"emailDelivery\":false}"
       })
   void rejectsInvalidOrForgedDefaults(String json) throws Exception {
     mvc.perform(
@@ -75,6 +97,17 @@ class BookingNotificationSubscriptionControllerTest {
                 .content(json))
         .andExpect(status().isBadRequest());
     verifyNoInteractions(manager);
+  }
+
+  /** Exactly the four documented members, for Preferences(false, true, false, true). */
+  private static ResultMatcher[] preferencesShape() {
+    return new ResultMatcher[] {
+      jsonPath("$.*", hasSize(4)),
+      jsonPath("$.autoSubscribeOwnedItems").value(false),
+      jsonPath("$.notifyOnCreated").value(true),
+      jsonPath("$.notifyOnCancelled").value(false),
+      jsonPath("$.emailDelivery").value(true)
+    };
   }
 
   @ParameterizedTest

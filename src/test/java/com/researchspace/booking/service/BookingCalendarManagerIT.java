@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,15 +62,16 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void concurrentInactiveCreatesLeaveOneSubscriptionAndOneConflict() throws Exception {
+  public void concurrentCreatesLeaveOneSubscriptionAndReturnItToBoth() throws Exception {
     User user = createInitAndLoginAnyUser();
 
-    List<Object> results = raceFromLockedUser(user, "\"inactive\"");
+    List<Object> results = raceFromLockedUser(user, () -> calendarManager.createUser(user, user));
 
-    assertEquals(
-        1, results.stream().filter(BookingCalendarManager.Created.class::isInstance).count());
-    assertEquals(
-        1, results.stream().filter(UserSubscriptionConflictException.class::isInstance).count());
+    List<BookingCalendarManager.Created> created =
+        results.stream().map(BookingCalendarManager.Created.class::cast).toList();
+    assertEquals(1, created.stream().filter(BookingCalendarManager.Created::newlyIssued).count());
+    assertEquals(created.get(0).subscriptionUrl(), created.get(1).subscriptionUrl());
+    assertEquals(created.get(0).status().etag(), created.get(1).status().etag());
     assertEquals(
         Integer.valueOf(1),
         jdbcTemplate.queryForObject(
@@ -77,24 +79,19 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
             Integer.class,
             user.getId()));
     BookingCalendarManager.Status current = calendarManager.userStatus(user, user);
-    BookingCalendarManager.Created winner =
-        (BookingCalendarManager.Created)
-            results.stream()
-                .filter(BookingCalendarManager.Created.class::isInstance)
-                .findFirst()
-                .orElseThrow();
-    assertEquals(winner.status().etag(), current.etag());
-    assertEquals(winner.subscriptionUrl(), current.subscriptionUrl());
+    assertEquals(created.get(0).status().etag(), current.etag());
+    assertEquals(created.get(0).subscriptionUrl(), current.subscriptionUrl());
   }
 
   @Test
   public void concurrentRotationsFromOneVersionReturnOneNewVersionAndOneConflict()
       throws Exception {
     User user = createInitAndLoginAnyUser();
-    BookingCalendarManager.Created initial =
-        calendarManager.createOrRotateUser(user, user, "\"inactive\"");
+    BookingCalendarManager.Created initial = calendarManager.createUser(user, user);
 
-    List<Object> results = raceFromLockedUser(user, initial.status().etag());
+    List<Object> results =
+        raceFromLockedUser(
+            user, () -> calendarManager.rotateUser(user, user, initial.status().etag()));
 
     assertEquals(
         1, results.stream().filter(BookingCalendarManager.Created.class::isInstance).count());
@@ -114,20 +111,19 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
   @Test
   public void recreatingUserSubscriptionInvalidatesTheOldEtag() {
     User user = createInitAndLoginAnyUser();
-    BookingCalendarManager.Created initial =
-        calendarManager.createOrRotateUser(user, user, "\"inactive\"");
+    BookingCalendarManager.Created initial = calendarManager.createUser(user, user);
 
     calendarManager.revokeUser(user, user);
-    BookingCalendarManager.Created replacement =
-        calendarManager.createOrRotateUser(user, user, "\"inactive\"");
+    BookingCalendarManager.Created replacement = calendarManager.createUser(user, user);
 
     assertNotEquals(initial.status().etag(), replacement.status().etag());
     assertThrows(
         UserSubscriptionConflictException.class,
-        () -> calendarManager.createOrRotateUser(user, user, initial.status().etag()));
+        () -> calendarManager.rotateUser(user, user, initial.status().etag()));
   }
 
-  private List<Object> raceFromLockedUser(User user, String expectedEtag) throws Exception {
+  private List<Object> raceFromLockedUser(
+      User user, Supplier<BookingCalendarManager.Created> operation) throws Exception {
     CountDownLatch holderLocked = new CountDownLatch(1);
     CountDownLatch releaseHolder = new CountDownLatch(1);
     CountDownLatch contendersReady = new CountDownLatch(2);
@@ -146,9 +142,9 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
                           }));
       assertTrue(holderLocked.await(10, TimeUnit.SECONDS));
       Future<Object> first =
-          pool.submit(() -> attemptRotation(user, expectedEtag, contendersReady, startContenders));
+          pool.submit(() -> attempt(operation, contendersReady, startContenders));
       Future<Object> second =
-          pool.submit(() -> attemptRotation(user, expectedEtag, contendersReady, startContenders));
+          pool.submit(() -> attempt(operation, contendersReady, startContenders));
       assertTrue(contendersReady.await(10, TimeUnit.SECONDS));
       startContenders.countDown();
       releaseHolder.countDown();
@@ -165,12 +161,14 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
     }
   }
 
-  private Object attemptRotation(
-      User user, String expectedEtag, CountDownLatch ready, CountDownLatch start) {
+  private static Object attempt(
+      Supplier<BookingCalendarManager.Created> operation,
+      CountDownLatch ready,
+      CountDownLatch start) {
     ready.countDown();
     await(start);
     try {
-      return calendarManager.createOrRotateUser(user, user, expectedEtag);
+      return operation.get();
     } catch (UserSubscriptionConflictException conflict) {
       return conflict;
     }
