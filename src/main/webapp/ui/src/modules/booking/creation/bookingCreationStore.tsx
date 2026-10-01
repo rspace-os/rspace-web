@@ -17,6 +17,7 @@ export type BookingCreationContext = Readonly<{
   }>;
   initialDate?: string;
   lockTarget?: boolean;
+  timelineAdjustable?: boolean;
 }>;
 
 export type BookingCreationStore = {

@@ -35,6 +35,26 @@ describe("BookingPreferencesPage", () => {
     );
   });
 
+  it("keeps a local draft when preferences are refreshed in the background", async () => {
+    const user = userEvent.setup();
+    let document = inheritedBrowserBookingPreferences;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(document)),
+    );
+    const { queryClient } = renderPage();
+    const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
+    await user.clear(start);
+    await user.type(start, "10:00");
+
+    document = customNewYorkBookingPreferences;
+    await queryClient.refetchQueries({ queryKey: bookingDisplayPreferencesQueryKey });
+
+    expect(start).toHaveValue("10:00");
+    expect(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeEnabled();
+  });
+
   it("saves one complete preference and replaces the shared query cache", async () => {
     let body: unknown;
     server.use(

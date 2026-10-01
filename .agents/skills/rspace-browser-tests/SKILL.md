@@ -32,8 +32,10 @@ semantic queries fail. Captured DOM nodes go stale on rerender.
 
 Paths below are relative to `src/main/webapp/ui/`.
 
-- `src/__tests__/browserSetup.ts`: shared `worker`, start/reset lifecycle,
-  CDP media reset, `suppressFireAndForget404(...)`.
+- `src/__tests__/browserMocks.ts`: per-file MSW `worker` and
+  `suppressFireAndForget404(...)`. Import helpers here rather than from setup.
+- `src/__tests__/browserSetup.ts`: starts/stops that client, resets handlers,
+  storage and CDP media. Vitest loads it through `setupFiles`.
 - `src/__tests__/mswAppShellHandlers.ts`: default whoami, navigation, analytics,
   and livechat handlers; survive `resetHandlers()`.
 - `src/__tests__/mocks/inventoryMocks.ts`: `oauthTokenHandler`, `OAUTH_TOKEN`.
@@ -44,8 +46,12 @@ Paths below are relative to `src/main/webapp/ui/`.
 - `src/__tests__/pageObjects/viewport.ts`: `isFullyInViewport`,
   `moveToastStackIntoViewport`, `clickWhenInViewport`.
 
-The MSW worker is origin-global. Never call `worker.stop()` between files;
-it breaks later interception. Keep `fileParallelism: false` and `retry: 2`.
+Each file has an isolated iframe and MSW client. Setup awaits start before tests
+and stops that client after the file. Do not import the setup file from specs,
+which registers lifecycle hooks again. Firefox uses MSW fetch/XHR fallback;
+Chromium and WebKit use service workers. A synthetic `beforeunload` stops MSW,
+so restart the client before subsequent tests. Keep `fileParallelism: false`
+and `retry: 2` because storage and browser emulation need cleanup.
 
 ## Run and verify
 
