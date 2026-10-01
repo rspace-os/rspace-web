@@ -30,6 +30,7 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
@@ -63,6 +64,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   private final BookingSchedulingPolicy schedulingPolicy;
   private final InstrumentDao instrumentDao;
   private final BookingInstrumentQueryDao bookingInstruments;
+  private final BookingNotificationService bookingNotificationService;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final ApplicationEventPublisher events;
   private final BookingItemPermissions accessManager;
@@ -77,6 +79,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       BookingSchedulingPolicy schedulingPolicy,
       InstrumentDao instrumentDao,
       BookingInstrumentQueryDao bookingInstruments,
+      BookingNotificationService bookingNotificationService,
       ObjectProvider<ResourceRegistry> resourceRegistry,
       ApplicationEventPublisher events,
       BookingItemPermissions accessManager,
@@ -90,6 +93,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     this.schedulingPolicy = schedulingPolicy;
     this.instrumentDao = instrumentDao;
     this.bookingInstruments = bookingInstruments;
+    this.bookingNotificationService = bookingNotificationService;
     this.resourceRegistry = resourceRegistry;
     this.events = events;
     this.accessManager = accessManager;
@@ -270,6 +274,10 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     booking.setCreatedBy(actor);
     booking.setUpdatedBy(actor);
     TimeSlotBooking saved = save(booking);
+    if (booking.getKind() == BookingEventKind.BOOKING) {
+      bookingNotificationService.notify(
+          saved, actor, NotificationType.NOTIFICATION_BOOKING_CREATED);
+    }
     events.publishEvent(new TimeSlotBookingAuditEvent(actor, subject, saved, AuditAction.CREATE));
     prepare(List.of(saved), subject);
     return saved;
@@ -356,6 +364,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               booking.setUpdatedAt(new Date());
               booking.setUpdatedBy(actor);
               TimeSlotBooking saved = save(booking);
+              if (booking.getKind() == BookingEventKind.BOOKING
+                  && patch.state() == BookingState.CANCELLED) {
+                bookingNotificationService.notify(
+                    saved, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+              }
               events.publishEvent(
                   new TimeSlotBookingAuditEvent(actor, subject, saved, AuditAction.WRITE));
               prepare(List.of(saved), subject);

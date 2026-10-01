@@ -1,10 +1,12 @@
 import { Form, isDirty, useField, useForm } from "@formisch/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { type BookingSettings, SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
+import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
@@ -25,6 +27,15 @@ import {
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
 const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
+
+// The JVM institution zone may be an alias (e.g. Etc/UTC) missing from Intl's canonical list.
+function withInstitutionTimeZone(institutionTimezone: string) {
+  return detailFields.map((field) =>
+    field.name === "timezone" && field.type === "select"
+      ? { ...field, options: bookingTimeZoneOptions(institutionTimezone) }
+      : field,
+  );
+}
 
 async function createBookingConfiguration(input: BookingConfigurationInput, token: string): Promise<void> {
   const response = await fetchWithUiToken("/api/v2/booking-configurations", {
@@ -124,6 +135,7 @@ export function AddBookableItemForm({
     initialInput: {
       ...(initialTargetId === undefined ? {} : { target: { relationTo: "instruments", value: initialTargetId } }),
       enabled: true,
+      timezone: defaults.institutionTimezone,
       slotGranularityMinutes: defaults.slotGranularityMinutes,
       openingHours: defaults.openingHours.map((entry) => ({ ...entry })),
       bufferBeforeMinutes: defaults.bufferBeforeMinutes,
@@ -132,6 +144,7 @@ export function AddBookableItemForm({
       allowDoubleBooking: defaults.allowDoubleBooking,
     },
   });
+  const fields = useMemo(() => withInstitutionTimeZone(defaults.institutionTimezone), [defaults.institutionTimezone]);
   const targetField = useField(form, { path: ["target"] });
   const target = targetSelection(targetField.input);
   const selectedTargetId = target.type === "instrument" ? target.id : undefined;
@@ -207,7 +220,7 @@ export function AddBookableItemForm({
         ) : null}
         {canComplete ? (
           <>
-            <RenderFields fields={detailFields} form={form} disabled={createMutation.isPending} />
+            <RenderFields fields={fields} form={form} disabled={createMutation.isPending} />
             <SchedulingSettingsFields form={form} disabled={createMutation.isPending} />
             {createFailed ? (
               <p role="alert" className="text-sm text-destructive">

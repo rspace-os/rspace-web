@@ -26,6 +26,7 @@ import com.researchspace.model.booking.BookingPrivacy;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.time.Instant;
@@ -57,6 +58,7 @@ class TimeSlotBookingSchedulingTest {
   private User actor;
   private BookingItemPermissions accessManager;
   private TimeSlotBookingManager manager;
+  private BookingNotificationService bookingNotificationService;
 
   @BeforeEach
   void setUp() {
@@ -68,6 +70,7 @@ class TimeSlotBookingSchedulingTest {
     actor = fixture.actor;
     accessManager = fixture.accessManager;
     manager = fixture.manager;
+    bookingNotificationService = fixture.bookingNotificationService;
   }
 
   @Test
@@ -95,6 +98,8 @@ class TimeSlotBookingSchedulingTest {
     verify(configurationDao).lockActiveByTarget(target.reference());
     verify(bookingDao).overlaps(4L, start(), end(), null, CONFLICTING_EVENT_KINDS);
     verify(events).publishEvent(any(TimeSlotBookingAuditEvent.class));
+    verify(bookingNotificationService)
+        .notify(created, actor, NotificationType.NOTIFICATION_BOOKING_CREATED);
   }
 
   @Test
@@ -197,6 +202,7 @@ class TimeSlotBookingSchedulingTest {
             instant("2026-10-27T02:00:00Z"),
             null,
             CONFLICTING_EVENT_KINDS);
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
   }
 
   @Test
