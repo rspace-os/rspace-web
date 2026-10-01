@@ -130,6 +130,13 @@ export type FieldOrigin = {
   runtimeValueType?: "text" | "number" | "date" | "time" | "radio" | "choice";
 };
 
+/** Optional API identity picker; resource selects an application-owned source, never a URL. */
+export type RelationshipFilterPicker = {
+  resource: string;
+  identity: "globalId";
+  globalIdPrefix: string;
+};
+
 type BaseFieldConfig<
   TDocument,
   TFormConfig extends FieldFormConfig<TDocument, string> = FieldFormConfig<TDocument, never>,
@@ -144,6 +151,7 @@ type BaseFieldConfig<
   writeConstraints?: Readonly<Record<string, unknown>>;
   capabilities?: FieldCapabilities;
   origin?: FieldOrigin;
+  filterPicker?: RelationshipFilterPicker;
   list?: false | FieldListConfig<TDocument>;
   form?: false | TFormConfig;
 };

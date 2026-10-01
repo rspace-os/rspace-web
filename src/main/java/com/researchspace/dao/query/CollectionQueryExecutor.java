@@ -145,7 +145,11 @@ public final class CollectionQueryExecutor<T> {
     if (request.sort().isEmpty()) {
       orderById(query);
     }
-    PagedList<R> page = query.page((int) firstResult, request.page().size()).getResultList();
+    PagedList<R> page =
+        query
+            .page((int) firstResult, request.page().size())
+            .withInlineCountQuery(false)
+            .getResultList();
     return new ResourcePage<>(page, page.getTotalSize());
   }
 
@@ -293,7 +297,8 @@ public final class CollectionQueryExecutor<T> {
   /** Uses the page count because Blaze's root-count query fails when there are no restrictions. */
   private long totalMatching(CriteriaBuilder<?> query) {
     orderById(query);
-    return query.page(0, 1).getResultList().getTotalSize();
+    // Blaze's inline count can miscount filters containing correlated relationship subqueries.
+    return query.page(0, 1).withInlineCountQuery(false).getResultList().getTotalSize();
   }
 
   private void applySort(CriteriaBuilder<?> query, Sort sort) {
