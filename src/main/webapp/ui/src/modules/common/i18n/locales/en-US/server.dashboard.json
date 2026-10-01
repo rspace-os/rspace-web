@@ -134,6 +134,8 @@
   },
   "notificationType": {
     "archiveExportCompleted": "Export Completed",
+    "bookingCancelled": "Booking Cancelled",
+    "bookingCreated": "Booking Created",
     "documentDeleted": "Document Deleted",
     "documentEdited": "Document Edited",
     "documentShared": "Document Shared",
