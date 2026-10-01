@@ -5052,6 +5052,7 @@ export default interface Resources {
       },
       "showRightPanel": "Show right panel",
       "sidebar": {
+        "bookingSystem": "Booking System",
         "exportData": "Export Data",
         "igsnIds": "IGSN IDs",
         "itemsListLabel": "List existing Inventory items",
