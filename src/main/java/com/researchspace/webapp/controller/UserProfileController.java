@@ -18,7 +18,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
-import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.core.util.ResponseUtil;
@@ -53,7 +52,6 @@ import com.researchspace.model.frontend.PublicOAuthApps;
 import com.researchspace.model.frontend.PublicOAuthConnAppInfo;
 import com.researchspace.model.frontend.PublicOAuthConnApps;
 import com.researchspace.model.oauth.OAuthToken;
-import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.PreferenceCategory;
@@ -74,11 +72,7 @@ import com.researchspace.service.UserNotFoundException;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.UserRoleHandler;
 import com.researchspace.service.cloud.CommunityUserManager;
-import io.github.resilience4j.core.IntervalFunction;
-import io.github.resilience4j.retry.Retry;
-import io.github.resilience4j.retry.RetryConfig;
-import io.vavr.control.Try;
-import jakarta.annotation.PostConstruct;
+import com.researchspace.session.SessionAttributeUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -94,7 +88,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import lombok.AllArgsConstructor;
@@ -104,11 +97,11 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -860,43 +853,19 @@ public class UserProfileController extends BaseController {
     return AjaxReturnObject.fromSOR(result, result2 -> Boolean.TRUE);
   }
 
-  private static final String INVENTORY_CLIENT_ID = "rsInventoryWebClient";
-  private static final String INVENTORY_CLIENT_SECRET = "rsInventoryPublicSecret";
-
-  protected RetryConfig retryConfigForNewJwtTokenCreation;
-
-  @PostConstruct
-  public void init() {
-    retryConfigForNewJwtTokenCreation = buildRetryConfigForNewJwtTokenCreation();
-  }
-
   @ResponseBody
   @GetMapping("/ajax/inventoryOauthToken")
-  public AjaxReturnObject<String> getInventoryOauthToken(Principal principal) {
+  public AjaxReturnObject<String> getInventoryOauthToken(
+      Principal principal, HttpServletRequest request) {
+    HttpSession session = request.getSession(false);
+    if (session != null
+        && Boolean.TRUE.equals(session.getAttribute(SessionAttributeUtils.IS_RUN_AS))) {
+      SECURITY_LOG.warn(
+          "Refused legacy UI token creation while operating as user [{}]", principal.getName());
+      throw new AuthorizationException(getText("errors.api.v2.forbidden"));
+    }
     User user = userManager.getUserByUsername(principal.getName());
-
-    Retry retry = Retry.of("jwtTokenGeneration", retryConfigForNewJwtTokenCreation);
-    Callable<NewOAuthTokenResponse> updateWithRetry =
-        Retry.decorateCallable(
-            retry,
-            () ->
-                oAuthTokenManager
-                    .createNewJwtToken(
-                        INVENTORY_CLIENT_ID, INVENTORY_CLIENT_SECRET, user, OAuthTokenType.UI_TOKEN)
-                    .getEntity());
-    NewOAuthTokenResponse createdToken = Try.ofCallable(updateWithRetry).get();
-
-    return new AjaxReturnObject<>(createdToken.getAccessToken(), null);
-  }
-
-  private RetryConfig buildRetryConfigForNewJwtTokenCreation() {
-    IntervalFunction intervalWithCustomExponentialBackoff =
-        IntervalFunction.ofExponentialRandomBackoff(500, 2d);
-    return RetryConfig.custom()
-        .maxAttempts(3)
-        .intervalFunction(intervalWithCustomExponentialBackoff)
-        .retryExceptions(DataIntegrityViolationException.class)
-        .build();
+    return new AjaxReturnObject<>(oAuthTokenManager.createUiToken(user), null);
   }
 
   private static final String PROFILE_IMAGE_LINK_FMT = "/userform/profileImage/%d/%d";

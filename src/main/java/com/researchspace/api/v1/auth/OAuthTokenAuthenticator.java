@@ -20,6 +20,12 @@ public class OAuthTokenAuthenticator extends AbstractApiAuthenticator {
 
   Function<String, Optional<AuthenticationResult>> findUserForToken() {
     return accessToken -> {
+      // Session-bound UI tokens are credentials for API v2 only. API v1 has no browser-session
+      // context with which to verify their subject and delegation claims, so accepting one here
+      // would reduce it to an ordinary bearer token.
+      if (tokenManager.getUiTokenContext(accessToken).isPresent()) {
+        return Optional.empty();
+      }
       ServiceOperationResult<OAuthToken> subjectRetrieval = tokenManager.authenticate(accessToken);
       if (!subjectRetrieval.isSucceeded()) {
         return Optional.empty();
