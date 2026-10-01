@@ -45,6 +45,17 @@ describe("CalendarPage", () => {
     if (layout === "resources") expect(screen.getByRole("link", { name: "Imaging lab" })).toBeVisible();
   });
 
+  it("hides item filter controls and keeps Calendar controls available", async () => {
+    await renderCalendar();
+    expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /^Bookable items(?:,|$)/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Filters(?:$|,)/ })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "Search Calendar" })).toBeVisible();
+    for (const name of ["Jump to date", "Time grid", "Day", "Resources", "My Bookings", "Owned Items"]) {
+      expect(screen.getByRole("button", { name: new RegExp(`^${name}$`) })).toBeVisible();
+    }
+  });
+
   it("offers a retry when booking events cannot be loaded", async () => {
     let requests = 0;
     server.use(
