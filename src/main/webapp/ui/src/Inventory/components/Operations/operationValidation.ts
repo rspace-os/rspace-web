@@ -1,3 +1,4 @@
+import Decimal from "decimal.js";
 import type { Quantity } from "@/stores/definitions/HasQuantity";
 import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
@@ -12,11 +13,17 @@ import { UNSET_UNIT } from "./types";
  * a different amount.
  */
 export function amountIsStorable(value: number): boolean {
-  if (!Number.isFinite(value)) return false;
-  // Compared as a three-decimal round trip, not as an integer test on the scaled value: binary
-  // floating point makes 1.001 * 1000 equal 1000.9999999999999, which would reject an amount the
-  // backend stores exactly.
-  return Math.round(value * 1000) / 1000 === value;
+  return Number.isFinite(value) && new Decimal(value).decimalPlaces() <= 3;
+}
+
+/**
+ * An amount in the atomic unit of its category (picolitres, picograms, items), exactly; null for a
+ * unit outside volume, mass and dimensionless, which toCommonUnit cannot convert.
+ */
+export function commonAmount(quantity: OperationQuantity): Decimal | null {
+  if (categoryOfUnit(quantity.unitId) === null) return null;
+  // toCommonUnit(1, unit) is a power of 1000 no larger than 1e15, which a double holds exactly.
+  return new Decimal(quantity.numericValue).times(toCommonUnit(1, quantity.unitId));
 }
 
 export function validSubSampleCount(count: unknown, min = 1, max?: number): boolean {
@@ -120,11 +127,10 @@ export function quantityExceedsOrigin(
   // Each side converts to the atomic unit of its OWN category, so a millilitre amount against a gram
   // origin would compare picolitres with picograms. "Not exceeding" is the right answer because a
   // category mismatch is not an over-removal; the endpoint rejects it outright.
-  const takenCategory = categoryOfUnit(taken.unitId);
-  if (originQuantity && takenCategory !== categoryOfUnit(originQuantity.unitId)) return false;
-  if (takenCategory === null) return false;
-  const originCommon = originQuantity ? toCommonUnit(originQuantity.numericValue, originQuantity.unitId) : 0;
-  return toCommonUnit(taken.numericValue, taken.unitId) > originCommon;
+  const takenCommon = commonAmount(taken);
+  if (originQuantity && categoryOfUnit(taken.unitId) !== categoryOfUnit(originQuantity.unitId)) return false;
+  if (takenCommon === null) return false;
+  return takenCommon.greaterThan((originQuantity && commonAmount(originQuantity)) ?? 0);
 }
 
 /**
