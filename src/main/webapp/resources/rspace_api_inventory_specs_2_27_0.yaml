@@ -2641,6 +2641,12 @@ paths:
         5 ml cannot be pooled with 5 g. A subsample may appear at most once in the list.
 
 
+        `takeAll` only decides how much is removed from the origins. The created sample holds
+        `count` subsamples of `eachAmount` each, so `eachAmount` stays required, and no equality
+        between the total taken and the total created is enforced: pooled material may have been
+        diluted, concentrated or partly lost. Every operation that creates a sample works this way.
+
+
         The operation is atomic across every origin: if one is rejected, none is decremented.
       tags:
         - Operations
