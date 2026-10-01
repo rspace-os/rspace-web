@@ -4,6 +4,8 @@ import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
+import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
+import com.researchspace.booking.service.BookingCalendarManagerImpl.UserSubscriptionConflictException;
 import com.researchspace.booking.service.BookingConfigurationLifecycleException;
 import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.InvalidBookingDefaultSharingException;
@@ -124,6 +126,16 @@ public class ApiV2ControllerAdvice {
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<ApiV2Problem> handleNotFound() {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
+  }
+
+  @ExceptionHandler(BookingCalendarNotFoundException.class)
+  public ResponseEntity<ApiV2Problem> handleBookingCalendarNotFound() {
+    return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
+  }
+
+  @ExceptionHandler(UserSubscriptionConflictException.class)
+  public ResponseEntity<ApiV2Problem> handleUserSubscriptionConflict() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingCalendar.subscriptionConflict");
   }
 
   @ExceptionHandler(ThrottlingException.class)
