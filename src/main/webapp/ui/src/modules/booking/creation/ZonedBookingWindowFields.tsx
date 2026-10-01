@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import {
   type BookingWindowDraft,
+  isBookingInstantAlignedToGranularity,
   resolveWallClock,
   type WallClockResolution,
   wallClockInstant,
@@ -87,15 +88,15 @@ export function validateBookingWindow(
   }: BookingWindowPolicy,
 ) {
   const result = resolveBookingWindow(value, displayTimezone);
+  const granularityInvalid = Boolean(
+    result.window &&
+      (!isBookingInstantAlignedToGranularity(result.window.start, resolvedSchedulingTimezone, slotGranularityMinutes) ||
+        !isBookingInstantAlignedToGranularity(result.window.end, resolvedSchedulingTimezone, slotGranularityMinutes)),
+  );
   const schedulingEndpoint = (instant: string | undefined) =>
     instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone) : undefined;
   const schedulingStart = schedulingEndpoint(result.window?.start);
   const schedulingEnd = schedulingEndpoint(result.window?.end);
-  const startMinute = schedulingStart ? schedulingStart.hour * 60 + schedulingStart.minute : undefined;
-  const endMinute = schedulingEnd ? schedulingEnd.hour * 60 + schedulingEnd.minute : undefined;
-  const granularityInvalid =
-    (startMinute !== undefined && startMinute % slotGranularityMinutes !== 0) ||
-    (endMinute !== undefined && endMinute % slotGranularityMinutes !== 0);
   const endAtMidnight = Boolean(schedulingEnd && schedulingEnd.hour === 0 && schedulingEnd.minute === 0);
   const openingEndDate = schedulingEnd?.toPlainDate().subtract({ days: endAtMidnight ? 1 : 0 }).toString();
   const openingEndTime = endAtMidnight

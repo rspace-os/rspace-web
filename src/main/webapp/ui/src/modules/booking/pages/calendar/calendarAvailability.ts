@@ -1,14 +1,14 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
-import * as v from "valibot";
 import type { AvailabilityInterval, SourcedAvailabilityInterval } from "@/modules/booking/domain/availability";
-import { BOOKING_READ_FIELDS, type Booking, BookingSchema } from "@/modules/booking/domain/booking";
+import type { Booking } from "@/modules/booking/domain/booking";
 import {
   type AbsoluteDisplayInterval,
   addCalendarDays,
   displayInterval,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
+import { fetchDayBookings } from "@/modules/booking/domain/fetchDayBookings";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 
 export type CalendarAvailabilityRow = {
@@ -51,45 +51,6 @@ export function calendarAvailabilityRow(row: {
     bufferAfterMinutes: row.bufferAfterMinutes,
     allowDoubleBooking: row.allowDoubleBooking,
   };
-}
-
-const PageSchema = v.object({
-  docs: v.array(BookingSchema),
-  totalDocs: v.number(),
-  totalPages: v.number(),
-  page: v.number(),
-  hasNextPage: v.boolean(),
-});
-
-function bookingWhere(globalIds: readonly string[], start: string, end: string): string {
-  return `target=in=(${globalIds.join(",")});start=lt=${end};end=gt=${start};state==CONFIRMED`;
-}
-
-async function fetchPage(
-  rows: readonly CalendarAvailabilityRow[],
-  envelope: { start: string; end: string },
-  page: number,
-  token: string,
-  signal: AbortSignal,
-) {
-  const parameters = new URLSearchParams({
-    where: bookingWhere(
-      rows.map((row) => row.globalId),
-      envelope.start,
-      envelope.end,
-    ),
-    sort: "start,id",
-    page: String(page),
-    limit: "100",
-    depth: "1",
-    "fields[bookings]": BOOKING_READ_FIELDS,
-  });
-  const response = await fetch(`/api/v2/bookings?${parameters}`, {
-    headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
-    signal,
-  });
-  if (!response.ok) throw new Error(`Booking availability request failed (${response.status})`);
-  return v.parse(PageSchema, await response.json());
 }
 
 function availabilityEnvelope(rows: readonly CalendarAvailabilityRow[], interval: AbsoluteDisplayInterval) {
@@ -225,12 +186,12 @@ async function loadAvailability(
   signal: AbortSignal,
 ): Promise<ReadonlyMap<string, readonly SourcedAvailabilityInterval[]>> {
   const rows = rowIntervals.map(({ row }) => row);
-  const first = await fetchPage(rows, envelope, 1, token, signal);
-  if (first.totalDocs > 1000) throw new Error("Calendar availability exceeds 1,000 bookings");
-  const bookings: Booking[] = [...first.docs];
-  for (let page = 2; page <= first.totalPages; page += 1) {
-    bookings.push(...(await fetchPage(rows, envelope, page, token, signal)).docs);
-  }
+  const bookings = await fetchDayBookings(
+    rows.map((row) => row.globalId),
+    envelope,
+    token,
+    signal,
+  );
   const result = new Map<string, SourcedAvailabilityInterval[]>();
   const rowIntervalById = new Map<string, AvailabilityRowInterval>();
   for (const rowInterval of rowIntervals) {
