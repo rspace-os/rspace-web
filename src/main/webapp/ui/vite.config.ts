@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
@@ -29,14 +30,8 @@ const intlMessageFormatBundlePath = path.join(
 
 const legacyCatalogueFileName = (locale: string) => `legacyMessages.${locale}.js`;
 
-/*
- * Emits the legacy message catalogue as one static file per locale, assigning `window.RS.i18n`.
- * Kept out of the `legacyI18n` chunk so the messages, which change on any copy edit, cache
- * separately from the formatting code, which does not. They land under `/ui/dist/`, already served
- * anonymously with a JavaScript MIME type, so nothing serves them at runtime.
- */
-function legacyMessages(): Plugin {
-  const catalogues = fs
+function readLegacyCatalogues() {
+  return fs
     .readdirSync(localesPath, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(localesPath, entry.name, "server.legacyJs.json")))
     .map((entry) => {
@@ -49,7 +44,16 @@ function legacyMessages(): Plugin {
         source: `window.RS = window.RS || {};\nwindow.RS.i18n = ${JSON.stringify(messages)};\n`,
       };
     });
+}
 
+/*
+ * Emits the legacy message catalogue as one static file per locale, assigning `window.RS.i18n`.
+ * Kept out of the `legacyI18n` chunk so the messages, which change on any copy edit, cache
+ * separately from the formatting code, which does not. They land under `/ui/dist/`, already served
+ * anonymously with a JavaScript MIME type, so nothing serves them at runtime.
+ */
+function legacyMessages(): Plugin {
+  const catalogues = readLegacyCatalogues();
   if (catalogues.length === 0) {
     throw new Error(`No server.legacyJs.json found under ${localesPath}; RS.msg would resolve nothing.`);
   }
@@ -61,11 +65,14 @@ function legacyMessages(): Plugin {
         this.emitFile({ type: "asset", fileName, source });
       }
     },
-    // `generateBundle` never runs under `vite dev`, so serve the same bytes from memory there.
+    // `generateBundle` never runs under `vite dev`, so serve the same bytes there, re-read on each
+    // request so a catalogue edit shows on reload without restarting the dev server.
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const requested = req.url?.split("?")[0] ?? "";
-        const catalogue = catalogues.find(({ fileName }) => requested.endsWith(`/${fileName}`));
+        const catalogue = /\/legacyMessages\.[^/]+\.js$/.test(requested)
+          ? readLegacyCatalogues().find(({ fileName }) => requested.endsWith(`/${fileName}`))
+          : undefined;
         if (!catalogue) {
           next();
           return;
@@ -290,7 +297,7 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [react(), legacyI18n(), legacyMessages()];
+  const plugins: PluginOption[] = [react(), legacyI18n(), legacyMessages(), tailwindcss()];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));

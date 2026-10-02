@@ -253,8 +253,42 @@ resolved during design. This file is a glossary only — no implementation detai
   from it by the inverse of the PIDINST mapping, and attaches a linked identifier for the
   PID, all in one step. The imported values are ordinary field values afterwards: the user
   edits them like any other, and only the identifier stays tied to the registry.
+  The record's two related identifiers that RSpace itself writes at registration, labelled
+  Measurement Technique and Calibration, are read back into the matching link fields, but
+  an RSpace link can only name an item stored in this same RSpace: an entry whose address
+  is this RSpace's own page for an item the importing user can see becomes a real link,
+  with the field's own relation (IsDocumentedBy for Measurement technique, IsCalibratedBy
+  for Calibration, since the registry's IsDescribedBy is a constant that says nothing) and
+  pinned to the same version the address names, if it names one; a trashed item the user
+  can still see is linked and shows as deleted, as by hand, except a trashed notebook, which
+  cannot be linked by hand either. Every other such entry is a skipped entry. Nothing about
+  a skipped entry is stored on the instrument (RSDEV-1528).
   _Avoid_: PIDINST import (the PID is imported, the instrument is created), instrument
   lookup (that is the search that precedes it), sync
+
+- **Related identifier** — a registry record's pointer to another resource (a manual, a
+  dataset, a paper), of which a PIDINST record may carry any number. RSpace writes exactly
+  two when it registers an instrument, the addresses of the items its Measurement technique
+  and Calibration fields link to (ADR 0007), and reads back only those two, recognised by
+  their labels, when it imports a record; the lookup's preview shows the same two before the
+  import. Every other related identifier is ignored quietly on import, like any registry
+  detail the template has no field for.
+  _Avoid_: alternate identifier (a different PIDINST property: the instrument's own local
+  ids), linked resource, reference
+
+- **Skipped entry** — a related identifier the import read but could not turn into a link,
+  reported to the user in a warning at import time that stays until dismissed, and to an API
+  caller alongside the created instrument: the field it was for, why, and its address. There
+  are only two reasons. Either the address is not an item's page in this RSpace, worded as
+  another server named by its host, whether that server is another RSpace or not at all an
+  RSpace, or, when the address has no host or is on this RSpace's own host, as not the
+  address of an item in this RSpace; or it points at this RSpace but the item is not
+  available to the importing user, which is the one wording for an item they cannot see, an
+  item that does not exist and a kind of item links cannot name, so an import never reveals
+  whether an item exists (the principle of ADR 0002). A server whose
+  address has changed since it registered the PID is not recognised as this one; its own
+  entries are skipped as another server's.
+  _Avoid_: dropped entry, lost link, failed link, unresolved identifier
 
 ## Record version history
 
@@ -434,3 +468,259 @@ resolved during design. This file is a glossary only — no implementation detai
   Operation, the wizard offers to perform it immediately from step one. Replaces the older
   per-item remembered defaults.
 
+## Platform Configuration
+
+Canonical terms for Feature Flags. Implementation and operational details live
+in `DevDocs/adr/0003-feature-flags.md`.
+
+**Feature Flag**:
+An internal boolean control for rollout, kill switches, and temporary changes.
+It is never an authorization, licensing, tenant-isolation, or secrecy boundary.
+_Avoid_: sysadmin setting, deployment property, app setting, toggle
+
+**Feature Flag Definition**:
+The manifest entry that declares a flag's identity and default state.
+_Avoid_: database row, property key, frontend constant
+
+**Feature Flag Manifest**:
+The checked-in JSONC source of Feature Flag Definitions, read directly at
+runtime and used to generate backend constants and frontend types.
+_Avoid_: Java enum, TypeScript constant list, database seed
+
+**Feature Flag Baseline**:
+The instance-wide value before a User Feature Flag Override is applied.
+Anonymous requests always receive this value.
+_Avoid_: global final value, deployment setting
+
+**User Feature Flag Override**:
+An explicitly stored per-user value that replaces the Feature Flag Baseline for
+that user. Without one, the baseline applies.
+_Avoid_: targeted rollout, group override, community override
+
+**Feature Flag Override Permission**:
+The capability to set one's own overrides. It applies to every Feature Flag,
+not selected flags.
+_Avoid_: special user, per-flag permission, sysadmin setting
+
+**Feature Flag Resource**:
+The caller-specific state of one Feature Flag in the REST API v2 collection.
+The resource contains the effective value, baseline, source, and override availability.
+_Avoid_: database row, manifest entry
+
+**Retired Feature Flag**:
+A flag removed from the manifest. Startup removes its stored baseline and user
+overrides.
+_Avoid_: deprecated flag, disabled forever, archived flag
+
+**Expired Feature Flag**:
+A flag whose `expires` date has passed. It fails CI validation but not startup.
+_Avoid_: runtime-failing flag, startup blocker
+
+## Resource role permissions
+
+- **Role scheme**: the roles, ordering, capabilities, assignment rules, and
+  invariants for one protected resource type. Every scheme makes Owner its
+  highest role, puts Manager immediately below it, prevents Managers from
+  changing Owners, and requires one persisted Owner. Capabilities are
+  monotonic: every higher role includes every capability of each lower role.
+  Other roles and capabilities belong only to that resource type.
+- **Role assignment**: one role granted directly to one grantee for one
+  protected resource. A grantee has at most one direct role assignment for that
+  resource.
+- **Grantee**: a user, group, or dynamic audience that receives a role.
+  _Avoid_: subject, actor, sharee
+- **Capability**: one action allowed by a role scheme, such as changing a
+  resource or assigning an Owner. Callers receive resolved capabilities so they
+  do not have to reproduce a role scheme.
+- **Effective role**: the highest role a user receives from all applicable
+  direct, group, audience, and implicit sources for one resource.
+
+## Booking
+
+- **Available now** — the current instant falls in an available segment within
+  today's preferred display interval. Booking and blockout intervals are
+  half-open, so an occupied interval excludes its end.
+- **Free later today** — the bookable item is not available now, but has a
+  positive-duration available segment later in today's preferred display
+  interval. Before that interval starts, any available segment qualifies;
+  at or after its end, neither quick filter applies.
+
+- **Day timeline** — a horizontal representation of one calendar day in the
+  display timezone, with events positioned by elapsed time. Clock-change days
+  can contain 23 or 25 hours; UTC offsets distinguish repeated local hours.
+- **Wall-clock day** — the interval between consecutive local midnights in a
+  timezone. Its elapsed duration can differ from 24 hours when clocks change.
+- **Event** — a time-bounded item displayed on a resource's calendar. Events may
+  overlap; overlap is not, by itself, evidence of a booking conflict.
+- **Event kind** — the reason an event affects a resource's availability: either
+  a booking or a blockout.
+- **Booking event** — an event that reserves a resource for a user. Its full
+  calendar card identifies who booked it, its exact period, and any notes the
+  viewer is permitted to see.
+- **Blockout event** — a non-booking event that marks a resource as unavailable,
+  such as maintenance or downtime. It has kind-appropriate card content and no
+  booker.
+- **Event lane** — one horizontal visual track within a day timeline. Overlapping
+  events occupy separate lanes so that each remains visible.
+- **Calendar card** — the reusable visual representation of an event. Its compact
+  state fits the geometry imposed by a calendar view; its expanded state exposes
+  the event's complete display details without changing the event's time range.
+- **Expanded calendar card** — a calendar card state that exposes the full booked-by
+  heading, exact period, and notes when compact timeline geometry cannot show them.
+  Expansion is distinct from creating or editing an event.
+- **Availability window** — the explicit time interval over which a resource's
+  availability is summarized. It can span part of a day, one day, or several days.
+- **Availability bar** — a thin summary of one resource's availability within an
+  availability window. Touching or overlapping events of the same kind form one
+  continuous section; its expanded overlay exposes the individual events the
+  viewer is permitted to see.
+- **Availability state** — the condition of a resource during one section of an
+  availability window: available, booked, blocked out, or simultaneously booked
+  and blocked out.
+- **Booking configuration** — the settings that make one inventory instrument
+  bookable, including its scheduling timezone and booking rules.
+- **Booking configuration state** — the lifecycle condition of a booking
+  configuration, either Active or Archived.
+  _Avoid_: deleted flag, archive flag
+- **Active booking configuration** — a booking configuration that may
+  participate in booking operations. Whether users can create new bookings also
+  depends on whether the configuration is enabled.
+- **Archived booking configuration** — a readable booking configuration that
+  cannot receive settings, access, or booking changes until it is restored.
+- **Archive a booking configuration** — move an Active booking configuration to
+  Archived while retaining its settings, bookings, and audit history. Repeating
+  the archive command leaves it Archived.
+  _Avoid_: delete a booking configuration
+- **Restore a booking configuration** — move an Archived booking configuration
+  back to Active without recreating revoked calendar subscriptions.
+- **Permanently delete a booking configuration** — irreversibly remove an
+  Active or Archived booking configuration and its live operational data. Audit history
+  remains. Only a system administrator acting as themselves may do this.
+- **Bookable-item calendar subscription** — one user's independently revocable,
+  read-only external calendar of one booking configuration's full schedule. It
+  remains available only while that user has effective permission to view the
+  configuration. Losing the final permission ends the subscription; restoring
+  access does not revive it.
+  _Avoid_: instrument calendar link, item feed
+- **Personal booking calendar subscription** — one user's revocable, read-only
+  external calendar of the reservations they requested and the blockouts they
+  created across bookable items.
+  _Avoid_: per-user calendar link, user calendar
+- **Subscription link** — the bearer URL for a bookable-item or personal booking
+  calendar subscription.
+- **Calendar cancellation tombstone** — the retained calendar representation of
+  a cancelled or deleted booking event. It keeps the event's stable identity and
+  original time range while declaring the event cancelled.
+  _Avoid_: deleted calendar event, hidden cancellation
+- **Booking access assignment**: one Booking role granted directly to one user
+  or group for one booking configuration. The assignment governs the
+  configuration and all of its bookings, blockouts, calendar views, audit
+  history, and calendar-subscription eligibility.
+- **Effective Booking role**: the highest Booking role a user receives from
+  the All users audience, their direct Booking access assignment, and all group
+  assignments. A weaker direct assignment never reduces access inherited
+  through another source.
+- **Booking Owner**: the highest Booking role. A Booking Owner can change the
+  configuration, manage every role assignment and calendar event, and archive
+  or restore the configuration, subject to the explicit-owner invariant.
+- **Booking Manager**: a Booking role that can change the configuration, manage
+  Manager, Booker, and Viewer assignments, manage every calendar event, and
+  archive or restore the configuration. It cannot change Owner assignments.
+- **Booker**: the Booking role whose defining permission is creating a booking.
+  A Booker can change or cancel their own bookings but cannot manage another
+  requester's bookings or create blockouts.
+  _Avoid_: User, booking user
+- **Viewer**: the lowest Booking role. A Viewer can read the configuration and
+  calendar and create a personal calendar subscription, but cannot create or
+  change calendar events.
+- **Explicit-owner invariant**: every booking configuration has at least one
+  persisted Owner assignment row for a user or supported group. A disabled
+  user, deleted-group snapshot, or group with no enabled members still counts
+  structurally, but grants no effective access. The implicit Owner access of a
+  system administrator never satisfies this invariant.
+- **Unavailable Booking role holder**: a disabled user, a hard-deleted group
+  retained through its assignment snapshot, or a group with no enabled members.
+  Availability is derived from live User and Group state rather than copied
+  onto every assignment. The row remains visible, removable, and auditable,
+  but grants no effective Booking access.
+- **All users audience**: every user account on the RSpace instance, including
+  accounts created after a booking configuration. It is a dynamic source of a
+  Booking role rather than a list of individual access assignments.
+- **Default shared with**: the instance-wide choice that supplies initial
+  Booker access when a booking configuration is created. It grants Booker to
+  the All users audience, to the users and groups selected with the setting, or
+  to nobody beyond the creator, who is always an Owner. A new instance starts
+  with All users selected.
+- **Leave a booking configuration**: remove one's direct Booking access
+  assignment. Access received through a group or the All users audience remains
+  because Booking has no per-user exclusions. Removing the final persisted
+  Owner is rejected.
+- **Own-booking access after role loss**: a requester without a current Booking
+  role can still read only their own past and future booking rows, whether the
+  role loss was voluntary or involuntary. This is derived from each booking's
+  requester relation, stores no departure marker, grants no configuration,
+  calendar, audit, access, or subscription permission, and keeps those rows
+  read-only.
+- **Booking ownership transfer**: an optional part of transferring the target
+  Instrument. It atomically makes the incoming Instrument owner a direct
+  Booking Owner and removes the outgoing owner's direct Booking assignment only
+  when that assignment is Owner. A lower outgoing role and every other Booking
+  assignment are preserved.
+- **Booking access directory**: the users and groups available for Booking role
+  assignment through a resource-scoped, capability-protected search. An
+  ordinary Owner or Manager can select their groups and fellow group members; a
+  system administrator can select any active user or valid lab, collaboration,
+  or project group. A community is never selectable. The Booking-settings
+  variant is separately sysadmin-only.
+- **Booking access**: access granted by a Booking role, independently of access
+  to the target Inventory record. Booking access reveals only the target details
+  needed inside Booking and grants no Inventory access.
+- **System administrator Booking access**: implicit Booking Owner access held by
+  every system administrator without a persisted assignment. While running as
+  another user, the represented user's Booking access applies and the system
+  administrator remains only the audit actor. This implicit access allows a
+  system administrator to identify and repair a configuration whose persisted
+  Owner rows grant no effective Owner access.
+- **Booking identity boundary**: the current Shiro solution supplies the
+  authenticated represented subject and original audit actor. Controllers pass
+  both identities into Booking and generic resource-access services; those
+  services never inspect Shiro or ambient thread-local identity themselves.
+- **Booking defaults** — the instance-wide scheduling values copied into a new
+  booking configuration at creation time. Changing them does not alter an
+  existing booking configuration.
+  _Avoid_: inherited settings, live defaults
+- **Scheduling policy** — the rules stored on one booking configuration that
+  determine its valid time increments, opening hours, booking buffers, maximum
+  booking duration, and whether concurrent bookings are permitted.
+  _Avoid_: global booking rules
+- **Opening interval** — the daily wall-clock period in a booking
+  configuration's timezone during which a booking may occur. `00:00–24:00`
+  denotes the complete local day; an interval never crosses a closed overnight
+  gap.
+  _Avoid_: business hours, availability event
+- **Booking buffer** — unavailable time immediately before or after a confirmed
+  booking. The two persisted directions may differ even though the settings UI
+  normally edits them as one value.
+- **Maximum booking duration** — the maximum elapsed time permitted for one
+  booking by one booking configuration. `0` disables this item-specific limit;
+  the 366-day system safety limit still applies.
+  _Avoid_: maximum occupancy, booking buffer
+- **Double-booking** — permission for confirmed booking intervals on one
+  bookable item to overlap. Opening intervals and time increments still apply.
+  _Avoid_: unlimited availability, capacity
+- **Time-slot booking** — one persisted reservation for one booking configuration.
+  It stores a half-open UTC interval, its requester, optional purpose, state, and
+  audit data. The system rejects durations over 366 days before acquiring the
+  configuration lock, and the locked scheduling policy may impose a smaller
+  maximum booking duration.
+- **Booking privacy** — access to a booking's details is all or nothing in the
+  Booking role iteration. Every caller authorized to read the booking
+  configuration sees full event details; other callers cannot read its calendar.
+  _Avoid_: busy-only Viewer
+- **Half-open booking interval** — a booking window that includes its start and
+  excludes its end. Two bookings that only touch at one boundary do not overlap.
+- **Booking cancellation** — the one-way change from `CONFIRMED` to `CANCELLED`.
+  Cancellation does not soft-delete the row: the booking remains readable and
+  appears under Past Bookings, while confirmed-only calendars and overlap checks
+  exclude it. Soft deletion is a separate removal concern and hides a booking
+  from every read, including audit resolution.

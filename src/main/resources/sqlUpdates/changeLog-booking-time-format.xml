@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="booking-time-format-column" author="researchspace" context="run">
+    <comment>
+      Add the global Booking display default for the 12- or 24-hour clock, and its Envers history.
+      AUTOMATIC, the Java default, keeps the existing behaviour: the browser region's clock in the
+      UI and the language's usual clock in email. User overrides are stored in UserPreference JSON
+      and need no column.
+    </comment>
+    <addColumn tableName="BookingConfigurationDefaults">
+      <column name="timeFormat" type="VARCHAR(32)" defaultValue="AUTOMATIC">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="BookingConfigurationDefaults_AUD">
+      <column name="timeFormat" type="VARCHAR(32)"/>
+    </addColumn>
+  </changeSet>
+</databaseChangeLog>

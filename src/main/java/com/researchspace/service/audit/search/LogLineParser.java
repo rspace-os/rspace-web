@@ -1,6 +1,7 @@
 package com.researchspace.service.audit.search;
 
 import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditDomain;
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +59,11 @@ public class LogLineParser {
       LogLine logline = new LogLine();
       String date = m.group(1);
       logline.date = logTimeStampFormat.parse(date);
-      logline.domain = AuditDomain.valueOf(m.group(2));
+      AuditDomain recordedDomain = AuditDomain.valueOf(m.group(2));
+      AuditData auditData =
+          recordedDomain == AuditDomain.UNKNOWN ? AuditData.fromJson(m.group(4)) : null;
+      Object id = auditData == null ? null : auditData.getData().get("id");
+      logline.domain = AuditDomain.normalizeLegacyBookingDomain(recordedDomain, id);
       logline.action = AuditAction.valueOf(sanitizeAuditAction(m.group(3)));
       logline.data = m.group(4);
       logline.username = m.group(5);

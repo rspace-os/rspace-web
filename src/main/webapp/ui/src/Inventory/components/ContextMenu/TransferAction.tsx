@@ -61,7 +61,9 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
     };
 
     const onSubmitHandler = () => {
-      if (recipient) void search.transferRecords(recipient.username, selectedResults);
+      if (recipient) {
+        void search.transferRecords(recipient.username, selectedResults);
+      }
       handleClose();
     };
 

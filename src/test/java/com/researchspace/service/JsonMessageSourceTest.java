@@ -55,6 +55,10 @@ class JsonMessageSourceTest {
         "errors.inventory.field.validation",
         "'value' cannot be parsed");
     assertMessage(
+        "'36-digit-value' is not a valid number or exceeds the supported precision and range.",
+        "errors.inventory.field.numberInvalid",
+        "36-digit-value");
+    assertMessage(
         "Incorrect id format - should be '\\d+-\\d+' but was 'bad-id'",
         "errors.composedId.invalidFormat",
         "bad-id");
@@ -62,6 +66,9 @@ class JsonMessageSourceTest {
         "By accepting, you will be removed from the group 'Example Group':",
         "groups.view.removeMe.confirmText",
         "Example Group");
+    assertMessage(
+        "The event changed while it was being edited.",
+        "errors.api.v2.booking.concurrentModification");
   }
 
   @Test

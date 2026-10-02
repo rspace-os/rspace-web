@@ -1,0 +1,583 @@
+package com.researchspace.api.v2.resource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.FileManifest;
+import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.ReadObserver;
+import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.Request;
+import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.StrictReadException;
+import com.researchspace.model.Role;
+import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditDomain;
+import com.researchspace.service.UserManager;
+import com.researchspace.service.audit.search.AuditTrailActorVisibility;
+import com.researchspace.service.audit.search.AuditTrailSearchResult;
+import com.researchspace.testutils.TestFactory;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
+
+class ApiV2AuditStrictSearchTest {
+
+  private static final Instant FROM = Instant.parse("2026-01-01T00:00:00Z");
+  private static final Instant TO = Instant.parse("2026-01-03T00:00:00Z");
+
+  @TempDir private Path directory;
+
+  private User sysadmin;
+  private AuditTrailActorVisibility visibility;
+
+  @BeforeEach
+  void setUp() {
+    sysadmin = TestFactory.createAnyUser("sysadmin");
+    sysadmin.addRole(Role.SYSTEM_ROLE);
+    visibility = new AuditTrailActorVisibility(Mockito.mock(UserManager.class));
+  }
+
+  @Test
+  void validEventsAndExactDuplicatesArePreservedAndBlankLinesAreIgnored() throws IOException {
+    String event = event("01 Jan 2026 12:00:00,000", "BC1");
+    write("RSLogs.txt", "\n" + event + "\n\n" + event + "\n");
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+
+    assertEquals(2, results.size());
+    assertEquals(results.get(0), results.get(1));
+  }
+
+  @Test
+  void hashInValidDirectAndDelegatedUsernamesDoesNotPoisonResourceSearches() throws IOException {
+    for (String actor : List.of("alice#1", "sys#admin->alice#1")) {
+      write(
+          "RSLogs.txt",
+          event("01 Jan 2026 12:00:00,000", "BC2").replace("alice(", actor + "(")
+              + "\n"
+              + event("01 Jan 2026 13:00:00,000", "BC1").replace("alice(", actor + "(")
+              + "\n");
+
+      assertEquals(1, search(ReadObserver.NONE, 10).search(request(10)).size());
+    }
+  }
+
+  @Test
+  void excludedHistoricalLogIsOpenedOnlyForItsTwoBoundaries() throws IOException {
+    Path log =
+        write("RSLogs.txt", (event("01 Jan 2020 12:00:00,000", "BC1") + "\n").repeat(10_000));
+    try (var channels = Mockito.mockStatic(FileChannel.class, Mockito.CALLS_REAL_METHODS)) {
+      assertTrue(search(ReadObserver.NONE, 10).search(request(10)).isEmpty());
+
+      channels.verify(
+          () -> FileChannel.open(log, Set.of(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)),
+          Mockito.times(2));
+    }
+  }
+
+  @Test
+  void unrelatedApplicationLinesInTheMixedLogAreIgnored() throws IOException {
+    write(
+        "RSLogs.txt",
+        "01 Jan 2026 09:00:00,000 - [/app/workspace] from 127.0.0.1 made by: [alice]\n"
+            + event("01 Jan 2026 12:00:00,000", "BC1")
+            + "\n"
+            + "02 Jan 2026 15:00:00,000 - [FOLDER CREATE id=42&name=notes] alice(Alice Example)\n");
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+
+    assertEquals(1, results.size());
+  }
+
+  @Test
+  void emptyActiveFileIsACompleteSnapshotWithNoEvents() throws IOException {
+    write("RSLogs.txt", "");
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+
+    assertTrue(results.isEmpty());
+  }
+
+  @Test
+  void malformedFirstMiddleAndLastLinesAreFatalWithoutPartialResults() throws IOException {
+    String valid = event("01 Jan 2026 12:00:00,000", "BC1");
+    String malformedAudit = "01 Jan 2026 11:00:00,000 - domain:UNKNOWN action:CREATE broken";
+    for (String body :
+        List.of(
+            malformedAudit + "\n" + valid + "\n",
+            valid + "\n" + malformedAudit + "\n" + valid + "\n",
+            valid + "\n" + malformedAudit + "\n")) {
+      write("RSLogs.txt", body);
+
+      assertThrows(
+          StrictReadException.class, () -> search(ReadObserver.NONE, 10).search(request(10)));
+    }
+  }
+
+  @Test
+  void invalidTimestampUnknownEnumsAndMalformedJsonAreFatal() throws IOException {
+    for (String line :
+        List.of(
+            event("32 Jan 2026 12:00:00,000", "BC1"),
+            event("01 Jan 2026 12:00:00,000", "BC1").replace("domain:UNKNOWN", "domain:NOPE"),
+            event("01 Jan 2026 12:00:00,000", "BC1").replace("action:CREATE", "action:NOPE"),
+            event("01 Jan 2026 12:00:00,000", "BC1")
+                .replace("{\"data\":{\"id\":\"BC1\",\"name\":\"item\"}}", "not-json"))) {
+      write("RSLogs.txt", line + "\n");
+
+      StrictReadException error =
+          assertThrows(
+              StrictReadException.class,
+              () -> search(ReadObserver.NONE, 10).search(request(10)),
+              line);
+      assertEquals("RSLogs.txt", error.getSafeFile());
+      assertTrue(error.getLineNumber() >= 1);
+      assertTrue(!error.getMessage().contains(line));
+    }
+  }
+
+  @Test
+  void truncatedEligibleRecordIsFatal() throws IOException {
+    write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1"));
+
+    assertThrows(
+        StrictReadException.class, () -> search(ReadObserver.NONE, 10).search(request(10)));
+  }
+
+  @Test
+  void validFileFollowedByFailedFileReturnsNoAccumulatedHits() throws IOException {
+    write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    write("RSLogs.txt.1", "broken\n");
+
+    assertThrows(
+        StrictReadException.class, () -> search(ReadObserver.NONE, 10).search(request(10)));
+  }
+
+  @Test
+  void unreadableEligibleFileFailsBothAttempts() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    Set<PosixFilePermission> original = Files.getPosixFilePermissions(log);
+    try {
+      Files.setPosixFilePermissions(log, Set.of());
+      assertThrows(
+          StrictReadException.class, () -> search(ReadObserver.NONE, 10).search(request(10)));
+    } finally {
+      Files.setPosixFilePermissions(log, original);
+    }
+  }
+
+  @Test
+  void harmlessPostBoundaryAppendKeepsTheAttemptValid() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    ReadObserver appendAfterBoundary =
+        new ReadObserver() {
+          @Override
+          public void afterRead(int attempt, List<FileManifest> manifest) {
+            if (attempt == 1) {
+              append(log, event("03 Jan 2026 00:00:00,000", "BC1") + "\n");
+            }
+          }
+        };
+
+    List<AuditTrailSearchResult> results = search(appendAfterBoundary, 10).search(request(10));
+
+    assertEquals(1, results.size());
+  }
+
+  @Test
+  void unrelatedApplicationAppendKeepsTheAttemptValid() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    ReadObserver appendAfterRead =
+        new ReadObserver() {
+          @Override
+          public void afterRead(int attempt, List<FileManifest> manifest) {
+            append(
+                log,
+                "02 Jan 2026 13:00:00,000 - [/app/workspace] from 127.0.0.1 made by: [alice]\n");
+          }
+        };
+
+    List<AuditTrailSearchResult> results = search(appendAfterRead, 10).search(request(10));
+
+    assertEquals(1, results.size());
+  }
+
+  @Test
+  void eligibleAppendDiscardsTheAttemptAndOneFreshRetrySucceeds() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    ReadObserver appendEligible =
+        new ReadObserver() {
+          @Override
+          public void afterRead(int attempt, List<FileManifest> manifest) {
+            if (attempt == 1) {
+              append(log, event("02 Jan 2026 12:00:00,000", "BC1") + "\n");
+            }
+          }
+        };
+
+    List<AuditTrailSearchResult> results = search(appendEligible, 10).search(request(10));
+
+    assertEquals(2, results.size());
+  }
+
+  @Test
+  void twoUnstableAttemptsReturnUnavailable() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    AtomicInteger sequence = new AtomicInteger(2);
+    ReadObserver appendEveryAttempt =
+        new ReadObserver() {
+          @Override
+          public void afterRead(int attempt, List<FileManifest> manifest) {
+            append(
+                log,
+                event("02 Jan 2026 12:00:0%d,000".formatted(sequence.getAndIncrement()), "BC1")
+                    + "\n");
+          }
+        };
+
+    assertThrows(
+        StrictReadException.class, () -> search(appendEveryAttempt, 10).search(request(10)));
+  }
+
+  @Test
+  void replacementBetweenReadAndCertificationRetriesWithoutMixingAttempts() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    ReadObserver replaceOnce =
+        new ReadObserver() {
+          @Override
+          public void afterRead(int attempt, List<FileManifest> manifest) {
+            if (attempt == 1) {
+              try {
+                Path replacement =
+                    write("replacement", event("02 Jan 2026 12:00:00,000", "BC1") + "\n");
+                Files.move(replacement, log, StandardCopyOption.REPLACE_EXISTING);
+              } catch (IOException ex) {
+                throw new AssertionError(ex);
+              }
+            }
+          }
+        };
+
+    List<AuditTrailSearchResult> results = search(replaceOnce, 10).search(request(10));
+
+    assertEquals(1, results.size());
+    assertEquals(
+        Instant.parse("2026-01-02T12:00:00Z").toEpochMilli(), results.get(0).getTimestamp());
+  }
+
+  @Test
+  void truncationDuringCertificationRetriesFromTheFreshEmptyManifest() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    ReadObserver truncateOnce =
+        new ReadObserver() {
+          @Override
+          public void afterRead(int attempt, List<FileManifest> manifest) {
+            if (attempt == 1) {
+              try {
+                Files.newByteChannel(log, StandardOpenOption.WRITE).truncate(0).close();
+              } catch (IOException ex) {
+                throw new AssertionError(ex);
+              }
+            }
+          }
+        };
+
+    List<AuditTrailSearchResult> results = search(truncateOnce, 10).search(request(10));
+
+    assertTrue(results.isEmpty());
+  }
+
+  @Test
+  void rolloverBetweenEnumerationAndOpenRetriesFromTheNewManifest() throws IOException {
+    write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    ReadObserver rolloverOnce =
+        new ReadObserver() {
+          @Override
+          public void beforeOpen(int attempt, FileManifest file) {
+            if (attempt == 1 && !Files.exists(directory.resolve("RSLogs.txt.1"))) {
+              try {
+                write("RSLogs.txt.1", event("02 Jan 2026 12:00:00,000", "BC1") + "\n");
+              } catch (IOException ex) {
+                throw new AssertionError(ex);
+              }
+            }
+          }
+        };
+
+    List<AuditTrailSearchResult> results = search(rolloverOnce, 10).search(request(10));
+
+    assertEquals(2, results.size());
+  }
+
+  @Test
+  void collectionStopsAtCeilingPlusOne() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1")
+            + "\n"
+            + event("01 Jan 2026 13:00:00,000", "BC1")
+            + "\n"
+            + event("01 Jan 2026 14:00:00,000", "BC1")
+            + "\n");
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 2).search(request(2));
+
+    assertEquals(3, results.size());
+  }
+
+  @Test
+  void textSearchMatchesRecordedValuesBeforeApplyingTheResultCeiling() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1")
+            + "\n"
+            + event("01 Jan 2026 13:00:00,000", "BC1")
+                .replace("\"name\":\"item\"", "\"name\":\"PayloadMarker\"")
+            + "\n");
+
+    List<AuditTrailSearchResult> results =
+        search(ReadObserver.NONE, 1).search(request(1, "payloadmarker"));
+
+    assertEquals(1, results.size());
+    assertEquals(
+        Instant.parse("2026-01-01T13:00:00Z").toEpochMilli(), results.get(0).getTimestamp());
+  }
+
+  @Test
+  void legacyUnknownBookingEventsUseOnlyTheirExactTopLevelIdentifier() throws IOException {
+    String bookingId = "booking-settings:1";
+    Request bookingRequest =
+        new Request(
+            FROM,
+            TO,
+            Set.of(AuditDomain.BOOKING),
+            Set.of(AuditAction.CREATE),
+            bookingId,
+            Set.of(),
+            sysadmin,
+            10);
+    String direct = event("01 Jan 2026 12:00:00,000", bookingId);
+    String nested =
+        event("01 Jan 2026 13:00:00,000", "BC1")
+            .replace("\"id\":\"BC1\"", "\"target\":{\"id\":\"" + bookingId + "\"}");
+    write("RSLogs.txt", direct + "\n" + nested + "\n");
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(bookingRequest);
+
+    assertEquals(1, results.size());
+    assertEquals(AuditDomain.BOOKING, results.get(0).getEvent().getDomain());
+    assertEquals(AuditAction.CREATE, results.get(0).getEvent().getAction());
+  }
+
+  @Test
+  void actorDirectoryHidesBookingEventsByOutsideUsersUnlessTheResourceBypassesIt()
+      throws IOException {
+    User itemManager = TestFactory.createAnyUser("item-manager");
+    UserManager users = Mockito.mock(UserManager.class);
+    Mockito.when(users.getViewableUsers(Mockito.eq(itemManager), Mockito.any()))
+        .thenReturn(new com.researchspace.core.util.SearchResultsImpl<User>(List.of(), 0, 0L));
+    write(
+        "RSLogs.txt",
+        "01 Jan 2026 12:00:00,000 - domain:BOOKING action:CREATE"
+            + " [{\"data\":{\"id\":\"bookings:41\"}}] outside-booker(Outside Booker)\n");
+    ApiV2AuditStrictSearch search =
+        new ApiV2AuditStrictSearch(
+            directory,
+            "RSLogs",
+            ZoneOffset.UTC,
+            new AuditTrailActorVisibility(users),
+            ReadObserver.NONE);
+
+    for (boolean bypass : new boolean[] {false, true}) {
+      List<AuditTrailSearchResult> results =
+          search.search(
+              new Request(
+                  FROM,
+                  TO,
+                  Set.of(AuditDomain.BOOKING),
+                  Set.of(),
+                  "bookings:41",
+                  Set.of(),
+                  itemManager,
+                  10,
+                  bypass));
+      assertEquals(bypass ? 1 : 0, results.size(), "bypass=" + bypass);
+    }
+  }
+
+  @Test
+  void textSearchMatchesDecodedTargetAndPurposeValues() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1")
+                .replace(
+                    "\"name\":\"item\"", "\"target\":\"related:41\",\"purpose\":\"PurposeMarker\"")
+            + "\n");
+
+    assertEquals(
+        1,
+        search(ReadObserver.NONE, 10).search(request(10, "related:41", Set.of("target"))).size());
+    assertEquals(
+        1,
+        search(ReadObserver.NONE, 10)
+            .search(request(10, "purposemarker", Set.of("purpose")))
+            .size());
+  }
+
+  @Test
+  void textSearchDoesNotInspectUnpublishedAuditFields() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1")
+                .replace("\"name\":\"item\"", "\"name\":\"Visible\",\"secret\":\"PrivateMarker\"")
+            + "\n");
+
+    assertTrue(
+        search(ReadObserver.NONE, 10)
+            .search(request(10, "privatemarker", Set.of("name")))
+            .isEmpty());
+  }
+
+  @Test
+  void resourceScopeMatchesOnlyTheDecodedTopLevelIdentifier() throws IOException {
+    String identifier = "things:41";
+    String unrelated = event("01 Jan 2026 12:00:00,000", "things:42");
+    String purpose = unrelated.replace("\"name\":\"item\"", "\"purpose\":\"" + identifier + "\"");
+    String nested =
+        unrelated.replace("\"name\":\"item\"", "\"target\":{\"id\":\"" + identifier + "\"}");
+    String direct = event("01 Jan 2026 13:00:00,000", identifier.replace(":", "\\u003a"));
+    write("RSLogs.txt", purpose + "\n" + nested + "\n" + direct + "\n");
+    Request request =
+        new Request(
+            FROM,
+            TO,
+            Set.of(AuditDomain.UNKNOWN),
+            Set.of(AuditAction.CREATE),
+            identifier,
+            Set.of(),
+            sysadmin,
+            1,
+            true);
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 1).search(request);
+
+    assertEquals(1, results.size());
+    assertEquals(identifier, results.get(0).getEvent().getData().getData().get("id"));
+  }
+
+  @Test
+  void blockTailReadPreservesUtf8AcrossBlocksAndTrailingBlankLines() throws IOException {
+    String description = "é".repeat(5_000);
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1") + " description:[" + description + "]\r\n\r\n");
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+
+    assertEquals(1, results.size());
+    assertEquals(description, results.get(0).getEvent().getDescription());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"bookings:41", "booking-configurations:12"})
+  void sameDomainEventsMustMatchTheDecodedTopLevelIdentifier(String identifier) throws IOException {
+    String unrelated =
+        event("01 Jan 2026 12:00:00,000", "bookings:42")
+            .replace("domain:UNKNOWN", "domain:BOOKING");
+    String purpose = unrelated.replace("\"name\":\"item\"", "\"purpose\":\"" + identifier + "\"");
+    String nested =
+        unrelated.replace("\"name\":\"item\"", "\"target\":{\"id\":\"" + identifier + "\"}");
+    String parent =
+        unrelated.replace("\"name\":\"item\"", "\"bookingConfigurationId\":\"" + identifier + "\"");
+    String direct =
+        event("01 Jan 2026 13:00:00,000", identifier.replace(":", "\\u003a"))
+            .replace("domain:UNKNOWN", "domain:BOOKING");
+    write("RSLogs.txt", purpose + "\n" + nested + "\n" + parent + "\n" + direct + "\n");
+    Request request =
+        new Request(
+            FROM,
+            TO,
+            Set.of(AuditDomain.BOOKING),
+            Set.of(AuditAction.CREATE),
+            identifier,
+            Set.of(),
+            sysadmin,
+            1,
+            true);
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 1).search(request);
+
+    assertEquals(1, results.size());
+    assertEquals(identifier, results.get(0).getEvent().getData().getData().get("id"));
+  }
+
+  private ApiV2AuditStrictSearch search(ReadObserver observer, int ceiling) {
+    return new ApiV2AuditStrictSearch(directory, "RSLogs", ZoneOffset.UTC, visibility, observer);
+  }
+
+  private Request request(int ceiling) {
+    return new Request(
+        FROM,
+        TO,
+        Set.of(AuditDomain.UNKNOWN),
+        Set.of(AuditAction.CREATE),
+        "BC1",
+        Set.of(),
+        sysadmin,
+        ceiling);
+  }
+
+  private Request request(int ceiling, String search) {
+    return request(ceiling, search, Set.of("name"));
+  }
+
+  private Request request(int ceiling, String search, Set<String> searchableFields) {
+    return new Request(
+        FROM,
+        TO,
+        Set.of(AuditDomain.UNKNOWN),
+        Set.of(AuditAction.CREATE),
+        "BC1",
+        Set.of(),
+        sysadmin,
+        ceiling,
+        false,
+        search,
+        searchableFields,
+        Set.of());
+  }
+
+  private Path write(String filename, String content) throws IOException {
+    return Files.writeString(directory.resolve(filename), content, StandardCharsets.UTF_8);
+  }
+
+  private static void append(Path path, String content) {
+    try {
+      Files.writeString(path, content, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+    } catch (IOException ex) {
+      throw new AssertionError(ex);
+    }
+  }
+
+  private static String event(String timestamp, String id) {
+    return "%s - domain:UNKNOWN action:CREATE [{\"data\":{\"id\":\"%s\",\"name\":\"item\"}}] alice(Alice Example)"
+        .formatted(timestamp, id);
+  }
+}

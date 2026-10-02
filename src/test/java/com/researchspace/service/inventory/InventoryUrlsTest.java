@@ -17,6 +17,8 @@ class InventoryUrlsTest {
 
   private static final String SERVER = "https://rspace.example.com";
   private static final String SUFFIX = "abc123XYZ_-456789";
+  private static final String OTHER_SERVER =
+      "https://rsdev-1253-map-clibration-and-measurement-f50c365a-11.researchspace.com";
 
   @Test
   void publicLandingPageUrlBuiltFromServerUrlAndSuffix() {
@@ -64,6 +66,93 @@ class InventoryUrlsTest {
     assertThat(InventoryUrls.globalIdPageUrl("  ", "IN114")).as("no server URL").isEmpty();
     assertThat(InventoryUrls.globalIdPageUrl(SERVER, "  ")).as("blank global id").isEmpty();
     assertThat(InventoryUrls.globalIdPageUrl(SERVER, null)).as("null global id").isEmpty();
+  }
+
+  /** RSDEV-1528: an RSpace link can only name an item in this deployment. */
+  @Test
+  void globalIdOfOwnPageRecognisesTheDeploymentsOwnAddresses() {
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536", SERVER));
+    assertEquals(
+        Optional.of("SA32768v3"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/SA32768v3", SERVER),
+        "a version suffix is kept: the new link must pin the version the address named");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage("http://rspace.example.com/globalId/IC65536", SERVER),
+        "http against an https server URL is the same server");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage("https://RSPACE.Example.com/globalId/IC65536", SERVER),
+        "host names are case-insensitive");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage("https://rspace.example.com:443/globalId/IC65536", SERVER),
+        "an explicit default port is the port the server URL leaves out");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(
+            SERVER + "/globalId/IC65536", "https://rspace.example.com:443"),
+        "and the other way round");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536/", SERVER + "/"),
+        "trailing slashes on either side are ignored");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536?from=registry", SERVER),
+        "a query string does not change which page is named");
+    assertEquals(
+        Optional.of("IC65536"),
+        InventoryUrls.globalIdOfOwnPage(SERVER + "/rspace/globalId/IC65536", SERVER + "/rspace"),
+        "a deployment under a context path recognises its own addresses");
+  }
+
+  @Test
+  void globalIdOfOwnPageIsEmptyForAnyOtherAddress() {
+    assertThat(InventoryUrls.globalIdOfOwnPage(OTHER_SERVER + "/globalId/IC65536", SERVER))
+        .as("another host")
+        .isEmpty();
+    assertThat(
+            InventoryUrls.globalIdOfOwnPage(
+                "https://rspace.example.com:8443/globalId/IC65536", SERVER))
+        .as("another port")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/other/globalId/IC65536", SERVER))
+        .as("another path before the segment")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/GLOBALID/IC65536", SERVER))
+        .as("the segment cased differently: the route is case-sensitive, so it answers 404")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536", SERVER + "/rspace"))
+        .as("the server URL has a context path the address lacks")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/public/inventory/" + SUFFIX, SERVER))
+        .as("this server, but not a globalId page")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536/extra", SERVER))
+        .as("more path after the global id")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/", SERVER))
+        .as("no global id at all")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage("ftp://rspace.example.com/globalId/IC65536", SERVER))
+        .as("this server's host, but not a web address")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage("//rspace.example.com/globalId/IC65536", SERVER))
+        .as("no scheme at all")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage("10.1000/manual", SERVER))
+        .as("a bare DOI")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage("http://[broken", SERVER))
+        .as("unparseable")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(SERVER + "/globalId/IC65536", " "))
+        .as("no server URL configured: nothing can be recognised as ours")
+        .isEmpty();
+    assertThat(InventoryUrls.globalIdOfOwnPage(null, SERVER)).as("null address").isEmpty();
   }
 
   @Test
@@ -166,18 +255,13 @@ class InventoryUrlsTest {
         InventoryUrls.namesGlobalIdPage("https://old name.example.com/globalId/IN999", "IN5"));
   }
 
+  /** Both importers read back what the builder wrote, so the two must agree. */
   @Test
-  void globalIdPagePrefixNormalisesExactlyAsTheBuilderDoes() {
-    assertEquals(Optional.of(SERVER + "/globalId/"), InventoryUrls.globalIdPagePrefix(SERVER));
+  void globalIdOfOwnPageRecognisesWhatTheBuilderWrites() {
+    String serverUrl = SERVER + "/rspace//";
     assertEquals(
-        Optional.of(SERVER + "/globalId/"),
-        InventoryUrls.globalIdPagePrefix(SERVER + "//"),
-        "repeated trailing slashes go, as in the builder");
-    assertTrue(InventoryUrls.globalIdPagePrefix("  ").isEmpty(), "no server url");
-    // the point of the method: a reader built from it recognises what the builder writes
-    assertTrue(
-        InventoryUrls.globalIdPageUrl(SERVER, "IN114")
-            .get()
-            .startsWith(InventoryUrls.globalIdPagePrefix(SERVER).get()));
+        Optional.of("SA1v2"),
+        InventoryUrls.globalIdOfOwnPage(
+            InventoryUrls.globalIdPageUrl(serverUrl, "SA1v2").orElseThrow(), serverUrl));
   }
 }

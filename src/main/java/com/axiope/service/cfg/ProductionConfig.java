@@ -20,6 +20,7 @@ import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.RemoteLicenseService;
+import com.researchspace.service.impl.BookingFixturesAppInitialiser;
 import com.researchspace.service.impl.CommunicationManagerImpl;
 import com.researchspace.service.impl.EcatMediaFactory;
 import com.researchspace.service.impl.GlobalInitManagerImpl;
@@ -154,6 +155,7 @@ public class ProductionConfig extends BaseConfig {
       @Qualifier("dBDataIntegrityChecker") IApplicationInitialisor dBDataIntegrityChecker) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<>();
+    inits.add(featureFlagInitialisor());
     inits.add(licenseServerChecker());
     inits.add(fileStoreRootDetector());
     inits.add(indexer());
@@ -161,6 +163,7 @@ public class ProductionConfig extends BaseConfig {
     inits.add(chemistryImageUpdater());
     inits.add(integrationsHandlerInitialisor());
     inits.add(sampleTemplateAppInitialiser());
+    inits.add(bookingFixtures());
     inits.add(customForms());
     // should be last
     inits.add(dBDataIntegrityChecker);
@@ -177,6 +180,7 @@ public class ProductionConfig extends BaseConfig {
   public GlobalInitManager globalInitManagerTest() {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<>();
+    inits.add(featureFlagInitialisor());
     inits.add(loadfromCSV());
     inits.add(indexer());
     inits.add(chemistryIndexer());
@@ -184,8 +188,14 @@ public class ProductionConfig extends BaseConfig {
     inits.add(chemistryImageUpdater());
     inits.add(licenseServerChecker());
     inits.add(sharedSnippetsFolderCreator());
+    inits.add(bookingFixtures());
     mgr.setApplicationInitialisors(inits);
     return mgr;
+  }
+
+  @Bean
+  public IApplicationInitialisor bookingFixtures() {
+    return new BookingFixturesAppInitialiser();
   }
 
   /**

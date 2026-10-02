@@ -65,6 +65,7 @@
         "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
         "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
         "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
+        "numberInvalid": "''{0}'' is not a valid number or exceeds the supported precision and range.",
         "notFound": "No inventory entity field with id: {0}",
         "validation": "{0}"
       },
@@ -108,6 +109,7 @@
         "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
         "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
         "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registry.",
+        "pidinstTemplateMissing": "This RSpace has no \"{0}\" template, which importing an instrument requires. Ask your system administrator to check the installation.",
         "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
         "typeUnsupported": "identifiers of type {0} are not supported yet"
       },

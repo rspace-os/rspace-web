@@ -70,7 +70,7 @@ const SnackbarContentWrapper = forwardRef<HTMLDivElement, SnackbarContentWrapper
 
     const standardSnackbarContent = (
       <Grid container sx={{ flexWrap: "nowrap" }}>
-        <Grid>
+        <Grid sx={{ flexShrink: 0 }}>
           <Badge
             badgeContent={alert.detailsCount}
             color="error"

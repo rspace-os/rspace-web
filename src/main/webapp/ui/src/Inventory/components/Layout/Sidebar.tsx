@@ -3,6 +3,7 @@ import { faGear } from "@fortawesome/free-solid-svg-icons/faGear";
 import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 import { faShareFromSquare } from "@fortawesome/free-solid-svg-icons/faShareFromSquare";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Drawer, { drawerClasses } from "@mui/material/Drawer";
@@ -11,6 +12,8 @@ import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
 import { InvalidState } from "@/util/error";
 import * as FetchingData from "@/util/fetchingData";
@@ -594,16 +597,18 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
+  const showBooking = useIsFeatureFlagEnabled(FEATURE_FLAGS.bookingEnabled);
   const sidebarRef = useLandmark("Navigation");
   const requestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("inventory.sampleRequests.available"))
     .flatMap(Parsers.isString)
     .map((value) => value === "ALLOWED")
     .orElse(false);
 
-  // Every index from here on shifts down by one when Requests is hidden, so the roving tab
+  // Indices shift down when Requests or Booking is hidden, so the roving tab
   // index never lands on a gap where nothing is rendered.
-  const exportIndex = requestsAvailable ? 9 : 8;
-  const settingsIndex = requestsAvailable ? 10 : 9;
+  const bookingIndex = 8 + Number(requestsAvailable);
+  const exportIndex = bookingIndex + Number(showBooking);
+  const settingsIndex = exportIndex + 1;
 
   const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
     max: isSysAdmin ? settingsIndex : exportIndex,
@@ -640,6 +645,18 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
           </List>
           <Divider />
           <List component="ul" aria-label={t("layout.sidebar.otherActionsLabel")}>
+            {showBooking && (
+              <DrawerTab
+                label={t("layout.sidebar.bookingSystem")}
+                selected={false}
+                icon={<CalendarMonthIcon />}
+                index={bookingIndex}
+                tabIndex={getTabIndex(bookingIndex)}
+                ref={getRef(bookingIndex)}
+                drawerOpen={uiStore.sidebarOpen}
+                href="/booking"
+              />
+            )}
             <ExportNavItem index={exportIndex} tabIndex={getTabIndex(exportIndex)} getRef={getRef} />
             {isSysAdmin && (
               <SettingsNavItem index={settingsIndex} tabIndex={getTabIndex(settingsIndex)} getRef={getRef} />

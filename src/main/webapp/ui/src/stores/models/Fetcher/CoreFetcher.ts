@@ -37,6 +37,7 @@ export const DEFAULT_SEARCH = {
   ownedBy: null,
   owner: null,
   deletedItems: "EXCLUDE" as const,
+  bookable: null,
   permalink: null,
   benchOwner: null,
   requestable: null,
@@ -84,6 +85,8 @@ export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): Core
     new Error(`Search parameter "deletedItems" is missing`),
   ).flatMap(parseDeletedItems);
   const requestable = searchParams.get("requestable");
+  const bookableParameter = searchParams.get("bookable");
+  const bookable = bookableParameter === "true" ? true : bookableParameter === "false" ? false : null;
   return {
     ...(query ? { query } : {}),
     ...(orderBy ? { orderBy } : {}),
@@ -91,6 +94,7 @@ export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): Core
     ...(parentGlobalId ? { parentGlobalId } : {}),
     ...(requestable === "true" ? { requestable: true } : {}),
     ...deletedItems.map((dItems) => ({ deletedItems: dItems })).orElse({}),
+    ...(bookable === null ? {} : { bookable }),
     ...order.map((o) => ({ order: o })).orElse({}),
     ...pageNumber.map((pNumber) => ({ pageNumber: pNumber })).orElse({}),
     ...pageSize.map((pSize) => ({ pageSize: pSize })).orElse({}),
@@ -157,6 +161,8 @@ export default class CoreFetcher {
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   deletedItems: DeletedItems;
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  bookable: boolean | null;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   benchOwner: Person | null;
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   requestable: boolean | null;
@@ -192,6 +198,7 @@ export default class CoreFetcher {
       ownedBy: observable,
       owner: observable,
       deletedItems: observable,
+      bookable: observable,
       benchOwner: observable,
       requestable: observable,
       permalinkNotFound: observable,
@@ -211,6 +218,7 @@ export default class CoreFetcher {
       replaceResult: action,
       resetSearch: action,
       setDeletedItems: action,
+      setBookable: action,
       setParentGlobalId: action,
       setOwner: action,
       setBenchOwner: action,
@@ -272,7 +280,7 @@ export default class CoreFetcher {
       return;
     }
     this.endpoint = "search";
-    if (!this.parentGlobalId) {
+    if (!this.parentGlobalId && this.bookable === null) {
       // The samples endpoint also accepts a free-text query alongside `requestable`, unlike the
       // other type-specific endpoints below, so a query doesn't rule it out once requestable is set.
       if ((!this.query || this.requestable !== null) && this.resultType === "SAMPLE") {
@@ -324,6 +332,7 @@ export default class CoreFetcher {
     if (
       (!params.resultType || params.resultType === "ALL") &&
       !params.parentGlobalId &&
+      params.bookable == null &&
       !params.query &&
       !params.permalink
     ) {
@@ -506,7 +515,7 @@ export default class CoreFetcher {
       (acc, [k, v]) => ({
         // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
         ...acc,
-        [k]: acc[k] || this[k] || v,
+        [k]: Object.hasOwn(acc, k) ? acc[k] : (this[k] ?? v),
       }),
       params,
     );
@@ -619,6 +628,10 @@ export default class CoreFetcher {
 
   setDeletedItems(value: DeletedItems) {
     this.deletedItems = value;
+  }
+
+  setBookable(value: boolean | null) {
+    this.bookable = value;
   }
 
   setResultType(resultType: ResultType) {

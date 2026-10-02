@@ -1,0 +1,206 @@
+import { onlineManager } from "@tanstack/react-query";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useTranslation } from "react-i18next";
+import { TooltipProvider } from "@/modules/common/ui/tooltip";
+import { cn } from "@/modules/common/utils/cn";
+import { topLevelFilterCount } from "./components/filters/TableListFilters";
+import { RestoredViewIssue } from "./components/RestoredViewIssue";
+import { TableListAlertStack, TableListAlertsProvider, useTableListAlertsState } from "./components/TableListAlerts";
+import { TableListControlPanel } from "./components/TableListControlPanel";
+import { TableListDataTable } from "./components/TableListDataTable";
+import { TableListHeader } from "./components/TableListHeader";
+import { type TableListControlPanel as ControlPanel, TableListToolbar } from "./components/TableListToolbar";
+import type { TableListProps } from "./tableListState";
+import { useTableListQueryString } from "./useTableListQueryString";
+
+export {
+  type TableListAlert,
+  type TableListAlertsApi,
+  useTableListAlerts,
+} from "./components/TableListAlerts";
+export type {
+  TableListFilterButtons,
+  TableListPresentations,
+  TableListPresentationVisibility,
+  TableListProps,
+  TableListRowActions,
+  TableListSelection,
+  TableListSelectionContext,
+} from "./tableListState";
+
+const subscribeOnline = (onChange: () => void) => onlineManager.subscribe(onChange);
+const getOnline = () => onlineManager.isOnline();
+
+function TableListContent<TDocument extends Record<string, unknown>>({
+  config,
+  rows,
+  getRowId,
+  features,
+  onReset,
+  clientSide,
+  status = "idle",
+  error,
+  onRowOpen,
+  onCreate,
+  createAction,
+  createLabel,
+  headerContent,
+  headingClassName,
+  uiColumns,
+  rowActions,
+  selection,
+  filterButtons,
+  hideFilterPanel,
+  debounceSearch,
+  presentations,
+  renderRows,
+  renderRowsWhenEmpty,
+  emptyDescription,
+  variant = "card",
+  hideHeader = false,
+  reserveEmptyRows,
+  onSelectRuntimeField,
+  runtimeFieldDefinitions,
+  runtimeFieldAuthScope,
+  restoredViewIssue,
+}: TableListProps<TDocument>) {
+  const { t } = useTranslation("common");
+  const online = useSyncExternalStore(subscribeOnline, getOnline, getOnline);
+  const [activePanel, setActivePanel] = useState<ControlPanel | null>(null);
+  const [activeRowAction, setActiveRowAction] = useState<{ actionId: string; rowId: string } | null>(null);
+  const rootRef = useRef<HTMLElement>(null);
+  // Read through a ref so a caller's inline getRowId does not rebuild the columns (which re-mounts their cells).
+  const getRowIdRef = useRef(getRowId);
+  getRowIdRef.current = getRowId;
+  const rowIds = useMemo(() => rows.map(getRowId), [getRowId, rows]);
+  const alerts = useTableListAlertsState({ root: rootRef, rowIds });
+  const collectionLabel = t(config.labels.pluralKey as never);
+  const filterCount = features.filtering === false ? 0 : topLevelFilterCount(features.filtering.value.expression);
+  const tableUiColumns = useMemo(() => {
+    if (!rowActions) return uiColumns;
+    return [
+      ...(uiColumns ?? []),
+      {
+        ...rowActions,
+        card: { ...rowActions.card, placement: "footer" as const },
+        renderCell: (row: TDocument) => (
+          // Lets an alert's undo return focus to the row it brings back.
+          <div data-table-list-row-actions={getRowIdRef.current(row)} className="contents">
+            {rowActions.renderCell({
+              row,
+              activate: (actionId) => setActiveRowAction({ actionId, rowId: getRowIdRef.current(row) }),
+            })}
+          </div>
+        ),
+      },
+    ];
+  }, [rowActions, uiColumns]);
+  const activeRow = activeRowAction ? rows.find((row) => getRowId(row) === activeRowAction.rowId) : undefined;
+  return (
+    <TooltipProvider delay={250}>
+      <TableListAlertsProvider api={alerts.api}>
+        <section
+          ref={rootRef}
+          data-table-list
+          className="text-foreground [&_[data-inventory-item]]:p-0 [&_[data-unknown-item]]:p-0 [&_[data-slot=badge]]:rounded-sm [&_[data-slot=button]]:rounded-sm [&_[data-slot=input]]:rounded-sm [&_svg]:size-3.5!"
+        >
+          {hideHeader ? null : (
+            <div className={cn(variant === "card" && "mb-5")}>
+              <TableListHeader
+                config={config}
+                collectionLabel={collectionLabel}
+                onCreate={onCreate}
+                createAction={createAction}
+                createLabel={createLabel}
+                headingClassName={headingClassName}
+                divided={variant === "transparent"}
+              />
+              {headerContent ? <div className="mt-5">{headerContent}</div> : null}
+            </div>
+          )}
+          <div className={cn(variant === "card" && "rounded-sm border bg-card px-3")}>
+            <TableListAlertStack alerts={alerts.alerts} onUndo={alerts.undo} onDismiss={alerts.api.dismiss} />
+            {clientSide === false && !online ? (
+              <p role="status" className="py-3 text-sm text-muted-foreground">
+                {t("tableList.offline")}
+              </p>
+            ) : null}
+            {restoredViewIssue ? <RestoredViewIssue issue={restoredViewIssue} /> : null}
+            {!restoredViewIssue ? (
+              <>
+                <TableListToolbar
+                  config={config}
+                  collectionLabel={collectionLabel}
+                  features={features}
+                  clientSide={clientSide}
+                  activePanel={activePanel}
+                  filterCount={filterCount}
+                  filterButtons={filterButtons}
+                  hideFilterPanel={hideFilterPanel}
+                  debounceSearch={debounceSearch}
+                  onPanelChange={setActivePanel}
+                  onReset={() => setActivePanel(null)}
+                  resetView={onReset}
+                />
+                <TableListControlPanel
+                  onSelectRuntimeField={onSelectRuntimeField}
+                  runtimeFieldDefinitions={runtimeFieldDefinitions}
+                  runtimeFieldAuthScope={runtimeFieldAuthScope}
+                  activePanel={activePanel}
+                  config={config}
+                  features={features}
+                  onClose={() => setActivePanel(null)}
+                />
+                <TableListDataTable
+                  config={config}
+                  rows={rows}
+                  getRowId={getRowId}
+                  features={features}
+                  clientSide={clientSide}
+                  status={status}
+                  error={error}
+                  onRowOpen={onRowOpen}
+                  collectionLabel={collectionLabel}
+                  reserveEmptyRows={reserveEmptyRows}
+                  uiColumns={tableUiColumns}
+                  selection={selection}
+                  presentations={presentations}
+                  renderRows={renderRows}
+                  renderRowsWhenEmpty={renderRowsWhenEmpty}
+                  emptyDescription={emptyDescription}
+                />
+              </>
+            ) : null}
+          </div>
+        </section>
+        {activeRowAction && activeRow && rowActions
+          ? rowActions.renderInteraction({
+              actionId: activeRowAction.actionId,
+              row: activeRow,
+              close: () => setActiveRowAction(null),
+            })
+          : null}
+      </TableListAlertsProvider>
+    </TooltipProvider>
+  );
+}
+
+function QueryStringSync<TDocument extends Record<string, unknown>>(props: TableListProps<TDocument>) {
+  useTableListQueryString(
+    props.config,
+    props.features,
+    typeof props.queryString === "object" ? props.queryString : true,
+    props.stateSync !== undefined,
+  );
+  return null;
+}
+
+export function TableList<TDocument extends Record<string, unknown>>(props: TableListProps<TDocument>) {
+  return (
+    <>
+      {props.stateSync}
+      {props.queryString === false ? null : <QueryStringSync {...props} />}
+      <TableListContent {...props} />
+    </>
+  );
+}

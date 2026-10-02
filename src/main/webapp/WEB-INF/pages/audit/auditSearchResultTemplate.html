@@ -2,22 +2,22 @@
 	You found {{totalHits}} hits.
 	<table style="width:100%">
 		<tr>
-			<th style="width:22%"><a  class="getAudit tableSortLink date" href="#">Time</a></th>
-			<th style="width:15%"><a  class="getAudit tableSortLink username" href="#">User</a></th>
-			<th style="width:10%"><a  class="getAudit tableSortLink action" href="#">Action</a></th>
-			 <th style="width:10%"> Type </th>
-			<th style="width:10%">Resource</th>
-			<th style="width:15%">Name</th>
+			<th style="width:18%"><a  class="getAudit tableSortLink date" href="#">Time</a></th>
+			<th style="width:10%"><a  class="getAudit tableSortLink username" href="#">User</a></th>
+			<th style="width:9%"><a  class="getAudit tableSortLink action" href="#">Action</a></th>
+			 <th style="width:9%"> Type </th>
+			<th style="width:12%">Resource</th>
+			<th style="width:10%">Name</th>
 			<th>Description</th>
 		</tr>
 		<!--  {{#results}}-->
 		<tr>
 			<td>{{timestamp}}</td>
 			<td>{{event.fullName}}</td>
-			<td>{{event.action}}</td>
+			<td>{{event.displayAction}}</td>
 			<td>{{event.domain}}</td>
-			<td><a href="/globalId/{{event.data.data.id}}">{{event.data.data.id}}</a></td>
-			<td>{{event.data.data.name}}</td>
+			<td>{{#event.resourceHref}}<a href="{{event.resourceHref}}">{{event.data.data.id}}</a>{{/event.resourceHref}}{{^event.resourceHref}}{{event.data.data.id}}{{/event.resourceHref}}</td>
+			<td>{{event.displayName}}</td>
 			<td>{{event.description}}</td>
 		</tr>
 		<!--{{/results}}-->
@@ -29,10 +29,10 @@
 		<tr>
 			<td>{{timestamp}}</td>
 			<td>{{event.fullName}}</td>
-			<td>{{event.action}}</td>
+			<td>{{event.displayAction}}</td>
 			<td>{{event.domain}}</td>
-			<td><a href="/globalId/{{event.data.data.id}}">{{event.data.data.id}}</a></td>
-			<td>{{event.data.data.name}}</td>
+			<td>{{#event.resourceHref}}<a href="{{event.resourceHref}}">{{event.data.data.id}}</a>{{/event.resourceHref}}{{^event.resourceHref}}{{event.data.data.id}}{{/event.resourceHref}}</td>
+			<td>{{event.displayName}}</td>
 			<td>{{event.description}}</td>
 		</tr>
 	{{/results}}
@@ -53,6 +53,7 @@
 		<input class="domainsInput" aria-label="ELN" checked type="checkbox" name="domains" value="ELN"> ELN
 		<input class="domainsInput" aria-label="Inventory" checked type="checkbox" name="domains" value="INV"> Inventory
 		<input class="domainsInput" aria-label="Requests" checked type="checkbox" name="domains" value="REQUEST"> Requests
+		<input class="domainsInput" aria-label="{{bookingActivityArea}}" checked type="checkbox" name="domains" value="BOOKING"> {{bookingActivityArea}}
 		<input class="domainsInput" aria-label="Other" checked type="checkbox" name="domains" value="OTHER"> Other
 	</fieldset>   
 	<button class="remover" style="height:19px; width:19px;padding:0px !important;" id="remover1" name="x1">X</button>

@@ -111,6 +111,53 @@ When you see Jetty report the app has started, open the URL printed by
 `rspace-dev up` (e.g. `http://localhost:8080`). Log in with `user1a` /
 `user1234`, or `sysadmin1` / `sysWisc23!`.
 
+The Docker stack enables Booking. With `deployment.test.fb.instance=true`, the
+first deployment seeds `user1a` with its smaller set of
+bookable-item examples, plus 500 instruments and 1,003 events spread across the
+next full Monday-to-Sunday week. Three events have distinctive names—Aurora,
+Beacon, and Comet—to make Calendar event-name search easy to test. The six
+smaller booking examples use the following calendar date, so all new bookings
+start in the future even when the stack starts late in the day. The
+Restricted-location plate reader, which `user2b` owns and shares with nobody, is
+view-only for `user1a`: as PI of `user2b`'s group, `user1a` sees it in the
+Calendar but can neither book it nor edit its configuration. It is closed on
+Wednesdays and opens only 10:00 to 14:00 (Europe/Berlin) on Thursdays, so the
+closure shading on a read-only row is visible. Other examples cover scheduling
+edge cases:
+
+- The Electron microscope (America/New_York) closes at weekends and at noon on
+  Fridays.
+- The Mass spectrometer (UTC) closes on Sundays and is open all day on
+  Wednesdays although its shared hours are partial. It allows double booking
+  and has two overlapping bookings.
+- The No-parent centrifuge is open all day except on Sundays, with a Saturday
+  booking that ends at midnight.
+- The Deleted-location sequencer is open all day on weekdays only, with one
+  booking from Monday to Wednesday.
+- The Auckland PCR cycler, Honolulu X-ray diffractometer and Kolkata NMR
+  spectrometer (UTC+05:30, 15-minute increments) show day offsets and weekday
+  differences to a European viewer.
+- The Closed-day incubator has a booking and a maintenance event on two
+  weekdays that were closed after the events were created.
+
+The startup
+seed runs only on the first deployment and defaults to disabled. Set the property
+in `deployment.properties` to opt in; it also works with the `prod` profile on AWS
+feature-branch instances. Restarts preserve existing fixtures and do not log in
+using default fixture passwords.
+
+A brand-new database also receives a Liquibase booking seed with nine
+instruments and 50 events for `sysadmin1`, `user1a`, `user2b`, and `user3c`.
+The events cover three days ago, today, and seven days from today. Eight of the
+instruments have booking configurations, including one that permits double
+booking; the ninth remains unconfigured. Liquibase skips this seed when booking
+configuration data already exists. A second dev-test changeset then gives seven
+of those items edge-case schedules: weekend and Sunday closures, a shorter
+Friday, an all-day Wednesday exception, evening-only hours, Pacific/Honolulu and
+Asia/Kolkata timezones, and events on closed days, across two all-day weekdays
+and ending at closing time. It changes nothing unless all seven still have the
+seed's defaults, so it never overwrites edits made on a development database.
+
 Subsequent `up`s reuse the existing database and are much faster.
 
 To run the Playwright suite against local third-party integration mocks, enable

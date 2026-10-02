@@ -3,6 +3,7 @@ package com.researchspace.dao.hibernate;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
+import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.Constants;
 import com.researchspace.core.util.DateUtil;
@@ -12,6 +13,7 @@ import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.UserDao;
+import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.model.Community;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.PaginationCriteria;
@@ -22,6 +24,10 @@ import com.researchspace.model.SignupSource;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
+import com.researchspace.model.UserSavedEvent;
+import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.sort.UserSort;
@@ -54,6 +60,7 @@ import org.hibernate.Session;
 import org.hibernate.graph.GraphParser;
 import org.hibernate.graph.RootGraph;
 import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Repository;
 
@@ -82,6 +89,13 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   private static final String LAST_LOGIN = "lastLogin";
   private static final String TAGS = "tagsJsonString";
 
+  private static final CollectionQueryExecutor<User> COLLECTION_QUERY =
+      new CollectionQueryExecutor<>(User.class, ApiV2UserResource.DESCRIPTION, "collectionUser");
+
+  @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
+
+  @Autowired private org.springframework.context.ApplicationEventPublisher events = event -> {};
+
   /** Constructor that sets the entity to User.class. */
   public UserDaoHibernate() {
     super(User.class);
@@ -106,6 +120,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     // this will force the throwing of a constraint violation exception
     // now, if there is one, so that it can be handled in the service layer.
     s.flush();
+    events.publishEvent(new UserSavedEvent(user));
     return user;
   }
 
@@ -839,5 +854,15 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
       }
     }
     return new ArrayList<>(result);
+  }
+
+  @Override
+  public ResourcePage<User> getUsers(ResourceRequest request) {
+    return COLLECTION_QUERY.page(criteriaBuilderFactory, getSession(), request);
+  }
+
+  @Override
+  public long countUsers(ResourceRequest request) {
+    return COLLECTION_QUERY.count(criteriaBuilderFactory, getSession(), request);
   }
 }

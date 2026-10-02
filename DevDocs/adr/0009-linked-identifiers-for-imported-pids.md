@@ -206,6 +206,79 @@ and API field names were ported instead.
    clauses, and `*Instr1<U+3000>OR<U+3000>**` matched all 810 records. For the same reason the
    minimum strips Unicode whitespace rather than trimming ASCII only, so padding cannot pass it.
 
+9. **The record's Measurement Technique and Calibration related identifiers become links only
+   when they name an item in this RSpace; every other one is skipped and reported** (RSDEV-1528,
+   decided with Nico on 2026-09-25).
+
+   RSpace registers the two link fields as related identifiers whose value is
+   `<serverUrl>/globalId/<id>` (ADR 0007), so the inverse mapping of decision 4 now covers them,
+   under the one constraint that an RSpace link can only name an item stored in the same
+   deployment. The import used to leave both fields empty and report plain success.
+
+   - An entry is *this RSpace's* when its address is the deployment's own globalId page: an http or
+     https address (either scheme) with the same host (case-insensitive) and port (a scheme's
+     default port counts the same written or left out, `https://h:443` being `https://h`), the same
+     path before `/globalId/` and that segment spelled exactly as the route maps it, trailing
+     slashes and query ignored (`InventoryUrls.globalIdOfOwnPage`, the inverse of the builder next
+     to it). The allowances are the ones the route itself honours: checked on 2026-09-29,
+     `/GLOBALID/` answers 404 while a trailing slash or a query still opens the item. A server
+     address that has changed since registration is deliberately not recognised: those entries
+     count as another server's (the ticket's out-of-scope item). The CSV link import (RSDEV-1354)
+     uses the same rule, so the two importers agree about which addresses are ours.
+   - Such an entry becomes a link exactly when the importing user could have made it by hand,
+     decided by the write path's own checks (`InventoryLinkManager.canCreateLink`, which is
+     `createLink` without the write), so the pre-check and the create can never disagree and a
+     rejected entry is dropped instead of failing the whole import with the 422 that create would
+     answer. That only holds while every lookup behind the check answers false without throwing
+     across a transactional manager: an ELN target once failed the import at commit that way,
+     because the throw marked the import's transaction rollback-only even though it was caught. A
+     trashed Inventory item, document or Gallery file the user can still see is linked and shows as
+     deleted, as by hand; a trashed notebook cannot be linked by hand either, so it is skipped. The
+     CSV link import (RSDEV-1354) is deliberately more lenient and stores a link whatever state its
+     target is in, because a file imports all or nothing and one unreachable target would fail it;
+     this import can skip one entry and report it instead.
+   - The link gets the field's own relation, `IsDocumentedBy` for Measurement technique and
+     `IsCalibratedBy` for Calibration, both in the locked template's whitelist: the registry's
+     `IsDescribedBy` is the constant ADR 0007 writes whatever the link stored, so it carries no
+     information. A version suffix in the address (`SA32768v3`) is passed through unchanged, so
+     the new link pins the version the registered address named.
+   - Every other entry with one of the two labels is a **skipped entry** (CONTEXT.md), with one
+     of two reasons: `OTHER_SERVER`, carrying the address's host unless that host is this RSpace's
+     own, or `NOT_AVAILABLE` for an address of this RSpace whose item the user cannot link. The
+     second is one reason for an item that is unreadable, missing, or of a kind links cannot
+     target, so the import never confirms that an item exists (ADR 0002). The first is deliberately
+     "other server", not "other RSpace": a registrar that reuses our labels with a manual's URL or a
+     DOI is reported truthfully. An address with no host at all, or on this RSpace's own host but
+     not an item's page, is reported as not the address of an item in this RSpace, never as another
+     server (Nico, 2026-09-30).
+   - The skipped entries travel on the created Instrument (`skippedRelatedIdentifiers`, serialised
+     only when non-empty and set only by the import endpoint), so an API caller gets the same list
+     with the same reasons. The dialog keeps its success toast and adds a second, persistent
+     warning toast, one row per entry with the field, the reason in words and the address: a link
+     when it is an absolute http(s) address, plain text otherwise, because a bare DOI as an href
+     would open a page of this RSpace that does not exist (Nico, 2026-09-28). Nothing about a
+     skipped entry is stored on the instrument; the registry record, reachable through the linked
+     identifier, still lists it.
+   - Several entries with one label: the first that can be linked fills the field and the rest are
+     ignored quietly; if none can, each one is reported. Entries with any other label, or none, are
+     ignored quietly, like any registry detail the template has no field for. A DataCite registrar
+     on Metadata Schema 4.6 or earlier drops `relationTypeInformation` (ADR 0007), so on such a DOI
+     both entries are ignored without a warning.
+   - The search lists each hit's entries for the two labels (`measurementTechniques`,
+     `calibrations`), matched by the same rule as the import, so the dialog's preview shows them
+     before the import (Nico's request, 2026-09-29). It shows them as the registry holds them, a
+     link only for an http(s) address, and does not say which will be linked: that verdict needs
+     the checks the import runs for the importing user, and the warning after the import gives it.
+
+   Rejected along the way: keeping skipped entries on the instrument as extra fields (Nico,
+   2026-09-25: the warning at import time is what the user gets, and the registry record keeps the
+   entries); warning inside the dialog before the import rather than after it (the preview lists the
+   entries since 2026-09-29, but not which will be linked); a wrapper response
+   `{instrument, skipped}` (changes the 201 body of an endpoint still in Release Prep, for no gain);
+   a third reason code for a non-RSpace address; re-implementing the link checks inside the lookup
+   manager (a smaller diff, but any check later added to the write path would turn into a 422
+   failing the whole import); one merged warning toast in place of the success toast.
+
 ## Considered options
 
 - **Fields only** (Alternate Identifier and Landing page, no identifier row): no link
@@ -288,3 +361,7 @@ and API field names were ported instead.
   502 would be a separate, small change and was not asked for.
 - DataCite's `searchDois` and typed `contributors`/`identifiers` live in
   datacite-java-client, so the change rides a client release and a pin bump.
+- The positive path of decision 9 is reachable only on the RSpace that registered the PID, and only
+  once its original instrument has been trashed, because trashing is what unlinks the PID (ADR 0010);
+  until then the import is refused with the 409 of decision 4. Anywhere else the two entries name
+  another server and are reported, never linked.

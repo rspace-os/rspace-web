@@ -4,7 +4,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { describe, expect, test, vi } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockInstrument } from "../../../../stores/models/__tests__/InstrumentModel/mocking";
 import materialTheme from "../../../../theme";
 import TransferAction from "../TransferAction";
 
@@ -33,5 +35,23 @@ describe("TransferAction", () => {
     await waitFor(() => {
       expect(Dialog).toHaveBeenLastCalledWith(expect.objectContaining({ open: false }), undefined);
     });
+  });
+
+  test("does not expose Booking-specific ownership controls", async () => {
+    const user = userEvent.setup();
+    const { baseElement } = render(
+      <ThemeProvider theme={materialTheme}>
+        <TransferAction as="button" disabled="" closeMenu={() => {}} selectedResults={[makeMockInstrument()]} />
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getAllByText("common:actions.transfer")[0]);
+
+    expect(
+      screen.queryByRole("checkbox", {
+        name: "inventory:contextMenu.transfer.dialog.transferBookingConfigurationOwnership",
+      }),
+    ).not.toBeInTheDocument();
+    await expectAccessible(baseElement);
   });
 });

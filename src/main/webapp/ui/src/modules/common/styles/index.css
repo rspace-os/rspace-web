@@ -1,0 +1,40 @@
+/* Expanded form of `@import "tailwindcss"` so preflight (the base reset) is an
+   explicit, controllable part of the newApp bundle. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "./fonts.css";
+@import "./theme.css";
+
+@source "../../../";
+@source not "../../../styles";
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+    @apply border-border outline-ring/50;
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-ui-sans);
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  /* Windows High Contrast Mode suppresses box shadows and rings, so keyboard
+     focus needs a system-colour outline that survives forced colour mapping. */
+  @media (forced-colors: active) {
+    *:focus-visible {
+      outline: 2px solid;
+      outline-offset: 2px;
+    }
+  }
+}
