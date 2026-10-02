@@ -1,4 +1,5 @@
 import { type Locator, page } from "vitest/browser";
+import { upcomingBooking } from "../mocks/bookingMocks";
 
 export class MyBookingsPageObject {
   readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Confocal microscope" });
@@ -22,6 +23,16 @@ export class MyBookingsPageObject {
 
   get confocal(): Locator {
     return page.getByText("Confocal microscope", { exact: true });
+  }
+
+  get confocalStartDate(): Locator {
+    const displayTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const displayedStart = new Intl.DateTimeFormat("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: displayTimeZone,
+    }).format(new Date(upcomingBooking.start));
+    return page.getByRole("article", { name: /Confocal microscope/ }).getByText(displayedStart, { exact: true });
   }
 
   get electron(): Locator {

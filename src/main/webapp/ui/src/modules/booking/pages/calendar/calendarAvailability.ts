@@ -145,6 +145,7 @@ function sourcedInterval(
               purpose: booking.purpose,
               bookedBy: booking.bookedBy,
               createdBy: booking.createdBy,
+              instrumentTimeZone: booking.timezone,
             },
           }
         : {}),

@@ -1,6 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
+import { cloneElement } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  BookingInstrumentTimeTooltip,
+  type BookingInstrumentTimeTooltipProps,
+} from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { UserBadge } from "@/modules/common/ui/user-badge";
@@ -17,6 +22,7 @@ export type BookingSummaryAccordionProps = {
   heading: string;
   summaryLabel?: string;
   period: string;
+  periodTooltip?: Omit<BookingInstrumentTimeTooltipProps, "children" | "trigger">;
   purpose: string | null;
   maintenance?: boolean;
   item?: BookingSummaryItem;
@@ -29,6 +35,7 @@ export function BookingSummaryAccordion({
   heading,
   summaryLabel,
   period,
+  periodTooltip,
   purpose,
   maintenance = false,
   item,
@@ -36,37 +43,50 @@ export function BookingSummaryAccordion({
   detailsBookingId,
 }: BookingSummaryAccordionProps) {
   const { t } = useTranslation("booking");
+  const summaryTrigger = (
+    <summary
+      aria-label={t("dayTimeline.event.showDetails", { title: heading, period })}
+      className="flex min-w-0 cursor-pointer list-none items-center gap-2 px-2 py-1.5 outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden"
+    />
+  );
+  const summaryContent = (
+    <>
+      <span
+        className={cn(
+          "flex size-7 shrink-0 items-center justify-center rounded-sm",
+          maintenance
+            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+            : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
+        )}
+      >
+        {maintenance ? (
+          <WrenchIcon className="size-4" aria-hidden="true" />
+        ) : (
+          <CalendarClockIcon className="size-4" aria-hidden="true" />
+        )}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs font-medium">{summaryLabel ?? heading}</span>
+        <span className="block truncate text-[11px] text-muted-foreground">{period}</span>
+      </span>
+      <ChevronRightIcon
+        className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
+        aria-hidden="true"
+      />
+    </>
+  );
+  const summary = periodTooltip ? (
+    <BookingInstrumentTimeTooltip {...periodTooltip} trigger={summaryTrigger}>
+      {summaryContent}
+    </BookingInstrumentTimeTooltip>
+  ) : (
+    cloneElement(summaryTrigger, undefined, summaryContent)
+  );
 
   return (
     <li className="min-w-0 overflow-hidden rounded-sm border bg-background">
       <details name={accordionName} className="group">
-        <summary
-          aria-label={t("dayTimeline.event.showDetails", { title: heading, period })}
-          className="flex min-w-0 cursor-pointer list-none items-center gap-2 px-2 py-1.5 outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden"
-        >
-          <span
-            className={cn(
-              "flex size-7 shrink-0 items-center justify-center rounded-sm",
-              maintenance
-                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
-                : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-            )}
-          >
-            {maintenance ? (
-              <WrenchIcon className="size-4" aria-hidden="true" />
-            ) : (
-              <CalendarClockIcon className="size-4" aria-hidden="true" />
-            )}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-xs font-medium">{summaryLabel ?? heading}</span>
-            <span className="block truncate text-[11px] text-muted-foreground">{period}</span>
-          </span>
-          <ChevronRightIcon
-            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
-            aria-hidden="true"
-          />
-        </summary>
+        {summary}
         <div className="border-border border-t">
           <dl className="divide-y divide-border px-2 text-sm">
             {item ? (
