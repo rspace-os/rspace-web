@@ -12,8 +12,6 @@ import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
-import com.researchspace.model.preference.HierarchicalPermission;
-import com.researchspace.service.SystemPropertyName;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
@@ -34,14 +32,6 @@ public class API_MVC_TestBase extends MVCTestBase {
   static final int MIN_KEY_LENGTH = 16;
 
   static final String STATUS = "/status";
-
-  protected void enableAPI(User apiUser) {
-    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.ALLOWED, apiUser);
-  }
-
-  protected void disableAPI(User apiUser) {
-    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.DENIED, apiUser);
-  }
 
   /**
    * Initialises request creation and adds API key as header and principal to the request

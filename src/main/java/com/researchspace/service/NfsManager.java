@@ -11,7 +11,6 @@ import com.researchspace.model.netfiles.NfsFileSystemInfo;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
-import com.researchspace.webapp.controller.IgnoreInServiceLoggerAspct;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;

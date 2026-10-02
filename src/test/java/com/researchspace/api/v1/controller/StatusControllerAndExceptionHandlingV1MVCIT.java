@@ -90,7 +90,7 @@ public class StatusControllerAndExceptionHandlingV1MVCIT extends API_MVC_TestBas
   @Test
   public void unavailableAPIGenerates401() throws Exception {
     try {
-      disableAPI(apiUser);
+      disableGlobalApiAccess();
       MvcResult result =
           mockMvc.perform(createBuilderForGet(ONE, apiKey, STATUS, apiUser)).andReturn();
       ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
@@ -98,7 +98,7 @@ public class StatusControllerAndExceptionHandlingV1MVCIT extends API_MVC_TestBas
       log.warn(error.toString());
       assertEquals(UNAUTHORIZED.value(), error.getHttpCode());
     } finally {
-      enableAPI(apiUser);
+      enableGlobalApiAccess();
     }
   }
 

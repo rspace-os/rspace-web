@@ -2,7 +2,9 @@ package com.researchspace.api.v1.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -92,9 +94,12 @@ class SystemSettingsApiControllerUnitTest {
     assertThat(settings.getIdentifiersSettings().get(InventorySettingType.PIDINST)).hasSize(2);
     IdentifierSettings b2inst =
         settings.findByProvider(IdentifierType.PIDINST_B2INST).orElseThrow();
-    // B2INST reuses the IdentifierSettings shape: username <- community.id, password <- token
+    // B2INST reuses the IdentifierSettings shape: username <- community.id, password <- token,
+    // which is null because a stored secret never leaves the server ("" would mean unset)
     assertEquals("comm-default", b2inst.getUsername());
-    assertEquals("tok-default", b2inst.getPassword());
+    assertNull(b2inst.getPassword());
+    assertEquals(
+        "", settings.findByProvider(IdentifierType.IGSN_DATACITE).orElseThrow().getPassword());
     assertEquals("https://b2inst-test.gwdg.de", b2inst.getServerUrl());
     // repositoryPrefix is unused for B2INST; it must serialize as "" (the IdentifierSettings
     // contract is a String) rather than null, so clients never see "repositoryPrefix": null.
@@ -119,6 +124,18 @@ class SystemSettingsApiControllerUnitTest {
     verify(mockSysPropMgr)
         .save(eq(SystemPropertyName.PIDINST_B2INST_ENABLED), eq("true"), eq(sysadmin));
     verify(mockB2instConnector, times(1)).reloadClient();
+    assertThat(update.toString()).doesNotContain("tok456");
+  }
+
+  @Test
+  void nullPasswordKeepsTheStoredSecret() throws Exception {
+    IdentifierSettings b2inst = new IdentifierSettings();
+    b2inst.setProvider(IdentifierType.PIDINST_B2INST);
+    b2inst.setPassword(null); // stored token is "tok-default", returned to the client as null
+    controller.updateInventorySettings(request, b2inst, errorsFor(b2inst), sysadmin);
+
+    verify(mockSysPropMgr, never())
+        .save(eq(SystemPropertyName.PIDINST_B2INST_TOKEN), anyString(), any());
   }
 
   @Test
