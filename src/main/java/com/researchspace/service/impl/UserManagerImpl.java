@@ -5,7 +5,7 @@ import static java.lang.String.format;
 import com.researchspace.CacheNames;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
-import com.researchspace.core.util.CryptoUtils;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.CommunityDao;
@@ -43,9 +43,6 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.crypto.RandomNumberGenerator;
-import org.apache.shiro.crypto.SecureRandomNumberGenerator;
-import org.apache.shiro.lang.util.ByteSource;
 import org.apache.shiro.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +60,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
-  private RandomNumberGenerator randNumGen = new SecureRandomNumberGenerator();
   private UserDao userDao;
 
   public UserManagerImpl(@Autowired UserDao userDao) {
@@ -80,6 +76,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired RSpacePasswordEncoder passwordEncoder;
 
   /** {@inheritDoc} */
   public User getUser(String userId) {
@@ -196,10 +193,22 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   private void changePassword(String plainText, User user) {
-    final int saltlength = 16;
-    ByteSource salt = randNumGen.nextBytes(saltlength);
-    user.setPassword(CryptoUtils.hashWithSha256inHex(plainText, salt));
-    user.setSalt(salt.toBase64());
+    user.setPassword(passwordEncoder.encode(plainText));
+    user.setSalt(null);
+  }
+
+  @Override
+  public boolean upgradePasswordHash(
+      String username, String verifiedPassword, String encodedPassword) {
+    requireCurrentEncoding(encodedPassword);
+    return userDao.updatePasswordHash(username, verifiedPassword, encodedPassword) == 1;
+  }
+
+  /** Upgrades store an already-encoded value; refuse anything else rather than persist it. */
+  private static void requireCurrentEncoding(String encoded) {
+    Validate.isTrue(
+        encoded != null && encoded.startsWith("{" + RSpacePasswordEncoder.ARGON2_ID + "}"),
+        "Upgraded password hash must use the current encoding");
   }
 
   // session may be null if it's api call

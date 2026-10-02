@@ -4,6 +4,20 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# Unreleased
+
+### Server
+
+- RSDEV-894 login passwords are now hashed with Argon2id
+  - On first startup after the upgrade a Liquibase change wraps every existing password hash in Argon2id, so no fast SHA-256 hash stays in the database. Each wrapped hash is re-encoded as plain Argon2id the next time its user logs in successfully.
+  - **This change is irreversible.** Older RSpace versions cannot read the new hashes, so nobody could log in after a downgrade. Downgrading past this version requires restoring the database backup taken before the upgrade.
+  - First startup may take up to a minute longer on large instances, roughly 50 ms per user.
+  - Rows whose password is not a SHA-256 hex hash with a Base64 salt are left unchanged and logged at ERROR with the username. Those users cannot log in until an administrator resets their password.
+  - New optional `deployment.properties` keys limit how many login and reauthentication password checks run at once, since each check holds about 19 MiB of heap:
+    - `login.passwordVerification.maxConcurrent`, default `8`
+    - `login.passwordVerification.waitSeconds`, the seconds a check waits for a free slot, default `5`. A check that times out shows the usual wrong-password message but does not count toward account lockout.
+  - Failed reauthentication (signing, witnessing, password change, OAuth password grant) now counts toward the same limit as failed logins, 4 failures within 2 minutes. Further reauthentication is then refused until the lockout window ends, but the account itself is not marked as locked.
+
 # 2.27.0 2026-10-02
 
 ### ELN Features

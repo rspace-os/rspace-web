@@ -1,0 +1,181 @@
+---
+status: proposed
+---
+
+# Argon2id password hashing with a login verification concurrency limit (RSDEV-894)
+
+## Context
+
+RSpace stores login passwords as a single round of SHA-256. `ShiroRealm` and
+`UsernamePasswordCredentialsMatcher` both construct Shiro's `HashedCredentialsMatcher` with
+no iteration count, so Shiro's default of one round applies, and `UserManagerImpl.changePassword`
+writes `Sha256Hash(plainText, salt)` with a per-user 16-byte salt. The salt stops rainbow tables
+and cross-account matching. It does nothing to slow guessing: a commodity GPU tries on the order
+of ten billion salted SHA-256 candidates per second, so an eight-character password falls in
+hours once the hash table is read. This is CWE-916, insufficient computational effort.
+
+Not every stored hash is salted. The production seed in `initial-seed-run.sql` creates
+`sysadmin1`, `admin` and the anonymous guest with `salt = NULL` and an unsalted hash, and the
+dev seeds do the same with uppercase hex. Both verify paths already branch on a null salt.
+
+The weakness was first raised in 2019 (RSPAC-1914). It became urgent in August 2026 when
+RSDEV-1328 gave any authenticated user a SQL read primitive over the `User` table, including the
+`password` and `salt` columns. RSDEV-1328 is fixed in 1.124.3 and 1.126.0, so the live chain is
+closed, but a fast hash turns the next read primitive into immediate credential recovery. This
+change is defence in depth against that next one.
+
+Two facts about the deployment shape drove the decision. Instances are small, a few hundred
+users and at most around 500. And RSpace upgrades already apply irreversible Liquibase changes
+(RSDEV-444 discarded Spring Batch history and reseeded `hibernate_sequences`), so customers who
+roll back already restore a pre-upgrade database backup.
+
+A memory-hard hash creates a new problem that SHA-256 never had. Argon2 allocates its configured
+memory block on the Java heap for every verification and holds it for the duration, tens of
+milliseconds. The login form is unauthenticated, usernames are not secret (`sysadmin1` ships
+with every install, the directory lists usernames to any logged-in user, and the signup page
+confirms whether a username exists), and the account lockout in `DefaultLockoutPolicy` only
+registers after a failed verification completes. A burst of concurrent login requests therefore
+forces concurrent allocations bounded only by the servlet thread pool, around 200 threads. At
+64 MiB per verification that is 12.8 GB of transient heap, enough to stall or kill the JVM for
+every user, not just the attacker.
+
+## Decision
+
+**Algorithm.** Login passwords are hashed with Argon2id through Spring Security's
+`Argon2PasswordEncoder`, wrapped in a `DelegatingPasswordEncoder` so every stored value carries
+an `{id}` prefix and a future change of algorithm or parameters is configuration, not a format
+migration. Parameters are 19 MiB of memory (19456 KiB), 2 iterations, parallelism 1, a 16-byte
+salt and a 32-byte hash. This is the OWASP Password Storage Cheat Sheet's stated minimum for
+Argon2id. The encoder id is RSpace's own (`{argon2@rspace_v1}`), not Spring's default `{argon2}`,
+so a later retune is distinguishable from the first. The wrapper, `RSpacePasswordEncoder`,
+registers only this id and the legacy id below, so a stored value with an unknown or missing
+prefix fails closed rather than matching.
+
+**Migration.** Every existing hash is upgraded at rest, once, by a Liquibase custom change
+(`WrapLegacyPasswordHashes_RSDEV894`) that runs on the first application start after upgrade.
+For each row with a non-null `password` that does not already start with `{`, the change decodes
+the stored SHA-256 hex to its 32 bytes, hashes the Base64 of those bytes with Argon2id, and
+stores `{argon2-legacy-sha256@rspace_v1}<base64 salt>$<argon2>` (an empty salt for unsalted
+rows). The salt now lives inside the wrapped value and the `salt` column is set to null.
+Verification for a legacy row recomputes the SHA-256 exactly as Shiro did (salt bytes first when
+present, then the UTF-8 password, one round) and feeds the Base64 of the digest to Argon2.
+Because Argon2 sees the decoded bytes and not the hex string, the case of the stored hex cannot
+matter, just as it did not under Shiro. Both the salted and the unsalted seed variants are
+covered. A row whose password is not 64 hex characters, or whose salt is not valid Base64, is
+left unchanged and logged at ERROR by username; that user needs an administrator password reset.
+Rows with a null password are not touched. Rows already carrying a prefix are skipped, so a rerun
+changes nothing, and at 500 rows and roughly 50 ms each the change completes in well under a
+minute. On a successful login against a legacy row the hash is re-encoded as plain Argon2id, so
+the nested format disappears as users log in. That write is a compare-and-swap on the old hash
+(`UserDao.updatePasswordHash`), so it never reverts a password change made concurrently, and it
+bypasses the change detection in `UserManager.save` that would otherwise hash the hash.
+
+**Password verification concurrency limit.** Login password verification, at Shiro login and
+at default-realm reauthentication (signing, witnessing, password change, API key and OAuth client
+management, the OAuth password grant, sysadmin actions and operate-as), goes through a
+`BoundedPasswordVerifier` bean that wraps the shared encoder bean with a fair
+`java.util.concurrent.Semaphore`. Permits and wait are deployment properties,
+`login.passwordVerification.maxConcurrent` (default 8) and `login.passwordVerification.waitSeconds`
+(default 5). At the default, peak Argon2 heap is 8 times 19 MiB, about 152 MiB, regardless of
+request volume. A request that cannot get its turn before the wait elapses fails with the same
+generic failure the user sees for a wrong password, but through a distinct exception type,
+`LoginVerificationBusyException`. The login filter (`StandaloneShiroFormAuthFilterExt`) and
+`ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
+users out. Encoding new passwords and the at-rest migration do not go through the verifier and
+are not bounded; both are rare and not attacker-driven.
+
+Some reauthentication does not reach the verifier at all: the SSO and Community verification
+password (bcrypt today, moved onto the shared encoder by the stacked PR described under
+Consequences) and LDAP users, who reauthenticate against the directory. Their failures still count
+toward lockout as described next.
+
+Two further rules stop a single account from monopolising the pool. First, verifications are
+serialised per username ahead of the semaphore: one username has at most one verification in
+flight, so one account can hold at most one permit, and a burst of parallel login requests for a
+known username hashes one at a time while lockout catches up. One deadline covers both the
+per-username lock and the permit, so the total wait never exceeds the configured seconds. Second,
+failed reauthentications share the failed-login counter and window in `DefaultLockoutPolicy`
+(four failures inside two minutes, refused until seven minutes after the first).
+`ReauthenticatorImpl` checks `IUserAccountLockoutPolicy.isReauthenticationLocked`, which looks at
+the failure count and window, before any password is checked, and records a failure through
+`handleReauthenticationFailure`. Unlike a failed form login, a failed reauthentication never sets
+the `accountLocked` flag, because API and SSO logins treat that flag as a disabled account until a
+form login clears it, and a few mistyped signing passwords must not have that effect. The OAuth
+password grant reaches reauthentication before the client is validated, so setting the flag there
+would let anyone disable any user's API access with four bad grants. Without
+these rules, an authenticated low-privilege user scripting wrong passwords at the sign endpoint
+could hold every permit indefinitely and deny login to the whole instance.
+
+Only login and reauthentication degrade under attack. Authenticated sessions and the rest of the
+application are unaffected.
+
+## Considered options
+
+- **Upgrade on login instead of at rest.** Rehash each account when its owner next logs in and
+  force a reset for accounts that never do. Keeps rollback clean and avoids a startup migration.
+  Rejected: at 500 users the at-rest migration costs seconds, so the only remaining benefit is
+  rollback safety, which RSpace upgrades do not offer anyway. The price is fast SHA-256 hashes
+  left at rest for every user who has not logged in since the upgrade, plus a user-facing reset
+  campaign to retire them. The chosen design also keeps a legacy verify format until every user
+  has logged in once, but every value in that format is already behind Argon2, so it needs no
+  reset campaign.
+- **Hybrid: upgrade on login, then a scheduled job wraps stragglers.** Rejected for the same
+  reason once the at-rest cost was shown to be trivial at this scale.
+- **bcrypt.** Already in the tree for the SSO verification password and needs no BouncyCastle.
+  Rejected: bcrypt caps input at 72 bytes, which is why `User.MAX_PWD_LENGTH` is 50 today, and
+  it is not memory-hard. Argon2id is the current OWASP first choice.
+- **Shiro's own Argon2 hash** (Shiro is at 3.0.0 on main since RSDEV-1291). RSDEV-921 assumed
+  this route, which is why Shiro 2.x was called a blocker. Shiro 2 onwards does make Argon2id the
+  `DefaultPasswordService` default and stores it in a parameter-carrying `$shiro2$` format, so it
+  is a genuine alternative, not a strawman.
+  Rejected because the deciding part of this ticket is the legacy wrapper, not the algorithm.
+  Shiro's hash-format registry expects standard hashes, so Argon2-over-SHA-256 with an external
+  salt needs a custom `HashFormat` or a custom `CredentialsMatcher` in front of `PasswordMatcher`
+  anyway, and Shiro has no built-in upgrade-on-verify hook. Spring's delegating encoder makes the
+  legacy format an ordinary `PasswordEncoder` under its own id and provides `upgradeEncoding`.
+  The `shiro-hashes-argon2` artifact would also be new to the tree, needs BouncyCastle just the
+  same, and `spring-security-crypto` is already a dependency used for the verification password.
+- **OWASP's higher memory profiles (46 MiB or 64 MiB).** Stronger per hash. Rejected: the
+  memory parameter multiplies directly into the login flood exposure, and the 19 MiB, 2 iteration
+  profile is OWASP's baseline, not a weaker fallback.
+- **Per-IP rate limiting instead of a concurrency limit.** Rejected as the primary control:
+  it needs the real client address, which behind a customer's reverse proxy means trusting
+  `X-Forwarded-For`, and it does nothing against a distributed source. It does not cap the heap.
+  The semaphore does, and is blind to addresses. The two are complementary, not alternatives.
+- **Rely on the servlet thread pool.** Rejected: 200 threads times 19 MiB is 3.8 GB, above
+  the heap most customer instances run with.
+
+## Consequences
+
+- The upgrade is irreversible. A release downgraded past this change cannot read
+  `{argon2@rspace_v1}` or `{argon2-legacy-sha256@rspace_v1}` values and nobody can log in.
+  Downgrade requires restoring the pre-upgrade database. This is in the release notes.
+- First start after upgrade is slower by the wrap time, under a minute at 500 users.
+- Rows the migration cannot parse are left as they were and logged at ERROR by username. Those
+  users cannot log in until an administrator resets their password.
+- Two encoder ids exist in the database until every legacy user has logged in once. The legacy
+  verify path, including Shiro's exact byte ordering for the salted hash, was pinned by tests
+  against fixtures generated with the old Shiro code and then hard-coded, before that code was
+  removed. The salted `CryptoUtils.hashWithSha256inHex` helper is gone.
+- `Argon2PasswordEncoder` requires BouncyCastle. Two `bcprov` lines are already on the compile
+  classpath: `bcprov-jdk15on` 1.70, a direct dependency since the initial commit and the final
+  release of that line, and `bcprov-jdk18on` 1.84, transitive through Shiro 3's
+  `shiro-crypto-hash`. Both ship the same `org.bouncycastle` packages, so which copy of
+  `Argon2BytesGenerator` loads is a classpath-order accident. Two `bcpkix` versions (1.52 via the
+  Box SDK, 1.81.1 via Tika) sit on top. This change declares `bcprov-jdk18on` 1.84 explicitly,
+  pinned to Shiro's version, which leaves the resolved artifact set unchanged. Retiring
+  `jdk15on` and consolidating onto one BouncyCastle line is RSDEV-1544.
+- `User.MAX_PWD_LENGTH` carries a `TODO: RSDEV-894` to lift the 50-character cap. The cap is
+  driven by bcrypt's 72-byte input limit on the SSO verification password, which this change does
+  not touch, so the cap stays at 50 here. A second, stacked PR under the same ticket migrates the
+  verification password onto the same delegating encoder (existing bcrypt values prefixed
+  `{bcrypt}` and re-encoded on next successful use) and raises the cap to 128. Splitting it keeps
+  this PR to the login path, whose failures surface within minutes, apart from the verification
+  path, whose failures would surface as SSO customers unable to sign or witness documents.
+- Under a login flood, legitimate users see slow or failed logins for the duration. That is the
+  intended failure mode, replacing an out-of-memory JVM.
+- The reauthentication path and sysadmin operate-as share the `BoundedPasswordVerifier` and so
+  share the permit pool with login. Both are authenticated and low volume.
+- Argon2's cost makes the response time for an existing username measurably longer than for an
+  unknown one, which never runs a hash. Accepted because usernames are not secret (see Context);
+  equalising the timing is out of scope for this ticket.

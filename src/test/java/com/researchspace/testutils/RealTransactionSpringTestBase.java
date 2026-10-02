@@ -18,9 +18,9 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.testutil.InvokableWithResult;
-import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.AuditDaoIT;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.AbstractUserOrGroupImpl;
@@ -584,7 +584,7 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
 
     User user = TestFactory.createAnyUser(name);
 
-    String hashedPassword = CryptoUtils.hashWithSha256inHex(password);
+    String hashedPassword = new RSpacePasswordEncoder().encode(password);
 
     user.setPassword(hashedPassword);
     user.setConfirmPassword(hashedPassword);
