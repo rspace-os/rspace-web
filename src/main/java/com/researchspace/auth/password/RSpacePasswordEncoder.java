@@ -10,8 +10,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * Encoder for login and verification passwords. Stored values carry an {@code {id}} prefix; new
  * passwords are encoded with Argon2id under {@link #ARGON2_ID}. Only the ids registered here are
  * accepted, so an unknown or missing prefix fails with {@link IllegalArgumentException} rather than
- * matching. {@link #BCRYPT_ID} only exists for verification passwords set before RSDEV-894. See ADR
- * 0011.
+ * matching. {@link #BCRYPT_ID} is registered for verification passwords set before RSDEV-894 and
+ * never encodes; {@link com.researchspace.auth.UsernamePasswordCredentialsMatcher} refuses it for
+ * login passwords. See ADR 0011.
  */
 public class RSpacePasswordEncoder implements PasswordEncoder {
 

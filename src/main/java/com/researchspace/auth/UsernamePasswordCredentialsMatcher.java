@@ -1,6 +1,7 @@
 package com.researchspace.auth;
 
 import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.User;
 import com.researchspace.service.UserManager;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
+
+  private static final String BCRYPT_PREFIX = "{" + RSpacePasswordEncoder.BCRYPT_ID + "}";
 
   private @Autowired BoundedPasswordVerifier verifier;
   private @Autowired UserManager userMgr;
@@ -45,6 +48,10 @@ public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
 
   private boolean verify(
       String username, String suppliedPassword, String storedPassword, User callerCopy) {
+    if (storedPassword != null && storedPassword.startsWith(BCRYPT_PREFIX)) {
+      log.error("Login password of [{}] has the verification-password-only bcrypt id", username);
+      return false;
+    }
     BoundedPasswordVerifier.Result result;
     try {
       result = verifier.verify(username, suppliedPassword, storedPassword);

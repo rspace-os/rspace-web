@@ -13,11 +13,14 @@ public interface IVerificationPasswordValidator {
   boolean isVerificationPasswordSet(User subject);
 
   /**
-   * Checks if user's verification password has been set to a valid value.
+   * Checks a candidate verification password through the shared bounded verifier. If it matches an
+   * outdated encoding, the stored hash is re-encoded and {@code passwordOwner} updated to match.
    *
    * @param passwordOwner The password owner - can be the subject or an operating-as sysadmin
    * @param password Candidate password
    * @return true if password matches hashed value, false otherwise
+   * @throws com.researchspace.auth.password.LoginVerificationBusyException if no verification slot
+   *     is free in time
    */
   boolean authenticateVerificationPassword(User passwordOwner, String password);
 

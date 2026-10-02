@@ -131,4 +131,12 @@ class UsernamePasswordCredentialsMatcherTest {
 
     assertTrue(ENCODER.matches("sysWisc23!", upgraded.getValue()));
   }
+
+  @Test
+  void bcryptIsRefusedForLoginPasswords() {
+    User user = TestFactory.createAnyUser("bcrypt");
+    user.setPassword("{bcrypt}$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6");
+    assertFalse(matcher.verifyAndUpgrade(user, "verify1234"));
+    verify(verifier, never()).verify(anyString(), any(), anyString());
+  }
 }

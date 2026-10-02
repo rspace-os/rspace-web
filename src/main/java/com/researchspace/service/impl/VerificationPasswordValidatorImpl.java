@@ -45,12 +45,6 @@ public class VerificationPasswordValidatorImpl implements IVerificationPasswordV
     return SignupSource.GOOGLE.equals(user.getSignupSource());
   }
 
-  /**
-   * Checks if user's verification password has been set to a valid value.
-   *
-   * @param The principal user or sysadmin operating-as
-   * @return true if current verification password is valid, false otherwise
-   */
   @Override
   public boolean authenticateVerificationPassword(User passwordOwner, String password) {
     String username = passwordOwner.getUsername();

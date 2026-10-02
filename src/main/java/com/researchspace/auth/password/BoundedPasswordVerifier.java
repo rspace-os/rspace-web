@@ -9,10 +9,10 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * Runs Argon2 login-password checks (Shiro login and default-realm reauthentication) through one
- * shared pool of permits, so the per-check heap allocation is bounded however many requests arrive
- * (ADR 0011). A username has at most one check in flight, so one account cannot hold more than one
- * permit. Encoding new passwords is not bounded.
+ * Runs stored-password checks (Shiro login, default-realm reauthentication and SSO/Community
+ * verification passwords) through one shared pool of permits, so the per-check heap allocation is
+ * bounded however many requests arrive (ADR 0011). A username has at most one check in flight, so
+ * one account cannot hold more than one permit. Encoding new passwords is not bounded.
  */
 public class BoundedPasswordVerifier {
 

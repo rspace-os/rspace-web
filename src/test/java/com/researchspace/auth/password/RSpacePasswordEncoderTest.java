@@ -18,9 +18,7 @@ class RSpacePasswordEncoderTest {
   private static final String UNSALTED_HEX =
       "caa6eec0faa20efba3b7af44af7107b05334759954ef3581030cc8e6199a33bf";
 
-  // Generated with BCrypt.hashpw("verify1234", BCrypt.gensalt()), as
-  // VerificationPasswordValidatorImpl
-  // stored it
+  // BCrypt.hashpw("verify1234", BCrypt.gensalt()), as stored before RSDEV-894
   private static final String LEGACY_BCRYPT =
       "$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6";
 

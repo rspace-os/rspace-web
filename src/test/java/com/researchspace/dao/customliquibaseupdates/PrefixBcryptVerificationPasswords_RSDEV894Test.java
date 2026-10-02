@@ -1,14 +1,12 @@
 package com.researchspace.dao.customliquibaseupdates;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.User;
-import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 class PrefixBcryptVerificationPasswords_RSDEV894Test extends SpringTransactionalTest {
 
@@ -16,10 +14,8 @@ class PrefixBcryptVerificationPasswords_RSDEV894Test extends SpringTransactional
   private static final String LEGACY_BCRYPT =
       "$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6";
 
-  private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
-
   @Test
-  void prefixedOnceThenUpgradedToArgon2OnUse() throws Exception {
+  void prefixesBareBcryptOnce() throws Exception {
     User u = createAndSaveRandomUser();
     storeVerificationPassword(u, LEGACY_BCRYPT);
 
@@ -27,22 +23,31 @@ class PrefixBcryptVerificationPasswords_RSDEV894Test extends SpringTransactional
     assertEquals("{bcrypt}" + LEGACY_BCRYPT, storedVerificationPassword(u));
     assertTrue(runChange().getConfirmationMessage().startsWith("Prefixed 0 "));
     assertEquals("{bcrypt}" + LEGACY_BCRYPT, storedVerificationPassword(u));
-
-    User reloaded = reload(u);
-    assertTrue(
-        verificationPasswordValidator.authenticateVerificationPassword(reloaded, "verify1234"));
-    String upgraded = storedVerificationPassword(u);
-    assertTrue(upgraded.startsWith("{" + RSpacePasswordEncoder.ARGON2_ID + "}"), upgraded);
-    assertTrue(
-        verificationPasswordValidator.authenticateVerificationPassword(reload(u), "verify1234"));
   }
 
   @Test
-  void leavesNonBcryptValuesAlone() throws Exception {
-    User u = createAndSaveRandomUser();
-    storeVerificationPassword(u, "not-bcrypt");
+  void clearsValuesThatCouldNeverVerify() throws Exception {
+    User notBcrypt = createAndSaveRandomUser();
+    User unknownId = createAndSaveRandomUser();
+    storeVerificationPassword(notBcrypt, "not-bcrypt");
+    storeVerificationPassword(unknownId, "{noop}x");
     runChange();
-    assertEquals("not-bcrypt", storedVerificationPassword(u));
+    assertNull(storedVerificationPassword(notBcrypt));
+    assertNull(storedVerificationPassword(unknownId));
+  }
+
+  @Test
+  void upgradeWriteIsACompareAndSwap() throws Exception {
+    User u = createAndSaveRandomUser();
+    storeVerificationPassword(u, "{bcrypt}" + LEGACY_BCRYPT);
+    assertEquals(
+        0, userDao.updateVerificationPasswordHash(u.getUsername(), "{bcrypt}stale", "{x}new"));
+    assertEquals("{bcrypt}" + LEGACY_BCRYPT, storedVerificationPassword(u));
+    assertEquals(
+        1,
+        userDao.updateVerificationPasswordHash(
+            u.getUsername(), "{bcrypt}" + LEGACY_BCRYPT, "{x}new"));
+    assertEquals("{x}new", storedVerificationPassword(u));
   }
 
   private PrefixBcryptVerificationPasswords_RSDEV894 runChange() {
@@ -53,12 +58,6 @@ class PrefixBcryptVerificationPasswords_RSDEV894Test extends SpringTransactional
     change.addBeans();
     change.doExecute(null);
     return change;
-  }
-
-  private User reload(User u) {
-    sessionFactory.getCurrentSession().flush();
-    sessionFactory.getCurrentSession().clear();
-    return userDao.getUserByUsername(u.getUsername());
   }
 
   private void storeVerificationPassword(User u, String value) {
