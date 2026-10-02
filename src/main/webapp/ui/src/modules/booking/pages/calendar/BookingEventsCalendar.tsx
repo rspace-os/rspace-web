@@ -1,10 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { CalendarCheck2Icon, PlusIcon } from "lucide-react";
+import { CalendarCheck2Icon, PencilIcon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
-import { BookingDateControls, BookingTimeZoneBadge } from "@/modules/booking/components/BookingToolbar";
+import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
 import {
   DayTimeline,
   type DayTimelineEvent,
@@ -12,36 +10,27 @@ import {
   type DayTimelineViewState,
 } from "@/modules/booking/components/DayTimeline";
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
-import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
-import { BookingForm, type BookingFormSubmission, type EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { bookingProblemKey } from "@/modules/booking/creation/useCreateBooking";
-import {
-  ApiV2ProblemError,
-  type BookingListDocument,
-  type BookingUpdate,
-  isBookingOverlapError,
-  updateBooking,
-} from "@/modules/booking/domain/booking";
+import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   addCalendarDays,
-  formatAgendaPeriod,
   sliceAcrossZonedDay,
   wallClockToDayMinute,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
-import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import i18n from "@/modules/common/i18n";
 import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
 import { useTableList } from "@/modules/common/table-list/useTableList";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
+import { BookingActions } from "./BookingEventActions";
 
 export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
 export type CalendarLayout = (typeof calendarLayouts)[number];
@@ -49,12 +38,25 @@ export const calendarViews = ["day", "week", "month"] as const;
 export type CalendarView = (typeof calendarViews)[number];
 export type BookingCalendarResource = BookingListDocument["target"];
 
+function additionalEventResourceCount(
+  events: readonly BookingListDocument[],
+  resources: readonly BookingCalendarResource[] | undefined,
+): number {
+  if (!resources) return 0;
+  const pageResourceIds = new Set(resources.map((resource) => resource.globalId));
+  const additionalResourceIds = new Set<string>();
+  for (const event of events) {
+    if (!pageResourceIds.has(event.target.globalId)) additionalResourceIds.add(event.target.globalId);
+  }
+  return additionalResourceIds.size;
+}
+
 const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
   slug: "booking-events-calendar",
   idField: "id",
   useAsTitle: "purpose",
   defaultColumns: ["purpose"],
-  listSearchableFields: ["target.name", "purpose", "bookedBy"],
+  listSearchableFields: ["target.name", "target.globalId", "purpose", "bookedBy"],
   labels: {
     singularKey: "booking:calendar.event",
     pluralKey: "booking:calendar.title",
@@ -81,7 +83,14 @@ const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
     { name: "timezone", type: "text", labelKey: "booking:calendar.fields.timezone" },
     { name: "start", type: "dateTime", labelKey: "booking:calendar.fields.start" },
     { name: "end", type: "dateTime", labelKey: "booking:calendar.fields.end" },
-    { name: "state", type: "select", options: ["CONFIRMED", "CANCELLED"], labelKey: "booking:calendar.fields.state" },
+    {
+      name: "kind",
+      type: "select",
+      options: ["BOOKING", "MAINTENANCE"],
+      labelKey: "booking:bookableItemDetails.events.kind",
+      list: false,
+      form: false,
+    },
     { name: "canEdit", type: "boolean", labelKey: "booking:calendar.fields.editable", list: false },
     { name: "createdAt", type: "dateTime", labelKey: "booking:calendar.fields.createdAt", list: false },
     { name: "updatedAt", type: "dateTime", labelKey: "booking:calendar.fields.updatedAt", list: false },
@@ -256,180 +265,17 @@ function EventCard({
 }
 
 /** Whole-number grid tracks, kept as literal class strings because Tailwind scans source text. */
-const ACTION_COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3"];
-
-function isEditableBooking(event: BookingListDocument): event is BookingListDocument & EditableBooking {
-  return event.privacy === "full" && event.canEdit && event.state === "CONFIRMED";
-}
-
-function InlineBookingEditor({
-  event,
-  timezone,
-  token,
-  onClose,
-}: {
-  event: BookingListDocument & EditableBooking;
-  timezone: string;
-  token: string;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation(["booking", "common"]);
-  const queryClient = useQueryClient();
-  const configuration = useBookableItemConfiguration(event.target.globalId, token);
-  const mutation = useMutation({
-    mutationFn: (submission: BookingFormSubmission) => {
-      const patch: BookingUpdate = {
-        ...(submission.window.start !== event.start ? { start: submission.window.start } : {}),
-        ...(submission.window.end !== event.end ? { end: submission.window.end } : {}),
-        ...(submission.purpose !== event.purpose ? { purpose: submission.purpose } : {}),
-      };
-      return Object.keys(patch).length === 0
-        ? Promise.resolve(event)
-        : updateBooking(event.id, event.version, patch, token);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
-      onClose();
-    },
-    onError: async (error) => {
-      if (
-        error instanceof ApiV2ProblemError &&
-        (error.status === 412 ||
-          error.code === "errors.api.v2.booking.concurrentModification" ||
-          error.code === "errors.api.v2.forbidden" ||
-          error.code === "errors.api.v2.booking.state.transition")
-      ) {
-        await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
-      }
-      if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      }
-    },
-  });
-  const mutationHasError = React.useRef(false);
-  mutationHasError.current = mutation.isError;
-  const resetMutation = mutation.reset;
-  const clearMutationErrorOnChange = React.useCallback(() => {
-    if (!mutationHasError.current) return;
-    mutationHasError.current = false;
-    resetMutation();
-  }, [resetMutation]);
-
-  if (configuration.isPending) {
-    return (
-      <div className="space-y-4 border-border border-t p-4" aria-busy="true">
-        <p role="status" className="sr-only">
-          {t("bookings.loadingConfiguration")}
-        </p>
-        <Skeleton aria-hidden="true" className="h-12 w-full" />
-        <Skeleton aria-hidden="true" className="h-24 w-full" />
-      </div>
-    );
-  }
-  if (configuration.isError || !configuration.data) {
-    return (
-      <div className="space-y-3 border-border border-t p-4">
-        <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => void configuration.refetch()}>
-            {t("common:actions.retry")}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            {t("bookings.form.cancel")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex max-h-[min(22rem,45vh)] flex-col border-border border-t">
-      <BookingForm
-        key={event.version}
-        mode="edit"
-        density="compact"
-        displayTimezone={timezone}
-        booking={event}
-        configuration={configuration.data}
-        token={token}
-        pending={mutation.isPending}
-        error={mutation.error ? t(bookingProblemKey(mutation.error)) : undefined}
-        submissionBlocked={isBookingOverlapError(mutation.error)}
-        onStateChange={clearMutationErrorOnChange}
-        onCancel={() => {
-          mutation.reset();
-          onClose();
-        }}
-        onSubmit={(submission) => mutation.mutateAsync(submission)}
-      />
-    </div>
-  );
-}
-
-function BookingActions({ event, timezone }: { event: BookingListDocument; timezone: string }) {
-  const { t } = useTranslation("booking");
-  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const [editing, setEditing] = React.useState(false);
-  const editable = isEditableBooking(event);
-  if (editing && editable) {
-    return <InlineBookingEditor event={event} timezone={timezone} token={token} onClose={() => setEditing(false)} />;
-  }
-  // The same pair of conditions the download endpoint itself enforces, so the action never 404s.
-  const canDownload = event.canViewConfiguration && event.state === "CONFIRMED";
-  const canViewDetails = event.privacy === "full";
-  const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0) + (canDownload ? 1 : 0);
-  if (actionCount === 0) return null;
-  return (
-    <div
-      className={cn(
-        "grid border-border border-t text-xs",
-        ACTION_COLUMNS[actionCount],
-        actionCount > 1 && "divide-x divide-border",
-      )}
-    >
-      {canViewDetails ? (
-        <Link
-          className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
-          to="/booking/calendar/bookings/$id"
-          params={{ id: String(event.id) }}
-        >
-          {t("calendar.actions.viewDetails")}
-        </Link>
-      ) : null}
-      {editable ? (
-        <button
-          type="button"
-          className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
-          onClick={() => setEditing(true)}
-        >
-          {t("calendar.actions.edit")}
-        </button>
-      ) : null}
-      {canDownload ? (
-        <BookingCalendarFileButton
-          bookingId={event.id}
-          itemName={event.target.value.name}
-          period={formatAgendaPeriod(event.start, event.end, timezone)}
-          token={token}
-          size="xs"
-          variant="link"
-          className="h-auto rounded-none py-2"
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function actionsFor(events: readonly BookingListDocument[], timezone: string) {
+function actionsFor(events: readonly BookingListDocument[], timezone: string, timelineDate: string) {
   return (timelineEvent: Extract<DayTimelineEvent, { kind: "booking" }>) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
-    return event ? <BookingActions event={event} timezone={timezone} /> : null;
+    return event ? <BookingActions event={event} timezone={timezone} timelineDate={timelineDate} /> : null;
   };
 }
 
-function blockoutActionsFor(events: readonly BookingListDocument[], timezone: string) {
+function blockoutActionsFor(events: readonly BookingListDocument[], timezone: string, timelineDate: string) {
   return (timelineEvent: Extract<DayTimelineEvent, { kind: "blockout" }>) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
-    return event ? <BookingActions event={event} timezone={timezone} /> : null;
+    return event ? <BookingActions event={event} timezone={timezone} timelineDate={timelineDate} /> : null;
   };
 }
 
@@ -449,24 +295,20 @@ function SegmentedControl<Option extends string>({
   onChange: (option: Option) => void;
 }) {
   return (
-    <fieldset>
-      <legend className="sr-only">{legend}</legend>
-      <div className="flex w-fit rounded-sm border bg-background p-1">
-        {options.map((option) => (
-          <Button
-            key={option}
-            type="button"
-            size="sm"
-            variant={value === option ? "secondary" : "ghost"}
-            aria-pressed={value === option}
-            disabled={isDisabled?.(option)}
-            onClick={() => onChange(option)}
-          >
-            {optionLabel(option)}
-          </Button>
-        ))}
-      </div>
-    </fieldset>
+    <ButtonGroup aria-label={legend}>
+      {options.map((option) => (
+        <Button
+          key={option}
+          type="button"
+          variant={value === option ? "secondary" : "outline"}
+          aria-pressed={value === option}
+          disabled={isDisabled?.(option)}
+          onClick={() => onChange(option)}
+        >
+          {optionLabel(option)}
+        </Button>
+      ))}
+    </ButtonGroup>
   );
 }
 
@@ -510,7 +352,6 @@ function CalendarFilterControls({
       <fieldset className="min-w-0">
         <legend className="sr-only">{t("calendar.displayControls")}</legend>
         <div className="flex flex-wrap items-center gap-2">
-          <BookingTimeZoneBadge timeZone={timezone} label={t("availabilityBar.timezone", { timezone })} />
           <SegmentedControl
             legend={t("calendar.layout.legend")}
             options={calendarLayouts}
@@ -570,8 +411,8 @@ function TimeGrid({
               startWindow={availabilityStartMinute}
               endWindow={availabilityEndMinute}
               showZoomControls={false}
-              renderEventActions={actionsFor(events, timezone)}
-              renderBlockoutActions={blockoutActionsFor(events, timezone)}
+              renderEventActions={actionsFor(events, timezone, date)}
+              renderBlockoutActions={blockoutActionsFor(events, timezone, date)}
             />
           </div>
           {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
@@ -669,6 +510,7 @@ function ResourceSchedule({
   availabilityEndMinute,
   resourceConfigurations,
   creationDisabled,
+  includeEventResources = false,
   onResourceRangeSelect,
   isLoading = false,
 }: {
@@ -682,6 +524,7 @@ function ResourceSchedule({
   availabilityEndMinute: number;
   resourceConfigurations?: readonly BookableItemOption[];
   creationDisabled: boolean;
+  includeEventResources?: boolean;
   isLoading?: boolean;
   onResourceRangeSelect?: (
     resource: BookableItemOption,
@@ -715,15 +558,32 @@ function ResourceSchedule({
     () =>
       [
         ...new Map(
-          (resources ?? events.map((event) => event.target)).map((resource) => [resource.globalId, resource]),
+          (includeEventResources
+            ? [...(resources ?? []), ...events.map((event) => event.target)]
+            : (resources ?? events.map((event) => event.target))
+          ).map((resource) => [resource.globalId, resource]),
         ).values(),
       ].toSorted((left, right) => left.value.name.localeCompare(right.value.name)),
-    [events, resources],
+    [events, includeEventResources, resources],
   );
   const configurationByTarget = React.useMemo(
     () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
     [resourceConfigurations],
   );
+  const editConfigurationLink = (resource: BookingCalendarResource, configuration?: BookableItemOption) => {
+    if (configuration?.capabilities?.canEditConfiguration !== true) return null;
+    return (
+      <Link
+        className={buttonVariants({ variant: "outline", size: "xs", className: "w-full" })}
+        to="/booking/bookable-items/$globalId/{-$tab}"
+        params={{ globalId: resource.globalId, tab: "details" }}
+        search={{ edit: true }}
+      >
+        <PencilIcon aria-hidden="true" />
+        {t("bookableItemDetails.edit")}
+      </Link>
+    );
+  };
   return (
     <section aria-label={t("calendar.layout.resources")} className="p-3" aria-busy={isLoading}>
       <section
@@ -739,6 +599,7 @@ function ResourceSchedule({
             {resourceRows.map((resource, index) => {
               const resourceEvents = eventsByResourceAndDate.get(`${resource.globalId}|${date}`) ?? [];
               const configuration = configurationByTarget.get(resource.globalId);
+              const canCreateBooking = configuration?.capabilities?.canCreateBooking === true;
               const proposedRange = configuration
                 ? nextFreeRange(
                     resourceEvents,
@@ -752,19 +613,22 @@ function ResourceSchedule({
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="border-r bg-muted/30 p-1">
-                    <InventoryItem
-                      locationPlacement="below"
-                      name={resource.value.name}
-                      globalId={resource.globalId}
-                      href={`/globalId/${resource.globalId}`}
-                      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
-                      size="xs"
-                    >
-                      <InventoryLocationLink
-                        name={resource.value.parentContainerName}
-                        globalId={resource.value.parentContainerGlobalId}
-                      />
-                    </InventoryItem>
+                    <div className="space-y-1">
+                      <InventoryItem
+                        locationPlacement="below"
+                        name={resource.value.name}
+                        globalId={resource.globalId}
+                        href={`/globalId/${resource.globalId}`}
+                        idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+                        size="xs"
+                      >
+                        <InventoryLocationLink
+                          name={resource.value.parentContainerName}
+                          globalId={resource.value.parentContainerGlobalId}
+                        />
+                      </InventoryItem>
+                      {editConfigurationLink(resource, configuration)}
+                    </div>
                   </header>
                   <div className="relative grid min-h-32 min-w-0">
                     <div className="grid min-w-0" aria-hidden={isLoading || undefined} inert={isLoading}>
@@ -781,12 +645,12 @@ function ResourceSchedule({
                         onViewStateChange={setTimelineViewState}
                         scrollSync={timelineScrollSync}
                         showScrollbar={index === resourceRows.length - 1}
-                        renderEventActions={actionsFor(resourceEvents, timezone)}
-                        renderBlockoutActions={blockoutActionsFor(resourceEvents, timezone)}
+                        renderEventActions={actionsFor(resourceEvents, timezone, date)}
+                        renderBlockoutActions={blockoutActionsFor(resourceEvents, timezone, date)}
                         snapIncrementMinutes={configuration?.slotGranularityMinutes}
-                        creationDisabled={isLoading || creationDisabled || !configuration}
+                        creationDisabled={isLoading || creationDisabled || !canCreateBooking}
                         onRangeSelect={
-                          configuration && onResourceRangeSelect
+                          canCreateBooking && configuration && onResourceRangeSelect
                             ? (range, trigger) => onResourceRangeSelect(configuration, range, trigger)
                             : undefined
                         }
@@ -800,11 +664,11 @@ function ResourceSchedule({
                       size="icon-sm"
                       variant="outline"
                       disabled={
-                        isLoading || creationDisabled || !configuration || !proposedRange || !onResourceRangeSelect
+                        isLoading || creationDisabled || !canCreateBooking || !proposedRange || !onResourceRangeSelect
                       }
                       aria-label={t("calendar.actions.addForItem", { item: resource.value.name })}
                       onClick={(event) => {
-                        if (!configuration || !proposedRange || !onResourceRangeSelect) return;
+                        if (!canCreateBooking || !configuration || !proposedRange || !onResourceRangeSelect) return;
                         onResourceRangeSelect(configuration, proposedRange, event.currentTarget);
                       }}
                     >
@@ -820,19 +684,22 @@ function ResourceSchedule({
             {resourceRows.map((resource) => (
               <React.Fragment key={resource.globalId}>
                 <div className="sticky left-0 z-10 border-r border-b bg-background p-1">
-                  <InventoryItem
-                    locationPlacement="below"
-                    name={resource.value.name}
-                    globalId={resource.globalId}
-                    href={`/globalId/${resource.globalId}`}
-                    idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
-                    size="xs"
-                  >
-                    <InventoryLocationLink
-                      name={resource.value.parentContainerName}
-                      globalId={resource.value.parentContainerGlobalId}
-                    />
-                  </InventoryItem>
+                  <div className="space-y-1">
+                    <InventoryItem
+                      locationPlacement="below"
+                      name={resource.value.name}
+                      globalId={resource.globalId}
+                      href={`/globalId/${resource.globalId}`}
+                      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+                      size="xs"
+                    >
+                      <InventoryLocationLink
+                        name={resource.value.parentContainerName}
+                        globalId={resource.value.parentContainerGlobalId}
+                      />
+                    </InventoryItem>
+                    {editConfigurationLink(resource, configurationByTarget.get(resource.globalId))}
+                  </div>
                 </div>
                 {dates.map((day) => (
                   <div key={day} className="min-h-20 space-y-1 border-r border-b p-1">
@@ -960,6 +827,8 @@ export function BookingEventsCalendar({
   creationAction,
   resourceConfigurations,
   resourceTableProps,
+  searchControl,
+  onEventScopeChange,
   creationDisabled = false,
   onResourceRangeSelect,
 }: {
@@ -984,6 +853,8 @@ export function BookingEventsCalendar({
   creationAction?: React.ReactNode;
   resourceConfigurations?: readonly BookableItemOption[];
   resourceTableProps?: TableListProps<BookingConfiguration>;
+  searchControl?: { value: string; onChange: (search: string) => void };
+  onEventScopeChange?: (isFiltered: boolean) => void;
   creationDisabled?: boolean;
   onResourceRangeSelect?: (
     resource: BookableItemOption,
@@ -1001,6 +872,26 @@ export function BookingEventsCalendar({
     features: { sorting: false, pagination: false, columns: false },
     queryString: false,
   });
+  const eventFiltering = table.tableProps.features.filtering;
+  const eventSearch = searchControl?.value ?? (eventFiltering !== false ? eventFiltering.value.search : "");
+  const eventScopeIsFiltered =
+    mineOnly || (eventFiltering !== false && (eventSearch.trim() !== "" || eventFiltering.value.expression !== null));
+  React.useEffect(() => {
+    onEventScopeChange?.(eventScopeIsFiltered);
+  }, [eventScopeIsFiltered, onEventScopeChange]);
+  const calendarFeatures =
+    !searchControl || eventFiltering === false
+      ? table.tableProps.features
+      : {
+          ...table.tableProps.features,
+          filtering: {
+            value: { ...eventFiltering.value, search: searchControl.value },
+            onChange: (filters: typeof eventFiltering.value) => {
+              eventFiltering.onChange(filters);
+              searchControl.onChange(filters.search);
+            },
+          },
+        };
   return (
     <main className="min-h-screen w-full min-w-0 space-y-5 overflow-hidden bg-background p-4 sm:p-8">
       {isLoading && !isError && (
@@ -1019,6 +910,9 @@ export function BookingEventsCalendar({
       {!isError && (
         <TableList
           {...table.tableProps}
+          features={calendarFeatures}
+          debounceSearch={resourceTableProps !== undefined}
+          headingClassName="text-2xl font-semibold"
           createAction={creationAction}
           filterButtons={{
             legend: t("calendar.quickFilters.legend"),
@@ -1069,33 +963,53 @@ export function BookingEventsCalendar({
                 (resourceTableProps ? (
                   <TableList
                     {...resourceTableProps}
+                    features={{
+                      ...resourceTableProps.features,
+                      filtering: false,
+                      pagination:
+                        eventScopeIsFiltered && resourceTableProps.rows.length === 0
+                          ? false
+                          : resourceTableProps.features.pagination,
+                    }}
                     status={resourceTableProps.status === "loading" ? "idle" : resourceTableProps.status}
-                    renderRowsWhenEmpty={resourceTableProps.status === "loading"}
+                    renderRowsWhenEmpty={
+                      resourceTableProps.status === "loading" || (eventScopeIsFiltered && filteredEvents.length > 0)
+                    }
                     hideHeader
                     // The resource fetch honours only the search term, so a filter panel here
                     // would build an expression nothing reads.
                     hideFilterPanel
                     variant="transparent"
-                    renderRows={() =>
-                      resourceTableProps.status === "loading" ? (
-                        <ResourceScheduleSkeleton period={{ date, view }} />
-                      ) : (
-                        <ResourceSchedule
-                          date={date}
-                          view={view}
-                          events={filteredEvents}
-                          resources={resources}
-                          timezone={timezone}
-                          today={todayValue}
-                          availabilityStartMinute={availabilityStartMinute}
-                          availabilityEndMinute={availabilityEndMinute}
-                          resourceConfigurations={resourceConfigurations}
-                          creationDisabled={creationDisabled}
-                          isLoading={isLoading}
-                          onResourceRangeSelect={onResourceRangeSelect}
-                        />
-                      )
-                    }
+                    renderRows={() => {
+                      if (resourceTableProps.status === "loading") {
+                        return <ResourceScheduleSkeleton period={{ date, view }} />;
+                      }
+                      const extraEventResourceCount = additionalEventResourceCount(filteredEvents, resources);
+                      return (
+                        <>
+                          {extraEventResourceCount > 0 && (
+                            <p className="border-b px-3 py-2 text-sm text-muted-foreground">
+                              {t("calendar.additionalEventResources", { count: extraEventResourceCount })}
+                            </p>
+                          )}
+                          <ResourceSchedule
+                            date={date}
+                            view={view}
+                            events={filteredEvents}
+                            resources={resources}
+                            timezone={timezone}
+                            today={todayValue}
+                            availabilityStartMinute={availabilityStartMinute}
+                            availabilityEndMinute={availabilityEndMinute}
+                            resourceConfigurations={resourceConfigurations}
+                            creationDisabled={creationDisabled}
+                            includeEventResources={eventScopeIsFiltered}
+                            isLoading={isLoading}
+                            onResourceRangeSelect={onResourceRangeSelect}
+                          />
+                        </>
+                      );
+                    }}
                   />
                 ) : (
                   <ResourceSchedule
@@ -1109,6 +1023,7 @@ export function BookingEventsCalendar({
                     availabilityEndMinute={availabilityEndMinute}
                     resourceConfigurations={resourceConfigurations}
                     creationDisabled={creationDisabled}
+                    includeEventResources={eventScopeIsFiltered}
                     isLoading={isLoading}
                     onResourceRangeSelect={onResourceRangeSelect}
                   />
@@ -1143,6 +1058,7 @@ export function ResourceScheduleSkeleton({ period }: { period?: { date: string; 
               <React.Fragment key={row}>
                 <div className="border-r border-b p-1">
                   <Skeleton className="h-16 w-full" />
+                  {row === 0 && <Skeleton className="mt-1 h-6 w-full" />}
                 </div>
                 {dates.map((day) => (
                   <div key={day} className="min-h-20 border-r border-b p-1">

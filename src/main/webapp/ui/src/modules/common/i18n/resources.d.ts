@@ -804,6 +804,7 @@ export default interface Resources {
         "error": "Could not find available items.",
         "freeLaterToday": "Free later today",
         "legend": "Quick filters",
+        "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
         "loading": "Finding bookable items…",
         "retry": "Retry",
         "scope": "Availability uses the selected display date and timezone."
@@ -811,6 +812,17 @@ export default interface Resources {
       "singular": "Bookable item",
       "title": "All Bookable Items",
       "toolbar": "All Bookable Items controls"
+    },
+    "archived": {
+      "description": "This booking configuration is archived. New bookings, edits, access changes, and calendar links are unavailable until it is restored.",
+      "error": "This archived booking configuration is not available.",
+      "futureBookings": "Future bookings",
+      "loading": "Loading archived booking configuration.",
+      "noFutureBookings": "There are no future bookings to manage.",
+      "subscriptionInactive": "The item calendar subscription is inactive.",
+      "unarchive": "Unarchive",
+      "unarchiveError": "The configuration could not be unarchived. Refresh and try again.",
+      "unknownItem": "Archived booking configuration"
     },
     "availabilityBar": {
       "current": {
@@ -832,6 +844,7 @@ export default interface Resources {
         "overlap": "Booked and blocked out: {ranges}."
       },
       "slice": {
+        "bookedBy": "Booked by {user}",
         "count": "{count, plural, one {# event} other {# events}}",
         "details": "Details",
         "sources": {
@@ -863,6 +876,7 @@ export default interface Resources {
       },
       "archived": "Archived",
       "audit": {
+        "allActions": "All actions",
         "apply": "Load audit events",
         "conflict": {
           "description": "This snapshot can no longer be paged reliably. Restart from the first page to avoid missing or duplicate events.",
@@ -920,6 +934,25 @@ export default interface Resources {
           "inverted": "From must be on or before To.",
           "required": "Choose a date.",
           "tooWide": "Choose a period of no more than 183 days."
+        },
+        "values": {
+          "allowDoubleBooking": "Allow concurrent bookings",
+          "bufferAfter": "Buffer after (minutes)",
+          "bufferBefore": "Buffer before (minutes)",
+          "configuration": "Booking configuration",
+          "empty": "No details recorded",
+          "enabled": "Enabled",
+          "end": "End (UTC)",
+          "increment": "Time increment (minutes)",
+          "kind": "Event type",
+          "maximumDuration": "Maximum duration (minutes)",
+          "openingEnd": "Closing time",
+          "openingStart": "Opening time",
+          "purpose": "Purpose / notes",
+          "start": "Start (UTC)",
+          "state": "Status",
+          "target": "Bookable item",
+          "timezone": "Scheduling timezone"
         }
       },
       "calendarSubscription": {
@@ -1111,7 +1144,7 @@ export default interface Resources {
       },
       "plural": "Bookable Items",
       "singular": "Bookable item",
-      "staleEdit": "This configuration changed while you were editing. Your draft is preserved. Copy your changes, then refresh the page before editing again.",
+      "staleEdit": "This configuration changed while you were editing. Your draft is preserved; review the server-changed fields below before saving again.",
       "states": {
         "active": "Active"
       },
@@ -1138,7 +1171,6 @@ export default interface Resources {
         "title": "Cancel booking?"
       },
       "compact": {
-        "bookingDescription": "Choose a bookable item and time for the new booking.",
         "bookingTitle": "New Booking",
         "discard": "Discard changes",
         "discardDescription": "Your unsaved event changes will be lost.",
@@ -1209,7 +1241,7 @@ export default interface Resources {
         "openingHours": "This booking must be within the bookable item's opening hours.",
         "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
         "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
-        "overlap": "This period overlaps another booking.",
+        "overlap": "This period overlaps another booking or a maintenance event.",
         "targetUnavailable": "This bookable item is unavailable.",
         "windowRequired": "Enter a valid start and end."
       },
@@ -1254,12 +1286,22 @@ export default interface Resources {
         "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
         "typeBooking": "Booking"
       },
+      "itemInformation": {
+        "buffer": "Buffer",
+        "bufferAfter": "{count}m after",
+        "bufferBefore": "{count}m before",
+        "doubleBookingAllowed": "Double booking allowed",
+        "title": "Item information"
+      },
       "loading": "Loading booking.",
       "loadingConfiguration": "Loading bookable item settings.",
       "maintenanceLabel": "Maintenance blockout",
       "warnings": {
         "past": "This booking is in the past. You can still create it."
       }
+    },
+    "breadcrumbs": {
+      "label": "Breadcrumbs"
     },
     "calendar": {
       "actions": {
@@ -1269,6 +1311,7 @@ export default interface Resources {
         "label": "Booking actions",
         "viewDetails": "View details"
       },
+      "additionalEventResources": "{count, plural, one {# additional resource with a matching event is shown.} other {# additional resources with matching events are shown.}} Pagination applies to catalogue items.",
       "agenda": "Booking agenda",
       "availability": "Availability",
       "availabilityLoading": "Loading availability",
@@ -1346,7 +1389,12 @@ export default interface Resources {
       "title": "Calendar",
       "today": "Today",
       "toolbar": "Calendar controls",
-      "unavailable": "Booking events are unavailable."
+      "unavailable": "Booking events are unavailable.",
+      "windowEditor": {
+        "end": "Change booking end time",
+        "move": "Move booking time",
+        "start": "Change booking start time"
+      }
     },
     "dayTimeline": {
       "event": {
@@ -1377,6 +1425,79 @@ export default interface Resources {
         "legend": "Timeline zoom",
         "out": "Zoom out"
       }
+    },
+    "detailPrototype": {
+      "acceptBookings": "Accept new bookings",
+      "acceptBookingsHint": "Turning this off keeps existing bookings and pauses new ones.",
+      "acceptingBookings": "Accepting bookings",
+      "accessHint": "Who can use and manage this bookable item.",
+      "accessSummary": "Imaging group can book · Grace Hopper owns this configuration",
+      "activity": "Activity",
+      "activityCount": "Showing {shown} of {total} activities",
+      "activityCreated": "Created",
+      "activityCreatedBy": "30 Aug 2026, 09:14 · Grace Hopper",
+      "activityDetail": "Sample change: scheduling details updated after a calibration review. Expand entries to read full actor names without truncation.",
+      "activityPage": "Page {page} of {total}",
+      "activitySummary": "Updated 31 Aug 2026 by Grace Hopper",
+      "activityUpdated": "Last updated",
+      "activityUpdatedBy": "31 Aug 2026, 16:40 · Grace Hopper",
+      "bufferAfterLabel": "Buffer after (minutes)",
+      "bufferBeforeLabel": "Buffer before (minutes)",
+      "compareLayouts": "Compare detail layouts",
+      "configurationBreadcrumb": "Booking / Configuration details",
+      "configurationInvalid": "Check opening hours, duration increments and non-negative buffer values.",
+      "dailyHours": "{start}–{end} daily",
+      "discard": "Discard changes",
+      "discarded": "Draft discarded. Saved details restored.",
+      "doubleBookingHint": "Allow reservations to overlap.",
+      "duration": "Duration",
+      "durationHint": "Use 0 for no limit.",
+      "editEvent": "Edit booking",
+      "editing": "Editing",
+      "eventBreadcrumb": "Booking / Event details",
+      "eventInvalid": "Choose a unique local time, with end after start, within the displayed booking rules.",
+      "eventPeriod": "{date} · {time}",
+      "eventTimeHint": "Times in {timezone}. Use 15-minute increments between 08:00 and 18:00, up to 4 hours.",
+      "footer": "Times shown in {timezone}. Full timestamps are under Activity.",
+      "invalidPeriod": "Choose a valid booking period",
+      "layouts": {
+        "ledger": "Ledger",
+        "overview": "Overview",
+        "reading": "Reading"
+      },
+      "nextActivities": "Next activities",
+      "nextLayout": "Next layout",
+      "noActivities": "No matching activities. Try another search.",
+      "noChanges": "No changes yet",
+      "notice": "Prototype · sample data · edits reset on reload",
+      "outlineHint": "Expand a section to see its details.",
+      "paused": "New bookings paused",
+      "peopleItem": "People & location",
+      "peopleSummary": "Ada Lovelace · Imaging suite",
+      "previousActivities": "Previous activities",
+      "previousLayout": "Previous layout",
+      "reservedTime": "Reserved time",
+      "rulesSummary": "{start}–{end} daily · {increment}-minute increments",
+      "saved": "Changes saved in this prototype.",
+      "scenario": "Stress scenario",
+      "scenarioState": "{nameLength}-character name · {activities} activities · {access} access entries",
+      "scenarios": {
+        "combined": "Combined stress",
+        "dst": "DST transition",
+        "longNames": "Very long text",
+        "manyActivities": "240 activities / 40 access entries",
+        "overnight": "Overnight booking",
+        "standard": "Standard",
+        "veryLong": "Very long booking"
+      },
+      "schedulePurpose": "Schedule & purpose",
+      "searchActivity": "Search activity by person, action or number",
+      "sections": "Detail sections",
+      "showMoreActivity": "Show more activities",
+      "timeSummary": "{duration} · {timezone}",
+      "unsaved": "Unsaved changes",
+      "whoCanBook": "Who can book",
+      "yourAccess": "You are an Owner. You can edit rules and manage access."
     },
     "myBookings": {
       "actions": {
@@ -1463,6 +1584,13 @@ export default interface Resources {
       },
       "title": "Booking preferences"
     },
+    "sample": {
+      "check": "Sample check {number}.",
+      "maintenance": {
+        "notes": "Laser alignment and safety inspection.",
+        "title": "Scheduled maintenance"
+      }
+    },
     "settings": {
       "actions": {
         "save": "Save settings"
@@ -1507,7 +1635,7 @@ export default interface Resources {
         "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
         "openingHours": "Use an opening start before the end, or select Open all day.",
         "save": "RSpace could not save the booking settings. Try again.",
-        "stale": "These settings changed after you opened this page. Copy your changes, then refresh the page before editing again."
+        "stale": "These settings changed after you opened this page. Reload the page and try again."
       },
       "fields": {
         "allowDoubleBooking": "Allow concurrent bookings",
@@ -1532,6 +1660,7 @@ export default interface Resources {
       "approvalQueue": "Approval Queue",
       "bookableItems": "Bookable Items",
       "calendar": "Calendar",
+      "dashboard": "Dashboard",
       "label": "Booking",
       "myBookings": "My Bookings",
       "preferences": "Preferences",
@@ -2683,6 +2812,7 @@ export default interface Resources {
         "where": "Where"
       },
       "loading": "Loading records",
+      "offline": "You are offline. Results may be out of date. Pending requests will resume when you reconnect.",
       "page": "Page {page} of {pages}",
       "refreshing": "Refreshing records",
       "results": "{first}–{last} of {total} records",

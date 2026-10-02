@@ -2,7 +2,7 @@ import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { emulateHighContrast, expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
 import { chemistryIntegrationHandler, createDialogStoichiometryResponse } from "./mocks/stoichiometryMocks";

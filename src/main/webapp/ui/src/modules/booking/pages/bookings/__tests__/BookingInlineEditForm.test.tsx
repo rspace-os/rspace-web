@@ -8,7 +8,7 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -111,6 +111,11 @@ describe("BookingInlineEditForm", () => {
     const user = userEvent.setup();
 
     const purpose = await screen.findByDisplayValue("Cell imaging");
+    const itemInformation = await screen.findByRole("complementary", {
+      name: "booking:bookings.itemInformation.title",
+    });
+    expect(within(itemInformation).getByText("Confocal microscope")).toBeVisible();
+    expect(within(itemInformation).getByText("booking:bookableItemDetails.fields.openingHours")).toBeVisible();
     expect(screen.getByRole("heading", { name: "booking:bookings.details.edit.title" })).toHaveFocus();
     await user.clear(purpose);
     await user.type(purpose, "Updated imaging");

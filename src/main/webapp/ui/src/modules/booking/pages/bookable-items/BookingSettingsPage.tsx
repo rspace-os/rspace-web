@@ -136,7 +136,7 @@ function BookingSettingsContent() {
   return (
     <main className="p-4 sm:p-8">
       <DirtyNavigationGuard dirty={dirty} />
-      <Heading level={2} as="h1" className="mb-2">
+      <Heading level={3} as="h1" className="mb-2">
         {t("settings.title")}
       </Heading>
       <p className="mb-5 text-sm text-muted-foreground">{t("settings.description")}</p>

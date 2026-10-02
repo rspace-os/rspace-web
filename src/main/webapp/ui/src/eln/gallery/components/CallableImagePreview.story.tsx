@@ -2,26 +2,29 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { CallableImagePreview, useImagePreview } from "./CallableImagePreview";
 
+// Inline fixtures also load when MSW uses fetch/XHR interception in Firefox.
+function imageFixture(width: number, height: number, color: string) {
+  return `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="${color}"/></svg>`,
+  )}`;
+}
+
 function TestComponent() {
   const { openImagePreview } = useImagePreview();
 
   return (
     <Stack spacing={2}>
-      <Button onClick={() => openImagePreview("https://via.placeholder.com/800x600/0066cc/ffffff?text=Test+Image")}>
-        {"Open Image Preview"}
-      </Button>
+      <Button onClick={() => openImagePreview(imageFixture(800, 600, "#0066cc"))}>{"Open Image Preview"}</Button>
       <Button
         onClick={() =>
-          openImagePreview("https://via.placeholder.com/1200x800/cc6600/ffffff?text=Image+with+Caption", {
+          openImagePreview(imageFixture(1200, 800, "#cc6600"), {
             caption: ["Test Image Caption", "This is a test image with multiple lines"],
           })
         }
       >
         {"Open Image with Caption"}
       </Button>
-      <Button onClick={() => openImagePreview("https://via.placeholder.com/400x300/cc0066/ffffff?text=Small+Image")}>
-        {"Open Small Image"}
-      </Button>
+      <Button onClick={() => openImagePreview(imageFixture(400, 300, "#cc0066"))}>{"Open Small Image"}</Button>
     </Stack>
   );
 }
@@ -38,9 +41,7 @@ function TestComponentWithLargeImage() {
   const { openImagePreview } = useImagePreview();
 
   return (
-    <Button onClick={() => openImagePreview("https://via.placeholder.com/2000x1500/009900/ffffff?text=Large+Image")}>
-      {"Open Large Image Preview"}
-    </Button>
+    <Button onClick={() => openImagePreview(imageFixture(2000, 1500, "#009900"))}>{"Open Large Image Preview"}</Button>
   );
 }
 
@@ -55,11 +56,7 @@ export function CallableImagePreviewWithLargeImage() {
 function TestComponentWithErrorImage() {
   const { openImagePreview } = useImagePreview();
 
-  return (
-    <Button onClick={() => openImagePreview("https://invalid-url-that-should-fail.example.com/nonexistent.jpg")}>
-      {"Open Invalid Image"}
-    </Button>
-  );
+  return <Button onClick={() => openImagePreview("data:image/png;base64,invalid")}>{"Open Invalid Image"}</Button>;
 }
 
 export function CallableImagePreviewWithError() {
@@ -74,11 +71,7 @@ function TestComponentWithEmptyCaption() {
   const { openImagePreview } = useImagePreview();
 
   return (
-    <Button
-      onClick={() =>
-        openImagePreview("https://via.placeholder.com/600x400/660099/ffffff?text=No+Caption", { caption: [] })
-      }
-    >
+    <Button onClick={() => openImagePreview(imageFixture(600, 400, "#660099"), { caption: [] })}>
       {"Open Image with Empty Caption"}
     </Button>
   );

@@ -159,7 +159,10 @@ describe("BookingEventPage", () => {
     server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json(document)));
     renderPage();
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
+    expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toHaveClass(
+      "text-2xl",
+      "font-semibold",
+    );
     expect(screen.getByRole("heading", { name: "booking:bookings.details.title" })).toBeVisible();
     expect(screen.getByText("Cell imaging")).toBeVisible();
     expect(screen.getByText("Ada Lovelace (ada)")).toBeVisible();
