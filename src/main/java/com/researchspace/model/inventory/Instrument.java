@@ -3,7 +3,6 @@ package com.researchspace.model.inventory;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import com.researchspace.search.customfield.InstrumentRuntimeFieldBinder;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -18,13 +17,11 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.TypeBinderRef;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.TypeBinding;
 
 /** Represents RSpace Inventory Instrument */
 @Entity
@@ -34,7 +31,6 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.TypeBindin
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Indexed
-@TypeBinding(binder = @TypeBinderRef(type = InstrumentRuntimeFieldBinder.class))
 public class Instrument extends InstrumentEntity {
 
   /**

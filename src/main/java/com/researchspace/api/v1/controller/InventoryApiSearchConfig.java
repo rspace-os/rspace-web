@@ -51,6 +51,8 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
       message = "{errors.inventory.search.deletedItems.invalid}")
   private String deletedItems;
 
+  private Boolean bookable;
+
   /**
    * Inspect query string for tags: and modify the search term if it contains values we substitute -
    * eg '/'
@@ -122,6 +124,9 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
     }
     if (deletedItems != null) {
       rc.add("deletedItems", deletedItems);
+    }
+    if (bookable != null) {
+      rc.add("bookable", bookable.toString());
     }
     return rc;
   }
