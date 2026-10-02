@@ -144,6 +144,53 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     assertEquals("testId2", updatedElementSet.findElementByPropertyName("ORCID_ID").getValue());
   }
 
+  @Test
+  public void postedNullKeepsTheStoredValue() {
+    UserAppConfig cfg =
+        userAppCfgMgr.saveAppConfigElementSet(createValidPropertyMap(), null, false, u1);
+    Long setId = cfg.getAppConfigElementSets().iterator().next().getId();
+    Map<String, String> update = createValidPropertyMap();
+    update.put(SLACK_CHANNEL_NAME, null); // what the UI posts for an untouched secret
+    update.put(SLACK_CHANNEL_LABEL, "renamed");
+
+    userAppCfgMgr.saveAppConfigElementSet(update, setId, false, u1);
+
+    AppConfigElementSet saved = userAppCfgMgr.getAppConfigElementSetById(setId);
+    assertEquals(SLACK_CHANNEL1, saved.findElementByPropertyName(SLACK_CHANNEL_NAME).getValue());
+    assertEquals("renamed", saved.findElementByPropertyName(SLACK_CHANNEL_LABEL).getValue());
+  }
+
+  @Test
+  public void newSetCannotKeepANullValue() {
+    Map<String, String> props = createValidPropertyMap();
+    props.put(SLACK_CHANNEL_NAME, null);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1));
+  }
+
+  @Test
+  public void cannotUpdateAnotherUsersSetById() {
+    UserAppConfig u1Cfg =
+        userAppCfgMgr.saveAppConfigElementSet(createValidPropertyMap(), null, false, u1);
+    Long u1SetId = u1Cfg.getAppConfigElementSets().iterator().next().getId();
+    logoutAndLoginAs(otherUser);
+    userAppCfgMgr.saveAppConfigElementSet(createValidPropertyMap(), null, false, otherUser);
+    Map<String, String> overwrite = createValidPropertyMap();
+    overwrite.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL2);
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> userAppCfgMgr.saveAppConfigElementSet(overwrite, u1SetId, false, otherUser));
+    assertEquals(
+        SLACK_CHANNEL1,
+        userAppCfgMgr
+            .getAppConfigElementSetById(u1SetId)
+            .findElementByPropertyName(SLACK_CHANNEL_NAME)
+            .getValue());
+  }
+
   private Map<String, String> createValidPropertyMap() {
     Map<String, String> props = new HashMap<>();
     props.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL1);

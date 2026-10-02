@@ -53,7 +53,9 @@ public interface IntegrationsHandler {
   boolean isValidIntegration(String integrationName);
 
   /**
-   * Gets the {@link IntegrationInfo} enablement for the specified property name
+   * Gets the {@link IntegrationInfo} enablement for the specified property name. Stored secrets in
+   * its options are {@code null} (an unset one is {@code ""}), so server-side code that needs the
+   * real value must read it from the database, not from this object.
    *
    * @param subject
    * @param integrationName

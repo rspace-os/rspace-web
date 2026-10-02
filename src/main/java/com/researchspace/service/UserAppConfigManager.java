@@ -11,7 +11,8 @@ import java.util.Optional;
 public interface UserAppConfigManager extends GenericManager<UserAppConfig, Long> {
 
   /**
-   * Save or update AppConfigElementSet
+   * Save or update AppConfigElementSet. When updating, a {@code null} value keeps the stored value,
+   * because reads return stored secrets as {@code null}.
    *
    * @param appConfigSetData a Map of propertyName:propertyValue pairs
    * @param appId appConfigSetDataId an optional ID, can be null if is a new, transient data
@@ -24,7 +25,11 @@ public interface UserAppConfigManager extends GenericManager<UserAppConfig, Long
    *           table.
    *       <li>the map size is not the same as the number of configuration elements associated with
    *           the App - i.e not all properties in a set are being saved.
+   *       <li>a new set is posted with a {@code null} value, as there is nothing to keep.
    *     </ul>
+   *
+   * @throws org.apache.shiro.authz.AuthorizationException if {@code appConfigSetDataId} is not a
+   *     set belonging to {@code user}
    */
   UserAppConfig saveAppConfigElementSet(
       Map<String, String> appConfigSetData,

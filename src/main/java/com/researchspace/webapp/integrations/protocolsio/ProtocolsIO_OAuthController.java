@@ -9,6 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.protocolsio.PIOUser;
+import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -106,17 +107,6 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
     private PIOUser user;
   }
 
-  /**
-   * Gets the access token id there is one, else returns empty string.
-   *
-   * @param subject
-   * @return
-   */
-  @GetMapping("/accessToken")
-  public @ResponseBody String getAccessToken(Principal subject) {
-    return doGetAccessToken(subject, PROTOCOLS_IO_APP_NAME);
-  }
-
   @GetMapping("/redirect_uri")
   public String onAuthorization(
       @RequestParam Map<String, String> params, Model model, HttpServletRequest request) {
@@ -174,6 +164,8 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
     private String errorMessage;
   }
 
+  @ClientReadableSecret(
+      "the protocols.io TinyMCE plugin calls the protocols.io API from the browser")
   @PostMapping("/refreshToken")
   public @ResponseBody ResponseEntity<String> refreshToken(Principal subject) {
     Optional<UserConnection> optConn =
