@@ -15,6 +15,7 @@ import com.researchspace.model.views.FormSearchCriteria;
 import com.researchspace.session.UserSessionTracker;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /** Service API for operating on {@link RSForm} objects */
 public interface FormManager extends AbstractFormManager<RSForm> {
@@ -120,6 +121,13 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   void unlockForm(RSForm form, User user);
 
   void unlockForm(Long formId, User user);
+
+  /**
+   * Gets the IDs of fields on a temporary form that were copied from the original form.
+   *
+   * <p>Fields added directly to the temporary form are excluded.
+   */
+  Set<Long> getCopiedTemporaryFieldIds(RSForm form);
 
   /**
    * Reverts the form back to previous version, removing draft changes.
