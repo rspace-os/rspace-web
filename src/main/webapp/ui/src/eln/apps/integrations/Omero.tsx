@@ -8,6 +8,7 @@ import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/omero";
 import OmeroIcon from "../../../assets/branding/omero/logo.svg";
+import SecretField from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
 import { useDisconnectEndpoint } from "../useDisconnect";
@@ -117,19 +118,14 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
                       },
                     }}
                   />
-                  <TextField
+                  <SecretField
                     fullWidth
                     value={password}
-                    onChange={({ target: { value } }) => setPassword(value)}
+                    onChange={setPassword}
                     label={t("integrations.omero.fields.password")}
                     sx={{ mt: 1 }}
-                    slotProps={{
-                      htmlInput: {
-                        name: "omeropassword",
-                        type: "password",
-                        autoComplete: "new-password",
-                      },
-                    }}
+                    name="omeropassword"
+                    autoComplete="new-password"
                   />
                   <Button type="submit" sx={{ mt: 1 }}>
                     {t("actions.connect")}

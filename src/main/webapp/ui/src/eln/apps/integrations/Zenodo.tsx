@@ -3,20 +3,20 @@ import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/zenodo";
 import ZenodoIcon from "../../../assets/branding/zenodo/logo.svg";
+import SecretField, { secretAfterSave } from "../../../components/Inputs/SecretField";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
 import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ZenodoArgs = {
   integrationState: IntegrationStates["ZENODO"];
-  update: (newIntegrationState: IntegrationStates["ZENODO"]) => void;
+  update: (newIntegrationState: IntegrationStates["ZENODO"]) => Promise<void>;
 };
 
 /*
@@ -56,20 +56,25 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
                     credentials: {
                       ZENODO_USER_TOKEN: Optional.present(apiKey),
                     },
-                  });
+                  }).then(
+                    () => {
+                      setApiKey(secretAfterSave(apiKey));
+                    },
+                    () => {
+                      // update() has already shown the error; keep the typed key so it can be retried
+                    },
+                  );
                 }}
               >
                 <CardContent>
-                  <TextField
+                  <SecretField
                     fullWidth
                     variant="outlined"
                     label={t("integrations.zenodo.fields.apiKey")}
-                    type="password"
                     size="small"
+                    autoComplete="new-password"
                     value={apiKey}
-                    onChange={({ target: { value } }) => {
-                      setApiKey(value);
-                    }}
+                    onChange={setApiKey}
                   />
                 </CardContent>
                 <CardActions>
@@ -80,7 +85,7 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
           </>
         }
         update={(newMode) => {
-          update({
+          void update({
             mode: newMode,
             credentials: integrationState.credentials,
           });

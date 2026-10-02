@@ -7,7 +7,6 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
@@ -16,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "@/assets/branding/galaxy";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import GalaxyIcon from "../../../assets/branding/galaxy/logo.svg";
+import SecretField, { secretAfterSave } from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
@@ -78,6 +78,9 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                           GALAXY_APIKEY: server.apiKey,
                         })
                           .then(() => {
+                            runInAction(() => {
+                              server.apiKey = secretAfterSave(server.apiKey);
+                            });
                             addAlert(
                               mkAlert({
                                 variant: "success",
@@ -98,14 +101,14 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                       }}
                     >
                       <Stack direction="row" spacing={1}>
-                        <TextField
+                        <SecretField
                           fullWidth
                           variant="outlined"
                           label={t("integrations.galaxy.apiKeyLabel", { alias: server.alias })}
-                          type="password"
                           size="small"
+                          autoComplete="new-password"
                           value={server.apiKey}
-                          onChange={({ target: { value } }) => {
+                          onChange={(value) => {
                             runInAction(() => {
                               server.apiKey = value;
                             });

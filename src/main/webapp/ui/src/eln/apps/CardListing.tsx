@@ -173,10 +173,12 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
     [update, integrationStates.EGNYTE],
   );
 
+  // returns the save so the card can clear its typed key only once the save succeeded
   const fieldmarkUpdate = React.useCallback(
-    (newState: IntegrationStates["FIELDMARK"]) => {
-      void runInAction(async () => {
-        integrationStates.FIELDMARK = await update("FIELDMARK", newState);
+    async (newState: IntegrationStates["FIELDMARK"]) => {
+      const saved = await update("FIELDMARK", newState);
+      runInAction(() => {
+        integrationStates.FIELDMARK = saved;
       });
     },
     [update, integrationStates.FIELDMARK],
@@ -309,9 +311,10 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
   );
 
   const zenodoUpdate = React.useCallback(
-    (newState: IntegrationStates["ZENODO"]) => {
-      void runInAction(async () => {
-        integrationStates.ZENODO = await update("ZENODO", newState);
+    async (newState: IntegrationStates["ZENODO"]) => {
+      const saved = await update("ZENODO", newState);
+      runInAction(() => {
+        integrationStates.ZENODO = saved;
       });
     },
     [update, integrationStates.ZENODO],

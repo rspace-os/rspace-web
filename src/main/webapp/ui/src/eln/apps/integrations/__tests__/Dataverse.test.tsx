@@ -99,7 +99,7 @@ describe("Dataverse", () => {
     });
   });
   describe("Saving", () => {
-    test("Tapping save on existing config should correctly call saveAppOptions endpoint.", () => {
+    test("Tapping save on existing config should keep the stored API key.", () => {
       const mockAxios = new MockAdapter(axios);
 
       mockAxios.onPost("integration/saveAppOptions");
@@ -109,7 +109,7 @@ describe("Dataverse", () => {
             mode: "DISABLED",
             credentials: [
               Optional.present({
-                DATAVERSE_APIKEY: "apikey",
+                DATAVERSE_APIKEY: null,
                 DATAVERSE_URL: "url",
                 DATAVERSE_ALIAS: "alias",
                 _label: "label",
@@ -122,6 +122,10 @@ describe("Dataverse", () => {
       );
 
       fireEvent.click(screen.getByRole("button"));
+      expect(screen.getByLabelText("apps:integrations.dataverse.fields.apiKey")).toHaveAttribute(
+        "placeholder",
+        "common:inputs.secretField.unchanged",
+      );
       fireEvent.input(screen.getByRole("textbox", { name: "apps:integrations.dataverse.fields.alias" }), {
         target: { value: "new name" },
       });
@@ -131,7 +135,7 @@ describe("Dataverse", () => {
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("DATAVERSE");
       expect(mockAxios.history.post[0].params.get("optionsId")).toEqual("4");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({
-        DATAVERSE_APIKEY: "apikey",
+        DATAVERSE_APIKEY: null,
         DATAVERSE_URL: "url",
         DATAVERSE_ALIAS: "new name",
       });

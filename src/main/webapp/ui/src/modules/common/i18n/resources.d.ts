@@ -1080,6 +1080,12 @@ export default interface Resources {
       "referenceField": {
         "notYetSupported": "Not yet supported."
       },
+      "secretField": {
+        "clear": "Clear secret",
+        "hide": "Hide secret",
+        "show": "Show secret",
+        "unchanged": "(unchanged)"
+      },
       "selectedFileInfo": {
         "invalidFile": "Invalid file.",
         "label": "File selected:"

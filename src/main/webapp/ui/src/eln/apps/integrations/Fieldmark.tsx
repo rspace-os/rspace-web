@@ -3,19 +3,19 @@ import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/fieldmark";
 import FieldmarktIcon from "../../../assets/branding/fieldmark/logo.svg";
+import SecretField, { secretAfterSave } from "../../../components/Inputs/SecretField";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
 import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type FieldmarkArgs = {
   integrationState: IntegrationStates["FIELDMARK"];
-  update: (newIntegrationState: IntegrationStates["FIELDMARK"]) => void;
+  update: (newIntegrationState: IntegrationStates["FIELDMARK"]) => Promise<void>;
 };
 
 /*
@@ -58,20 +58,25 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
                     credentials: {
                       FIELDMARK_USER_TOKEN: Optional.present(apiKey),
                     },
-                  });
+                  }).then(
+                    () => {
+                      setApiKey(secretAfterSave(apiKey));
+                    },
+                    () => {
+                      // update() has already shown the error; keep the typed key so it can be retried
+                    },
+                  );
                 }}
               >
                 <CardContent>
-                  <TextField
+                  <SecretField
                     fullWidth
                     variant="outlined"
                     label={t("integrations.fieldmark.fields.apiKey")}
-                    type="password"
                     size="small"
+                    autoComplete="new-password"
                     value={apiKey}
-                    onChange={({ target: { value } }) => {
-                      setApiKey(value);
-                    }}
+                    onChange={setApiKey}
                   />
                 </CardContent>
                 <CardActions>
