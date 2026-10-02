@@ -202,6 +202,11 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     user.setSalt(salt.toBase64());
   }
 
+  @Override
+  public void upgradePasswordHash(String username, String encodedPassword) {
+    userDao.updatePasswordHash(username, encodedPassword);
+  }
+
   // session may be null if it's api call
   public User getUserByUsername(String username, boolean forceRefresh) {
     Session session = SecurityUtils.getSubject().getSession(false);
