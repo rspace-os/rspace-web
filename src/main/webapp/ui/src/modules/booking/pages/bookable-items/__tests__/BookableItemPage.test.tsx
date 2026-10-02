@@ -299,39 +299,48 @@ describe("BookableItemPage", () => {
     await expectAccessible(container);
   });
 
-  it("confirms a tab change before discarding staged permissions", async () => {
-    const assignment = (id: number, role: string) => ({
-      grantee: { kind: "USER", id, key: `user:${id}`, name: `Person ${id}`, available: true },
-      role,
-    });
+  it("shows the inventory item's access as read-only", async () => {
+    let bookingAccessRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
-      http.get("/api/v2/booking-configurations/7/access", () =>
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(
+          envelope(
+            [
+              {
+                ...configuration,
+                capabilities: { ...configuration.capabilities, canViewAccess: false },
+              },
+            ],
+            2,
+          ),
+        ),
+      ),
+      http.get("/api/inventory/v1/instruments/123", () =>
         HttpResponse.json({
-          scheme: "booking",
-          version: 0,
-          assignments: [assignment(1, "OWNER"), assignment(2, "BOOKER")],
-          caller: {
-            granteeKey: "user:1",
-            capabilities: { canManageAssignments: true, canManageOwners: true, canLeave: false },
-          },
+          sharingMode: "WHITELIST",
+          sharedWith: [
+            { group: { id: 11, name: "Imaging lab" }, shared: true, itemOwnerGroup: true },
+            { group: { id: 12, name: "Microscopy collaborators" }, shared: false, itemOwnerGroup: false },
+          ],
         }),
       ),
+      http.get("/api/v2/booking-configurations/7/access", () => {
+        bookingAccessRequests += 1;
+        return HttpResponse.json({});
+      }),
     );
     const { router } = renderPage("/booking/bookable-items/IN123/access");
-    const user = userEvent.setup();
     const table = await screen.findByRole("table");
-    await user.click(within(table).getByRole("button", { name: "common:resourceAccess.removeNamed" }));
+    expect(within(table).getByText("Microscopy collaborators")).toBeInTheDocument();
+    expect(
+      within(table)
+        .getAllByRole("checkbox")
+        .every((checkbox) => checkbox.getAttribute("aria-disabled") === "true"),
+    ).toBe(true);
+    expect(screen.getAllByRole("radio").every((radio) => radio.getAttribute("aria-disabled") === "true")).toBe(true);
+    expect(bookingAccessRequests).toBe(0);
     const details = screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" });
-    await user.click(details);
-    const dialog = await screen.findByRole("alertdialog");
-    expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123/access");
-    await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
-    expect(within(table).getByText("common:resourceAccess.staged.removed")).toBeInTheDocument();
-    await user.click(details);
-    await user.click(
-      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "common:dirtyNavigation.leave" }),
-    );
+    await userEvent.setup().click(details);
     await waitFor(() => expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123/details"));
   });
 

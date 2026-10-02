@@ -125,6 +125,11 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
           path: "/calendar/bookings/add",
           component: () => <main>{"Add booking destination"}</main>,
         }),
+        createRoute({
+          getParentRoute: () => bookingRoute,
+          path: "/config/settings",
+          component: () => <main>{"Settings destination"}</main>,
+        }),
         createBookableItemRoute(bookingRoute),
       ]),
     ]),
@@ -146,6 +151,15 @@ describe("booking layout", () => {
 
     expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toBeVisible();
     expect(screen.queryByRole("navigation", { name: "booking:breadcrumbs.label" })).not.toBeInTheDocument();
+  });
+
+  it("shows the dashboard calendar without a subheading or bookable-items primer", async () => {
+    renderAt("/booking", false);
+
+    expect(await screen.findByRole("region", { name: "booking:dashboard.calendar.title" })).not.toHaveAttribute(
+      "aria-describedby",
+    );
+    expect(screen.queryByText("booking:bookableItems.primer.description")).not.toBeInTheDocument();
   });
 
   it("shows linked ancestors and the current page on nested Booking routes", async () => {
@@ -251,12 +265,27 @@ describe("booking layout", () => {
     expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
   });
 
-  it("hides Administration from users who are not sysadmins", async () => {
+  it("shows Bookable items but not Settings to users who are not sysadmins", async () => {
     renderAt("/booking", false);
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "booking:sidebar.administration" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "booking:sidebar.bookableItems" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "booking:sidebar.administration" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "booking:sidebar.bookableItems" })).toHaveAttribute(
+      "href",
+      "/booking/config/bookable-items",
+    );
+    expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
+  });
+
+  it("links the Administration breadcrumb to the bookable items list", async () => {
+    renderAt("/booking/config/settings");
+
+    const breadcrumbs = await screen.findByRole("navigation", { name: "booking:breadcrumbs.label" });
+    expect(within(breadcrumbs).getByRole("link", { name: "booking:sidebar.administration" })).toHaveAttribute(
+      "href",
+      "/booking/config/bookable-items",
+    );
+    expect(within(breadcrumbs).getByText("booking:settings.title")).toHaveAttribute("aria-current", "page");
   });
 
   it("stays mounted on the merged bookable item route", async () => {
