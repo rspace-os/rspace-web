@@ -53,9 +53,9 @@ export const ownBooking: BookingListDocument & { cancellationReason: null } = {
   end: "2026-08-17T10:00:00Z",
   state: "CONFIRMED",
   purpose: "Cell imaging",
-  cancellationReason: null,
   bookedBy: "Ada Lovelace (ada)",
   privacy: "full",
+  cancellationReason: null,
   canEdit: true,
   ...timestamps,
 };

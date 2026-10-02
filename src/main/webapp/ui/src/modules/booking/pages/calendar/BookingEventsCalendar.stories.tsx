@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import * as React from "react";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
@@ -86,14 +86,27 @@ function InteractiveCalendar() {
   const [date, setDate] = React.useState("2026-08-17");
   const [view, setView] = React.useState<CalendarView>("week");
   const [layout, setLayout] = React.useState<CalendarLayout>("time-grid");
+  const [search, setSearch] = React.useState("");
+  const [mineOnly, setMineOnly] = React.useState(false);
+  // The page asks the server to filter; the story filters its fixture so Search and My Bookings visibly work.
+  const events = storyEvents.filter(
+    (event) =>
+      (!mineOnly || event.requesterId === 1) &&
+      [event.target?.value.name, event.purpose, event.bookedBy].some((value) =>
+        value?.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
+      ),
+  );
   return (
     <BookingEventsCalendar
       date={date}
       view={view}
       layout={layout}
       timezone="Europe/Berlin"
-      events={storyEvents}
+      events={events}
       currentUserId={1}
+      searchControl={{ value: search, onChange: setSearch }}
+      mineOnly={mineOnly}
+      onMineChange={setMineOnly}
       isLoading={false}
       isError={false}
       onRetry={() => undefined}
@@ -102,6 +115,8 @@ function InteractiveCalendar() {
         setDate(todayInTimeZone("Europe/Berlin"));
         setView("day");
         setLayout("resources");
+        setSearch("");
+        setMineOnly(false);
       }}
       onViewChange={setView}
       onLayoutChange={setLayout}
@@ -132,20 +147,38 @@ type Story = StoryObj<typeof meta>;
 export const Interactive: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    // Menus and popovers render in a portal outside the story canvas.
+    const body = within(canvasElement.ownerDocument.body);
+    const closePopup = async () => {
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("menu")).not.toBeInTheDocument());
+      await waitFor(() => expect(body.queryByRole("dialog")).not.toBeInTheDocument());
+    };
+    const chooseView = async (option: string) => {
+      await userEvent.click(canvas.getByRole("button", { name: /^View: / }));
+      await userEvent.click(await body.findByRole("menuitemradio", { name: option }));
+      await closePopup();
+    };
     const search = await canvas.findByRole("textbox", { name: "Search Calendar" });
     await userEvent.type(search, "Grace");
-    expect(canvas.queryByRole("button", { name: /Show details for Confocal microscope/ })).not.toBeInTheDocument();
+    // Search is debounced, as it is for the server-filtered page.
+    await waitFor(() =>
+      expect(canvas.queryByRole("button", { name: /Show details for Confocal microscope/ })).not.toBeInTheDocument(),
+    );
     expect(canvas.getByRole("button", { name: /Show details for Electron microscope/ })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Clear search" }));
-    await userEvent.click(canvas.getByRole("button", { name: "Month" }));
-    expect(canvas.getByRole("button", { name: "Month" })).toHaveAttribute("aria-pressed", "true");
-    await userEvent.click(canvas.getByRole("button", { name: "Resources" }));
-    expect(canvas.getByRole("region", { name: "Resources" })).toBeVisible();
-    expect(canvas.getByRole("button", { name: "Month" })).toBeDisabled();
-    expect(canvas.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
-    await userEvent.click(canvas.getByRole("button", { name: "Day" }));
+    expect(await canvas.findByRole("button", { name: /Show details for Confocal microscope/ })).toBeVisible();
+    await chooseView("Month");
+    expect(canvas.getByRole("button", { name: "View: Time grid · Month" })).toBeVisible();
+    await chooseView("By Item");
+    expect(canvas.getByRole("region", { name: "By Item" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "View: By Item · Week" }));
+    expect(await body.findByRole("menuitemradio", { name: "Month" })).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(body.getByRole("menuitemradio", { name: "Day" }));
+    await closePopup();
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(3);
     await userEvent.click(canvas.getByRole("button", { name: "My Bookings" }));
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(2);
+    expect(canvas.getByRole("button", { name: "Remove My Bookings filter" })).toBeVisible();
   },
 };

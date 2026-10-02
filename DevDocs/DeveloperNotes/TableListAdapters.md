@@ -15,6 +15,20 @@ For example, the booking catalogue clears its date, availability, target, search
 type filters, and page together while retaining the selected page size. Independent state owners
 can omit the callback and keep the built-in reset behavior.
 
+Quick filters (`filterButtons.buttons`) render as toolbar toggles by default. Set
+`filterButtons.presentation: "menu"` to move them into the Filters button's popover as switches,
+next to an "Edit filters" action that opens the filter panel; the Filters badge then counts
+pressed quick filters as well as panel filters. The toolbar no longer shows which quick filters
+are on, so the page must, for example as removable chips (the booking Calendar does this). Give
+each button a `description`; the popover shows it under the switch. Without a filter panel
+(`filtering: false` or `hideFilterPanel`), quick filters stay as toolbar toggles.
+
+Booking catalogue text search matches instrument names, descriptions, readable immediate-parent
+location names, and exact `IN` global IDs. Creation pickers send the required `capability` so
+permission filtering happens before pagination and totals are calculated. Empty result sets
+have no type facets. The administration collection also accepts exact instrument IDs in its
+text search; invalid or out-of-range IDs remain ordinary name searches.
+
 ## Design summary
 
 The module has one endpoint interface:
@@ -167,7 +181,16 @@ renderer reads each value through its owner relationship. Sparse field requests 
 relationship instead of the dotted selector.
 
 The field label combines the translated relationship label and the target field title, such as
-"Bookable item → Name". The adapter uses the selector when the server publishes no title.
+"Bookable item → Name". When the server publishes no title, the adapter uses the shared
+`common:tableList.targetFields.<field>` label, such as "Created by → First name", and falls back
+to the field name only for a field that the catalog does not name. An owner without a configured
+field uses `common:tableList.fields.<owner>`, such as "Created by", then the published
+`viaTitle`, then the owner name. A metadata-derived identity field, such as `location`, takes its
+label from the same `common:tableList.fields.<selector>` key.
+
+These keys carry their `common:` namespace, so a translator bound to another namespace, such as
+`useTranslation("booking")`, still resolves them. Pass a translator that forwards interpolation
+values: `(key, values) => String(t(key as never, values as never))`.
 
 ### Search fields
 
@@ -325,6 +348,46 @@ const rowActions = {
 
 Keep `uiColumns` for display-only custom columns. Do not mount a stateful dialog in every
 `uiColumns.renderCell` call.
+
+## Report action results with alerts
+
+Any control rendered inside a `TableList` (row actions, selection actions, toolbar controls, and
+`renderInteraction`) can report a result as a one-line alert above the table with
+`useTableListAlerts()`. `push` accepts several alerts at once; pushing an existing `id` replaces
+that alert, and the stack shows the newest first. Each alert has a Dismiss control and an optional
+Undo.
+
+```tsx
+const alerts = useTableListAlerts();
+
+alerts.push({
+  id: `booking-cancelled-${row.id}`,
+  tone: "warning",
+  icon: <CalendarX2Icon aria-hidden="true" />,
+  message: t("myBookings.cancelled.alert", { itemName, period }),
+  undo: {
+    run: () => restoreBooking(row.id, cancelled.version, token).then(invalidateBookings),
+    focusRowId: String(row.id),
+    describeError: (error) => t("myBookings.cancelled.undoFailed", { reason: bookingProblemMessage(error, t) }),
+  },
+});
+```
+
+The table owns the state, and `push` is stable, so an action may push from a callback that outlives
+its row (a dialog whose confirmation removes the row). The stack sits in a polite live region, so
+new alerts are announced. Focus rules:
+
+- A pushed alert takes focus only once the control that acted has gone, for example because its row
+  left after a refetch. A persistent button, such as a bulk action, keeps focus.
+- Dismiss focuses the next alert, or the table's Filters control (else its search) when none is left.
+- Undo disables the alert's buttons while it runs. On success the alert goes and focus moves to the
+  first control of `focusRowId`'s row once that row is shown again (after about five seconds, to
+  Filters). On failure the alert stays, shows `describeError`'s text (or a generic message) without
+  Undo, and takes focus.
+
+Row-action cells carry `data-table-list-row-actions` with the row ID for this lookup. `getRowId`
+from `useTableList` is stable, and TableList reads a caller's `getRowId` through a ref: a new
+identity would rebuild the columns and re-mount every row's cells, closing open menus and dialogs.
 
 ## Add controlled row selection
 
@@ -559,6 +622,13 @@ Register sources in `src/modules/common/relationship-picker/relationshipSources.
 or provide a collection's `relationshipSources` override keyed by resource name.
 Booking keeps its `booking-instruments` override so archived references resolve
 through booking configurations, using the same access policy as the booking list.
+Booking also registers `booking-locations` ("Location", `IC` values, searched through
+`/api/v2/booking-catalogue/locations`). A workbench location's filter value is `IC` plus its ID,
+while its option still shows its `BE` global ID.
+
+A source that answers an empty term with a useful first page sets `browsable: true`. The filter
+value picker then lists choices as soon as it opens, without typing. Both Booking sources
+browse. Leave the flag unset for a source that needs a term, such as a grantee directory.
 
 Each source owns these operations:
 
@@ -569,7 +639,9 @@ Each source owns these operations:
 - `resolveMany(values, token, signal)` restores selected documents in bounded batches.
   Unknown and inaccessible values produce the same missing result.
 - `toOption(document, context)` validates a document and supplies its stable value,
-  accessible label, and optional rendered content.
+  accessible label, and optional rendered content. The content renders inside the
+  listbox, so it must not contain links or other interactive elements: following one
+  would leave the page and lose the unsaved selection. Show a global ID as plain text.
 
 The source's batch limit must not exceed its endpoint's page or argument limits.
 Instrument restoration uses the collection's typed-ID `in` filter and sparse display
@@ -785,7 +857,8 @@ input, and dates have a date input. Scalar fields do not fetch record-name sugge
 
 The filter picker groups target fields and their custom-field option under the relationship's
 label. Shared audit relationships use localized `Created by` and `Updated by` labels unless the
-config supplies its own label. New relationship rules default to `equals` when supported;
+config supplies its own label, and their untitled user fields use the localized target field
+labels described in [Fields of a relationship target](#fields-of-a-relationship-target). New relationship rules default to `equals` when supported;
 opening a saved rule preserves its operator.
 
 The server permits the `equals`, `in`, `contains`, and `matches` operators on a target field. It
@@ -813,6 +886,14 @@ returns its own DTO. It derives the same relationship and runtime filters as the
 but leaves derived fields out of column selection. `localFields` explicitly identifies filters the
 page resolves itself, such as booking availability. All other filter operators come from API
 metadata. Keep DTO parsing, pagination, and query composition in the endpoint's own fetcher.
+
+All bookable items uses this path with the booking catalogue. Availability is a local filter
+field that the server evaluates: the table requests its own page at its own page size, passing a
+top-level availability rule as the catalogue's `availability` parameter, and the quick-filter
+badges read `/api/v2/booking-catalogue/availability-counts`. No request pages through the
+catalogue. Contradictory availability rules match nothing, and an availability rule inside an OR
+group is reported as an unavailable restored filter. See "Booking catalogue availability quick
+filters" in `RestApiV2Collections.md`.
 
 A collection config can contribute `relationshipSources`, keyed by the field's `relationTo`.
 These override the default picker sources for that table. Sources own search and saved-ID resolution;

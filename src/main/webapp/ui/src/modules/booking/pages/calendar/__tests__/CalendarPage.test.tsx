@@ -25,6 +25,20 @@ const readOnlyCapabilities = {
   canEditConfiguration: false,
 };
 
+type User = ReturnType<typeof userEvent.setup>;
+
+/** Chooses a layout or period in the View menu, then closes it; an open menu makes the rest of the page inert. */
+async function chooseView(user: User, option: string) {
+  await user.click(await screen.findByRole("button", { name: /^View: / }));
+  await user.click(await screen.findByRole("menuitemradio", { name: option }));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+}
+
+async function toggleQuickFilter(user: User, name: string) {
+  await user.click(await screen.findByRole("button", { name }));
+}
+
 function catalogueItem(item: (typeof bookableItemFixtures)[number], overrides: Record<string, unknown> = {}) {
   return {
     ...item,
@@ -85,7 +99,7 @@ describe("CalendarPage", () => {
     const user = userEvent.setup();
     await renderCalendar();
 
-    await user.click(await screen.findByRole("button", { name: "Owned Items" }));
+    await toggleQuickFilter(user, "Owned Items");
 
     await waitFor(() => {
       expect(catalogueRequests.at(-1)?.searchParams.get("mine")).toBe("true");
@@ -103,8 +117,7 @@ describe("CalendarPage", () => {
     await renderCalendar();
 
     expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Resources" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Day" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "View: By Item · Day" })).toBeVisible();
     expect(await screen.findByText("Mass spectrometer")).toBeVisible();
     expect(screen.queryByText("No records found")).not.toBeInTheDocument();
   });
@@ -119,14 +132,13 @@ describe("CalendarPage", () => {
 
     await renderCalendarAt("/booking/calendar?layout=time-grid&view=week");
 
-    expect(await screen.findByRole("button", { name: "Time grid" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
-    await user.click(screen.getByRole("button", { name: "Agenda" }));
+    expect(await screen.findByRole("button", { name: "View: Time grid · Week" })).toBeVisible();
+    await chooseView(user, "Agenda");
     await waitFor(() => expect(new URLSearchParams(window.location.search).get("layout")).toBe("agenda"));
     expect(new URLSearchParams(window.location.search).get("view")).toBe("week");
   });
 
-  it("opens the week when a link asks for Month in Resources", async () => {
+  it("opens the week when a link asks for Month in By Item", async () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
@@ -135,19 +147,43 @@ describe("CalendarPage", () => {
 
     await renderCalendarAt("/booking/calendar?view=month");
 
-    expect(await screen.findByRole("button", { name: "Resources" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
+    expect(await screen.findByRole("button", { name: "View: By Item · Week" })).toBeVisible();
   });
 
   it("hides item filter controls and keeps Calendar controls available", async () => {
+    const user = userEvent.setup();
     await renderCalendar();
     expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
     expect(screen.queryByRole("button", { name: /^Bookable items(?:,|$)/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Filters(?:$|,)/ })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "Search Calendar" })).toBeVisible();
-    for (const name of ["Jump to date", "Time grid", "Day", "Resources", "My Bookings", "Owned Items"]) {
-      expect(screen.getByRole("button", { name: new RegExp(`^${name}$`) })).toBeVisible();
+    for (const name of ["Jump to date", "View: By Item · Day"]) {
+      expect(screen.getByRole("button", { name })).toBeVisible();
     }
+
+    expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAccessibleDescription("Bookings you made");
+    expect(screen.getByRole("button", { name: "Owned Items" })).toHaveAccessibleDescription(
+      "Bookings on items you own",
+    );
+    await user.click(screen.getByRole("button", { name: /^Filters(?:$|,)/ }));
+    expect(await screen.findByRole("button", { name: "Add filter" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /^Filters(?:$|,)/ })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("shows quick filters that are on as removable chips", async () => {
+    const user = userEvent.setup();
+    await renderCalendar();
+    await screen.findByRole("region", { name: "Resource booking schedule" });
+
+    await toggleQuickFilter(user, "My Bookings");
+    expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Filters, none applied" })).toBeVisible();
+    const remove = screen.getByRole("button", { name: "Remove My Bookings filter" });
+
+    await user.click(remove);
+    expect(screen.queryByRole("button", { name: "Remove My Bookings filter" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAttribute("aria-pressed", "false");
+    // The chip unmounts with its button, so focus moves to the Filters control rather than the page.
+    expect(screen.getByRole("button", { name: "Filters, none applied" })).toHaveFocus();
   });
 
   it("shows the route's bookable-item focus as a removable filter chip", async () => {
@@ -172,17 +208,76 @@ describe("CalendarPage", () => {
     expect((await screen.findAllByText("IN123", { exact: true }))[0]).toBeVisible();
   });
 
-  it("explains why Month is unavailable in the Resources layout", async () => {
+  it("names the route's bookable item while Search hides it from the loaded items and events", async () => {
+    const catalogueRequests: URL[] = [];
+    server.use(
+      http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
+        catalogueRequests.push(new URL(request.url));
+        return undefined;
+      }),
+    );
+    await renderCalendar("/booking/calendar?date=2026-08-17&target=IN124&calendar-resources.q=confocal");
+
+    const remove = await screen.findByRole("button", { name: "Remove bookable item filter" });
+    const chip = remove.closest<HTMLElement>("[data-calendar-target-filter]");
+    if (!chip) throw new Error("The remove button must belong to the target filter chip");
+    await waitFor(() => expect(chip).toHaveTextContent("Bookable item: Electron microscope (IN124)"));
+    expect(chip).not.toHaveAttribute("aria-busy");
+    // The Search really excludes the item: no row or event names it.
+    expect(catalogueRequests.some((url) => url.searchParams.get("q") === "confocal")).toBe(true);
+    expect(screen.getByRole("textbox", { name: "Search Calendar" })).toHaveValue("confocal");
+    expect(screen.queryByText("Electron microscope", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("shows the route's bookable item as loading, then as not restored when its name cannot be resolved", async () => {
+    let releaseResolve: () => void = () => {};
+    const resolveHeld = new Promise<void>((resolve) => {
+      releaseResolve = resolve;
+    });
+    server.use(
+      http.get("/api/v2/booking-configurations", async ({ request }) => {
+        if (!new URL(request.url).searchParams.get("where")?.startsWith("target=in=")) return undefined;
+        await resolveHeld;
+        return new HttpResponse(null, { status: 503 });
+      }),
+    );
+    onTestFinished(() => releaseResolve());
+    await renderCalendar("/booking/calendar?date=2026-08-17&target=IN124&calendar-resources.q=confocal");
+
+    const remove = await screen.findByRole("button", { name: "Remove bookable item filter" });
+    const chip = remove.closest<HTMLElement>("[data-calendar-target-filter]");
+    if (!chip) throw new Error("The remove button must belong to the target filter chip");
+    await waitFor(() => expect(chip).toHaveAttribute("aria-busy", "true"));
+    expect(within(chip).getByText("Bookable item: IN124", { exact: true })).toBeInTheDocument();
+    expect(within(chip).getByText("Loading", { exact: true })).toBeInTheDocument();
+
+    releaseResolve();
+    await waitFor(() =>
+      expect(chip).toHaveTextContent("Bookable item: IN124 — Could not restore this saved selection. Try again."),
+    );
+    expect(chip).not.toHaveAttribute("aria-busy");
+    expect(within(chip).queryByText("Loading", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("explains why Month is unavailable in the By Item layout", async () => {
+    const user = userEvent.setup();
     await renderCalendar();
-    const month = await screen.findByRole("button", { name: "Month" });
-    expect(month).toBeDisabled();
+    await user.click(await screen.findByRole("button", { name: "View: By Item · Day" }));
+    const month = await screen.findByRole("menuitemradio", { name: "Month" });
+    expect(month).toHaveAttribute("aria-disabled", "true");
+    expect(within(month).getByText("Not available in the By Item view")).toBeVisible();
     expect(month).toHaveAccessibleDescription(
-      "Month isn't available in Resources. Use Time grid or Agenda for a month overview.",
+      "Month isn't available in the By Item view. Use Time grid or Agenda for a month overview.",
     );
 
-    await userEvent.setup().click(screen.getByRole("button", { name: "Agenda" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Month" })).toBeEnabled());
-    expect(screen.getByRole("button", { name: "Month" })).not.toHaveAccessibleDescription();
+    await user.click(screen.getByRole("menuitemradio", { name: "Agenda" }));
+    await waitFor(() =>
+      expect(screen.getByRole("menuitemradio", { name: "Month" })).not.toHaveAttribute("aria-disabled", "true"),
+    );
+    expect(screen.getByRole("menuitemradio", { name: "Month" })).not.toHaveAccessibleDescription();
+    await user.click(screen.getByRole("menuitemradio", { name: "Month" }));
+    await user.keyboard("{Escape}");
+    expect(await screen.findByRole("button", { name: "View: Agenda · Month" })).toBeVisible();
   });
 
   it("keeps viewer events visible while disabling resource creation", async () => {
@@ -224,7 +319,7 @@ describe("CalendarPage", () => {
     expect(screen.getByTestId("day-timeline-canvas")).toHaveAttribute("data-creation-disabled", "true");
   });
 
-  it("shades a closed weekday for read-only viewers in the Resources and Time grid day views", async () => {
+  it("shades a closed weekday for read-only viewers in the By Item and Time grid day views", async () => {
     const item = bookableItemFixtures[0];
     server.use(
       oauthTokenHandler(true),
@@ -262,9 +357,11 @@ describe("CalendarPage", () => {
       expect(screen.getByTestId("day-timeline-closed-hours")).toHaveStyle({ left: "0%", width: "100%" }),
     );
 
-    await userEvent.setup().click(screen.getByRole("button", { name: "Time grid" }));
+    await chooseView(userEvent.setup(), "Time grid");
     expect(await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
     expect(screen.getByTestId("day-timeline-closed-hours")).toHaveStyle({ left: "0%", width: "100%" });
+    // The one item in scope is read-only for this viewer, so the Time grid offers no creation either.
+    expect(screen.getByTestId("day-timeline-canvas")).toHaveAttribute("data-creation-disabled", "true");
   });
 
   it("shades the Time grid for the one item an item filter leaves in scope", async () => {
@@ -287,7 +384,7 @@ describe("CalendarPage", () => {
     expect(catalogueWheres.at(-1)).toBe("target==IN123");
     expect(screen.queryByRole("button", { name: "Remove bookable item filter" })).not.toBeInTheDocument();
 
-    await userEvent.setup().click(screen.getByRole("button", { name: "Time grid" }));
+    await chooseView(userEvent.setup(), "Time grid");
     expect(await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
     expect(screen.getByTestId("day-timeline-closed-hours")).toHaveStyle({ left: "0%", width: "100%" });
   });
@@ -309,11 +406,13 @@ describe("CalendarPage", () => {
     // Both rows have loaded, each with its closed Monday.
     await waitFor(() => expect(screen.getAllByTestId("day-timeline-closed-hours")).toHaveLength(2));
 
-    await userEvent.setup().click(screen.getByRole("button", { name: "Time grid" }));
+    await chooseView(userEvent.setup(), "Time grid");
     const timeGrid = await screen.findByRole("region", { name: "Time grid" });
     expect(await within(timeGrid).findByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
     await waitFor(() => expect(timeGrid).toHaveAttribute("aria-busy", "false"));
     expect(screen.queryAllByTestId("day-timeline-closed-hours")).toHaveLength(0);
+    // Several items have no single item to book, so the Time grid keeps drag creation off.
+    expect(within(timeGrid).getByTestId("day-timeline-canvas")).toHaveAttribute("data-creation-disabled", "true");
   });
 
   it("keeps closure shading for a read-only row and offers it no booking or configuration action", async () => {
@@ -432,6 +531,86 @@ describe("CalendarPage", () => {
     expect(save).toBeDisabled();
   });
 
+  it("keeps an inline edit through a stale-version rejection and saves it against the refreshed version", async () => {
+    let serverBooking: BookingListDocument = ownBooking;
+    const saves: { ifMatch: string | null; payload: unknown }[] = [];
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([serverBooking]))),
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        const ifMatch = request.headers.get("If-Match");
+        const payload = (await request.json()) as Partial<BookingListDocument>;
+        saves.push({ ifMatch, payload });
+        if (ifMatch !== `"${serverBooking.version}"`) {
+          return HttpResponse.json(
+            { status: 412, code: "errors.api.v2.preconditionFailed", detail: "private server detail" },
+            { status: 412 },
+          );
+        }
+        serverBooking = { ...serverBooking, ...payload, version: serverBooking.version + 1 };
+        return HttpResponse.json(serverBooking);
+      }),
+    );
+    const user = userEvent.setup();
+    await renderCalendar();
+
+    await user.click((await screen.findAllByRole("button", { name: /^Show details for Confocal microscope/ }))[0]);
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+    await user.type(await screen.findByRole("textbox", { name: "Purpose" }), " updated");
+    // Someone else edits the booking before this save reaches the server.
+    serverBooking = { ...serverBooking, purpose: "Changed elsewhere", version: 1 };
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Someone else changed this booking while you were editing. Your changes are kept");
+    expect(alert).not.toHaveTextContent("private server detail");
+    await waitFor(() => expect(alert).toHaveFocus());
+    expect(screen.getByRole("textbox", { name: "Purpose" })).toHaveValue("Cell imaging updated");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled());
+
+    // The explanation lasts while the draft is edited further; it is not the save's transient error.
+    await user.type(screen.getByRole("textbox", { name: "Purpose" }), "!");
+    expect(screen.getByRole("alert")).toHaveTextContent("Someone else changed this booking while you were editing.");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => expect(saves.map(({ ifMatch }) => ifMatch)).toEqual(['"0"', '"1"']));
+    expect(saves[1].payload).toEqual({ purpose: "Cell imaging updated!" });
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Purpose" })).not.toBeInTheDocument());
+  });
+
+  it("shows the matching purpose on collapsed Agenda cards while a search is applied", async () => {
+    const auroraBooking: BookingListDocument = { ...ownBooking, purpose: "Spring Aurora imaging run" };
+    const otherPurpose: BookingListDocument = {
+      ...ownBooking,
+      id: 46,
+      start: "2026-08-18T08:00:00Z",
+      end: "2026-08-18T09:00:00Z",
+      purpose: "Calibration",
+    };
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () =>
+        HttpResponse.json(collectionResponse([auroraBooking, otherPurpose, busyBooking])),
+      ),
+    );
+    const user = userEvent.setup();
+    await renderCalendarAt("/booking/calendar?date=2026-08-17&layout=agenda&view=week&calendar-resources.q=aurora");
+
+    const agenda = await screen.findByRole("region", { name: "Booking agenda" });
+    const highlight = await within(agenda).findByText("Aurora", { selector: "mark" });
+    expect(highlight.closest("[data-calendar-search-match]")).toHaveTextContent("PurposeSpring Aurora imaging run");
+    // Only the card whose purpose matched shows it; the others keep their purpose (or busy state) hidden.
+    expect(within(agenda).getAllByRole("article")).toHaveLength(3);
+    expect(agenda.querySelectorAll("[data-calendar-search-match]")).toHaveLength(1);
+    expect(within(agenda).queryByText("Calibration")).not.toBeInTheDocument();
+
+    await user.clear(screen.getByRole("textbox", { name: "Search Calendar" }));
+    await waitFor(() => expect(agenda.querySelectorAll("[data-calendar-search-match]")).toHaveLength(0));
+    expect(within(agenda).queryByText(/Spring Aurora imaging run/)).not.toBeInTheDocument();
+  });
+
   it("uses one search for calendar events and bookable items", async () => {
     const catalogueSearches: string[] = [];
     server.use(
@@ -455,7 +634,7 @@ describe("CalendarPage", () => {
     await user.type(screen.getByRole("textbox", { name: "Search Calendar" }), "Mass");
 
     expect(screen.getByRole("button", { name: "Jump to date" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Time grid" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "View: By Item · Day" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
     await waitFor(() => expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument());
     expect(await screen.findByText("Mass spectrometer")).toBeVisible();
