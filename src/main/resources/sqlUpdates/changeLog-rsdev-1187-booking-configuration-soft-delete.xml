@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-booking-configuration-soft-delete" author="researchspace" context="run">
+    <comment>Archive booking configurations without breaking historical booking references</comment>
+    <addColumn tableName="BookingConfiguration">
+      <column name="deleted" type="BIT(1)" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="BookingConfiguration_AUD">
+      <column name="deleted" type="BIT(1)"/>
+    </addColumn>
+  </changeSet>
+</databaseChangeLog>
