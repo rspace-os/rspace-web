@@ -43,6 +43,7 @@ export function BookingSettingsContent() {
     customTimezone: settings.customTimezone,
   });
   const form = useForm({ schema: SchedulingSettingsSchema, initialInput: settings });
+  const [scheduleSaveBlocked, setScheduleSaveBlocked] = useState(false);
   const mutation = useMutation({
     mutationFn: (input: SchedulingSettings) =>
       saveBookingSettings(
@@ -91,9 +92,13 @@ export function BookingSettingsContent() {
         of={form}
         className="max-w-2xl space-y-8"
         onChange={() => mutation.reset()}
-        onSubmit={(input) => mutation.mutateAsync(input)}
+        onSubmit={(input) => (scheduleSaveBlocked ? undefined : mutation.mutateAsync(input))}
       >
-        <SchedulingSettingsFields form={form} disabled={mutation.isPending} />
+        <SchedulingSettingsFields
+          form={form}
+          disabled={mutation.isPending}
+          onSaveBlockedChange={setScheduleSaveBlocked}
+        />
         <Separator />
         <section className="space-y-4" aria-labelledby="booking-display-defaults-heading">
           <div>
@@ -122,7 +127,7 @@ export function BookingSettingsContent() {
         ) : null}
         <Button
           type="submit"
-          disabled={mutation.isPending || !dirty || !displaySettingsValid}
+          disabled={mutation.isPending || !dirty || !displaySettingsValid || scheduleSaveBlocked}
           aria-busy={mutation.isPending}
           className={
             saved

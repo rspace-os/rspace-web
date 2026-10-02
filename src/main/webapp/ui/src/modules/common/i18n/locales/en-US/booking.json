@@ -586,8 +586,8 @@
       "notesCount": "{count, number}/1,000 characters",
       "occurrence": "Repeated local time",
       "openAllDay": "Open all day",
+      "openAllDayOnDate": "Open all day on this date",
       "openingHours": "Open: {start} - {end}",
-      "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})",
       "openingHoursOnDate": "Open on this date: {hours}",
       "openItem": "Open {globalId}",
       "previousItems": "Previous",
@@ -604,7 +604,6 @@
       "submitMaintenance": "Create maintenance event",
       "time": "Time",
       "timeSnapped": "Adjusted to {time} to match the {increment, number}-minute time increment.",
-      "timezone": "Times shown in {timezone}.",
       "type": "Booking type",
       "typeBlockout": "Maintenance",
       "typeBooking": "Booking"

@@ -4,7 +4,8 @@ Booking keeps presentation choices separate from scheduling rules:
 
 - The **display timezone** and **availability window** come from the current user's Booking
   preference, falling back to the global Booking defaults. They control rendered dates and times,
-  route-level “today”, booking-form wall clocks, availability domains, and the Now marker.
+  route-level “today”, booking-form wall clocks (until the user picks another zone; see the form
+  timezone below), availability domains, and the Now marker.
 - Booking owner notifications use the recipient's display timezone in the dashboard. Browser mode
   uses the timezone captured for the current session and falls back to the institution zone if it is
   missing; email notifications use the institution zone for Browser mode.
@@ -67,12 +68,30 @@ Booking forms resolve wall-clock input and scheduling policy synchronously with
 window to the parent in an effect. Form state notifications use the latest callback without
 turning callback identity changes into draft changes, so mutation errors remain visible until
 the input changes.
-Forms explicitly label the display timezone and render conflict times in that same timezone,
-including when the item's scheduling timezone differs.
+The booking form's date and time fields use a **form timezone**: the display timezone unless the
+user picks another. The globe beside the start time shows or hides a timezone field
+under each endpoint's row. The end follows the start's zone until it is given its own; picking the
+start's zone for it links them again. `resolveBookingWindow` and `validateBookingWindow` accept a
+zone per endpoint for this. Changing a zone keeps the entered wall clock and moves the instants.
+The quick-create dialog passes `fixedTimezone`, so it has no globe and stays in the display timezone.
+`BookingForm` holds its draft in the form timezone and converts
+drafts crossing its props (`initialWindow`, `windowAdjustment`, `onDraftChange`, `onStateChange`)
+to and from the display timezone, so pages and the day timeline keep working in the display
+timezone. When either endpoint's zone differs from the item's scheduling timezone, a note under
+the end row gives the start and end in the scheduling timezone, with the date only when it differs
+from the entered one, and the UTC offset on a clock-change day so the repeated hour is unambiguous.
+Conflict times stay in the display timezone. `BookingFormState.enteredWindow` is set as soon as
+both endpoints resolve with the end after the start, even when the times break the item's rules,
+and the draft availability checks use it, so conflicts show straight away; submission still needs
+the rule-checked `window`.
 Booking date and time displays retain the user's selected display timezone. When a booking's
 instrument timezone differs from either that display timezone or the browser timezone, hovering
 or focusing its timing shows the instrument-local date and time, UTC offset, and IANA timezone.
 The booking read document supplies that timezone; a null or hidden timezone produces no tooltip.
+The Time grid week view lays seven day columns on one wall-clock hour axis. An overlap group shows
+at most two lanes (`WEEK_GRID_MAX_LANES`); the rest collapse into a “+N more” slot that opens that
+day in the Time grid day view. Duration-sized cards in the week grid and the booking form's day
+schedule drop the booker badge, then the second title line, so the item name and time stay visible.
 
 Global display defaults are stored on the audited `BookingConfigurationDefaults` singleton. The
 initial values are `08:00`–`18:00`, Browser mode, and no custom timezone. A user override is one

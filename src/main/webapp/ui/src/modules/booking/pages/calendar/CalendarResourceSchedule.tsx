@@ -13,6 +13,7 @@ import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
 import { CalendarEventCard } from "./CalendarEventCard";
+import { closedDayRanges } from "./calendarAvailability";
 import {
   actionsFor,
   type BookingCalendarResource,
@@ -132,6 +133,19 @@ export function CalendarResourceSchedule({
     () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
     [resourceConfigurations],
   );
+  // Configurations carry openDays and openingExceptions, so a changed schedule yields new objects here.
+  const closedByTarget = React.useMemo(
+    () =>
+      view === "day"
+        ? new Map(
+            [...configurationByTarget].map(([globalId, configuration]) => [
+              globalId,
+              closedDayRanges(configuration, date, timezone),
+            ]),
+          )
+        : new Map<string, ReturnType<typeof closedDayRanges>>(),
+    [configurationByTarget, date, timezone, view],
+  );
   const viewConfigurationLink = (
     resource: BookingCalendarResource,
     configuration?: BookableItemOption,
@@ -177,16 +191,20 @@ export function CalendarResourceSchedule({
               const resourceEvents = eventsByResourceAndDate.get(`${resource.globalId}|${date}`) ?? [];
               const configuration = configurationByTarget.get(resource.globalId);
               const canCreateBooking = configuration?.capabilities?.canCreateBooking === true;
-              const proposedRange = configuration
-                ? nextFreeRange(
-                    blockingEvents.filter((event) => event.target?.globalId === resource.globalId),
-                    date,
-                    timezone,
-                    availabilityStartMinute,
-                    availabilityEndMinute,
-                    configuration.slotGranularityMinutes,
-                  )
-                : undefined;
+              const proposeRange = (startMinute: number, endMinute: number) =>
+                configuration &&
+                nextFreeRange(
+                  blockingEvents.filter((event) => event.target?.globalId === resource.globalId),
+                  date,
+                  timezone,
+                  startMinute,
+                  endMinute,
+                  configuration.slotGranularityMinutes,
+                  closedByTarget.get(resource.globalId),
+                );
+              // Items open only outside the viewer's availability window still get the first open slot that day.
+              const proposedRange =
+                proposeRange(availabilityStartMinute, availabilityEndMinute) || proposeRange(0, 24 * 60);
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="sticky left-0 z-10 border-r bg-muted/30 p-1">
@@ -210,6 +228,7 @@ export function CalendarResourceSchedule({
                         date={date}
                         timezone={timezone}
                         events={resourceEvents.map((event) => toTimelineEvent(event, date, timezone))}
+                        closedPeriods={closedByTarget.get(resource.globalId)}
                         startWindow={availabilityStartMinute}
                         endWindow={availabilityEndMinute}
                         showZoomControls={false}

@@ -7,13 +7,15 @@ import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCre
 import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import { DraftMarker } from "@/modules/booking/creation/DraftMarker";
 import {
-  bookingCreationProblemKey,
+  bookingProblemFeedback,
+  isBookingConflictError,
   isBookingCreationOutcomeUncertain,
   useCreateBooking,
+  withBookingProblemConflict,
 } from "@/modules/booking/creation/useCreateBooking";
 import { bookingConflicts } from "@/modules/booking/domain/availability";
-import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   calendarAvailabilityRow,
   useCalendarAvailability,
@@ -138,26 +140,28 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const availabilityRow = availabilityTarget
     ? calendarAvailabilityRow({
         ...availabilityTarget,
-        openingStart: maintenance ? "00:00" : availabilityTarget.openingStart,
-        openingEnd: maintenance ? "24:00" : availabilityTarget.openingEnd,
+        // Opening hours are the form's own check, so closed time must not read as an overlap here.
+        ...ALWAYS_OPEN,
         // Fetch overlaps even when the configuration permits double booking so the form can explain them.
         allowDoubleBooking: false,
       })
     : undefined;
-  const availabilityInterval = formState?.window
+  // Checked as soon as both endpoints are entered, before the item's rules are met.
+  const enteredWindow = formState?.enteredWindow;
+  const availabilityInterval = enteredWindow
     ? {
-        ...formState.window,
+        ...enteredWindow,
         date: formState.draft.startDate,
         timeZone: availabilityTarget?.timezone ?? preferences.timeZone,
-        elapsedMinutes: (Date.parse(formState.window.end) - Date.parse(formState.window.start)) / 60_000,
+        elapsedMinutes: (Date.parse(enteredWindow.end) - Date.parse(enteredWindow.start)) / 60_000,
       }
     : { start: "", end: "", date: "", timeZone: preferences.timeZone, elapsedMinutes: 0 };
   const availability = useCalendarAvailability(
-    availabilityRow && formState?.window ? [availabilityRow] : [],
+    availabilityRow && enteredWindow ? [availabilityRow] : [],
     availabilityInterval,
     token,
   );
-  const checkingAvailability = Boolean(availabilityRow && formState?.window && availability.isPending);
+  const checkingAvailability = Boolean(availabilityRow && enteredWindow && availability.isPending);
   const availabilityViolation = Boolean(
     availability.isSuccess &&
       availabilityTarget &&
@@ -169,6 +173,14 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const maintenanceConflict = conflicts.some(({ kind }) => kind === "MAINTENANCE");
   const conflictBlocksSubmission =
     availabilityViolation && (maintenanceConflict || !availabilityTarget?.allowDoubleBooking);
+  const problem = bookingProblemFeedback(mutation.error, t, {
+    displayTimezone: preferences.timeZone,
+    target: availabilityTarget && {
+      timezone: availabilityTarget.timezone,
+      maxBookingDurationMinutes: maintenance ? 0 : availabilityTarget.maxBookingDurationMinutes,
+    },
+    creation: true,
+  });
 
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
@@ -233,6 +245,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           <BookingForm
             mode="add"
             density="compact"
+            fixedTimezone
             displayTimezone={preferences.timeZone}
             eventKind={creation.eventKind}
             initialTarget={creation.target}
@@ -242,19 +255,19 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             token={token}
             pending={mutation.isPending}
             error={
-              availabilityViolation && conflicts.length === 0
+              availabilityViolation && conflicts.length === 0 && !problem.conflict
                 ? t("bookings.errors.overlap")
-                : mutation.error
-                  ? t(bookingCreationProblemKey(mutation.error))
-                  : undefined
+                : problem.message
             }
-            conflicts={conflicts}
-            conflictSeverity={availabilityTarget?.allowDoubleBooking && !maintenanceConflict ? "warning" : "error"}
+            conflicts={withBookingProblemConflict(conflicts, problem.conflict)}
+            conflictSeverity={
+              availabilityTarget?.allowDoubleBooking && !maintenanceConflict && !problem.conflict ? "warning" : "error"
+            }
             outcomeUncertain={isBookingCreationOutcomeUncertain(mutation.error)}
             submissionBlocked={
               checkingAvailability ||
               conflictBlocksSubmission ||
-              isBookingOverlapError(mutation.error) ||
+              isBookingConflictError(mutation.error) ||
               isBookingCreationOutcomeUncertain(mutation.error)
             }
             windowAdjustment={windowAdjustment}
