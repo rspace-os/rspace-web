@@ -177,6 +177,72 @@ describe("Inventory instrument booking action", () => {
     expect(
       screen.queryByRole("link", { name: "inventory:instrument.booking.configured.book" }),
     ).not.toBeInTheDocument();
+    expect(screen.getByText("inventory:instrument.booking.archived.title")).toBeInTheDocument();
+    expect(screen.getByText("inventory:instrument.booking.archived.description")).toBeInTheDocument();
+    expect(screen.queryByText("inventory:instrument.booking.configured.title")).not.toBeInTheDocument();
+  });
+
+  test("labels a disabled configuration as disabled rather than configured", async () => {
+    server.use(...bookingHandlers({ enabled: true, docs: [configuration({ enabled: false })] }));
+    const { container } = renderAction();
+
+    expect(await screen.findByRole("link", { name: "inventory:instrument.booking.configured.open" })).toHaveAttribute(
+      "href",
+      "/booking/bookable-items/IN123",
+    );
+    expect(screen.getByText("inventory:instrument.booking.disabled.title")).toBeInTheDocument();
+    expect(screen.getByText("inventory:instrument.booking.disabled.description")).toBeInTheDocument();
+    expect(screen.queryByText("inventory:instrument.booking.configured.title")).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:instrument.booking.archived.title")).not.toBeInTheDocument();
+    await expectAccessible(container);
+  });
+
+  test("offers setup to a non-owner who can configure the instrument, such as a sysadmin", async () => {
+    let targetQuery: string | null = null;
+    server.use(
+      ...bookingHandlers({ enabled: true, docs: [] }),
+      http.get("/api/v2/booking-configuration-targets", ({ request }) => {
+        targetQuery = new URL(request.url).searchParams.get("query");
+        return HttpResponse.json([{ id: 123, globalId, name: "Confocal microscope", deleted: false }]);
+      }),
+    );
+    renderAction({ isOwner: false });
+
+    expect(
+      await screen.findByRole("link", { name: "inventory:instrument.booking.notConfigured.action" }),
+    ).toHaveAttribute("href", "/booking/bookable-items/add?target=IN123");
+    expect(targetQuery).toBe(globalId);
+  });
+
+  test("shows no setup card to a non-owner who cannot configure the instrument", async () => {
+    let targetRequests = 0;
+    server.use(
+      ...bookingHandlers({ enabled: true, docs: [] }),
+      http.get("/api/v2/booking-configuration-targets", () => {
+        targetRequests += 1;
+        return HttpResponse.json([]);
+      }),
+    );
+    renderAction({ isOwner: false });
+
+    await waitFor(() => expect(targetRequests).toBe(1));
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:instrument.booking.notConfigured.title")).not.toBeInTheDocument();
+  });
+
+  test("does not check setup eligibility for the owner", async () => {
+    let targetRequests = 0;
+    server.use(
+      ...bookingHandlers({ enabled: true, docs: [] }),
+      http.get("/api/v2/booking-configuration-targets", () => {
+        targetRequests += 1;
+        return HttpResponse.json([]);
+      }),
+    );
+    renderAction();
+
+    await screen.findByRole("link", { name: "inventory:instrument.booking.notConfigured.action" });
+    expect(targetRequests).toBe(0);
   });
 
   test("does not request availability data", async () => {
