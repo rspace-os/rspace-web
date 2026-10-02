@@ -5,6 +5,7 @@ import static com.researchspace.model.preference.Preference.DROPBOX;
 import static com.researchspace.service.IntegrationsHandler.ARGOS_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.CLUSTERMARKET_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.DBREPO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
@@ -74,7 +75,7 @@ import org.springframework.test.web.servlet.MvcResult;
     })
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 28;
+  final int TOTAL_INTEGRATIONS = 29;
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
@@ -135,6 +136,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(GALAXY_APP_NAME, new String[] {"GALAXY_CONFIGURED_SERVERS"});
     expectedOptions.put(DSW_APP_NAME, new String[] {});
     expectedOptions.put(DMPASSISTANT_APP_NAME, new String[] {});
+    expectedOptions.put(DBREPO_APP_NAME, new String[] {"DBREPO_CONNECTED"});
 
     for (var info : infos.values()) {
       String integrationName = (String) info.get("name");
