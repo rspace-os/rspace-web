@@ -10,5 +10,6 @@
     <include relativeToChangelogFile="true" file="rsdev-607-perform-doi-bulk-update.xml"/>
     <include relativeToChangelogFile="true"
       file="rsdev-1219-create-default-instrument-template.xml"/>
+    <include relativeToChangelogFile="true" file="rsdev-1525-move-github-slack-secrets.xml"/>
 
 </databaseChangeLog>

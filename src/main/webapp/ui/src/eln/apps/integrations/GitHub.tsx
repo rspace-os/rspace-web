@@ -32,7 +32,6 @@ type UnwrapArray<T extends Array<unknown>> = {
 
 export interface GitHubConnectedMessage extends Record<string, unknown> {
   type: "GITHUB_CONNECTED";
-  authToken: string;
   error?: string;
 }
 
@@ -52,13 +51,16 @@ const DialogContent = observer(
     const { getAllRepositories, oauthUrl } = useGitHubEndpoint();
     const copyOfRepos = useLocalObservable(() => linkedRepos.map((c) => observable(c)));
     const [allRepositories, setAllRepositories] = useState<Optional<Array<Repository>>>(Optional.empty());
-    const [accessToken, setAccessToken] = useState<string | null>(null);
     const [loadingAllRepositories, setLoadingAllRepositories] = useState(false);
 
     useBroadcastChannel<GitHubConnectedMessage>(
       GITHUB_CONNECTION_CHANNEL,
       (e: MessageEvent<GitHubConnectedMessage>) => {
-        if (e.data?.type === "GITHUB_CONNECTED" && e.data.error) {
+        if (e.data?.type !== "GITHUB_CONNECTED") {
+          console.log("GitHub: Ignoring unknown message", e.data);
+          return;
+        }
+        if (e.data.error) {
           setLoadingAllRepositories(false);
           addAlert(
             mkAlert({
@@ -69,19 +71,9 @@ const DialogContent = observer(
           );
           return;
         }
-        if (
-          e.data?.type !== "GITHUB_CONNECTED" ||
-          typeof e.data.authToken !== "string" ||
-          e.data.authToken.length === 0
-        ) {
-          console.log("GitHub: Ignoring unknown message", e.data);
-          return;
-        }
-
         void (async () => {
           try {
-            setAccessToken(e.data.authToken);
-            const response = await getAllRepositories(e.data.authToken);
+            const response = await getAllRepositories();
             setAllRepositories(Optional.present(response));
           } catch (error) {
             if (error instanceof Error) {
@@ -142,12 +134,7 @@ const DialogContent = observer(
               {copyOfRepos.map((config, i) => (
                 <TableRow key={i}>
                   <TableCell>
-                    <ListItemText
-                      primary={config.GITHUB_REPOSITORY_FULL_NAME}
-                      secondary={config.GITHUB_ACCESS_TOKEN.map(() => null).orElse(
-                        t("integrations.github.repositories.invalidState"),
-                      )}
-                    />
+                    <ListItemText primary={config.GITHUB_REPOSITORY_FULL_NAME} />
                   </TableCell>
                   <TableCell>
                     <Button
@@ -217,7 +204,6 @@ const DialogContent = observer(
                             void (async () => {
                               try {
                                 const newState = await saveAppOptions("GITHUB", Optional.empty(), {
-                                  GITHUB_ACCESS_TOKEN: accessToken,
                                   GITHUB_REPOSITORY_FULL_NAME: repo.full_name,
                                 });
                                 const optionIdsOfExistingRepos = new Set(copyOfRepos.map(({ optionsId }) => optionsId));

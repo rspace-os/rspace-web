@@ -452,7 +452,6 @@ export default interface Resources {
         "orElse": "Error getting configured repositories",
         "repositories": {
           "additionalHeading": "Link Additional Repositories",
-          "invalidState": "Repository is in an invalid state. Please remove and re-add.",
           "linkedHeading": "Linked Repositories",
           "loading": "Loading available repositories",
           "nameHeader": "Repository Name",

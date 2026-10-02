@@ -6,6 +6,7 @@ import com.researchspace.extmessages.base.ExternalMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
+import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.properties.IPropertyHolder;
 import java.net.URI;
@@ -30,8 +31,9 @@ public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
     return App.APP_MSTEAMS.equals(app.getName());
   }
 
-  protected String getPostUrlSetting() {
-    return webhookPropertyName;
+  @Override
+  protected String doGetPostUrl(AppConfigElementSet messageConfig) {
+    return messageConfig.findElementByPropertyName(webhookPropertyName).getValue();
   }
 
   /**

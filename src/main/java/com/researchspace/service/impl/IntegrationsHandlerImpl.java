@@ -89,13 +89,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       "the protocols.io TinyMCE plugin calls the protocols.io API from the browser")
   private static final Set<String> CLIENT_READABLE_TOKEN_APPS = Set.of(PROTOCOLS_IO_APP_NAME);
 
-  /** App settings that are secret but still sent to the browser. */
-  @ClientReadableSecret(
-      "the GitHub and Slack pages save the token the OAuth flow issues, and the GitHub file tree"
-          + " reads it back, until both keep their credentials in UserConnection")
-  private static final Set<String> CLIENT_READABLE_SECRET_SETTINGS =
-      Set.of("GITHUB_ACCESS_TOKEN", "SLACK_USER_ACCESS_TOKEN", "SLACK_WEBHOOK_URL");
-
   // RSDEV-1525: app settings are secret unless listed here as not secret. A new integration
   // must list its non-secret settings, or the browser receives null in their place.
   private static final Set<String> CLIENT_READABLE_SETTINGS =
@@ -401,10 +394,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   private static String hideIfSecret(String settingName, String value) {
-    return CLIENT_READABLE_SETTINGS.contains(settingName)
-            || CLIENT_READABLE_SECRET_SETTINGS.contains(settingName)
-        ? value
-        : secretForBrowser(value);
+    return CLIENT_READABLE_SETTINGS.contains(settingName) ? value : secretForBrowser(value);
   }
 
   /**
@@ -710,6 +700,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (GALAXY_APP_NAME.equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
           user, appName, GALAXY_ALIAS, configSetBeforeRemoval);
+    } else if (SLACK_APP_NAME.equals(appName)) {
+      // a channel's token and webhook URL are kept under its set id
+      userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
     }
   }
 
