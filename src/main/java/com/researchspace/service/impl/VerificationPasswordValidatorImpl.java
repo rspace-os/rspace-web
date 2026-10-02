@@ -2,18 +2,25 @@ package com.researchspace.service.impl;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IVerificationPasswordValidator;
+import com.researchspace.service.UserManager;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 @Component
 public class VerificationPasswordValidatorImpl implements IVerificationPasswordValidator {
 
   protected @Autowired IPropertyHolder properties;
+  private @Autowired RSpacePasswordEncoder passwordEncoder;
+  private @Autowired BoundedPasswordVerifier verifier;
+  // UserManagerImpl depends on this class
+  private @Autowired @Lazy UserManager userMgr;
 
   @Override
   public boolean isVerificationPasswordSet(User user) {
@@ -36,16 +43,17 @@ public class VerificationPasswordValidatorImpl implements IVerificationPasswordV
     return SignupSource.GOOGLE.equals(user.getSignupSource());
   }
 
-  /**
-   * Checks if user's verification password has been set to a valid value.
-   *
-   * @param The principal user or sysadmin operating-as
-   * @return true if current verification password is valid, false otherwise
-   */
   @Override
   public boolean authenticateVerificationPassword(User passwordOwner, String password) {
-    String hashedPassword = passwordOwner.getVerificationPassword();
-    return BCrypt.checkpw(password, hashedPassword);
+    String username = passwordOwner.getUsername();
+    return verifier.verifyAndUpgrade(
+        username,
+        password,
+        passwordOwner.getVerificationPassword(),
+        (verified, upgraded) ->
+            userMgr.upgradeVerificationPasswordHash(username, verified, upgraded),
+        // keep the caller's copy in step, or a later save would write the old hash back
+        passwordOwner::setVerificationPassword);
   }
 
   /**
@@ -56,6 +64,6 @@ public class VerificationPasswordValidatorImpl implements IVerificationPasswordV
    */
   @Override
   public String hashVerificationPassword(String password) {
-    return BCrypt.hashpw(password, BCrypt.gensalt());
+    return passwordEncoder.encode(password);
   }
 }

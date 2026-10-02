@@ -144,6 +144,19 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
         .executeUpdate();
   }
 
+  @Override
+  public int updateVerificationPasswordHash(
+      String username, String expectedHash, String encodedHash) {
+    return getSession()
+        .createMutationQuery(
+            "update User user set user.verificationPassword = :vp"
+                + " where user.username = :uname and user.verificationPassword = :expected")
+        .setParameter("vp", encodedHash)
+        .setParameter("uname", username)
+        .setParameter("expected", expectedHash)
+        .executeUpdate();
+  }
+
   public User getUserByUsername(String username) {
     return getOptionalUserByUsername(username)
         .orElseThrow(() -> new ObjectRetrievalFailureException(User.class, username));

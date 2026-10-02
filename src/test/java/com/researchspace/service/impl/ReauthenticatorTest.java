@@ -106,6 +106,23 @@ public class ReauthenticatorTest {
   }
 
   @Test
+  void ownVerificationPasswordCheckIsLockedOutWithoutOperateAsSubstitution() {
+    when(verificationPasswordValidator.authenticateVerificationPassword(user, "wrong"))
+        .thenReturn(false);
+    when(verificationPasswordValidator.authenticateVerificationPassword(user, "busy"))
+        .thenThrow(new LoginVerificationBusyException("busy"));
+
+    assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "busy"));
+    assertEquals(0, user.getNumConsecutiveLoginFailures());
+    for (int i = 0; i < 4; i++) {
+      assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "wrong"));
+    }
+    assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "right"));
+    verify(verificationPasswordValidator, never()).authenticateVerificationPassword(user, "right");
+    verify(userMgr, never()).getOriginalUserForOperateAs(user);
+  }
+
+  @Test
   void busyVerificationIsRefusedWithoutCountingAFailure() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
     when(credentialsMatcher.verifyAndUpgrade(user, "any"))

@@ -88,12 +88,8 @@ public class User extends AbstractUserOrGroupImpl
   public static final int MAX_UNAME_LENGTH = 50;
 
   public static final int MIN_PWD_LENGTH = 8;
-  /*
-   * Bound by BCrypt's 72-byte input limit on the verification password; the login password shares
-   * the cap for consistency. TODO: RSDEV-894 stack 2 migrates the verification password to the
-   * Argon2 encoder and raises this cap.
-   */
-  public static final int MAX_PWD_LENGTH = 50;
+  /* Bounds the input hashed for both the login and the verification password. */
+  public static final int MAX_PWD_LENGTH = 128;
 
   /** Core regex for dis-allowed username characters */
   public static final String DISALLOWED_USERNAME_CHARS_REGEXP = "[^" + ALLOWED_USERNAME_CHARS + "]";

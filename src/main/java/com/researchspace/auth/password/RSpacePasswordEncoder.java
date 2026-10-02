@@ -2,18 +2,23 @@ package com.researchspace.auth.password;
 
 import java.util.Map;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * Login password encoder. Stored values carry an {@code {id}} prefix; new passwords are encoded
- * with Argon2id under {@link #ARGON2_ID}. Only the ids registered here are accepted, so an unknown
- * or missing prefix fails with {@link IllegalArgumentException} rather than matching. See ADR 0011.
+ * Encoder for login and verification passwords. Stored values carry an {@code {id}} prefix; new
+ * passwords are encoded with Argon2id under {@link #ARGON2_ID}. Only the ids registered here are
+ * accepted, so an unknown or missing prefix fails with {@link IllegalArgumentException} rather than
+ * matching. {@link #BCRYPT_ID} is registered for verification passwords set before RSDEV-894 and
+ * never encodes; {@link com.researchspace.auth.UsernamePasswordCredentialsMatcher} refuses it for
+ * login passwords. See ADR 0011.
  */
 public class RSpacePasswordEncoder implements PasswordEncoder {
 
   public static final String ARGON2_ID = "argon2@rspace_v1";
   public static final String LEGACY_SHA256_ID = "argon2-legacy-sha256@rspace_v1";
+  public static final String BCRYPT_ID = "bcrypt";
 
   private static final int SALT_LENGTH = 16;
   private static final int HASH_LENGTH = 32;
@@ -30,7 +35,14 @@ public class RSpacePasswordEncoder implements PasswordEncoder {
     legacy = new LegacySha256WrappedEncoder(argon2);
     delegate =
         new DelegatingPasswordEncoder(
-            ARGON2_ID, Map.of(ARGON2_ID, argon2, LEGACY_SHA256_ID, legacy));
+            ARGON2_ID,
+            Map.of(
+                ARGON2_ID,
+                argon2,
+                LEGACY_SHA256_ID,
+                legacy,
+                BCRYPT_ID,
+                new BCryptPasswordEncoder()));
   }
 
   /**

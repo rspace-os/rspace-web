@@ -10,6 +10,7 @@ import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.filter.IUserAccountLockoutPolicy;
+import java.util.function.BooleanSupplier;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,18 @@ public class ReauthenticatorImpl implements IReauthenticator {
   public boolean reauthenticate(User subject, String pwd) {
 
     // check this first, before doing any password validation:  rspac-2223
-    subject = userMgr.getOriginalUserForOperateAs(subject);
+    User account = userMgr.getOriginalUserForOperateAs(subject);
+    return withLockout(account, () -> checkPassword(account, pwd));
+  }
+
+  @Override
+  public boolean reauthenticateWithVerificationPassword(User passwordOwner, String pwd) {
+    return withLockout(
+        passwordOwner,
+        () -> verificationPasswordValidator.authenticateVerificationPassword(passwordOwner, pwd));
+  }
+
+  private boolean withLockout(User subject, BooleanSupplier passwordCheck) {
     String caller = callingAction();
 
     if (lockoutPolicy.isReauthenticationLocked(subject)) {
@@ -50,7 +62,7 @@ public class ReauthenticatorImpl implements IReauthenticator {
 
     boolean authenticated;
     try {
-      authenticated = checkPassword(subject, pwd);
+      authenticated = passwordCheck.getAsBoolean();
     } catch (LoginVerificationBusyException e) {
       SECURITY_LOG.warn("Reauthentication by {}: {}", caller, e.getMessage());
       return false;

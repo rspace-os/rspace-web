@@ -204,6 +204,13 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     return userDao.updatePasswordHash(username, verifiedPassword, encodedPassword) == 1;
   }
 
+  @Override
+  public boolean upgradeVerificationPasswordHash(
+      String username, String verifiedHash, String encodedHash) {
+    requireCurrentEncoding(encodedHash);
+    return userDao.updateVerificationPasswordHash(username, verifiedHash, encodedHash) == 1;
+  }
+
   /** Upgrades store an already-encoded value; refuse anything else rather than persist it. */
   private static void requireCurrentEncoding(String encoded) {
     Validate.isTrue(

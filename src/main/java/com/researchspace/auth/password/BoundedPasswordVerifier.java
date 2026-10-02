@@ -5,15 +5,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * Runs Argon2 login-password checks (Shiro login and default-realm reauthentication) through one
- * shared pool of permits, so the per-check heap allocation is bounded however many requests arrive
- * (ADR 0011). A username has at most one check in flight, so one account cannot hold more than one
- * permit. Encoding new passwords is not bounded.
+ * Runs stored-password checks (Shiro login, default-realm reauthentication and SSO/Community
+ * verification passwords) through one shared pool of permits, so the per-check heap allocation is
+ * bounded however many requests arrive (ADR 0011). A username has at most one check in flight, so
+ * one account cannot hold more than one permit. Encoding new passwords is not bounded.
  */
+@Slf4j
 public class BoundedPasswordVerifier {
 
   /**
@@ -83,6 +86,53 @@ public class BoundedPasswordVerifier {
     } finally {
       releaseHolder(username);
     }
+  }
+
+  /** Writes an upgraded hash if the stored value is still the one that was verified. */
+  @FunctionalInterface
+  public interface HashStore {
+    /**
+     * @return whether the stored value was replaced
+     */
+    boolean replace(String verifiedHash, String upgradedHash);
+  }
+
+  /**
+   * Verifies a password and, when it matched an outdated encoding, stores the re-encoded hash.
+   * Storing is best effort: a failed or lost write is logged and the check still succeeds.
+   *
+   * @param store writes the upgraded hash, compare-and-swap on the verified value
+   * @param onStored called with the new hash only once it has been written, so callers can keep an
+   *     in-memory copy in step
+   * @return whether the password matched; false if the stored value has no recognised encoding
+   * @throws LoginVerificationBusyException if no verification slot is free in time
+   */
+  public boolean verifyAndUpgrade(
+      String username,
+      CharSequence rawPassword,
+      String encodedPassword,
+      HashStore store,
+      Consumer<String> onStored) {
+    Result result;
+    try {
+      result = verify(username, rawPassword, encodedPassword);
+    } catch (IllegalArgumentException e) {
+      log.error("Stored password of [{}] cannot be verified", username, e);
+      return false;
+    }
+    if (result.upgradedHash() != null) {
+      try {
+        if (store.replace(encodedPassword, result.upgradedHash())) {
+          onStored.accept(result.upgradedHash());
+        } else {
+          log.info(
+              "Stored password of [{}] changed during verification, upgrade skipped", username);
+        }
+      } catch (RuntimeException e) {
+        log.warn("Could not store upgraded password hash of [{}], old hash kept", username, e);
+      }
+    }
+    return result.matches();
   }
 
   private Result check(CharSequence rawPassword, String encodedPassword) {

@@ -165,4 +165,51 @@ class BoundedPasswordVerifierTest {
     }
     assertEquals(count, encoder.entered.get());
   }
+
+  @Test
+  void verifyAndUpgradeStoresOnlyConfirmedUpgrades() {
+    encoder.release.countDown();
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(1));
+    List<String> stored = new ArrayList<>();
+    List<String> callerCopy = new ArrayList<>();
+
+    assertTrue(
+        verifier.verifyAndUpgrade(
+            "alice", "ok", "old", (v, n) -> stored.add(v + "->" + n), callerCopy::add));
+    assertEquals(List.of("old->new"), stored);
+    assertEquals(List.of("new"), callerCopy);
+
+    // lost compare-and-swap or a failed write: still a match, caller copy untouched
+    assertTrue(verifier.verifyAndUpgrade("alice", "ok", "old", (v, n) -> false, callerCopy::add));
+    assertTrue(
+        verifier.verifyAndUpgrade(
+            "alice",
+            "ok",
+            "old",
+            (v, n) -> {
+              throw new IllegalStateException("db down");
+            },
+            callerCopy::add));
+    assertEquals(List.of("new"), callerCopy);
+
+    assertFalse(verifier.verifyAndUpgrade("alice", "bad", "old", (v, n) -> true, callerCopy::add));
+    assertTrue(
+        verifier.verifyAndUpgrade("alice", "ok", "current", (v, n) -> true, callerCopy::add));
+    assertEquals(List.of("new"), callerCopy);
+  }
+
+  @Test
+  void verifyAndUpgradeTreatsUnreadableStoredValueAsMismatch() {
+    PasswordEncoder unreadable =
+        new BlockingEncoder() {
+          @Override
+          public boolean matches(CharSequence rawPassword, String encodedPassword) {
+            throw new IllegalArgumentException("no id");
+          }
+        };
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(unreadable, PERMITS, Duration.ofSeconds(1));
+    assertFalse(verifier.verifyAndUpgrade("alice", "x", "raw", (v, n) -> true, n -> {}));
+  }
 }

@@ -85,7 +85,11 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.upgradePasswordHash("any", "{old}x", "{bcrypt}$2a$10$x"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.upgradeVerificationPasswordHash("any", "{bcrypt}x", "plaintext"));
     verify(userDao, never()).updatePasswordHash(anyString(), anyString(), anyString());
+    verify(userDao, never()).updateVerificationPasswordHash(anyString(), anyString(), anyString());
 
     String encoded = passwordEncoder.encode("pw");
     when(userDao.updatePasswordHash("any", "{old}x", encoded)).thenReturn(1);
