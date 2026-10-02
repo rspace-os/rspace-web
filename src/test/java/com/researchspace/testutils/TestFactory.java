@@ -3,8 +3,8 @@ package com.researchspace.testutils;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.core.testutil.CoreTestUtils;
-import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
@@ -89,6 +89,7 @@ public class TestFactory {
   }
 
   private static final String OLD_NAME = "oldName";
+  private static final String TESTPASS_ENCODED = new RSpacePasswordEncoder().encode("testpass");
 
   /**
    * Creates a structured document with a single text field.
@@ -279,10 +280,9 @@ public class TestFactory {
   public static User createAnyUser(String uname) {
     User user = createAnyUserWithPlainTextPassword(uname);
 
-    // hash password fields so test user can be used in shiro login flow
-    String testPassSha256 = SecureStringUtils.getHashForSigning(user.getPassword()).toString();
-    user.setPassword(testPassSha256);
-    user.setConfirmPassword(testPassSha256);
+    // stored encoded so the test user can be used in the shiro login flow
+    user.setPassword(TESTPASS_ENCODED);
+    user.setConfirmPassword(TESTPASS_ENCODED);
 
     return user;
   }
