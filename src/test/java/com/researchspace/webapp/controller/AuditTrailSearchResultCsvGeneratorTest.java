@@ -23,6 +23,7 @@ import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -158,6 +159,27 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     assertEquals("Booking", getCellByRowColumn(csv, 4, 3));
     assertEquals("Cancelled", getCellByRowColumn(csv, 5, 2));
     assertEquals("Booking", getCellByRowColumn(csv, 5, 3));
+  }
+
+  @Test
+  public void bookingDescriptionPutsRecordedDetailsBeforeTheLoggedDescription() throws IOException {
+    AuditTrailSearchResult deleted =
+        createAuditSearchResult(
+            AuditDomain.BOOKING,
+            AuditAction.DELETE,
+            "booking-configurations:13",
+            "ARCHIVED",
+            "permanent=true; subject=user2b");
+    deleted.getEvent().getData().getData().put("openDays", List.of(1, 3));
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(
+            singleResult(deleted), defaultSearchConfig());
+
+    assertEquals("Permanently deleted", getCellByRowColumn(csv, 2, 2));
+    assertThat(csv.getBody())
+        .contains(
+            "\"Status: ARCHIVED; Open days: Monday, Wednesday; permanent=true; subject=user2b\"");
   }
 
   @Test
