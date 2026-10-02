@@ -9,6 +9,7 @@ import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import SecretField from "../components/Inputs/SecretField";
 import LoadingFade from "../components/LoadingFade";
 import type { FileSystemId } from "./common";
 
@@ -91,12 +92,11 @@ export default function FileStoreLogin({
         </Grid>
         <Grid size={12}>
           <FormControl error aria-describedby="password-error-text">
-            <TextField
+            <SecretField
               variant="standard"
               label={t("export.fileStore.login.password")}
-              type="password"
               value={password}
-              onChange={({ target: { value } }) => setPassword(value)}
+              onChange={setPassword}
               autoComplete="nfsPassword"
               data-test-id="password"
             />
