@@ -38,8 +38,9 @@ The design and its trade-offs are in
 [ADR 0011](../adr/0011-argon2id-password-hashing-and-login-concurrency-limit.md).
 
 - **Encoder.** `RSpacePasswordEncoder` (bean in `SecurityBaseConfig`) wraps
-  Spring Security's `DelegatingPasswordEncoder`. Every stored login
-  password carries an `{id}` prefix. Only two ids are registered:
+  Spring Security's `DelegatingPasswordEncoder`. Every stored login and
+  SSO/Community verification password carries an `{id}` prefix. Only
+  three ids are registered:
   - `argon2@rspace_v1`, the default for new passwords: Argon2id,
     m=19456 KiB, t=2, p=1, 16-byte salt, 32-byte hash. The salt is
     inside the encoded value and the `salt` column is null.
@@ -49,13 +50,24 @@ The design and its trade-offs are in
     with an empty salt for unsalted rows. The SHA-256 is fed to Argon2 as
     the Base64 of its decoded bytes, so the case of the old hex never
     matters.
+  - `bcrypt`, verification passwords set before RSDEV-894, prefixed at
+    rest by the Liquibase change
+    `PrefixBcryptVerificationPasswords_RSDEV894`. It runs after the
+    login wrap, skips values already carrying a registered id, and
+    clears (sets to null) and logs at ERROR by username any other
+    non-blank value, since that could never verify. This id only
+    reads: it never encodes, and `UsernamePasswordCredentialsMatcher`
+    refuses it for login passwords.
 
   An unknown or missing prefix throws `IllegalArgumentException` and the
   check fails closed.
 - **Verification.** Shiro login (`ShiroRealm`) and default-realm
   reauthentication (`ReauthenticatorImpl`) both go through
   `UsernamePasswordCredentialsMatcher`, which calls
-  `BoundedPasswordVerifier`. That verifier holds a fair semaphore
+  `BoundedPasswordVerifier`. Verification password checks
+  (`VerificationPasswordValidatorImpl#authenticateVerificationPassword`)
+  call the same verifier and share its permits. Only LDAP
+  reauthentication, which checks against the directory, skips it. That verifier holds a fair semaphore
   (`login.passwordVerification.maxConcurrent`, default 8) and a
   per-username lock, so one account holds at most one permit. A single
   deadline (`login.passwordVerification.waitSeconds`, default 5) covers
@@ -69,11 +81,23 @@ The design and its trade-offs are in
   `UserDao#updatePasswordHash`. That is a compare-and-swap on the old
   hash, so it never reverts a concurrent password change, and it bypasses
   the change detection in `UserManager#save`, which would otherwise hash
-  the hash. A failed upgrade is logged and the login still succeeds.
+  the hash. Verification passwords work the same way through
+  `UserManager#upgradeVerificationPasswordHash` and
+  `UserDao#updateVerificationPasswordHash`, against the row of the
+  account whose verification password was checked (the sysadmin under
+  operate-as). Both upgrade methods run in their own transaction
+  (`REQUIRES_NEW`, `userManagerTxAdvice` in
+  `applicationContext-service.xml`), so a failed upgrade is logged and
+  the correct password is still accepted.
 - **Reauthentication lockout.** `ReauthenticatorImpl` checks
   `IUserAccountLockoutPolicy#isReauthenticationLocked` before any
   password check, and records failures with
-  `handleReauthenticationFailure`. This shares the login failure counter
+  `handleReauthenticationFailure`. Signing and witnessing go through
+  `IReauthenticator#reauthenticate`. Changing a verification password
+  checks the current one through
+  `IReauthenticator#reauthenticateWithVerificationPassword`, which applies
+  the same lockout and busy handling but never substitutes an
+  operating-as sysadmin. This shares the login failure counter
   and window (4 failures in 2 minutes) but never sets `accountLocked`,
   because API and SSO logins treat that flag as disabled until a form
   login clears it.
