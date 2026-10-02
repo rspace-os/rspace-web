@@ -8,6 +8,7 @@ import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
@@ -81,12 +82,14 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     user.setId(1L);
     user.setVersion(1);
     user.setPassword("newPassword1");
+    user.setSalt("old salt");
     when(userDao.getUserPassword(user.getUsername())).thenReturn("{argon2@rspace_v1}old");
     when(userDao.saveUser(user)).thenReturn(user);
 
     userManager.saveUser(user);
     String encoded = user.getPassword();
     assertTrue(passwordEncoder.matches("newPassword1", encoded));
+    assertNull(user.getSalt());
 
     // stored value now equals the in-memory one, so a second save leaves it alone
     when(userDao.getUserPassword(user.getUsername())).thenReturn(encoded);
