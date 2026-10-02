@@ -181,7 +181,10 @@ public enum Preference {
 
   /** Similar to UI_CLIENT_SETTINGS, but for storing arbitrary data in json key-value format */
   UI_JSON_SETTINGS(
-      "", SettingsType.TEXT, PreferenceCategory.UI, "UI client-side settings, in json format");
+      "", SettingsType.TEXT, PreferenceCategory.UI, "UI client-side settings, in json format"),
+
+  BOOKING_DISPLAY_PREFERENCES(
+      "", SettingsType.TEXT, PreferenceCategory.UI, "Booking display preferences");
 
   private String defaultValue;
   private SettingsType prefType;
