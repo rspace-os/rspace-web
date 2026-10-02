@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="booking-opening-weekdays-columns" author="researchspace" context="run">
+    <comment>
+      Add open ISO weekdays and per-weekday opening exceptions, stored as canonical JSON, to item
+      settings, creation-time defaults and their Envers history. Defaults match the Java defaults:
+      every weekday open and no exceptions.
+    </comment>
+    <addColumn tableName="BookingConfiguration">
+      <column name="openDays" type="VARCHAR(64)" defaultValue="[1,2,3,4,5,6,7]">
+        <constraints nullable="false"/>
+      </column>
+      <column name="openingExceptions" type="VARCHAR(1024)" defaultValue="[]">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="BookingConfiguration_AUD">
+      <column name="openDays" type="VARCHAR(64)"/>
+      <column name="openingExceptions" type="VARCHAR(1024)"/>
+    </addColumn>
+    <addColumn tableName="BookingConfigurationDefaults">
+      <column name="openDays" type="VARCHAR(64)" defaultValue="[1,2,3,4,5,6,7]">
+        <constraints nullable="false"/>
+      </column>
+      <column name="openingExceptions" type="VARCHAR(1024)" defaultValue="[]">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="BookingConfigurationDefaults_AUD">
+      <column name="openDays" type="VARCHAR(64)"/>
+      <column name="openingExceptions" type="VARCHAR(1024)"/>
+    </addColumn>
+  </changeSet>
+</databaseChangeLog>

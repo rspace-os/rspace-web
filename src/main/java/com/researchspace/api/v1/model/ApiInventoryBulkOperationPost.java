@@ -17,6 +17,9 @@ public class ApiInventoryBulkOperationPost {
   @JsonProperty("rollbackOnError")
   private boolean rollbackOnError = true;
 
+  @JsonProperty("transferBookingConfigurationOwnership")
+  private boolean transferBookingConfigurationOwnership;
+
   @NotNull(message = "{errors.inventory.bulk.recordsRequired}")
   @Size(min = 1, max = 100, message = "{errors.inventory.bulk.recordCount}")
   @JsonProperty("records")
