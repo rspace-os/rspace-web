@@ -1,7 +1,12 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.password.BoundedPasswordVerifier;
@@ -15,6 +20,7 @@ import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -73,5 +79,42 @@ public class IVerificationPasswordValidatorTest {
     String hashedPw = verificationValidator.hashVerificationPassword(plaintextPw);
     anyUser.setVerificationPassword(hashedPw);
     assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, plaintextPw));
+  }
+
+  // BCrypt.hashpw("verify1234", BCrypt.gensalt()), as stored before RSDEV-894
+  private static final String LEGACY_BCRYPT =
+      "$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6";
+
+  @Test
+  public void newVerificationPasswordIsArgon2() {
+    assertTrue(
+        verificationValidator.hashVerificationPassword("pass").startsWith("{argon2@rspace_v1}"));
+  }
+
+  @Test
+  public void prefixedBcryptVerificationPasswordMatchesAndIsUpgraded() {
+    String legacy = "{bcrypt}" + LEGACY_BCRYPT;
+    anyUser.setVerificationPassword(legacy);
+    ArgumentCaptor<String> upgraded = ArgumentCaptor.forClass(String.class);
+    when(userMgr.upgradeVerificationPasswordHash(
+            eq(anyUser.getUsername()), eq(legacy), upgraded.capture()))
+        .thenReturn(true);
+
+    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify12345"));
+    assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
+
+    assertTrue(upgraded.getValue().startsWith("{argon2@rspace_v1}"));
+    assertEquals(upgraded.getValue(), anyUser.getVerificationPassword());
+    assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
+    verify(userMgr).upgradeVerificationPasswordHash(anyString(), anyString(), anyString());
+  }
+
+  @Test
+  public void bareBcryptOrMissingVerificationPasswordDoesNotMatch() {
+    anyUser.setVerificationPassword(LEGACY_BCRYPT);
+    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
+    anyUser.setVerificationPassword(null);
+    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
+    verify(userMgr, never()).upgradeVerificationPasswordHash(anyString(), anyString(), anyString());
   }
 }
