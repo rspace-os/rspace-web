@@ -1,11 +1,12 @@
 import type { Locator } from "@playwright/test";
+import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
+import { SendMessageDialogComponent } from "@/__tests__/e2e/components/shared/SendMessageDialogComponent";
 import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
 import { ChangePiDialogComponent } from "@/__tests__/e2e/components/system/groups/ChangePiDialogComponent";
 import { ChangeRoleDialogComponent } from "@/__tests__/e2e/components/system/groups/ChangeRoleDialogComponent";
 import { GroupHeaderComponent } from "@/__tests__/e2e/components/system/groups/GroupHeaderComponent";
 import { InviteMembersDialogComponent } from "@/__tests__/e2e/components/system/groups/InviteMembersDialogComponent";
 import { RenameGroupDialogComponent } from "@/__tests__/e2e/components/system/groups/RenameGroupDialogComponent";
-import { SendMessageDialogComponent } from "@/__tests__/e2e/components/system/groups/SendMessageDialogComponent";
 import { BasePage } from "@/__tests__/e2e/pageObjects/BasePage";
 
 /** Group details/membership view. */
@@ -14,6 +15,11 @@ export class GroupDetailsPage extends BasePage {
 
   async openGroup(groupId: number): Promise<void> {
     await this.page.goto(`${this.path}/${groupId}`);
+    await this.waitForLayoutToSettle();
+  }
+
+  private async waitForLayoutToSettle(): Promise<void> {
+    await new AppHeader(this.page).accountMenuButton.waitFor({ state: "visible" });
   }
 
   get heading(): Locator {
@@ -123,17 +129,32 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async makeMemberLabAdmin(username: string, canViewAllDocuments: boolean): Promise<void> {
-    await this.memberChangeRoleButton(username).click();
-    const dialog = new ChangeRoleDialogComponent(this.page);
-    await dialog.waitUntilVisible();
-    await dialog.makeLabAdmin(canViewAllDocuments);
+    await this.changeMemberRole(username, (dialog) => dialog.makeLabAdmin(canViewAllDocuments));
   }
 
   async makeMemberUser(username: string): Promise<void> {
+    await this.changeMemberRole(username, (dialog) => dialog.makeUser());
+  }
+
+  // viewGroupEditing.js reloads the page once the role change is saved.
+  private async changeMemberRole(
+    username: string,
+    submit: (dialog: ChangeRoleDialogComponent) => Promise<void>,
+  ): Promise<void> {
     await this.memberChangeRoleButton(username).click();
     const dialog = new ChangeRoleDialogComponent(this.page);
     await dialog.waitUntilVisible();
-    await dialog.makeUser();
+    const saved = this.page.waitForResponse((res) => res.url().includes("/groups/ajax/admin/changeRole/"));
+    const reloaded = this.page.waitForEvent("load");
+    await submit(dialog);
+    // The body can't be read: the success handler navigates away immediately. A validation error
+    // shows an alert instead of reloading, so it surfaces as the reload wait timing out.
+    const res = await saved;
+    if (!res.ok()) {
+      throw new Error(`Changing ${username}'s role failed: ${res.status()}`);
+    }
+    await reloaded;
+    await this.waitForLayoutToSettle();
   }
 
   get editProfileButton(): Locator {

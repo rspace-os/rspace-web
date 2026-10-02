@@ -44,8 +44,19 @@ export class MoveDialog {
 
   async clickFolder(name: string): Promise<void> {
     const target = this.path.filter({ hasText: name });
+    await this.waitForTreeToSettle();
     await this.folder(name).click();
     await target.waitFor({ state: "visible" });
+    await this.waitForTreeToSettle();
+  }
+
+  // jqueryFileTree marks a folder `.wait` while its children load, then slides them open over 500ms;
+  // on webkit a click on a child mid-slide can miss it.
+  private async waitForTreeToSettle(): Promise<void> {
+    await this.page.waitForFunction(() => {
+      const $ = (window as unknown as { jQuery: (s: string) => { length: number } }).jQuery;
+      return $("#movefolder-tree .wait").length === 0 && $("#movefolder-tree ul:animated").length === 0;
+    });
   }
 
   async setOrdering(field: MoveDialogSortField, order: MoveDialogSortOrder): Promise<void> {
