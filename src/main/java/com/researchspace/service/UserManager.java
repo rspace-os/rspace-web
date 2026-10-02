@@ -319,9 +319,12 @@ public interface UserManager extends GenericManager<User, Long> {
    * encoding. Writes the hash directly; never pass a plain-text password.
    *
    * @param username the login name
+   * @param verifiedPassword the stored value that was verified; nothing is written if the stored
+   *     password has changed since, so a concurrent password change is never undone
    * @param encodedPassword the encoded password, including its encoder id prefix
+   * @return whether the hash was replaced
    */
-  void upgradePasswordHash(String username, String encodedPassword);
+  boolean upgradePasswordHash(String username, String verifiedPassword, String encodedPassword);
 
   /**
    * Updates email of existing user

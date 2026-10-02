@@ -54,4 +54,24 @@ public class DefautLockoutPolicyTest {
     assertNull(u.getLoginFailure());
     assertEquals(0, u.getNumConsecutiveLoginFailures());
   }
+
+  @Test
+  public void reauthenticationFailuresCountWithoutSettingTheLockFlag() throws InterruptedException {
+    policy.handleReauthenticationFailure(u);
+    assertFalse(policy.isReauthenticationLocked(u));
+    policy.handleReauthenticationFailure(u);
+    assertTrue(policy.isReauthenticationLocked(u));
+    assertFalse(u.isAccountLocked());
+
+    Thread.sleep(TIMEOUT + LOCKOUT + 1);
+    assertFalse(policy.isReauthenticationLocked(u));
+  }
+
+  @Test
+  public void loginLockAlsoRefusesReauthentication() {
+    policy.handleLockoutOnFailure(u);
+    policy.handleLockoutOnFailure(u);
+    assertTrue(u.isAccountLocked());
+    assertTrue(policy.isReauthenticationLocked(u));
+  }
 }
