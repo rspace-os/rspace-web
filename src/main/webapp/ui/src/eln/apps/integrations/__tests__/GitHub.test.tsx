@@ -67,7 +67,6 @@ describe("GitHub", () => {
             mode: "DISABLED",
             credentials: [
               Optional.present({
-                GITHUB_ACCESS_TOKEN: Optional.present("access token"),
                 GITHUB_REPOSITORY_FULL_NAME: "username/someRepo",
                 optionsId: "1",
               }),
@@ -79,27 +78,6 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
       expect(within(screen.getByRole("table")).getByText("username/someRepo")).toBeVisible();
-    });
-    test("If the server responds with a missing ACCESS_TOKEN then the repo should be shown in an invalid state", () => {
-      render(
-        <GitHub
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                GITHUB_ACCESS_TOKEN: Optional.empty(),
-                GITHUB_REPOSITORY_FULL_NAME: "username/someRepo",
-                optionsId: "1",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />,
-      );
-
-      fireEvent.click(screen.getByRole("button"));
-      expect(within(screen.getByRole("table")).getByText("username/someRepo")).toBeVisible();
-      expect(screen.getByText("apps:integrations.github.repositories.invalidState")).toBeVisible();
     });
   });
   describe("Adding repositories", () => {
@@ -140,7 +118,7 @@ describe("GitHub", () => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         broadcastHandlers.forEach((handler) =>
           handler({
-            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+            data: { type: "GITHUB_CONNECTED" },
           } as MessageEvent<GitHubConnectedMessage>),
         );
       });
@@ -194,7 +172,7 @@ describe("GitHub", () => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         broadcastHandlers.forEach((handler) =>
           handler({
-            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+            data: { type: "GITHUB_CONNECTED" },
           } as MessageEvent<GitHubConnectedMessage>),
         );
       });
@@ -212,7 +190,6 @@ describe("GitHub", () => {
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("GITHUB");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({
         GITHUB_REPOSITORY_FULL_NAME: "a repo",
-        GITHUB_ACCESS_TOKEN: "oauth token",
       });
     });
     test("When the add button next to a repo is tapped, it should be added to the conncted repos table and removed from the all repos table.", async () => {
@@ -236,7 +213,6 @@ describe("GitHub", () => {
           options: {
             "1": {
               GITHUB_REPOSITORY_FULL_NAME: "a repo",
-              GITHUB_ACCESS_TOKEN: "oauth token",
             },
           },
         },
@@ -266,7 +242,7 @@ describe("GitHub", () => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         broadcastHandlers.forEach((handler) =>
           handler({
-            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+            data: { type: "GITHUB_CONNECTED" },
           } as MessageEvent<GitHubConnectedMessage>),
         );
       });
@@ -322,7 +298,6 @@ describe("GitHub", () => {
           options: {
             "1": {
               GITHUB_REPOSITORY_FULL_NAME: "a repo",
-              GITHUB_ACCESS_TOKEN: "oauth token",
             },
           },
         },
@@ -345,7 +320,7 @@ describe("GitHub", () => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         broadcastHandlers.forEach((handler) =>
           handler({
-            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+            data: { type: "GITHUB_CONNECTED" },
           } as MessageEvent<GitHubConnectedMessage>),
         );
       });
@@ -383,7 +358,6 @@ describe("GitHub", () => {
             mode: "DISABLED",
             credentials: [
               Optional.present({
-                GITHUB_ACCESS_TOKEN: Optional.empty(),
                 GITHUB_REPOSITORY_FULL_NAME: "username/someRepo",
                 optionsId: "1",
               }),
@@ -411,7 +385,6 @@ describe("GitHub", () => {
         mode: "DISABLED" as const,
         credentials: [
           Optional.present({
-            GITHUB_ACCESS_TOKEN: Optional.present("access token"),
             GITHUB_REPOSITORY_FULL_NAME: "username/someRepo",
             optionsId: "1",
           }),

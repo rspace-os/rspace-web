@@ -1,17 +1,24 @@
 package com.researchspace.webapp.integrations.slack;
 
+import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.session.SessionAttributeUtils.getSessionAttribute;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.analytics.service.AnalyticsEvent;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.User;
+import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
+import com.researchspace.model.apps.UserAppConfig;
+import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ChatBotFunctionalityHandler;
-import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.UserAppConfigManager;
+import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.slack.SlackAttachment;
 import com.researchspace.slack.SlackAuthToken;
@@ -28,7 +35,9 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.time.Clock;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -98,6 +107,7 @@ public class SlackController extends BaseOAuth2Controller {
   private String slackApiBaseUrl;
 
   private @Autowired UserAppConfigManager userAppCfgMgr;
+  private @Autowired UserConnectionManager userConnectionManager;
   private @Autowired SlackService slackService;
   private @Autowired ChatBotFunctionalityHandler chatBotFunctionalityHandler;
   @Autowired IPropertyHolder props;
@@ -127,10 +137,12 @@ public class SlackController extends BaseOAuth2Controller {
     return URLEncoder.encode(props.getServerUrl() + "/slack/redirect_uri", StandardCharsets.UTF_8);
   }
 
-  @ClientReadableSecret("the browser saves the issued token and webhook URL with the channel")
   @GetMapping("/redirect_uri")
   public String handleSlackRedirect(
-      @RequestParam Map<String, String> params, Model model, HttpServletRequest request) {
+      @RequestParam Map<String, String> params,
+      Model model,
+      Principal principal,
+      HttpServletRequest request) {
     ConnectionResultPage.addConnectionAttributes(
         model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
 
@@ -173,8 +185,8 @@ public class SlackController extends BaseOAuth2Controller {
               + "&redirect_uri="
               + encodedRedirectUri();
       String content = IOUtils.toString(new URL(slackUrl), StandardCharsets.UTF_8);
-      model.addAttribute("connectionResponse", content);
       log.info("slack response retrieved fine");
+      saveChannel(content, userManager.getUserByUsername(principal.getName()));
 
     } catch (IOException e) {
       // the JDK's message contains the full request URL, client_secret and code included
@@ -191,9 +203,68 @@ public class SlackController extends BaseOAuth2Controller {
               .build();
       model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
       return CONNECTED_VIEW;
+    } catch (IllegalArgumentException e) {
+      OauthAuthorizationError error =
+          getAuthErrorBuilder()
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {APP_DISPLAY_NAME}))
+              .errorDetails(e.getMessage())
+              .build();
+      model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
+      return CONNECTED_VIEW;
     }
 
     return CONNECTED_VIEW;
+  }
+
+  /**
+   * Saves the channel that oauth.access connected. The token and webhook URL are credentials, so
+   * they go to an encrypted UserConnection keyed by the channel's config set id, and only the
+   * channel details become app settings.
+   */
+  private void saveChannel(String oauthAccessResponse, User user) throws IOException {
+    JsonNode response = new ObjectMapper().readTree(oauthAccessResponse);
+    if (!response.path("ok").asBoolean()) {
+      throw new IllegalArgumentException(response.path("error").asText("unknown error"));
+    }
+    JsonNode webhook = response.path("incoming_webhook");
+    Map<String, String> channel = new HashMap<>();
+    channel.put("SLACK_TEAM_NAME", requiredText(response, "team_name"));
+    channel.put("SLACK_TEAM_ID", requiredText(response, "team_id"));
+    channel.put("SLACK_USER_ID", requiredText(response, "user_id"));
+    channel.put("SLACK_CHANNEL_ID", requiredText(webhook, "channel_id"));
+    channel.put("SLACK_CHANNEL_NAME", requiredText(webhook, "channel"));
+    channel.put("SLACK_CHANNEL_LABEL", channel.get("SLACK_CHANNEL_NAME"));
+    String accessToken = requiredText(response, "access_token");
+    String webhookUrl = requiredText(webhook, "url");
+
+    UserAppConfig cfg =
+        userAppCfgMgr.saveAppConfigElementSet(channel, null, true, user, App.APP_SLACK);
+    // set ids only increase, so the new channel has the highest
+    long setId =
+        cfg.getAppConfigElementSets().stream()
+            .mapToLong(AppConfigElementSet::getId)
+            .max()
+            .orElseThrow();
+    UserConnection connection =
+        new UserConnection(
+            new UserConnectionId(user.getUsername(), SLACK_APP_NAME, String.valueOf(setId)),
+            accessToken);
+    connection.setSecret(webhookUrl);
+    // a user's connections to one provider need distinct ranks
+    connection.setRank(
+        userConnectionManager
+            .findMaxRankByUserNameProviderName(user.getUsername(), SLACK_APP_NAME)
+            .map(rank -> rank + 1)
+            .orElse(1));
+    userConnectionManager.save(connection);
+  }
+
+  private static String requiredText(JsonNode node, String field) {
+    JsonNode value = node.path(field);
+    if (!value.isTextual() || value.asText().isEmpty()) {
+      throw new IllegalArgumentException("Slack's response has no " + field);
+    }
+    return value.asText();
   }
 
   private OauthAuthorizationErrorBuilder getAuthErrorBuilder() {
@@ -398,11 +469,15 @@ public class SlackController extends BaseOAuth2Controller {
         userAppCfgMgr.getByAppName("app.slack", user).getAppConfigElementSets()) {
       String currentUserId = elementSet.findElementByPropertyName("SLACK_USER_ID").getValue();
       String currentTeamId = elementSet.findElementByPropertyName("SLACK_TEAM_ID").getValue();
-      String accessToken =
-          elementSet.findElementByPropertyName("SLACK_USER_ACCESS_TOKEN").getValue();
-
-      if (currentUserId.equals(userId) && currentTeamId.equals(teamId) && !accessToken.isEmpty())
-        return accessToken;
+      if (currentUserId.equals(userId) && currentTeamId.equals(teamId)) {
+        String accessToken =
+            userConnectionManager
+                .findByUserNameProviderName(
+                    user.getUsername(), SLACK_APP_NAME, String.valueOf(elementSet.getId()))
+                .map(UserConnection::getAccessToken)
+                .orElse("");
+        if (!accessToken.isEmpty()) return accessToken;
+      }
     }
     return null;
   }

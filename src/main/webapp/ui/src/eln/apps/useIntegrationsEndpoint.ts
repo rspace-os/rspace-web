@@ -130,11 +130,6 @@ export type IntegrationStates = {
   GITHUB: IntegrationState<
     Array<
       Optional<{
-        /*
-         * we use an inner Optional so that the user can see which repo is in an
-         * invalid state, and can thus remove and readd
-         */
-        GITHUB_ACCESS_TOKEN: Optional<string>;
         GITHUB_REPOSITORY_FULL_NAME: string;
         optionsId: OptionsId;
       }>
@@ -197,9 +192,7 @@ export type IntegrationStates = {
         SLACK_CHANNEL_NAME: string;
         SLACK_USER_ID: string;
         SLACK_CHANNEL_LABEL: string;
-        SLACK_USER_ACCESS_TOKEN: string;
         SLACK_TEAM_ID: string;
-        SLACK_WEBHOOK_URL: string;
         optionsId: OptionsId;
       }>
     >
@@ -527,11 +520,6 @@ function decodeGitHub(data: FetchedState): IntegrationStates["GITHUB"] {
               .flatMap(Parsers.isRecord)
               .flatMap((configRecord) =>
                 Parsers.isString(configRecord.GITHUB_REPOSITORY_FULL_NAME).map((GITHUB_REPOSITORY_FULL_NAME) => ({
-                  /*
-                   * we use an inner Optional so that the user can see which repo
-                   * is in an invalid state, and can thus remove and readd
-                   */
-                  GITHUB_ACCESS_TOKEN: Parsers.isString(configRecord.GITHUB_ACCESS_TOKEN).toOptional(),
                   GITHUB_REPOSITORY_FULL_NAME,
                   optionsId,
                 })),
@@ -745,18 +733,14 @@ function decodeSlack(data: FetchedState): IntegrationStates["SLACK"] {
             const SLACK_CHANNEL_NAME = Parsers.isString(configRecord.SLACK_CHANNEL_NAME).elseThrow();
             const SLACK_CHANNEL_LABEL = Parsers.isString(configRecord.SLACK_CHANNEL_LABEL).elseThrow();
             const SLACK_USER_ID = Parsers.isString(configRecord.SLACK_USER_ID).elseThrow();
-            const SLACK_USER_ACCESS_TOKEN = Parsers.isString(configRecord.SLACK_USER_ACCESS_TOKEN).elseThrow();
             const SLACK_TEAM_ID = Parsers.isString(configRecord.SLACK_TEAM_ID).elseThrow();
-            const SLACK_WEBHOOK_URL = Parsers.isString(configRecord.SLACK_WEBHOOK_URL).elseThrow();
             return Optional.present({
               SLACK_TEAM_NAME,
               SLACK_CHANNEL_ID,
               SLACK_CHANNEL_NAME,
               SLACK_CHANNEL_LABEL,
               SLACK_USER_ID,
-              SLACK_USER_ACCESS_TOKEN,
               SLACK_TEAM_ID,
-              SLACK_WEBHOOK_URL,
               optionsId,
             });
           } catch {
@@ -1088,7 +1072,6 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
             config.map((c) => [
               c.optionsId,
               {
-                GITHUB_ACCESS_TOKEN: c.GITHUB_ACCESS_TOKEN,
                 GITHUB_REPOSITORY_FULL_NAME: c.GITHUB_REPOSITORY_FULL_NAME,
               },
             ]),

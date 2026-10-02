@@ -305,11 +305,9 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     channelOptions.put("SLACK_TEAM_NAME", "testTeamName");
     channelOptions.put("SLACK_CHANNEL_NAME", "testChannelName");
     channelOptions.put("SLACK_CHANNEL_LABEL", INITIAL_LABEL);
-    channelOptions.put("SLACK_WEBHOOK_URL", "testWebhookUrl");
     channelOptions.put("SLACK_USER_ID", "U123");
     channelOptions.put("SLACK_TEAM_ID", "T456");
     channelOptions.put("SLACK_CHANNEL_ID", "C789");
-    channelOptions.put("SLACK_USER_ACCESS_TOKEN", "xoxp-123456789");
 
     String optionsJson = mvcUtils.getAsJsonString(channelOptions);
     MvcResult result =
