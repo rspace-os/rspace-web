@@ -20,11 +20,6 @@ export class SharedDocumentsPage extends BasePage {
     await this.page.getByRole("heading", { name: "Shared Documents" }).waitFor({ state: "visible" });
   }
 
-  /** Alias for {@link waitUntilLoaded}. */
-  async isLoaded(): Promise<void> {
-    await this.waitUntilLoaded();
-  }
-
   override async open(): Promise<void> {
     await super.open();
     await this.waitUntilLoaded();
@@ -119,7 +114,9 @@ export class SharedDocumentsPage extends BasePage {
       throw new Error(`Changing permission for "${recordName}" failed: ${response.status()} ${response.statusText()}`);
     }
     const failure = await response.finished();
-    if (failure) throw failure;
+    if (failure) {
+      throw failure;
+    }
 
     const result = (await response.json()) as { success: boolean; data: string | null };
     expect(result, `Changing permission for "${recordName}" succeeds`).toMatchObject({

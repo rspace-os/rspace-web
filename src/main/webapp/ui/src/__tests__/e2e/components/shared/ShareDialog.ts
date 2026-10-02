@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { awaitTableRefresh } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
 
 export type SharePermission = "READ" | "EDIT" | "UNSHARE";
 
@@ -55,9 +56,17 @@ export class ShareDialog {
     await this.page.getByRole("option", { name: PERMISSION_OPTION_LABEL[permission], exact: true }).click();
   }
 
+  /** In the workspace a successful share re-renders the listing; wait for it before returning. */
   async save(): Promise<void> {
-    await this.root.getByRole("button", { name: "Save" }).click();
-    await this.root.waitFor({ state: "hidden" });
+    const submit = async () => {
+      await this.root.getByRole("button", { name: "Save" }).click();
+      await this.root.waitFor({ state: "hidden" });
+    };
+    if (await this.page.locator("#file_table").count()) {
+      await awaitTableRefresh(this.page, submit);
+    } else {
+      await submit();
+    }
   }
 
   /** Selects a location within a group's shared folder; the path includes its root folder. */

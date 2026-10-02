@@ -12,8 +12,10 @@ import { BasePage } from "@/__tests__/e2e/pageObjects/BasePage";
 export class GroupDetailsPage extends BasePage {
   readonly path = "/groups/view";
 
+  /** Late React mounts shift the members table; the Account Menu mounts last. */
   async openGroup(groupId: number): Promise<void> {
     await this.page.goto(`${this.path}/${groupId}`);
+    await this.page.getByRole("button", { name: "Account Menu" }).waitFor({ state: "visible" });
   }
 
   get heading(): Locator {

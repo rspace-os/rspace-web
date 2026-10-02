@@ -442,7 +442,7 @@ dynamicUserTest.describe("Notebook export and persisted view state", () => {
 
       await dynamicUserTest.step("And Gallery > Exports starts empty for this fresh account", async () => {
         await pageGallery.openInSection("Exports");
-        expect(await pageGallery.itemsCount()).toBe(0);
+        await expect(pageGallery.emptyState).toBeVisible();
       });
 
       await dynamicUserTest.step("When I export the whole notebook as a PDF", async () => {

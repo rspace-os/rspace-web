@@ -8,7 +8,8 @@ import { WorkspaceSelectionBar } from "./WorkspaceSelectionBar";
 export async function waitForTableSwap(page: Page, staleTable: ElementHandle | null): Promise<void> {
   if (!staleTable) return;
   await page
-    .waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable)
+    // waitForFunction never times out by default; bound it so a missing refresh fails here.
+    .waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable, { timeout: 15_000 })
     .catch((error: unknown) => {
       throw new Error("The workspace table was not re-rendered after the refresh it was waiting for.", {
         cause: error,

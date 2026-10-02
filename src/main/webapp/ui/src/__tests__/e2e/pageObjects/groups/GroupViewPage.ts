@@ -12,9 +12,12 @@ export class GroupViewPage extends BasePage {
     this.raidConnections = new GroupRaidConnectionsComponent(page);
   }
 
-  /** Omit groupId to view the current user's own PI group (mirrors the "My RSpace" nav link). */
+  /** groupId stays optional only to match BasePage.open(); every caller views a specific group. */
   override async open(groupId?: string | number): Promise<void> {
-    await this.page.goto(groupId !== undefined ? `${this.path}/${groupId}` : "/groups/viewPIGroup");
+    if (groupId === undefined) {
+      throw new Error("GroupViewPage.open() needs a groupId.");
+    }
+    await this.page.goto(`${this.path}/${groupId}`);
   }
 
   private enforceOntologiesButton(): Locator {
@@ -41,7 +44,9 @@ export class GroupViewPage extends BasePage {
   }
 
   async setBioPortalOntologiesAllowed(allowed: boolean): Promise<void> {
-    if ((await this.isBioPortalOntologiesAllowed()) === allowed) return;
+    if ((await this.isBioPortalOntologiesAllowed()) === allowed) {
+      return;
+    }
     await this.bioPortalButton(!allowed).click();
     const [response] = await Promise.all([
       this.page.waitForResponse((res) =>

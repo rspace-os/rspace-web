@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { expectDocumentUnavailable } from "@/__tests__/e2e/assertions/documents";
+import { expectDocumentUnavailable, expectDocumentUpdateRefused } from "@/__tests__/e2e/assertions/documents";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
@@ -41,6 +41,7 @@ test.describe("Sharing documents", () => {
       const memberDoc = member.document;
       await memberDoc.isLoaded();
       expect(await memberDoc.isReadOnly()).toBe(true);
+      await expectDocumentUpdateRefused(member.documents, memberDoc.getId());
     });
   });
 
@@ -93,7 +94,7 @@ test.describe("Sharing documents", () => {
       await pageWorkspace.table.openRecord(docName);
       await pageDocument.isLoaded();
       const content = await pageDocument.getFieldViewContent("", 0);
-      expect(await content.innerText()).toBe(editedContent);
+      await expect(content).toHaveText(editedContent);
     });
   });
 
@@ -141,7 +142,7 @@ test.describe("Sharing documents", () => {
     await test.step("Then it disappears from the group member's workspace too", async () => {
       const member = await flowDocumentSession(memberUser);
       await member.workspace.searchFor(docName);
-      expect(await member.workspace.table.rowCount()).toBe(0);
+      await expect(member.workspace.table.dataRows).toHaveCount(0);
     });
   });
 
@@ -188,7 +189,7 @@ test.describe("Sharing documents", () => {
 
     const sharedDocs = await test.step("When I open My RSpace > Shared Documents", async () => {
       await pageMyRSpace.open();
-      return pageMyRSpace.navigateToSharedDocumentsPage();
+      return pageMyRSpace.openSharedDocuments();
     });
 
     // RSDEV-863: with two documents shared to the same user, each one's permission must change independently.

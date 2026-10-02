@@ -125,10 +125,12 @@ export class DocumentPage extends BasePage {
     const editButton = this.page.locator(`#edit_${fieldId}`);
     const editorId = `rtf_${fieldId}`;
     const editorIframe = this.page.locator(`iframe#${editorId}_ifr`);
-    await this.page.waitForLoadState("networkidle");
+    // A status means the editor script is ready; clicks before that do nothing. Editing counts, hence not isLoaded().
+    await this.page.locator("#status .state:visible").first().waitFor({ state: "visible" });
     await expect(async () => {
       if (!(await editorIframe.isVisible().catch(() => false)) && (await editButton.isVisible().catch(() => false))) {
-        await editButton.click();
+        // A locked doc can resume edit mode mid-click; give up and let the retry find the editor.
+        await editButton.click({ timeout: 5_000 });
       }
       await editorIframe.waitFor({ state: "visible", timeout: 10_000 });
     }).toPass({ timeout: 45_000 });

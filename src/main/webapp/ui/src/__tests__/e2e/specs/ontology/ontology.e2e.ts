@@ -1,6 +1,7 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
+import { expectDocumentUpdateRefused } from "@/__tests__/e2e/assertions/documents";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { test as sessionTest } from "@/__tests__/e2e/fixtures/flows";
@@ -17,8 +18,10 @@ test.describe("Tagging and Ontology", () => {
   test("As a user, tags I add to a document appear in my account's auto-generated ontology file, are shown on the document, and can be removed", async ({
     pageWorkspace,
     pageDocument,
+    clientDocuments,
   }) => {
     const docName = uniqueName("e2e-ont-doc");
+    const savedTags = async () => (await clientDocuments.getById(pageDocument.getId())).tags ?? "";
     const tag1 = uniqueName("e2e-ont-tag1");
     const tag2 = uniqueName("e2e-ont-tag2");
     const tag3 = uniqueName("e2e-ont-tag3");
@@ -56,6 +59,7 @@ test.describe("Tagging and Ontology", () => {
       for (const tag of tags) {
         expect(docTags).toContain(tag);
       }
+      expect(await savedTags()).toContain(tag1);
     });
 
     await test.step("When I remove all the tags", async () => {
@@ -64,9 +68,8 @@ test.describe("Tagging and Ontology", () => {
       }
     });
 
-    await test.step("Then no tags remain, even after reloading", async () => {
-      await pageDocument.reload();
-      expect(await pageDocument.header.getTags()).toEqual([]);
+    await test.step("Then no tags remain on the saved document", async () => {
+      expect(await savedTags()).toBe("");
     });
 
     await test.step("When I try to add tags containing forbidden characters", async () => {
@@ -77,7 +80,7 @@ test.describe("Tagging and Ontology", () => {
     });
 
     await test.step("Then none of the forbidden-character tags were added", async () => {
-      expect(await pageDocument.header.getTags()).toEqual([]);
+      expect(await savedTags()).toBe("");
     });
   });
 
@@ -229,6 +232,7 @@ test.describe("Tagging and Ontology", () => {
         await read.document.isLoaded();
         expect(read.document.getId()).toBe(ontologyId);
         expect(await read.document.isReadOnly()).toBe(true);
+        await expectDocumentUpdateRefused(read.documents, ontologyId);
       });
 
       const edit = await flowDocumentSession(editUser);
@@ -387,8 +391,8 @@ test.describe("Tagging and Ontology", () => {
       const editor = await pageWorkspace.createBasicDocument();
       await editor.header.rename(piDocName);
       await editor.header.addForbiddenTag(ontologyTag);
-      expect(await editor.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
-      expect(await editor.header.getTags()).toEqual([]);
+      await expect(editor.header.tagInfoDialogText).toHaveText(ENFORCED_MESSAGE);
+      await expect(editor.header.editModeTagChips).toHaveCount(0);
       await editor.editToolbar.saveAndClose();
     });
 
@@ -398,8 +402,8 @@ test.describe("Tagging and Ontology", () => {
       await member.workspace.open();
       const editor = await member.workspace.createBasicDocument();
       await editor.header.addForbiddenTag(ontologyTag);
-      expect(await editor.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
-      expect(await editor.header.getTags()).toEqual([]);
+      await expect(editor.header.tagInfoDialogText).toHaveText(ENFORCED_MESSAGE);
+      await expect(editor.header.editModeTagChips).toHaveCount(0);
       return editor;
     });
 
@@ -435,7 +439,7 @@ test.describe("Tagging and Ontology", () => {
     await test.step("And still cannot add an unrelated free-text tag", async () => {
       const otherTag = alphaNumericUnique("e2eEnforceOther");
       await memberDoc.header.addForbiddenTag(otherTag);
-      expect(await memberDoc.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
+      await expect(memberDoc.header.tagInfoDialogText).toHaveText(ENFORCED_MESSAGE);
     });
 
     await test.step("Then the PI can also add the ontology-derived tag, but still not an unrelated one", async () => {
@@ -453,7 +457,7 @@ test.describe("Tagging and Ontology", () => {
 
       const otherTag = alphaNumericUnique("e2eEnforceOtherPi");
       await pageDocument.header.addForbiddenTag(otherTag);
-      expect(await pageDocument.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
+      await expect(pageDocument.header.tagInfoDialogText).toHaveText(ENFORCED_MESSAGE);
     });
   });
 
@@ -505,7 +509,7 @@ test.describe("Tagging and Ontology", () => {
       await member.workspace.open();
       const editor = await member.workspace.createBasicDocument();
       await editor.header.addForbiddenTag(ontologyTag);
-      expect(await editor.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
+      await expect(editor.header.tagInfoDialogText).toHaveText(ENFORCED_MESSAGE);
     });
 
     const editor = await test.step("Given the member has a document open to check suggestions on", async () => {
@@ -536,8 +540,10 @@ test.describe("Tagging and Ontology", () => {
       await editor.header.addForbiddenTag(ontologyTag);
       await expect(editor.header.tagInfoDialogText).toHaveText(ENFORCED_MESSAGE);
       await editor.saveAndView();
-      const document = await member.workspace.openDocument(editor.getId());
-      expect(await document.header.getTags()).not.toContain(ontologyTag);
+      // Reload for a fresh tag widget; the next step checks suggestions.
+      await member.workspace.openDocument(editor.getId());
+      const saved = await member.documents.getById(editor.getId());
+      expect((saved.tags ?? "").split(",")).not.toContain(ontologyTag);
     });
 
     await test.step("When the PI instead shares the ontology document with the enforcing group, at Edit", async () => {

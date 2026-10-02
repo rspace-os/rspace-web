@@ -32,7 +32,7 @@ async function deleteAndVerifyGone(
 
   await test.step("And it's no longer searchable by its content", async () => {
     await pageWorkspace.searchBar.search(content);
-    expect(await pageWorkspace.table.rowCount()).toBe(0);
+    await expect(pageWorkspace.table.dataRows).toHaveCount(0);
   });
 }
 
@@ -142,7 +142,7 @@ test.describe("Document CRUD and editing", () => {
 
       await expect.poll(() => pageDocument.header.getName()).toBe(`${docName}-copy`);
       const clonedContent = await pageDocument.getFieldViewContent("", 0);
-      expect(await clonedContent.innerText()).toBe(content1);
+      await expect(clonedContent).toHaveText(content1);
 
       await pageDocument.editField("", 0);
       await pageDocumentEditor.isLoaded();
@@ -156,7 +156,7 @@ test.describe("Document CRUD and editing", () => {
       await pageWorkspace.table.openRecord(docName);
       await pageDocument.isLoaded();
       const content = await pageDocument.getFieldViewContent("", 0);
-      expect(await content.innerText()).toBe(content1);
+      await expect(content).toHaveText(content1);
     });
 
     const originalId = pageDocument.getId();
@@ -170,7 +170,7 @@ test.describe("Document CRUD and editing", () => {
 
       expect(pageDocument.getId()).not.toBe(originalId);
       const freshContent = await pageDocument.getFieldViewContent("", 0);
-      expect(await freshContent.innerText()).not.toContain(content3);
+      await expect(freshContent).not.toContainText(content3);
       expect((await clientDocuments.getById(originalId)).fields[0].content).toContain(content3);
     });
 
@@ -184,7 +184,7 @@ test.describe("Document CRUD and editing", () => {
 
       expect(viewed.getId()).toBe(originalId);
       const content = await viewed.getFieldViewContent("", 0);
-      expect(await content.innerText()).toBe(content4);
+      await expect(content).toHaveText(content4);
       expect((await clientDocuments.getById(originalId)).fields[0].content).toContain(content4);
     });
   });
@@ -220,7 +220,7 @@ test.describe("Document CRUD and editing", () => {
 
     await test.step("Then the field reverts to the last-saved content, not the discarded edit", async () => {
       const content = await pageDocument.getFieldViewContent("", 0);
-      expect(await content.innerText()).toBe(firstContent);
+      await expect(content).toHaveText(firstContent);
     });
 
     await test.step("And cancelling but choosing to stay keeps the unsaved edit in place", async () => {

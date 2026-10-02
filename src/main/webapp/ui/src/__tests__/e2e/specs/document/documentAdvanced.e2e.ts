@@ -58,7 +58,9 @@ test.describe("Document editor menus and history", () => {
     };
     for (const [name, expected] of Object.entries(menus)) {
       await field.openMenu(name);
-      for (const item of expected) await expect.soft(field.menuItem(item), `${name} > ${item}`).toBeVisible();
+      for (const item of expected) {
+        await expect.soft(field.menuItem(item), `${name} > ${item}`).toBeVisible();
+      }
       await field.closeMenu();
     }
   });
@@ -221,7 +223,9 @@ dynamicUserTest.describe("Document recovery and downloadable exports", () => {
         expect(await download.failure()).toBeNull();
         expect(download.suggestedFilename()).toContain(name);
         const path = await download.path();
-        if (!path) throw new Error("The completed export download has no local file.");
+        if (!path) {
+          throw new Error("The completed export download has no local file.");
+        }
         const exportedDocuments = await readArchiveDocuments(path, format);
         expect(
           exportedDocuments.some((entry) => entry.includes(name) && entry.includes(content)),

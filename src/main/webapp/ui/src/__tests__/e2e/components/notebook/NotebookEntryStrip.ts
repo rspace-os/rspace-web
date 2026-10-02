@@ -52,8 +52,11 @@ export class NotebookEntryStrip {
     ]);
     expect(response.ok(), "Loading the requested notebook entry succeeds").toBe(true);
     const entry = (await response.json()) as { id: number; name: string; position: number };
-    if ("name" in expected) expect(entry.name).toBe(expected.name);
-    else expect(entry.position).toBe(expected.position);
+    if ("name" in expected) {
+      expect(entry.name).toBe(expected.name);
+    } else {
+      expect(entry.position).toBe(expected.position);
+    }
     // The counter is temporarily emptied before journal.js renders the new entry.
     // Wait for the complete position and identity rather than accepting that loading state.
     await expect(this.entryCounter).toHaveText(`Entry ${entry.position + 1} of ${total}`);

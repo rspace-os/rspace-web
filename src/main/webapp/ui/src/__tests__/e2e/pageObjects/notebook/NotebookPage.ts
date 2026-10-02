@@ -6,7 +6,6 @@ import { WitnessDocumentDialogComponent } from "@/__tests__/e2e/components/docum
 import { NotebookEntryStrip } from "@/__tests__/e2e/components/notebook/NotebookEntryStrip";
 import { NotebookViewToolbar } from "@/__tests__/e2e/components/notebook/NotebookViewToolbar";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
-import { ShareDialog } from "@/__tests__/e2e/components/shared/ShareDialog";
 import { WorkspaceTemplatePickerDialog } from "@/__tests__/e2e/components/workspace/WorkspaceTemplatePickerDialog";
 import { BasePage } from "../BasePage";
 import { DocumentEditorPage } from "../document/DocumentEditorPage";
@@ -70,6 +69,7 @@ export class NotebookPage extends BasePage {
     return editor;
   }
 
+  /** Notebook counterpart of WorkspacePage.createDocumentFromForm(): a non-Basic form entry opens in view mode. */
   async createFromForm(formName: string): Promise<DocumentPage> {
     await this.toolbar.createMenu.createFromCustomForm(formName);
     const doc = new DocumentPage(this.page);
@@ -123,13 +123,6 @@ export class NotebookPage extends BasePage {
     await this.toolbar.witnessButton.click();
     await this.witnessDialog.waitUntilVisible();
     await this.witnessDialog.witnessWithPassword(password);
-  }
-
-  async share(): Promise<ShareDialog> {
-    await this.toolbar.shareButton.click();
-    const dialog = new ShareDialog(this.page);
-    await dialog.waitUntilVisible();
-    return dialog;
   }
 
   /**

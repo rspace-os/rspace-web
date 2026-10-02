@@ -62,20 +62,25 @@ export class GalleryPage extends BasePage {
     await this.page.goto(`${this.path}/item/${fileId}`);
   }
 
+  get emptyState(): Locator {
+    return galleryEmptyStateLocator(this.filesListingRegion);
+  }
+
   /**
    * Waits for the listing, then normalises to Grid view, which every file helper here addresses.
    * An empty section renders the same empty state in every view and is left as it is.
    */
   async isLoaded(): Promise<void> {
     await this.filesListingRegion.waitFor({ state: "visible" });
-    const emptyState = galleryEmptyStateLocator(this.filesListingRegion);
     await this.fileGrid
       .or(this.page.getByRole("tree"))
       .or(this.page.getByRole("region", { name: "Carousel view of files" }))
-      .or(emptyState)
+      .or(this.emptyState)
       .first()
       .waitFor({ state: "visible" });
-    if (await this.fileGrid.isVisible().catch(() => false)) return;
+    if (await this.fileGrid.isVisible().catch(() => false)) {
+      return;
+    }
     await this.views.switchToGridOrEmpty();
   }
 

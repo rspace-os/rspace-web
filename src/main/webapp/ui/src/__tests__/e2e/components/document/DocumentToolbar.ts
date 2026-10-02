@@ -15,12 +15,26 @@ export class DocumentToolbar {
 
   async save(): Promise<void> {
     await this.saveMenuButton.click();
+    // Save is only done once the page's own field refresh lands; reading the doc earlier races it.
+    const refreshed = this.page.waitForResponse((res) => res.url().includes("/ajax/getUpdatedFields"), {
+      timeout: 15_000,
+    });
+    refreshed.catch(() => undefined);
     const [response] = await Promise.all([
       this.page.waitForResponse((res) => res.url().includes("/ajax/saveStructuredDocument")),
       this.page.getByRole("menuitem", { name: "Save", exact: true }).click(),
     ]);
     if (!response.ok()) {
       throw new Error(`Save failed: ${response.status()} ${response.statusText()}`);
+    }
+    // A refusal is 200 with no data, and the page then skips its refresh; fail now, not at the refresh timeout.
+    const body = (await response.json()) as { data: unknown; errorMsg?: unknown };
+    if (body.data === null) {
+      throw new Error(`Save was refused: ${JSON.stringify(body.errorMsg ?? body)}`);
+    }
+    const refresh = await refreshed;
+    if (!refresh.ok()) {
+      throw new Error(`Refreshing fields after save failed: ${refresh.status()}`);
     }
   }
 

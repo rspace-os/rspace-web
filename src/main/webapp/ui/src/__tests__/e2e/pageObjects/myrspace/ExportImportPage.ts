@@ -31,13 +31,6 @@ export class ExportImportPage extends BasePage {
     await this.page.getByRole("heading", { name: "Export all" }).waitFor({ state: "visible" });
   }
 
-  /** Waits for the ontology-import section's heading, as opposed to {@link waitUntilLoaded}'s export heading. */
-  async isLoaded(): Promise<void> {
-    await this.page.getByRole("heading", { name: "Import an ontology file - csv format" }).waitFor({
-      state: "visible",
-    });
-  }
-
   get exportAllButton(): Locator {
     return this.page.getByRole("link", { name: "Export all my work" });
   }

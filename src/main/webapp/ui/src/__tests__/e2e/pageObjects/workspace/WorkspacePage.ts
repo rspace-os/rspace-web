@@ -168,6 +168,7 @@ export class WorkspacePage extends BasePage {
     return this.createDocumentFromCustomForm("Basic Document");
   }
 
+  /** Basic Document only: it is the one form that opens in edit mode. Otherwise use createDocumentFromForm(). */
   async createDocumentFromCustomForm(formName: string): Promise<DocumentEditorPage> {
     await this.toolbar.createMenu.createFromCustomForm(formName);
     await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
@@ -183,6 +184,7 @@ export class WorkspacePage extends BasePage {
     return document;
   }
 
+  /** Any non-Basic form; opens in view mode. */
   async createDocumentFromForm(formName: string): Promise<DocumentPage> {
     await this.toolbar.createMenu.createFromCustomForm(formName);
     const doc = new DocumentPage(this.page);

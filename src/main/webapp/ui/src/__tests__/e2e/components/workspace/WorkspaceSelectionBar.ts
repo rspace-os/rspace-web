@@ -103,7 +103,9 @@ export class WorkspaceSelectionBar {
         this.page.waitForResponse((res) => new URL(res.url()).pathname === "/workspace/ajax/copy"),
         this.clickAction("Duplicate"),
       ]);
-      if (!response.ok()) throw new Error(`Duplicate failed: ${response.status()} ${response.statusText()}`);
+      if (!response.ok()) {
+        throw new Error(`Duplicate failed: ${response.status()} ${response.statusText()}`);
+      }
     });
   }
 

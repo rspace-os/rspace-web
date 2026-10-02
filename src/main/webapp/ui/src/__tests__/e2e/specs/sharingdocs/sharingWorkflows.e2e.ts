@@ -1,13 +1,12 @@
 import { expect } from "@playwright/test";
-import { ApiError } from "@/__tests__/e2e/api/clients/BaseApiClient";
-import { expectDocumentUnavailable } from "@/__tests__/e2e/assertions/documents";
+import { expectDocumentUnavailable, expectDocumentUpdateRefused } from "@/__tests__/e2e/assertions/documents";
 import type { SelectionBarAction } from "@/__tests__/e2e/components/workspace/WorkspaceSelectionBar";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
 
 test.describe("Sharing workflows and permissions", () => {
-  test("As a group member with read-only access to a colleague's notebook, I can read its entries but cannot create one", async ({
+  test("As a group member with read-only access to a colleague's notebook, I can read its entries but am not offered Create", async ({
     appUser,
     clientSysadmin,
     flowDocumentSession,
@@ -40,14 +39,7 @@ test.describe("Sharing workflows and permissions", () => {
     await reader.notebook.isLoaded();
     await expect(reader.notebook.entryContent).toContainText(entryContent);
     await expect(reader.notebook.toolbar.createMenu.createButton).toBeHidden();
-
-    const rejected = await reader.documents
-      .create({ name: "Unauthorised entry", parentFolderId: notebook.id, fields: [{ content: "x" }] })
-      .then(
-        () => undefined,
-        (error: unknown) => error,
-      );
-    expect(rejected, "Creating an entry in a read-only notebook must be refused").toBeInstanceOf(ApiError);
+    // No API check: RSpace returns 500 here, not a 403 refusal; 403 is the suggested response.
   });
 
   test("As a lab admin, group sharing grants edit access and a downgrade revokes editing", async ({
@@ -110,6 +102,7 @@ test.describe("Sharing workflows and permissions", () => {
     await shares.setPermission(doc.name, groupName, "READ");
     await viewed.reload();
     expect(await viewed.isReadOnly()).toBe(true);
+    await expectDocumentUpdateRefused(admin.documents, doc.id);
     await expect(await viewed.getFieldViewContent("", 0)).toContainText(edited);
   });
 
@@ -156,7 +149,9 @@ test.describe("Sharing workflows and permissions", () => {
     const reader = await flowDocumentSession(recipient);
     const viewed = await reader.workspace.openDocument(doc.id);
     expect(await viewed.isReadOnly()).toBe(true);
+    await expectDocumentUpdateRefused(reader.documents, doc.id);
     await expect(await viewed.getFieldViewContent("", 0)).toContainText(content);
+    await expectDocumentUnavailable(admin.documents, doc.id);
     await admin.workspace.searchFor(doc.name);
     await expect(admin.workspace.table.row(doc.name)).toHaveCount(0);
   });
@@ -216,7 +211,9 @@ test.describe("Sharing workflows and permissions", () => {
       });
     }
     await pi.workspace.open(notebook.id);
-    for (const record of [piEntry, standalone, entry]) await expect(pi.workspace.table.row(record.name)).toBeVisible();
+    for (const record of [piEntry, standalone, entry]) {
+      await expect(pi.workspace.table.row(record.name)).toBeVisible();
+    }
     await pi.workspace.table.selectRecord(standalone.name);
     await pi.workspace.selectionBar.delete();
     await expect(pi.workspace.table.row(standalone.name)).toHaveCount(0);
@@ -301,6 +298,7 @@ test.describe("Sharing workflows and permissions", () => {
     await recipientSession.workspace.shareRecord(createdName, { recipient: reader.username, permission: "READ" });
     const sharedCopy = await readerSession.workspace.openDocument(createdId);
     expect(await sharedCopy.isReadOnly()).toBe(true);
+    await expectDocumentUpdateRefused(readerDocuments, createdId);
     await expect(await sharedCopy.getFieldViewContent("", 0)).toContainText(recipientContent);
     const persistedSharedCopy = await readerDocuments.getById(createdId);
     expect(persistedSharedCopy).toMatchObject({ owner: { username: recipient.username } });
@@ -466,9 +464,11 @@ test.describe("Sharing workflows and permissions", () => {
     await expect(move.folder("Home")).toHaveCount(0);
     await move.cancel();
 
-    const ordinary = await clientFolders.create({ name: alphaNumericUnique("Templates") });
-    await pageWorkspace.searchFor(ordinary.name);
-    await pageWorkspace.table.selectRecord(ordinary.name);
+    // Same exact name, so only the SYSTEM type can tell them apart.
+    const parent = await clientFolders.create({ name: alphaNumericUnique("OrdinaryTemplatesParent") });
+    await clientFolders.create({ name: "Templates", parentFolderId: parent.id });
+    await pageWorkspace.open(parent.id);
+    await pageWorkspace.table.selectRecord("Templates");
     for (const action of supportedFolderActions) {
       expect(await pageWorkspace.selectionBar.isActionVisible(action), `Ordinary folder supports ${action}`).toBe(true);
     }

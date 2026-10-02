@@ -1,5 +1,16 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+
+/** /tagRecord rejects with 200 + errorMsg, so ok() alone proves nothing. */
+async function expectTagSaved(response: Response, action: string): Promise<void> {
+  if (!response.ok()) {
+    throw new Error(`${action} failed: ${response.status()} ${response.statusText()}`);
+  }
+  const body = (await response.json()) as { data?: boolean | null; errorMsg?: unknown };
+  if (body.errorMsg || body.data !== true) {
+    throw new Error(`${action} was rejected: ${JSON.stringify(body.errorMsg ?? body)}`);
+  }
+}
 
 export class DocumentHeader {
   readonly name: Locator;
@@ -36,8 +47,14 @@ export class DocumentHeader {
     return this.uniqueIdLink.innerText();
   }
 
+  /** View-mode pills: plain and ontology tags use different classes but share the `tagpill{n}` id. */
   async getTags(): Promise<string[]> {
-    return this.tags.locator(".tagit-choice-inv").allInnerTexts();
+    return this.tags.locator("[id^='tagpill']").allInnerTexts();
+  }
+
+  /** Chips in the open tag-it editor; empty when the editor is closed. */
+  get editModeTagChips(): Locator {
+    return this.tags.locator("li.tagit-choice");
   }
 
   private async openTagEditor(): Promise<void> {
@@ -56,9 +73,7 @@ export class DocumentHeader {
       this.page.waitForResponse((res) => res.url().includes("/tagRecord")),
       this.tagInput.press("Enter"),
     ]);
-    if (!response.ok()) {
-      throw new Error(`Adding tag '${tag}' failed: ${response.status()} ${response.statusText()}`);
-    }
+    await expectTagSaved(response, `Adding tag '${tag}'`);
     await this.tagChip(tag).waitFor({ state: "visible" });
   }
 
@@ -81,9 +96,7 @@ export class DocumentHeader {
       this.page.waitForResponse((res) => res.url().includes("/tagRecord")),
       chip.getByText("×", { exact: true }).click(),
     ]);
-    if (!response.ok()) {
-      throw new Error(`Removing tag '${tag}' failed: ${response.status()} ${response.statusText()}`);
-    }
+    await expectTagSaved(response, `Removing tag '${tag}'`);
     await chip.waitFor({ state: "hidden" });
   }
 
@@ -146,9 +159,7 @@ export class DocumentHeader {
       this.page.waitForResponse((res) => res.url().includes("/tagRecord")),
       option.first().click(),
     ]);
-    if (!response.ok()) {
-      throw new Error(`Selecting suggested tag '${tag}' failed: ${response.status()} ${response.statusText()}`);
-    }
+    await expectTagSaved(response, `Selecting suggested tag '${tag}'`);
   }
 
   async openRecordInfo(): Promise<RecordInfoDialog> {
