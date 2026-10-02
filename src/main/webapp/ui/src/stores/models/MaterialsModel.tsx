@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import { Trans } from "react-i18next";
 import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import InvApiService from "../../common/InvApiService";
@@ -758,16 +759,20 @@ export class ListOfMaterials {
       !parentIsOnBench.isEmpty &&
       (await uiStore.confirm(
         i18n.t("inventory:materialsListing.actions.move.confirmOnBench.title"),
-        <>
-          {i18n.t("inventory:materialsListing.actions.move.confirmOnBench.itemsLabel")}
-          <ul>
-            {parentIsOnBench.map(({ name, globalId }) => {
-              const title = name.trim();
-              return <li key={globalId}>{title ? `${title} (${globalId})` : `(${globalId})`}</li>;
-            })}
-          </ul>
-          {i18n.t("inventory:materialsListing.actions.move.confirmOnBench.prompt")}
-        </>,
+        <Trans
+          ns="inventory"
+          i18nKey="materialsListing.actions.move.confirmOnBench.message"
+          components={{
+            itemList: (
+              <ul>
+                {parentIsOnBench.map(({ name, globalId }) => {
+                  const title = name.trim();
+                  return <li key={globalId}>{title ? `${title} (${globalId})` : `(${globalId})`}</li>;
+                })}
+              </ul>
+            ),
+          }}
+        />,
         i18n.t("common:actions.yes"),
         i18n.t("common:actions.no"),
       ))
