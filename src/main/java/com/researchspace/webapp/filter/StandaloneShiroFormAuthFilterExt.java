@@ -2,6 +2,7 @@ package com.researchspace.webapp.filter;
 
 import com.researchspace.auth.IncorrectSignupSourceException;
 import com.researchspace.auth.SidVerificationException;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
@@ -134,6 +135,13 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
           (e != null) && (e.getCause() instanceof SidVerificationException);
       if (autoSignupProblem || sidVerificationProblem) {
         WebUtils.toHttp(request).setAttribute("checkedExceptionMessage", e.getCause().getMessage());
+      } else if (e instanceof LoginVerificationBusyException) {
+        // a flood, not a wrong password: counting it would let a flood lock users out
+        SECURITY_LOG.warn(
+            "Login by [{}] from {} refused: {}",
+            username,
+            RequestUtil.remoteAddr(WebUtils.toHttp(request)),
+            e.getMessage());
       } else {
         try {
           User u = userMgr.getUserByUsernameOrAlias(username);

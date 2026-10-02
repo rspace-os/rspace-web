@@ -14,6 +14,7 @@ import com.researchspace.auth.LoginAuthorizer;
 import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.MaintenanceLoginAuthorizer;
 import com.researchspace.auth.SidVerificationException;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
@@ -149,6 +150,13 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     authException = new AuthenticationException(null, sidException);
     filter.onLoginFailure(token, authException, req, resp);
     assertEquals(sidException.getMessage(), req.getAttribute("checkedExceptionMessage"));
+    // shouldn't increase login failures count
+    u = userMgr.get(u.getId());
+    assertEquals(0, u.getNumConsecutiveLoginFailures());
+
+    // verification pool busy, RSDEV-894
+    initHttpReqAndResp(u.getUsername());
+    filter.onLoginFailure(token, new LoginVerificationBusyException("busy"), req, resp);
     // shouldn't increase login failures count
     u = userMgr.get(u.getId());
     assertEquals(0, u.getNumConsecutiveLoginFailures());
