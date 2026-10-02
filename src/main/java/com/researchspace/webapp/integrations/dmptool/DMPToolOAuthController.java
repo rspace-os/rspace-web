@@ -157,28 +157,6 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
         .getBody();
   }
 
-  /**
-   * Returns access token to the UI. Status is {@code}false{@code} if there is no access token
-   * stored.
-   *
-   * @param principal
-   * @return
-   */
-  @GetMapping("/access_token")
-  @ResponseBody
-  public ServiceOperationResult<String> getAccessToken(Principal principal) {
-    Optional<UserConnection> optConn = getUserConnection(principal);
-
-    if (!optConn.isPresent()) {
-      // front-end checks if DMPTool app has OAuth connected before the list_dmps
-      // operation. Hence this is unlikely to happen.
-      log.error("No DMPtool connection found for user {}", principal.getName());
-      return ServiceOperationResult.fromOptionalError(
-          Optional.of("Access token isn't enabled - user must connect in Apps page"));
-    }
-    return new ServiceOperationResult<String>(optConn.get().getAccessToken(), true);
-  }
-
   @PostMapping("/jsonById/{id}")
   @ResponseBody
   public AjaxReturnObject<Boolean> getPdfById(@PathVariable("id") Integer id) {

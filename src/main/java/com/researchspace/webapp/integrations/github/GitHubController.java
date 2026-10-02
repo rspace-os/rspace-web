@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
@@ -216,6 +217,7 @@ public class GitHubController extends BaseOAuth2Controller {
     }
   }
 
+  @ClientReadableSecret("the browser lists repositories and saves them with the issued token")
   @GetMapping("/redirect_uri")
   public String onAuthorization(
       @RequestParam Map<String, String> params,

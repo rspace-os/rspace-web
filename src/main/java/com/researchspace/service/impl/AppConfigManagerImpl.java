@@ -12,9 +12,11 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserAppConfigManager;
 import jakarta.annotation.PostConstruct;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
@@ -93,14 +95,28 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
     }
     AppConfigElementSet set = null;
     if (appConfigSetDataId == null) {
+      // null means "keep the stored secret", and a new set has none (e.g. an OAuth secret held in
+      // a session that expired before the save)
+      Validate.isTrue(
+          appConfigSetData.values().stream().noneMatch(Objects::isNull),
+          "a new config set has no stored secret to keep");
       set = createAppConfigElementSetFromMap(appConfigSetData, app);
       cfg.addConfigSet(set);
       appCfgDao.save(cfg);
       // Explicitly save the set so it gets an ID immediately
       appCfgDao.saveAppConfigElement(set);
     } else {
-      AppConfigElementSet transientSet = createAppConfigElementSetFromMap(appConfigSetData, app);
       AppConfigElementSet saved = appCfgDao.getAppConfigElementSetById(appConfigSetDataId);
+      if (saved == null || !cfg.getId().equals(saved.getUserAppConfig().getId())) {
+        throw new AuthorizationException("Not permitted to update this AppConfig set");
+      }
+      Map<String, String> data = new HashMap<>(appConfigSetData);
+      data.replaceAll(
+          (name, value) -> {
+            AppConfigElement stored = saved.findElementByPropertyName(name);
+            return value == null && stored != null ? stored.getValue() : value;
+          });
+      AppConfigElementSet transientSet = createAppConfigElementSetFromMap(data, app);
       Validate.isTrue(transientSet.propertiesMatch(saved), "properties do not match");
       saved.merge(transientSet);
       appCfgDao.saveAppConfigElement(saved);
