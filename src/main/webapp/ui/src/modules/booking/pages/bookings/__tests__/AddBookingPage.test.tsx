@@ -166,7 +166,7 @@ describe("AddBookingPage", () => {
     expect(screen.getByRole("combobox", { name: "booking:bookings.form.item" })).toBeEnabled();
     expect(screen.getByLabelText("booking:bookings.form.startDate")).toHaveValue("2026-08-17");
     expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue("2026-08-17");
-    expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
+    expect(screen.getByText("booking:bookings.form.timezone")).toBeVisible();
   });
 
   it("resolves Calendar search, creates a booking, invalidates, and returns", async () => {

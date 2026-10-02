@@ -14,7 +14,7 @@ export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
 export type CalendarLayout = (typeof calendarLayouts)[number];
 export const calendarViews = ["day", "week", "month"] as const;
 export type CalendarView = (typeof calendarViews)[number];
-export type BookingCalendarResource = BookingListDocument["target"];
+export type BookingCalendarResource = NonNullable<BookingListDocument["target"]>;
 
 export function utcDate(date: string): Date {
   return new Date(`${date}T12:00:00Z`);
@@ -121,11 +121,14 @@ export function useScrollToToday(date: string, view: CalendarView, today: string
 export function toTimelineEvent(event: BookingListDocument, date: string, timezone: string): DayTimelineEvent {
   const slice = sliceAcrossZonedDay(event.start, event.end, date, timezone);
   if (event.privacy === "busy") return { id: String(event.id), kind: "booking", privacy: "busy", ...slice };
+  const target = event.target;
+  const itemName = target?.value.name ?? i18n.t("common:values.unknownItem");
+  const itemGlobalId = target?.globalId ?? null;
   const location =
-    event.target.value.parentContainerName != null && event.target.value.parentContainerGlobalId != null
+    target?.value.parentContainerName != null && target.value.parentContainerGlobalId != null
       ? {
-          name: event.target.value.parentContainerName,
-          globalId: event.target.value.parentContainerGlobalId,
+          name: target.value.parentContainerName,
+          globalId: target.value.parentContainerGlobalId,
         }
       : undefined;
   if (event.kind === "MAINTENANCE") {
@@ -133,7 +136,7 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
       id: String(event.id),
       kind: "blockout",
       title: i18n.t("booking:bookings.maintenanceLabel"),
-      item: { name: event.target.value.name, globalId: event.target.globalId, location },
+      item: { name: itemName, globalId: itemGlobalId, location },
       createdBy: event.createdBy ?? undefined,
       notes: event.purpose ?? undefined,
       ...slice,
@@ -143,11 +146,11 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
     id: String(event.id),
     kind: "booking",
     privacy: "full",
-    title: event.target.value.name,
+    title: itemName,
     bookedBy: event.bookedBy ?? "",
     item: {
-      name: event.target.value.name,
-      globalId: event.target.globalId,
+      name: itemName,
+      globalId: itemGlobalId,
       location,
     },
     notes: event.purpose ?? undefined,
