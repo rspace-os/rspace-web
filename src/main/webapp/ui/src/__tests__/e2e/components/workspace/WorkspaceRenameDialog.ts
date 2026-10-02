@@ -13,6 +13,17 @@ export class WorkspaceRenameDialog {
     await this.root.waitFor({ state: "visible" });
   }
 
+  /** Submits a rename the server refuses; the dialog stays open behind the error toast. */
+  async submitExpectingRejection(newName: string): Promise<void> {
+    await this.nameInput.fill(newName);
+    await this.root.getByRole("button", { name: "Rename" }).click();
+  }
+
+  async cancel(): Promise<void> {
+    await this.root.getByRole("button", { name: "Cancel" }).click();
+    await this.root.waitFor({ state: "hidden" });
+  }
+
   async submit(newName: string): Promise<void> {
     await this.nameInput.fill(newName);
     await this.root.getByRole("button", { name: "Rename" }).click();

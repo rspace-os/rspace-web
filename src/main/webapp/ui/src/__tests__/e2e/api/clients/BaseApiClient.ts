@@ -1,5 +1,24 @@
 import type { APIRequestContext, APIResponse } from "@playwright/test";
 
+export class ApiError extends Error {
+  readonly body: unknown;
+
+  constructor(
+    action: string,
+    readonly status: number,
+    statusText: string,
+    responseText: string,
+  ) {
+    super(`${action} failed: ${status} ${statusText} — ${responseText}`);
+    this.name = "ApiError";
+    try {
+      this.body = JSON.parse(responseText);
+    } catch {
+      this.body = responseText;
+    }
+  }
+}
+
 export class BaseApiClient {
   constructor(
     protected readonly request: APIRequestContext,
@@ -12,7 +31,7 @@ export class BaseApiClient {
 
   protected async assertOk(res: APIResponse, action: string): Promise<void> {
     if (!res.ok()) {
-      throw new Error(`${action} failed: ${res.status()} ${res.statusText()} — ${await res.text()}`);
+      throw new ApiError(action, res.status(), res.statusText(), await res.text());
     }
   }
 

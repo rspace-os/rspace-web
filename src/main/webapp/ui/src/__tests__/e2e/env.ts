@@ -46,6 +46,7 @@ export const env = {
   sysadminApiKey: optional("RSPACE_SYSADMIN_API_KEY", "abcdefghijklmnop12"),
   fieldmarkApiKey: optional("FIELDMARK_API_KEY", ""),
   zenodoApiKey: optional("ZENODO_API_KEY", ""),
+  bioportalApiKey: optional("BIOPORTAL_API_KEY", ""),
   galaxyEuApiKey: optional("GALAXY_EU_APIKEY", ""),
   dataverseApiToken: optional("DATAVERSE_API_TOKEN", ""),
   dataverseServerUrl: optional("DATAVERSE_SERVER_URL", ""),

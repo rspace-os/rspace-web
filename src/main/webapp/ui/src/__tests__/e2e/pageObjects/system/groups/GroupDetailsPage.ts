@@ -12,8 +12,10 @@ import { BasePage } from "@/__tests__/e2e/pageObjects/BasePage";
 export class GroupDetailsPage extends BasePage {
   readonly path = "/groups/view";
 
+  /** Late React mounts shift the members table; the Account Menu mounts last. */
   async openGroup(groupId: number): Promise<void> {
     await this.page.goto(`${this.path}/${groupId}`);
+    await this.page.getByRole("button", { name: "Account Menu" }).waitFor({ state: "visible" });
   }
 
   get heading(): Locator {
@@ -115,6 +117,22 @@ export class GroupDetailsPage extends BasePage {
 
   homeFolderLink(username: string): Locator {
     return this.memberRow(username).getByRole("link", { name: "Go to User's Home Folder", exact: true });
+  }
+
+  async homeFolderId(username: string): Promise<number> {
+    return this.folderId(this.homeFolderLink(username));
+  }
+
+  async sharedFolderId(): Promise<number> {
+    return this.folderId(this.sharedFolderLink);
+  }
+
+  private async folderId(link: Locator): Promise<number> {
+    const href = await link.getAttribute("href");
+    if (!href) throw new Error("Group details has no folder destination.");
+    const id = Number(new URL(href, this.page.url()).pathname.split("/").pop());
+    if (!Number.isSafeInteger(id) || id <= 0) throw new Error(`Invalid folder destination: ${href}`);
+    return id;
   }
 
   async removeMember(username: string): Promise<void> {
