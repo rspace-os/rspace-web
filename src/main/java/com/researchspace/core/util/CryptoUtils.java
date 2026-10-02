@@ -6,7 +6,6 @@ import com.google.common.io.BaseEncoding;
 import org.apache.shiro.crypto.RandomNumberGenerator;
 import org.apache.shiro.crypto.SecureRandomNumberGenerator;
 import org.apache.shiro.crypto.hash.Sha256Hash;
-import org.apache.shiro.lang.util.ByteSource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class CryptoUtils {
@@ -22,11 +21,6 @@ public class CryptoUtils {
    */
   public static String hashWithSha256inHex(String plainText) {
     return new Sha256Hash(plainText).toHex();
-  }
-
-  /** Salt the data, hash it with SHA-256 and return the hash in hex */
-  public static String hashWithSha256inHex(String plainText, ByteSource salt) {
-    return new Sha256Hash(plainText, salt).toHex();
   }
 
   /**

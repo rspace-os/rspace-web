@@ -6,6 +6,7 @@ import static com.researchspace.model.Role.SYSTEM_ROLE;
 import static com.researchspace.testutils.TestFactory.createACommunity;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.RoleDao;
 import com.researchspace.dao.UserAccountEventDao;
@@ -54,6 +56,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private @Mock AnalyticsManager analyticsManager;
   private @Mock IPropertyHolder properties;
   private @Mock IVerificationPasswordValidator verificationPasswordValidator;
+  private final RSpacePasswordEncoder passwordEncoder = new RSpacePasswordEncoder();
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -69,6 +72,26 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     ReflectionTestUtils.setField(userManager, "properties", properties);
     ReflectionTestUtils.setField(
         userManager, "verificationPasswordValidator", verificationPasswordValidator);
+    ReflectionTestUtils.setField(userManager, "passwordEncoder", passwordEncoder);
+  }
+
+  @Test
+  public void saveEncodesChangedPasswordOnlyOnce() {
+    User user = createAnyUser("any");
+    user.setId(1L);
+    user.setVersion(1);
+    user.setPassword("newPassword1");
+    when(userDao.getUserPassword(user.getUsername())).thenReturn("{argon2@rspace_v1}old");
+    when(userDao.saveUser(user)).thenReturn(user);
+
+    userManager.saveUser(user);
+    String encoded = user.getPassword();
+    assertTrue(passwordEncoder.matches("newPassword1", encoded));
+
+    // stored value now equals the in-memory one, so a second save leaves it alone
+    when(userDao.getUserPassword(user.getUsername())).thenReturn(encoded);
+    userManager.saveUser(user);
+    assertEquals(encoded, user.getPassword());
   }
 
   @Test
