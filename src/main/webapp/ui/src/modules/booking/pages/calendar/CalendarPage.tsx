@@ -1,8 +1,12 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
+import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { dayMinuteToZonedTime, wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -58,6 +62,8 @@ function CalendarContent() {
   const [layout, setLayout] = React.useState<CalendarLayout>("resources");
   const [resettingControls, setResettingControls] = React.useState(false);
   const preferences = useBookingDisplayPreferences();
+  const beginCreation = useBookingCreationStore((state) => state.beginCreation);
+  const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
   const selectedDate = date ?? todayInTimeZone(preferences.timeZone);
   const dates = calendarDates(selectedDate, view);
   const resourceTable = useTableList<BookingConfiguration>({
@@ -86,6 +92,15 @@ function CalendarContent() {
     features: { sorting: false, columns: false },
     queryString: { parameterPrefix: "calendar-resources", tableId: "booking-calendar-resources" },
   });
+  const resourceConfigurations = React.useMemo(
+    () =>
+      resourceTable.tableProps.rows.flatMap((row) => {
+        if (!row.capabilities.canCreateBooking) return [];
+        const option = bookableItemOption(row);
+        return option ? [option] : [];
+      }),
+    [resourceTable.tableProps.rows],
+  );
   const resourceTargetIds = React.useMemo(
     () => resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target.globalId] : [])),
     [resourceTable.tableProps.rows],
@@ -112,6 +127,7 @@ function CalendarContent() {
       availabilityEndMinute={preferences.availabilityWindow.endMinute}
       events={events.data ?? []}
       resources={resourceTargets}
+      resourceConfigurations={resourceConfigurations}
       resourceTableProps={resourceTable.tableProps}
       currentUserId={currentUser.id}
       isLoading={events.isPending && resourceTable.tableProps.status !== "error"}
@@ -141,6 +157,29 @@ function CalendarContent() {
       }}
       onViewChange={setView}
       onLayoutChange={setLayout}
+      creationAction={
+        <BookingCreationButtonGroup ownerId="calendar-toolbar" initialDate={selectedDate} size="default" />
+      }
+      creationDisabled={creationActive}
+      onResourceRangeSelect={(resource, range, trigger) => {
+        const window = wallClockDraftFromInstants(
+          dayMinuteToZonedTime(selectedDate, preferences.timeZone, range.startMinute).toInstant().toString(),
+          dayMinuteToZonedTime(selectedDate, preferences.timeZone, range.endMinute).toInstant().toString(),
+          preferences.timeZone,
+        );
+        const ownerId = `calendar-resource-${resource.configurationId}`;
+        const triggerId = `${ownerId}-${selectedDate}`;
+        trigger.id = triggerId;
+        beginCreation({
+          ownerId,
+          triggerId,
+          eventKind: "BOOKING",
+          target: resource,
+          initialDate: selectedDate,
+          window,
+          lockTarget: true,
+        });
+      }}
     />
   );
 }
