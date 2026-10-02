@@ -256,11 +256,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     channelOptions.put("SLACK_TEAM_NAME", "testTeamName");
     channelOptions.put("SLACK_CHANNEL_NAME", "testChannelName");
     channelOptions.put("SLACK_CHANNEL_LABEL", "testLabel");
-    channelOptions.put("SLACK_WEBHOOK_URL", "testWebhookUrl");
     channelOptions.put("SLACK_USER_ID", "U123");
     channelOptions.put("SLACK_TEAM_ID", "T456");
     channelOptions.put("SLACK_CHANNEL_ID", "C789");
-    channelOptions.put("SLACK_USER_ACCESS_TOKEN", "xoxp-123456789");
 
     userAppConfigManager.saveAppConfigElementSet(channelOptions, null, false, user, App.APP_SLACK);
   }

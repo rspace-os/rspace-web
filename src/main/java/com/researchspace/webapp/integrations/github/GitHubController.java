@@ -1,13 +1,17 @@
 package com.researchspace.webapp.integrations.github;
 
+import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
 import static com.researchspace.session.SessionAttributeUtils.getSessionAttribute;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.User;
-import com.researchspace.model.dto.IntegrationInfo;
+import com.researchspace.model.apps.App;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.service.ClientReadableSecret;
+import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.service.UserAppConfigManager;
+import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
@@ -27,6 +31,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -69,6 +74,9 @@ public class GitHubController extends BaseOAuth2Controller {
   private String clientSecret;
 
   private RestTemplate restTemplate;
+
+  @Autowired private UserConnectionManager userConnectionManager;
+  @Autowired private UserAppConfigManager userAppConfigManager;
 
   private static class AccessDeniedException extends Exception {
     private static final long serialVersionUID = -4859611690834326921L;
@@ -207,17 +215,15 @@ public class GitHubController extends BaseOAuth2Controller {
 
   @GetMapping("/allRepositories")
   @ResponseBody
-  public AjaxReturnObject<List<Repository>> allRepositories(
-      @RequestParam Map<String, String> params) {
+  public AjaxReturnObject<List<Repository>> allRepositories(Principal principal) {
     try {
-      return new AjaxReturnObject<>(getUserRepositories(params.get("authToken")), null);
+      return new AjaxReturnObject<>(getUserRepositories(getStoredToken(principal)), null);
     } catch (RestClientException e) {
       log.error("Getting GitHub repositories list failed", e);
       return new AjaxReturnObject<>(null, ErrorList.of(e.getMessage()));
     }
   }
 
-  @ClientReadableSecret("the browser lists repositories and saves them with the issued token")
   @GetMapping("/redirect_uri")
   public String onAuthorization(
       @RequestParam Map<String, String> params,
@@ -287,9 +293,13 @@ public class GitHubController extends BaseOAuth2Controller {
     }
 
     log.info(String.format("User %s successfully authenticated with GitHub", principal.getName()));
+    // one token per user: every linked repository uses the latest connection's token
+    userConnectionManager.replaceConnection(
+        new UserConnection(
+            new UserConnectionId(principal.getName(), GITHUB_APP_NAME, GITHUB_APP_NAME),
+            accessToken));
     ConnectionResultPage.addConnectionAttributes(
         model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED");
-    model.addAttribute("connectionToken", accessToken);
 
     return ConnectionResultPage.VIEW;
   }
@@ -298,29 +308,29 @@ public class GitHubController extends BaseOAuth2Controller {
     return OauthAuthorizationError.builder().appName("GitHub");
   }
 
-  // Map is from repository name to access code
-  private Map<String, String> getConfiguredRepositoriesWithTokens(Principal principal) {
-    Map<String, String> hashMap = new HashMap<>();
+  // null when the user has not connected, so GitHub rejects the request
+  private String getStoredToken(Principal principal) {
+    return userConnectionManager
+        .findByUserNameProviderName(principal.getName(), GITHUB_APP_NAME, GITHUB_APP_NAME)
+        .map(UserConnection::getAccessToken)
+        .orElse(null);
+  }
+
+  private List<String> getConfiguredRepositories(Principal principal) {
     User user = userManager.getUserByUsername(principal.getName());
-    IntegrationInfo integration = integrationsHandler.getIntegration(user, "GITHUB");
-    for (Object propertySetObject : integration.getOptions().values()) {
-      if (!(propertySetObject instanceof Map<?, ?> values)) {
-        throw new IllegalStateException("GitHub integration options must be objects");
-      }
-      Map<String, String> propertySet = new HashMap<>();
-      values.forEach(
-          (key, value) -> propertySet.put(String.class.cast(key), String.class.cast(value)));
-      String repositoryName = propertySet.get("GITHUB_REPOSITORY_FULL_NAME");
-      String accessToken = propertySet.get("GITHUB_ACCESS_TOKEN");
-      hashMap.put(repositoryName, accessToken);
-    }
-    return hashMap;
+    return userAppConfigManager
+        .getByAppName(App.APP_GITHUB, user)
+        .getAppConfigElementSets()
+        .stream()
+        .map(set -> set.findElementByPropertyName("GITHUB_REPOSITORY_FULL_NAME").getValue())
+        .sorted()
+        .toList();
   }
 
   @RequestMapping(value = "/ajax/get_repository_tree", method = RequestMethod.POST)
   public String getTree(@RequestParam("dir") String dir, Model model, Principal principal) {
     List<TreeNode> nodes = new ArrayList<>();
-    Map<String, String> repositories = getConfiguredRepositoriesWithTokens(principal);
+    String accessToken = getStoredToken(principal);
 
     try {
       dir = java.net.URLDecoder.decode(dir, "UTF-8");
@@ -333,13 +343,12 @@ public class GitHubController extends BaseOAuth2Controller {
 
     // Root folder, showing all repository names
     if (dir.equals("/")) {
-      for (String repositoryName : repositories.keySet()) {
+      for (String repositoryName : getConfiguredRepositories(principal)) {
         TreeNode node = new TreeNode();
         node.setPath(repositoryName);
         node.setRepository(repositoryName);
         node.setType("tree");
-        node.setSha(
-            getDefaultBranchFromGitHubApi(repositoryName, repositories.get(repositoryName)));
+        node.setSha(getDefaultBranchFromGitHubApi(repositoryName, accessToken));
         nodes.add(node);
       }
     } else {
@@ -348,8 +357,10 @@ public class GitHubController extends BaseOAuth2Controller {
         String repositoryName = splitDir[0];
         String sha = splitDir[1];
         String fullPath = splitDir[2];
-        nodes =
-            getNodesFromGitHubApi(repositoryName, fullPath, sha, repositories.get(repositoryName));
+        // only linked repositories are browsed with the user's token
+        String token =
+            getConfiguredRepositories(principal).contains(repositoryName) ? accessToken : null;
+        nodes = getNodesFromGitHubApi(repositoryName, fullPath, sha, token);
         // No error
         model.addAttribute("error", "");
       } catch (Exception e) {

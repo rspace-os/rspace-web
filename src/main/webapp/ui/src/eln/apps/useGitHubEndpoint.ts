@@ -6,19 +6,15 @@ export type Repository = {
   full_name: string;
 };
 
-export type RepositoryListing = {
-  repositories: Array<Repository>;
-  accessToken: string;
-};
-
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
 /*
  * There is an API endpoint that allows the UI to fetch a list of all of the
- * user's GitHub repositories.
+ * user's GitHub repositories, using the token the server stored when the user
+ * last connected.
  */
 export function useGitHubEndpoint(): {
-  getAllRepositories: (authToken: string) => Promise<Array<Repository>>;
+  getAllRepositories: () => Promise<Array<Repository>>;
   oauthUrl: () => Promise<string>;
 } {
   const { t } = useTranslation();
@@ -27,7 +23,7 @@ export function useGitHubEndpoint(): {
     timeout: ONE_MINUTE_IN_MS,
   });
 
-  const getAllRepositories = async (authToken: string): Promise<Array<Repository>> => {
+  const getAllRepositories = async (): Promise<Array<Repository>> => {
     const response = await api.get<
       | { success: true; data: Array<Repository>; error: null }
       | {
@@ -39,7 +35,7 @@ export function useGitHubEndpoint(): {
                 errorMessages: Array<string>;
               };
         }
-    >("/allRepositories", { params: new URLSearchParams({ authToken }) });
+    >("/allRepositories");
     if (!response.data.success) {
       if (response.data.errorMsg) {
         const errorMsg = response.data.errorMsg;
