@@ -18,6 +18,12 @@ class RSpacePasswordEncoderTest {
   private static final String UNSALTED_HEX =
       "caa6eec0faa20efba3b7af44af7107b05334759954ef3581030cc8e6199a33bf";
 
+  // Generated with BCrypt.hashpw("verify1234", BCrypt.gensalt()), as
+  // VerificationPasswordValidatorImpl
+  // stored it
+  private static final String LEGACY_BCRYPT =
+      "$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6";
+
   private final RSpacePasswordEncoder encoder = new RSpacePasswordEncoder();
 
   @Test
@@ -59,9 +65,19 @@ class RSpacePasswordEncoderTest {
     assertThrows(IllegalArgumentException.class, () -> encoder.matches("password1", argon2));
     assertThrows(IllegalArgumentException.class, () -> encoder.matches("sysWisc23!", UNSALTED_HEX));
     assertThrows(IllegalArgumentException.class, () -> encoder.matches("x", "{noop}x"));
+    assertThrows(IllegalArgumentException.class, () -> encoder.matches("x", "{sha256}x"));
+    // a bare BCrypt value, as stored before the prefix migration
     assertThrows(
-        IllegalArgumentException.class,
-        () -> encoder.matches("x", "{bcrypt}$2a$10$abcdefghijklmnopqrstuu"));
+        IllegalArgumentException.class, () -> encoder.matches("verify1234", LEGACY_BCRYPT));
+  }
+
+  @Test
+  void prefixedLegacyBcryptVerificationPasswordMatchesAndNeedsUpgrade() {
+    String prefixed = "{bcrypt}" + LEGACY_BCRYPT;
+    assertTrue(encoder.matches("verify1234", prefixed));
+    assertFalse(encoder.matches("verify12345", prefixed));
+    assertTrue(encoder.upgradeEncoding(prefixed));
+    assertFalse(encoder.encode("verify1234").startsWith("{bcrypt}"));
   }
 
   @Test
