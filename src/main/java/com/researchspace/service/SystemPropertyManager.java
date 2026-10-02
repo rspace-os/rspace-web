@@ -33,11 +33,13 @@ public interface SystemPropertyManager extends GenericManager<SystemPropertyValu
    */
   SystemPropertyValue save(SystemPropertyName name, HierarchicalPermission newValue, User subject);
 
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
   SystemPropertyValue save(SystemPropertyName name, String newValue, User subject);
 
   SystemPropertyValue save(Preference preference, String newValue, User subject);
 
   @Deprecated // use strongly-typed save method variant
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
   SystemPropertyValue save(String propertyUniqueName, String newValue, User subject);
 
   /**

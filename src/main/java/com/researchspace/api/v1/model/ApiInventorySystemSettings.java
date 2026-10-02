@@ -10,6 +10,7 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /** Inventory system-wide settings for identifier (IGSN/PIDINST) registration. */
 @Data
@@ -28,7 +29,7 @@ public class ApiInventorySystemSettings {
     private IdentifierType provider;
     private String serverUrl;
     private String username;
-    private String password;
+    @ToString.Exclude private String password;
     private String repositoryPrefix;
     private String enabled;
   }

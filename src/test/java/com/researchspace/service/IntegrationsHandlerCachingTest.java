@@ -4,7 +4,6 @@ import static com.researchspace.service.IntegrationsHandler.ACCESS_TOKEN_SETTING
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
-import static com.researchspace.service.impl.IntegrationsHandlerImpl.MASKED_TOKEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -103,23 +102,25 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
   // this should expire the cache for everyone.
   private void assertThatUpdatingAvailabilityTriggersCacheRefresh(
       User user, String propertyToUpdate, IntegrationInfo reloaded) {
+    User sysadmin = getSysAdminUser();
     SystemPropertyValue dropboxAvailable =
         sysPropMger.findByName(SystemPropertyName.DROPBOX_AVAILABLE);
     // save by name
     sysPropMger.save(
         SystemPropertyName.DROPBOX_AVAILABLE,
         dropboxAvailable.getValue(),
-        user); // doesn't matter if value is different; just saving will trigger cache invalidation
+        sysadmin); // doesn't matter if value is different; just saving will trigger cache
+    // invalidation
     IntegrationInfo dropboxAvailableReloaded =
         integrationsHandler.getIntegration(user, propertyToUpdate);
     assertNotSame(reloaded, dropboxAvailableReloaded);
     // save by object
-    sysPropMger.save(dropboxAvailable, user);
+    sysPropMger.save(dropboxAvailable, sysadmin);
     IntegrationInfo dropboxAvailableReloaded2 =
         integrationsHandler.getIntegration(user, propertyToUpdate);
     assertNotSame(dropboxAvailableReloaded, dropboxAvailableReloaded2);
     // save by id
-    sysPropMger.save(dropboxAvailable.getId(), dropboxAvailable.getValue(), user);
+    sysPropMger.save(dropboxAvailable.getId(), dropboxAvailable.getValue(), sysadmin);
     IntegrationInfo dropboxAvailableReloaded3 =
         integrationsHandler.getIntegration(user, propertyToUpdate);
     assertNotSame(dropboxAvailableReloaded2, dropboxAvailableReloaded3);
@@ -127,7 +128,7 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     // now let's update a child property; should refresh all properties
     SystemPropertyValue dropboxLinking =
         sysPropMger.findByName(SystemPropertyName.DROPBOX_LINKING_ENABLED);
-    sysPropMger.save(dropboxLinking, user);
+    sysPropMger.save(dropboxLinking, sysadmin);
     IntegrationInfo dropboxAvailableReloaded4 =
         integrationsHandler.getIntegration(user, propertyToUpdate);
     assertNotSame(dropboxAvailableReloaded3, dropboxAvailableReloaded4);
@@ -199,7 +200,7 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     IntegrationInfo reloaded = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
     IntegrationInfo reloadedCached =
         integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
-    assertThat(reloaded.getOptions()).containsEntry(FIELDMARK_USER_TOKEN, MASKED_TOKEN);
+    assertThat(reloaded.getOptions()).containsEntry(FIELDMARK_USER_TOKEN, null);
     // sanity check that it is now being cached again
     assertSame(reloadedCached, reloaded);
 

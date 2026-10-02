@@ -1,13 +1,21 @@
 package com.researchspace.webapp.controller;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.User;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.raid.RaIDServerConfigurationDTO;
+import com.researchspace.webapp.integrations.pyrat.PyratServerConfigurationDTO;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -21,6 +29,13 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 @RequestMapping("/deploymentproperties*")
 public class DeploymentPropertiesController extends BaseController {
+
+  private static final ObjectMapper CONFIG_MAPPER =
+      new ObjectMapper().setSerializationInclusion(Include.NON_NULL);
+  private static final TypeReference<Map<String, PyratServerConfigurationDTO>> PYRAT_CONFIG =
+      new TypeReference<>() {};
+  private static final TypeReference<Map<String, RaIDServerConfigurationDTO>> RAID_CONFIG =
+      new TypeReference<>() {};
 
   @Autowired private SystemPropertyManager sysPropertyMgr;
 
@@ -66,6 +81,7 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${nextcloud.client.id}")
   private String nextCloudClientId;
 
+  @ClientReadableSecret("a browser API key: the Google Picker runs client-side")
   @Value("${googledrive.developer.key}")
   private String googleDriveDevKey;
 
@@ -126,7 +142,8 @@ public class DeploymentPropertiesController extends BaseController {
     // managed props e.g. for RSPAC-861
     List<SystemPropertyValue> dbProperties = sysPropertyMgr.getAllSysadminProperties();
     for (SystemPropertyValue spv : dbProperties) {
-      if (spv.getProperty().getName().equals(propertyName)) {
+      if (spv.getProperty().getName().equals(propertyName)
+          && SystemPropertyName.isClientReadable(spv.getProperty())) {
         return spv.getValue();
       }
     }
@@ -148,9 +165,9 @@ public class DeploymentPropertiesController extends BaseController {
       case "egnyte.client.id":
         return egnyteClientId;
       case "pyrat.server.config":
-        return pyratServerConfig;
+        return withoutSecrets(pyratServerConfig, PYRAT_CONFIG);
       case "raid.server.config":
-        return raidServerConfig;
+        return withoutSecrets(raidServerConfig, RAID_CONFIG);
       case "owncloud.url":
         return ownCloudURL;
       case "owncloud.server.name":
@@ -250,8 +267,8 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("nextcloud.server.name", nextCloudServerName);
     properties.put("nextcloud.client.id", nextCloudClientId);
 
-    properties.put("pyrat.server.config", pyratServerConfig);
-    properties.put("raid.server.config", raidServerConfig);
+    properties.put("pyrat.server.config", withoutSecrets(pyratServerConfig, PYRAT_CONFIG));
+    properties.put("raid.server.config", withoutSecrets(raidServerConfig, RAID_CONFIG));
 
     properties.put("googledrive.developer.key", googleDriveDevKey);
     properties.put("googledrive.client.id", googleDriveClientId);
@@ -264,6 +281,23 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("deployment.helpEmail", deploymentHelpEmail);
 
     return properties;
+  }
+
+  /**
+   * Re-serializes a multi-server config through its DTO, whose WRITE_ONLY fields (tokens, client
+   * secrets) are dropped, so only the server-side clients ever see them (RSDEV-1525).
+   */
+  private <T> String withoutSecrets(String config, TypeReference<Map<String, T>> type) {
+    if (StringUtils.isBlank(config)) {
+      return config;
+    }
+    try {
+      return CONFIG_MAPPER.writeValueAsString(CONFIG_MAPPER.readValue(config, type));
+    } catch (JsonProcessingException e) {
+      // only the class: Jackson's message quotes the source text, which holds the secrets
+      log.warn("Unparseable multi-server configuration, not returning it: {}", e.getClass());
+      return "";
+    }
   }
 
   /*
@@ -290,7 +324,9 @@ public class DeploymentPropertiesController extends BaseController {
 
     List<SystemPropertyValue> dbProperties = sysPropertyMgr.getAllSysadminProperties();
     for (SystemPropertyValue spv : dbProperties) {
-      properties.put(spv.getProperty().getName(), spv.getValue());
+      if (SystemPropertyName.isClientReadable(spv.getProperty())) {
+        properties.put(spv.getProperty().getName(), spv.getValue());
+      }
     }
     return properties;
   }
@@ -301,11 +337,13 @@ public class DeploymentPropertiesController extends BaseController {
    * @return updated property value
    */
   @PostMapping("/ajax/updateProperty")
+  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"newValue"})
   @ResponseBody
   public AjaxReturnObject<String> updateProperty(
       @RequestParam(value = "propertyName", required = true) String propertyName,
       @RequestParam(value = "newValue", required = true) String newValue) {
     User subject = userManager.getAuthenticatedUserInSession();
+    assertUserIsSysAdmin(subject);
     SystemPropertyValue updatedValue = sysPropertyMgr.save(propertyName, newValue, subject);
     return new AjaxReturnObject<>(updatedValue.getValue(), null);
   }
