@@ -254,6 +254,7 @@ function doSerializeForm(forDownload) {
 	// So, here we coalesce domain names into a single name-value pair to submit.
 	var elnDomains = ["AUDIT","FOLDER","FORM","MEDIA","NOTEBOOK","RECORD","WORKSPACE"]
 	var invDomains = ["INV_SAMPLE","INV_SUBSAMPLE","INV_CONTAINER"]
+	var requestDomains = ["REQUEST"]
 	var otherDomains = ["COMMUNITY","GROUP","MESSAGING","UNKNOWN","USER"]
 	var domainsToSubmit = []
 	var requestData = $('form').serializeArray();
@@ -264,6 +265,9 @@ function doSerializeForm(forDownload) {
 			}
 			if (requestData[i]["value"] == "INV") {
 				domainsToSubmit = domainsToSubmit.concat(invDomains)
+			}
+			if (requestData[i]["value"] == "REQUEST") {
+				domainsToSubmit = domainsToSubmit.concat(requestDomains)
 			}
 			if (requestData[i]["value"] == "OTHER") {
 				domainsToSubmit = domainsToSubmit.concat(otherDomains)

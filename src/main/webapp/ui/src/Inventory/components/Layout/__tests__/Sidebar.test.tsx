@@ -19,10 +19,20 @@ vi.mock("../../../../hooks/api/integrationHelpers", () => ({
   }),
 }));
 
+// Defaults to DENIED so the two pre-existing tests below are unaffected; the Requests-visibility
+// tests further down set this explicitly for each case.
+const deploymentProperties: Record<string, string> = {
+  "inventory.sampleRequests.available": "DENIED",
+};
+vi.mock("../../../../hooks/api/useDeploymentProperty", () => ({
+  useDeploymentProperty: (name: string) => ({ tag: "success", value: deploymentProperties[name] }),
+}));
+
 const mockAxios = new MockAdapter(axios);
 describe("Sidebar", () => {
   beforeEach(() => {
     mockAxios.reset();
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
   });
 
   test("Should have no axe violations.", async () => {
@@ -108,5 +118,36 @@ describe("Sidebar", () => {
     const [url] = navFn.mock.calls[0];
     expect(url).toMatch(/^\/inventory\/search\?/);
     expect(setVisiblePanel).not.toHaveBeenCalled();
+  });
+
+  function renderSidebar() {
+    mockAxios.onGet("livechatProperties").reply(200, { livechatEnabled: false });
+    const rootStore = makeMockRootStore({
+      uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
+      searchStore: { search: { benchSearch: true } },
+    });
+    return render(
+      <ThemeProvider theme={materialTheme}>
+        <LandmarksProvider>
+          <storesContext.Provider value={rootStore}>
+            <Sidebar id="foo" />
+          </storesContext.Provider>
+        </LandmarksProvider>
+      </ThemeProvider>,
+    );
+  }
+
+  test("hides the Requests nav item when inventory.sampleRequests.available is not ALLOWED.", () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
+    renderSidebar();
+
+    expect(screen.queryByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeNull();
+  });
+
+  test("shows the Requests nav item when inventory.sampleRequests.available is ALLOWED.", () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "ALLOWED";
+    renderSidebar();
+
+    expect(screen.getByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeInTheDocument();
   });
 });

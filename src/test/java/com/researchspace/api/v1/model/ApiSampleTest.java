@@ -43,6 +43,7 @@ public class ApiSampleTest extends SpringTransactionalTest {
     sampleWithJustLimitedViewProperties.setStorageTempMin(apiSample.getStorageTempMin());
     sampleWithJustLimitedViewProperties.setStorageTempMax(apiSample.getStorageTempMax());
     sampleWithJustLimitedViewProperties.setExpiryDate(apiSample.getExpiryDate());
+    sampleWithJustLimitedViewProperties.setRequestable(apiSample.getRequestable());
     // ApiSampleInfoWithFields-level properties
     sampleWithJustLimitedViewProperties.setFields(null);
     sampleWithJustLimitedViewProperties.setExtraFields(null);
@@ -75,6 +76,9 @@ public class ApiSampleTest extends SpringTransactionalTest {
     sampleWithJustGlobalViewProperties.setOwner(apiSample.getOwner());
     sampleWithJustGlobalViewProperties.setPermittedActions(apiSample.getPermittedActions());
     sampleWithJustGlobalViewProperties.setLinks(apiSample.getLinks());
+    // requestable survives even the public view, so a user with no read access still knows
+    // whether they may request the sample
+    sampleWithJustGlobalViewProperties.setRequestable(apiSample.getRequestable());
     // lists explicitly nullified
     sampleWithJustGlobalViewProperties.setAttachments(null);
     sampleWithJustGlobalViewProperties.setBarcodes(null);

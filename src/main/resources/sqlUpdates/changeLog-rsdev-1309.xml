@@ -1,0 +1,113 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Sample requests (RSDEV-1309). -->
+
+    <changeSet id="2026-09-29a" context="run" author="mrowe-tan">
+        <comment>Add inventory.sampleRequests.available system property (RSDEV-1365)</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="DENIED"/>
+            <column name="name" type="STRING" value="inventory.sampleRequests.available"/>
+            <column name="type" type="NUMERIC" value="3"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id" type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name = 'inventory.sampleRequests.available')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value="DENIED"/>
+            <column name="property_id" type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id = pd.id where pd.name = 'inventory.sampleRequests.available')"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2026-09-29b" context="run" author="mrowe-tan">
+        <comment>Add requestable column to Sample (RSDEV-1365)</comment>
+        <addColumn tableName="Sample">
+            <column name="requestable" type="bit" defaultValueNumeric="0"/>
+        </addColumn>
+        <addColumn tableName="Sample_AUD">
+            <column name="requestable" type="bit" defaultValueNumeric="0">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026-09-29c" context="run" author="matthias">
+        <comment>Create SampleRequest table (RSDEV-1366)</comment>
+        <!-- ids come from hibernate_sequences, so not autoIncrement -->
+        <createTable tableName="SampleRequest">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sample_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_samplerequest_sample"
+                             references="Sample(id)"/>
+            </column>
+            <!-- usernames, not FKs, so a request survives either user's deletion -->
+            <column name="requesterUsername" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="originalOwner" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="note" type="VARCHAR(2000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <!-- the REQUESTER and OWNER listings filter on these -->
+        <createIndex tableName="SampleRequest" indexName="idx_samplerequest_requesterUsername">
+            <column name="requesterUsername"/>
+        </createIndex>
+        <createIndex tableName="SampleRequest" indexName="idx_samplerequest_originalOwner">
+            <column name="originalOwner"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="2026-09-29d" context="run" author="matthias">
+        <comment>Create SampleRequestStatusChange table (RSDEV-1368)</comment>
+        <!-- ids come from hibernate_sequences, so not autoIncrement -->
+        <createTable tableName="SampleRequestStatusChange">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sampleRequest_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_srsc_samplerequest"
+                             references="SampleRequest(id)"/>
+            </column>
+            <column name="createdByUsername" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reason" type="VARCHAR(2000)"/>
+            <!-- the sample a fulfilment handed over, if recorded -->
+            <column name="transferredSample_id" type="BIGINT">
+                <constraints nullable="true" foreignKeyName="fk_srsc_transferredsample"
+                             references="Sample(id)"/>
+            </column>
+            <column name="created" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <!-- backstop behind the row lock: every status is reachable at most once per request -->
+        <addUniqueConstraint tableName="SampleRequestStatusChange"
+                             columnNames="sampleRequest_id, status"
+                             constraintName="uc_srsc_request_status"/>
+    </changeSet>
+
+</databaseChangeLog>

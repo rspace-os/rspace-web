@@ -2,6 +2,7 @@ import type { ApiInventoryQuantity, ApiInventoryRecordInfo } from "./inventoryRe
 
 export interface ApiInventorySample extends ApiInventoryRecordInfo {
   subSamples: ApiInventorySubSample[];
+  requestable?: boolean;
 }
 
 export type ApiInventorySubSample = ApiInventoryRecordInfo;
@@ -31,7 +32,8 @@ export interface ApiInventoryIdentifierInfo {
 }
 
 export interface ApiInventorySampleUpdateRequest {
-  name: string;
+  name?: string;
+  requestable?: boolean;
 }
 
 export interface ApiInventorySampleRevisions {
