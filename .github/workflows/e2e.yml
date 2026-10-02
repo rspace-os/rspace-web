@@ -72,11 +72,11 @@ jobs:
         java-version: [17]
         project: [chromium, firefox, webkit, mobile]
         shard: [1, 2]
-        # API specs are a single file; run them once, unsharded.
-        include:
-          - java-version: 17
-            project: api
-            shard: 1
+        # API specs are a single file; run them once, unsharded. Cloud specs need a
+        # community (deployment.cloud=true) server and no real integrations, so mock mode only.
+        include: ${{ fromJSON(inputs.mode == 'mock'
+          && '[{"java-version":17,"project":"api","shard":1},{"java-version":17,"project":"cloud","shard":1}]'
+          || '[{"java-version":17,"project":"api","shard":1}]') }}
     services:
       db:
         image: mariadb:12.3
@@ -133,6 +133,7 @@ jobs:
           case "${{ matrix.project }}" in
             mobile) echo "E2E_PW_BROWSER=chromium" >> "$GITHUB_ENV"; echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV" ;;
             api)    echo "E2E_PW_BROWSER=" >> "$GITHUB_ENV";          echo "E2E_SHARD_OF=1" >> "$GITHUB_ENV" ;;
+            cloud)  echo "E2E_PW_BROWSER=chromium" >> "$GITHUB_ENV";  echo "E2E_SHARD_OF=1" >> "$GITHUB_ENV" ;;
             *)      echo "E2E_PW_BROWSER=${{ matrix.project }}" >> "$GITHUB_ENV"; echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV" ;;
           esac
 
@@ -248,6 +249,10 @@ jobs:
               "-Dorcid.secret=$ORCID_CLIENT_SECRET"
             )
           fi
+          DEPLOYMENT_ARGS=()
+          if [ "${{ matrix.project }}" = "cloud" ]; then
+            DEPLOYMENT_ARGS=("-Ddeployment.cloud=true")
+          fi
           nohup ./mvnw jetty:run-war \
             -DskipTests=true -Dmaven.war.skip=true \
             -Dtimestamp=${{ github.run_id }} \
@@ -269,6 +274,7 @@ jobs:
             -DRS_FILE_BASE="$RS_FILE_BASE" \
             -DRS.devlogLevel=INFO \
             "${INTEGRATION_ARGS[@]}" \
+            "${DEPLOYMENT_ARGS[@]}" \
             > /tmp/jetty.log 2>&1 &
 
       - run: pnpm install --frozen-lockfile

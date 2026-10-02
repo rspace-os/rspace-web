@@ -1,5 +1,5 @@
 import type { Browser, BrowserContextOptions, Page } from "@playwright/test";
-import { GroupInvitationBanner } from "@/__tests__/e2e/components/system/groups/GroupInvitationBanner";
+import { GroupRequestToastComponent } from "@/__tests__/e2e/components/groups/GroupRequestToastComponent";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { test as sysadminSessionTest } from "@/__tests__/e2e/fixtures/flows/sessions/sysadminSessions";
 import { LoginPage } from "@/__tests__/e2e/pageObjects/auth/LoginPage";
@@ -25,7 +25,7 @@ export type SelfServicePiActor = {
 
 export type UserSession = {
   groupDetails: GroupDetailsPage;
-  groupInvitation: GroupInvitationBanner;
+  groupRequest: (groupName: string) => GroupRequestToastComponent;
   workspace: WorkspacePage;
   users: SystemUsersPage;
   createAccount: CreateAccountPage;
@@ -97,7 +97,7 @@ export const test = sysadminSessionTest.extend<UserSessionFixtures>({
         closers.push(close);
         return {
           groupDetails: new GroupDetailsPage(page),
-          groupInvitation: new GroupInvitationBanner(page),
+          groupRequest: (groupName) => new GroupRequestToastComponent(page, groupName),
           workspace: new WorkspacePage(page),
           users: new SystemUsersPage(page),
           createAccount: new CreateAccountPage(page),

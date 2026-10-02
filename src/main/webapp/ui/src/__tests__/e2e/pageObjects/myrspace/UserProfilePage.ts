@@ -38,6 +38,11 @@ export class UserProfilePage extends BasePage {
     return this.page.locator("#userEmail", { hasText: email });
   }
 
+  /** Community (cloud) only: an email change waits for the new address to be confirmed. */
+  get emailVerificationSentAlert(): Locator {
+    return this.page.getByRole("alert").filter({ hasText: "Verification link has been sent to the new email address" });
+  }
+
   get profileImage(): Locator {
     return this.page.locator("#profileImage");
   }
