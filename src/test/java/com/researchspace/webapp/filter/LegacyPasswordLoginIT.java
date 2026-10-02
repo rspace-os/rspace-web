@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * RSDEV-894: login with a hash wrapped at rest, through the realm and the filter's post-login save,
@@ -87,6 +88,22 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
     User u = createAndSaveUser(randomAlphabetic(10));
     assertTrue(storedPassword(u).startsWith("{" + RSpacePasswordEncoder.ARGON2_ID + "}"));
     login(u, TESTPASSWD);
+  }
+
+  @Test
+  void hashUpgradeCommitsIndependentlyOfTheCallersTransaction() {
+    User u = createAndSaveUser(randomAlphabetic(10));
+    String before = storedPassword(u);
+    String upgraded = passwordEncoder.encode("other1234");
+
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            status -> {
+              assertTrue(userMgr.upgradePasswordHash(u.getUsername(), before, upgraded));
+              status.setRollbackOnly();
+            });
+
+    assertEquals(upgraded, storedPassword(u));
   }
 
   private void login(User u, String password) throws Exception {
