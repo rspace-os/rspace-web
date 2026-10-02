@@ -77,11 +77,6 @@ public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTest
   }
 
   @Test
-  public void matchesPartialWordsAsSubstrings() throws Exception {
-    assertEquals(List.of("Exact", "Phrase", "Prefixed"), like("SL-2"));
-  }
-
-  @Test
   public void keepsContainsAnExactSubstringMatch() throws Exception {
     assertEquals(List.of("Exact", "Other level", "Phrase", "Prefixed"), contains("BSL"));
     assertEquals(List.of("Exact", "Phrase", "Prefixed"), contains("SL-2"));

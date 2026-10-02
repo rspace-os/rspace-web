@@ -113,9 +113,9 @@ public class BookingConfiguration implements Serializable {
       onMethod_ = {
         @OneToOne(
             fetch = FetchType.LAZY,
-            optional = false,
+            optional = true,
             cascade = {CascadeType.PERSIST, CascadeType.MERGE}),
-        @JoinColumn(name = "resourceAccess_id", nullable = false, unique = true),
+        @JoinColumn(name = "resourceAccess_id", unique = true),
         @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
       })
   @Setter

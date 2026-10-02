@@ -54,6 +54,27 @@ class TimeSlotBookingReadMVCIT {
     Instant start = alignedStart();
     long bookingId = fixture.booking(instrumentId, start, start.plus(1, ChronoUnit.HOURS));
     String path = "/api/v2/bookings/" + bookingId;
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(
+            ignored -> bookingDao.get(bookingId).setPurpose("Acceptance UI 20260922"));
+
+    mockMvc
+        .perform(
+            get("/api/v2/bookings")
+                .header("apiKey", fixture.userKey())
+                .param(
+                    "where",
+                    "requesterId==%d;purpose=contains=Acceptance"
+                        .formatted(fixture.user().getId())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(1));
+    mockMvc
+        .perform(
+            get("/api/v2/bookings")
+                .header("apiKey", fixture.userKey())
+                .param("where", "target==IN" + instrumentId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(1));
 
     MvcResult booking =
         mockMvc
@@ -89,7 +110,6 @@ class TimeSlotBookingReadMVCIT {
                 .param("where", "id==%d;state==CONFIRMED".formatted(bookingId)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalDocs").value(0));
-    withoutAllUsersAccess(configurationId);
     mockMvc
         .perform(get(path).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
@@ -117,34 +137,125 @@ class TimeSlotBookingReadMVCIT {
     assertTrue(bookingManager.getBookingForAudit(bookingId, fixture.user()).isEmpty());
   }
 
+  @Test
+  void purposeSearchAndCountUseCurrentTargetReadAccess() throws Exception {
+    var owner = fixture.user();
+    fixture.makeOwnerRoleVisibleTo(fixture.otherUser(), owner);
+    fixture.thirdUser();
+    long instrumentId = fixture.instrument(owner, fixture.marker());
+    fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
+    Instant start = alignedStart();
+    long bookingId = fixture.booking(instrumentId, start, start.plus(1, ChronoUnit.HOURS));
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(ignored -> bookingDao.get(bookingId).setPurpose("Hidden purpose"));
+
+    mockMvc
+        .perform(
+            get("/api/v2/bookings")
+                .header("apiKey", fixture.otherUserKey())
+                .param("where", "id==%d".formatted(bookingId)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(1))
+        .andExpect(jsonPath("$.docs[0].purpose").value("Hidden purpose"));
+    mockMvc
+        .perform(
+            get("/api/v2/bookings")
+                .header("apiKey", fixture.thirdUserKey())
+                .param("where", "purpose=contains=Hidden"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(0));
+    mockMvc
+        .perform(
+            get("/api/v2/bookings/count")
+                .header("apiKey", fixture.thirdUserKey())
+                .param("where", "purpose=contains=Hidden"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(0));
+  }
+
   private static Instant alignedStart() {
     Instant candidate = Instant.now().plus(7, ChronoUnit.DAYS);
     return Instant.ofEpochSecond(((candidate.getEpochSecond() + 299) / 300) * 300);
   }
 
-  private void withoutAllUsersAccess(long configurationId) throws Exception {
-    String path = "/api/v2/booking-configurations/" + configurationId + "/access";
-    String etag =
+  @Test
+  void inheritsAccessAndRedactsOwnBookingAfterInventoryTransfer() throws Exception {
+    long instrumentId = fixture.instrument(fixture.user(), fixture.marker());
+    long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
+    Instant start = alignedStart();
+    long bookingId = fixture.booking(instrumentId, start, start.plus(1, ChronoUnit.HOURS));
+    String accessPath = "/api/v2/booking-configurations/" + configurationId + "/access";
+    var access =
         mockMvc
-            .perform(get(path).header("apiKey", fixture.userKey()))
+            .perform(get(accessPath).header("apiKey", fixture.userKey()))
             .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getHeader(HttpHeaders.ETAG);
+            .andExpect(jsonPath("$.inherited").value(true))
+            .andExpect(jsonPath("$.assignments.length()").value(0))
+            .andReturn();
     mockMvc
         .perform(
-            put(path)
+            put(accessPath)
                 .header("apiKey", fixture.userKey())
-                .header(HttpHeaders.IF_MATCH, etag)
+                .header(HttpHeaders.IF_MATCH, access.getResponse().getHeader(HttpHeaders.ETAG))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"assignments":[
-                      {"granteeKey":"user:%d","role":"OWNER"},
-                      {"granteeKey":"audience:all-users","role":"NO_ACCESS"}
-                    ]}
-                    """
-                        .formatted(fixture.user().getId())))
-        .andExpect(status().isOk());
+                .content("{\"assignments\":[]}"))
+        .andExpect(status().isForbidden());
+
+    var calendar = context.getBean(com.researchspace.booking.service.BookingCalendarManager.class);
+    var created =
+        calendar.createOrRotate(configurationId, fixture.user(), fixture.user(), "\"inactive\"");
+    String token =
+        java.net.URI.create(created.subscriptionUrl()).getRawQuery().substring("token=".length());
+    var instruments =
+        context.getBean(com.researchspace.service.inventory.InstrumentEntityApiManager.class);
+    var item = instruments.getApiInstrumentById(instrumentId, fixture.user());
+    item.setOwner(new com.researchspace.api.v1.model.ApiUser(fixture.otherUser()));
+    instruments.changeApiInstrumentOwner(item, fixture.user());
+
+    String path = "/api/v2/bookings/" + bookingId;
+    var retained =
+        mockMvc
+            .perform(get(path).header("apiKey", fixture.userKey()).param("depth", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.target").isEmpty())
+            .andExpect(jsonPath("$.timezone").isEmpty())
+            .andExpect(jsonPath("$.canViewConfiguration").value(false))
+            .andExpect(jsonPath("$.canEdit").value(false))
+            .andExpect(jsonPath("$.canCancel").value(false))
+            .andReturn();
+    mockMvc
+        .perform(
+            get("/api/v2/bookings")
+                .header("apiKey", fixture.userKey())
+                .param("where", "id==" + bookingId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(1));
+    mockMvc
+        .perform(
+            get("/api/v2/bookings")
+                .header("apiKey", fixture.userKey())
+                .param("where", "id==" + bookingId + ";target.name==" + fixture.marker()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(0));
+    mockMvc
+        .perform(
+            get("/api/v2/booking-configurations/" + configurationId)
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(
+            patch(path)
+                .header("apiKey", fixture.userKey())
+                .header(HttpHeaders.IF_MATCH, retained.getResponse().getHeader(HttpHeaders.ETAG))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"state\":\"CANCELLED\"}"))
+        .andExpect(status().isNotFound());
+
+    item = instruments.getApiInstrumentById(instrumentId, fixture.otherUser());
+    item.setOwner(new com.researchspace.api.v1.model.ApiUser(fixture.user()));
+    instruments.changeApiInstrumentOwner(item, fixture.otherUser());
+    org.junit.jupiter.api.Assertions.assertInstanceOf(
+        com.researchspace.booking.service.BookingCalendarManager.NotFound.class,
+        calendar.feed(token, java.util.Locale.UK, new java.util.Date()));
   }
 }

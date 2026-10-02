@@ -2,7 +2,6 @@ package com.researchspace.booking.service;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
-import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetType;
@@ -12,6 +11,7 @@ import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
@@ -21,7 +21,6 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.service.FeatureFlagManager;
-import com.researchspace.service.resourceaccess.ResourceRoleScheme;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,35 +37,82 @@ import org.springframework.transaction.annotation.Transactional;
 public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
 
   private final BookingConfigurationManager configurations;
-  private final BookingConfigurationDao configurationDao;
   private final InstrumentDao instruments;
   private final FeatureFlagManager featureFlags;
-  private final BookingResourceRoleScheme roleScheme;
+  private final com.researchspace.booking.dao.BookingItemQuery itemQuery;
+  private final com.researchspace.booking.dao.BookingCalendarQuery calendarQuery;
 
   public BookingCatalogueManagerImpl(
       BookingConfigurationManager configurations,
-      BookingConfigurationDao configurationDao,
       InstrumentDao instruments,
       FeatureFlagManager featureFlags,
-      BookingResourceRoleScheme roleScheme) {
+      com.researchspace.booking.dao.BookingItemQuery itemQuery,
+      com.researchspace.booking.dao.BookingCalendarQuery calendarQuery) {
     this.configurations = configurations;
-    this.configurationDao = configurationDao;
     this.instruments = instruments;
     this.featureFlags = featureFlags;
-    this.roleScheme = roleScheme;
+    this.itemQuery = itemQuery;
+    this.calendarQuery = calendarQuery;
   }
 
   @Override
   public Page search(
       String query,
       String targetGlobalId,
-      FilterExpression filter,
+      ResourceRequest request,
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
       int page,
       int limit,
       User caller) {
+    return search(
+        query,
+        targetGlobalId,
+        request,
+        targetTypes,
+        locationGlobalIds,
+        capability,
+        page,
+        limit,
+        caller,
+        null);
+  }
+
+  @Override
+  public Page searchCalendar(
+      String query,
+      ResourceRequest items,
+      ResourceRequest events,
+      java.time.Instant start,
+      java.time.Instant end,
+      int page,
+      int limit,
+      User caller) {
+    return search(
+        null,
+        null,
+        items,
+        List.of(),
+        List.of(),
+        null,
+        page,
+        limit,
+        caller,
+        calendarQuery.resources(events, start, end, query, caller));
+  }
+
+  private Page search(
+      String query,
+      String targetGlobalId,
+      ResourceRequest request,
+      List<String> targetTypes,
+      List<String> locationGlobalIds,
+      Capability capability,
+      int page,
+      int limit,
+      User caller,
+      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)) {
       throw new NotFoundException();
     }
@@ -75,19 +121,18 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     }
 
     List<FilterExpression> filters = new ArrayList<>();
-    if (filter != null) filters.add(filter);
     filters.add(comparison("enabled", Operator.EQUAL, true));
     filters.add(comparison("state", Operator.EQUAL, BookingConfigurationState.ACTIVE));
     filters.add(comparison("target.deleted", Operator.EQUAL, false));
-    if (capability != null && !caller.hasSysadminRole()) {
-      Set<String> roles = roleScheme.rolesWithCapability(capability.name());
-      Set<Long> capableTargetIds = configurationDao.findBookableInstrumentIds(caller, roles);
-      if (capableTargetIds.isEmpty()) {
-        return emptyPage(page, limit);
-      }
-      filters.add(
-          new FilterExpression.Comparison(
-              "target.value", Operator.IN, List.copyOf(capableTargetIds), false));
+    if (capability != null) {
+      restriction =
+          com.researchspace.booking.dao.BookingItemQuery.and(
+              restriction,
+              itemQuery.restriction(
+                  caller,
+                  true,
+                  capability == Capability.CREATE_BLOCKOUT,
+                  "bookingConfiguration.target"));
     }
     if (query != null && !query.isBlank()) {
       Set<Long> matchingTargetIds =
@@ -122,15 +167,20 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
               "target", Operator.IN, List.copyOf(candidateTargets), false));
     }
 
-    ResourcePage<BookingConfiguration> result =
-        configurations.getConfigurations(
-            new ResourceRequest(
-                new FilterExpression.And(filters),
+    ResourceRequest scopedRequest =
+        new ResourceRequest(
+                request.filter(),
+                request.serverConstraint(),
                 List.of(),
                 new ResourceRequest.Page(page, limit),
-                FieldSelection.all(),
-                IncludeTree.empty()),
-            caller);
+                ResourceFieldSelections.root(FieldSelection.all()),
+                IncludeTree.empty(),
+                request.runtime())
+            .restrict(new FilterExpression.And(filters));
+    ResourcePage<BookingConfiguration> result =
+        restriction == null
+            ? configurations.getConfigurations(scopedRequest, caller)
+            : configurations.getConfigurations(scopedRequest, caller, restriction);
     Set<Long> targetIds =
         result.resources().stream()
             .map(configuration -> configuration.getTarget().id())
@@ -164,12 +214,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       return new LocationPage(List.of(), page, limit, 0);
     }
     ResourcePage<com.researchspace.model.inventory.InstrumentParentLocationSummary> result =
-        instruments.getBookingCatalogueLocations(
-            query,
-            page,
-            limit,
-            caller,
-            roleScheme.rolesWithCapability(ResourceRoleScheme.READ_RESOURCE_CAPABILITY));
+        instruments.getBookingCatalogueLocations(query, page, limit, caller);
     return new LocationPage(
         result.resources().stream()
             .map(
