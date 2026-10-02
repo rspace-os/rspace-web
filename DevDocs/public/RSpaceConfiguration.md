@@ -501,6 +501,10 @@ These optional settings configure  behaviour of the RSpace application.
 * **login.customLoginContent** A line of text to appear on login page. Should be 1 or 2 sentences maximum. (not available for SSO installations). Default is empty string
 * **signup.customSignupContent** An optional short message can be put on the RSpace signup page. Default is unset.
 
+#### Login password checks
+* **login.passwordVerification.maxConcurrent** The maximum number of login and reauthentication password checks that run at once. Each check holds about 19 MiB of heap, so this bounds the memory a burst of login attempts can use. Default is 8.
+* **login.passwordVerification.waitSeconds** How long, in seconds, a password check waits for a free slot before it is refused. A refused check shows the usual wrong-password message but does not count toward account lockout. Default is 5.
+
 #### Archiving and export
 * **archive.folder.location** (default = $TOMCAT_HOME/archive) Path to a directory where exports will be assembled and stored. Must be readable and writable by Tomcat.
 * **archive.folder.storagetime** Time, in hours, that an exported archive will be available for download before it is considered for physical deletion from the server. Default is 24.
