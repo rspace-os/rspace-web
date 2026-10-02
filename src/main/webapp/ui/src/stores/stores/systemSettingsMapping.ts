@@ -1,3 +1,5 @@
+import type { Secret } from "../../components/Inputs/SecretField";
+
 /*
  * Mapping between the inventory system-settings API shape and the model the
  * "Configure Inventory (for System Administrators)" dialog uses.
@@ -18,7 +20,7 @@ export type DataciteSettings = {
   enabled: IntegrationState;
   serverUrl: DataCiteServerUrl;
   username: string;
-  password: string;
+  password: Secret;
   repositoryPrefix: string;
 };
 
@@ -27,7 +29,7 @@ export type B2InstSettings = {
   enabled: IntegrationState;
   serverUrl: string;
   username: string;
-  password: string;
+  password: Secret;
   repositoryPrefix: string;
 };
 

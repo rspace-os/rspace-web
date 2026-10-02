@@ -14,6 +14,7 @@ import DMPToolIcon from "@/assets/branding/dmptool/logo.svg";
 import { LOGO_COLOR as DSW_LOGO_COLOR } from "@/assets/branding/dsw";
 import DSWIcon from "@/assets/branding/dsw/logo.svg";
 import AccentMenuItem from "@/components/AccentMenuItem";
+import type { Secret } from "@/components/Inputs/SecretField";
 import { type IntegrationStates, useIntegrationsEndpoint } from "@/eln/apps/useIntegrationsEndpoint";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import * as ArrayUtils from "@/util/ArrayUtils";
@@ -24,7 +25,7 @@ import DMPToolDMPDialog from "./DMPTool/DMPDialog";
 import DSWImportDialog from "./DSW/DSWImportDialog";
 
 export type DswConfig = {
-  DSW_APIKEY: string;
+  DSW_APIKEY: Secret;
   DSW_URL: string;
   DSW_ALIAS: string;
 };

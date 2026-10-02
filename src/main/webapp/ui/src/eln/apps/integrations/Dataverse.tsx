@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dataverse";
 import DataverseIcon from "../../../assets/branding/dataverse/logo.svg";
+import SecretField, { type Secret } from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
@@ -46,7 +47,7 @@ type Configurations = UnwrapArray<IntegrationStates["DATAVERSE"]["credentials"]>
  */
 
 type ExistingConfig = {
-  DATAVERSE_APIKEY: string;
+  DATAVERSE_APIKEY: Secret;
   DATAVERSE_URL: string;
   DATAVERSE_ALIAS: string;
   _label: string;
@@ -210,16 +211,17 @@ const DialogContent = observer(
                       error={config.DATAVERSE_URL === ""}
                       helperText={config.DATAVERSE_URL === "" && t("integrations.dataverse.fields.urlRequired")}
                     />
-                    <TextField
+                    <SecretField
                       fullWidth
+                      clearable={false}
                       value={config.DATAVERSE_APIKEY}
-                      onChange={({ target: { value } }) => {
+                      onChange={(value) => {
                         runInAction(() => {
                           config.DATAVERSE_APIKEY = value;
                           config.dirty = true;
                         });
                       }}
-                      type="password"
+                      autoComplete="new-password"
                       label={t("integrations.dataverse.fields.apiKey")}
                       error={config.DATAVERSE_APIKEY === ""}
                       helperText={config.DATAVERSE_APIKEY === "" && t("integrations.dataverse.fields.apiKeyRequired")}
@@ -331,15 +333,15 @@ const DialogContent = observer(
                       error={newConfig.DATAVERSE_URL === ""}
                       helperText={newConfig.DATAVERSE_URL === "" && t("integrations.dataverse.fields.urlRequired")}
                     />
-                    <TextField
+                    <SecretField
                       fullWidth
                       value={newConfig.DATAVERSE_APIKEY}
-                      onChange={({ target: { value } }) => {
+                      onChange={(value) => {
                         runInAction(() => {
                           newConfig.DATAVERSE_APIKEY = value;
                         });
                       }}
-                      type="password"
+                      autoComplete="new-password"
                       label={t("integrations.dataverse.fields.apiKey")}
                       error={newConfig.DATAVERSE_APIKEY === ""}
                       helperText={

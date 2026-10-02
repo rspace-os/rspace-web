@@ -10,7 +10,6 @@ import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useId, useState } from "react";
@@ -18,11 +17,13 @@ import { useTranslation } from "react-i18next";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import ApiService from "../../../common/InvApiService";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import { secretAfterSave } from "../../../components/Inputs/SecretField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import WarningBar from "../../../components/WarningBar";
 import type { B2InstSettings, IntegrationState, SystemSettings } from "../../../stores/stores/AuthStore";
 import useStores from "../../../stores/use-stores";
 import { getErrorMessage } from "../../../util/error";
+import IdentifierSettingField from "./IdentifierSettingField";
 
 type PIDINSTB2InstCardArgs = {
   currentSettings: SystemSettings["pidinstB2Inst"];
@@ -58,18 +59,24 @@ export default function PIDINSTB2InstCard({
     if (updatedSettings) {
       setLastTestResult(null);
       setSavingInFlight(true);
-      await authStore.updateSystemSettings("pidinstB2Inst", updatedSettings);
-      setSavingInFlight(false);
-      setSavedSettings(updatedSettings);
+      try {
+        await authStore.updateSystemSettings("pidinstB2Inst", updatedSettings);
+        const saved = { ...updatedSettings, password: secretAfterSave(updatedSettings.password) };
+        setUpdatedSettings(saved);
+        setSavedSettings(saved);
+      } finally {
+        setSavingInFlight(false);
+      }
     }
   };
 
   const unsavedChanges: boolean = JSON.stringify(updatedSettings) !== JSON.stringify(savedSettings);
+  const visibleFields: ReadonlyArray<VisibleB2InstField> = ["serverUrl", "username", "password"];
+  const required = updatedSettings.enabled === "true";
+  const missingRequired = required && visibleFields.some((f) => updatedSettings[f] === "");
 
   const connectionStatusId = useId();
   const showConnectionStatus = !unsavedChanges && Boolean(lastTestResult);
-
-  const visibleFields: ReadonlyArray<VisibleB2InstField> = ["serverUrl", "username", "password"];
 
   return (
     <Card elevation={0} variant="outlined">
@@ -101,27 +108,16 @@ export default function PIDINSTB2InstCard({
                 }}
               >
                 <Grid sx={{ flexGrow: 1 }}>
-                  <TextField
-                    sx={{ p: 0.5, m: 1 }}
-                    size="small"
-                    fullWidth
+                  <IdentifierSettingField
+                    secret={field === "password"}
                     label={settingsLabels[field]}
-                    onChange={({ target }) => {
-                      setUpdatedSettings({
-                        ...updatedSettings,
-                        [field]: target.value,
-                      });
-                    }}
-                    error={updatedSettings[field] === ""}
                     value={updatedSettings[field]}
-                    placeholder={t("settings.pidinst.b2inst.placeholder", { label: settingsLabels[field] })}
-                    helperText={updatedSettings[field] === "" ? t("settings.pidinst.b2inst.fieldRequiredError") : null}
-                    variant="outlined"
-                    slotProps={{
-                      inputLabel: {
-                        shrink: true,
-                      },
+                    onChange={(value) => {
+                      setUpdatedSettings({ ...updatedSettings, [field]: value });
                     }}
+                    placeholder={t("settings.pidinst.b2inst.placeholder", { label: settingsLabels[field] })}
+                    requiredError={t("settings.pidinst.b2inst.fieldRequiredError")}
+                    required={required}
                   />
                 </Grid>
               </Grid>
@@ -200,7 +196,7 @@ export default function PIDINSTB2InstCard({
         </Button>
         <SubmitSpinnerButton
           label={t("common:actions.save")}
-          disabled={!unsavedChanges || savingInFlight || isConflict}
+          disabled={!unsavedChanges || savingInFlight || isConflict || missingRequired}
           loading={savingInFlight}
           onClick={() => void onSubmitHandler()}
         />

@@ -9,6 +9,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { Dialog } from "../../../components/DialogBoundary";
+import SecretField from "../../../components/Inputs/SecretField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -112,14 +113,12 @@ const FilestoreLoginDialog = ({
                 setUsername(value);
               }}
             />
-            <TextField
+            <SecretField
               size="small"
               label={t("filestoreLoginDialog.password")}
-              type="password"
+              autoComplete="current-password"
               value={password}
-              onChange={({ target: { value } }) => {
-                setPassword(value);
-              }}
+              onChange={setPassword}
             />
           </Stack>
         </DialogContent>

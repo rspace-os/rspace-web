@@ -10,7 +10,6 @@ import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useId, useState } from "react";
@@ -19,11 +18,13 @@ import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRi
 import ApiService from "../../../common/InvApiService";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
+import { secretAfterSave } from "../../../components/Inputs/SecretField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import WarningBar from "../../../components/WarningBar";
 import type { DataCiteServerUrl, IntegrationState, SystemSettings } from "../../../stores/stores/AuthStore";
 import useStores from "../../../stores/use-stores";
 import { getErrorMessage } from "../../../util/error";
+import IdentifierSettingField from "./IdentifierSettingField";
 
 type PIDINSTDataciteCardArgs = {
   currentSettings: SystemSettings["pidinstDatacite"];
@@ -61,13 +62,24 @@ export default function PIDINSTDataciteCard({
     if (updatedSettings) {
       setLastTestResult(null);
       setSavingInFlight(true);
-      await authStore.updateSystemSettings("pidinstDatacite", updatedSettings);
-      setSavingInFlight(false);
-      setSavedSettings(updatedSettings);
+      try {
+        await authStore.updateSystemSettings("pidinstDatacite", updatedSettings);
+        const saved = { ...updatedSettings, password: secretAfterSave(updatedSettings.password) };
+        setUpdatedSettings(saved);
+        setSavedSettings(saved);
+      } finally {
+        setSavingInFlight(false);
+      }
     }
   };
 
   const unsavedChanges: boolean = JSON.stringify(updatedSettings) !== JSON.stringify(savedSettings);
+  const required = updatedSettings.enabled === "true";
+  const missingRequired =
+    required &&
+    (Object.keys(updatedSettings) as Array<keyof typeof updatedSettings>)
+      .filter((f) => f !== "enabled")
+      .some((f) => updatedSettings[f] === "");
 
   const connectionStatusId = useId();
   const showConnectionStatus = !unsavedChanges && Boolean(lastTestResult);
@@ -104,30 +116,17 @@ export default function PIDINSTDataciteCard({
                   }}
                 >
                   <Grid sx={{ flexGrow: 1 }}>
-                    <TextField
-                      sx={{ p: 0.5, m: 1 }}
-                      size="small"
-                      fullWidth
+                    <IdentifierSettingField
+                      secret={entry[0] === "password"}
                       label={settingsLabels[entry[0]]}
-                      onChange={({ target }) => {
-                        setUpdatedSettings({
-                          ...updatedSettings,
-                          [entry[0]]: target.value,
-                        });
-                      }}
-                      error={entry[1] === ""}
                       value={entry[1]}
-                      placeholder={t("settings.pidinst.datacite.placeholder", {
-                        label: settingsLabels[entry[0]],
-                      })}
-                      helperText={entry[1] === "" ? t("settings.pidinst.datacite.fieldRequiredError") : null}
-                      variant="outlined"
-                      disabled={entry[0] === "serverUrl"}
-                      slotProps={{
-                        inputLabel: {
-                          shrink: true,
-                        },
+                      onChange={(value) => {
+                        setUpdatedSettings({ ...updatedSettings, [entry[0]]: value });
                       }}
+                      placeholder={t("settings.pidinst.datacite.placeholder", { label: settingsLabels[entry[0]] })}
+                      requiredError={t("settings.pidinst.datacite.fieldRequiredError")}
+                      required={required}
+                      disabled={entry[0] === "serverUrl"}
                     />
                   </Grid>
                   {entry[0] === "serverUrl" && (
@@ -225,7 +224,7 @@ export default function PIDINSTDataciteCard({
         </Button>
         <SubmitSpinnerButton
           label={t("common:actions.save")}
-          disabled={!unsavedChanges || savingInFlight || isConflict}
+          disabled={!unsavedChanges || savingInFlight || isConflict || missingRequired}
           loading={savingInFlight}
           onClick={() => void onSubmitHandler()}
         />

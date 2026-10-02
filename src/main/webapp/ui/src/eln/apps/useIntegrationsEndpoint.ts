@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import type { Secret } from "../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getByKey, Optional } from "../../util/optional";
@@ -66,12 +67,12 @@ export type IntegrationStates = {
   }>;
   CHEMISTRY: IntegrationState<emptyObject>;
   CLUSTERMARKET: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   DATAVERSE: IntegrationState<
     Array<
       Optional<{
-        DATAVERSE_APIKEY: string;
+        DATAVERSE_APIKEY: Secret;
         DATAVERSE_URL: string;
         DATAVERSE_ALIAS: string;
         _label: string;
@@ -80,25 +81,25 @@ export type IntegrationStates = {
     >
   >;
   DIGITALCOMMONSDATA: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   DMPASSISTANT: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   DMPONLINE: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   DMPTOOL: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   DROPBOX: IntegrationState<emptyObject>;
   DRYAD: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   DSW: IntegrationState<
     Array<
       Optional<{
-        DSW_APIKEY: string;
+        DSW_APIKEY: Secret;
         DSW_URL: string;
         DSW_ALIAS: string;
         optionsId: OptionsId;
@@ -109,10 +110,10 @@ export type IntegrationStates = {
     EGNYTE_DOMAIN: Optional<string>;
   }>;
   FIELDMARK: IntegrationState<{
-    FIELDMARK_USER_TOKEN: Optional<string>;
+    FIELDMARK_USER_TOKEN: Optional<Secret>;
   }>;
   FIGSHARE: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   GALAXY: IntegrationState<{
     configuredServers: ReadonlyArray<{
@@ -122,7 +123,7 @@ export type IntegrationStates = {
     authenticatedServers: ReadonlyArray<{
       url: string;
       alias: string;
-      apiKey: string;
+      apiKey: Secret;
       optionsId: OptionsId;
     }>;
   }>;
@@ -146,23 +147,23 @@ export type IntegrationStates = {
     Array<
       Optional<{
         MSTEAMS_CHANNEL_LABEL: string;
-        MSTEAMS_WEBHOOK_URL: string;
+        MSTEAMS_WEBHOOK_URL: Secret;
         optionsId: OptionsId;
       }>
     >
   >;
   NEXTCLOUD: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   OMERO: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   ONEDRIVE: IntegrationState<emptyObject>;
   OWNCLOUD: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   PROTOCOLS_IO: IntegrationState<{
-    ACCESS_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<Secret>;
   }>;
   PYRAT: IntegrationState<{
     configuredServers: ReadonlyArray<{
@@ -172,7 +173,7 @@ export type IntegrationStates = {
     authenticatedServers: ReadonlyArray<{
       url: string;
       alias: string;
-      apiKey: string;
+      apiKey: Secret;
       optionsId: OptionsId;
     }>;
   }>;
@@ -204,7 +205,7 @@ export type IntegrationStates = {
     >
   >;
   ZENODO: IntegrationState<{
-    ZENODO_USER_TOKEN: Optional<string>;
+    ZENODO_USER_TOKEN: Optional<Secret>;
   }>;
 };
 
@@ -236,6 +237,19 @@ function parseCredentialString<K extends string>(options: Record<K, unknown>, ke
   return getByKey(key, options).flatMap((cred) =>
     typeof cred === "string" ? Optional.present(cred) : Optional.empty(),
   );
+}
+
+function isSecret(value: unknown): value is Secret {
+  return value === null || typeof value === "string";
+}
+
+function parseSecret(value: unknown): Result<Secret> {
+  return isSecret(value) ? Result.Ok(value) : Result.Error([new Error("Expected a secret: a string or null")]);
+}
+
+/** Like parseCredentialString, but a null value (a stored secret) is present, not missing. */
+function parseCredentialSecret<K extends string>(options: Record<K, unknown>, key: K): Optional<Secret> {
+  return getByKey(key, options).flatMap((cred) => (isSecret(cred) ? Optional.present(cred) : Optional.empty()));
 }
 
 /**
@@ -281,14 +295,14 @@ function decodeClustermarket(data: FetchedState): IntegrationStates["CLUSTERMARK
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "ACCESS_TOKEN"),
     },
   };
 }
 
 function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
   function isValidConfig(config: unknown): config is {
-    DATAVERSE_APIKEY: string;
+    DATAVERSE_APIKEY: Secret;
     DATAVERSE_URL: string;
     DATAVERSE_ALIAS: string;
     _label: string;
@@ -298,7 +312,7 @@ function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
       .flatMap(Parsers.isRecord)
       .map<boolean>((configRecord: Record<string, unknown>) => {
         return (
-          typeof configRecord.DATAVERSE_APIKEY === "string" &&
+          isSecret(configRecord.DATAVERSE_APIKEY) &&
           typeof configRecord.DATAVERSE_URL === "string" &&
           typeof configRecord.DATAVERSE_ALIAS === "string" &&
           typeof configRecord._label === "string"
@@ -330,7 +344,7 @@ function decodeDigitalCommonsData(data: FetchedState): IntegrationStates["DIGITA
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "DIGITAL_COMMONS_DATA_USER_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "DIGITAL_COMMONS_DATA_USER_TOKEN"),
     },
   };
 }
@@ -339,7 +353,7 @@ function decodeDmpAssistant(data: FetchedState): IntegrationStates["DMPASSISTANT
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "ACCESS_TOKEN"),
     },
   };
 }
@@ -348,7 +362,7 @@ function decodeDmpTool(data: FetchedState): IntegrationStates["DMPTOOL"] {
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "ACCESS_TOKEN"),
     },
   };
 }
@@ -357,7 +371,7 @@ function decodeDmponline(data: FetchedState): IntegrationStates["DMPONLINE"] {
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "DMPONLINE_USER_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "DMPONLINE_USER_TOKEN"),
     },
   };
 }
@@ -370,14 +384,14 @@ function decodeDryad(data: FetchedState): IntegrationStates["DRYAD"] {
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "ACCESS_TOKEN"),
     },
   };
 }
 
 function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
   function isValidConfig(config: unknown): config is {
-    DSW_APIKEY: string;
+    DSW_APIKEY: Secret;
     DSW_URL: string;
     DSW_ALIAS: string;
   } {
@@ -386,7 +400,7 @@ function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
       .flatMap(Parsers.isRecord)
       .map<boolean>((configRecord: Record<string, unknown>) => {
         return (
-          typeof configRecord.DSW_APIKEY === "string" &&
+          isSecret(configRecord.DSW_APIKEY) &&
           typeof configRecord.DSW_URL === "string" &&
           typeof configRecord.DSW_ALIAS === "string"
         );
@@ -433,7 +447,7 @@ function decodeFieldmark(data: FetchedState): IntegrationStates["FIELDMARK"] {
   return {
     mode: parseState(data),
     credentials: {
-      FIELDMARK_USER_TOKEN: parseCredentialString(data.options, "FIELDMARK_USER_TOKEN"),
+      FIELDMARK_USER_TOKEN: parseCredentialSecret(data.options, "FIELDMARK_USER_TOKEN"),
     },
   };
 }
@@ -442,7 +456,7 @@ function decodeFigshare(data: FetchedState): IntegrationStates["FIGSHARE"] {
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "ACCESS_TOKEN"),
     },
   };
 }
@@ -483,14 +497,14 @@ function decodeGalaxy(data: FetchedState): IntegrationStates["GALAXY"] {
                 const server = Parsers.isObject(config).flatMap(Parsers.isNotNull).elseThrow();
                 const alias = Parsers.getValueWithKey("GALAXY_ALIAS")(server).flatMap(Parsers.isString).elseThrow();
                 const url = Parsers.getValueWithKey("GALAXY_URL")(server).flatMap(Parsers.isString).elseThrow();
-                const apiKey = Parsers.getValueWithKey("GALAXY_APIKEY")(server).flatMap(Parsers.isString).elseThrow();
+                const apiKey = Parsers.getValueWithKey("GALAXY_APIKEY")(server).flatMap(parseSecret).elseThrow();
                 const optionsId = Parsers.isString(key).elseThrow();
                 return Result.Ok({ alias, url, apiKey, optionsId });
               } catch {
                 return Result.Error<{
                   url: string;
                   alias: string;
-                  apiKey: string;
+                  apiKey: Secret;
                   optionsId: OptionsId;
                 }>([new Error("Could not parse out Galaxy authenticated server")]);
               }
@@ -547,17 +561,17 @@ function decodeMsTeams(data: FetchedState): IntegrationStates["MSTEAMS"] {
         .flatMap((configRecord) =>
           Result.lift2<
             string,
-            string,
+            Secret,
             {
               MSTEAMS_CHANNEL_LABEL: string;
-              MSTEAMS_WEBHOOK_URL: string;
+              MSTEAMS_WEBHOOK_URL: Secret;
               optionsId: string;
             }
           >((MSTEAMS_CHANNEL_LABEL, MSTEAMS_WEBHOOK_URL) => ({
             MSTEAMS_CHANNEL_LABEL,
             MSTEAMS_WEBHOOK_URL,
             optionsId,
-          }))(Parsers.isString(configRecord.MSTEAMS_CHANNEL_LABEL), Parsers.isString(configRecord.MSTEAMS_WEBHOOK_URL)),
+          }))(Parsers.isString(configRecord.MSTEAMS_CHANNEL_LABEL), parseSecret(configRecord.MSTEAMS_WEBHOOK_URL)),
         )
         .toOptional();
     }),
@@ -568,7 +582,7 @@ function decodeNextCloud(data: FetchedState): IntegrationStates["NEXTCLOUD"] {
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "ACCESS_TOKEN"),
     },
   };
 }
@@ -577,7 +591,7 @@ function decodeOmero(data: FetchedState): IntegrationStates["OMERO"] {
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "ACCESS_TOKEN"),
     },
   };
 }
@@ -590,7 +604,7 @@ function decodeOwnCloud(data: FetchedState): IntegrationStates["OWNCLOUD"] {
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "ACCESS_TOKEN"),
     },
   };
 }
@@ -599,7 +613,7 @@ function decodeProtocolsIo(data: FetchedState): IntegrationStates["PROTOCOLS_IO"
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+      ACCESS_TOKEN: parseCredentialSecret(data.options, "ACCESS_TOKEN"),
     },
   };
 }
@@ -640,14 +654,14 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
                 const server = Parsers.isObject(config).flatMap(Parsers.isNotNull).elseThrow();
                 const alias = Parsers.getValueWithKey("PYRAT_ALIAS")(server).flatMap(Parsers.isString).elseThrow();
                 const url = Parsers.getValueWithKey("PYRAT_URL")(server).flatMap(Parsers.isString).elseThrow();
-                const apiKey = Parsers.getValueWithKey("PYRAT_APIKEY")(server).flatMap(Parsers.isString).elseThrow();
+                const apiKey = Parsers.getValueWithKey("PYRAT_APIKEY")(server).flatMap(parseSecret).elseThrow();
                 const optionsId = Parsers.isString(key).elseThrow();
                 return Result.Ok({ alias, url, apiKey, optionsId });
               } catch {
                 return Result.Error<{
                   url: string;
                   alias: string;
-                  apiKey: string;
+                  apiKey: Secret;
                   optionsId: OptionsId;
                 }>([new Error("Could not parse out pyrat authenticated server")]);
               }
@@ -757,7 +771,7 @@ function decodeZenodo(data: FetchedState): IntegrationStates["ZENODO"] {
   return {
     mode: parseState(data),
     credentials: {
-      ZENODO_USER_TOKEN: parseCredentialString(data.options, "ZENODO_USER_TOKEN"),
+      ZENODO_USER_TOKEN: parseCredentialSecret(data.options, "ZENODO_USER_TOKEN"),
     },
   };
 }
@@ -861,7 +875,7 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
       options: Object.fromEntries(
         ArrayUtils.mapOptional<
           Optional<{
-            DATAVERSE_APIKEY: string;
+            DATAVERSE_APIKEY: Secret;
             DATAVERSE_URL: string;
             DATAVERSE_ALIAS: string;
             _label: string;
@@ -870,7 +884,7 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
           [
             OptionsId,
             {
-              DATAVERSE_APIKEY: string;
+              DATAVERSE_APIKEY: Secret;
               DATAVERSE_URL: string;
               DATAVERSE_ALIAS: string;
               _label: string;
@@ -972,7 +986,7 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
       options: Object.fromEntries(
         ArrayUtils.mapOptional<
           Optional<{
-            DSW_APIKEY: string;
+            DSW_APIKEY: Secret;
             DSW_URL: string;
             DSW_ALIAS: string;
             optionsId: OptionsId;
@@ -980,7 +994,7 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
           [
             OptionsId,
             {
-              DSW_APIKEY: string;
+              DSW_APIKEY: Secret;
               DSW_URL: string;
               DSW_ALIAS: string;
             },

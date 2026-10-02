@@ -14,6 +14,7 @@ import TransRichText from "@/modules/common/i18n/TransRichText";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import { LOGO_COLOR } from "../../../assets/branding/dsw";
 import DSWIcon from "../../../assets/branding/dsw/logo.svg";
+import SecretField, { type Secret } from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
@@ -47,7 +48,7 @@ type Configurations = UnwrapArray<IntegrationStates["DSW"]["credentials"]>;
  */
 
 type ExistingConfig = {
-  DSW_APIKEY: string;
+  DSW_APIKEY: Secret;
   DSW_URL: string;
   DSW_ALIAS: string;
   optionsId: OptionsId;
@@ -208,16 +209,17 @@ const DialogContent = observer(
                       error={config.DSW_URL === ""}
                       helperText={config.DSW_URL === "" && t("integrations.dsw.fields.urlRequired")}
                     />
-                    <TextField
+                    <SecretField
                       fullWidth
+                      clearable={false}
                       value={config.DSW_APIKEY}
-                      onChange={({ target: { value } }) => {
+                      onChange={(value) => {
                         runInAction(() => {
                           config.DSW_APIKEY = value;
                           config.dirty = true;
                         });
                       }}
-                      type="password"
+                      autoComplete="new-password"
                       label={t("integrations.dsw.fields.apiKey")}
                       error={config.DSW_APIKEY === ""}
                       helperText={config.DSW_APIKEY === "" && t("integrations.dsw.fields.apiKeyRequired")}
@@ -329,15 +331,15 @@ const DialogContent = observer(
                       error={newConfig.DSW_URL === ""}
                       helperText={newConfig.DSW_URL === "" && t("integrations.dsw.fields.urlRequired")}
                     />
-                    <TextField
+                    <SecretField
                       fullWidth
                       value={newConfig.DSW_APIKEY}
-                      onChange={({ target: { value } }) => {
+                      onChange={(value) => {
                         runInAction(() => {
                           newConfig.DSW_APIKEY = value;
                         });
                       }}
-                      type="password"
+                      autoComplete="new-password"
                       label={t("integrations.dsw.fields.apiKey")}
                       error={newConfig.DSW_APIKEY === ""}
                       helperText={newConfig.DSW_APIKEY === "" && t("integrations.dsw.fields.apiKeyRequired")}
