@@ -52,32 +52,16 @@ public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
       log.error("Login password of [{}] has the verification-password-only bcrypt id", username);
       return false;
     }
-    BoundedPasswordVerifier.Result result;
-    try {
-      result = verifier.verify(username, suppliedPassword, storedPassword);
-    } catch (IllegalArgumentException e) {
-      log.error("Stored password of [{}] cannot be verified", username, e);
-      return false;
-    }
-    if (result.upgradedHash() != null) {
-      storeUpgrade(username, storedPassword, result.upgradedHash(), callerCopy);
-    }
-    return result.matches();
-  }
-
-  private void storeUpgrade(String username, String oldHash, String newHash, User callerCopy) {
-    try {
-      if (!userMgr.upgradePasswordHash(username, oldHash, newHash)) {
-        log.info("Password of [{}] changed during verification, upgrade skipped", username);
-        return;
-      }
-    } catch (RuntimeException e) {
-      log.warn("Could not store upgraded password hash of [{}], old hash kept", username, e);
-      return;
-    }
-    if (callerCopy != null) {
-      callerCopy.setPassword(newHash);
-      callerCopy.setSalt(null);
-    }
+    return verifier.verifyAndUpgrade(
+        username,
+        suppliedPassword,
+        storedPassword,
+        (verified, upgraded) -> userMgr.upgradePasswordHash(username, verified, upgraded),
+        upgraded -> {
+          if (callerCopy != null) {
+            callerCopy.setPassword(upgraded);
+            callerCopy.setSalt(null);
+          }
+        });
   }
 }
