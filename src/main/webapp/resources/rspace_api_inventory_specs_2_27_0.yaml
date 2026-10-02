@@ -3914,7 +3914,9 @@ paths:
             Identifier settings grouped by type. Each type holds an array of providers; PIDINST
             carries both PIDINST_DATACITE and PIDINST_B2INST, of which at most one is enabled at a
             time. For PIDINST_B2INST the generic username/password fields carry the community id and
-            the API token respectively, and repositoryPrefix is unused.
+            the API token respectively, and repositoryPrefix is unused. Stored passwords and tokens
+            are never returned: `password` is `null` when a secret is stored and an empty string
+            when there is none.
           content:
             application/json:
               schema:
@@ -3924,7 +3926,7 @@ paths:
                       - provider: IGSN_DATACITE
                         serverUrl: https://api.datacite.org
                         username: AJFO.JIJEMD
-                        password: <password>
+                        password: null
                         repositoryPrefix: "10.82316"
                         enabled: "true"
                     PIDINST:
@@ -3937,7 +3939,7 @@ paths:
                       - provider: PIDINST_B2INST
                         serverUrl: https://b2inst-test.gwdg.de
                         username: <community id>
-                        password: <api token>
+                        password: null
                         enabled: "false"
     put:
       summary: Update settings
@@ -3961,7 +3963,8 @@ paths:
           `PIDINST_DATACITE` or `PIDINST_B2INST` updates the PIDINST configuration. Enabling one
           PIDINST provider automatically disables the other. For `PIDINST_B2INST` the `username`
           field carries the community id and the `password` field carries the API token;
-          `repositoryPrefix` is unused.
+          `repositoryPrefix` is unused. Send `password` as `null` (or omit it) to keep the stored
+          secret, an empty string to clear it, or a new value to replace it.
         required: true
       responses:
         "200":

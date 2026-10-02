@@ -2,6 +2,8 @@ package com.researchspace.integrations.galaxy.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -19,5 +21,7 @@ public class GalaxyAliasToServer {
   }
 
   @JsonInclude(value = Include.NON_EMPTY)
+  // RSDEV-1525: read from deployment.properties, never serialized back to the browser
+  @JsonProperty(access = Access.WRITE_ONLY)
   private String token;
 }
