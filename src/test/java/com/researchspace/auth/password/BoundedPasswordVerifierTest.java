@@ -72,7 +72,7 @@ class BoundedPasswordVerifierTest {
     awaitEntered(PERMITS);
 
     assertThrows(
-        LoginVerificationBusyException.class, () -> verifier.verify("user9", "ok", "stored"));
+        LoginVerificationBusyException.class, () -> verifier.verify("user8", "ok", "stored"));
 
     encoder.release.countDown();
     for (Future<BoundedPasswordVerifier.Result> f : running) {
@@ -108,11 +108,26 @@ class BoundedPasswordVerifierTest {
   void sameUsernameBusyWhenFirstCheckOutlastsTheWait() throws Exception {
     BoundedPasswordVerifier verifier =
         new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200));
-    pool.submit(() -> verifier.verify("alice", "ok", "stored"));
+    Future<BoundedPasswordVerifier.Result> first =
+        pool.submit(() -> verifier.verify("alice", "ok", "stored"));
     awaitEntered(1);
     assertThrows(
         LoginVerificationBusyException.class, () -> verifier.verify("alice", "ok", "stored"));
     assertEquals(PERMITS - 1, verifier.availablePermits());
+
+    encoder.release.countDown();
+    first.get(5, TimeUnit.SECONDS);
+    assertEquals(0, verifier.trackedPrincipals());
+  }
+
+  @Test
+  void rejectsConfigurationThatWouldRefuseEveryCheck() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new BoundedPasswordVerifier(encoder, 0, Duration.ofSeconds(5)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(-1)));
   }
 
   @Test

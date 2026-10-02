@@ -1,6 +1,7 @@
 package com.researchspace.dao.customliquibaseupdates;
 
 import com.researchspace.auth.password.RSpacePasswordEncoder;
+import java.util.Base64;
 import java.util.List;
 import java.util.regex.Pattern;
 import liquibase.database.Database;
@@ -8,9 +9,10 @@ import org.hibernate.Session;
 
 /**
  * Wraps every pre-Argon2 SHA-256 login password hash in Argon2id, once, so no fast hash stays at
- * rest (RSDEV-894, ADR 0011). Rows already carrying an encoder id prefix are skipped, so a re-run
- * after a crash only finishes the remainder. The salt moves into the wrapped value and the salt
- * column is cleared.
+ * rest (RSDEV-894, ADR 0011). Rows already carrying an encoder id prefix are skipped, so running it
+ * again changes nothing. The salt moves into the wrapped value and the salt column is cleared. Rows
+ * that are not a SHA-256 hex digest with a Base64 salt are logged at ERROR and left unchanged;
+ * those users cannot log in until an administrator resets their password.
  */
 public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUpdater {
 
@@ -36,16 +38,21 @@ public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUp
     List<Object[]> rows =
         session
             .createNativeQuery(
-                "select id, password, salt from User"
+                "select id, username, password, salt from User"
                     + " where password is not null and password not like '{%'",
                 Object[].class)
             .list();
     for (Object[] row : rows) {
       Long id = ((Number) row[0]).longValue();
-      String password = (String) row[1];
-      String salt = (String) row[2];
-      if (!SHA256_HEX.matcher(password).matches()) {
-        logger.warn("User id {} has a password that is not a SHA-256 hash, left unchanged", id);
+      String username = (String) row[1];
+      String password = (String) row[2];
+      String salt = (String) row[3];
+      if (!SHA256_HEX.matcher(password).matches() || !isBase64OrNull(salt)) {
+        logger.error(
+            "Password of user [{}] (id {}) is not a salted SHA-256 hash and was left unchanged;"
+                + " an administrator must reset it before this user can log in",
+            username,
+            id);
         skipped++;
         continue;
       }
@@ -57,5 +64,17 @@ public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUp
       wrapped++;
     }
     logger.info(getConfirmationMessage());
+  }
+
+  private static boolean isBase64OrNull(String salt) {
+    if (salt == null) {
+      return true;
+    }
+    try {
+      Base64.getDecoder().decode(salt);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
   }
 }
