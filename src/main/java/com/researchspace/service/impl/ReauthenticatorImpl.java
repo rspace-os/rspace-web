@@ -26,8 +26,8 @@ public class ReauthenticatorImpl implements IReauthenticator {
 
   /**
    * Reauthenticates a user; or if is sysadmin operating as a user, sysadmin can reauthenticate with
-   * his own password. Failures count toward the same account lockout as failed logins, and a locked
-   * account is refused without checking the password (RSDEV-894).
+   * his own password. Failures share the failed-login counter, and a locked-out account is refused
+   * without checking the password (RSDEV-894).
    *
    * @param subject The principal user - i.e., the subject, or whoever sysadmin is operating as.
    * @param pwd the password. This should be the subject's password, or the sysadmin password if
@@ -37,41 +37,33 @@ public class ReauthenticatorImpl implements IReauthenticator {
 
     // check this first, before doing any password validation:  rspac-2223
     subject = userMgr.getOriginalUserForOperateAs(subject);
-    // the session copy may predate failures recorded by other sessions
-    User account = userMgr.getUserByUsername(subject.getUsername(), true);
     String caller = callingAction();
 
-    if (account.isAccountLocked()
-        && account.getLoginFailure() != null
-        && !lockoutPolicy.isAfterLockoutTime(account)) {
+    if (lockoutPolicy.isReauthenticationLocked(subject)) {
       SECURITY_LOG.warn(
           "Reauthentication as [{}] by {} refused, the account is temporarily locked",
-          account.getUsername(),
+          subject.getUsername(),
           caller);
       return false;
     }
 
     boolean authenticated;
     try {
-      authenticated = checkPassword(account, pwd);
+      authenticated = checkPassword(subject, pwd);
     } catch (LoginVerificationBusyException e) {
-      SECURITY_LOG.warn(
-          "Reauthentication as [{}] by {} refused: {}",
-          account.getUsername(),
-          caller,
-          e.getMessage());
+      SECURITY_LOG.warn("Reauthentication by {}: {}", caller, e.getMessage());
       return false;
     }
 
     if (authenticated) {
-      if (account.getLoginFailure() != null) {
-        lockoutPolicy.handleLockoutOnSuccess(account);
-        userMgr.save(account);
+      if (subject.getLoginFailure() != null) {
+        lockoutPolicy.handleLockoutOnSuccess(subject);
+        userMgr.save(subject);
       }
     } else {
-      SECURITY_LOG.warn("Failed reauthentication as [{}] by {}", account.getUsername(), caller);
-      lockoutPolicy.handleLockoutOnFailure(account);
-      userMgr.save(account);
+      SECURITY_LOG.warn("Failed reauthentication as [{}] by {}", subject.getUsername(), caller);
+      lockoutPolicy.handleReauthenticationFailure(subject);
+      userMgr.save(subject);
     }
     return authenticated;
   }
@@ -95,7 +87,7 @@ public class ReauthenticatorImpl implements IReauthenticator {
     }
 
     // check provided password against default realm
-    return credentialsMatcher.test(subject, pwd);
+    return credentialsMatcher.verifyAndUpgrade(subject, pwd);
   }
 
   private static String callingAction() {

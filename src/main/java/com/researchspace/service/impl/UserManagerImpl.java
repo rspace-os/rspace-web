@@ -198,8 +198,9 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   @Override
-  public void upgradePasswordHash(String username, String encodedPassword) {
-    userDao.updatePasswordHash(username, encodedPassword);
+  public boolean upgradePasswordHash(
+      String username, String verifiedPassword, String encodedPassword) {
+    return userDao.updatePasswordHash(username, verifiedPassword, encodedPassword) == 1;
   }
 
   // session may be null if it's api call

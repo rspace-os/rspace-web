@@ -38,7 +38,8 @@ public class RSpacePasswordEncoder implements PasswordEncoder {
    *
    * @param sha256Hex the stored SHA-256 hex digest, either case
    * @param base64Salt the stored Base64 salt, or null for unsalted rows
-   * @return the prefixed value to store in place of the hash, with the salt column then nulled
+   * @return the prefixed value to store in place of the hash; the salt is inside it, so the caller
+   *     clears the salt column
    */
   public String wrapLegacySha256(String sha256Hex, String base64Salt) {
     return "{" + LEGACY_SHA256_ID + "}" + legacy.wrap(sha256Hex, base64Salt);
