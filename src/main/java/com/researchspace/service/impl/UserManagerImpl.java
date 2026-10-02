@@ -200,13 +200,22 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   @Override
   public boolean upgradePasswordHash(
       String username, String verifiedPassword, String encodedPassword) {
+    requireCurrentEncoding(encodedPassword);
     return userDao.updatePasswordHash(username, verifiedPassword, encodedPassword) == 1;
   }
 
   @Override
   public boolean upgradeVerificationPasswordHash(
       String username, String verifiedHash, String encodedHash) {
+    requireCurrentEncoding(encodedHash);
     return userDao.updateVerificationPasswordHash(username, verifiedHash, encodedHash) == 1;
+  }
+
+  /** Upgrades store an already-encoded value; refuse anything else rather than persist it. */
+  private static void requireCurrentEncoding(String encoded) {
+    Validate.isTrue(
+        encoded != null && encoded.startsWith("{" + RSpacePasswordEncoder.ARGON2_ID + "}"),
+        "Upgraded password hash must use the current encoding");
   }
 
   // session may be null if it's api call
