@@ -29,8 +29,54 @@ expiry/termination).
 The configuration of this caching behaviour is in `ehcache.xml` and
 annotations on the User entity class.
 
-New users are persisted in `UserManager#saveUser` and salted password
-hashes generated. Plain text passwords are not stored.
+New users are persisted in `UserManager#saveUser` and password hashes
+generated. Plain text passwords are not stored.
+
+### Password storage
+
+The design and its trade-offs are in
+[ADR 0011](../adr/0011-argon2id-password-hashing-and-login-concurrency-limit.md).
+
+- **Encoder.** `RSpacePasswordEncoder` (bean in `SecurityBaseConfig`) wraps
+  Spring Security's `DelegatingPasswordEncoder`. Every stored login
+  password carries an `{id}` prefix. Only two ids are registered:
+  - `argon2@rspace_v1`, the default for new passwords: Argon2id,
+    m=19456 KiB, t=2, p=1, 16-byte salt, 32-byte hash. The salt is
+    inside the encoded value and the `salt` column is null.
+  - `argon2-legacy-sha256@rspace_v1`, pre-Argon2 hashes wrapped at rest
+    by the Liquibase change `WrapLegacyPasswordHashes_RSDEV894`. Stored
+    as `<base64 salt>$<argon2 of Base64(SHA-256(salt || utf8 password))>`,
+    with an empty salt for unsalted rows. The SHA-256 is fed to Argon2 as
+    the Base64 of its decoded bytes, so the case of the old hex never
+    matters.
+
+  An unknown or missing prefix throws `IllegalArgumentException` and the
+  check fails closed.
+- **Verification.** Shiro login (`ShiroRealm`) and default-realm
+  reauthentication (`ReauthenticatorImpl`) both go through
+  `UsernamePasswordCredentialsMatcher`, which calls
+  `BoundedPasswordVerifier`. That verifier holds a fair semaphore
+  (`login.passwordVerification.maxConcurrent`, default 8) and a
+  per-username lock, so one account holds at most one permit. A single
+  deadline (`login.passwordVerification.waitSeconds`, default 5) covers
+  both waits. On timeout it throws `LoginVerificationBusyException`,
+  which the login filter and `ReauthenticatorImpl` deliberately do not
+  count toward lockout. Encoding new passwords and the migration are not
+  bounded.
+- **Upgrade on verify.** When a password matches a legacy hash, the
+  verifier returns a fresh Argon2id encoding and the matcher stores it
+  through `UserManager#upgradePasswordHash`, which calls
+  `UserDao#updatePasswordHash`. That is a compare-and-swap on the old
+  hash, so it never reverts a concurrent password change, and it bypasses
+  the change detection in `UserManager#save`, which would otherwise hash
+  the hash. A failed upgrade is logged and the login still succeeds.
+- **Reauthentication lockout.** `ReauthenticatorImpl` checks
+  `IUserAccountLockoutPolicy#isReauthenticationLocked` before any
+  password check, and records failures with
+  `handleReauthenticationFailure`. This shares the login failure counter
+  and window (4 failures in 2 minutes) but never sets `accountLocked`,
+  because API and SSO logins treat that flag as disabled until a form
+  login clears it.
 
 ## Authorization
 
