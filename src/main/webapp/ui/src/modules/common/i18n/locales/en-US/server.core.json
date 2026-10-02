@@ -30,11 +30,6 @@
       }
     }
   },
-  "duration": {
-    "days": "{0, plural, one {# day} other {# days}}",
-    "hours": "{0, plural, one {# hour} other {# hours}}",
-    "minutes": "{0, plural, one {# minute} other {# minutes}}"
-  },
   "errors": {
     "api": {
       "v2": {
@@ -524,5 +519,10 @@
       "titleRequired": "Title is a required field.",
       "titleStringRange": "Title \"${validatedValue}\" must be between {min} and {max} characters."
     }
+  },
+  "duration": {
+    "days": "{0, plural, one {# day} other {# days}}",
+    "hours": "{0, plural, one {# hour} other {# hours}}",
+    "minutes": "{0, plural, one {# minute} other {# minutes}}"
   }
 }
