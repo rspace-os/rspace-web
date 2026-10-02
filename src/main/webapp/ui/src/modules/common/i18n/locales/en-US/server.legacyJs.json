@@ -25,13 +25,16 @@
       "archived": "Archived",
       "bookingActivityArea": "Bookings",
       "cancelled": "Cancelled",
+      "changed": "Changed",
+      "created": "Created",
       "itemsExported": "{0, plural, one {# item exported} other {# items exported}}",
       "itemsExportedAs": "Items exported as {0} to {1}",
       "itemsExportedWithConfiguration": "{0, plural, one {# item exported as {1} to {2}} other {# items exported as {1} to {2}}}",
       "movedFromTo": "from {0} ({1}) to {2} ({3})",
       "permanentlyDeleted": "Permanently deleted",
       "queryingAuditTable": "Querying audit table..",
-      "queryingAuditTrail": "Querying audit trail"
+      "queryingAuditTrail": "Querying audit trail",
+      "restored": "Restored"
     },
     "cloudGroup": {
       "emailAlreadyAdded": "You have already added an email.",

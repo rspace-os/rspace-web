@@ -99,6 +99,7 @@ public class AuditTrailSearchResultCsvGenerator {
           name = data.getOrDefault("name", "n/a").toString();
           String desc2 = auditEntry.getData().getDescription();
           if (BookingAuditDetails.isBookingEvent(auditEntry.getEvent(), data)) {
+            name = StringUtils.defaultIfBlank(BookingAuditDetails.displayName(data), name);
             desc =
                 StringUtils.defaultIfBlank(
                     BookingAuditDetails.combine(
@@ -156,7 +157,14 @@ public class AuditTrailSearchResultCsvGenerator {
     if (AuditAction.DELETE.equals(action) && state != null && "ARCHIVED".equals(state.toString())) {
       return messages.getMessageForLocale("export.audit.csv.bookingActionArchived", CSV_LOCALE);
     }
-    return action.toString();
+    String label =
+        switch (action) {
+          case CREATE -> "export.audit.csv.bookingActionCreated";
+          case WRITE -> "export.audit.csv.bookingActionChanged";
+          case RESTORE -> "export.audit.csv.bookingActionRestored";
+          default -> null;
+        };
+    return label == null ? action.toString() : messages.getMessageForLocale(label, CSV_LOCALE);
   }
 
   private boolean isBookingEvent(AuditTrailSearchResult auditEntry, Map<String, Object> data) {

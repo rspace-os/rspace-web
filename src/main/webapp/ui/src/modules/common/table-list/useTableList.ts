@@ -64,6 +64,9 @@ export function useTableList<TDocument extends Record<string, unknown>>({
   reserveEmptyRows,
 }: UseTableListOptions<TDocument>): UseTableListResult<TDocument> {
   const [state, setState] = useState(() => initialQueryState(config, initialState));
+  // Stable identity: TableList builds its columns from it, and a new function would re-mount every row's cells.
+  const idField = config.idField;
+  const defaultGetRowId = useCallback((row: TDocument) => String(row[idField]), [idField]);
   const remote = dataSource.type === "remote" ? dataSource : null;
   const canFetch =
     remote !== null && (typeof remote.enabled === "function" ? remote.enabled(state) : remote.enabled !== false);
@@ -124,7 +127,7 @@ export function useTableList<TDocument extends Record<string, unknown>>({
     tableProps: {
       config,
       rows,
-      getRowId: getRowId ?? ((row) => String(row[config.idField])),
+      getRowId: getRowId ?? defaultGetRowId,
       features: tableFeatures,
       clientSide: dataSource.type === "client",
       status:
