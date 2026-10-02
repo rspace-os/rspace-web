@@ -30,8 +30,7 @@ public class CredentialsMatcherTest extends SpringTransactionalTest {
 
   @Test
   public void legacySaltedHashReauthenticatesAndIsUpgraded() throws UserExistsException {
-    User u = createAndSaveRandomUser();
-    storeWrappedLegacyHash(u, LEGACY_SALTED_HEX, LEGACY_SALT);
+    User u = storeWrappedLegacyHash(createAndSaveRandomUser(), LEGACY_SALTED_HEX, LEGACY_SALT);
 
     assertFalse(reauthenticator.reauthenticate(u, "legacyPass1x"));
     assertTrue(reauthenticator.reauthenticate(u, "legacyPass1"));
@@ -42,8 +41,7 @@ public class CredentialsMatcherTest extends SpringTransactionalTest {
 
   @Test
   public void legacyUnsaltedHashLogsInAndIsUpgraded() throws UserExistsException {
-    User u = createAndSaveRandomUser();
-    storeWrappedLegacyHash(u, LEGACY_UNSALTED_HEX, null);
+    User u = storeWrappedLegacyHash(createAndSaveRandomUser(), LEGACY_UNSALTED_HEX, null);
 
     RSpaceTestUtils.logoutCurrUserAndLoginAs(u.getUsername(), "sysWisc23!");
 
@@ -51,7 +49,7 @@ public class CredentialsMatcherTest extends SpringTransactionalTest {
     assertTrue(reauthenticator.reauthenticate(u, "sysWisc23!"));
   }
 
-  private void storeWrappedLegacyHash(User u, String hex, String salt) {
+  private User storeWrappedLegacyHash(User u, String hex, String salt) {
     sessionFactory.getCurrentSession().flush();
     sessionFactory
         .getCurrentSession()
@@ -61,6 +59,7 @@ public class CredentialsMatcherTest extends SpringTransactionalTest {
         .setParameter("id", u.getId())
         .executeUpdate();
     sessionFactory.getCurrentSession().clear();
+    return userDao.getUserByUsername(u.getUsername());
   }
 
   private void assertUpgraded(String username) {

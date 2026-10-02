@@ -39,8 +39,9 @@ public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUp
         session
             .createNativeQuery(
                 "select id, username, password, salt from User"
-                    + " where password is not null and password not like '{%'",
+                    + " where password is not null and password not like :encoderIdPrefix",
                 Object[].class)
+            .setParameter("encoderIdPrefix", "{%")
             .list();
     for (Object[] row : rows) {
       Long id = ((Number) row[0]).longValue();
