@@ -11,6 +11,7 @@ import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.IReauthenticator;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
@@ -41,6 +42,7 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
   private @Autowired RSpacePasswordEncoder passwordEncoder;
   private @Autowired IPropertyHolder propertyHolder;
   private @Autowired List<LoginAuthorizer> loginAuthorizers;
+  private @Autowired IReauthenticator reauthenticator;
 
   @Autowired
   @Qualifier("manualLoginHelper")
@@ -91,6 +93,19 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  void legacySaltedUserReauthenticatesAndIsUpgraded() throws Exception {
+    User u = createAndSaveUser(randomAlphabetic(10));
+    storeWrapped(u, SALTED_HEX, SALT);
+    // reauthenticate while someone else is logged in, so login itself does not upgrade
+    login(createAndSaveUser(randomAlphabetic(10)), TESTPASSWD);
+
+    assertFalse(reauthenticator.reauthenticate(reload(u), "legacyPass1x"));
+    assertTrue(reauthenticator.reauthenticate(reload(u), "legacyPass1"));
+    assertArgon2(u, "legacyPass1");
+    assertTrue(reauthenticator.reauthenticate(reload(u), "legacyPass1"));
+  }
+
+  @Test
   void hashUpgradeCommitsIndependentlyOfTheCallersTransaction() {
     User u = createAndSaveUser(randomAlphabetic(10));
     String before = storedPassword(u);
@@ -130,6 +145,10 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
         "update User set password = ?, salt = null where id = ?",
         passwordEncoder.wrapLegacySha256(hex, salt),
         u.getId());
+  }
+
+  private User reload(User u) {
+    return userMgr.getUserByUsername(u.getUsername(), true);
   }
 
   private String storedPassword(User u) {
