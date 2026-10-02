@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, createRouter, lazyRouteComponent } from "@tanstack/react-router";
 import { createAboutRoute } from "@/modules/about/pages/AboutPage";
+import { createAllBookableItemsRoute } from "@/modules/booking/pages/all-bookable-items/routes";
 import { createBookingIndexRoute, createBookingRoute } from "@/modules/booking/pages/BookingPage";
 import {
   createAddBookableItemRoute,
@@ -37,6 +38,7 @@ const rootRoute = createRootRoute({
 const bookingRouteBase = createBookingRoute(rootRoute);
 const bookingRoute = bookingRouteBase.addChildren([
   createBookingIndexRoute(bookingRouteBase),
+  createAllBookableItemsRoute(bookingRouteBase),
   createCalendarRoute(bookingRouteBase),
   createAddBookingRoute(bookingRouteBase),
   createBookingEventRouteTree(bookingRouteBase),
