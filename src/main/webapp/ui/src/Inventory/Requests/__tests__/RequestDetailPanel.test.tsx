@@ -1,7 +1,12 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// Constructing SubSampleModel/SampleModel instances (for the Operations Wizard launch tests)
+// touches getRootStore() internally; this registers the real RootStore factory for that.
+import "@/stores/stores/RootStore";
+import { sampleAttrs } from "@/stores/models/__tests__/SampleModel/mocking";
+import { subsampleAttrs } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import materialTheme from "@/theme";
 import RequestDetailPanel from "../RequestDetailPanel";
 import type { ApiSampleRequestListItem } from "../RequestsList";
@@ -94,6 +99,31 @@ vi.mock("../../components/Inputs/PeopleField", () => ({
   ),
 }));
 
+// The real hook drives a whole lock-acquisition/wizard-dialog flow unrelated to what this suite
+// is verifying - that the panel asks for the right origin and the right excluded operations. A
+// stub records both and exposes a fake "wizard" marker so a test can assert the launch happened.
+const launchOperationWizard = vi.fn().mockResolvedValue(true);
+let lastWizardOrigins: ReadonlyArray<{ id: number | null; globalId: string | null }> = [];
+let lastExcludedOperationKeys: ReadonlySet<string> | undefined;
+let lastOnPerformed: ((sample: { id: number; globalId: string; name: string } | null) => void) | undefined;
+vi.mock("../../components/Operations/useOperationWizardLauncher", () => ({
+  useOperationWizardLauncher: (
+    origins: ReadonlyArray<{ id: number | null; globalId: string | null }>,
+    options: {
+      onPerformed?: (sample: { id: number; globalId: string; name: string } | null) => void;
+      excludedOperationKeys?: ReadonlySet<string>;
+    } = {},
+  ) => {
+    lastWizardOrigins = origins;
+    lastExcludedOperationKeys = options.excludedOperationKeys;
+    lastOnPerformed = options.onPerformed;
+    return {
+      launch: launchOperationWizard,
+      wizard: origins.length > 0 ? <div data-testid="mock-operation-wizard" /> : null,
+    };
+  },
+}));
+
 function baseRequest(overrides: Partial<ApiSampleRequestListItem> = {}): ApiSampleRequestListItem {
   return {
     id: 101,
@@ -127,6 +157,9 @@ beforeEach(() => {
   deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
   deploymentProperties["inventory.operations.available"] = "ALLOWED";
   getUser.mockResolvedValue({ username: REQUESTER.username });
+  launchOperationWizard.mockResolvedValue(true);
+  lastWizardOrigins = [];
+  lastExcludedOperationKeys = undefined;
 
   apiGet.mockImplementation((resource: string) => {
     if (resource === "sampleRequests") {
@@ -352,8 +385,23 @@ describe("RequestDetailPanel", () => {
     window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
   });
 
-  it("shows the placeholder Operations Wizard step when 'Create a new sample' is chosen", async () => {
+  it("launches the Operations Wizard for the selected subsample, excluding Pool and Destroy, when 'Create a new sample' is chosen", async () => {
     const user = userEvent.setup();
+    apiGet.mockImplementation((resource: string, id: number) => {
+      if (resource === "sampleRequests") {
+        return Promise.resolve({
+          data: { statusChanges: [], sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } } },
+        });
+      }
+      if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }] } });
+      if (resource === "subSamples") {
+        expect(id).toBe(42);
+        return Promise.resolve({
+          data: subsampleAttrs({ id: 42, globalId: "SS42", name: "Sample Fifty Five.01", sample: sampleAttrs() }),
+        });
+      }
+      return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
+    });
     renderPanel(baseRequest({ status: "APPROVED" }));
     await waitForInitialFetches();
 
@@ -373,9 +421,89 @@ describe("RequestDetailPanel", () => {
       }),
     );
 
+    await waitFor(() => expect(apiGet).toHaveBeenCalledWith("subSamples", 42));
+    await waitFor(() => expect(launchOperationWizard).toHaveBeenCalled());
+    expect(lastWizardOrigins).toHaveLength(1);
+    expect(lastWizardOrigins[0]).toMatchObject({ id: 42, globalId: "SS42" });
+    expect(lastExcludedOperationKeys).toEqual(new Set(["destroy", "pool"]));
+  });
+
+  it("opens the Transfer Ownership dialog for the newly-created sample once the Operations Wizard performs an operation", async () => {
+    const user = userEvent.setup();
+    apiGet.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") {
+        return Promise.resolve({
+          data: { statusChanges: [], sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } } },
+        });
+      }
+      if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }] } });
+      if (resource === "subSamples") {
+        return Promise.resolve({
+          data: subsampleAttrs({ id: 42, globalId: "SS42", name: "Sample Fifty Five.01", sample: sampleAttrs() }),
+        });
+      }
+      return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
+    });
+    apiUpdate.mockImplementation((resource: string, path: string) => {
+      if (resource === "sampleRequests") return Promise.resolve({ data: { status: "FULFILLED" } });
+      if (resource === "samples" && path === "77/actions/changeOwner") return Promise.resolve({ data: { id: 77 } });
+      return Promise.reject(new Error("unexpected"));
+    });
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.wizardOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+    await waitFor(() => expect(launchOperationWizard).toHaveBeenCalled());
+
+    // Simulates the wizard's Passage/Aliquot/etc. step handing back the new sample it created.
+    act(() => lastOnPerformed?.({ id: 77, globalId: "SA77", name: "Sample Fifty Five.02" }));
+
+    const transferDialog = await screen.findByRole("dialog", {
+      name: "inventory:requestsManagement.detail.transferDialog.heading",
+    });
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
+
+    // The new sample didn't exist before this flow, so the usual "you will no longer own this
+    // sample" warning (and its "subsamples will be moved" bullet) don't apply - this is the
+    // wizard-path replacement content for both.
     expect(
-      await screen.findByRole("dialog", { name: "inventory:requestsManagement.detail.prepareDialog.title" }),
+      within(transferDialog).getByText("inventory:requestsManagement.detail.transferDialog.newSampleHint"),
     ).toBeInTheDocument();
+    expect(within(transferDialog).queryByText("inventory:requestsManagement.detail.transferDialog.warning")).toBeNull();
+    expect(
+      within(transferDialog).getByText("inventory:requestsManagement.detail.transferDialog.bullets.newSampleMoved"),
+    ).toBeInTheDocument();
+    expect(
+      within(transferDialog).queryByText("inventory:requestsManagement.detail.transferDialog.bullets.subsamplesMoved"),
+    ).toBeNull();
+
+    await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
+
+    await waitFor(() =>
+      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", {
+        status: "FULFILLED",
+        transferredSampleGlobalId: "SA77",
+      }),
+    );
+    await waitFor(() =>
+      expect(apiUpdate).toHaveBeenCalledWith("samples", "77/actions/changeOwner", {
+        owner: { username: REQUESTER.username },
+      }),
+    );
   });
 
   it("skips the Choose Sample to Prepare dialog and goes straight to Transfer when inventory.sampleRequests.available is on and inventory.operations.available is off", async () => {
@@ -417,6 +545,117 @@ describe("RequestDetailPanel", () => {
     expect(
       screen.queryByRole("button", { name: "inventory:requestsManagement.detail.transferSampleButton" }),
     ).toBeNull();
+  });
+
+  describe("Choose Sample to Prepare dialog warnings", () => {
+    /** Reaches the Choose Sample to Prepare dialog with the "transfer" radio already selected. */
+    async function openChooseMethodDialogWithTransferSelected(user: ReturnType<typeof userEvent.setup>) {
+      deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
+      deploymentProperties["inventory.operations.available"] = "ALLOWED";
+      renderPanel(baseRequest({ status: "APPROVED" }));
+      await waitForInitialFetches();
+      await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+      await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+      const dialog = screen.getByRole("dialog", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+      });
+      await user.click(
+        within(dialog).getByRole("radio", {
+          name: "inventory:requestsManagement.detail.chooseMethodDialog.transferOption",
+        }),
+      );
+      return dialog;
+    }
+
+    it("names the Pending state specifically when every other active request is Pending", async () => {
+      const user = userEvent.setup();
+      apiQuery.mockImplementation((resource: string) => {
+        if (resource === "sampleRequests") {
+          return Promise.resolve({
+            data: { requests: [{ id: 202, status: "PENDING", requester: { firstName: "Sam", lastName: "Second" } }] },
+          });
+        }
+        return Promise.reject(new Error(`unexpected ApiService.query(${resource})`));
+      });
+      const dialog = await openChooseMethodDialogWithTransferSelected(user);
+
+      expect(
+        await within(dialog).findByText(
+          "inventory:requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningPending",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("names the Approved states specifically when every other active request is Approved", async () => {
+      const user = userEvent.setup();
+      apiQuery.mockImplementation((resource: string) => {
+        if (resource === "sampleRequests") {
+          return Promise.resolve({
+            data: { requests: [{ id: 203, status: "APPROVED", requester: { firstName: "Tara", lastName: "Third" } }] },
+          });
+        }
+        return Promise.reject(new Error(`unexpected ApiService.query(${resource})`));
+      });
+      const dialog = await openChooseMethodDialogWithTransferSelected(user);
+
+      expect(
+        await within(dialog).findByText(
+          "inventory:requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningApproved",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("falls back to the either/or wording when other active requests span both Pending and Approved", async () => {
+      const user = userEvent.setup();
+      apiQuery.mockImplementation((resource: string) => {
+        if (resource === "sampleRequests") {
+          return Promise.resolve({
+            data: {
+              requests: [
+                { id: 202, status: "PENDING", requester: { firstName: "Sam", lastName: "Second" } },
+                { id: 203, status: "APPROVED", requester: { firstName: "Tara", lastName: "Third" } },
+              ],
+            },
+          });
+        }
+        return Promise.reject(new Error(`unexpected ApiService.query(${resource})`));
+      });
+      const dialog = await openChooseMethodDialogWithTransferSelected(user);
+
+      expect(
+        await within(dialog).findByText(
+          "inventory:requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarning",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("combines both warnings into one alert, leading the other-requests half with 'also', when the sample also has multiple subsamples", async () => {
+      const user = userEvent.setup();
+      apiGet.mockImplementation((resource: string) => {
+        if (resource === "sampleRequests") {
+          return Promise.resolve({
+            data: { statusChanges: [], sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } } },
+          });
+        }
+        if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }, { id: 2 }] } });
+        return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
+      });
+      apiQuery.mockImplementation((resource: string) => {
+        if (resource === "sampleRequests") {
+          return Promise.resolve({
+            data: { requests: [{ id: 202, status: "PENDING", requester: { firstName: "Sam", lastName: "Second" } }] },
+          });
+        }
+        return Promise.reject(new Error(`unexpected ApiService.query(${resource})`));
+      });
+      const dialog = await openChooseMethodDialogWithTransferSelected(user);
+
+      const alert = await within(dialog).findByRole("alert");
+      expect(alert).toHaveTextContent("inventory:requestsManagement.detail.chooseMethodDialog.transferWarning");
+      expect(alert).toHaveTextContent(
+        "inventory:requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningPendingCombined",
+      );
+    });
   });
 
   describe("Transfer Ownership dialog content", () => {

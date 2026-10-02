@@ -167,12 +167,8 @@ function RequestSampleButton({ onClick }: { onClick: () => void }): React.ReactN
       onClick={onClick}
       sx={{
         color: theme.palette.record.sample.lighter,
-        backgroundColor: theme.palette.primary.main,
-        borderColor: theme.palette.primary.main,
-        "&:hover": {
-          backgroundColor: theme.palette.primary.dark,
-          borderColor: theme.palette.primary.dark,
-        },
+        backgroundColor: theme.palette.primary.dark,
+        borderColor: theme.palette.primary.dark,
       }}
     >
       {t("sample.requestMaterialSection.requestSampleButton")}
@@ -377,6 +373,7 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
                 multiline
                 minRows={3}
                 fullWidth
+                autoFocus
                 value={requestText}
                 onChange={({ target: { value } }) => setRequestText(value)}
               />

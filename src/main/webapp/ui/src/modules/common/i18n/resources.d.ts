@@ -4340,10 +4340,6 @@ export default interface Resources {
     },
     "requestsManagement": {
       "browserTitle": "Requests | RSpace Inventory",
-      "chips": {
-        "requests": "Requests: {value}",
-        "status": "Status: {value}"
-      },
       "columns": {
         "id": "Request ID",
         "requester": "Requested by",
@@ -4357,11 +4353,16 @@ export default interface Resources {
         "cancelRequestHint": "Cancel this request if you no longer require this material.",
         "chooseMethodDialog": {
           "body": "Choose how you wish to prepare the sample:",
-          "otherActiveRequestsWarning": "There are other requests against this sample that are either in the Pending or Approved states. These other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarning": "There are other requests against this sample that are either in the Pending or Approved states - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningApproved": "There are other requests against this sample that are in the Approved states - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningApprovedCombined": "There are also other requests against this sample that are in the Approved states - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningCombined": "There are also other requests against this sample that are either in the Pending or Approved states - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningPending": "There are other requests against this sample that are in the Pending state - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningPendingCombined": "There are also other requests against this sample that are in the Pending state - these other requests will be closed automatically when this sample is transferred.",
           "proceedButton": "Proceed",
           "title": "Choose Sample to Prepare",
           "transferOption": "Transfer the existing sample and all subsamples",
-          "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to user {requester}.",
+          "transferWarning": "This sample has {count} subsamples - transferring this sample will transfer all subsamples to user {requester}.",
           "wizardOption": "Create a new sample derived from the existing sample"
         },
         "fields": {
@@ -4403,12 +4404,6 @@ export default interface Resources {
           "approvedSelected": "{subsample} can now be prepared for transfer to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
           "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer."
         },
-        "prepareDialog": {
-          "body": "Preparing {subsample} for transfer.",
-          "comingSoon": "Coming soon",
-          "nextButton": "Next",
-          "title": "Operations Wizard Step"
-        },
         "prepareSampleButton": "Prepare Sample",
         "rejectButton": "Reject",
         "rejectDialog": {
@@ -4429,6 +4424,7 @@ export default interface Resources {
         "title": "Request {id}: {sampleName}",
         "transferDialog": {
           "bullets": {
+            "newSampleMoved": "The new sample and subsamples will be moved to {requester}'s bench",
             "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
             "requestFulfilled": "Request {id} will be marked as fulfilled",
             "subsamplesMoved": "Subsamples will be moved from their current locations to {requester}'s bench",
@@ -4436,6 +4432,7 @@ export default interface Resources {
             "subsamplesTransferredBoth": "Both subsamples will be transferred to user {requester}"
           },
           "heading": "Hand over {sampleName} to {requester}",
+          "newSampleHint": "The new sample {sampleName} has now been created and is currently in your own Inventory. If you Cancel the transfer now it will remain in your Inventory until it has been transferred manually.",
           "warning": "<strong>You will no longer own this sample.</strong> Only {requester} or their PI can transfer it back.",
           "whatWillHappen": "What will happen:"
         },
@@ -7282,9 +7279,12 @@ export default interface Resources {
           "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
           "originCountMinimum": "This operation requires at least two origin subsamples.",
           "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+          "originFieldNameClash": "The origin subsample already has a field named {0} of a different type. Rename or remove that field, then try again.",
           "originGlobalIdInvalid": "Each origin must be identified by a subsample global id (SS followed by a number), was [{0}].",
           "originIdRequired": "Each origin must identify a subsample by id.",
           "originsRequired": "At least one origin subsample must be provided for the operation.",
+          "passageLimitReached": "The parent sample is already at passage {0}, the highest supported, so it cannot be passaged again.",
+          "passageNumberUnreadable": "The parent sample''s passage number ''{0}'' is not a whole number from 0 to 9999. Correct it on the parent sample, then try again.",
           "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
           "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
           "storageTempNotWhole": "The storage temperature must be whole degrees.",

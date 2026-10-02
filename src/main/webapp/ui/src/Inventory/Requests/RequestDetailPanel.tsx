@@ -17,7 +17,7 @@ import { darken, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomTooltip from "@/components/CustomTooltip";
 import { Heading, HeadingContext } from "@/components/DynamicHeadingLevel";
@@ -28,19 +28,28 @@ import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
 import useWhoAmI from "@/hooks/api/useWhoAmI";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
+import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import type PersonModel from "@/stores/models/PersonModel";
+import SubSampleModel, { type SubSampleAttrs } from "@/stores/models/SubSampleModel";
 import useStores from "@/stores/use-stores";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
 import { isoToLocale } from "@/util/Util";
 import ApiService from "../../common/InvApiService";
 import PeopleField from "../components/Inputs/PeopleField";
+import type { OperationResult } from "../components/Operations/operationsApi";
+import { useOperationWizardLauncher } from "../components/Operations/useOperationWizardLauncher";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
 import type { ApiSampleRequestListItem } from "./RequestsList";
 import RequestsStatusChip, { STATUS_BACKGROUND } from "./RequestsStatusChip";
 import { notifySampleRequestStatusChanged } from "./sampleRequestEvents";
+
+// Preparing a sample for a request always ends in transferring it to the requester, so
+// destroying the origin has no sensible place in this flow; Pool requires multiple origins,
+// but this flow only ever offers the single subsample selected in Sample Locations.
+const OPERATION_WIZARD_EXCLUDED_KEYS = new Set(["destroy", "pool"]);
 
 const STATUS_HELP_KEY = {
   FULFILLED: "requestsManagement.detail.statusHelp.fulfilled",
@@ -105,15 +114,21 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const [selectedSubsampleName, setSelectedSubsampleName] = useState<string | null>(null);
   const [chooseMethodDialogOpen, setChooseMethodDialogOpen] = useState(false);
   const [preparationMethod, setPreparationMethod] = useState<"wizard" | "transfer" | null>(null);
-  const [prepareDialogOpen, setPrepareDialogOpen] = useState(false);
+  const [wizardOrigin, setWizardOrigin] = useState<SubSampleModel | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  // Set only when the Transfer Ownership dialog is reached via the "wizard" radio's Operations
+  // Wizard having just created a new sample; null (the ordinary case, including every "transfer"
+  // radio route into this dialog) means the dialog acts on request.sample exactly as before.
+  const [wizardCreatedSample, setWizardCreatedSample] = useState<OperationResult | null>(null);
   const [transferRecipient, setTransferRecipient] = useState<PersonModel | null>(null);
   const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
   const [sampleOwnerName, setSampleOwnerName] = useState<string | null>(null);
   const [subSampleCount, setSubSampleCount] = useState<number | null>(null);
-  const [otherActiveRequests, setOtherActiveRequests] = useState<Array<{ id: number; requesterName: string }> | null>(
-    null,
-  );
+  const [otherActiveRequests, setOtherActiveRequests] = useState<Array<{
+    id: number;
+    requesterName: string;
+    status: "PENDING" | "APPROVED";
+  }> | null>(null);
   const currentUser = useWhoAmI();
   const { peopleStore, uiStore } = useStores();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
@@ -133,6 +148,26 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // sample" has nothing to offer, so the Choose Sample to Prepare dialog would only ever
   // sensibly end in a direct transfer; skip straight to it instead of making the owner pick.
   const skipChooseMethodDialog = sampleRequestsAvailable && !operationsAvailable;
+
+  // Reassigned below, after `request` is known non-null, so it always calls this render's own
+  // openTransferDialog rather than a stale one from whichever earlier render first constructed
+  // the (necessarily hook-stable) callback this hook-ordering requires declaring up here.
+  const onWizardPerformedRef = useRef<(sample: OperationResult | null) => void>(() => {});
+  const wizardOrigins = wizardOrigin ? [wizardOrigin] : [];
+  const { launch: launchOperationWizard, wizard: operationWizard } = useOperationWizardLauncher(wizardOrigins, {
+    onPerformed: (sample) => onWizardPerformedRef.current(sample),
+    onClose: () => setWizardOrigin(null),
+    excludedOperationKeys: OPERATION_WIZARD_EXCLUDED_KEYS,
+  });
+
+  // launchOperationWizard is deliberately excluded from the deps: it is a fresh closure every
+  // render (not memoised by the hook), so including it would refire this on every render rather
+  // than only when a freshly-fetched origin is set.
+  useEffect(() => {
+    if (wizardOrigin) {
+      void launchOperationWizard();
+    }
+  }, [wizardOrigin]);
 
   useEffect(() => {
     if (!request) return;
@@ -189,16 +224,23 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       status: "PENDING,APPROVED",
       pageSize: "100",
     });
-    ApiService.query<{ requests: Array<{ id: number; requester: { firstName: string; lastName: string } }> }>(
-      "sampleRequests",
-      params,
-    )
+    ApiService.query<{
+      requests: Array<{
+        id: number;
+        status: "PENDING" | "APPROVED";
+        requester: { firstName: string; lastName: string };
+      }>;
+    }>("sampleRequests", params)
       .then(({ data }) => {
         if (cancelled) return;
         setOtherActiveRequests(
           data.requests
             .filter((r) => r.id !== request.id)
-            .map((r) => ({ id: r.id, requesterName: `${r.requester.firstName} ${r.requester.lastName}` })),
+            .map((r) => ({
+              id: r.id,
+              requesterName: `${r.requester.firstName} ${r.requester.lastName}`,
+              status: r.status,
+            })),
         );
       })
       .catch((error: unknown) => {
@@ -212,6 +254,8 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   }, [request, status]);
 
   const otherActiveRequestsCount = otherActiveRequests?.length ?? null;
+  const hasPendingOtherActiveRequest = (otherActiveRequests ?? []).some((r) => r.status === "PENDING");
+  const hasApprovedOtherActiveRequest = (otherActiveRequests ?? []).some((r) => r.status === "APPROVED");
 
   const comment = statusChanges
     .filter((change) => change.status === status)
@@ -279,9 +323,14 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       });
   };
 
-  const markRequestFulfilled = () => {
+  // transferredSampleGlobalId is only accepted by the backend when fulfilling, and only ever
+  // names a sample other than the one originally requested when the Operations Wizard created
+  // it (see submitTransfer) - every other caller (this one included) omits it, leaving the
+  // request's history to imply the originally requested sample, which is correct for them too.
+  const markRequestFulfilled = (transferredSampleGlobalId?: string) => {
     return ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
       status: "FULFILLED",
+      ...(transferredSampleGlobalId !== undefined ? { transferredSampleGlobalId } : {}),
     })
       .then(({ data }) => {
         setStatus(data.status);
@@ -296,11 +345,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     void markRequestFulfilled().then(() => setFulfilDialogOpen(false));
   };
 
-  // The requester was pre-fetched as a PersonModel via peopleStore.getUser when the
-  // Preparing Sample dialog's "Next" button was pressed; if that lookup hasn't resolved
-  // yet, the field just starts empty and the owner can pick a recipient manually.
-  const openTransferDialog = () => {
-    setPrepareDialogOpen(false);
+  // The requester is pre-fetched as a PersonModel via peopleStore.getUser the first time this
+  // opens (for either route into it: the "transfer" radio directly, or the "wizard" radio once
+  // the Operations Wizard has created a new sample); if that lookup hasn't resolved yet, the
+  // field just starts empty and the owner can pick a recipient manually.
+  const openTransferDialog = (createdSample: OperationResult | null = null) => {
+    setWizardCreatedSample(createdSample);
     setTransferDialogOpen(true);
     if (!transferRecipient) {
       void peopleStore.getUser(request.requester.username).then((person) => {
@@ -309,30 +359,53 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     }
   };
 
+  // Kept in sync every render (see the ref declaration above): the Operations Wizard's onPerformed
+  // hands back the new sample it created, which is what then gets offered up in the Transfer
+  // Ownership dialog, exactly as the "transfer" radio does for the originally requested sample.
+  onWizardPerformedRef.current = (sample) => {
+    setWizardOrigin(null);
+    if (sample) openTransferDialog(sample);
+  };
+
+  const launchOperationsWizardForSelectedSubsample = () => {
+    if (selectedSubsampleId === null) return;
+    ApiService.get<SubSampleAttrs>("subSamples", selectedSubsampleId)
+      .then(({ data }) => {
+        setWizardOrigin(new SubSampleModel(new AlwaysNewFactory(), data));
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load the selected subsample for the Operations Wizard", error);
+      });
+  };
+
   const proceedWithPreparationMethod = () => {
     if (!preparationMethod) return;
     setChooseMethodDialogOpen(false);
     setPreparationMethod(null);
     if (preparationMethod === "wizard") {
-      setPrepareDialogOpen(true);
+      launchOperationsWizardForSelectedSubsample();
     } else {
       openTransferDialog();
     }
   };
 
   // A SubSample has no owner of its own (it always derives from its parent Sample), so
-  // "preparing" a subsample for transfer means transferring ownership of the whole Sample.
+  // "preparing" a subsample for transfer means transferring ownership of a whole Sample: either
+  // the originally requested one (the "transfer" radio), or the new one the Operations Wizard
+  // just created (the "wizard" radio) - wizardCreatedSample names which.
   //
   // The request is marked fulfilled BEFORE the transfer, not after: the backend authorises
-  // the fulfil transition against the sample's current owner, and that's still the caller
-  // here. Doing the transfer first would change the sample's owner away from the caller,
+  // the fulfil transition against the transferred sample's current owner, and that's still the
+  // caller here. Doing the transfer first would change that sample's owner away from the caller,
   // so the follow-up fulfil call would then fail as the caller no longer being party to
   // the request (reported back as 404, to avoid disclosing the request's existence).
   const submitTransfer = () => {
     if (!transferRecipient) return;
-    void markRequestFulfilled()
+    const targetId = wizardCreatedSample?.id ?? request.sample.id;
+    const targetName = wizardCreatedSample?.name ?? request.sample.name;
+    void markRequestFulfilled(wizardCreatedSample?.globalId)
       .then(() =>
-        ApiService.update<{ id: number }>("samples", `${request.sample.id}/actions/changeOwner`, {
+        ApiService.update<{ id: number }>("samples", `${targetId}/actions/changeOwner`, {
           owner: { username: transferRecipient.username },
         }),
       )
@@ -349,7 +422,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             variant: "success",
             message: t("requestsManagement.detail.transferSuccessMessage", {
               id: request.id,
-              sampleName: request.sample.name,
+              sampleName: targetName,
               requester: `${request.requester.firstName} ${request.requester.lastName}`,
             }),
           }),
@@ -394,6 +467,44 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               requester: `${request.requester.firstName} ${request.requester.lastName}`,
             })
         : null;
+  // Named for which other active requests exist, so the warning can say specifically "Pending"
+  // or "Approved" rather than always the vaguer "either...or" - which is still used when both
+  // are present, since then there genuinely isn't a single specific state to name.
+  const otherActiveRequestsWarningText = (leadsWithAlso: boolean): string => {
+    if (hasPendingOtherActiveRequest && hasApprovedOtherActiveRequest) {
+      return leadsWithAlso
+        ? t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningCombined")
+        : t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarning");
+    }
+    if (hasPendingOtherActiveRequest) {
+      return leadsWithAlso
+        ? t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningPendingCombined")
+        : t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningPending");
+    }
+    return leadsWithAlso
+      ? t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningApprovedCombined")
+      : t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningApproved");
+  };
+
+  // Combined into one alert rather than one each: both warn about consequences of the same
+  // "transfer" choice in the Choose Sample to Prepare dialog, so showing both at once as two
+  // separate boxes read as more alarming than warranted.
+  const showsSubsampleWarning = preparationMethod === "transfer" && subSampleCount !== null && subSampleCount > 1;
+  const showsOtherActiveRequestsWarning =
+    preparationMethod === "transfer" && otherActiveRequestsCount !== null && otherActiveRequestsCount > 0;
+  const chooseMethodTransferWarnings: Array<string> = (
+    [
+      showsSubsampleWarning
+        ? t("requestsManagement.detail.chooseMethodDialog.transferWarning", {
+            count: subSampleCount,
+            requester: requesterFullName,
+          })
+        : null,
+      // Leads with "also" only when it follows the subsamples warning in the same alert; read
+      // on its own, "also" would imply some earlier warning that was never shown.
+      showsOtherActiveRequestsWarning ? otherActiveRequestsWarningText(showsSubsampleWarning) : null,
+    ] as Array<string | null>
+  ).filter((warning): warning is string => warning !== null);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, width: "100%", height: "100%", minWidth: 0 }}>
@@ -801,17 +912,9 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               label={t("requestsManagement.detail.chooseMethodDialog.transferOption")}
             />
           </RadioGroup>
-          {preparationMethod === "transfer" && subSampleCount !== null && subSampleCount > 1 && (
+          {chooseMethodTransferWarnings.length > 0 && (
             <Alert severity="warning" sx={{ mt: 2 }}>
-              {t("requestsManagement.detail.chooseMethodDialog.transferWarning", {
-                count: subSampleCount,
-                requester: `${request.requester.firstName} ${request.requester.lastName}`,
-              })}
-            </Alert>
-          )}
-          {preparationMethod === "transfer" && otherActiveRequestsCount !== null && otherActiveRequestsCount > 0 && (
-            <Alert severity="warning" sx={{ mt: 2 }}>
-              {t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarning")}
+              {chooseMethodTransferWarnings.join(" ")}
             </Alert>
           )}
         </DialogContent>
@@ -824,41 +927,39 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           >
             {t("common:actions.cancel")}
           </Button>
-          <Button variant="contained" disabled={preparationMethod === null} onClick={proceedWithPreparationMethod}>
+          <Button
+            variant="contained"
+            color="callToAction"
+            disableElevation
+            disabled={preparationMethod === null}
+            onClick={proceedWithPreparationMethod}
+          >
             {t("requestsManagement.detail.chooseMethodDialog.proceedButton")}
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={prepareDialogOpen} onClose={() => setPrepareDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t("requestsManagement.detail.prepareDialog.title")}</DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ mb: 1 }}>
-            {t("requestsManagement.detail.prepareDialog.body", { subsample: selectedSubsampleName ?? "" })}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t("requestsManagement.detail.prepareDialog.comingSoon")}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPrepareDialogOpen(false)}>{t("common:actions.cancel")}</Button>
-          <Button variant="contained" onClick={openTransferDialog}>
-            {t("requestsManagement.detail.prepareDialog.nextButton")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {operationWizard}
       <Dialog open={transferDialogOpen} onClose={() => setTransferDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>
           {t("requestsManagement.detail.transferDialog.heading", {
-            sampleName: request.sample.name,
+            sampleName: wizardCreatedSample?.name ?? request.sample.name,
             requester: requesterFullName,
           })}
         </DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2 }}>
-            <TransRichText
-              i18nKey="inventory:requestsManagement.detail.transferDialog.warning"
-              values={{ requester: requesterFullName }}
-            />
+            {wizardCreatedSample ? (
+              // Reached via the "wizard" radio: the sample being offered up didn't exist before
+              // this flow started, so the usual ownership warning (which presumes an existing
+              // sample the owner is giving up) doesn't apply - this explains what the new sample
+              // is and where it stays if the transfer is cancelled instead.
+              t("requestsManagement.detail.transferDialog.newSampleHint", { sampleName: wizardCreatedSample.name })
+            ) : (
+              <TransRichText
+                i18nKey="inventory:requestsManagement.detail.transferDialog.warning"
+                values={{ requester: requesterFullName }}
+              />
+            )}
           </Alert>
           <Typography component="p" variant="body1" sx={{ mb: 1 }}>
             {t("requestsManagement.detail.transferDialog.whatWillHappen")}
@@ -877,7 +978,13 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               </Typography>
             )}
             <Typography component="li" variant="body2">
-              {t("requestsManagement.detail.transferDialog.bullets.subsamplesMoved", { requester: requesterFullName })}
+              {wizardCreatedSample
+                ? t("requestsManagement.detail.transferDialog.bullets.newSampleMoved", {
+                    requester: requesterFullName,
+                  })
+                : t("requestsManagement.detail.transferDialog.bullets.subsamplesMoved", {
+                    requester: requesterFullName,
+                  })}
             </Typography>
             <Typography component="li" variant="body2">
               {t("requestsManagement.detail.transferDialog.bullets.requestFulfilled", { id: request.id })}
@@ -909,15 +1016,10 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Button onClick={() => setTransferDialogOpen(false)}>{t("common:actions.cancel")}</Button>
           <Button
             variant="contained"
+            color="callToAction"
+            disableElevation
             disabled={transferRecipient === null}
             onClick={submitTransfer}
-            sx={{
-              backgroundColor: darken(theme.palette.primary.main, 0.5),
-              color: "white",
-              "&:hover": {
-                backgroundColor: darken(theme.palette.primary.main, 0.55),
-              },
-            }}
           >
             {t("common:actions.transfer")}
           </Button>
