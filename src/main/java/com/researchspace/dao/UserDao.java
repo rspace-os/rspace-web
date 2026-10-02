@@ -51,6 +51,15 @@ public interface UserDao extends GenericDao<User, Long> {
 
   String getUserPassword(String username);
 
+  /**
+   * Overwrites a stored login password hash and clears the salt, without the change detection in
+   * {@code UserManager.save} that would treat the hash as a new plain-text password.
+   *
+   * @param username the login name
+   * @param encodedPassword the already-encoded password, including its encoder id prefix
+   */
+  void updatePasswordHash(String username, String encodedPassword);
+
   User getUserByUsername(String username);
 
   /**
