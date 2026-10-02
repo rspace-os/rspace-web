@@ -39,7 +39,26 @@ public class DefaultLockoutPolicy implements IUserAccountLockoutPolicy {
 
   @Override
   public void handleLockoutOnFailure(User u) {
+    if (countFailure(u)) {
+      u.setAccountLocked(true);
+    }
+  }
 
+  @Override
+  public void handleReauthenticationFailure(User u) {
+    countFailure(u);
+  }
+
+  @Override
+  public boolean isReauthenticationLocked(User u) {
+    if (u.getLoginFailure() == null || isAfterLockoutTime(u)) {
+      return false;
+    }
+    return u.isAccountLocked() || u.getNumConsecutiveLoginFailures() >= maxFailures;
+  }
+
+  /** Records one failure; returns whether it reached the limit inside the timeout. */
+  private boolean countFailure(User u) {
     long millisSinceFirstFailure = milisSinceFirstLoginFailure(u);
 
     // reset failed attempts if lockout time is over
@@ -52,9 +71,7 @@ public class DefaultLockoutPolicy implements IUserAccountLockoutPolicy {
       u.setLoginFailure(Calendar.getInstance().getTime());
     }
 
-    if (u.getNumConsecutiveLoginFailures() >= maxFailures && millisSinceFirstFailure < timeout) {
-      u.setAccountLocked(true);
-    }
+    return u.getNumConsecutiveLoginFailures() >= maxFailures && millisSinceFirstFailure < timeout;
   }
 
   @Override
