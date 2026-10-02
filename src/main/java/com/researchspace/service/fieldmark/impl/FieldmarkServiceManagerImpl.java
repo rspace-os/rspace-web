@@ -7,16 +7,15 @@ import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConve
 import com.researchspace.api.v1.controller.ContainerApiPostValidator;
 import com.researchspace.api.v1.controller.InventoryFilePostValidator;
 import com.researchspace.api.v1.controller.InventoryFilesApiController.ApiInventoryFilePost;
-import com.researchspace.api.v1.controller.SampleApiPostFullValidator;
 import com.researchspace.api.v1.controller.SampleApiPostValidator;
 import com.researchspace.api.v1.controller.SampleTemplatePostValidator;
-import com.researchspace.api.v1.controller.SamplesApiController.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.api.v1.model.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -42,6 +41,7 @@ import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleApiPostFullValidator;
 import com.researchspace.webapp.integrations.fieldmark.FieldmarkApiImportRequest;
 import com.researchspace.webapp.integrations.fieldmark.FieldmarkApiImportResult;
 import jakarta.ws.rs.NotFoundException;
@@ -113,7 +113,6 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
       }
       FieldmarkNotebookDTO notebookDTO = getFieldmarkNotebookDTO(importRequest, user);
 
-      // create sample template
       ApiSampleTemplatePost sampleTemplatePost = createSampleTemplateRequest(notebookDTO);
       BindingResult bindingResult =
           new BeanPropertyBindingResult(sampleTemplatePost, "templatePost");
@@ -121,13 +120,11 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
       ApiSampleTemplate createdSampleTemplate =
           sampleApiMgr.createSampleTemplate(sampleTemplatePost, user);
 
-      // create container
       ApiContainer containerPost = createContainerRequest(notebookDTO, user);
       bindingResult = new BeanPropertyBindingResult(containerPost, "containerPost");
       validateCreateContainerInput(containerPost, bindingResult);
       ApiContainer createdContainer = containerApiMgr.createNewApiContainer(containerPost, user);
 
-      // create samples and associate identifiers (if it is the case)
       importResult = new FieldmarkApiImportResult(createdContainer, createdSampleTemplate);
       for (FieldmarkRecordDTO currentRecordDTO : notebookDTO.getRecords().values()) {
 
@@ -145,8 +142,6 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
           apiHandler.assertInventoryAndDataciteEnabled(user);
           assignIdentifierToSample(user, currentRecordDTO, createdSample);
         }
-        // for each ATTACHMENT field get "globalID" and "content" (having file identifier) and
-        // then upload the right file
         for (ApiInventoryEntityField currentField : createdSample.getFields()) {
           if (ApiFieldType.ATTACHMENT.equals(currentField.getType())) {
             String sampleFieldGlobalId = currentField.getGlobalId();

@@ -41,10 +41,25 @@ describe("fetchAdditionalInfo", () => {
       firstCallDone = true;
     });
     await subsample.fetchAdditionalInfo();
-    /*
-     * The second call should not have resolved until the first resolved and
-     * set firstCallDone to true
-     */
     expect(firstCallDone).toBe(true);
+  });
+
+  test("A refresh that failed does not poison later refreshes: the next call issues a new request.", async () => {
+    const subsample = makeMockSubSample();
+    const query = vi.spyOn(InvApiService, "query") as MockInstance;
+    query.mockImplementationOnce(() => Promise.reject(new Error("network down")));
+    query.mockImplementation(() =>
+      Promise.resolve({
+        data: {
+          sample: sampleAttrs(),
+          ...subsampleAttrs(),
+        },
+        // biome-ignore lint/suspicious/noExplicitAny: matches the existing mock shape
+      } as any),
+    );
+    await expect(subsample.fetchAdditionalInfo(true)).rejects.toThrow();
+    const requestsAfterFailure = query.mock.calls.length;
+    await subsample.fetchAdditionalInfo(true);
+    expect(query.mock.calls.length).toBeGreaterThan(requestsAfterFailure);
   });
 });
