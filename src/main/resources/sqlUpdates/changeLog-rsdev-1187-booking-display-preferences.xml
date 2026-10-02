@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-booking-display-preferences" author="researchspace" context="run">
+    <comment>Add global Booking display defaults</comment>
+    <addColumn tableName="BookingConfigurationDefaults">
+      <column name="availabilityWindowStart" type="VARCHAR(5)"/>
+      <column name="availabilityWindowEnd" type="VARCHAR(5)"/>
+      <column name="timezoneMode" type="VARCHAR(32)"/>
+      <column name="customTimezone" type="VARCHAR(255)"/>
+    </addColumn>
+    <update tableName="BookingConfigurationDefaults">
+      <column name="availabilityWindowStart" value="08:00"/>
+      <column name="availabilityWindowEnd" value="18:00"/>
+      <column name="timezoneMode" value="BROWSER"/>
+      <column name="customTimezone" valueComputed="NULL"/>
+    </update>
+    <addNotNullConstraint
+        tableName="BookingConfigurationDefaults"
+        columnName="availabilityWindowStart"
+        columnDataType="VARCHAR(5)"/>
+    <addNotNullConstraint
+        tableName="BookingConfigurationDefaults"
+        columnName="availabilityWindowEnd"
+        columnDataType="VARCHAR(5)"/>
+    <addNotNullConstraint
+        tableName="BookingConfigurationDefaults"
+        columnName="timezoneMode"
+        columnDataType="VARCHAR(32)"/>
+    <addColumn tableName="BookingConfigurationDefaults_AUD">
+      <column name="availabilityWindowStart" type="VARCHAR(5)"/>
+      <column name="availabilityWindowEnd" type="VARCHAR(5)"/>
+      <column name="timezoneMode" type="VARCHAR(32)"/>
+      <column name="customTimezone" type="VARCHAR(255)"/>
+    </addColumn>
+  </changeSet>
+</databaseChangeLog>
