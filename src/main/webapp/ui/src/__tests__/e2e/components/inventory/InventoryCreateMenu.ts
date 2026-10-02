@@ -4,6 +4,7 @@ import { type NewContainerFormComponent, newContainerFormComponent } from "./New
 import { type NewInstrumentFormComponent, newInstrumentFormComponent } from "./NewInstrumentFormComponent";
 import { type NewSampleFormComponent, newSampleFormComponent } from "./NewSampleFormComponent";
 import { type NewTemplateFormComponent, newTemplateFormComponent } from "./NewTemplateFormComponent";
+import { PidinstImportDialog } from "./PidinstImportDialog";
 
 export type InventoryCreateMenuItem =
   | "New Sample"
@@ -29,6 +30,14 @@ export class InventoryCreateMenu {
 
   async hasFieldmarkImport(): Promise<boolean> {
     return (await this.menuItem("Fieldmark").count()) > 0;
+  }
+
+  pidinstImportItem(): Locator {
+    return this.menuItem("From PIDINST registry");
+  }
+
+  async openPidinstImport(): Promise<PidinstImportDialog> {
+    return openDialog(() => this.pidinstImportItem().click(), new PidinstImportDialog(this.page));
   }
 
   async click(item: InventoryCreateMenuItem): Promise<void> {
