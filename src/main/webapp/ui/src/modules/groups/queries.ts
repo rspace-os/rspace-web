@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import type { Either } from "purify-ts/Either";
 import { type RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
 import { parse, parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { GroupInfoSchema } from "@/modules/groups/schema";
 
 const API_BASE_URL = "/api/v1";
@@ -12,7 +13,7 @@ export const groupQueryKeys = {
 };
 
 export async function getGroupById(id: string, { token }: { token: string }) {
-  const response = await fetch(`${API_BASE_URL}/groups/${id}`, {
+  const response = await fetchWithUiToken(`${API_BASE_URL}/groups/${id}`, {
     method: "GET",
     headers: {
       "X-Requested-With": "XMLHttpRequest",
