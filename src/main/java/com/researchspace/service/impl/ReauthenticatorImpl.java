@@ -10,6 +10,7 @@ import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.filter.IUserAccountLockoutPolicy;
+import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,11 +92,13 @@ public class ReauthenticatorImpl implements IReauthenticator {
   }
 
   private static String callingAction() {
-    return StackWalker.getInstance()
+    // aspects such as ServiceLoggerAspct sit between this class and its caller
+    return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
         .walk(
             frames ->
                 frames
-                    .filter(f -> !f.getClassName().equals(ReauthenticatorImpl.class.getName()))
+                    .filter(f -> f.getDeclaringClass() != ReauthenticatorImpl.class)
+                    .filter(f -> !f.getDeclaringClass().isAnnotationPresent(Aspect.class))
                     .filter(f -> f.getClassName().startsWith("com.researchspace"))
                     .findFirst()
                     .map(f -> f.getClassName() + "." + f.getMethodName())
