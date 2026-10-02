@@ -276,6 +276,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
             null,
             changedAt,
             ResourceAccessAuditReason.DIRECT_LEAVE));
+    events.publishEvent(new ResourceAccessChangedEvent(auditTarget(resource, protectedEntity)));
   }
 
   private static <T, ID> Object auditTarget(
@@ -351,6 +352,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
               changedAt,
               reason));
     }
+    events.publishEvent(new ResourceAccessChangedEvent(auditTarget));
   }
 
   private <T, ID> Locked<T> lockAndAuthorize(
