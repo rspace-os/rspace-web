@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.service.IntegrationsHandler.ACCESS_TOKEN_SETTING;
+import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAME;
@@ -18,7 +19,6 @@ import static com.researchspace.service.SystemPropertyName.DROPBOX_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.OMERO_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.PYRAT_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.SLACK_AVAILABLE;
-import static com.researchspace.service.impl.IntegrationsHandlerImpl.MASKED_TOKEN;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createPermissionEnumSystemProperty;
 import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_ALIAS;
 import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
@@ -77,6 +77,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -237,6 +238,38 @@ public class IntegrationsHandlerTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  public void appSettingsAreWithheldUnlessListedAsClientReadable() {
+    AppConfigElementSet set = new AppConfigElementSet();
+    set.setConfigElements(
+        Set.of(
+            new AppConfigElement(
+                new AppConfigElementDescriptor(
+                    new PropertyDescriptor("DATAVERSE_URL", SettingsType.STRING, "")),
+                "https://dataverse.example"),
+            new AppConfigElement(
+                new AppConfigElementDescriptor(
+                    new PropertyDescriptor("DATAVERSE_APIKEY", SettingsType.STRING, "")),
+                "dataverse-secret"),
+            new AppConfigElement(
+                new AppConfigElementDescriptor(
+                    new PropertyDescriptor("DATAVERSE_UNLISTED", SettingsType.STRING, "")),
+                "unlisted-value")));
+    UserAppConfig cfg =
+        new UserAppConfig(subject, new App("app.dataverse", "Dataverse", true), true);
+    cfg.addConfigSet(set);
+    when(appCfgMgr.getByAppName("app.dataverse", subject)).thenReturn(cfg);
+
+    IntegrationInfo info = handler.getIntegration(subject, DATAVERSE_APP_NAME);
+
+    Map<String, String> options =
+        (Map<String, String>) info.getOptions().values().iterator().next();
+    assertThat(options).containsEntry("DATAVERSE_APIKEY", null);
+    assertThat(options).containsEntry("DATAVERSE_UNLISTED", null); // fail-closed for new settings
+    assertEquals("https://dataverse.example", options.get("DATAVERSE_URL"));
+  }
+
+  @Test
   public void testUpdateSlackApp() {
 
     // set slack as available
@@ -362,7 +395,7 @@ public class IntegrationsHandlerTest {
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
     assertThat(options).hasSize(1);
-    assertThat(options).containsEntry(DIGITAL_COMMONS_DATA_USER_TOKEN, MASKED_TOKEN);
+    assertThat(options).containsEntry(DIGITAL_COMMONS_DATA_USER_TOKEN, null);
   }
 
   @Test
@@ -383,14 +416,15 @@ public class IntegrationsHandlerTest {
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
     assertThat(options).hasSize(1);
-    // the real token must never be surfaced to the Apps page; only the masked sentinel
-    assertThat(options).containsEntry(ACCESS_TOKEN_SETTING, MASKED_TOKEN);
+    // the real token must never be surfaced to the Apps page: a stored token is sent as null
+    assertThat(options).containsEntry(ACCESS_TOKEN_SETTING, null);
   }
 
   /**
    * OMERO is a single-option-set appConfig integration, so getIntegration replaces the whole
-   * options map from the app config before postProcessInfo adds the masked token. Stubbing the app
-   * config is what makes this test exercise that real ordering rather than a null-config shortcut.
+   * options map from the app config before postProcessInfo adds the withheld token. Stubbing the
+   * app config is what makes this test exercise that real ordering rather than a null-config
+   * shortcut.
    */
   private void stubOmeroAppConfig() {
     UserAppConfig omeroConfig =
@@ -414,7 +448,7 @@ public class IntegrationsHandlerTest {
     assertEquals(OMERO_APP_NAME, info.getName());
     assertTrue(info.isOauthConnected());
     // the stored OMERO username/password must never reach the Apps page
-    assertThat(info.getOptions()).containsEntry(ACCESS_TOKEN_SETTING, MASKED_TOKEN);
+    assertThat(info.getOptions()).containsEntry(ACCESS_TOKEN_SETTING, null);
     assertThat(info.getOptions().toString())
         .as("the real OMERO credentials must not appear anywhere in the options")
         .doesNotContain("omeropassword");
@@ -432,6 +466,21 @@ public class IntegrationsHandlerTest {
     IntegrationInfo info = handler.getIntegration(subject, OMERO_APP_NAME);
     assertFalse(info.isOauthConnected());
     assertNull(info.getOptions().get(ACCESS_TOKEN_SETTING));
+  }
+
+  @Test
+  public void clearedUserTokenReadsAsUnset() {
+    when(sysPropMgr.findByName(DIGITAL_COMMON_DATA_AVAILABLE))
+        .thenReturn(getSystemPropertyValueAllowed(DIGITAL_COMMON_DATA_AVAILABLE));
+    UserConnection cleared = new UserConnection();
+    cleared.setAccessToken("");
+    when(userConnectionManager.findByUserNameProviderName(
+            anyString(), eq(DIGITAL_COMMONS_DATA_APP_NAME)))
+        .thenReturn(Optional.of(cleared));
+
+    IntegrationInfo info = handler.getIntegration(subject, DIGITAL_COMMONS_DATA_APP_NAME);
+
+    assertThat(info.getOptions()).doesNotContainKey(DIGITAL_COMMONS_DATA_USER_TOKEN);
   }
 
   @Test
@@ -500,8 +549,7 @@ public class IntegrationsHandlerTest {
     // here we do get("null") becasue since the AppCnfigSet is not saved into DB (as per mocks)
     // then it has not got a proper numerical ID
     assertThat(((Map<String, String>) options.get("null"))).containsEntry(PYRAT_ALIAS, "alias1");
-    assertThat(((Map<String, String>) options.get("null")))
-        .containsEntry(PYRAT_APIKEY, MASKED_TOKEN);
+    assertThat(((Map<String, String>) options.get("null"))).containsEntry(PYRAT_APIKEY, null);
     assertThat(((Map<String, String>) options.get("null")))
         .containsEntry(PYRAT_URL, "http://pyrat1.server.com/");
   }
@@ -538,12 +586,12 @@ public class IntegrationsHandlerTest {
     existingConnection.setAccessToken(origDswToken);
 
     // The potentially updated options that are being passed in
-    // from the UI.  Note that the API Key is set as the default
-    // masked value that is returned to the UI.
+    // from the UI.  Note that the API Key is null, which is how a stored
+    // key is returned to the UI and means "keep it".
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, origDswAlias);
     dswOptions.put(DSW_URL, origDswUrl);
-    dswOptions.put(DSW_APIKEY, MASKED_TOKEN);
+    dswOptions.put(DSW_APIKEY, null);
 
     handler.saveAppOptions(null, dswOptions, DSW_APP_NAME, false, subject);
     Mockito.verify(userConnectionManager, times(0))
@@ -591,7 +639,7 @@ public class IntegrationsHandlerTest {
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, updatedDswAlias);
     dswOptions.put(DSW_URL, origDswUrl);
-    dswOptions.put(DSW_APIKEY, MASKED_TOKEN);
+    dswOptions.put(DSW_APIKEY, null);
 
     handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
     Mockito.verify(userConnectionManager, times(1))
@@ -628,7 +676,7 @@ public class IntegrationsHandlerTest {
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, origDswAlias);
     dswOptions.put(DSW_URL, updatedDswUrl);
-    dswOptions.put(DSW_APIKEY, MASKED_TOKEN);
+    dswOptions.put(DSW_APIKEY, null);
 
     handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
     // There will be no interactions with the userConnectionManager methods since

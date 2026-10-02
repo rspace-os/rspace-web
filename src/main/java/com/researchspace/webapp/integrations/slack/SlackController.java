@@ -10,6 +10,7 @@ import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ChatBotFunctionalityHandler;
+import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.slack.SlackAttachment;
@@ -34,6 +35,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.ISODateTimeFormat;
@@ -125,6 +127,7 @@ public class SlackController extends BaseOAuth2Controller {
     return URLEncoder.encode(props.getServerUrl() + "/slack/redirect_uri", StandardCharsets.UTF_8);
   }
 
+  @ClientReadableSecret("the browser saves the issued token and webhook URL with the channel")
   @GetMapping("/redirect_uri")
   public String handleSlackRedirect(
       @RequestParam Map<String, String> params, Model model, HttpServletRequest request) {
@@ -174,11 +177,17 @@ public class SlackController extends BaseOAuth2Controller {
       log.info("slack response retrieved fine");
 
     } catch (IOException e) {
-      log.warn("io exception on contacting oauth.access url", e);
+      // the JDK's message contains the full request URL, client_secret and code included
+      String details =
+          StringUtils.replaceEach(
+              e.getMessage(),
+              new String[] {clientSecret, authorizationCode},
+              new String[] {"***", "***"});
+      log.warn("io exception on contacting oauth.access url: {}", details);
       OauthAuthorizationError error =
           getAuthErrorBuilder()
               .errorMsg("exception during token exchange")
-              .errorDetails(e.getMessage())
+              .errorDetails(details)
               .build();
       model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
       return CONNECTED_VIEW;
