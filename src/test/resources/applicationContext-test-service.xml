@@ -52,6 +52,8 @@
     <tx:advice id="userManagerTxAdvice">
         <tx:attributes>
             <tx:method name="save*" rollback-for="UserExistsException"/>
+            <!-- RSDEV-894: mirrors applicationContext-service.xml -->
+            <tx:method name="upgrade*Hash" propagation="REQUIRES_NEW"/>
         </tx:attributes>
     </tx:advice>
 
