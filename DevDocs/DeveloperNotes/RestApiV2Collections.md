@@ -1139,6 +1139,17 @@ and returns a map containing only entities that the effective subject can read. 
 resource adds schemas to OpenAPI but does not add paths. Its access policy must not return a row
 constraint. The batch lookup must enforce row visibility.
 
+A target-only spec can supply a `runtimeFieldSourceResource` naming a routable resource with
+the same entity and ID mapping. This delegates runtime-field discovery and resolution without
+exposing collection routes or copying the source's scalar fields. OpenAPI publishes the source's
+existing field catalogue URLs. The catalogue validates the mapping at startup.
+
+Delegated runtime predicates additionally enforce the source resource's read policy in a correlated
+`EXISTS`, including negative and missing-value comparisons. Discovery of a definition on one
+readable item does not authorize evaluating it on every item with that definition. Safe reference
+and name predicates retain the target-only resource's own policy. Hopped projection still requires
+the provider's independently authorized `valuesForIds` support.
+
 At `depth=0`, a readable target's `value` is its ID. This reference object is also the update shape.
 If the client supplies `globalId`, it must agree with `relationTo` and `value`. A relationship can
 also accept a global-ID string as update shorthand. Target visibility is still checked at depth 0.
