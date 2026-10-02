@@ -677,7 +677,8 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
         request.sort(),
         request.page(),
         request.fieldSelections().withRoot(narrowed),
-        request.includes());
+        request.includes(),
+        request.runtime());
   }
 
   /** The subset of {@code selection} this caller may actually see. */

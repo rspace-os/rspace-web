@@ -2,8 +2,10 @@ import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import type { SearchSelector } from "@/modules/common/collection/collectionConfig";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
+import { enrichApiV2FilterConfig } from "../../../adapters/apiV2/apiV2FilterFields";
 import { createApiV2CollectionAdapter } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import { apiV2CollectionRequestParams } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
+import type { FilterExpression } from "../../../tableListState";
 
 type RelationshipValue = {
   relationTo: "instruments";
@@ -186,6 +188,299 @@ describe("filter selectors derived from published relationship targets", () => {
     expect(derived.find((field) => field.name === "room.floor")?.type).toBe("number");
   });
 
+  it("derives and serializes relationship filters whose owners are not configured", () => {
+    type OwnerlessRecord = { id: string; title: string };
+    const ownerlessConfig = {
+      slug: "ownerless-records",
+      idField: "id" as const,
+      labels: { singularKey: "record", pluralKey: "records" },
+      useAsTitle: "title" as const,
+      defaultColumns: ["title" as const],
+      fields: [
+        { name: "id" as const, labelKey: "id", type: "text" as const, list: false as const },
+        { name: "title" as const, labelKey: "title", type: "text" as const },
+      ],
+    };
+    const ownerlessSchema = v.object({ id: v.string(), title: v.string() });
+    const ownerlessMetadata: ApiV2CollectionMetadata<OwnerlessRecord> = {
+      resourceName: "ownerless-records",
+      fields: ["id", "title"],
+      sorting: { fields: [], default: [], maximumFields: 5 },
+      filtering: {
+        selectors: {
+          "createdBy.username": { operators: ["=="], wildcards: false, fieldType: "text" },
+          "updatedBy.username": { operators: ["=="], wildcards: false, fieldType: "text" },
+          "reviewedBy.username": { operators: ["=="], wildcards: false, fieldType: "text" },
+        },
+        limits: metadata.filtering.limits,
+      },
+      relationshipFields: {
+        "createdBy.username": {
+          operators: ["=="],
+          wildcards: false,
+          title: "Username",
+          viaTitle: "Created by",
+          fieldType: "text",
+        },
+        "updatedBy.username": {
+          operators: ["=="],
+          wildcards: false,
+          title: "Username",
+          viaTitle: "Updated by",
+          fieldType: "text",
+        },
+        "reviewedBy.username": {
+          operators: ["=="],
+          wildcards: false,
+          title: "Username",
+          fieldType: "text",
+        },
+      },
+      pagination: { defaultLimit: 10, maximumLimit: 100 },
+    };
+    const translate = (key: string) =>
+      ({ "tableList.fields.createdBy": "Erstellt von", "tableList.fields.updatedBy": "Aktualisiert von" })[key] ?? key;
+    const adapter = createApiV2CollectionAdapter<OwnerlessRecord>({
+      translate,
+      config: ownerlessConfig,
+      documentSchema: ownerlessSchema,
+      metadata: ownerlessMetadata,
+    });
+    const state = {
+      filters: {
+        search: "",
+        expression: {
+          kind: "and" as const,
+          children: [
+            {
+              kind: "comparison" as const,
+              field: "createdBy.username" as never,
+              operator: "equals" as const,
+              value: "ada",
+            },
+            {
+              kind: "comparison" as const,
+              field: "updatedBy.username" as never,
+              operator: "equals" as const,
+              value: "grace",
+            },
+          ],
+        },
+      },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 10 },
+      visibleFields: ["title" as const],
+    };
+    const createdBy = adapter.config.fields.find((field) => String(field.name) === "createdBy.username");
+    const updatedBy = adapter.config.fields.find((field) => String(field.name) === "updatedBy.username");
+    const reviewedBy = adapter.config.fields.find((field) => String(field.name) === "reviewedBy.username");
+
+    expect(createdBy).toMatchObject({
+      label: "Erstellt von \u2192 Username",
+      type: "text",
+      list: false,
+      form: false,
+    });
+    expect(updatedBy?.label).toBe("Aktualisiert von \u2192 Username");
+    expect(reviewedBy?.label).toBe("reviewedBy \u2192 Username");
+    expect(createdBy).not.toHaveProperty("filterPicker");
+    expect(
+      adapter.config.fields.some((field) => ["createdBy", "updatedBy", "reviewedBy"].includes(String(field.name))),
+    ).toBe(false);
+    expect(adapter.toSearchParams(state).get("where")).toBe("createdBy.username==ada;updatedBy.username==grace");
+    expect(adapter.toSearchParams(state).get("fields[ownerless-records]")).toBe("id,title");
+    expect(adapter.selectedFields(state)).toEqual(["id", "title"]);
+    expect(adapter.requiredDepth(state)).toBe(0);
+
+    const enriched = enrichApiV2FilterConfig({ config: ownerlessConfig, metadata: ownerlessMetadata, translate });
+    expect(enriched.fields.find((field) => String(field.name) === "createdBy.username")?.label).toBe(
+      "Erstellt von \u2192 Username",
+    );
+    expect(
+      enriched.fields.find((field) => String(field.name) === "updatedBy.username")?.capabilities.filterOperators,
+    ).toEqual(["equals"]);
+    expect(enriched.defaultColumns).toEqual(["title"]);
+  });
+
+  it("derives a filter-only identity relationship and its target fields from metadata", () => {
+    const withoutTargetConfig = {
+      ...config,
+      useAsTitle: "room" as const,
+      defaultColumns: ["room" as const],
+      fields: config.fields.filter((field) => field.name !== "target"),
+    };
+    const withPicker: ApiV2CollectionMetadata<Booking> = {
+      ...metadata,
+      filtering: {
+        ...metadata.filtering,
+        selectors: {
+          ...metadata.filtering.selectors,
+          target: {
+            operators: ["==", "=in="] as const,
+            wildcards: false,
+            fieldType: "text",
+            picker: { resource: "instruments", identity: "globalId", globalIdPrefix: "IN" },
+          },
+        },
+      },
+    };
+    const built = createApiV2CollectionAdapter<Booking>({
+      config: withoutTargetConfig,
+      documentSchema,
+      metadata: withPicker,
+    });
+    const identity = built.config.fields.find((field) => String(field.name) === "target");
+    const targetName = built.config.fields.find((field) => String(field.name) === "target.name");
+
+    expect(identity).toMatchObject({
+      type: "relationship",
+      relationTo: "instruments",
+      hasMany: false,
+      filterPicker: { resource: "instruments", identity: "globalId", globalIdPrefix: "IN" },
+      list: false,
+      form: false,
+    });
+    expect(targetName?.capabilities.filterOperators).toEqual(["contains"]);
+    expect(
+      built.selectedFields({
+        filters: { search: "", expression: null },
+        sorting: [],
+        page: { pageIndex: 0, pageSize: 10 },
+        visibleFields: ["target.name"] as never,
+      }),
+    ).toEqual(["id", "room", "target"]);
+    expect(
+      built.requiredDepth({
+        filters: { search: "", expression: null },
+        sorting: [],
+        page: { pageIndex: 0, pageSize: 10 },
+        visibleFields: ["target.name"] as never,
+      }),
+    ).toBe(1);
+  });
+
+  it("normalizes known picker operands before serialization and rejects malformed identities", () => {
+    const withPicker: ApiV2CollectionMetadata<Booking> = {
+      ...metadata,
+      filtering: {
+        ...metadata.filtering,
+        selectors: {
+          ...metadata.filtering.selectors,
+          target: {
+            operators: ["==", "!=", "=in=", "=out="],
+            wildcards: false,
+            fieldType: "text",
+            picker: { resource: "instruments", identity: "globalId", globalIdPrefix: "IN" },
+          },
+        },
+      },
+    };
+    const built = createApiV2CollectionAdapter<Booking>({ config, documentSchema, metadata: withPicker });
+    const listFilter = {
+      filters: {
+        search: "",
+        expression: {
+          kind: "comparison" as const,
+          field: "target" as const,
+          operator: "in" as const,
+          value: [" in2 ", "in3"],
+        },
+      },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 10 },
+      visibleFields: ["room"] as const,
+    };
+
+    expect(built.toSearchParams(listFilter).get("where")).toBe("target=in=(IN2,IN3)");
+    expect(() =>
+      built.toSearchParams({
+        ...listFilter,
+        filters: {
+          ...listFilter.filters,
+          expression: { kind: "comparison", field: "target", operator: "equals", value: "other" },
+        },
+      }),
+    ).toThrow("Invalid relationship filter value: target");
+  });
+
+  it("leaves unknown picker sources on the typed filter path", () => {
+    const withUnknownPicker: ApiV2CollectionMetadata<Booking> = {
+      ...metadata,
+      filtering: {
+        ...metadata.filtering,
+        selectors: {
+          ...metadata.filtering.selectors,
+          target: {
+            operators: ["=="],
+            wildcards: false,
+            fieldType: "text",
+            picker: { resource: "not-installed", identity: "globalId", globalIdPrefix: "ZZ" },
+          },
+        },
+      },
+    };
+    const built = createApiV2CollectionAdapter<Booking>({ config, documentSchema, metadata: withUnknownPicker });
+
+    expect(
+      built
+        .toSearchParams({
+          filters: {
+            search: "",
+            expression: { kind: "comparison", field: "target", operator: "equals", value: "typed-value" },
+          },
+          sorting: [],
+          page: { pageIndex: 0, pageSize: 10 },
+          visibleFields: ["room"],
+        })
+        .get("where"),
+    ).toBe("target==typed-value");
+  });
+
+  it("preserves legacy numeric, relation target, and me identity values", () => {
+    const legacyMetadata: ApiV2CollectionMetadata<Booking> = {
+      ...metadata,
+      filtering: {
+        ...metadata.filtering,
+        selectors: {
+          ...metadata.filtering.selectors,
+          "target.value": { operators: ["=="], wildcards: false, fieldType: "number" },
+          "target.relationTo": { operators: ["=="], wildcards: false, fieldType: "text" },
+          "createdBy.value": { operators: ["=="], wildcards: false, fieldType: "text" },
+        },
+      },
+    };
+    const built = createApiV2CollectionAdapter<Booking>({ config, documentSchema, metadata: legacyMetadata });
+    const expression: FilterExpression<Booking> = {
+      kind: "and",
+      children: [
+        { kind: "comparison", field: "target.value", operator: "equals", value: 42 },
+        { kind: "comparison", field: "target.relationTo", operator: "equals", value: "instruments" },
+        { kind: "comparison", field: "createdBy.value" as never, operator: "equals", value: "me" },
+      ],
+    };
+
+    expect(
+      built
+        .toSearchParams({
+          filters: { search: "", expression },
+          sorting: [],
+          page: { pageIndex: 0, pageSize: 10 },
+          visibleFields: ["room"],
+        })
+        .get("where"),
+    ).toBe("target.value==42;target.relationTo==instruments;createdBy.value==me");
+  });
+
+  it("does not attach a picker to a multi-target relationship without picker metadata", () => {
+    const multiTargetConfig = {
+      ...config,
+      fields: config.fields.map((field) => (field.name === "target" ? { ...field, hasMany: true } : field)),
+    };
+    const built = createApiV2CollectionAdapter<Booking>({ config: multiTargetConfig, documentSchema, metadata });
+
+    expect(built.config.fields.find((field) => field.name === "target")?.filterPicker).toBeUndefined();
+  });
+
   it("selects owner relationships instead of dotted virtual fields", () => {
     const state = {
       filters: { search: "", expression: null },
@@ -254,6 +549,56 @@ describe("filter selectors derived from published relationship targets", () => {
     });
 
     expect(params.get("where")).toBe("target.name=contains=in2,target==IN2");
+  });
+
+  it("keeps the validated legacy IN search when picker metadata names an unavailable source", () => {
+    const selectors = {
+      ...metadata.filtering.selectors,
+      target: {
+        operators: ["=="] as const,
+        wildcards: false,
+        fieldType: "text" as const,
+        picker: { resource: "retired-instruments", identity: "globalId" as const, globalIdPrefix: "IN" },
+      },
+    };
+    const searchable = adapterWithSearch(["target.name", "target.globalId"], {
+      ...metadata,
+      filtering: { ...metadata.filtering, selectors },
+    });
+
+    const params = searchable.toSearchParams({
+      filters: { search: "in2", expression: null },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 10 },
+      visibleFields: ["target"] as never,
+    });
+
+    expect(params.get("where")).toBe("target.name=contains=in2,target==IN2");
+  });
+
+  it("does not use an incompatible source's declared prefix as a target identity", () => {
+    const selectors = {
+      ...metadata.filtering.selectors,
+      target: {
+        operators: ["=="] as const,
+        wildcards: false,
+        fieldType: "text" as const,
+        picker: { resource: "instruments", identity: "globalId" as const, globalIdPrefix: "XX" },
+      },
+    };
+    const searchable = adapterWithSearch(["target.name", "target.globalId"], {
+      ...metadata,
+      filtering: { ...metadata.filtering, selectors },
+    });
+
+    const params = searchable.toSearchParams({
+      filters: { search: "XX2", expression: null },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 10 },
+      visibleFields: ["target"] as never,
+    });
+
+    expect(params.get("where")).toBe("target.name=contains=XX2");
   });
 
   it("keeps an out-of-range instrument identifier as plain text", () => {

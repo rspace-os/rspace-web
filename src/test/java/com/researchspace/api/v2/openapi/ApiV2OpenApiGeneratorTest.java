@@ -28,7 +28,14 @@ import com.researchspace.model.booking.BookingConfigurationCapabilities;
 import com.researchspace.model.booking.BookingOwnerHealth;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionMutationLimits;
+import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.Relationship;
+import com.researchspace.model.collection.RelationshipTarget;
+import com.researchspace.model.collection.Sort;
+import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
 import io.swagger.v3.core.util.Json31;
@@ -136,6 +143,8 @@ class ApiV2OpenApiGeneratorTest {
   private static final class ExampleConflictException extends RuntimeException {}
 
   private static final class SecondConflictException extends RuntimeException {}
+
+  private record MultiTargetFilterFixture(Long id) {}
 
   @SuppressWarnings("unchecked")
   private static ProtectedResourceAccess<BookingConfiguration, Long> protectedAccess() {
@@ -377,6 +386,16 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(List.of("=="), objectMap(bookingSelectors.get("target.deleted")).get("operators"));
     assertTrue(bookingSelectors.containsKey("createdBy.username"));
     assertTrue(bookingSelectors.containsKey("updatedBy.username"));
+    assertFalse(bookingSelectors.containsKey("createdBy"));
+    assertTrue(bookingSelectors.containsKey("createdBy.value"));
+    assertTrue(bookingSelectors.containsKey("target.value"));
+    assertTrue(bookingSelectors.containsKey("target.relationTo"));
+    assertEquals(
+        Map.of(
+            "resource", "booking-instruments",
+            "identity", "globalId",
+            "globalIdPrefix", "IN"),
+        objectMap(objectMap(bookingSelectors.get("target")).get("picker")));
 
     Map<String, Object> bookingRelationshipFields =
         objectMap(bookingWhere.get("x-rspace-relationship-fields"));
@@ -386,6 +405,7 @@ class ApiV2OpenApiGeneratorTest {
             .containsAll(List.of("target.id", "target.name", "target.globalId", "target.deleted")));
     Map<String, Object> name = objectMap(bookingRelationshipFields.get("target.name"));
     assertEquals("Name", name.get("title"));
+    assertEquals("Booking target", name.get("viaTitle"));
     assertTrue(((List<?>) name.get("operators")).contains("=contains="));
     Map<String, Object> globalId = objectMap(bookingRelationshipFields.get("target.globalId"));
     assertEquals("Global ID", globalId.get("title"));
@@ -504,6 +524,43 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
+  void publishesPickersOnlyForSingleTargetRelationshipsWithGlobalIds() {
+    Map<String, Object> document = multiTargetDocument();
+    Map<String, Object> paths = objectMap(document.get("paths"));
+    Map<String, Object> list = objectMap(objectMap(paths.get("/api/v2/multi-targets")).get("get"));
+    Map<String, Object> where =
+        objectMapList(list.get("parameters")).stream()
+            .filter(parameter -> parameter.get("name").equals("where"))
+            .findFirst()
+            .orElseThrow();
+    Map<String, Object> selectors =
+        objectMap(objectMap(where.get("x-rspace-filter")).get("selectors"));
+
+    assertTrue(selectors.containsKey("target"));
+    assertFalse(objectMap(selectors.get("target")).containsKey("picker"));
+    assertTrue(selectors.containsKey("target.value"));
+    assertTrue(selectors.containsKey("target.relationTo"));
+  }
+
+  @Test
+  void generatedFilterMetadataIsDeterministicAndAdditive() {
+    Map<String, Object> first = document();
+    Map<String, Object> second = document();
+    Map<String, Object> paths = objectMap(first.get("paths"));
+    Map<String, Object> list =
+        objectMap(objectMap(paths.get("/api/v2/booking-configurations")).get("get"));
+    Map<String, Object> where =
+        objectMapList(list.get("parameters")).stream()
+            .filter(parameter -> parameter.get("name").equals("where"))
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals(first, second);
+    assertTrue(objectMap(where.get("x-rspace-filter")).containsKey("maximumComparisons"));
+    assertTrue(objectMap(where.get("x-rspace-relationship-fields")).containsKey("target.name"));
+  }
+
+  @Test
   void documentsDailyAuditSnapshotContract() {
     Map<String, Object> document = document();
     Map<String, Object> paths = objectMap(document.get("paths"));
@@ -563,6 +620,44 @@ class ApiV2OpenApiGeneratorTest {
   private Map<String, Object> document() {
     return Json31.mapper()
         .convertValue(generator.generate(), new TypeReference<LinkedHashMap<String, Object>>() {});
+  }
+
+  private static Map<String, Object> multiTargetDocument() {
+    Relationship<MultiTargetFilterFixture> target =
+        Relationship.polymorphicToOne(
+            "target",
+            CollectionFieldTypes.longNumber(),
+            List.of(
+                new RelationshipTarget<>("instruments", "instrument", "IN", Instrument.class),
+                new RelationshipTarget<>(
+                    "booking-instruments", "booking-instrument", "BK", Instrument.class)),
+            new SplitReferenceBinding<MultiTargetFilterFixture, String, Long>(
+                ignored -> null, "target.type", "target.id"));
+    CollectionDescription<MultiTargetFilterFixture> description =
+        new CollectionDescription<>(
+            "multi-targets",
+            MultiTargetFilterFixture.class,
+            List.of(
+                Field.readOnly(
+                    "id", "id", CollectionFieldTypes.longNumber(), MultiTargetFilterFixture::id)),
+            List.of(target),
+            "id",
+            List.of(new Sort("id", true)));
+    ApiV2ResourceSpec<MultiTargetFilterFixture, Long> spec =
+        new ApiV2ResourceSpec<>(
+            description, operationsMock(), Long::valueOf, "create-error", "update-error");
+    ApiV2RelationshipTargetSpec<Instrument, Long> instruments =
+        new ApiV2RelationshipTargetSpec<>(
+            ApiV2InstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
+    ApiV2RelationshipTargetSpec<Instrument, Long> bookingInstruments =
+        new ApiV2RelationshipTargetSpec<>(
+            ApiV2BookingInstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
+    ApiV2ResourceCatalog catalog =
+        new ApiV2ResourceCatalog(List.of(spec), List.of(instruments, bookingInstruments));
+    return Json31.mapper()
+        .convertValue(
+            new ApiV2OpenApiGenerator(catalog, "Test API", "2.0.0").generate(),
+            new TypeReference<LinkedHashMap<String, Object>>() {});
   }
 
   private static Map<String, Object> objectMap(Object value) {

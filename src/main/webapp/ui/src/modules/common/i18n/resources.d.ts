@@ -1763,6 +1763,8 @@ export default interface Resources {
       "fields": {
         "allowDoubleBooking": "Allow concurrent bookings",
         "buffer": "Buffer before and after bookings (minutes)",
+        "bufferAfter": "Buffer after booking (minutes)",
+        "bufferBefore": "Buffer before booking (minutes)",
         "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
         "granularity": "Time increment",
         "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
@@ -2505,7 +2507,9 @@ export default interface Resources {
       "openOptions": "Show matching records",
       "openRecord": "Open record {globalId}",
       "remove": "Remove {item}",
+      "restoreFailed": "Could not restore this saved selection. Try again.",
       "search": "Search by name or global ID",
+      "searchTooShort": "Type at least {count, plural, one {# character} other {# characters}} to search.",
       "unavailable": "{value} (unavailable)"
     },
     "resourceAccess": {
@@ -2861,6 +2865,10 @@ export default interface Resources {
         "customFields": "Custom fields",
         "extraFields": "Extra fields",
         "relationshipFields": "Related record fields"
+      },
+      "fields": {
+        "createdBy": "Created by",
+        "updatedBy": "Updated by"
       },
       "filters": {
         "alsoShowAsColumn": "Show as column",
