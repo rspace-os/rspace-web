@@ -83,7 +83,8 @@ class RuntimeFieldQueryTest {
                     ApiV2BookingInstrumentResource.DESCRIPTION.relationships(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
-                    AccessPolicy.readOnly(readAccess)))),
+                    AccessPolicy.readOnly(readAccess)),
+                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION)),
         null);
   }
 
@@ -275,7 +276,8 @@ class RuntimeFieldQueryTest {
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2BookingInstrumentResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
-                source));
+                source,
+                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
     var translator = new RsqlCollectionQuery(ApiV2BookingConfigurationResource.DESCRIPTION, "cfg");
     Predicate predicate =
         translator.translate(

@@ -145,7 +145,8 @@ class ApiV2QuerySupportTest {
             List.of(
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2BookingInstrumentResource.DESCRIPTION,
-                ApiV2UserResource.DESCRIPTION));
+                ApiV2UserResource.DESCRIPTION,
+                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
 
     assertDoesNotThrow(
         () ->
@@ -162,7 +163,8 @@ class ApiV2QuerySupportTest {
             List.of(
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2BookingInstrumentResource.DESCRIPTION,
-                ApiV2UserResource.DESCRIPTION));
+                ApiV2UserResource.DESCRIPTION,
+                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
     User subject = new User("subject");
     subject.setId(73L);
 
