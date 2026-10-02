@@ -3,7 +3,6 @@ package com.researchspace.auth;
 import com.researchspace.auth.password.BoundedPasswordVerifier;
 import com.researchspace.model.User;
 import com.researchspace.service.UserManager;
-import java.util.function.BiPredicate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -15,26 +14,23 @@ import org.springframework.stereotype.Service;
 /**
  * Checks a login password against the stored hash for both Shiro login ({@link ShiroRealm}) and
  * reauthentication, through the shared {@link BoundedPasswordVerifier}. A hash stored in an
- * outdated encoding is replaced after a successful match.
+ * outdated encoding is replaced after a successful match; failing to store it never fails the
+ * check.
  */
 @Slf4j
 @Service
-public class UsernamePasswordCredentialsMatcher
-    implements BiPredicate<User, String>, CredentialsMatcher {
+public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
 
   private @Autowired BoundedPasswordVerifier verifier;
   private @Autowired UserManager userMgr;
 
-  @Override
-  public boolean test(User subject, String suppliedPassword) {
-    BoundedPasswordVerifier.Result result =
-        verify(subject.getUsername(), suppliedPassword, subject.getPassword());
-    if (result.upgradedHash() != null) {
-      // keep the caller's copy in step, or a later save would re-hash the old hash
-      subject.setPassword(result.upgradedHash());
-      subject.setSalt(null);
-    }
-    return result.matches();
+  /**
+   * Checks the password for reauthentication. If the stored hash is upgraded, the caller's {@code
+   * subject} is updated to match, so a later save of it does not treat the old hash as a new
+   * password.
+   */
+  public boolean verifyAndUpgrade(User subject, String suppliedPassword) {
+    return verify(subject.getUsername(), suppliedPassword, subject.getPassword(), subject);
   }
 
   @Override
@@ -44,21 +40,37 @@ public class UsernamePasswordCredentialsMatcher
       return false;
     }
     String username = (String) info.getPrincipals().getPrimaryPrincipal();
-    return verify(username, new String(supplied), (String) info.getCredentials()).matches();
+    return verify(username, new String(supplied), (String) info.getCredentials(), null);
   }
 
-  private BoundedPasswordVerifier.Result verify(
-      String username, String suppliedPassword, String storedPassword) {
+  private boolean verify(
+      String username, String suppliedPassword, String storedPassword, User callerCopy) {
     BoundedPasswordVerifier.Result result;
     try {
       result = verifier.verify(username, suppliedPassword, storedPassword);
     } catch (IllegalArgumentException e) {
-      log.error("Stored password of [{}] has an unrecognised encoding", username);
-      return new BoundedPasswordVerifier.Result(false, null);
+      log.error("Stored password of [{}] cannot be verified", username, e);
+      return false;
     }
     if (result.upgradedHash() != null) {
-      userMgr.upgradePasswordHash(username, result.upgradedHash());
+      storeUpgrade(username, storedPassword, result.upgradedHash(), callerCopy);
     }
-    return result;
+    return result.matches();
+  }
+
+  private void storeUpgrade(String username, String oldHash, String newHash, User callerCopy) {
+    try {
+      if (!userMgr.upgradePasswordHash(username, oldHash, newHash)) {
+        log.info("Password of [{}] changed during verification, upgrade skipped", username);
+        return;
+      }
+    } catch (RuntimeException e) {
+      log.warn("Could not store upgraded password hash of [{}], old hash kept", username, e);
+      return;
+    }
+    if (callerCopy != null) {
+      callerCopy.setPassword(newHash);
+      callerCopy.setSalt(null);
+    }
   }
 }

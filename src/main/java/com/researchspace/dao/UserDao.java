@@ -56,9 +56,11 @@ public interface UserDao extends GenericDao<User, Long> {
    * {@code UserManager.save} that would treat the hash as a new plain-text password.
    *
    * @param username the login name
+   * @param expectedPassword the stored value the new one replaces; no update if it has changed
    * @param encodedPassword the already-encoded password, including its encoder id prefix
+   * @return the number of rows updated, 0 or 1
    */
-  void updatePasswordHash(String username, String encodedPassword);
+  int updatePasswordHash(String username, String expectedPassword, String encodedPassword);
 
   User getUserByUsername(String username);
 
