@@ -22,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class BookingItemPermissions {
 
+  /** Personal notification management is granted to every reader of the Inventory item. */
+  public static final String MANAGE_NOTIFICATION_SUBSCRIPTION = "MANAGE_NOTIFICATION_SUBSCRIPTION";
+
   @org.springframework.beans.factory.annotation.Autowired
   private com.researchspace.booking.dao.BookingCalendarSubscriptionDao subscriptions;
 
@@ -109,14 +112,17 @@ public class BookingItemPermissions {
 
   private ResolvedResourceAccess resolve(Instrument instrument, User subject) {
     boolean owner =
-        subject.hasSysadminRole()
-            || (instrument.getOwner() != null
-                && instrument.getOwner().getUsername() != null
-                && instrument.getOwner().getUsername().equals(subject.getUsername()));
-    if (owner) {
+        instrument.getOwner() != null
+            && instrument.getOwner().getUsername() != null
+            && instrument.getOwner().getUsername().equals(subject.getUsername());
+    if (owner || subject.hasSysadminRole()) {
+      Set<String> capabilities =
+          new java.util.HashSet<>(
+              withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)));
+      capabilities.add(MANAGE_NOTIFICATION_SUBSCRIPTION);
       return new ResolvedResourceAccess(
           Optional.of(BookingResourceRoleScheme.OWNER),
-          withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)),
+          capabilities,
           List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.OWNER)));
     }
     if (inventoryPermissions.canUserEditInventoryRecord(instrument, subject)) {
@@ -134,6 +140,7 @@ public class BookingItemPermissions {
       Set<String> capabilities =
           new java.util.HashSet<>(
               withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)));
+      capabilities.add(MANAGE_NOTIFICATION_SUBSCRIPTION);
       return new ResolvedResourceAccess(
           Optional.of(BookingResourceRoleScheme.OWNER),
           capabilities,
@@ -154,10 +161,10 @@ public class BookingItemPermissions {
   }
 
   private ResolvedResourceAccess role(String role) {
+    Set<String> capabilities = new java.util.HashSet<>(roleScheme.capabilities(role));
+    capabilities.add(MANAGE_NOTIFICATION_SUBSCRIPTION);
     return new ResolvedResourceAccess(
-        Optional.of(role),
-        roleScheme.capabilities(role),
-        List.of(ResourceRoleSource.implicit(role)));
+        Optional.of(role), capabilities, List.of(ResourceRoleSource.implicit(role)));
   }
 
   private static Set<String> withoutAclManagement(Set<String> capabilities) {
