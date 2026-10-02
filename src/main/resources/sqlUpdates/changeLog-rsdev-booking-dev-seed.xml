@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-booking-dev-seed" author="researchspace" context="dev-test">
+    <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                   onFailMessage="booking dev seed skipped: booking data already exists"
+                   onErrorMessage="booking dev seed skipped: booking data already exists">
+      <sqlCheck expectedResult="0">SELECT COUNT(*) FROM BookingConfiguration</sqlCheck>
+    </preConditions>
+    <comment>
+      Seed a small, repeatable booking catalogue for a fresh development database. The SQL is
+      intentionally dev-test only; production uses the service-backed fixture initializer instead.
+    </comment>
+    <sqlFile path="booking-dev-seed.sql" relativeToChangelogFile="true"
+             splitStatements="true" stripComments="true" endDelimiter=";"/>
+  </changeSet>
+</databaseChangeLog>

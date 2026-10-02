@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-booking-cancellation-reason" author="researchspace" context="run">
+    <comment>
+      Store optional cancellation reasons on bookings and retain the complete formatted message in
+      notifications.
+    </comment>
+    <addColumn tableName="TimeSlotBooking">
+      <column name="cancellationReason" type="VARCHAR(500)"/>
+    </addColumn>
+    <addColumn tableName="TimeSlotBooking_AUD">
+      <column name="cancellationReason" type="VARCHAR(500)"/>
+    </addColumn>
+    <modifyDataType
+        tableName="Notification"
+        columnName="notificationMessage"
+        newDataType="TEXT"/>
+  </changeSet>
+</databaseChangeLog>
