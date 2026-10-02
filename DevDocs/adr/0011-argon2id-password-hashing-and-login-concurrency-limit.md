@@ -100,7 +100,9 @@ failed reauthentications share the failed-login counter and window in `DefaultLo
 the failure count and window, before any password is checked, and records a failure through
 `handleReauthenticationFailure`. Unlike a failed form login, a failed reauthentication never sets
 the `accountLocked` flag, because API and SSO logins treat that flag as a disabled account until a
-form login clears it, and a few mistyped signing passwords must not have that effect. Without
+form login clears it, and a few mistyped signing passwords must not have that effect. The OAuth
+password grant reaches reauthentication before the client is validated, so setting the flag there
+would let anyone disable any user's API access with four bad grants. Without
 these rules, an authenticated low-privilege user scripting wrong passwords at the sign endpoint
 could hold every permit indefinitely and deny login to the whole instance.
 
