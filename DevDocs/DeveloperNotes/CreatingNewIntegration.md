@@ -41,6 +41,8 @@ Once an integration is available at the system level (sysadmin toggle is on), in
    No extra per-user options are required. The App row plus classification in code is enough (see classification below).
    b. If the App requires per-user configuration options:
    Define one or more `PropertyDescriptor` rows for your option keys and link them to your App via `AppConfigElementDescriptor` rows. Example: [adding an API key](/src/main/resources/sqlUpdates/changeLog-rsdev-369.xml).
+
+   Option values are treated as secrets unless listed in `CLIENT_READABLE_SETTINGS` in `IntegrationsHandlerImpl` (RSDEV-1525). A stored unlisted value reaches the browser as `null` (an unset one as `""`), and posting `null` back keeps the stored value. Add your non-secret keys (URLs, aliases, labels) to that set, or the UI receives `null` in their place. Server code that needs a real secret must read it from the database, because `IntegrationInfo` options withhold secrets.
 3. Code changes:
    - Add your integration to `IntegrationsHandlerImpl.isAppConfigIntegration()` if it has more than one option set per user.
    - Otherwise, if it has only a single option set per user, add it to `isSingleOptionSetAppConfigIntegration()`.
@@ -70,6 +72,10 @@ For integrations using OAuth 2.0, implement both of the following:
    - Handles the OAuth callback
    - Stores the access token using `UserConnectionManager`
 
+Tokens are never returned to the browser (RSDEV-1525):
+
+- `IntegrationsHandlerImpl` withholds OAuth tokens in `IntegrationInfo`: a connected app's `ACCESS_TOKEN` key is present with a `null` value. The only exceptions are apps listed in `CLIENT_READABLE_TOKEN_APPS`, whose browser code calls the provider directly. Add an app there only when there is no server-side alternative, and annotate any endpoint or value that sends a secret to the browser with `@ClientReadableSecret("why the browser needs it")`.
+
 #### Single-user token/API key
 
 For integrations that use a simple API key or token per user:
@@ -80,6 +86,7 @@ For integrations that use a simple API key or token per user:
    - `userId`: The user's username
    - `providerId`: Your integration's app name
    - `accessToken`: The actual token/API key
+4. Return the token to the UI as `null` (`setSingleUserToken` does this), keep the stored token when `null` is posted back, and treat a stored `""` as unset.
 
 ## Frontend changes
 

@@ -29,6 +29,22 @@ username and password. This piece of data is then stored and used to make
 requests on the user behalf when they use the integration. The UI will
 therefore contain a number of text fields and a save button.
 
+Stored secrets are never sent back to the browser. A stored secret arrives as
+`null` and an unset one as `""` (the `Secret` type in `SecretField`). Posting
+`null` back keeps the stored value, `""` clears it, and any other string
+replaces it. For this to work:
+- App settings are withheld unless listed in `CLIENT_READABLE_SETTINGS` in
+  `IntegrationsHandlerImpl`. Add your integration's non-secret settings there,
+  or the UI receives `null` in their place.
+- Type secret credentials as `Secret`, and decode them so that `null` is
+  accepted (see `parseSecret` in `useIntegrationsEndpoint.ts`).
+- Render secret inputs with `components/Inputs/SecretField`. It shows a stored
+  secret as `(unchanged)` and posts `null` back when it is left untouched.
+  Its clear button posts `""`, which must remove the stored value. Pass
+  `clearable={false}` where the secret is required.
+- Once a save succeeds, set the field to `secretAfterSave(value)` so it shows
+  `(unchanged)` again.
+
 ### Complex Configuration
 A few of the integrations require a complex set of configurations. This is
 typically where the user may connect to a number of instances of the service, with
