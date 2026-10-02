@@ -9,6 +9,7 @@ import type {
   RelationshipOptionWithSource,
   RelationshipSource,
 } from "./relationshipSources";
+import { databaseIdFromGlobalId } from "./relationshipSources";
 
 export const OPTION_PAGE_SIZE = 20;
 
@@ -19,9 +20,7 @@ function sourceList(source: RelationshipSource | undefined, sources: readonly Re
 
 /** The numeric ID inside a global ID, or null when the prefix belongs to another resource. */
 export function databaseId(source: RelationshipSource, globalId: string): number | null {
-  if (!source.globalIdPrefix) return null;
-  const match = new RegExp(`^${source.globalIdPrefix}(\\d+)$`, "i").exec(globalId.trim());
-  return match ? Number(match[1]) : null;
+  return source.globalIdPrefix === undefined ? null : databaseIdFromGlobalId(globalId, source.globalIdPrefix);
 }
 
 export function useRelationshipOptions({
@@ -114,7 +113,11 @@ export function useSelectedRelationshipOptions({
     if (owner && document !== undefined && document !== null) {
       return { ...owner.toOption(document, labels), sourceId: owner.id, sourceDocument: document };
     }
-    return { value, label: value, sourceId: owner?.id ?? "unknown" };
+    return {
+      value,
+      label: queries[index]?.isSuccess && document === null ? (labels.unavailableLabel?.(value) ?? value) : value,
+      sourceId: owner?.id ?? "unknown",
+    };
   });
 }
 

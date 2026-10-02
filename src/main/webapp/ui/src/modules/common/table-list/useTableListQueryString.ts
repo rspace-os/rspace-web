@@ -1,5 +1,5 @@
-import { createParser, parseAsString, useQueryStates } from "nuqs";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { parseAsString, useQueryStates } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
 import {
   parseColumns,
@@ -64,50 +64,70 @@ export function useTableListQueryString<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,
   features: TableListFeatures<TDocument>,
   options: true | TableListQueryStringOptions,
+  preserveInvalid = false,
 ): TableListFeatures<TDocument> {
   const names = parameterNames(config.slug, options);
   const configuredTableId = typeof options === "object" ? options.tableId?.trim() : undefined;
   const storageKey = tableViewStorageKey(configuredTableId || config.slug);
   const defaultSort = config.defaultSort ?? emptySorting;
-  const stale = useMemo(() => staleFieldPolicy(config), [config]);
-  const parsers = useMemo(
-    () => ({
+  const stale = useMemo(() => (preserveInvalid ? undefined : staleFieldPolicy(config)), [config, preserveInvalid]);
+  // All readers of these nuqs keys use strings. Its shared state broadcasts parsed values,
+  // so mixing a raw reader and typed parsers would pass arrays/ASTs into the raw reader.
+  const [rawQueryState, setRawQueryState] = useQueryStates(
+    {
       search: parseAsString,
-      where: createParser({
-        parse: (value) => parseRsqlExpression(value, config, stale),
-        serialize: serializeRsqlExpression,
-        eq: (left, right) => serializeRsqlExpression(left) === serializeRsqlExpression(right),
-      }),
-      legacyFilters: createParser({
-        parse: (value) => parseFilters(value, config),
-        serialize: serializeFilters,
-        eq: (left, right) => serializeFilters(left) === serializeFilters(right),
-      }),
-      columns: createParser({
-        parse: (value) => parseColumns(value, config, stale),
-        serialize: serializeColumns,
-        eq: (left, right) => serializeColumns(left) === serializeColumns(right),
-      }).withDefault(config.defaultColumns),
-      sort: createParser({
-        parse: (value) => parseSorting(value, config),
-        serialize: serializeSorting,
-        eq: (left, right) => serializeSorting(left) === serializeSorting(right),
-      }).withDefault(defaultSort),
-    }),
-    [config, defaultSort, stale],
-  );
-  const [queryState, setQueryState] = useQueryStates(parsers, {
-    history: "replace",
-    urlKeys: {
-      search: names.search,
-      where: names.where,
-      legacyFilters: names.legacyFilters,
-      columns: names.columns,
-      sort: names.sort,
+      where: parseAsString,
+      legacyFilters: parseAsString,
+      columns: parseAsString,
+      sort: parseAsString,
     },
-  });
-  // Read presence through the same adapter as the parsed state (including memory history).
-  const [rawQueryState] = useQueryStates(Object.fromEntries(Object.values(names).map((name) => [name, parseAsString])));
+    { history: "replace", urlKeys: names },
+  );
+  const queryState = useMemo(
+    () => ({
+      search: rawQueryState.search,
+      where: rawQueryState.where === null ? null : parseRsqlExpression(rawQueryState.where, config, stale),
+      legacyFilters: rawQueryState.legacyFilters === null ? null : parseFilters(rawQueryState.legacyFilters, config),
+      columns:
+        rawQueryState.columns === null
+          ? config.defaultColumns
+          : (parseColumns(rawQueryState.columns, config, stale) ?? config.defaultColumns),
+      sort: rawQueryState.sort === null ? defaultSort : (parseSorting(rawQueryState.sort, config) ?? defaultSort),
+    }),
+    [rawQueryState, config, stale, defaultSort],
+  );
+  const viewValid =
+    !preserveInvalid ||
+    ((rawQueryState.where === null || queryState.where !== null) &&
+      (rawQueryState.legacyFilters === null || queryState.legacyFilters !== null) &&
+      (rawQueryState.columns === null || parseColumns(rawQueryState.columns, config) !== null) &&
+      (rawQueryState.sort === null || parseSorting(rawQueryState.sort, config) !== null));
+  const setQueryState = useCallback(
+    (next: Partial<typeof queryState>) =>
+      setRawQueryState({
+        search: next.search,
+        where: next.where === undefined ? undefined : next.where === null ? null : serializeRsqlExpression(next.where),
+        legacyFilters:
+          next.legacyFilters === undefined
+            ? undefined
+            : next.legacyFilters === null
+              ? null
+              : serializeFilters(next.legacyFilters),
+        columns:
+          next.columns === undefined
+            ? undefined
+            : serializeColumns(next.columns) === serializeColumns(config.defaultColumns)
+              ? null
+              : serializeColumns(next.columns),
+        sort:
+          next.sort === undefined
+            ? undefined
+            : serializeSorting(next.sort) === serializeSorting(defaultSort)
+              ? null
+              : serializeSorting(next.sort),
+      }),
+    [setRawQueryState, config.defaultColumns, defaultSort],
+  );
   const urlOwnsInitialState = useRef(Object.values(rawQueryState).some((value) => value !== null));
   const [storageReady, setStorageReady] = useState(urlOwnsInitialState.current);
   const featuresRef = useRef(features);
@@ -129,6 +149,7 @@ export function useTableListQueryString<TDocument>(
   const featureSorting = features.sorting === false ? null : serializeSorting(features.sorting.value);
 
   useEffect(() => {
+    if (!viewValid) return;
     if (urlOwnsInitialState.current) return;
     let active = true;
     const restored = loadStoredTableView(storageKey, config, stale);
@@ -143,9 +164,10 @@ export function useTableListQueryString<TDocument>(
     return () => {
       active = false;
     };
-  }, [config, defaultSort, setQueryState, stale, storageKey]);
+  }, [config, defaultSort, setQueryState, stale, storageKey, viewValid]);
 
   useEffect(() => {
+    if (!viewValid) return;
     const current = featuresRef.current;
     if (current.filtering !== false) {
       if (serializeFilters(current.filtering.value) === queryFilters) {
@@ -171,9 +193,10 @@ export function useTableListQueryString<TDocument>(
         current.sorting.onChange(queryState.sort);
       }
     }
-  }, [queryColumns, queryFilterState, queryFilters, querySorting, queryState.columns, queryState.sort]);
+  }, [queryColumns, queryFilterState, queryFilters, querySorting, queryState.columns, queryState.sort, viewValid]);
 
   useEffect(() => {
+    if (!viewValid) return;
     const current = featuresRef.current;
     let search: string | null | undefined;
     let where: typeof queryState.where | undefined;
@@ -213,9 +236,19 @@ export function useTableListQueryString<TDocument>(
     ) {
       void setQueryState({ search, where, legacyFilters, columns, sort });
     }
-  }, [featureColumns, featureFilters, featureSorting, queryColumns, queryFilters, querySorting, setQueryState]);
+  }, [
+    featureColumns,
+    featureFilters,
+    featureSorting,
+    queryColumns,
+    queryFilters,
+    querySorting,
+    setQueryState,
+    viewValid,
+  ]);
 
   useEffect(() => {
+    if (!viewValid) return;
     if (!storageReady) return;
     saveStoredTableView(
       storageKey,
@@ -237,6 +270,7 @@ export function useTableListQueryString<TDocument>(
     queryState.sort,
     storageKey,
     storageReady,
+    viewValid,
     sortingEnabled,
   ]);
 

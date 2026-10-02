@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { TooltipProvider } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
 import { topLevelFilterCount } from "./components/filters/TableListFilters";
+import { RestoredViewIssue } from "./components/RestoredViewIssue";
 import { TableListControlPanel } from "./components/TableListControlPanel";
 import { TableListDataTable } from "./components/TableListDataTable";
 import { TableListHeader } from "./components/TableListHeader";
@@ -54,6 +55,8 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   reserveEmptyRows,
   onSelectRuntimeField,
   runtimeFieldDefinitions,
+  runtimeFieldAuthScope,
+  restoredViewIssue,
 }: TableListProps<TDocument>) {
   const { t } = useTranslation("common");
   const online = useSyncExternalStore(subscribeOnline, getOnline, getOnline);
@@ -100,46 +103,52 @@ function TableListContent<TDocument extends Record<string, unknown>>({
               {t("tableList.offline")}
             </p>
           ) : null}
-          <TableListToolbar
-            config={config}
-            collectionLabel={collectionLabel}
-            features={features}
-            clientSide={clientSide}
-            activePanel={activePanel}
-            filterCount={filterCount}
-            filterButtons={filterButtons}
-            hideFilterPanel={hideFilterPanel}
-            debounceSearch={debounceSearch}
-            onPanelChange={setActivePanel}
-            onReset={() => setActivePanel(null)}
-            resetView={onReset}
-          />
-          <TableListControlPanel
-            onSelectRuntimeField={onSelectRuntimeField}
-            runtimeFieldDefinitions={runtimeFieldDefinitions}
-            activePanel={activePanel}
-            config={config}
-            features={features}
-            onClose={() => setActivePanel(null)}
-          />
-          <TableListDataTable
-            config={config}
-            rows={rows}
-            getRowId={getRowId}
-            features={features}
-            clientSide={clientSide}
-            status={status}
-            error={error}
-            onRowOpen={onRowOpen}
-            collectionLabel={collectionLabel}
-            reserveEmptyRows={reserveEmptyRows}
-            uiColumns={tableUiColumns}
-            selection={selection}
-            presentations={presentations}
-            renderRows={renderRows}
-            renderRowsWhenEmpty={renderRowsWhenEmpty}
-            emptyDescription={emptyDescription}
-          />
+          {restoredViewIssue ? <RestoredViewIssue issue={restoredViewIssue} /> : null}
+          {!restoredViewIssue ? (
+            <>
+              <TableListToolbar
+                config={config}
+                collectionLabel={collectionLabel}
+                features={features}
+                clientSide={clientSide}
+                activePanel={activePanel}
+                filterCount={filterCount}
+                filterButtons={filterButtons}
+                hideFilterPanel={hideFilterPanel}
+                debounceSearch={debounceSearch}
+                onPanelChange={setActivePanel}
+                onReset={() => setActivePanel(null)}
+                resetView={onReset}
+              />
+              <TableListControlPanel
+                onSelectRuntimeField={onSelectRuntimeField}
+                runtimeFieldDefinitions={runtimeFieldDefinitions}
+                runtimeFieldAuthScope={runtimeFieldAuthScope}
+                activePanel={activePanel}
+                config={config}
+                features={features}
+                onClose={() => setActivePanel(null)}
+              />
+              <TableListDataTable
+                config={config}
+                rows={rows}
+                getRowId={getRowId}
+                features={features}
+                clientSide={clientSide}
+                status={status}
+                error={error}
+                onRowOpen={onRowOpen}
+                collectionLabel={collectionLabel}
+                reserveEmptyRows={reserveEmptyRows}
+                uiColumns={tableUiColumns}
+                selection={selection}
+                presentations={presentations}
+                renderRows={renderRows}
+                renderRowsWhenEmpty={renderRowsWhenEmpty}
+                emptyDescription={emptyDescription}
+              />
+            </>
+          ) : null}
         </div>
       </section>
       {activeRowAction && activeRow && rowActions
@@ -153,15 +162,22 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   );
 }
 
-function QueryStringTableList<TDocument extends Record<string, unknown>>(props: TableListProps<TDocument>) {
-  const features = useTableListQueryString(
+function QueryStringSync<TDocument extends Record<string, unknown>>(props: TableListProps<TDocument>) {
+  useTableListQueryString(
     props.config,
     props.features,
     typeof props.queryString === "object" ? props.queryString : true,
+    props.stateSync !== undefined,
   );
-  return <TableListContent {...props} features={features} />;
+  return null;
 }
 
 export function TableList<TDocument extends Record<string, unknown>>(props: TableListProps<TDocument>) {
-  return props.queryString === false ? <TableListContent {...props} /> : <QueryStringTableList {...props} />;
+  return (
+    <>
+      {props.stateSync}
+      {props.queryString === false ? null : <QueryStringSync {...props} />}
+      <TableListContent {...props} />
+    </>
+  );
 }

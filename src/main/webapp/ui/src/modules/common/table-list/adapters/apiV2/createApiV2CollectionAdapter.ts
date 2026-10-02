@@ -3,34 +3,18 @@ import type {
   CollectionConfig,
   FieldConfig,
   FieldName,
-  FilterOperator,
   ResolvedCollectionConfig,
 } from "@/modules/common/collection/collectionConfig";
-import { fieldLabel, hierarchicalFieldLabel } from "@/modules/common/collection/collectionConfig";
-import {
-  isFilterOperatorCompatible,
-  resolveCollectionConfig,
-} from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 import type { CollectionPage, CollectionQueryState } from "../../tableListState";
-import type { ApiV2CollectionMetadata, ApiV2FilterOperator } from "./apiV2CollectionMetadata";
+import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
+import { createApiV2FilterFields, type RuntimeFieldCatalogForNamespace } from "./apiV2FilterFields";
 import { collectionQueryParams, selectedFields } from "./collectionQueryParams";
-import { type RuntimeFieldDefinition, runtimeFieldValuesSchema } from "./runtimeFieldCatalog";
+import { runtimeFieldValuesSchema } from "./runtimeFieldCatalog";
 
-const semanticOperators: Record<ApiV2FilterOperator, FilterOperator> = {
-  "==": "equals",
-  "!=": "notEquals",
-  "=gt=": "greaterThan",
-  "=ge=": "greaterThanOrEqual",
-  "=lt=": "lessThan",
-  "=le=": "lessThanOrEqual",
-  "=in=": "in",
-  "=out=": "notIn",
-  "=contains=": "contains",
-  "=like=": "matches",
-  "=exists=": "exists",
-};
+export type { RuntimeFieldCatalogForNamespace } from "./apiV2FilterFields";
 
 /**
  * A document schema must be an object schema: the adapter narrows it to the selected fields with
@@ -55,11 +39,6 @@ export type ApiV2CollectionDefinition<TDocument> = {
   metadata: ApiV2CollectionMetadata<TDocument>;
   runtimeFields?: readonly RuntimeFieldCatalogForNamespace[];
   translate?: (key: string, values?: Record<string, unknown>) => string;
-};
-
-export type RuntimeFieldCatalogForNamespace = {
-  namespace: string;
-  definitions: readonly RuntimeFieldDefinition[];
 };
 
 export function staleRuntimeFields<TDocument>(
@@ -120,51 +99,37 @@ export function createApiV2CollectionAdapter<TDocument>({
     }
   }
   validateSearchSelectors(sourceConfig, metadata);
-  // Derived fields go through the same narrowing, so their operators and wildcard rule come
-  // from the published selector rather than from the defaults for a text field.
   const relationships = new Map(
     sourceConfig.fields.filter((field) => field.type === "relationship").map((field) => [String(field.name), field]),
   );
-  const derived = derivedTargetFields(sourceConfig, metadata, translate);
-  const runtime = derivedRuntimeFields(metadata, runtimeFields, relationshipLabels(sourceConfig, translate));
-  const relationshipFields = new Set(derived.map(({ field }) => field.name));
-  const runtimeSelectors = new Map(
-    runtime.map(({ field, operators, supportsWildcards }) => [field.name, { operators, supportsWildcards }] as const),
-  );
-  const virtualFields = new Set([...relationshipFields, ...runtimeSelectors.keys()]);
-  const projectableFields = new Set(Object.keys(documentSchema.entries) as FieldName<TDocument>[]);
-  const fields = [
-    ...sourceConfig.fields,
-    ...derived.map(({ field }) => field),
-    ...runtime.map(({ field }) => field),
-  ].map((field) => {
-    const runtimeOperators = runtimeSelectors.get(field.name);
-    if (runtimeOperators) {
-      return {
-        ...field,
-        capabilities: {
-          sortable: false,
-          filterOperators: runtimeOperators.operators.filter((operator) =>
-            isFilterOperatorCompatible(field.type, operator),
-          ),
-          supportsWildcards: runtimeOperators.supportsWildcards,
-        },
-      };
-    }
-    const selector = metadata.filtering.selectors[field.name] ?? metadata.relationshipFields?.[String(field.name)];
-    const filterOperators =
-      selector?.operators
-        .map((operator) => semanticOperators[operator])
-        .filter((operator) => isFilterOperatorCompatible(field.type, operator)) ?? [];
-    return {
-      ...field,
-      capabilities: {
-        sortable: metadata.sorting.fields.includes(field.name),
-        filterOperators,
-        supportsWildcards: selector?.wildcards ?? false,
-      },
-    };
+  const filterFields = createApiV2FilterFields({
+    config: sourceConfig,
+    metadata,
+    runtimeFields,
+    translate,
   });
+  const relationshipFields = new Set(filterFields.relationshipFields.map(({ field }) => field.name));
+  const runtimeSelectors = filterFields.runtimeSelectors;
+  const projectableFields = new Set(Object.keys(documentSchema.entries) as FieldName<TDocument>[]);
+  const fields: FieldConfig<TDocument>[] = [
+    ...filterFields.sourceFields,
+    ...filterFields.relationshipFields.map(({ field, owner, targetField }) => ({
+      ...field,
+      list: {
+        dependencies: [owner],
+        renderCell: ({ row }: { row: TDocument }) => targetValue(row, owner, targetField),
+      },
+    })),
+    ...filterFields.runtimeFields.map(({ field, namespace, responseField, definition }) => ({
+      ...field,
+      list: namespace.columnSelectable
+        ? {
+            description: definition.source.label,
+            renderCell: ({ row }: { row: TDocument }) => runtimeValue(row, responseField, definition.id),
+          }
+        : (false as const),
+    })),
+  ];
   const configInput: CollectionConfig<TDocument> = {
     ...sourceConfig,
     fields,
@@ -173,17 +138,7 @@ export function createApiV2CollectionAdapter<TDocument>({
   };
   const config = {
     ...resolveCollectionConfig(configInput),
-    runtimeSources: (metadata.runtimeFields ?? [])
-      .filter((namespace) => namespace.filterable || namespace.columnSelectable)
-      .map((namespace) => ({
-        namespace: namespace.namespace,
-        viaLabel:
-          namespace.via === "" ? "" : (relationshipLabels(sourceConfig, translate).get(namespace.via) ?? namespace.via),
-        catalog: namespace.catalog,
-        maximumLimit: namespace.catalogMaximumLimit,
-        filterable: namespace.filterable,
-        columnSelectable: namespace.columnSelectable,
-      })),
+    runtimeSources: filterFields.runtimeSources,
   };
   const responseSchema = (
     (metadata.runtimeFields ?? []).length === 0
@@ -201,19 +156,14 @@ export function createApiV2CollectionAdapter<TDocument>({
     (metadata.runtimeFields ?? []).some((namespace) => name.startsWith(`${namespace.namespace}.`));
   const runtimeProjection = (state: CollectionQueryState<TDocument>) =>
     state.visibleFields.filter((name) => runtimeSelectors.has(name)).map(String);
-  const catalogSelectors = Object.fromEntries(
-    runtime.map(({ field, wireOperators, supportsWildcards }) => [
-      String(field.name),
-      { operators: wireOperators, wildcards: supportsWildcards },
-    ]),
-  ) as ApiV2CollectionMetadata<TDocument>["filtering"]["selectors"];
+  const catalogSelectors = filterFields.catalogSelectors;
 
   return {
     config,
     metadata,
     isRuntimeSelector,
     selectedFields: (state) => {
-      const selected = selectedFields(state, config, virtualFields, projectableFields);
+      const selected = selectedFields(state, config, filterFields.virtualFields, projectableFields);
       const namespaces = (metadata.runtimeFields ?? [])
         .filter((namespace) =>
           state.visibleFields.some(
@@ -225,7 +175,7 @@ export function createApiV2CollectionAdapter<TDocument>({
     },
     requiredDepth: (state) => (state.visibleFields.some((field) => relationshipFields.has(field)) ? 1 : 0),
     toSearchParams: (state) =>
-      collectionQueryParams(state, config, metadata, virtualFields, projectableFields, {
+      collectionQueryParams(state, config, metadata, filterFields.virtualFields, projectableFields, {
         projection: runtimeProjection(state),
         selectors: catalogSelectors,
         projectionLimitMessage: (limit) => translate("tableList.error.customFieldColumnLimit", { limit }),
@@ -241,138 +191,6 @@ export function createApiV2CollectionAdapter<TDocument>({
       return { rows, rowCount: result.totalDocs };
     },
   };
-}
-
-/**
- * Optional list fields for each target selector that no configured field covers.
- *
- *
- * <p>The name is a selector such as `target.name`, which is not a key of the document. That is why
- * these fields read their value through the relationship field. They stay out of forms because
- * they are not fields of the source document. The cast is confined to this function.
- */
-function relationshipLabels<TDocument>(
-  sourceConfig: CollectionConfig<TDocument>,
-  translate: (key: string) => string,
-): ReadonlyMap<string, string> {
-  return new Map(
-    sourceConfig.fields
-      .filter((field) => field.type === "relationship")
-      .map((field) => [String(field.name), fieldLabel(field, translate)] as const),
-  );
-}
-
-function derivedTargetFields<TDocument>(
-  sourceConfig: CollectionConfig<TDocument>,
-  metadata: ApiV2CollectionMetadata<TDocument>,
-  translate: (key: string) => string,
-): { field: FieldConfig<TDocument>; owner: FieldName<TDocument>; targetField: string }[] {
-  const declared = new Set<string>(sourceConfig.fields.map((field) => String(field.name)));
-  const relationships = new Map(
-    sourceConfig.fields
-      .filter((field) => field.type === "relationship")
-      .map((field) => [String(field.name), field] as const),
-  );
-  return Object.entries(metadata.relationshipFields ?? {}).flatMap(([selector, published]) => {
-    const dot = selector.indexOf(".");
-    const relationship = relationships.get(selector.slice(0, dot));
-    const targetField = selector.slice(dot + 1);
-    if (declared.has(selector) || !relationship) {
-      return [];
-    }
-    if (published.fieldType === null) return [];
-    const name = selector as FieldName<TDocument>;
-    const owner = relationship.name;
-    const viaLabel = fieldLabel(relationship, translate);
-    const common = {
-      name,
-      labelKey: selector,
-      label: hierarchicalFieldLabel(viaLabel, published.title ?? targetField),
-      origin: {
-        kind: "relationshipTarget" as const,
-        groupLabelKey: "tableList.fieldGroups.relationshipFields",
-        viaLabel,
-      },
-      list: {
-        dependencies: [owner],
-        renderCell: ({ row }: { row: TDocument }) => targetValue(row, owner, targetField),
-      },
-      form: false as const,
-    };
-    const field = (() => {
-      switch (published.fieldType) {
-        case "number":
-          return { ...common, type: "number" as const };
-        case "boolean":
-          return { ...common, type: "boolean" as const };
-        case "dateTime":
-          return { ...common, type: "dateTime" as const };
-        default:
-          return { ...common, type: "text" as const };
-      }
-    })() satisfies FieldConfig<TDocument>;
-    return [{ field, owner, targetField }];
-  });
-}
-
-function derivedRuntimeFields<TDocument>(
-  metadata: ApiV2CollectionMetadata<TDocument>,
-  catalog: readonly RuntimeFieldCatalogForNamespace[],
-  viaLabels: ReadonlyMap<string, string>,
-): {
-  field: FieldConfig<TDocument>;
-  operators: readonly FilterOperator[];
-  wireOperators: readonly ApiV2FilterOperator[];
-  supportsWildcards: boolean;
-}[] {
-  const namespaces = new Map((metadata.runtimeFields ?? []).map((namespace) => [namespace.namespace, namespace]));
-  return catalog.flatMap((entry) =>
-    entry.definitions.flatMap((definition) => {
-      const namespace = namespaces.get(entry.namespace);
-      if (!namespace) return [];
-      const responseField = namespace.responseField as FieldName<TDocument>;
-      const name = (
-        namespace.via === "" ? definition.selector : `${namespace.via}.${definition.selector}`
-      ) as FieldName<TDocument>;
-      const viaLabel = namespace.via === "" ? "" : (viaLabels.get(namespace.via) ?? namespace.via);
-      const common = {
-        name,
-        labelKey: definition.selector,
-        label: hierarchicalFieldLabel(viaLabel, definition.label),
-        origin: {
-          kind: "runtimeField" as const,
-          groupLabelKey: "tableList.fieldGroups.customFields",
-          sourceLabel: definition.source.label,
-          stableId: definition.id,
-          namespace: namespace.namespace,
-          viaLabel,
-        },
-        list: namespace.columnSelectable
-          ? {
-              description: definition.source.label,
-              renderCell: ({ row }: { row: TDocument }) => runtimeValue(row, responseField, definition.id),
-            }
-          : (false as const),
-        form: false as const,
-      };
-      const field = (
-        definition.options.length > 0
-          ? { ...common, type: "select" as const, options: [...definition.options] }
-          : definition.type === "number"
-            ? { ...common, type: "number" as const }
-            : { ...common, type: "text" as const }
-      ) satisfies FieldConfig<TDocument>;
-      const wireOperators = namespace.filterable ? definition.operators : [];
-      return [
-        {
-          field,
-          operators: wireOperators.map((operator) => semanticOperators[operator]),
-          wireOperators,
-          supportsWildcards: definition.supportsWildcards,
-        },
-      ];
-    }),
-  );
 }
 
 function runtimeValue<TDocument>(row: TDocument, responseField: FieldName<TDocument>, id: string): string {
