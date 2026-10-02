@@ -62,6 +62,16 @@ public interface UserDao extends GenericDao<User, Long> {
    */
   int updatePasswordHash(String username, String expectedPassword, String encodedPassword);
 
+  /**
+   * Overwrites a stored verification password hash if it still has the expected value.
+   *
+   * @param username the login name
+   * @param expectedHash the stored value the new one replaces; no update if it has changed
+   * @param encodedHash the already-encoded verification password, including its encoder id prefix
+   * @return the number of rows updated, 0 or 1
+   */
+  int updateVerificationPasswordHash(String username, String expectedHash, String encodedHash);
+
   User getUserByUsername(String username);
 
   /**

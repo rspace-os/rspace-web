@@ -203,6 +203,12 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     return userDao.updatePasswordHash(username, verifiedPassword, encodedPassword) == 1;
   }
 
+  @Override
+  public boolean upgradeVerificationPasswordHash(
+      String username, String verifiedHash, String encodedHash) {
+    return userDao.updateVerificationPasswordHash(username, verifiedHash, encodedHash) == 1;
+  }
+
   // session may be null if it's api call
   public User getUserByUsername(String username, boolean forceRefresh) {
     Session session = SecurityUtils.getSubject().getSession(false);

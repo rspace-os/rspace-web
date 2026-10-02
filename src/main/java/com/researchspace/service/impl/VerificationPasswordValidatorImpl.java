@@ -2,18 +2,27 @@ package com.researchspace.service.impl;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IVerificationPasswordValidator;
+import com.researchspace.service.UserManager;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class VerificationPasswordValidatorImpl implements IVerificationPasswordValidator {
 
   protected @Autowired IPropertyHolder properties;
+  private @Autowired RSpacePasswordEncoder passwordEncoder;
+  private @Autowired BoundedPasswordVerifier verifier;
+  // UserManagerImpl depends on this class
+  private @Autowired @Lazy UserManager userMgr;
 
   @Override
   public boolean isVerificationPasswordSet(User user) {
@@ -44,8 +53,34 @@ public class VerificationPasswordValidatorImpl implements IVerificationPasswordV
    */
   @Override
   public boolean authenticateVerificationPassword(User passwordOwner, String password) {
-    String hashedPassword = passwordOwner.getVerificationPassword();
-    return BCrypt.checkpw(password, hashedPassword);
+    String username = passwordOwner.getUsername();
+    String stored = passwordOwner.getVerificationPassword();
+    BoundedPasswordVerifier.Result result;
+    try {
+      result = verifier.verify(username, password, stored);
+    } catch (IllegalArgumentException e) {
+      log.error("Verification password of [{}] cannot be verified", username, e);
+      return false;
+    }
+    if (result.upgradedHash() != null) {
+      storeUpgrade(passwordOwner, stored, result.upgradedHash());
+    }
+    return result.matches();
+  }
+
+  private void storeUpgrade(User passwordOwner, String oldHash, String newHash) {
+    String username = passwordOwner.getUsername();
+    try {
+      if (!userMgr.upgradeVerificationPasswordHash(username, oldHash, newHash)) {
+        log.info("Verification password of [{}] changed during verification", username);
+        return;
+      }
+    } catch (RuntimeException e) {
+      log.warn("Could not store upgraded verification password of [{}]", username, e);
+      return;
+    }
+    // keep the caller's copy in step, or a later save would write the old hash back
+    passwordOwner.setVerificationPassword(newHash);
   }
 
   /**
@@ -56,6 +91,6 @@ public class VerificationPasswordValidatorImpl implements IVerificationPasswordV
    */
   @Override
   public String hashVerificationPassword(String password) {
-    return BCrypt.hashpw(password, BCrypt.gensalt());
+    return passwordEncoder.encode(password);
   }
 }

@@ -4,21 +4,31 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.impl.VerificationPasswordValidatorImpl;
 import com.researchspace.testutils.TestFactory;
+import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class IVerificationPasswordValidatorTest {
   @Mock IPropertyHolder propertyHolder;
+  @Mock UserManager userMgr;
+  @Spy RSpacePasswordEncoder passwordEncoder = new RSpacePasswordEncoder();
+
+  @Spy
+  BoundedPasswordVerifier verifier =
+      new BoundedPasswordVerifier(passwordEncoder, 8, Duration.ofSeconds(5));
 
   @InjectMocks private VerificationPasswordValidatorImpl verificationValidator;
   User anyUser;
