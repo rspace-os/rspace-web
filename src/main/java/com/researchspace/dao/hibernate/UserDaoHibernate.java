@@ -131,6 +131,17 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     return query.uniqueResult();
   }
 
+  @Override
+  public void updatePasswordHash(String username, String encodedPassword) {
+    getSession()
+        .createMutationQuery(
+            "update User user set user.password = :pwd, user.salt = null"
+                + " where user.username = :uname")
+        .setParameter("pwd", encodedPassword)
+        .setParameter("uname", username)
+        .executeUpdate();
+  }
+
   public User getUserByUsername(String username) {
     return getOptionalUserByUsername(username)
         .orElseThrow(() -> new ObjectRetrievalFailureException(User.class, username));

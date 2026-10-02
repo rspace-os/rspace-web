@@ -315,6 +315,15 @@ public interface UserManager extends GenericManager<User, Long> {
   User getUserByUsernameNoSession(String username);
 
   /**
+   * Stores a login password re-encoded after a successful verification, replacing an outdated
+   * encoding. Writes the hash directly; never pass a plain-text password.
+   *
+   * @param username the login name
+   * @param encodedPassword the encoded password, including its encoder id prefix
+   */
+  void upgradePasswordHash(String username, String encodedPassword);
+
+  /**
    * Updates email of existing user
    *
    * @return the updated user
