@@ -27,6 +27,9 @@ import {
   useIntegrationsEndpoint,
 } from "../useIntegrationsEndpoint";
 
+// crypto.randomUUID() needs a secure context; these keys only have to be unique per page
+let unsavedKeyCount = 0;
+
 type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
 
 type UnwrapArray<T extends Array<unknown>> = {
@@ -149,7 +152,7 @@ const DialogContent = observer(
             copyOfState.credentials.push(
               observable({
                 ...(newlySavedConfig ?? { ...config, DSW_APIKEY: secretAfterSave(config.DSW_APIKEY), optionsId: "" }),
-                _key: newlySavedConfig?.optionsId ?? crypto.randomUUID(),
+                _key: newlySavedConfig?.optionsId ?? `unsaved-${++unsavedKeyCount}`,
                 dirty: false,
               }),
             );

@@ -689,7 +689,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   public void deleteAppOptions(Long optionsId, String appName, User user) {
     AppConfigElementSet configSetBeforeRemoval = appConfigMgr.getAppConfigElementSetById(optionsId);
     // the cleanup below and the cache eviction trust appName, so it must name the set's own app
-    if (!configSetBeforeRemoval.getApp().getName().equals(getAppNameFromIntegrationName(appName))) {
+    if (!configSetBeforeRemoval
+        .getApp()
+        .getName()
+        .equalsIgnoreCase(getAppNameFromIntegrationName(appName))) {
       throw new IllegalArgumentException("Options " + optionsId + " do not belong to " + appName);
     }
     appConfigMgr.deleteAppConfigSet(optionsId, user);
