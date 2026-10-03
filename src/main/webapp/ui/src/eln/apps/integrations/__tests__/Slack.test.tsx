@@ -108,6 +108,96 @@ describe("Slack", () => {
     expect(integrationState.credentials.length).toBe(1);
     expect(mockAxios.history.post.length).toBe(0);
   });
+  describe("Refetching after Slack connects", () => {
+    const channel = (optionsId: string, name: string) => ({
+      SLACK_TEAM_NAME: "RSpace Dev",
+      SLACK_CHANNEL_ID: `C${optionsId}`,
+      SLACK_CHANNEL_NAME: name,
+      SLACK_USER_ID: "U01A48677SP",
+      SLACK_CHANNEL_LABEL: name,
+      SLACK_TEAM_ID: "T1R89S3MG",
+      optionsId,
+    });
+    const mockServerChannels = (mockAxios: MockAdapter, channels: Array<ReturnType<typeof channel>>) =>
+      mockAxios.onGet("integration/allIntegrations").reply(200, {
+        success: true,
+        data: {
+          ...allIntegrationsAreDisabled.data,
+          SLACK: {
+            ...allIntegrationsAreDisabled.data.SLACK,
+            options: Object.fromEntries(channels.map(({ optionsId, ...rest }) => [optionsId, rest])),
+          },
+        },
+        error: null,
+      });
+    const connect = async () => {
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
+      bc.postMessage({ type: "SLACK_CONNECTED" });
+      bc.close();
+      // the Add button comes back once the refetch has finished
+      await screen.findByRole("button", { name: "common:actions.add" });
+    };
+
+    test("A refetch that finds no new channel should not duplicate it or show the added toast.", async () => {
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onGet("slack/oauthUrl").reply(200, { success: true, data: "https://slack.com/oauth", error: null });
+      mockServerChannels(mockAxios, [channel("1", "#one")]);
+      const integrationState = observable<IntegrationStates["SLACK"]>({
+        mode: "DISABLED",
+        credentials: [Optional.present(channel("1", "#one"))],
+      });
+      render(
+        <Alerts>
+          <Slack integrationState={integrationState} update={() => {}} />
+        </Alerts>,
+      );
+      fireEvent.click(screen.getByRole("button"));
+
+      await connect();
+
+      expect(mockAxios.history.get.map(({ baseURL, url }) => `${baseURL}/${url}`)).toContain(
+        "/integration/allIntegrations",
+      );
+      expect(screen.getAllByRole("textbox")).toHaveLength(1);
+      expect(
+        screen.queryByRole("alert", { name: "apps:integrations.slack.alerts.addSuccess" }),
+      ).not.toBeInTheDocument();
+    });
+
+    test("Remove after the server list changed should remove the channel with the matching optionsId.", async () => {
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onGet("slack/oauthUrl").reply(200, { success: true, data: "https://slack.com/oauth", error: null });
+      mockAxios.onPost("integration/deleteAppOptions").reply(200, { success: true, data: null });
+      // channel 1 was removed in another tab and channel 3 was just connected
+      mockServerChannels(mockAxios, [channel("2", "#two"), channel("3", "#three")]);
+      const integrationState = observable<IntegrationStates["SLACK"]>({
+        mode: "DISABLED",
+        credentials: [Optional.present(channel("1", "#one")), Optional.present(channel("2", "#two"))],
+      });
+      render(
+        <Alerts>
+          <Slack integrationState={integrationState} update={() => {}} />
+        </Alerts>,
+      );
+      fireEvent.click(screen.getByRole("button"));
+      fireEvent.change(screen.getAllByRole("textbox")[1], { target: { value: "unsaved label" } });
+
+      await connect();
+
+      expect(screen.getByRole("alert", { name: "apps:integrations.slack.alerts.addSuccess" })).toBeVisible();
+      expect(screen.getAllByRole("textbox").map((t) => (t as HTMLInputElement).value)).toEqual([
+        "unsaved label",
+        "#three",
+      ]);
+
+      fireEvent.click(screen.getAllByRole("button", { name: "common:actions.remove" })[0]);
+      expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.deleteSuccess" })).toBeVisible();
+      expect(mockAxios.history.post[0].data.get("optionsId")).toBe("2");
+      expect(integrationState.credentials.map((c) => c.map(({ optionsId }) => optionsId).orElse(null))).toEqual(["3"]);
+      expect(screen.getAllByRole("textbox").map((t) => (t as HTMLInputElement).value)).toEqual(["#three"]);
+    });
+  });
   test("Should render the existing channels.", () => {
     render(
       <Alerts>

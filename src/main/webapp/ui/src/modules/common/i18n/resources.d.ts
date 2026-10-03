@@ -447,6 +447,9 @@ export default interface Resources {
           "removeSuccess": "Successfully removed repository."
         },
         "description": "Store and manage your code through a software development and Git version control platform.",
+        "errors": {
+          "authWindowFailed": "Failed to open GitHub authentication window"
+        },
         "helpLink": "GitHub integration docs",
         "name": "GitHub",
         "orElse": "Error getting configured repositories",
@@ -651,6 +654,10 @@ export default interface Resources {
           "labelSuccess": "Successfully changed label."
         },
         "description": "Message and collaborate with your team with a cloud-based communication tool.",
+        "errors": {
+          "authWindowFailed": "Failed to open Slack authentication window",
+          "resultsUnavailable": "Save completed but cannot show results."
+        },
         "fields": {
           "channelName": "Channel name",
           "rspaceLabel": "RSpace Label",
@@ -5467,6 +5474,7 @@ export default interface Resources {
         "errors": {
           "noAccessToken": "Please, add this Slack channel again on RSpace (no access token found).",
           "noConnectedUser": "There are no RSpace users associated with this Slack account! Please connect to Slack from the RSpace Apps tab.",
+          "noWebhook": "Please add this Slack channel again on RSpace (no webhook URL found).",
           "tooManyConnectedUsers": "There is more than 1 RSpace user associated with this Slack account! [{0}, {1}...]",
           "verificationCodeMismatch": "Verification token does not match!"
         },

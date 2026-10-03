@@ -9,11 +9,8 @@ import com.researchspace.analytics.service.AnalyticsEvent;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.User;
-import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
-import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ChatBotFunctionalityHandler;
@@ -203,7 +200,8 @@ public class SlackController extends BaseOAuth2Controller {
               .build();
       model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
       return CONNECTED_VIEW;
-    } catch (IllegalArgumentException e) {
+    } catch (RuntimeException e) {
+      log.warn("Saving the Slack channel failed: {}", e.getMessage());
       OauthAuthorizationError error =
           getAuthErrorBuilder()
               .errorMsg(getText("apps.oauth.errors.connection", new Object[] {APP_DISPLAY_NAME}))
@@ -237,26 +235,8 @@ public class SlackController extends BaseOAuth2Controller {
     String accessToken = requiredText(response, "access_token");
     String webhookUrl = requiredText(webhook, "url");
 
-    UserAppConfig cfg =
-        userAppCfgMgr.saveAppConfigElementSet(channel, null, true, user, App.APP_SLACK);
-    // set ids only increase, so the new channel has the highest
-    long setId =
-        cfg.getAppConfigElementSets().stream()
-            .mapToLong(AppConfigElementSet::getId)
-            .max()
-            .orElseThrow();
-    UserConnection connection =
-        new UserConnection(
-            new UserConnectionId(user.getUsername(), SLACK_APP_NAME, String.valueOf(setId)),
-            accessToken);
-    connection.setSecret(webhookUrl);
-    // a user's connections to one provider need distinct ranks
-    connection.setRank(
-        userConnectionManager
-            .findMaxRankByUserNameProviderName(user.getUsername(), SLACK_APP_NAME)
-            .map(rank -> rank + 1)
-            .orElse(1));
-    userConnectionManager.save(connection);
+    userConnectionManager.saveWithNewAppConfigElementSet(
+        channel, SLACK_APP_NAME, accessToken, webhookUrl, user);
   }
 
   private static String requiredText(JsonNode node, String field) {
