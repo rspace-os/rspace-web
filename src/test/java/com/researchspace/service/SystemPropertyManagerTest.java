@@ -12,6 +12,7 @@ import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -38,6 +39,13 @@ public class SystemPropertyManagerTest extends SpringTransactionalTest {
 
     spv = sysPropMgr.save(spv.getId(), "zzz", sysadmin);
     assertEquals("zzz", spv.getValue());
+  }
+
+  @Test
+  public void onlySysadminSavesGlobalValueObject() {
+    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("user"));
+    SystemPropertyValue spv = sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE);
+    assertThrows(AuthorizationException.class, () -> sysPropMgr.save(spv, user));
   }
 
   @Test

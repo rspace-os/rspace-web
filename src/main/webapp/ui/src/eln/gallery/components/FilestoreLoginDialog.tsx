@@ -13,6 +13,7 @@ import SecretField from "../../../components/Inputs/SecretField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { getErrorMessage } from "../../../util/error";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 
@@ -79,7 +80,8 @@ const FilestoreLoginDialog = ({
               });
               onSuccess();
             } catch (error) {
-              console.error(error);
+              // not the error itself: its request config holds the password
+              console.error("Filestore login failed", getErrorMessage(error, ""));
               if (error instanceof Error) {
                 const message = Parsers.objectPath(["response", "status"], error)
                   .flatMap((status) => {

@@ -31,6 +31,7 @@ public interface UserAppConfigManager extends GenericManager<UserAppConfig, Long
    * @throws org.apache.shiro.authz.AuthorizationException if {@code appConfigSetDataId} is not a
    *     set belonging to {@code user}
    */
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
   UserAppConfig saveAppConfigElementSet(
       Map<String, String> appConfigSetData,
       Long appConfigSetDataId,

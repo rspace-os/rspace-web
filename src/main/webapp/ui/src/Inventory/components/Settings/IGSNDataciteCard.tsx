@@ -72,11 +72,13 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
 
   const unsavedChanges: boolean = JSON.stringify(updatedSettings) !== JSON.stringify(savedSettings);
   const required = updatedSettings.enabled === "true";
-  const missingRequired =
-    required &&
-    (Object.keys(updatedSettings) as Array<keyof typeof updatedSettings>)
-      .filter((f) => f !== "enabled")
-      .some((f) => updatedSettings[f] === "");
+  const detailFields: ReadonlyArray<Exclude<keyof SystemSettings["igsnDatacite"], "enabled">> = [
+    "serverUrl",
+    "username",
+    "password",
+    "repositoryPrefix",
+  ];
+  const missingRequired = required && detailFields.some((f) => updatedSettings[f] === "");
 
   const connectionStatusId = useId();
   const showConnectionStatus = !unsavedChanges && Boolean(lastTestResult);
@@ -111,56 +113,54 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
         <Box sx={{ mt: 1.5 }}>
           <FormControl component="fieldset" fullWidth>
             <FormLabel id="igsn-details-label">{t("settings.datacite.detailsLabel")}</FormLabel>
-            {(Object.entries(updatedSettings) as ReadonlyArray<[keyof typeof updatedSettings, string]>)
-              .filter((entry) => entry[0] !== "enabled")
-              .map((entry) => (
-                <Grid
-                  key={entry[0]}
-                  container
-                  direction="row"
-                  spacing={1}
-                  sx={{
-                    alignItems: "center",
-                    width: "100%",
-                  }}
-                >
-                  <Grid sx={{ flexGrow: 1 }}>
-                    <IdentifierSettingField
-                      secret={entry[0] === "password"}
-                      label={settingsLabels[entry[0]]}
-                      value={entry[1]}
-                      onChange={(value) => {
-                        setUpdatedSettings({ ...updatedSettings, [entry[0]]: value });
+            {detailFields.map((field) => (
+              <Grid
+                key={field}
+                container
+                direction="row"
+                spacing={1}
+                sx={{
+                  alignItems: "center",
+                  width: "100%",
+                }}
+              >
+                <Grid sx={{ flexGrow: 1 }}>
+                  <IdentifierSettingField
+                    secret={field === "password"}
+                    label={settingsLabels[field]}
+                    value={updatedSettings[field]}
+                    onChange={(value) => {
+                      setUpdatedSettings({ ...updatedSettings, [field]: value });
+                    }}
+                    placeholder={t("settings.datacite.placeholder", { label: settingsLabels[field] })}
+                    requiredError={t("settings.datacite.fieldRequiredError")}
+                    required={required}
+                    // the other fields stay editable while IGSN is disabled: disabling them would
+                    // also disable Clear, the only way to remove a stored password
+                    disabled={field === "serverUrl"}
+                  />
+                </Grid>
+                {field === "serverUrl" && (
+                  <Grid sx={{ width: "200px" }}>
+                    <RadioField
+                      name={t("settings.datacite.serverUrlLabel")}
+                      value={updatedSettings.serverUrl}
+                      onChange={({ target }) => {
+                        if (target.value !== null && typeof target.value !== "undefined") {
+                          setUpdatedSettings({
+                            ...updatedSettings,
+                            serverUrl: target.value,
+                          });
+                        }
                       }}
-                      placeholder={t("settings.datacite.placeholder", { label: settingsLabels[entry[0]] })}
-                      requiredError={t("settings.datacite.fieldRequiredError")}
-                      required={required}
-                      // the other fields stay editable while IGSN is disabled: disabling them would
-                      // also disable Clear, the only way to remove a stored password
-                      disabled={entry[0] === "serverUrl"}
+                      options={dataciteServerUrlOptions}
+                      smallText
+                      row
                     />
                   </Grid>
-                  {entry[0] === "serverUrl" && (
-                    <Grid sx={{ width: "200px" }}>
-                      <RadioField
-                        name={t("settings.datacite.serverUrlLabel")}
-                        value={updatedSettings.serverUrl}
-                        onChange={({ target }) => {
-                          if (target.value !== null && typeof target.value !== "undefined") {
-                            setUpdatedSettings({
-                              ...updatedSettings,
-                              serverUrl: target.value,
-                            });
-                          }
-                        }}
-                        options={dataciteServerUrlOptions}
-                        smallText
-                        row
-                      />
-                    </Grid>
-                  )}
-                </Grid>
-              ))}
+                )}
+              </Grid>
+            ))}
           </FormControl>
         </Box>
       </CardContent>

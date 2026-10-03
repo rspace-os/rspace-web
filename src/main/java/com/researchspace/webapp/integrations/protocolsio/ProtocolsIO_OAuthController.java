@@ -3,13 +3,10 @@ package com.researchspace.webapp.integrations.protocolsio;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.researchspace.core.util.JacksonUtil;
-import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.protocolsio.PIOUser;
-import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -19,16 +16,12 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -39,7 +32,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.RedirectView;
@@ -59,8 +51,6 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
 
   @Value("${protocolsio.oauth.authorize.url}")
   private String protocolsioAuthUrl;
-
-  static final int REFRESH_TOKEN_EXPIRED_CODE = 1217;
 
   private RestTemplate restTemplate;
 
@@ -151,82 +141,6 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
 
   private long getExpireTime(ResponseEntity<AccessToken> accessToken) {
     return Instant.now().toEpochMilli() + (accessToken.getBody().getExpiresIn() * 1000);
-  }
-
-  @Data
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public static class ClientError {
-    @JsonProperty("status_code")
-    private int statusCode;
-
-    @JsonProperty("error_message")
-    private String errorMessage;
-  }
-
-  @ClientReadableSecret(
-      "the protocols.io TinyMCE plugin calls the protocols.io API from the browser")
-  @PostMapping("/refreshToken")
-  public @ResponseBody ResponseEntity<String> refreshToken(Principal subject) {
-    Optional<UserConnection> optConn =
-        userConnectionManager.findByUserNameProviderName(subject.getName(), PROTOCOLS_IO_APP_NAME);
-    if (!optConn.isPresent()) {
-      return new ResponseEntity<String>(
-          "No token entry, please authenticate", HttpStatus.BAD_REQUEST);
-    }
-
-    UserConnection conn = optConn.get();
-    // Set required post parameters
-    Map<String, String> kv = new HashMap<>();
-    setClientSecretId(kv);
-    kv.put("refresh_token", conn.getRefreshToken());
-    kv.put("grant_type", "refresh_token");
-    HttpEntity<Map<String, String>> accessTokenRequestEntity =
-        new HttpEntity<>(kv, getApiHeaders());
-    try {
-      ResponseEntity<AccessToken> newToken =
-          restTemplate.exchange(
-              protocolsioAccessTokenUrl,
-              HttpMethod.POST,
-              accessTokenRequestEntity,
-              AccessToken.class);
-      // refresh token is also updated
-      conn.setAccessToken(newToken.getBody().getAccessToken());
-      conn.setRefreshToken(newToken.getBody().getRefreshToken());
-      conn.setExpireTime(getExpireTime(newToken));
-      userConnectionManager.save(conn);
-      return new ResponseEntity<String>(conn.getAccessToken(), HttpStatus.OK);
-    } catch (HttpStatusCodeException e) {
-      // response statuses returned to RSpace are from RSpace users point of view, not PIO client
-      // point of view.
-      log.warn(e.getMessage());
-      ClientError err = JacksonUtil.fromJson(e.getResponseBodyAsString(), ClientError.class);
-      if (err != null) {
-        log.warn(err.getErrorMessage());
-        switch (err.getStatusCode()) {
-          case REFRESH_TOKEN_EXPIRED_CODE:
-            log.warn(
-                " Refresh token expired for {}:{}",
-                subject.getName(),
-                StringAbbreviationUtils.abbreviate(conn.getRefreshToken(), 5));
-            return new ResponseEntity<String>(
-                "Refresh token expired", HttpStatus.SERVICE_UNAVAILABLE);
-          default:
-            log.warn(
-                " General error refreshing token for {}:{}",
-                subject.getName(),
-                err.getErrorMessage());
-            return new ResponseEntity<String>(
-                getText("apps.oauth.errors.general"), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-      }
-      log.warn(
-          " General error refreshing token for {}: {}",
-          subject.getName(),
-          e.getResponseBodyAsString());
-      return new ResponseEntity<String>(
-          getText("apps.oauth.errors.unknown"), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
   }
 
   private ResponseEntity<AccessToken> getAccessToken(String authorizationCode) {

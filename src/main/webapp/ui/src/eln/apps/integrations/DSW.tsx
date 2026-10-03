@@ -14,7 +14,7 @@ import TransRichText from "@/modules/common/i18n/TransRichText";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import { LOGO_COLOR } from "../../../assets/branding/dsw";
 import DSWIcon from "../../../assets/branding/dsw/logo.svg";
-import SecretField, { type Secret } from "../../../components/Inputs/SecretField";
+import SecretField, { type Secret, secretAfterSave } from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
@@ -52,6 +52,8 @@ type ExistingConfig = {
   DSW_URL: string;
   DSW_ALIAS: string;
   optionsId: OptionsId;
+  /** Stable React key: the optionsId, or a local id if the saved config was missing from the response. */
+  _key: string;
   dirty: boolean;
 };
 
@@ -77,7 +79,7 @@ const DialogContent = observer(
      */
     const copyOfState = useLocalObservable<IntegrationState<Array<ExistingConfig>>>(() => ({
       mode: integrationState.mode,
-      credentials: configs.map((c) => observable({ ...c, dirty: false })),
+      credentials: configs.map((c) => observable({ ...c, _key: c.optionsId, dirty: false })),
     }));
     const observableConfigs = copyOfState.credentials;
 
@@ -103,6 +105,7 @@ const DialogContent = observer(
                 1,
                 observable({
                   ...newCreds[indexOfNewConfig],
+                  _key: config._key,
                   dirty: false,
                 }),
               );
@@ -144,7 +147,11 @@ const DialogContent = observer(
               ({ optionsId }) => !optionIdsOfExistingConfigs.has(optionsId),
             );
             copyOfState.credentials.push(
-              observable({ ...(newlySavedConfig ?? { ...config, optionsId: "" }), dirty: false }),
+              observable({
+                ...(newlySavedConfig ?? { ...config, DSW_APIKEY: secretAfterSave(config.DSW_APIKEY), optionsId: "" }),
+                _key: newlySavedConfig?.optionsId ?? crypto.randomUUID(),
+                dirty: false,
+              }),
             );
           } catch {
             throw new Error("Save completed but cannot show results.");
@@ -173,7 +180,7 @@ const DialogContent = observer(
       <Stack spacing={1} sx={{ mt: 1 }}>
         <Stack spacing={1}>
           {observableConfigs.map((config, i) => (
-            <Card key={i} variant="outlined">
+            <Card key={config._key} variant="outlined">
               <form
                 onSubmit={(event) => {
                   event.preventDefault();

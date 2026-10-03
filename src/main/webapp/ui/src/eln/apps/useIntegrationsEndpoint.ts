@@ -1,13 +1,13 @@
 import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import type { Secret } from "../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getByKey, Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
 import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
+import type { Secret } from "../../util/secret";
 import type { emptyObject } from "../../util/types";
 
 /*

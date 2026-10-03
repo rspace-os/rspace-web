@@ -182,7 +182,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                               fullWidth
                               value={newWebhook ?? ""}
                               onChange={setNewWebhook}
-                              autoComplete="off"
+                              autoComplete="new-password"
                               sx={{ mt: 1 }}
                             />
                           </CardContent>

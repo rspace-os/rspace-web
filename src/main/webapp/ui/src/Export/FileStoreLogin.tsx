@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import SecretField from "../components/Inputs/SecretField";
 import LoadingFade from "../components/LoadingFade";
+import { getErrorMessage } from "../util/error";
 import type { FileSystemId } from "./common";
 
 type FileStoreLoginArgs = {
@@ -68,7 +69,8 @@ export default function FileStoreLogin({
       })
       .catch((error) => {
         setLoading(false);
-        console.log(error);
+        // not the error itself: its request config holds the password
+        console.error("Filestore login failed", getErrorMessage(error, ""));
       });
   };
 
@@ -82,7 +84,7 @@ export default function FileStoreLogin({
               label={t("export.fileStore.login.username")}
               value={userName}
               onChange={({ target: { value } }) => setUserName(value)}
-              autoComplete="nfsUsername"
+              autoComplete="username"
               data-test-id="username"
             />
             {userNameError && (
@@ -97,7 +99,7 @@ export default function FileStoreLogin({
               label={t("export.fileStore.login.password")}
               value={password}
               onChange={setPassword}
-              autoComplete="nfsPassword"
+              autoComplete="current-password"
               data-test-id="password"
             />
             {passwordError && <FormHelperText>{t("export.fileStore.login.passwordBlank")}</FormHelperText>}

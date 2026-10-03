@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.CacheNames.INTEGRATION_INFO;
 import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
+import static com.researchspace.service.SystemPropertyName.isClientReadable;
 import static com.researchspace.service.SystemPropertyName.valueOfPropertyName;
 import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_ALIAS;
 import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_CONFIGURED_SERVERS;
@@ -472,9 +473,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
               systemPropertyPermissionUtils.isPropertyAllowed(user, child.getName()));
         } catch (IllegalArgumentException e) {
           // Value was not one of ALLOWED, DENIED_BY_DEFAULT or DENIED
-          options.put(
-              child.getName(),
-              sysPropMgr.findByName(valueOfPropertyName(child.getName())).getValue());
+          if (isClientReadable(child)) {
+            options.put(
+                child.getName(),
+                sysPropMgr.findByName(valueOfPropertyName(child.getName())).getValue());
+          }
         }
       }
     }

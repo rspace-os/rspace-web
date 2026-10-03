@@ -1081,10 +1081,12 @@ export default interface Resources {
         "notYetSupported": "Not yet supported."
       },
       "secretField": {
-        "clear": "Clear secret",
-        "hide": "Hide secret",
-        "show": "Show secret",
-        "unchanged": "(unchanged)"
+        "clear": "Clear {label}",
+        "defaultName": "secret",
+        "hide": "Hide {label}",
+        "show": "Show {label}",
+        "unchanged": "(unchanged)",
+        "undoClear": "Undo clear {label}"
       },
       "selectedFileInfo": {
         "invalidFile": "Invalid file.",

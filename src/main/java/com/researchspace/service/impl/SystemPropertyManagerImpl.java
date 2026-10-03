@@ -100,6 +100,7 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
   @CachePut(key = "#spv.property.name + (#spv.community != null ? #spv.community.id : '')")
   @CacheEvict(allEntries = true, value = INTEGRATION_INFO)
   public SystemPropertyValue save(SystemPropertyValue spv, User subject) {
+    assertMayChange(spv, subject);
     handlePropertyChanges(spv, subject);
     // Re-fetch the SystemProperty to ensure it is managed within the current session.
     // In Hibernate 6, cascade=ALL on a detached association during persist() throws
@@ -115,13 +116,17 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
     throw new UnsupportedOperationException("Must also supply the User subject as an argument");
   }
 
-  private SystemPropertyValue doSave(
-      String propertyUniqueName, String newValue, SystemPropertyValue spv, User subject) {
-    // RSDEV-1525: global settings are sysadmin-only; a null subject is the system itself (startup)
+  // RSDEV-1525: global settings are sysadmin-only; a null subject is the system itself (startup)
+  private void assertMayChange(SystemPropertyValue spv, User subject) {
     boolean global = spv == null || spv.getCommunity() == null;
     if (global && subject != null && !subject.hasSysadminRole()) {
       throw new AuthorizationException("Only a sysadmin can change a global system setting");
     }
+  }
+
+  private SystemPropertyValue doSave(
+      String propertyUniqueName, String newValue, SystemPropertyValue spv, User subject) {
+    assertMayChange(spv, subject);
     if (spv == null) {
       log.warn("No value set for {}, creating new system property value.", propertyUniqueName);
       SystemProperty prop = syspropdao.findPropertyByPropertyName(propertyUniqueName);

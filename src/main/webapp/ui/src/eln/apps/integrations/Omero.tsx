@@ -125,7 +125,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
                     label={t("integrations.omero.fields.password")}
                     sx={{ mt: 1 }}
                     name="omeropassword"
-                    autoComplete="new-password"
+                    autoComplete="current-password"
                   />
                   <Button type="submit" sx={{ mt: 1 }}>
                     {t("actions.connect")}

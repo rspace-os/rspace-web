@@ -2,7 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, test } from "vitest";
-import SecretField, { type Secret } from "../SecretField";
+import i18n from "@/modules/common/i18n";
+import type { Secret } from "@/util/secret";
+import SecretField from "../SecretField";
 
 function Harness({ initial, clearable }: { initial: Secret; clearable?: boolean }) {
   const [value, setValue] = useState<Secret>(initial);
@@ -66,6 +68,37 @@ describe("SecretField", () => {
     await user.type(input, "x");
     await user.clear(input);
     expect(screen.getByRole("status")).toHaveTextContent('""');
+  });
+
+  test("moves focus to the input after clearing", async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={null} />);
+
+    await user.click(screen.getByRole("button", { name: "common:inputs.secretField.clear" }));
+    expect(screen.getByLabelText("Secret")).toHaveFocus();
+  });
+
+  test("undoes a clear, restoring the stored secret", async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={null} />);
+
+    await user.click(screen.getByRole("button", { name: "common:inputs.secretField.clear" }));
+    await user.click(screen.getByRole("button", { name: "common:inputs.secretField.undoClear" }));
+    expect(screen.getByRole("status")).toHaveTextContent("null");
+    expect(screen.getByLabelText("Secret")).toHaveAttribute("placeholder", "common:inputs.secretField.unchanged");
+  });
+
+  test("names its buttons after the field", async () => {
+    // cimode renders only the key, which would hide the interpolated label
+    await i18n.changeLanguage("en-US");
+    try {
+      const { unmount } = render(<SecretField label="API key" value={null} onChange={() => {}} />);
+      expect(screen.getByRole("button", { name: "Clear API key" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Show API key" })).toBeInTheDocument();
+      unmount();
+    } finally {
+      await i18n.changeLanguage("cimode");
+    }
   });
 
   test("offers no clear button for a secret that was never stored", () => {
