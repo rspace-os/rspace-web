@@ -8,6 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,6 +38,8 @@ import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO.ArchiveDialogConfig;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.model.repository.RepositoryTestFactory;
@@ -128,6 +133,7 @@ public class ExportControllerTest {
   @Mock private DiskSpaceChecker diskSpaceChecker;
   @Mock private OntologyDocManager ontologyDocManager;
   @Mock IGroupPermissionUtils grpPermUtils;
+  @Mock IPermissionUtils permissionUtils;
 
   @InjectMocks private ExportController exportController;
 
@@ -704,6 +710,29 @@ public class ExportControllerTest {
     Mockito.verify(depositHandler, times(1)).sendArchiveToRepository(any(), any(), any(), any());
     assertEquals(HttpStatus.OK, msg.getStatusCode());
     assertEquals(submissionSuccess, msg.getBody());
+  }
+
+  @Test
+  public void depositToAnotherUsersRepositoryConfigIsRejected() throws Exception {
+    stubArchiveProcessCanStart();
+    final Long appSetId = 1L;
+    UserAppConfig othersCfg = setupMockAppCfg(appSetId, App.APP_DATAVERSE);
+    when(mockUserMgr.getUserByUsername("user1a")).thenReturn(user);
+    when(principal.getName()).thenReturn("user1a");
+    when(properties.getServerUrl()).thenReturn("http://www.rspace.com");
+    doThrow(new AuthorizationException())
+        .when(permissionUtils)
+        .assertIsPermitted(eq(othersCfg), eq(PermissionType.READ), eq(user), anyString());
+
+    ResponseEntity<String> msg =
+        exportController.exportArchive(
+            createExportArchiveConfig(ids(5), names(5), types(5), true),
+            errors,
+            request,
+            principal);
+
+    assertEquals(HttpStatus.BAD_REQUEST, msg.getStatusCode());
+    verify(depositHandler, never()).sendArchiveToRepository(any(), any(), any(), any());
   }
 
   @Test
