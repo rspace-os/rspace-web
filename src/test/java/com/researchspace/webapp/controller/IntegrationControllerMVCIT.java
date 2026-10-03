@@ -50,6 +50,7 @@ import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.preference.BoxLinkType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.IntegrationsHandler;
@@ -293,6 +294,39 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     info = getIntegrationInfoFromServer(mockPrincipal, integrationName);
     assertEquals(integrationName, info.getName());
     assertFalse(info.isEnabled()); // app is disabled now
+  }
+
+  @Test
+  public void removingTheLastGitHubRepositoryDeletesTheToken() throws Exception {
+    logoutAndLoginAs(piUser);
+    userConnectionManager.save(
+        new UserConnection(
+            new UserConnectionId(piUser.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME),
+            "gho-token"));
+    Long setId =
+        userAppConfigManager
+            .saveAppConfigElementSet(
+                Map.of("GITHUB_REPOSITORY_FULL_NAME", "org/repo"),
+                null,
+                true,
+                piUser,
+                App.APP_GITHUB)
+            .getAppConfigElementSets()
+            .iterator()
+            .next()
+            .getId();
+
+    mockMvc
+        .perform(
+            post("/integration/deleteAppOptions")
+                .param("optionsId", setId.toString())
+                .param("appName", GITHUB_APP_NAME)
+                .principal(mockPrincipal))
+        .andExpect(status().is2xxSuccessful());
+
+    assertThat(
+            userConnectionManager.findByUserNameProviderName(piUser.getUsername(), GITHUB_APP_NAME))
+        .isEmpty();
   }
 
   @Test
