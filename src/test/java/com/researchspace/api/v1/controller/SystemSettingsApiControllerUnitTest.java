@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -135,7 +135,7 @@ class SystemSettingsApiControllerUnitTest {
     controller.updateInventorySettings(request, b2inst, errorsFor(b2inst), sysadmin);
 
     verify(mockSysPropMgr, never())
-        .save(eq(SystemPropertyName.PIDINST_B2INST_TOKEN), anyString(), any());
+        .save(eq(SystemPropertyName.PIDINST_B2INST_TOKEN), nullable(String.class), any());
   }
 
   @Test

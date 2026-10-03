@@ -85,6 +85,7 @@ public interface IntegrationsHandler {
    *     provided by user
    * @param user
    */
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
   void saveAppOptions(
       Long optionsId,
       Map<String, String> options,
