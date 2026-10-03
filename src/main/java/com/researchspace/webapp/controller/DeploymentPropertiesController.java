@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.User;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.ClientReadable;
 import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
@@ -19,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,18 +41,23 @@ public class DeploymentPropertiesController extends BaseController {
 
   @Autowired private SystemPropertyManager sysPropertyMgr;
 
+  @ClientReadable
   @Value("${onedrive.redirect}")
   private String oneDriveRedirect;
 
+  @ClientReadable
   @Value("${onedrive.client.id}")
   private String oneDriveClientId;
 
+  @ClientReadable
   @Value("${server.urls.prefix}")
   private String baseURL;
 
+  @ClientReadable
   @Value("${box.client.id}")
   private String boxClientId;
 
+  @ClientReadable
   @Value("${egnyte.client.id}")
   private String egnyteClientId;
 
@@ -60,24 +67,31 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${raid.server.config}")
   private String raidServerConfig;
 
+  @ClientReadable
   @Value("${labtools.server.location}")
   private String labToolsServerUrl;
 
+  @ClientReadable
   @Value("${owncloud.url}")
   private String ownCloudURL;
 
+  @ClientReadable
   @Value("${owncloud.server.name}")
   private String ownCloudServerName;
 
+  @ClientReadable
   @Value("${owncloud.client.id}")
   private String ownCloudClientId;
 
+  @ClientReadable
   @Value("${nextcloud.url}")
   private String nextCloudURL;
 
+  @ClientReadable
   @Value("${nextcloud.server.name}")
   private String nextCloudServerName;
 
+  @ClientReadable
   @Value("${nextcloud.client.id}")
   private String nextCloudClientId;
 
@@ -85,45 +99,59 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${googledrive.developer.key}")
   private String googleDriveDevKey;
 
+  @ClientReadable
   @Value("${googledrive.client.id}")
   private String googleDriveClientId;
 
+  @ClientReadable
   @Value("${googledrive.app.id}")
   private String googleDriveAppId;
 
+  @ClientReadable
   @Value("${clustermarket.api.url}")
   private String clustermarketApiUrl;
 
+  @ClientReadable
   @Value("${clustermarket.web.url}")
   private String clustermarketWebUrl;
 
+  @ClientReadable
   @Value("${omero.api.url}")
   private String omeroApiUrl;
 
+  @ClientReadable
   @Value("${sysadmin.delete.user}")
   private String sysadminDeleteUser;
 
+  @ClientReadable
   @Value("${collabora.wopi.enabled}")
   private String collaboraEnabled;
 
+  @ClientReadable
   @Value("${msoffice.wopi.enabled}")
   private String officeOnlineEnabled;
 
+  @ClientReadable
   @Value("${netfilestores.enabled}")
   private String netfilestoresEnabled;
 
+  @ClientReadable
   @Value("${gallery.actions.metadata.sidecarFile.enabled}")
   private String metadataSidecarFileEnabled;
 
+  @ClientReadable
   @Value("${chemistry.provider}")
   private String chemistryProvider;
 
+  @ClientReadable
   @Value("${deployment.cloud}")
   private String cloudDeployment;
 
+  @ClientReadable
   @Value("${deployment.description}")
   private String deploymentDescription;
 
+  @ClientReadable
   @Value("${deployment.helpEmail}")
   private String deploymentHelpEmail;
 
@@ -149,68 +177,13 @@ public class DeploymentPropertiesController extends BaseController {
     }
 
     // not found, must be set in deployment property files
-    switch (propertyName) {
-      case "clustermarket.web.url":
-        return clustermarketWebUrl;
-      case "clustermarket.api.url":
-        return clustermarketApiUrl;
-      case "omero.api.url":
-        return omeroApiUrl;
-      case "onedrive.redirect":
-        return oneDriveRedirect;
-      case "server.urls.prefix":
-        return baseURL;
-      case "onedrive.client.id":
-        return oneDriveClientId;
-      case "egnyte.client.id":
-        return egnyteClientId;
-      case "pyrat.server.config":
-        return withoutSecrets(pyratServerConfig, PYRAT_CONFIG);
-      case "raid.server.config":
-        return withoutSecrets(raidServerConfig, RAID_CONFIG);
-      case "owncloud.url":
-        return ownCloudURL;
-      case "owncloud.server.name":
-        return ownCloudServerName;
-      case "owncloud.client.id":
-        return ownCloudClientId;
-      case "nextcloud.url":
-        return nextCloudURL;
-      case "nextcloud.server.name":
-        return nextCloudServerName;
-      case "nextcloud.client.id":
-        return nextCloudClientId;
-      case "googledrive.developer.key":
-        return googleDriveDevKey;
-      case "googledrive.client.id":
-        return googleDriveClientId;
-      case "googledrive.app.id":
-        return googleDriveAppId;
-      case "aspose.enabled":
-        return String.valueOf(isAsposeEnabled());
-      case "sysadmin.delete.user":
-        return sysadminDeleteUser;
-      case "collabora.wopi.enabled":
-        return collaboraEnabled;
-      case "msoffice.wopi.enabled":
-        return officeOnlineEnabled;
-      case "netfilestores.enabled":
-        return netfilestoresEnabled;
-      case "gallery.actions.metadata.sidecarFile.enabled":
-        return metadataSidecarFileEnabled;
-      case "chemistry.provider":
-        return chemistryProvider;
-      case "deployment.cloud":
-        return cloudDeployment;
-      case "deployment.description":
-        return deploymentDescription;
-      case "deployment.helpEmail":
-        return deploymentHelpEmail;
-      default:
-        throw new IllegalArgumentException(
-            messages.getResourceNotFoundMessage(
-                messages.getMessage("resourceType.property"), propertyName));
+    Map<String, String> deploymentProperties = clientReadableDeploymentProperties();
+    if (!deploymentProperties.containsKey(propertyName)) {
+      throw new IllegalArgumentException(
+          messages.getResourceNotFoundMessage(
+              messages.getMessage("resourceType.property"), propertyName));
     }
+    return deploymentProperties.get(propertyName);
   }
 
   /**
@@ -225,61 +198,64 @@ public class DeploymentPropertiesController extends BaseController {
   @ResponseBody
   public Map<String, String> getPropertyValues(HttpServletResponse response) {
     Map<String, SystemPropertyValue> rc = sysPropertyMgr.getAllSysadminPropertiesAsMap();
-    Map<String, String> properties = new HashMap<>();
-    properties.put("clustermarket.api.url", clustermarketApiUrl);
-    properties.put("clustermarket.web.url", clustermarketWebUrl);
-    properties.put("omero.api.url", omeroApiUrl);
-    properties.put("dropbox.available", rc.get("dropbox.available").getValue());
-    properties.put("dropbox.linking.enabled", rc.get("dropbox.linking.enabled").getValue());
-
-    properties.put("box.available", rc.get("box.available").getValue());
-    properties.put("box.linking.enabled", rc.get("box.linking.enabled").getValue());
-    properties.put("box.api.enabled", rc.get("box.api.enabled").getValue());
-    properties.put("box.client.id", boxClientId);
-
-    properties.put("googledrive.available", rc.get("googledrive.available").getValue());
-    properties.put("googledrive.linking.enabled", rc.get("googledrive.linking.enabled").getValue());
-
-    properties.put("onedrive.available", rc.get("onedrive.available").getValue());
-    properties.put("onedrive.linking.enabled", rc.get("onedrive.linking.enabled").getValue());
-    properties.put("onedrive.redirect", oneDriveRedirect);
-    properties.put("onedrive.client.id", oneDriveClientId);
-
-    properties.put("egnyte.available", rc.get("egnyte.available").getValue());
-    properties.put("egnyte.client.id", egnyteClientId);
-
-    properties.put(
-        SystemPropertyName.CHEMISTRY_AVAILABLE.getPropertyName(),
-        rc.get(SystemPropertyName.CHEMISTRY_AVAILABLE.getPropertyName()).getValue());
-    properties.put(
-        SystemPropertyName.SNAPGENE_AVAILABLE.getPropertyName(),
-        rc.get(SystemPropertyName.SNAPGENE_AVAILABLE.getPropertyName()).getValue());
-
+    Map<String, String> properties = clientReadableDeploymentProperties();
+    for (String name :
+        List.of(
+            "dropbox.available",
+            "dropbox.linking.enabled",
+            "box.available",
+            "box.linking.enabled",
+            "box.api.enabled",
+            "googledrive.available",
+            "googledrive.linking.enabled",
+            "onedrive.available",
+            "onedrive.linking.enabled",
+            "egnyte.available",
+            SystemPropertyName.CHEMISTRY_AVAILABLE.getPropertyName(),
+            SystemPropertyName.SNAPGENE_AVAILABLE.getPropertyName())) {
+      properties.put(name, rc.get(name).getValue());
+    }
+    // older name for server.urls.prefix
     properties.put("baseURL", baseURL);
 
-    properties.put("labtools.server.location", labToolsServerUrl);
+    return properties;
+  }
 
-    properties.put("owncloud.url", ownCloudURL);
-    properties.put("owncloud.server.name", ownCloudServerName);
-    properties.put("owncloud.client.id", ownCloudClientId);
-
-    properties.put("nextcloud.url", nextCloudURL);
-    properties.put("nextcloud.server.name", nextCloudServerName);
-    properties.put("nextcloud.client.id", nextCloudClientId);
-
+  /**
+   * RSDEV-1525: the deployment properties the browser may read, allowlisted by annotation so a new
+   * {@code @Value} field stays server-side unless it is marked, plus the derived values.
+   */
+  private Map<String, String> clientReadableDeploymentProperties() {
+    Map<String, String> properties =
+        clientReadableFields(this, DeploymentPropertiesController.class);
     properties.put("pyrat.server.config", withoutSecrets(pyratServerConfig, PYRAT_CONFIG));
     properties.put("raid.server.config", withoutSecrets(raidServerConfig, RAID_CONFIG));
-
-    properties.put("googledrive.developer.key", googleDriveDevKey);
-    properties.put("googledrive.client.id", googleDriveClientId);
-    properties.put("googledrive.app.id", googleDriveAppId);
-
-    properties.put("server.urls.prefix", baseURL);
     properties.put("aspose.enabled", String.valueOf(isAsposeEnabled()));
-    properties.put("chemistry.provider", chemistryProvider);
-    properties.put("deployment.description", deploymentDescription);
-    properties.put("deployment.helpEmail", deploymentHelpEmail);
+    return properties;
+  }
 
+  /**
+   * The values of {@code type}'s {@code @Value} fields marked {@link ClientReadable} or {@link
+   * ClientReadableSecret}, keyed by property name.
+   */
+  static Map<String, String> clientReadableFields(Object target, Class<?> type) {
+    Map<String, String> properties = new HashMap<>();
+    ReflectionUtils.doWithLocalFields(
+        type,
+        field -> {
+          Value value = field.getAnnotation(Value.class);
+          boolean readable =
+              field.isAnnotationPresent(ClientReadable.class)
+                  || field.isAnnotationPresent(ClientReadableSecret.class);
+          if (value != null && readable) {
+            ReflectionUtils.makeAccessible(field);
+            // "${name}" or "${name:default}"
+            String name =
+                StringUtils.substringBefore(
+                    StringUtils.substringBetween(value.value(), "${", "}"), ":");
+            properties.put(name, (String) ReflectionUtils.getField(field, target));
+          }
+        });
     return properties;
   }
 

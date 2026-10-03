@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyName;
@@ -59,13 +60,15 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
   public void testGetPropertyValues() throws Exception {
     logoutAndLoginAsCommunityAdmin(); // can be anyone,
     MvcResult res = mockMvc.perform(get("/deploymentproperties/ajax/properties")).andReturn();
-    Map<?, ?> data = getFromJsonResponseBody(res, Map.class);
+    Map<String, ?> data = getFromJsonResponseBody(res, Map.class);
     final int MIN_PROPERTY_COUNT = 7; // from rspac861
     assertThat(data.keySet().size()).isGreaterThanOrEqualTo(MIN_PROPERTY_COUNT);
     // assert properties are merged from DB...
     assertNotNull(data.get(SystemPropertyName.DROPBOX_AVAILABLE.getPropertyName()));
     // .. and property files
     assertNotNull(data.get("baseURL"));
+    // both read endpoints share one allowlist, so these are no longer only in /ajax/property
+    assertThat(data).containsKeys("sysadmin.delete.user", "deployment.cloud");
   }
 
   @Test
@@ -87,6 +90,11 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
             .andReturn();
     result = res.getResponse().getContentAsString();
     assertEquals(egnyteClientId, result);
+
+    // nor only in /ajax/properties
+    mockMvc
+        .perform(get("/deploymentproperties/ajax/property").param("name", "box.client.id"))
+        .andExpect(status().isOk());
   }
 
   @Test

@@ -60,6 +60,8 @@ newplugin.api.key=your-api-key-here
 
 Always add the property to the `defaultDeployment.properties` file at a minimum. See the [Property files docs](/DevDocs/DeveloperNotes/PropertyFiles.md) for more info. Deployment-level options go in `PropertyHolder`/property files; user-level options go via `AppConfigElementDescriptor`.
 
+If the browser needs a deployment property, add a `@Value` field for it to `DeploymentPropertiesController` and mark it `@ClientReadable`; both `/deploymentproperties/ajax/property` and `/ajax/properties` then return it. Unmarked fields are never returned, so never mark a secret `@ClientReadable`. A secret the browser genuinely needs (such as a browser API key) gets `@ClientReadableSecret("why the browser needs it")` instead, which also exposes it (RSDEV-1525).
+
 ### 4) Authentication
 
 #### OAuth flow
