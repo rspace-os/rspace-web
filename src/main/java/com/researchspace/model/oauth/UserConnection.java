@@ -45,12 +45,15 @@ public class UserConnection {
   @Column(length = 512)
   private String imageUrl;
 
+  @ToString.Exclude
   @Column(length = 4096, nullable = false)
   private String accessToken;
 
+  @ToString.Exclude
   @Column(length = 4096)
   private String secret;
 
+  @ToString.Exclude
   @Column(length = 4096)
   private String refreshToken;
 

@@ -7,7 +7,8 @@
     <changeSet id="rsdev-1525-galaxy-apikey" context="run" author="tchoi-rs">
         <comment>RSDEV-1525: Galaxy API keys live in the encrypted UserConnection table, which
             GalaxyService reads; remove the plaintext copies kept as Galaxy app settings, and the
-            GALAXY_APIKEY setting itself, as PyRAT and DSW already do.</comment>
+            GALAXY_APIKEY setting itself. Like PyRAT and DSW keys, Galaxy keys are no longer saved
+            as app settings.</comment>
         <sql>
             delete from AppConfigElement where appConfigElementDescriptor_id in (
                 select d.id from AppConfigElementDescriptor d

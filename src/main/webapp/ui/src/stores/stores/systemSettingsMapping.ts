@@ -1,4 +1,4 @@
-import type { Secret } from "../../components/Inputs/SecretField";
+import type { Secret } from "../../util/secret";
 
 /*
  * Mapping between the inventory system-settings API shape and the model the

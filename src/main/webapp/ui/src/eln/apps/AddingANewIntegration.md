@@ -36,12 +36,13 @@ replaces it. For this to work:
 - App settings are withheld unless listed in `CLIENT_READABLE_SETTINGS` in
   `IntegrationsHandlerImpl`. Add your integration's non-secret settings there,
   or the UI receives `null` in their place.
-- Type secret credentials as `Secret`, and decode them so that `null` is
+- Type secret credentials as `Secret` (from `util/secret.ts`), and decode them so that `null` is
   accepted (see `parseSecret` in `useIntegrationsEndpoint.ts`).
 - Render secret inputs with `components/Inputs/SecretField`. It shows a stored
   secret as `(unchanged)` and posts `null` back when it is left untouched.
-  Its clear button posts `""`, which must remove the stored value. Pass
-  `clearable={false}` where the secret is required.
+  Its clear button posts `""`, which must remove the stored value, and then
+  offers to undo, posting `null` again. Pass `clearable={false}` where the
+  secret is required.
 - Once a save succeeds, set the field to `secretAfterSave(value)` so it shows
   `(unchanged)` again.
 

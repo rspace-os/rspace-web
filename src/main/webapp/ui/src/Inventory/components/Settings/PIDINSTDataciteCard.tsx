@@ -75,11 +75,13 @@ export default function PIDINSTDataciteCard({
 
   const unsavedChanges: boolean = JSON.stringify(updatedSettings) !== JSON.stringify(savedSettings);
   const required = updatedSettings.enabled === "true";
-  const missingRequired =
-    required &&
-    (Object.keys(updatedSettings) as Array<keyof typeof updatedSettings>)
-      .filter((f) => f !== "enabled")
-      .some((f) => updatedSettings[f] === "");
+  const detailFields: ReadonlyArray<Exclude<keyof SystemSettings["pidinstDatacite"], "enabled">> = [
+    "serverUrl",
+    "username",
+    "password",
+    "repositoryPrefix",
+  ];
+  const missingRequired = required && detailFields.some((f) => updatedSettings[f] === "");
 
   const connectionStatusId = useId();
   const showConnectionStatus = !unsavedChanges && Boolean(lastTestResult);
@@ -102,54 +104,52 @@ export default function PIDINSTDataciteCard({
         <Box sx={{ mt: 1.5 }}>
           <FormControl component="fieldset" fullWidth>
             <FormLabel id="pidinst-datacite-details-label">{t("settings.pidinst.datacite.detailsLabel")}</FormLabel>
-            {(Object.entries(updatedSettings) as ReadonlyArray<[keyof typeof updatedSettings, string]>)
-              .filter((entry) => entry[0] !== "enabled")
-              .map((entry) => (
-                <Grid
-                  key={entry[0]}
-                  container
-                  direction="row"
-                  spacing={1}
-                  sx={{
-                    alignItems: "center",
-                    width: "100%",
-                  }}
-                >
-                  <Grid sx={{ flexGrow: 1 }}>
-                    <IdentifierSettingField
-                      secret={entry[0] === "password"}
-                      label={settingsLabels[entry[0]]}
-                      value={entry[1]}
-                      onChange={(value) => {
-                        setUpdatedSettings({ ...updatedSettings, [entry[0]]: value });
+            {detailFields.map((field) => (
+              <Grid
+                key={field}
+                container
+                direction="row"
+                spacing={1}
+                sx={{
+                  alignItems: "center",
+                  width: "100%",
+                }}
+              >
+                <Grid sx={{ flexGrow: 1 }}>
+                  <IdentifierSettingField
+                    secret={field === "password"}
+                    label={settingsLabels[field]}
+                    value={updatedSettings[field]}
+                    onChange={(value) => {
+                      setUpdatedSettings({ ...updatedSettings, [field]: value });
+                    }}
+                    placeholder={t("settings.pidinst.datacite.placeholder", { label: settingsLabels[field] })}
+                    requiredError={t("settings.pidinst.datacite.fieldRequiredError")}
+                    required={required}
+                    disabled={field === "serverUrl"}
+                  />
+                </Grid>
+                {field === "serverUrl" && (
+                  <Grid sx={{ width: "200px" }}>
+                    <RadioField
+                      name={t("settings.pidinst.datacite.serverUrlLabel")}
+                      value={updatedSettings.serverUrl}
+                      onChange={({ target }) => {
+                        if (target.value !== null && typeof target.value !== "undefined") {
+                          setUpdatedSettings({
+                            ...updatedSettings,
+                            serverUrl: target.value,
+                          });
+                        }
                       }}
-                      placeholder={t("settings.pidinst.datacite.placeholder", { label: settingsLabels[entry[0]] })}
-                      requiredError={t("settings.pidinst.datacite.fieldRequiredError")}
-                      required={required}
-                      disabled={entry[0] === "serverUrl"}
+                      options={serverUrlOptions}
+                      smallText
+                      row
                     />
                   </Grid>
-                  {entry[0] === "serverUrl" && (
-                    <Grid sx={{ width: "200px" }}>
-                      <RadioField
-                        name={t("settings.pidinst.datacite.serverUrlLabel")}
-                        value={updatedSettings.serverUrl}
-                        onChange={({ target }) => {
-                          if (target.value !== null && typeof target.value !== "undefined") {
-                            setUpdatedSettings({
-                              ...updatedSettings,
-                              serverUrl: target.value,
-                            });
-                          }
-                        }}
-                        options={serverUrlOptions}
-                        smallText
-                        row
-                      />
-                    </Grid>
-                  )}
-                </Grid>
-              ))}
+                )}
+              </Grid>
+            ))}
           </FormControl>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1.5 }}>
