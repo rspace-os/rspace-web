@@ -72,11 +72,12 @@ For integrations using OAuth 2.0, implement both of the following:
 2. Create an OAuth controller (see `FigshareOAuthController`, `DMPToolOAuthController` for examples) that:
    - Redirects users to the third-party OAuth authorization page
    - Handles the OAuth callback
-   - Stores the access token using `UserConnectionManager`
+   - Stores the access token using `UserConnectionManager`, never as an app setting (`AppConfigElement` values are not encrypted)
 
 Tokens are never returned to the browser (RSDEV-1525):
 
 - `IntegrationsHandlerImpl` withholds OAuth tokens in `IntegrationInfo`: a connected app's `ACCESS_TOKEN` key is present with a `null` value. The only exceptions are apps listed in `CLIENT_READABLE_TOKEN_APPS`, whose browser code calls the provider directly. Add an app there only when there is no server-side alternative, and annotate any endpoint or value that sends a secret to the browser with `@ClientReadableSecret("why the browser needs it")`.
+- Finish the setup on the server, so the callback never hands a token to the browser. Where a user can connect several times, key each connection's `UserConnection` by its discriminant: Slack stores one per channel, keyed by the channel's config set id, with the webhook URL in `secret`. GitHub keeps one per user, and its repository list is fetched with that stored token.
 
 #### Single-user token/API key
 

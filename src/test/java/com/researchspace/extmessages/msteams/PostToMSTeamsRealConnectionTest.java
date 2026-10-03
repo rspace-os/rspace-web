@@ -6,6 +6,7 @@ import com.researchspace.extmessages.base.AbstractExternalWebhookMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
+import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -43,7 +44,7 @@ public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
     }
 
     @Override
-    protected String getPostUrlSetting() {
+    protected String doGetPostUrl(AppConfigElementSet messageConfig) {
       return null;
     }
 

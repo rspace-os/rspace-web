@@ -37,6 +37,7 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_URL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,8 +46,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.model.User;
+import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.preference.BoxLinkType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.IntegrationsHandler;
@@ -58,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.apache.logging.log4j.util.Strings;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -288,6 +292,35 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void removingTheLastGitHubRepositoryDeletesTheToken() throws Exception {
+    logoutAndLoginAs(piUser);
+    userConnectionManager.save(
+        new UserConnection(
+            new UserConnectionId(piUser.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME),
+            "gho-token"));
+    Long setId =
+        userAppConfigManager
+            .saveAppConfigElementSet(
+                Map.of("GITHUB_REPOSITORY_FULL_NAME", "org/repo"), null, true, piUser)
+            .getAppConfigElementSets()
+            .iterator()
+            .next()
+            .getId();
+
+    mockMvc
+        .perform(
+            post("/integration/deleteAppOptions")
+                .param("optionsId", setId.toString())
+                .param("appName", GITHUB_APP_NAME)
+                .principal(mockPrincipal))
+        .andExpect(status().is2xxSuccessful());
+
+    assertThat(
+            userConnectionManager.findByUserNameProviderName(piUser.getUsername(), GITHUB_APP_NAME))
+        .isEmpty();
+  }
+
+  @Test
   public void addEditDeleteSlackChannel() throws Exception {
 
     String integrationName = SLACK_APP_NAME;
@@ -301,12 +334,11 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     channelOptions.put("SLACK_TEAM_NAME", "testTeamName");
     channelOptions.put("SLACK_CHANNEL_NAME", "testChannelName");
     channelOptions.put("SLACK_CHANNEL_LABEL", INITIAL_LABEL);
-    channelOptions.put("SLACK_WEBHOOK_URL", "testWebhookUrl");
     channelOptions.put("SLACK_USER_ID", "U123");
     channelOptions.put("SLACK_TEAM_ID", "T456");
     channelOptions.put("SLACK_CHANNEL_ID", "C789");
-    channelOptions.put("SLACK_USER_ACCESS_TOKEN", "xoxp-123456789");
 
+    // only Slack's OAuth callback adds a channel, so the API refuses to create one
     String optionsJson = mvcUtils.getAsJsonString(channelOptions);
     MvcResult result =
         mockMvc
@@ -316,20 +348,28 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
                     .content(optionsJson)
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(mockPrincipal))
-            .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertNull(result.getResolvedException());
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
+    UserAppConfig cfg =
+        userAppConfigManager.saveAppConfigElementSet(channelOptions, null, true, piUser);
+    String setId = cfg.getAppConfigElementSets().iterator().next().getId().toString();
 
-    // verify that slack channel is created
-    IntegrationInfo info = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
-    Map<String, Object> savedOptions = info.getOptions();
-    assertThat(savedOptions).hasSize(1); // the channel was added
-    String setId = savedOptions.keySet().iterator().next();
-    assertThat(setId).isNotEmpty();
-    assertThat(((Map<String, String>) savedOptions.values().iterator().next()))
-        .containsEntry("SLACK_CHANNEL_LABEL", INITIAL_LABEL);
+    // nor may it change the ids that route slash commands to this user
+    Map<String, String> hijack = new HashMap<>(channelOptions);
+    hijack.put("SLACK_USER_ID", "U999");
+    result =
+        mockMvc
+            .perform(
+                post("/integration/saveAppOptions")
+                    .param("optionsId", setId)
+                    .param("appName", integrationName)
+                    .content(mvcUtils.getAsJsonString(hijack))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .principal(mockPrincipal))
+            .andReturn();
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
 
-    // now try saving the same slack channel with different label
+    // but it can relabel the channel
     channelOptions.put("SLACK_CHANNEL_LABEL", EDITED_LABEL);
     optionsJson = mvcUtils.getAsJsonString(channelOptions);
     result =

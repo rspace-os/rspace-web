@@ -111,13 +111,6 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   protected abstract String createMessage(MessageDetails internalMsg);
 
   /**
-   * Gets the name of the AppConfig property that stores the URL to send the message to.
-   *
-   * @return
-   */
-  protected abstract String getPostUrlSetting();
-
-  /**
    * Queries configuration for the name of the URL property saved as a webhook.
    *
    * @param messageConfig
@@ -134,9 +127,13 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
     return Optional.ofNullable(uri);
   }
 
-  String doGetPostUrl(AppConfigElementSet messageConfig) {
-    return messageConfig.findElementByPropertyName(getPostUrlSetting()).getValue();
-  }
+  /**
+   * Gets the webhook URL that the messages for this configuration are posted to.
+   *
+   * @param messageConfig the channel's configuration
+   * @return the webhook URL
+   */
+  protected abstract String doGetPostUrl(AppConfigElementSet messageConfig);
 
   // converts <br/> from form into newlines
   static final Pattern BR_TAG = Pattern.compile("<\\s*br\\s*/>");

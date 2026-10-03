@@ -26,6 +26,9 @@ import {
   useIntegrationsEndpoint,
 } from "../useIntegrationsEndpoint";
 
+// crypto.randomUUID() needs a secure context; these keys only have to be unique per page
+let unsavedKeyCount = 0;
+
 type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
 
 type UnwrapArray<T extends Array<unknown>> = {
@@ -153,7 +156,7 @@ const DialogContent = observer(
                   _label: config.DATAVERSE_ALIAS,
                   optionsId: "",
                 }),
-                _key: newlySavedConfig?.optionsId ?? crypto.randomUUID(),
+                _key: newlySavedConfig?.optionsId ?? `unsaved-${++unsavedKeyCount}`,
                 dirty: false,
               }),
             );

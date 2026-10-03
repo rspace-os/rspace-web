@@ -19,6 +19,7 @@ import com.researchspace.integrations.galaxy.service.GalaxyAliasToServer;
 import com.researchspace.integrations.galaxy.service.GalaxyService;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElement;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
@@ -88,13 +89,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   @ClientReadableSecret(
       "the protocols.io TinyMCE plugin calls the protocols.io API from the browser")
   private static final Set<String> CLIENT_READABLE_TOKEN_APPS = Set.of(PROTOCOLS_IO_APP_NAME);
-
-  /** App settings that are secret but still sent to the browser. */
-  @ClientReadableSecret(
-      "the GitHub and Slack pages save the token the OAuth flow issues, and the GitHub file tree"
-          + " reads it back, until both keep their credentials in UserConnection")
-  private static final Set<String> CLIENT_READABLE_SECRET_SETTINGS =
-      Set.of("GITHUB_ACCESS_TOKEN", "SLACK_USER_ACCESS_TOKEN", "SLACK_WEBHOOK_URL");
 
   // RSDEV-1525: app settings are secret unless listed here as not secret. A new integration
   // must list its non-secret settings, or the browser receives null in their place.
@@ -401,10 +395,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   private static String hideIfSecret(String settingName, String value) {
-    return CLIENT_READABLE_SETTINGS.contains(settingName)
-            || CLIENT_READABLE_SECRET_SETTINGS.contains(settingName)
-        ? value
-        : secretForBrowser(value);
+    return CLIENT_READABLE_SETTINGS.contains(settingName) ? value : secretForBrowser(value);
   }
 
   /**
@@ -697,6 +688,13 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   @CacheEvict(value = INTEGRATION_INFO, key = "#user.username + #appName")
   public void deleteAppOptions(Long optionsId, String appName, User user) {
     AppConfigElementSet configSetBeforeRemoval = appConfigMgr.getAppConfigElementSetById(optionsId);
+    // the cleanup below and the cache eviction trust appName, so it must name the set's own app
+    if (!configSetBeforeRemoval
+        .getApp()
+        .getName()
+        .equalsIgnoreCase(getAppNameFromIntegrationName(appName))) {
+      throw new IllegalArgumentException("Options " + optionsId + " do not belong to " + appName);
+    }
     appConfigMgr.deleteAppConfigSet(optionsId, user);
     if (PYRAT_APP_NAME.equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
@@ -710,6 +708,13 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (GALAXY_APP_NAME.equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
           user, appName, GALAXY_ALIAS, configSetBeforeRemoval);
+    } else if (SLACK_APP_NAME.equals(appName)) {
+      // a channel's token and webhook URL are kept under its set id
+      userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
+    } else if (GITHUB_APP_NAME.equals(appName)
+        && appConfigMgr.getByAppName(App.APP_GITHUB, user).getAppConfigElementSets().isEmpty()) {
+      // the one GitHub token serves all linked repositories, so it goes with the last of them
+      userConnManager.deleteByUserAndProvider(user.getUsername(), appName);
     }
   }
 

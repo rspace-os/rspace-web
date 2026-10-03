@@ -13,7 +13,8 @@ and App names.
 
 #### Conventions for `Communication` apps posting to webhooks
 
-* Property name for webhook is `<CAPITALIZED_APP_NAME>_WEBHOOK_URL` e.g. for Slack, is `SLACK_WEBHOOK_URL`
+* Property name for webhook is `<CAPITALIZED_APP_NAME>_WEBHOOK_URL` e.g. for MS Teams, is `MSTEAMS_WEBHOOK_URL`.
+  Slack is the exception: its webhook URL is a credential set by OAuth, kept in the encrypted `UserConnection`
 * Property name for a channel name is `<CAPITALIZED_APP_NAME>_CHANNEL_LABEL` e.g. for Slack, is `SLACK_CHANNEL_LABEL`
 
 These conventions enable a generic UI to choose where to post 

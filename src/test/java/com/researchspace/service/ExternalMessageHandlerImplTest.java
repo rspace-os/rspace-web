@@ -1,12 +1,15 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.apps.UserAppConfig;
+import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -40,6 +43,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
 
   private @Autowired ExternalMessageHandler handler;
   private @Autowired UserAppConfigManager mgr;
+  private @Autowired UserConnectionManager userConnectionManager;
   private User testUser;
 
   @BeforeEach
@@ -55,6 +59,12 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     StructuredDocument doc2 = createBasicDocumentInRootFolderWithText(testUser, "any2");
     StructuredDocument doc3 = createBasicDocumentInRootFolderWithText(testUser, "any3");
     Long cfgSetId = setUpAppConfigForUser(testUser, () -> getSlackDevDfg());
+    UserConnection connection =
+        new UserConnection(
+            new UserConnectionId(testUser.getUsername(), SLACK_APP_NAME, cfgSetId.toString()),
+            "xoxp-123456789");
+    connection.setSecret(slackTestWebhookUrl);
+    userConnectionManager.save(connection);
     logoutAndLoginAs(testUser);
 
     ServiceOperationResult<ResponseEntity<String>> response =
@@ -91,7 +101,8 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
   }
 
   private Long saveAndReturnId(User user, Map<String, String> config) {
-    UserAppConfig appConfig = mgr.saveAppConfigElementSet(config, null, false, user);
+    // trusted: Slack channels are only created by Slack's OAuth callback
+    UserAppConfig appConfig = mgr.saveAppConfigElementSet(config, null, true, user);
     Long cfgSetId = appConfig.getAppConfigElementSets().iterator().next().getId();
     return cfgSetId;
   }
@@ -139,12 +150,10 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     Map<String, String> map = new HashMap<>();
     map.put("SLACK_CHANNEL_NAME", "general");
     map.put("SLACK_TEAM_NAME", "rspacedev");
-    map.put("SLACK_WEBHOOK_URL", slackTestWebhookUrl);
     map.put("SLACK_CHANNEL_LABEL", "general");
     map.put("SLACK_USER_ID", "U123");
     map.put("SLACK_TEAM_ID", "T456");
     map.put("SLACK_CHANNEL_ID", "C789");
-    map.put("SLACK_USER_ACCESS_TOKEN", "xoxp-123456789");
     return map;
   }
 

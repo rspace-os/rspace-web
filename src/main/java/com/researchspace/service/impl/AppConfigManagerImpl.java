@@ -93,8 +93,12 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
     if (!trustedOrigin) {
       assertAppCanBeUpdatedByUntrustedOrigin(app);
     }
+    boolean untrustedSlack = !trustedOrigin && App.APP_SLACK.equals(app.getName());
     AppConfigElementSet set = null;
     if (appConfigSetDataId == null) {
+      if (untrustedSlack) {
+        throw new AuthorizationException("Slack channels are added by connecting to Slack");
+      }
       // null means "keep the stored secret", and a new set has none (e.g. an OAuth secret held in
       // a session that expired before the save)
       Validate.isTrue(
@@ -116,6 +120,9 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
             AppConfigElement stored = saved.findElementByPropertyName(name);
             return value == null && stored != null ? stored.getValue() : value;
           });
+      if (untrustedSlack) {
+        assertOnlySlackLabelChanged(saved, data);
+      }
       AppConfigElementSet transientSet = createAppConfigElementSetFromMap(data, app);
       Validate.isTrue(transientSet.propertiesMatch(saved), "properties do not match");
       saved.merge(transientSet);
@@ -128,6 +135,19 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
     if ("app.orcid".equals(app.getName())) {
       throw new AuthorizationException("This App cannot be updated this way");
     }
+  }
+
+  // a Slack channel's team and user ids route /rspace slash commands to its RSpace user, so only
+  // Slack's OAuth callback (a trusted origin) may set them
+  private void assertOnlySlackLabelChanged(AppConfigElementSet saved, Map<String, String> data) {
+    data.forEach(
+        (name, value) -> {
+          AppConfigElement stored = saved.findElementByPropertyName(name);
+          if (!"SLACK_CHANNEL_LABEL".equals(name)
+              && (stored == null || !Objects.equals(stored.getValue(), value))) {
+            throw new AuthorizationException("Only a Slack channel's label can be changed");
+          }
+        });
   }
 
   private AppConfigElementSet createAppConfigElementSetFromMap(

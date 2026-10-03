@@ -94,7 +94,6 @@ type of the state of the GitHub integration:
 IntegrationState<
   Array<
     Optional<{|
-      GITHUB_ACCESS_TOKEN: Optional<string>,
       GITHUB_REPOSITORY_FULL_NAME: string,
       optionsId: OptionsId,
     |}>
