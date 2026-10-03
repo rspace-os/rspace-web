@@ -259,7 +259,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     channelOptions.put("SLACK_TEAM_ID", "T456");
     channelOptions.put("SLACK_CHANNEL_ID", "C789");
 
-    userAppConfigManager.saveAppConfigElementSet(channelOptions, null, false, user);
+    userAppConfigManager.saveAppConfigElementSet(channelOptions, null, true, user);
   }
 
   private Long getFilePropertyCount(String username) {
