@@ -8,6 +8,7 @@ import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAM
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
+import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ONBOARDING_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
@@ -40,6 +41,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.PropertyDescriptor;
@@ -135,6 +137,41 @@ public class IntegrationsHandlerTest {
     assertThat(parent2child.get(parent)).hasSize(1);
     assertEquals(child, parent2child.get(parent).get(0));
     assertNull(parent2child.get(child));
+  }
+
+  @Test
+  public void deletingASlackChannelDeletesItsConnection() {
+    stubSetForApp(7L, App.APP_SLACK);
+    handler.deleteAppOptions(7L, SLACK_APP_NAME, subject);
+    verify(appCfgMgr).deleteAppConfigSet(7L, subject, App.APP_SLACK);
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), SLACK_APP_NAME, "7");
+  }
+
+  @Test
+  public void deletingTheLastGitHubRepositoryDeletesTheToken() {
+    UserAppConfig cfg = stubSetForApp(7L, App.APP_GITHUB);
+    UserAppConfig noRepositories = new UserAppConfig(subject, cfg.getApp(), true);
+    when(appCfgMgr.getByAppName(App.APP_GITHUB, subject)).thenReturn(noRepositories);
+    handler.deleteAppOptions(7L, GITHUB_APP_NAME, subject);
+    verify(userConnectionManager).deleteByUserAndProvider(subject.getUsername(), GITHUB_APP_NAME);
+  }
+
+  @Test
+  public void deletingOneOfSeveralGitHubRepositoriesKeepsTheToken() {
+    stubSetForApp(7L, App.APP_GITHUB);
+    when(appCfgMgr.getByAppName(App.APP_GITHUB, subject))
+        .thenReturn(
+            SystemPropertyTestFactory.createAnyAppWithConfigElements(subject, App.APP_GITHUB));
+    handler.deleteAppOptions(7L, GITHUB_APP_NAME, subject);
+    verify(userConnectionManager, never()).deleteByUserAndProvider(any(), any());
+  }
+
+  private UserAppConfig stubSetForApp(Long setId, String appName) {
+    UserAppConfig cfg = SystemPropertyTestFactory.createAnyAppWithConfigElements(subject, appName);
+    when(appCfgMgr.deleteAppConfigSet(setId, subject, appName))
+        .thenReturn(cfg.getAppConfigElementSets().iterator().next());
+    return cfg;
   }
 
   @Test

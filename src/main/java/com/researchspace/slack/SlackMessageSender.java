@@ -72,7 +72,9 @@ public class SlackMessageSender extends AbstractExternalWebhookMessageSender
             SLACK_APP_NAME,
             String.valueOf(messageConfig.getId()))
         .map(UserConnection::getSecret)
-        .orElse("");
+        .filter(url -> !url.isEmpty())
+        .orElseThrow(
+            () -> new IllegalStateException(messages.getMessage("apps.slack.errors.noWebhook")));
   }
 
   @Override

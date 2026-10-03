@@ -97,7 +97,7 @@ const DialogContent = observer(
       try {
         const authWindow = window.open(await oauthUrl());
         if (!authWindow) {
-          throw new Error("Failed to open GitHub authentication window");
+          throw new Error(t("integrations.github.errors.authWindowFailed"));
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -293,11 +293,12 @@ type GitHubArgs = {
 };
 
 /*
- * GitHub uses OAuth authentication, but the credential is stored on a
- * per-repository basis so the user has to reauthenticate whenever they wish
- * to view the listing of all of their repositories to link more. For this
- * reason, the current implementation is a little bit of hack and should be
- * further refined once the old apps page has been deprecated.
+ * GitHub uses OAuth authentication. Clicking Add opens the GitHub OAuth flow in
+ * a new window; on the callback the server stores the user's GitHub token in
+ * their UserConnection and the window broadcasts GITHUB_CONNECTED. This dialog
+ * then fetches the user's repositories through the server, which uses the
+ * stored token, and saves only the names of the repositories the user links.
+ * The token never reaches the browser.
  */
 function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
