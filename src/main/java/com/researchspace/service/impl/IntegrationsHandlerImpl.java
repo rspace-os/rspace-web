@@ -19,6 +19,7 @@ import com.researchspace.integrations.galaxy.service.GalaxyAliasToServer;
 import com.researchspace.integrations.galaxy.service.GalaxyService;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElement;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
@@ -687,6 +688,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   @CacheEvict(value = INTEGRATION_INFO, key = "#user.username + #appName")
   public void deleteAppOptions(Long optionsId, String appName, User user) {
     AppConfigElementSet configSetBeforeRemoval = appConfigMgr.getAppConfigElementSetById(optionsId);
+    // the cleanup below and the cache eviction trust appName, so it must name the set's own app
+    if (!configSetBeforeRemoval.getApp().getName().equals(getAppNameFromIntegrationName(appName))) {
+      throw new IllegalArgumentException("Options " + optionsId + " do not belong to " + appName);
+    }
     appConfigMgr.deleteAppConfigSet(optionsId, user);
     if (PYRAT_APP_NAME.equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
@@ -703,6 +708,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (SLACK_APP_NAME.equals(appName)) {
       // a channel's token and webhook URL are kept under its set id
       userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
+    } else if (GITHUB_APP_NAME.equals(appName)
+        && appConfigMgr.getByAppName(App.APP_GITHUB, user).getAppConfigElementSets().isEmpty()) {
+      // the one GitHub token serves all linked repositories, so it goes with the last of them
+      userConnManager.deleteByUserAndProvider(user.getUsername(), appName);
     }
   }
 

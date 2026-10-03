@@ -10,10 +10,11 @@ import com.researchspace.model.apps.AppConfigElement;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import liquibase.database.Database;
 import org.hibernate.Session;
 
@@ -51,16 +52,19 @@ public class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525
             .list();
 
     // ponytail: the connect flow now keeps one GitHub token per user, so the latest repository's
-    // wins. Repositories linked from a second GitHub account need connecting again.
+    // wins. A repository the kept token cannot read stops listing files until it is unlinked and
+    // linked again from an account that can.
     Map<String, String> gitHubTokens = new LinkedHashMap<>();
-    // a user's connections to one provider need distinct ranks
-    Map<String, Integer> slackRanks = new HashMap<>();
+    Set<String> usersWithDroppedTokens = new HashSet<>();
     for (AppConfigElementSet set : sets) {
       String username = set.getUserAppConfig().getUser().getUsername();
       if (App.APP_GITHUB.equals(set.getUserAppConfig().getApp().getName())) {
         String token = value(set, "GITHUB_ACCESS_TOKEN");
         if (!isEmpty(token)) {
-          gitHubTokens.put(username, token);
+          String previous = gitHubTokens.put(username, token);
+          if (previous != null && !previous.equals(token)) {
+            usersWithDroppedTokens.add(username);
+          }
         }
       } else {
         String token = value(set, "SLACK_USER_ACCESS_TOKEN");
@@ -71,10 +75,17 @@ public class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525
                   new UserConnectionId(username, SLACK_APP_NAME, String.valueOf(set.getId())),
                   token == null ? "" : token);
           connection.setSecret(webhookUrl);
-          connection.setRank(slackRanks.merge(username, 1, Integer::sum));
+          // as the connect flow does: set ids are unique, so ranks cannot collide
+          connection.setRank(Math.toIntExact(set.getId()));
           save(connection);
         }
       }
+    }
+    if (!usersWithDroppedTokens.isEmpty()) {
+      logger.warn(
+          "{} users had GitHub repositories linked with different tokens; each keeps only the"
+              + " token of their most recently linked repository",
+          usersWithDroppedTokens.size());
     }
     gitHubTokens.forEach(
         (username, token) ->

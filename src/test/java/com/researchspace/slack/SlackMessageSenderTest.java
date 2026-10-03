@@ -14,6 +14,8 @@ import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
@@ -57,5 +59,25 @@ public class SlackMessageSenderTest {
         .thenReturn(Optional.of(connection));
 
     assertEquals("https://hooks.slack.com/services/x", sender.doGetPostUrl(set));
+  }
+
+  @Test
+  public void aChannelWithNoWebhookUrlFailsWithAClearMessage() {
+    User user = TestFactory.createAnyUser("any");
+    AppConfigElementSet set = new AppConfigElementSet();
+    ReflectionTestUtils.setField(set, "id", 5L);
+    set.setUserAppConfig(new UserAppConfig(user, new App(App.APP_SLACK, "Slack", true), true));
+    SlackMessageSender sender = new SlackMessageSender();
+    MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
+    ReflectionTestUtils.setField(sender, "messages", messages);
+    sender.userConnectionManager = mock(UserConnectionManager.class);
+    when(sender.userConnectionManager.findByUserNameProviderName(
+            user.getUsername(), SLACK_APP_NAME, "5"))
+        .thenReturn(Optional.empty());
+
+    IllegalStateException e =
+        assertThrows(IllegalStateException.class, () -> sender.doGetPostUrl(set));
+    assertEquals(messages.getMessage("apps.slack.errors.noWebhook"), e.getMessage());
+    assertFalse(e.getMessage().startsWith("apps."));
   }
 }

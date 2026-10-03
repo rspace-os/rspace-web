@@ -100,12 +100,13 @@ function useChannelEventListener<K extends keyof BroadcastChannelEventMap>(
   }
 
   React.useEffect(() => {
-    const callback = callbackRef.current;
-    if (!channel || !callback) {
+    if (!channel) {
       return;
     }
 
-    channel.addEventListener(event, callback);
-    return () => channel.removeEventListener(event, callback);
+    // read the ref at dispatch time so the latest handler runs, not the first render's
+    const listener = (e: BroadcastChannelEventMap[K]) => callbackRef.current?.(e);
+    channel.addEventListener(event, listener);
+    return () => channel.removeEventListener(event, listener);
   }, [channel, event]);
 }

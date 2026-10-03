@@ -68,19 +68,26 @@ const DialogContent = observer(
         try {
           const { SLACK } = await allIntegrations();
           const channels = ArrayUtils.all(SLACK.credentials)
-            .toResult(() => new Error("Save completed but cannot show results."))
+            .toResult(() => new Error(t("integrations.slack.errors.resultsUnavailable")))
             .elseThrow();
-          const existingIds = new Set(copyOfChannels.map(({ optionsId }) => optionsId));
+          // reuse the local observables so unsaved label edits survive the refetch
+          const existing = new Map(copyOfChannels.map((c) => [c.optionsId, c]));
+          const anyNew = channels.some((c) => !existing.has(c.optionsId));
           runInAction(() => {
             integrationState.credentials = SLACK.credentials;
-            copyOfChannels.push(...channels.filter((c) => !existingIds.has(c.optionsId)).map((c) => observable(c)));
+            copyOfChannels.splice(
+              0,
+              copyOfChannels.length,
+              ...channels.map((c) => existing.get(c.optionsId) ?? observable(c)),
+            );
           });
-          addAlert(
-            mkAlert({
-              variant: "success",
-              message: t("integrations.slack.alerts.addSuccess"),
-            }),
-          );
+          if (anyNew)
+            addAlert(
+              mkAlert({
+                variant: "success",
+                message: t("integrations.slack.alerts.addSuccess"),
+              }),
+            );
         } catch (e) {
           if (e instanceof Error)
             addAlert(
@@ -101,7 +108,7 @@ const DialogContent = observer(
       try {
         const authWindow = window.open(await oauthUrl());
         if (!authWindow) {
-          throw new Error("Failed to open Slack authentication window");
+          throw new Error(t("integrations.slack.errors.authWindowFailed"));
         }
       } catch (e) {
         if (e instanceof Error)
@@ -117,7 +124,7 @@ const DialogContent = observer(
     };
     return (
       <Stack spacing={1} sx={{ mt: 1 }}>
-        {copyOfChannels.map((channel, index) => (
+        {copyOfChannels.map((channel) => (
           <Box key={channel.optionsId}>
             <Card variant="outlined">
               <form
@@ -133,12 +140,14 @@ const DialogContent = observer(
                       runInAction(() => {
                         integrationState.credentials = newState.credentials;
                         const newCreds = ArrayUtils.all(newState.credentials)
-                          .toResult(() => new Error("Save completed but cannot show results"))
+                          .toResult(() => new Error(t("integrations.slack.errors.resultsUnavailable")))
                           .elseThrow();
                         const indexOfNewConfig = newCreds.findIndex((c) => c.optionsId === channel.optionsId);
-                        if (indexOfNewConfig === -1) throw new Error("Save completed but cannot show results.");
+                        if (indexOfNewConfig === -1) throw new Error(t("integrations.slack.errors.resultsUnavailable"));
 
-                        copyOfChannels.splice(index, 1, observable(newCreds[indexOfNewConfig]));
+                        // by identity, as a refetch during the save can move the row
+                        const current = copyOfChannels.indexOf(channel);
+                        if (current !== -1) copyOfChannels.splice(current, 1, observable(newCreds[indexOfNewConfig]));
                       });
                       addAlert(
                         mkAlert({
@@ -193,9 +202,12 @@ const DialogContent = observer(
                         try {
                           await deleteAppOptions("SLACK", channel.optionsId);
                           runInAction(() => {
-                            const deletedIndex = copyOfChannels.indexOf(channel);
-                            copyOfChannels.splice(deletedIndex, 1);
-                            integrationState.credentials.splice(deletedIndex, 1);
+                            const localIndex = copyOfChannels.findIndex((c) => c.optionsId === channel.optionsId);
+                            if (localIndex !== -1) copyOfChannels.splice(localIndex, 1);
+                            const credentialIndex = integrationState.credentials.findIndex((credential) =>
+                              credential.map(({ optionsId }) => optionsId === channel.optionsId).orElse(false),
+                            );
+                            if (credentialIndex !== -1) integrationState.credentials.splice(credentialIndex, 1);
                           });
                           addAlert(
                             mkAlert({
