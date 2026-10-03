@@ -98,8 +98,9 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
 
   private Long setUpAppConfigForUser(
       User user, String appName, Supplier<Map<String, String>> appConfigSupplier) {
+    // trusted: Slack channels are only created by Slack's OAuth callback
     UserAppConfig appConfig =
-        mgr.saveAppConfigElementSet(appConfigSupplier.get(), null, false, user, appName);
+        mgr.saveAppConfigElementSet(appConfigSupplier.get(), null, true, user, appName);
     Long cfgSetId = appConfig.getAppConfigElementSets().iterator().next().getId();
     return cfgSetId;
   }
