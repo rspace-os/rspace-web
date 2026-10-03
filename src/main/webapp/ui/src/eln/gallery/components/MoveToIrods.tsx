@@ -24,6 +24,7 @@ import { ACCENT_COLOR } from "../../../assets/branding/irods";
 import AppBar from "../../../components/AppBar";
 import ChoiceField from "../../../components/Inputs/ChoiceField";
 import FormField from "../../../components/Inputs/FormField";
+import SecretField from "../../../components/Inputs/SecretField";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as FetchingData from "../../../util/fetchingData";
@@ -327,14 +328,11 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                               label={t("moveToIrods.login.password")}
                               value={password}
                               renderInput={({ id }) => (
-                                <TextField
+                                <SecretField
                                   id={id}
-                                  type="password"
                                   value={password}
                                   autoComplete="current-password"
-                                  onChange={({ target: { value } }) => {
-                                    setPassword(value);
-                                  }}
+                                  onChange={setPassword}
                                 />
                               )}
                             />

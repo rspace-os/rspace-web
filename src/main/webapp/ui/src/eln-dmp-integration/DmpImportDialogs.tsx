@@ -17,6 +17,7 @@ import AccentMenuItem from "@/components/AccentMenuItem";
 import { type IntegrationStates, useIntegrationsEndpoint } from "@/eln/apps/useIntegrationsEndpoint";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import * as ArrayUtils from "@/util/ArrayUtils";
+import type { Secret } from "@/util/secret";
 import ArgosDMPDialog from "./Argos/DMPDialog";
 import DMPAssistantDMPDialog from "./DMPAssistant/DMPDialog";
 import DMPOnlineDMPDialog from "./DMPOnline/DMPDialog";
@@ -24,7 +25,7 @@ import DMPToolDMPDialog from "./DMPTool/DMPDialog";
 import DSWImportDialog from "./DSW/DSWImportDialog";
 
 export type DswConfig = {
-  DSW_APIKEY: string;
+  DSW_APIKEY: Secret;
   DSW_URL: string;
   DSW_ALIAS: string;
 };

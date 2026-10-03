@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/msteams";
 import TeamsIcon from "../../../assets/branding/msteams/logo.svg";
+import SecretField from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
@@ -176,13 +177,12 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                               }}
                               sx={{ mt: 1 }}
                             />
-                            <TextField
+                            <SecretField
                               label={t("integrations.msteams.fields.webhookUrl")}
                               fullWidth
-                              value={newWebhook}
-                              onChange={({ target: { value } }) => {
-                                setNewWebhook(value);
-                              }}
+                              value={newWebhook ?? ""}
+                              onChange={setNewWebhook}
+                              autoComplete="new-password"
                               sx={{ mt: 1 }}
                             />
                           </CardContent>

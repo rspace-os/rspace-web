@@ -15,6 +15,7 @@ import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dto.IntegrationInfo;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.repository.LinkedDMP;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.RepositoryOperationResult;
@@ -135,6 +136,11 @@ public class RepositoryConfigurationController extends BaseController {
     if (errorStringBuilder.length() > 0) {
       throw new IllegalArgumentException(getText("repository.errors.invalidAppId"));
     }
+    permissionUtils.assertIsPermitted(
+        cfg.get().getUserAppConfig(),
+        PermissionType.READ,
+        userManager.getAuthenticatedUserInSession(),
+        " use AppConfig ");
     App app = cfg.get().getUserAppConfig().getApp();
     validateAppIsRepository(errorStringBuilder, app);
     if (errorStringBuilder.length() > 0) {

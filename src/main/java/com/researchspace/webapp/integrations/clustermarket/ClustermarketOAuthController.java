@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -65,17 +64,6 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
     int deleted =
         userConnectionManager.deleteByUserAndProvider(principal.getName(), CLUSTERMARKET_APP_NAME);
     log.info("Deleted {} Clustermarket connection(s) for user {}", deleted, principal.getName());
-  }
-
-  /**
-   * Gets the access token id there is one, else returns empty string.
-   *
-   * @param subject
-   * @return
-   */
-  @GetMapping("/accessToken")
-  public @ResponseBody String getAccessToken(Principal subject) {
-    return doGetAccessToken(subject, CLUSTERMARKET_APP_NAME);
   }
 
   @GetMapping("/redirect_uri")

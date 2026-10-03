@@ -3,6 +3,8 @@ package com.researchspace.service.raid;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.researchspace.webapp.integrations.ServerConfigurationDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,6 +23,8 @@ public class RaIDServerConfigurationDTO extends ServerConfigurationDTO {
   private String clientId;
 
   @JsonInclude(value = Include.NON_EMPTY)
+  // RSDEV-1525: read from deployment.properties, never serialized back to the browser
+  @JsonProperty(access = Access.WRITE_ONLY)
   private String clientSecret;
 
   public RaIDServerConfigurationDTO(String alias, String apiUrl, String authUrl) {

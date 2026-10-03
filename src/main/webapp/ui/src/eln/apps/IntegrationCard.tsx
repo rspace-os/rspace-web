@@ -24,6 +24,7 @@ import type { Hsl } from "../../accentedTheme";
 import { Dialog } from "../../components/DialogBoundary";
 import TransRichText, { type HelpDocsArticle } from "../../modules/common/i18n/TransRichText";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import CardPlacementContext from "./CardPlacementContext";
 import type { IntegrationState } from "./useIntegrationsEndpoint";
 
 function hsl(hue: number, saturation: number, lightness: number, opacity: number) {
@@ -119,6 +120,7 @@ function IntegrationCard<Credentials>({
 }: IntegrationCardArgs<Credentials>): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
   const [open, setOpen] = useState(false);
+  const { dialogOpened, dialogClosed } = useContext(CardPlacementContext);
   const mode = integrationState.mode;
   const theme = useTheme();
   const { trackEvent } = useContext(AnalyticsContext);
@@ -357,6 +359,7 @@ function IntegrationCard<Credentials>({
           disabled={mode === "UNAVAILABLE"}
           onClick={() => {
             setOpen(true);
+            dialogOpened();
             trackEvent("Apps page dialog opened", {
               integrationName: name,
             });
@@ -421,6 +424,8 @@ function IntegrationCard<Credentials>({
           paper: {
             tabIndex: -1,
           },
+          // let the card move to its new section only once the dialog has gone
+          transition: { onExited: dialogClosed },
         }}
         slots={{
           transition: CustomGrow,

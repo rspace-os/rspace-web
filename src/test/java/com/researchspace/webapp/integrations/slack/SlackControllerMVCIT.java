@@ -8,11 +8,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.session.SessionAttributeUtils;
+import com.researchspace.testutils.StubHttpServer;
 import com.researchspace.webapp.controller.MVCTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -77,5 +80,40 @@ public class SlackControllerMVCIT extends MVCTestBase {
         .andExpect(status().isOk())
         .andExpect(view().name(CONNECTED_VIEW))
         .andExpect(modelAttributeContains("connectionError", STATE_MISMATCH));
+  }
+
+  @Test
+  public void tokenExchangeFailureDoesNotShowCredentials() throws Exception {
+    String secret = "slack-secret-" + getRandomAlphabeticString("s");
+    String code = "slack-code-" + getRandomAlphabeticString("c");
+    // no stubs, so the exchange gets a 404 whose JDK message is the full request URL
+    StubHttpServer slack = new StubHttpServer();
+    Object target = AopTestUtils.getUltimateTargetObject(slackController);
+    Object originalBaseUrl = ReflectionTestUtils.getField(target, "slackApiBaseUrl");
+    Object originalSecret = ReflectionTestUtils.getField(target, "clientSecret");
+    try {
+      ReflectionTestUtils.setField(target, "slackApiBaseUrl", slack.getBaseUrl());
+      ReflectionTestUtils.setField(target, "clientSecret", secret);
+      String state =
+          UriComponentsBuilder.fromUriString(slackController.oauthUrl().getData())
+              .build()
+              .getQueryParams()
+              .getFirst("state");
+
+      mockMvc
+          .perform(
+              get(CALLBACK_URL)
+                  .param("code", code)
+                  .param("state", state)
+                  .principal(user::getUsername))
+          .andExpect(view().name(CONNECTED_VIEW))
+          .andExpect(modelAttributeContains("connectionError", "exception during token exchange"))
+          .andExpect(modelAttributeDoesNotContain("connectionError", secret))
+          .andExpect(modelAttributeDoesNotContain("connectionError", code));
+    } finally {
+      ReflectionTestUtils.setField(target, "slackApiBaseUrl", originalBaseUrl);
+      ReflectionTestUtils.setField(target, "clientSecret", originalSecret);
+      slack.stop();
+    }
   }
 }

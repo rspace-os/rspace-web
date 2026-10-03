@@ -47,7 +47,7 @@ describe("useIntegrationsEndpoint", () => {
         ...allIntegrationsAreDisabled.data,
         OMERO: {
           ...allIntegrationsAreDisabled.data.OMERO,
-          options: { ACCESS_TOKEN: "XXXXXXXXXXXXXXXXX" },
+          options: { ACCESS_TOKEN: null },
         },
       };
       mockAxios.onGet("integration/allIntegrations").reply(200, { success: true, data, error: null });

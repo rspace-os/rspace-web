@@ -26,6 +26,7 @@ import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.service.CommunicationManager;
@@ -630,6 +631,10 @@ public class ExportController extends BaseController {
     if (errorBuffer.length() > 0) {
       return new RepoDepositPreDepositValidation(getExportFailureMessage(errorBuffer.toString()));
     }
+    optionalAppConfig.ifPresent(
+        cfg ->
+            permissionUtils.assertIsPermitted(
+                cfg.getUserAppConfig(), PermissionType.READ, exporter, " use AppConfig "));
 
     App app = userAppConfigMgr.getByAppName(repositoryConfig.getAppName(), exporter).getApp();
     validateAppIsRepository(errorBuffer, app);

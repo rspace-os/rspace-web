@@ -29,7 +29,7 @@ describe("Clustermarket", () => {
       <Clustermarket
         integrationState={{
           mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.present("MASKED") },
+          credentials: { ACCESS_TOKEN: Optional.present(null) },
         }}
         update={() => {}}
       />,
@@ -52,7 +52,7 @@ describe("Clustermarket", () => {
         <Clustermarket
           integrationState={{
             mode: "DISABLED",
-            credentials: { ACCESS_TOKEN: Optional.present("MASKED") },
+            credentials: { ACCESS_TOKEN: Optional.present(null) },
           }}
           update={() => {}}
         />

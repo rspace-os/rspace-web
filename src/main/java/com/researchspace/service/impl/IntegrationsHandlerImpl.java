@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.CacheNames.INTEGRATION_INFO;
 import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
+import static com.researchspace.service.SystemPropertyName.isClientReadable;
 import static com.researchspace.service.SystemPropertyName.valueOfPropertyName;
 import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_ALIAS;
 import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_CONFIGURED_SERVERS;
@@ -29,6 +30,7 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.ListFormatUtils;
@@ -51,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -81,8 +84,43 @@ import org.springframework.dao.DataAccessException;
 @Slf4j
 public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
-  // this is to avoid passing clear apiToken to the UI while building the app page integration
-  public static final String MASKED_TOKEN = "XXXXXXXXXXXXXXXXX";
+  /** Apps whose OAuth token is sent to the browser in their IntegrationInfo. */
+  @ClientReadableSecret(
+      "the protocols.io TinyMCE plugin calls the protocols.io API from the browser")
+  private static final Set<String> CLIENT_READABLE_TOKEN_APPS = Set.of(PROTOCOLS_IO_APP_NAME);
+
+  /** App settings that are secret but still sent to the browser. */
+  @ClientReadableSecret(
+      "the GitHub and Slack pages save the token the OAuth flow issues, and the GitHub file tree"
+          + " reads it back, until both keep their credentials in UserConnection")
+  private static final Set<String> CLIENT_READABLE_SECRET_SETTINGS =
+      Set.of("GITHUB_ACCESS_TOKEN", "SLACK_USER_ACCESS_TOKEN", "SLACK_WEBHOOK_URL");
+
+  // RSDEV-1525: app settings are secret unless listed here as not secret. A new integration
+  // must list its non-secret settings, or the browser receives null in their place.
+  private static final Set<String> CLIENT_READABLE_SETTINGS =
+      Set.of(
+          "DATAVERSE_ALIAS",
+          "DATAVERSE_URL",
+          "DSW_ALIAS",
+          "DSW_URL",
+          "EGNYTE_DOMAIN",
+          "GALAXY_ALIAS",
+          "GALAXY_URL",
+          "GITHUB_REPOSITORY_FULL_NAME",
+          "MSTEAMS_CHANNEL_LABEL",
+          "ORCID_ID",
+          "PYRAT_ALIAS",
+          "PYRAT_URL",
+          "RAID_ALIAS",
+          "RAID_OAUTH_CONNECTED",
+          "RAID_URL",
+          "SLACK_CHANNEL_ID",
+          "SLACK_CHANNEL_LABEL",
+          "SLACK_CHANNEL_NAME",
+          "SLACK_TEAM_ID",
+          "SLACK_TEAM_NAME",
+          "SLACK_USER_ID");
 
   private @Autowired SystemPropertyManager sysPropMgr;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
@@ -98,8 +136,12 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   private final Map<SystemProperty, List<SystemProperty>> parent2ChildMap = new HashMap<>();
 
+  // these apps keep their key only in the encrypted UserConnection, never in an AppConfigElement
   private static final Map<String, String> ENCODE_API_KEY_FOR_APPS =
-      Map.ofEntries(Map.entry(PYRAT_APP_NAME, PYRAT_APIKEY), Map.entry(DSW_APP_NAME, DSW_APIKEY));
+      Map.ofEntries(
+          Map.entry(PYRAT_APP_NAME, PYRAT_APIKEY),
+          Map.entry(DSW_APP_NAME, DSW_APIKEY),
+          Map.entry(GALAXY_APP_NAME, GALAXY_APIKEY));
 
   public void init() {
     List<SystemProperty> sysPropertyLookup = sysPropMgr.listSystemPropertyDefinitions();
@@ -271,7 +313,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       if (!paramConfiguredServers.equals(infoElement.getKey())) {
         Map<String, String> configElementMapSet = (Map<String, String>) infoElement.getValue();
         String aliasToConfigure = configElementMapSet.get(paramAlias); // i.e.: "mice server"
-        String apiKey = apikeyByAlias.get(aliasToConfigure) == null ? "" : MASKED_TOKEN;
+        String apiKey = secretForBrowser(apikeyByAlias.get(aliasToConfigure));
         configElementMapSet.put(paramApiKey, apiKey);
       }
     }
@@ -279,12 +321,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   // this is using UserConnection table to store OAuth token.
   private void setSingleOAuthConnectionStatus(IntegrationInfo info, User user, String appName) {
-    if (PROTOCOLS_IO_APP_NAME.equals(appName)) { // PRT-1023: temp fix while waiting to refactor
-      getTokenForProvider(user, appName).ifPresent(token -> updateInfoWithOAuthToken(info, token));
-    } else {
-      getTokenForProvider(user, appName)
-          .ifPresent(token -> updateInfoWithOAuthToken(info, MASKED_TOKEN));
-    }
+    boolean clientReadable = CLIENT_READABLE_TOKEN_APPS.contains(appName); // PRT-1023
+    getTokenForProvider(user, appName)
+        .ifPresent(token -> updateInfoWithOAuthToken(info, clientReadable ? token : null));
   }
 
   private String updateInfoWithOAuthToken(IntegrationInfo info, String token) {
@@ -316,8 +355,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   private void setSingleUserToken(
       IntegrationInfo info, User user, String appName, String tokenName) {
-    Optional<String> userToken = getTokenForProvider(user, appName);
-    userToken.ifPresent(t -> info.getOptions().put(tokenName, MASKED_TOKEN));
+    // a cleared token is stored as "", which must read as unset rather than as stored
+    Optional<String> userToken = getTokenForProvider(user, appName).filter(t -> !t.isEmpty());
+    userToken.ifPresent(t -> info.getOptions().put(tokenName, null));
   }
 
   private void populateIntegrationInfoFromUserAppConfig(IntegrationInfo info, User user) {
@@ -348,9 +388,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
                 set.getConfigElements()
                     .forEach(
                         el -> {
-                          elementSetOptions.put(
-                              el.getAppConfigElementDescriptor().getDescriptor().getName(),
-                              el.getValue());
+                          String name =
+                              el.getAppConfigElementDescriptor().getDescriptor().getName();
+                          elementSetOptions.put(name, hideIfSecret(name, el.getValue()));
                         });
                 getLabelForElementSet(set, user)
                     .map(label -> elementSetOptions.put("_label", label));
@@ -358,6 +398,21 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
               });
       info.setOptions(options);
     }
+  }
+
+  private static String hideIfSecret(String settingName, String value) {
+    return CLIENT_READABLE_SETTINGS.contains(settingName)
+            || CLIENT_READABLE_SECRET_SETTINGS.contains(settingName)
+        ? value
+        : secretForBrowser(value);
+  }
+
+  /**
+   * RSDEV-1525: a stored secret is never sent to the browser. It is sent as {@code null}, and an
+   * unset one as {@code ""}; posting {@code null} back keeps the stored value.
+   */
+  private static String secretForBrowser(String secret) {
+    return isEmpty(secret) ? "" : null;
   }
 
   private <T extends ServerConfigurationDTO> void createMultiServerEntries(
@@ -418,9 +473,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
               systemPropertyPermissionUtils.isPropertyAllowed(user, child.getName()));
         } catch (IllegalArgumentException e) {
           // Value was not one of ALLOWED, DENIED_BY_DEFAULT or DENIED
-          options.put(
-              child.getName(),
-              sysPropMgr.findByName(valueOfPropertyName(child.getName())).getValue());
+          if (isClientReadable(child)) {
+            options.put(
+                child.getName(),
+                sysPropMgr.findByName(valueOfPropertyName(child.getName())).getValue());
+          }
         }
       }
     }
@@ -470,11 +527,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         break;
       case ZENODO_APP_NAME:
         saveNewUserConnectionForSingleOptionApp(
-            newInfo.getOptions().get(ZENODO_USER_TOKEN).toString(), user, ZENODO_APP_NAME);
+            (String) newInfo.getOptions().get(ZENODO_USER_TOKEN), user, ZENODO_APP_NAME);
         break;
       case FIELDMARK_APP_NAME:
         saveNewUserConnectionForSingleOptionApp(
-            newInfo.getOptions().get(FIELDMARK_USER_TOKEN).toString(), user, FIELDMARK_APP_NAME);
+            (String) newInfo.getOptions().get(FIELDMARK_USER_TOKEN), user, FIELDMARK_APP_NAME);
         break;
       default:
         break;
@@ -505,9 +562,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   protected void saveNewUserConnectionForMultipleOptionApp(
       String token, User user, String appName, String discriminant) {
-    if (MASKED_TOKEN.equals(token)) {
-      // UI re-posted the masked sentinel (read-time placeholder) — preserve the existing
-      // token. With no existing connection there is nothing to persist.
+    if (token == null) {
+      // the UI posts null for a stored token it never received: keep the existing one. With no
+      // existing connection there is nothing to persist.
       return;
     }
     Optional<UserConnection> existingConnection =
@@ -540,7 +597,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     // The main elements that can be edited by the user are the server
     // alias (discriminant) and the API key (token), so do nothing if
     // these have not been updated.
-    if (!discriminant.equals(existingDiscriminant) || !MASKED_TOKEN.equals(token)) {
+    if (!discriminant.equals(existingDiscriminant) || token != null) {
       Optional<UserConnection> existingConnection =
           userConnManager.findByUserNameProviderName(
               user.getUsername(), appName, existingDiscriminant);
@@ -552,8 +609,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         updatedConn.setRank(existingConn.getRank());
         updatedConn.setId(new UserConnectionId(user.getUsername(), appName, discriminant));
         updatedConn.setExpireTime(existingConn.getExpireTime());
-        updatedConn.setAccessToken(
-            !MASKED_TOKEN.equals(token) ? token : existingConn.getAccessToken());
+        updatedConn.setAccessToken(token != null ? token : existingConn.getAccessToken());
 
         userConnManager.deleteByUserAndProvider(user.getUsername(), appName, existingDiscriminant);
         userConnManager.save(updatedConn);
@@ -651,6 +707,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (DSW_APP_NAME.equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
           user, appName, DSW_ALIAS, configSetBeforeRemoval);
+    } else if (GALAXY_APP_NAME.equals(appName)) {
+      deleteConfigOptionsForAppsWithMultipleOptionSet(
+          user, appName, GALAXY_ALIAS, configSetBeforeRemoval);
     }
   }
 
