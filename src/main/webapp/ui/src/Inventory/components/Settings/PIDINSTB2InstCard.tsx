@@ -112,12 +112,14 @@ export default function PIDINSTB2InstCard({
                     secret={field === "password"}
                     label={settingsLabels[field]}
                     value={updatedSettings[field]}
+                    storedSecretExists={field === "password" ? savedSettings.password !== "" : undefined}
                     onChange={(value) => {
                       setUpdatedSettings({ ...updatedSettings, [field]: value });
                     }}
                     placeholder={t("settings.pidinst.b2inst.placeholder", { label: settingsLabels[field] })}
                     requiredError={t("settings.pidinst.b2inst.fieldRequiredError")}
                     required={required}
+                    disabled={savingInFlight}
                   />
                 </Grid>
               </Grid>
@@ -130,6 +132,7 @@ export default function PIDINSTB2InstCard({
             control={
               <Switch
                 checked={updatedSettings.enabled === "true"}
+                disabled={savingInFlight}
                 onChange={({ target: { checked } }) => {
                   const newEnabled: IntegrationState = checked ? "true" : "false";
                   setUpdatedSettings({ ...updatedSettings, enabled: newEnabled });
@@ -175,7 +178,7 @@ export default function PIDINSTB2InstCard({
            * the user is seeing, and would likely be confusing. As such, we
            * disable the button and require they save first.
            */
-          disabled={unsavedChanges || isConflict}
+          disabled={unsavedChanges || isConflict || savingInFlight}
           variant="outlined"
           sx={{ minWidth: "max-content" }}
           onClick={() => {

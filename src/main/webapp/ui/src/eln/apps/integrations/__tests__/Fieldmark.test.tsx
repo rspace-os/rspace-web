@@ -39,4 +39,29 @@ describe("Fieldmark", () => {
     });
     expect(apiKeyField).toHaveValue("new-key");
   });
+
+  test("locks the API key while a save is pending", async () => {
+    const user = userEvent.setup();
+    let finishSave!: () => void;
+    const pendingSave = new Promise<void>((resolve) => {
+      finishSave = resolve;
+    });
+    const update = vi.fn(() => pendingSave);
+    render(<Fieldmark integrationState={state} update={update} />);
+    await user.click(screen.getByRole("button", { name: "apps:integrations.fieldmark.name" }));
+    const apiKeyField = screen.getAllByLabelText("apps:integrations.fieldmark.fields.apiKey")[0];
+
+    await user.type(apiKeyField, "new-key");
+    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
+    await waitFor(() => expect(update).toHaveBeenCalledOnce());
+
+    expect(apiKeyField).toBeDisabled();
+    expect(screen.getByRole("button", { name: "common:actions.save" })).toBeDisabled();
+    await user.type(apiKeyField, "replacement");
+    expect(apiKeyField).toHaveValue("new-key");
+
+    finishSave();
+    await waitFor(() => expect(apiKeyField).not.toBeDisabled());
+    expect(apiKeyField).toHaveAttribute("placeholder", "common:inputs.secretField.unchanged");
+  });
 });

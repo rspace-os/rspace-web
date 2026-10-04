@@ -25,6 +25,8 @@ type ZenodoArgs = {
 function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
   const [apiKey, setApiKey] = useState(integrationState.credentials.ZENODO_USER_TOKEN.orElse(""));
+  const [storedSecretExists, setStoredSecretExists] = useState(apiKey !== "");
+  const [saving, setSaving] = useState(false);
 
   return (
     <Grid
@@ -51,19 +53,24 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
+                  if (saving) return;
+                  setSaving(true);
                   void update({
                     mode: integrationState.mode,
                     credentials: {
                       ZENODO_USER_TOKEN: Optional.present(apiKey),
                     },
-                  }).then(
-                    () => {
-                      setApiKey(secretAfterSave(apiKey));
-                    },
-                    () => {
-                      // update() has already shown the error; keep the typed key so it can be retried
-                    },
-                  );
+                  })
+                    .then(
+                      () => {
+                        setStoredSecretExists(apiKey !== "");
+                        setApiKey(secretAfterSave(apiKey));
+                      },
+                      () => {
+                        // update() has already shown the error; keep the typed key so it can be retried
+                      },
+                    )
+                    .finally(() => setSaving(false));
                 }}
               >
                 <CardContent>
@@ -74,11 +81,15 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
                     size="small"
                     autoComplete="new-password"
                     value={apiKey}
+                    storedSecretExists={storedSecretExists}
+                    disabled={saving}
                     onChange={setApiKey}
                   />
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">{t("common:actions.save")}</Button>
+                  <Button type="submit" disabled={saving}>
+                    {t("common:actions.save")}
+                  </Button>
                 </CardActions>
               </form>
             </Card>

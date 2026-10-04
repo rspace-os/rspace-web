@@ -136,4 +136,40 @@ describe("PIDINSTB2InstCard", () => {
 
     expect(updateSystemSettings).toHaveBeenCalledWith("pidinstB2Inst", expect.objectContaining({ password: "" }));
   });
+
+  test("does not allow undo after clearing the stored secret has been saved", async () => {
+    const user = userEvent.setup();
+    const updateSystemSettings = renderCard({ enabled: "false" });
+
+    await user.click(screen.getByRole("button", CLEAR));
+    await user.click(screen.getByRole("button", SAVE));
+
+    expect(updateSystemSettings).toHaveBeenCalledWith("pidinstB2Inst", expect.objectContaining({ password: "" }));
+    expect(screen.queryByRole("button", { name: "common:inputs.secretField.undoClear" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "inventory:settings.pidinst.b2inst.enableLabel" }));
+    expect(screen.getByRole("button", SAVE)).toBeDisabled();
+  });
+
+  test("disables editable settings while a save is pending", async () => {
+    const user = userEvent.setup();
+    let finishSave!: () => void;
+    const savePromise = new Promise<void>((resolve) => {
+      finishSave = resolve;
+    });
+    const updateSystemSettings = vi.fn(() => savePromise);
+    renderCard({}, updateSystemSettings);
+
+    const username = screen.getByRole("textbox", { name: "inventory:settings.pidinst.b2inst.labels.username" });
+    await user.type(username, "-updated");
+    await user.click(screen.getByRole("button", SAVE));
+    await waitFor(() => expect(updateSystemSettings).toHaveBeenCalledOnce());
+
+    expect(username).toBeDisabled();
+    expect(screen.getByLabelText(PASSWORD_LABEL)).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "inventory:settings.pidinst.b2inst.enableLabel" })).toBeDisabled();
+
+    finishSave();
+    await waitFor(() => expect(username).not.toBeDisabled());
+  });
 });

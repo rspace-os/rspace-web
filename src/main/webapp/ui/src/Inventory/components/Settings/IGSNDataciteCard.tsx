@@ -96,6 +96,7 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
           </FormHelperText>
           <RadioField
             name={t("settings.datacite.formLabel")}
+            disabled={savingInFlight}
             value={updatedSettings.enabled}
             onChange={({ target }) => {
               if (target.value !== null && typeof target.value !== "undefined") {
@@ -129,6 +130,7 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
                     secret={field === "password"}
                     label={settingsLabels[field]}
                     value={updatedSettings[field]}
+                    storedSecretExists={field === "password" ? savedSettings.password !== "" : undefined}
                     onChange={(value) => {
                       setUpdatedSettings({ ...updatedSettings, [field]: value });
                     }}
@@ -137,13 +139,14 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
                     required={required}
                     // the other fields stay editable while IGSN is disabled: disabling them would
                     // also disable Clear, the only way to remove a stored password
-                    disabled={field === "serverUrl"}
+                    disabled={savingInFlight || field === "serverUrl"}
                   />
                 </Grid>
                 {field === "serverUrl" && (
                   <Grid sx={{ width: "200px" }}>
                     <RadioField
                       name={t("settings.datacite.serverUrlLabel")}
+                      disabled={savingInFlight}
                       value={updatedSettings.serverUrl}
                       onChange={({ target }) => {
                         if (target.value !== null && typeof target.value !== "undefined") {
@@ -188,7 +191,7 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
            * the user is seeing, and would likely be confusing. As such, we
            * disable the button and require they save first.
            */
-          disabled={unsavedChanges}
+          disabled={unsavedChanges || savingInFlight}
           variant="outlined"
           sx={{ minWidth: "max-content" }}
           onClick={() => {

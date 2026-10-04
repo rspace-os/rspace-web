@@ -24,6 +24,8 @@ type SecretFieldArgs<V extends Secret> = Omit<
   value: V;
   /** Also names the field's buttons, so it must be text; they fall back to "secret" without it. */
   label?: string;
+  /** Whether a secret is currently persisted, for parents that own save state. */
+  storedSecretExists?: boolean;
   /**
    * Offer a clear button on a stored secret (default true). Turn it off where the secret is
    * required, as clearing it would leave a form that cannot be saved.
@@ -47,6 +49,7 @@ export default function SecretField<V extends Secret>({
   label,
   placeholder,
   disabled,
+  storedSecretExists,
   clearable = true,
   readOnly = false,
   ...props
@@ -60,13 +63,24 @@ export default function SecretField<V extends Secret>({
   const [hasStoredSecret, setHasStoredSecret] = useState(isUnchanged);
   // whether the user has cleared the stored secret, which they can undo
   const [cleared, setCleared] = useState(false);
-  if (isUnchanged && (!hasStoredSecret || cleared || show)) {
-    setHasStoredSecret(true);
-    setCleared(false);
-    setShow(false);
+  if (storedSecretExists === undefined) {
+    if (isUnchanged && (!hasStoredSecret || cleared || show)) {
+      setHasStoredSecret(true);
+      setCleared(false);
+      setShow(false);
+    }
+    // the parent has reset the field to having no secret, e.g. on reuse for another config
+    if (value === "" && hasStoredSecret && !cleared) setHasStoredSecret(false);
+  } else {
+    if (hasStoredSecret !== storedSecretExists) setHasStoredSecret(storedSecretExists);
+    if (!storedSecretExists && cleared) setCleared(false);
+    if (isUnchanged && (cleared || show)) {
+      setCleared(false);
+      setShow(false);
+    }
   }
-  // the parent has reset the field to having no secret, e.g. on reuse for another config
-  if (value === "" && hasStoredSecret && !cleared) setHasStoredSecret(false);
+  const secretExists = storedSecretExists ?? hasStoredSecret;
+  const clearIsActive = storedSecretExists === false ? false : cleared;
 
   return (
     <TextField
@@ -79,7 +93,7 @@ export default function SecretField<V extends Secret>({
       placeholder={isUnchanged ? t("inputs.secretField.unchanged") : placeholder}
       onChange={({ target }) => {
         // null is only emitted once the field has held null, so V includes it
-        onChange?.((target.value === "" && hasStoredSecret && !cleared ? null : target.value) as V);
+        onChange?.((target.value === "" && secretExists && !clearIsActive ? null : target.value) as V);
       }}
       slotProps={{
         // MUI hides the placeholder until the label shrinks
@@ -88,22 +102,22 @@ export default function SecretField<V extends Secret>({
         input: {
           endAdornment: (
             <InputAdornment position="end">
-              {clearable && !readOnly && hasStoredSecret && (
+              {clearable && !readOnly && secretExists && (
                 <IconButton
                   aria-label={
-                    cleared
+                    clearIsActive
                       ? t("inputs.secretField.undoClear", { label: buttonName })
                       : t("inputs.secretField.clear", { label: buttonName })
                   }
                   onClick={() => {
-                    setCleared(!cleared);
-                    onChange?.((cleared ? null : "") as V);
+                    setCleared(!clearIsActive);
+                    onChange?.((clearIsActive ? null : "") as V);
                     inputRef.current?.focus();
                   }}
                   disabled={disabled}
                   size="small"
                 >
-                  {cleared ? <UndoIcon fontSize="small" /> : <ClearIcon fontSize="small" />}
+                  {clearIsActive ? <UndoIcon fontSize="small" /> : <ClearIcon fontSize="small" />}
                 </IconButton>
               )}
               <IconButton

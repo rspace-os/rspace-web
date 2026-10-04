@@ -10,6 +10,7 @@ type IdentifierSettingFieldArgs = {
   onChange: (value: Secret) => void;
   placeholder: string;
   requiredError: string;
+  storedSecretExists?: boolean;
   /**
    * Whether the field must have a value, i.e. the integration is enabled. A secret can only be
    * cleared while it is not required, so clearing never leaves a form that cannot be saved.
@@ -26,6 +27,7 @@ export default function IdentifierSettingField({
   onChange,
   placeholder,
   requiredError,
+  storedSecretExists,
   required,
   disabled,
 }: IdentifierSettingFieldArgs): React.ReactNode {
@@ -43,7 +45,13 @@ export default function IdentifierSettingField({
     helperText: missing ? requiredError : null,
   } as const;
   return secret ? (
-    <SecretField {...shared} autoComplete="new-password" clearable={!required} onChange={onChange} />
+    <SecretField
+      {...shared}
+      autoComplete="new-password"
+      clearable={!required}
+      storedSecretExists={storedSecretExists}
+      onChange={onChange}
+    />
   ) : (
     <TextField
       {...shared}

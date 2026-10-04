@@ -40,4 +40,37 @@ describe("Pyrat", () => {
     });
     expect(apiKeyField).toHaveValue("");
   });
+
+  test("locks a row while clearing its saved API key is pending", async () => {
+    const user = userEvent.setup();
+    let finishSave!: () => void;
+    const pendingSave = new Promise<void>((resolve) => {
+      finishSave = resolve;
+    });
+    mockSaveAppOptions.mockReset().mockReturnValue(pendingSave);
+    render(<Pyrat integrationState={state} update={() => {}} />);
+    await user.click(screen.getByRole("button", { name: "apps:integrations.pyrat.name" }));
+    const apiKeyField = screen.getByLabelText("apps:integrations.pyrat.apiKeyLabel");
+
+    await user.click(screen.getByRole("button", { name: "common:inputs.secretField.clear" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
+    await waitFor(() =>
+      expect(mockSaveAppOptions).toHaveBeenCalledWith(
+        "PYRAT",
+        Optional.present("1"),
+        expect.objectContaining({ PYRAT_APIKEY: "" }),
+      ),
+    );
+
+    expect(apiKeyField).toBeDisabled();
+    expect(screen.getByRole("button", { name: "common:actions.save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "common:actions.delete" })).toBeDisabled();
+    await user.type(apiKeyField, "replacement");
+    expect(apiKeyField).toHaveValue("");
+
+    finishSave();
+    await waitFor(() => expect(apiKeyField).not.toBeDisabled());
+    expect(screen.queryByRole("button", { name: "common:inputs.secretField.undoClear" })).not.toBeInTheDocument();
+    expect(apiKeyField).toHaveValue("");
+  });
 });
