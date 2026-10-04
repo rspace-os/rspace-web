@@ -67,9 +67,7 @@ public class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525
                   new UserConnectionId(username, SLACK_APP_NAME, String.valueOf(set.getId())),
                   token == null ? "" : token);
           connection.setSecret(webhookUrl);
-          // as the connect flow does: set ids are unique, so ranks cannot collide
-          connection.setRank(Math.toIntExact(set.getId()));
-          save(connection);
+          save(connection, set);
         }
       }
     }
@@ -79,15 +77,11 @@ public class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525
     deleteSetting(session, App.APP_SLACK, "SLACK_WEBHOOK_URL");
   }
 
-  private void save(UserConnection connection) {
+  private void save(UserConnection connection, AppConfigElementSet set) {
+    // as the connect flow does: set ids are unique, so ranks cannot collide
+    connection.setRank(Math.toIntExact(set.getId()));
     userConnectionDao.save(connection);
     moved++;
-  }
-
-  private void save(UserConnection connection, AppConfigElementSet set) {
-    // The set ID is globally unique, so it is also unique within this user's GitHub rank.
-    connection.setRank(Math.toIntExact(set.getId()));
-    save(connection);
   }
 
   private static String value(AppConfigElementSet set, String settingName) {
