@@ -33,7 +33,13 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
-  const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
+  const authenticatedServers = useLocalObservable(() =>
+    integrationState.credentials.authenticatedServers.map((server) => ({
+      ...server,
+      storedSecretExists: server.apiKey !== "",
+      saving: false,
+    })),
+  );
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   const unauthenticatedServers = integrationState.credentials.configuredServers.filter(
@@ -72,14 +78,20 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                       key={server.alias}
                       onSubmit={(event) => {
                         event.preventDefault();
+                        if (server.saving) return;
+                        const submittedApiKey = server.apiKey;
+                        runInAction(() => {
+                          server.saving = true;
+                        });
                         void saveAppOptions("GALAXY", Optional.present(server.optionsId), {
                           GALAXY_ALIAS: server.alias,
                           GALAXY_URL: server.url,
-                          GALAXY_APIKEY: server.apiKey,
+                          GALAXY_APIKEY: submittedApiKey,
                         })
                           .then(() => {
                             runInAction(() => {
-                              server.apiKey = secretAfterSave(server.apiKey);
+                              server.storedSecretExists = submittedApiKey !== "";
+                              server.apiKey = secretAfterSave(submittedApiKey);
                             });
                             addAlert(
                               mkAlert({
@@ -97,6 +109,11 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                                   message: e.message,
                                 }),
                               );
+                          })
+                          .finally(() => {
+                            runInAction(() => {
+                              server.saving = false;
+                            });
                           });
                       }}
                     >
@@ -108,14 +125,19 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                           size="small"
                           autoComplete="new-password"
                           value={server.apiKey}
+                          storedSecretExists={server.storedSecretExists}
+                          disabled={server.saving}
                           onChange={(value) => {
                             runInAction(() => {
                               server.apiKey = value;
                             });
                           }}
                         />
-                        <Button type="submit">{t("common:actions.save")}</Button>
+                        <Button type="submit" disabled={server.saving}>
+                          {t("common:actions.save")}
+                        </Button>
                         <Button
+                          disabled={server.saving}
                           onClick={() => {
                             void deleteAppOptions("GALAXY", server.optionsId)
                               .then(() => {
@@ -188,6 +210,8 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                                 alias,
                                 url,
                                 apiKey: "",
+                                storedSecretExists: false,
+                                saving: false,
                                 optionsId: newServer.optionsId,
                               });
                               addAlert(

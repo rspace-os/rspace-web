@@ -33,7 +33,13 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
-  const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
+  const authenticatedServers = useLocalObservable(() =>
+    integrationState.credentials.authenticatedServers.map((server) => ({
+      ...server,
+      storedSecretExists: server.apiKey !== "",
+      saving: false,
+    })),
+  );
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   const unauthenticatedServers = integrationState.credentials.configuredServers.filter(
@@ -72,14 +78,20 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                       key={server.alias}
                       onSubmit={(event) => {
                         event.preventDefault();
+                        if (server.saving) return;
+                        const submittedApiKey = server.apiKey;
+                        runInAction(() => {
+                          server.saving = true;
+                        });
                         void saveAppOptions("PYRAT", Optional.present(server.optionsId), {
                           PYRAT_ALIAS: server.alias,
                           PYRAT_URL: server.url,
-                          PYRAT_APIKEY: server.apiKey,
+                          PYRAT_APIKEY: submittedApiKey,
                         })
                           .then(() => {
                             runInAction(() => {
-                              server.apiKey = secretAfterSave(server.apiKey);
+                              server.storedSecretExists = submittedApiKey !== "";
+                              server.apiKey = secretAfterSave(submittedApiKey);
                             });
                             addAlert(
                               mkAlert({
@@ -97,6 +109,11 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                                   message: e.message,
                                 }),
                               );
+                          })
+                          .finally(() => {
+                            runInAction(() => {
+                              server.saving = false;
+                            });
                           });
                       }}
                     >
@@ -108,14 +125,19 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                           size="small"
                           autoComplete="new-password"
                           value={server.apiKey}
+                          storedSecretExists={server.storedSecretExists}
+                          disabled={server.saving}
                           onChange={(value) => {
                             runInAction(() => {
                               server.apiKey = value;
                             });
                           }}
                         />
-                        <Button type="submit">{t("common:actions.save")}</Button>
+                        <Button type="submit" disabled={server.saving}>
+                          {t("common:actions.save")}
+                        </Button>
                         <Button
+                          disabled={server.saving}
                           onClick={() => {
                             void deleteAppOptions("PYRAT", server.optionsId)
                               .then(() => {
@@ -188,6 +210,8 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                                 alias,
                                 url,
                                 apiKey: "",
+                                storedSecretExists: false,
+                                saving: false,
                                 optionsId: newServer.optionsId,
                               });
                               addAlert(

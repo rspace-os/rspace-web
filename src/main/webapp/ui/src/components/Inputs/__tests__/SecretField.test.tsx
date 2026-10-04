@@ -4,7 +4,7 @@ import { useState } from "react";
 import { describe, expect, test } from "vitest";
 import i18n from "@/modules/common/i18n";
 import type { Secret } from "@/util/secret";
-import SecretField from "../SecretField";
+import SecretField, { secretAfterSave } from "../SecretField";
 
 function Harness({ initial, clearable }: { initial: Secret; clearable?: boolean }) {
   const [value, setValue] = useState<Secret>(initial);
@@ -12,6 +12,25 @@ function Harness({ initial, clearable }: { initial: Secret; clearable?: boolean 
     <>
       <SecretField label="Secret" value={value} onChange={setValue} clearable={clearable} />
       {/* JSON so that null (stored) and "" (none) can be told apart */}
+      <output>{JSON.stringify(value)}</output>
+    </>
+  );
+}
+
+function SavedHarness() {
+  const [value, setValue] = useState<Secret>(null);
+  const [storedSecretExists, setStoredSecretExists] = useState(true);
+  return (
+    <>
+      <SecretField label="Secret" value={value} onChange={setValue} storedSecretExists={storedSecretExists} />
+      <button
+        type="button"
+        aria-label="Save secret"
+        onClick={() => {
+          setStoredSecretExists(value !== "");
+          setValue(secretAfterSave(value));
+        }}
+      />
       <output>{JSON.stringify(value)}</output>
     </>
   );
@@ -86,6 +105,34 @@ describe("SecretField", () => {
     await user.click(screen.getByRole("button", { name: "common:inputs.secretField.undoClear" }));
     expect(screen.getByRole("status")).toHaveTextContent("null");
     expect(screen.getByLabelText("Secret")).toHaveAttribute("placeholder", "common:inputs.secretField.unchanged");
+  });
+
+  test("does not offer to undo a clear after it has been saved", async () => {
+    const user = userEvent.setup();
+    render(<SavedHarness />);
+
+    await user.click(screen.getByRole("button", { name: "common:inputs.secretField.clear" }));
+    await user.click(screen.getByRole("button", { name: "Save secret" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent('""');
+    expect(screen.queryByRole("button", { name: "common:inputs.secretField.undoClear" })).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Secret"), "new-secret");
+    await user.clear(screen.getByLabelText("Secret"));
+    expect(screen.getByRole("status")).toHaveTextContent('""');
+  });
+
+  test("resets clear after replacing a stored secret and saving", async () => {
+    const user = userEvent.setup();
+    render(<SavedHarness />);
+
+    await user.click(screen.getByRole("button", { name: "common:inputs.secretField.clear" }));
+    await user.type(screen.getByLabelText("Secret"), "replacement");
+    await user.click(screen.getByRole("button", { name: "Save secret" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("null");
+    expect(screen.getByRole("button", { name: "common:inputs.secretField.clear" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "common:inputs.secretField.undoClear" })).not.toBeInTheDocument();
   });
 
   test("names its buttons after the field", async () => {

@@ -120,19 +120,21 @@ export default function PIDINSTDataciteCard({
                     secret={field === "password"}
                     label={settingsLabels[field]}
                     value={updatedSettings[field]}
+                    storedSecretExists={field === "password" ? savedSettings.password !== "" : undefined}
                     onChange={(value) => {
                       setUpdatedSettings({ ...updatedSettings, [field]: value });
                     }}
                     placeholder={t("settings.pidinst.datacite.placeholder", { label: settingsLabels[field] })}
                     requiredError={t("settings.pidinst.datacite.fieldRequiredError")}
                     required={required}
-                    disabled={field === "serverUrl"}
+                    disabled={savingInFlight || field === "serverUrl"}
                   />
                 </Grid>
                 {field === "serverUrl" && (
                   <Grid sx={{ width: "200px" }}>
                     <RadioField
                       name={t("settings.pidinst.datacite.serverUrlLabel")}
+                      disabled={savingInFlight}
                       value={updatedSettings.serverUrl}
                       onChange={({ target }) => {
                         if (target.value !== null && typeof target.value !== "undefined") {
@@ -158,6 +160,7 @@ export default function PIDINSTDataciteCard({
             control={
               <Switch
                 checked={updatedSettings.enabled === "true"}
+                disabled={savingInFlight}
                 onChange={({ target: { checked } }) => {
                   const newEnabled: IntegrationState = checked ? "true" : "false";
                   setUpdatedSettings({ ...updatedSettings, enabled: newEnabled });
@@ -203,7 +206,7 @@ export default function PIDINSTDataciteCard({
            * the user is seeing, and would likely be confusing. As such, we
            * disable the button and require they save first.
            */
-          disabled={unsavedChanges || isConflict}
+          disabled={unsavedChanges || isConflict || savingInFlight}
           variant="outlined"
           sx={{ minWidth: "max-content" }}
           onClick={() => {

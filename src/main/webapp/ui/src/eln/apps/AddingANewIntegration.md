@@ -41,10 +41,13 @@ replaces it. For this to work:
 - Render secret inputs with `components/Inputs/SecretField`. It shows a stored
   secret as `(unchanged)` and posts `null` back when it is left untouched.
   Its clear button posts `""`, which must remove the stored value, and then
-  offers to undo, posting `null` again. Pass `clearable={false}` where the
-  secret is required.
+  offers to undo, posting `null` again. For forms that can clear a saved
+  secret, pass `storedSecretExists` from the last saved settings and update it
+  only after a successful save. This removes Undo once a clear has been saved;
+  otherwise the field cannot distinguish an unsaved clear from a saved one.
+  Pass `clearable={false}` where the secret is required.
 - Once a save succeeds, set the field to `secretAfterSave(value)` so it shows
-  `(unchanged)` again.
+  `(unchanged)` again, and set `storedSecretExists` to `value !== ""`.
 
 ### Complex Configuration
 A few of the integrations require a complex set of configurations. This is

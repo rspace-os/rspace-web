@@ -225,4 +225,34 @@ describe("Zenodo", () => {
     });
     expect(apiKeyField).toHaveValue("");
   });
+
+  test("locks the API key while a save is pending", async () => {
+    const user = userEvent.setup();
+    let finishSave!: () => void;
+    const pendingSave = new Promise<void>((resolve) => {
+      finishSave = resolve;
+    });
+    const pendingUpdate = vi.fn(() => pendingSave);
+    render(
+      <Zenodo
+        integrationState={{ mode: "DISABLED", credentials: { ZENODO_USER_TOKEN: Optional.present("") } }}
+        update={pendingUpdate}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "apps:integrations.zenodo.name" }));
+    const apiKeyField = screen.getAllByLabelText("apps:integrations.zenodo.fields.apiKey")[0];
+
+    await user.type(apiKeyField, "new-key");
+    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
+    await waitFor(() => expect(pendingUpdate).toHaveBeenCalledOnce());
+
+    expect(apiKeyField).toBeDisabled();
+    expect(screen.getByRole("button", { name: "common:actions.save" })).toBeDisabled();
+    await user.type(apiKeyField, "replacement");
+    expect(apiKeyField).toHaveValue("new-key");
+
+    finishSave();
+    await waitFor(() => expect(apiKeyField).not.toBeDisabled());
+    expect(apiKeyField).toHaveAttribute("placeholder", "common:inputs.secretField.unchanged");
+  });
 });
