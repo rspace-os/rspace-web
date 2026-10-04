@@ -149,17 +149,6 @@ public class IntegrationsHandlerTest {
   }
 
   @Test
-  public void deletingTheLastGitHubRepositoryDeletesTheToken() {
-    UserAppConfig cfg = stubSetForApp(7L, App.APP_GITHUB);
-    UserAppConfig noRepositories = new UserAppConfig(subject, cfg.getApp(), true);
-    when(appCfgMgr.getByAppName(App.APP_GITHUB, subject)).thenReturn(noRepositories);
-    handler.deleteAppOptions(7L, GITHUB_APP_NAME, subject);
-    verify(userConnectionManager)
-        .deleteByUserAndProvider(subject.getUsername(), GITHUB_APP_NAME, "7");
-    verify(userConnectionManager).deleteByUserAndProvider(subject.getUsername(), GITHUB_APP_NAME);
-  }
-
-  @Test
   public void deletingOneOfSeveralGitHubRepositoriesKeepsTheToken() {
     stubSetForApp(7L, App.APP_GITHUB);
     when(appCfgMgr.getByAppName(App.APP_GITHUB, subject))

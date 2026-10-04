@@ -131,12 +131,6 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
     return Optional.ofNullable(uri);
   }
 
-  /**
-   * Gets the webhook URL that the messages for this configuration are posted to.
-   *
-   * @param messageConfig the channel's configuration
-   * @return the webhook URL
-   */
   protected abstract String doGetPostUrl(AppConfigElementSet messageConfig);
 
   // converts <br/> from form into newlines

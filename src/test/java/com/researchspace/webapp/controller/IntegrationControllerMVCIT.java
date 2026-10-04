@@ -379,7 +379,6 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertInstanceOf(AuthorizationException.class, result.getResolvedException());
 
-    // but it can relabel the channel
     channelOptions.put("SLACK_CHANNEL_LABEL", EDITED_LABEL);
     optionsJson = mvcUtils.getAsJsonString(channelOptions);
     result =
