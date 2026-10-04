@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -315,6 +316,22 @@ public class IntegrationsHandlerTest {
     expectedOptions.put(EGNYTE_DOMAIN_SETTING, testEgnyteDomain);
     Mockito.verify(appCfgMgr, times(1))
         .saveAppConfigElementSet(expectedOptions, null, false, subject);
+  }
+
+  @Test
+  public void enablingEgnyteWithoutADomainLeavesItsOptionsAlone() {
+    IntegrationInfo info = new IntegrationInfo();
+    info.setAvailable(true);
+    info.setEnabled(true);
+    info.setName(EGNYTE_APP_NAME);
+    UserAppConfig egnyteConfig =
+        new UserAppConfig(subject, new App(EGNYTE_APP_NAME, "Egnyte", false), false);
+    when(appCfgMgr.getByAppName("app.egnyte", subject)).thenReturn(egnyteConfig);
+
+    handler.updateIntegrationInfo(subject, info);
+
+    assertTrue(egnyteConfig.isEnabled());
+    Mockito.verify(appCfgMgr, never()).saveAppConfigElementSet(any(), any(), anyBoolean(), any());
   }
 
   @Test
