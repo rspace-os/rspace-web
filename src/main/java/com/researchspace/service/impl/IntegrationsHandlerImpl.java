@@ -632,6 +632,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   private void saveAppConfigWithSingleOptionSet(
       User user, IntegrationInfo newInfo, String appName, String optionName) {
+    // enabling or disabling posts no options, and must not create a set holding null
+    if (!newInfo.getOptions().containsKey(optionName)) {
+      return;
+    }
     String currentId = getIntegration(user, appName).retrieveFirstOptionsId();
     Long optionIdToSave = currentId == null ? null : Long.valueOf(currentId);
 
