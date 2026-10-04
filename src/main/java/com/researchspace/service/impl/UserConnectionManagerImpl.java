@@ -92,10 +92,11 @@ public class UserConnectionManagerImpl extends GenericManagerImpl<UserConnection
       String providerName,
       String accessToken,
       String secret,
+      boolean trustedOrigin,
       User user) {
     UserAppConfig cfg =
         userAppConfigManager.saveAppConfigElementSet(
-            settings, null, true, user, getAppNameFromIntegrationName(providerName));
+            settings, null, trustedOrigin, user, getAppNameFromIntegrationName(providerName));
     // set ids only increase, so the new set has the highest
     long setId =
         cfg.getAppConfigElementSets().stream()

@@ -62,21 +62,24 @@ public interface UserConnectionManager extends GenericManager<UserConnection, Us
   UserConnection replaceConnection(UserConnection connection);
 
   /**
-   * Saves a new app config set (from a trusted origin) and the encrypted connection holding its
-   * credentials in one transaction, so neither is kept without the other. The connection is keyed
-   * and ranked by the new set's id, which is unique, so concurrent saves cannot collide on rank.
+   * Saves a new app config set and the encrypted connection holding its credentials in one
+   * transaction, so neither is kept without the other. The connection is keyed and ranked by the
+   * new set's id, which is unique, so concurrent saves cannot collide on rank.
    *
    * @param settings the new set's non-secret settings
    * @param providerName the connection's provider, e.g. 'SLACK'
    * @param accessToken the connection's access token
    * @param secret the connection's secret, may be null
+   * @param trustedOrigin whether the app config is being saved by a trusted origin
    * @param user the owner of the set and the connection
    * @return the saved connection
    */
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
   UserConnection saveWithNewAppConfigElementSet(
       Map<String, String> settings,
       String providerName,
       String accessToken,
       String secret,
+      boolean trustedOrigin,
       User user);
 }

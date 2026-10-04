@@ -10,19 +10,15 @@ import com.researchspace.model.apps.AppConfigElement;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import liquibase.database.Database;
 import org.hibernate.Session;
 
 /**
  * RSDEV-1525: GitHub and Slack kept their credentials as plaintext app settings. This copies them
  * into the encrypted UserConnection table, where the controllers now read them, and then deletes
- * the app settings: one GitHub token per user, and one Slack connection per channel holding its
- * token and webhook URL, keyed by the channel's config set id.
+ * the app settings: one GitHub token per repository, and one Slack connection per channel holding
+ * its token and webhook URL, keyed by the config set id.
  */
 public class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525
     extends AbstractCustomLiquibaseUpdater {
@@ -51,20 +47,16 @@ public class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525
             .setParameterList("apps", List.of(App.APP_GITHUB, App.APP_SLACK))
             .list();
 
-    // ponytail: the connect flow now keeps one GitHub token per user, so the latest repository's
-    // wins. A repository the kept token cannot read stops listing files until it is unlinked and
-    // linked again from an account that can.
-    Map<String, String> gitHubTokens = new LinkedHashMap<>();
-    Set<String> usersWithDroppedTokens = new HashSet<>();
     for (AppConfigElementSet set : sets) {
       String username = set.getUserAppConfig().getUser().getUsername();
       if (App.APP_GITHUB.equals(set.getUserAppConfig().getApp().getName())) {
         String token = value(set, "GITHUB_ACCESS_TOKEN");
         if (!isEmpty(token)) {
-          String previous = gitHubTokens.put(username, token);
-          if (previous != null && !previous.equals(token)) {
-            usersWithDroppedTokens.add(username);
-          }
+          save(
+              new UserConnection(
+                  new UserConnectionId(username, GITHUB_APP_NAME, String.valueOf(set.getId())),
+                  token),
+              set);
         }
       } else {
         String token = value(set, "SLACK_USER_ACCESS_TOKEN");
@@ -81,17 +73,6 @@ public class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525
         }
       }
     }
-    if (!usersWithDroppedTokens.isEmpty()) {
-      logger.warn(
-          "{} users had GitHub repositories linked with different tokens; each keeps only the"
-              + " token of their most recently linked repository",
-          usersWithDroppedTokens.size());
-    }
-    gitHubTokens.forEach(
-        (username, token) ->
-            save(
-                new UserConnection(
-                    new UserConnectionId(username, GITHUB_APP_NAME, GITHUB_APP_NAME), token)));
 
     deleteSetting(session, App.APP_GITHUB, "GITHUB_ACCESS_TOKEN");
     deleteSetting(session, App.APP_SLACK, "SLACK_USER_ACCESS_TOKEN");
@@ -101,6 +82,12 @@ public class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525
   private void save(UserConnection connection) {
     userConnectionDao.save(connection);
     moved++;
+  }
+
+  private void save(UserConnection connection, AppConfigElementSet set) {
+    // The set ID is globally unique, so it is also unique within this user's GitHub rank.
+    connection.setRank(Math.toIntExact(set.getId()));
+    save(connection);
   }
 
   private static String value(AppConfigElementSet set, String settingName) {

@@ -236,7 +236,7 @@ public class SlackController extends BaseOAuth2Controller {
     String webhookUrl = requiredText(webhook, "url");
 
     userConnectionManager.saveWithNewAppConfigElementSet(
-        channel, SLACK_APP_NAME, accessToken, webhookUrl, user);
+        channel, SLACK_APP_NAME, accessToken, webhookUrl, true, user);
   }
 
   private static String requiredText(JsonNode node, String field) {
