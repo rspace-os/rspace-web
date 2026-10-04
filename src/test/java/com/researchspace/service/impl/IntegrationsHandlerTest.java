@@ -154,6 +154,8 @@ public class IntegrationsHandlerTest {
     UserAppConfig noRepositories = new UserAppConfig(subject, cfg.getApp(), true);
     when(appCfgMgr.getByAppName(App.APP_GITHUB, subject)).thenReturn(noRepositories);
     handler.deleteAppOptions(7L, GITHUB_APP_NAME, subject);
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), GITHUB_APP_NAME, "7");
     verify(userConnectionManager).deleteByUserAndProvider(subject.getUsername(), GITHUB_APP_NAME);
   }
 
@@ -164,7 +166,45 @@ public class IntegrationsHandlerTest {
         .thenReturn(
             SystemPropertyTestFactory.createAnyAppWithConfigElements(subject, App.APP_GITHUB));
     handler.deleteAppOptions(7L, GITHUB_APP_NAME, subject);
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), GITHUB_APP_NAME, "7");
     verify(userConnectionManager, never()).deleteByUserAndProvider(any(), any());
+  }
+
+  @Test
+  public void addingAGitHubRepositoryBindsTheCurrentTokenAtomically() {
+    String currentToken = "github-oauth-token";
+    Map<String, String> settings = Map.of("GITHUB_REPOSITORY_FULL_NAME", "owner/repo");
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME))
+        .thenReturn(
+            Optional.of(
+                new UserConnection(
+                    new UserConnectionId(subject.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME),
+                    currentToken)));
+
+    handler.saveAppOptions(null, settings, GITHUB_APP_NAME, false, subject);
+
+    verify(userConnectionManager)
+        .saveWithNewAppConfigElementSet(
+            settings, GITHUB_APP_NAME, currentToken, null, false, subject);
+  }
+
+  @Test
+  public void addingAGitHubRepositoryWithoutOAuthTokenDoesNotSaveTheConfig() {
+    Map<String, String> settings = Map.of("GITHUB_REPOSITORY_FULL_NAME", "owner/repo");
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME))
+        .thenReturn(Optional.empty());
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> handler.saveAppOptions(null, settings, GITHUB_APP_NAME, false, subject));
+
+    verify(userConnectionManager, never())
+        .saveWithNewAppConfigElementSet(any(), any(), any(), any(), anyBoolean(), any());
+    verify(appCfgMgr, never())
+        .saveAppConfigElementSet(any(), any(), anyBoolean(), any(), anyString());
   }
 
   private UserAppConfig stubSetForApp(Long setId, String appName) {

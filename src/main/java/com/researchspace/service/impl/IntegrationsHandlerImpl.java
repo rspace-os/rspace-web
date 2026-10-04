@@ -678,6 +678,17 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else {
       options = originalOptions;
     }
+    if (GITHUB_APP_NAME.equals(appName) && optionsId == null) {
+      String accessToken =
+          userConnManager
+              .findByUserNameProviderName(user.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME)
+              .map(UserConnection::getAccessToken)
+              .filter(StringUtils::isNotBlank)
+              .orElseThrow(() -> new IllegalStateException("GitHub OAuth connection is required"));
+      userConnManager.saveWithNewAppConfigElementSet(
+          options, GITHUB_APP_NAME, accessToken, null, trustedOrigin, user);
+      return;
+    }
     String existingAlias = null;
     if (DSW_APP_NAME.equals(appName) && null != optionsId) {
       Optional<AppConfigElementSet> prevSavedOptions =
@@ -716,10 +727,12 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (SLACK_APP_NAME.equals(appName)) {
       // a channel's token and webhook URL are kept under its set id
       userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
-    } else if (GITHUB_APP_NAME.equals(appName)
-        && appConfigMgr.getByAppName(App.APP_GITHUB, user).getAppConfigElementSets().isEmpty()) {
-      // the one GitHub token serves all linked repositories, so it goes with the last of them
-      userConnManager.deleteByUserAndProvider(user.getUsername(), appName);
+    } else if (GITHUB_APP_NAME.equals(appName)) {
+      // Each repository's token is stored under its config set id.
+      userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
+      if (appConfigMgr.getByAppName(App.APP_GITHUB, user).getAppConfigElementSets().isEmpty()) {
+        userConnManager.deleteByUserAndProvider(user.getUsername(), appName);
+      }
     }
   }
 

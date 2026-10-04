@@ -18,9 +18,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
 import com.researchspace.model.User;
+import com.researchspace.model.apps.App;
+import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
@@ -48,6 +51,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
 
   private @Autowired GitHubController gitHubController;
   private @Autowired IntegrationsHandler integrationsHandler;
+  private @Autowired UserAppConfigManager userAppConfigManager;
   private @Autowired UserConnectionManager userConnectionManager;
 
   @Value("${github.client.id}")
@@ -57,6 +61,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
   private String githubSecret;
 
   private static final String GITHUB_ACCESS_TOKEN = RandomStringUtils.randomAlphabetic(20);
+  private static final String SECOND_GITHUB_ACCESS_TOKEN = "second-account-token";
 
   private MockRestServiceServer server;
 
@@ -79,6 +84,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
     initUsers(user);
     logoutAndLoginAs(user);
+    addExampleRepositories(user);
 
     String state = "test-oauth-state";
     SessionAttributeUtils.setSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE, state);
@@ -119,6 +125,9 @@ public class GitHubControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertNull(result.getModelAndView().getModel().get("connectionError"));
     assertEquals(GITHUB_ACCESS_TOKEN, storedToken(user));
+    assertEquals(GITHUB_ACCESS_TOKEN, repositoryToken(user, "rspace-integration-test-user/test1"));
+    assertEquals(
+        SECOND_GITHUB_ACCESS_TOKEN, repositoryToken(user, "rspace-integration-test-user/test2"));
   }
 
   @Test
@@ -190,26 +199,49 @@ public class GitHubControllerMVCIT extends MVCTestBase {
   }
 
   private void addExampleRepositories(User user) {
-    storeToken(user);
+    storeToken(user, GITHUB_ACCESS_TOKEN);
     integrationsHandler.saveAppOptions(
         null,
         Map.of("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test1"),
         "GITHUB",
-        true,
+        false,
         user);
+    storeToken(user, SECOND_GITHUB_ACCESS_TOKEN);
     integrationsHandler.saveAppOptions(
         null,
         Map.of("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test2"),
         "GITHUB",
-        true,
+        false,
         user);
   }
 
   private void storeToken(User user) {
-    userConnectionManager.save(
+    storeToken(user, GITHUB_ACCESS_TOKEN);
+  }
+
+  private void storeToken(User user, String token) {
+    UserConnection connection =
         new UserConnection(
-            new UserConnectionId(user.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME),
-            GITHUB_ACCESS_TOKEN));
+            new UserConnectionId(user.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME), token);
+    connection.setRank(0);
+    userConnectionManager.save(connection);
+  }
+
+  private String repositoryToken(User user, String repositoryName) {
+    AppConfigElementSet set =
+        userAppConfigManager.getByAppName(App.APP_GITHUB, user).getAppConfigElementSets().stream()
+            .filter(
+                configSet ->
+                    repositoryName.equals(
+                        configSet
+                            .findElementByPropertyName("GITHUB_REPOSITORY_FULL_NAME")
+                            .getValue()))
+            .findFirst()
+            .orElseThrow();
+    return userConnectionManager
+        .findByUserNameProviderName(user.getUsername(), GITHUB_APP_NAME, set.getId().toString())
+        .map(UserConnection::getAccessToken)
+        .orElse(null);
   }
 
   private String storedToken(User user) {
@@ -227,14 +259,14 @@ public class GitHubControllerMVCIT extends MVCTestBase {
 
     addExampleRepositories(user);
 
-    // the tree lists repositories alphabetically, each fetched with the stored token
+    // Each repository is fetched with its own linked account's token.
     server
         .expect(requestTo("https://api.github.com/repos/rspace-integration-test-user/test1"))
         .andExpect(header("Authorization", "token " + GITHUB_ACCESS_TOKEN))
         .andRespond(withSuccess("{ \"default_branch\":\"master\"}", MediaType.APPLICATION_JSON));
     server
         .expect(requestTo("https://api.github.com/repos/rspace-integration-test-user/test2"))
-        .andExpect(header("Authorization", "token " + GITHUB_ACCESS_TOKEN))
+        .andExpect(header("Authorization", "token " + SECOND_GITHUB_ACCESS_TOKEN))
         .andRespond(withSuccess("{ \"default_branch\":\"main\"}", MediaType.APPLICATION_JSON));
 
     MvcResult result =

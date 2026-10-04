@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -293,11 +294,15 @@ public class GitHubController extends BaseOAuth2Controller {
     }
 
     log.info(String.format("User %s successfully authenticated with GitHub", principal.getName()));
-    // one token per user: every linked repository uses the latest connection's token
-    userConnectionManager.replaceConnection(
+    // Keep the current OAuth token for listing available repositories. Per-repository connections
+    // remain untouched when a user reconnects with another GitHub account.
+    UserConnection currentConnection =
         new UserConnection(
             new UserConnectionId(principal.getName(), GITHUB_APP_NAME, GITHUB_APP_NAME),
-            accessToken));
+            accessToken);
+    // Config set ids are positive ranks, leaving 0 unique for this server-only current token.
+    currentConnection.setRank(0);
+    userConnectionManager.save(currentConnection);
     ConnectionResultPage.addConnectionAttributes(
         model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED");
 
@@ -316,21 +321,31 @@ public class GitHubController extends BaseOAuth2Controller {
         .orElse(null);
   }
 
-  private List<String> getConfiguredRepositories(Principal principal) {
+  private Map<String, String> getConfiguredRepositoriesWithTokens(Principal principal) {
     User user = userManager.getUserByUsername(principal.getName());
-    return userAppConfigManager
+    Map<String, String> repositories = new TreeMap<>();
+    userAppConfigManager
         .getByAppName(App.APP_GITHUB, user)
         .getAppConfigElementSets()
-        .stream()
-        .map(set -> set.findElementByPropertyName("GITHUB_REPOSITORY_FULL_NAME").getValue())
-        .sorted()
-        .toList();
+        .forEach(
+            set -> {
+              String repositoryName =
+                  set.findElementByPropertyName("GITHUB_REPOSITORY_FULL_NAME").getValue();
+              String token =
+                  userConnectionManager
+                      .findByUserNameProviderName(
+                          principal.getName(), GITHUB_APP_NAME, String.valueOf(set.getId()))
+                      .map(UserConnection::getAccessToken)
+                      .orElse(null);
+              repositories.put(repositoryName, token);
+            });
+    return repositories;
   }
 
   @RequestMapping(value = "/ajax/get_repository_tree", method = RequestMethod.POST)
   public String getTree(@RequestParam("dir") String dir, Model model, Principal principal) {
     List<TreeNode> nodes = new ArrayList<>();
-    String accessToken = getStoredToken(principal);
+    Map<String, String> repositories = getConfiguredRepositoriesWithTokens(principal);
 
     try {
       dir = java.net.URLDecoder.decode(dir, "UTF-8");
@@ -343,12 +358,12 @@ public class GitHubController extends BaseOAuth2Controller {
 
     // Root folder, showing all repository names
     if (dir.equals("/")) {
-      for (String repositoryName : getConfiguredRepositories(principal)) {
+      for (Map.Entry<String, String> repository : repositories.entrySet()) {
         TreeNode node = new TreeNode();
-        node.setPath(repositoryName);
-        node.setRepository(repositoryName);
+        node.setPath(repository.getKey());
+        node.setRepository(repository.getKey());
         node.setType("tree");
-        node.setSha(getDefaultBranchFromGitHubApi(repositoryName, accessToken));
+        node.setSha(getDefaultBranchFromGitHubApi(repository.getKey(), repository.getValue()));
         nodes.add(node);
       }
     } else {
@@ -357,10 +372,8 @@ public class GitHubController extends BaseOAuth2Controller {
         String repositoryName = splitDir[0];
         String sha = splitDir[1];
         String fullPath = splitDir[2];
-        // only linked repositories are browsed with the user's token
-        String token =
-            getConfiguredRepositories(principal).contains(repositoryName) ? accessToken : null;
-        nodes = getNodesFromGitHubApi(repositoryName, fullPath, sha, token);
+        nodes =
+            getNodesFromGitHubApi(repositoryName, fullPath, sha, repositories.get(repositoryName));
         // No error
         model.addAttribute("error", "");
       } catch (Exception e) {

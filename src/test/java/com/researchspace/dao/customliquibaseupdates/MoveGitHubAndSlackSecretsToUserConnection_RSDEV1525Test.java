@@ -30,8 +30,10 @@ class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525Test extends SpringTran
   void movesTheSecretsIntoEncryptedConnectionsAndDeletesTheSettings() {
     User user = createAndSaveRandomUser();
     logoutAndLoginAs(user);
-    Long gitHubSet =
+    Long firstGitHubSet =
         newSet(user, Map.of("GITHUB_REPOSITORY_FULL_NAME", "owner/repo"), App.APP_GITHUB);
+    Long secondGitHubSet =
+        newSet(user, Map.of("GITHUB_REPOSITORY_FULL_NAME", "other/repo"), App.APP_GITHUB);
     Long slackSet = newSlackChannel(user, "C1");
     // channels connected before Slack tokens were stored have a webhook URL only
     Long webhookOnlySlackSet = newSlackChannel(user, "C2");
@@ -39,7 +41,8 @@ class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525Test extends SpringTran
     addLegacyDescriptor(session, -1525, "app.github", "GITHUB_ACCESS_TOKEN");
     addLegacyDescriptor(session, -1526, "app.slack", "SLACK_USER_ACCESS_TOKEN");
     addLegacyDescriptor(session, -1527, "app.slack", "SLACK_WEBHOOK_URL");
-    addLegacyValue(session, -1525, gitHubSet, "gh-token");
+    addLegacyValue(session, -1525, firstGitHubSet, "gh-token");
+    addLegacyValue(session, -1525, secondGitHubSet, "gh-token-other-account");
     addLegacyValue(session, -1526, slackSet, "xoxp-1");
     addLegacyValue(session, -1527, slackSet, "https://hook");
     addLegacyValue(session, -1527, webhookOnlySlackSet, "https://old-hook");
@@ -59,15 +62,39 @@ class MoveGitHubAndSlackSecretsToUserConnection_RSDEV1525Test extends SpringTran
         session
             .createNativeQuery(
                 "select accessToken from UserConnection where userId = :user and providerId ="
-                    + " 'GITHUB'",
+                    + " 'GITHUB' and providerUserId = :setId",
                 String.class)
             .setParameter("user", user.getUsername())
+            .setParameter("setId", firstGitHubSet.toString())
+            .getSingleResult());
+    assertNotEquals(
+        "gh-token-other-account",
+        session
+            .createNativeQuery(
+                "select accessToken from UserConnection where userId = :user and providerId ="
+                    + " 'GITHUB' and providerUserId = :setId",
+                String.class)
+            .setParameter("user", user.getUsername())
+            .setParameter("setId", secondGitHubSet.toString())
             .getSingleResult());
     session.clear();
     assertEquals(
+        2,
+        userConnectionManager
+            .findListByUserNameProviderName(user.getUsername(), GITHUB_APP_NAME)
+            .size());
+    assertEquals(
         "gh-token",
         userConnectionManager
-            .findByUserNameProviderName(user.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME)
+            .findByUserNameProviderName(
+                user.getUsername(), GITHUB_APP_NAME, firstGitHubSet.toString())
+            .map(UserConnection::getAccessToken)
+            .orElseThrow());
+    assertEquals(
+        "gh-token-other-account",
+        userConnectionManager
+            .findByUserNameProviderName(
+                user.getUsername(), GITHUB_APP_NAME, secondGitHubSet.toString())
             .map(UserConnection::getAccessToken)
             .orElseThrow());
     UserConnection slack =
