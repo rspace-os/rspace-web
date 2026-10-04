@@ -84,7 +84,6 @@ import org.springframework.dao.DataAccessException;
 @Slf4j
 public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
-  /** Apps whose OAuth token is sent to the browser in their IntegrationInfo. */
   @ClientReadableSecret(
       "the protocols.io TinyMCE plugin calls the protocols.io API from the browser")
   private static final Set<String> CLIENT_READABLE_TOKEN_APPS = Set.of(PROTOCOLS_IO_APP_NAME);

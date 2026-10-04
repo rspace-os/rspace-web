@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-/** RSDEV-1525: the server token is read from deployment.properties, never sent to the browser. */
 class GalaxyAliasToServerTest {
 
   @Test

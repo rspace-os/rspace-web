@@ -3,7 +3,6 @@ import type React from "react";
 import SecretField, { type Secret } from "../../../components/Inputs/SecretField";
 
 type IdentifierSettingFieldArgs = {
-  /** Renders the value as a masked secret, e.g. the provider password or token. */
   secret: boolean;
   label: string;
   value: Secret;
@@ -19,7 +18,6 @@ type IdentifierSettingFieldArgs = {
   disabled?: boolean;
 };
 
-/** One credential or connection field on an identifier provider settings card. */
 export default function IdentifierSettingField({
   secret,
   label,

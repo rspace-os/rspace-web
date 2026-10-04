@@ -66,12 +66,13 @@ public enum SystemPropertyName {
 
   private String propertyName;
 
-  // RSDEV-1525: free-text settings can hold credentials, so the legacy settings reads never return
-  // them.
   private static final Set<SettingsType> NON_TEXT_TYPES =
       EnumSet.of(SettingsType.BOOLEAN, SettingsType.NUMBER, SettingsType.ENUM);
 
-  /** Whether the legacy settings read endpoints may return this property's value. */
+  /**
+   * Whether the legacy settings read endpoints may return this property's value. Free-text settings
+   * can hold credentials, so they are never returned (RSDEV-1525).
+   */
   public static boolean isClientReadable(SystemProperty property) {
     return NON_TEXT_TYPES.contains(property.getType());
   }
