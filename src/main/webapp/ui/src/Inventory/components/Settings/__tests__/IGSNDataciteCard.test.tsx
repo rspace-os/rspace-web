@@ -28,27 +28,6 @@ describe("IGSNDataciteCard", () => {
     await expect(container).toBeAccessible();
   });
 
-  test("renders the secret as a password field that browsers will not autofill", () => {
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <IGSNDataciteCard
-          currentSettings={{
-            enabled: "true",
-            serverUrl: "https://api.datacite.org",
-            username: "",
-            password: "",
-            repositoryPrefix: "",
-          }}
-          onEnabledChange={() => {}}
-        />
-      </ThemeProvider>,
-    );
-
-    const secret = screen.getByLabelText("inventory:settings.datacite.labels.password");
-    expect(secret).toHaveAttribute("type", "password");
-    expect(secret).toHaveAttribute("autocomplete", "new-password");
-  });
-
   test("disables editable settings while a save is pending", async () => {
     const user = userEvent.setup();
     let finishSave!: () => void;

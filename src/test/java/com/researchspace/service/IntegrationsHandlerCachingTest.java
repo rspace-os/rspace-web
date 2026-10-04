@@ -105,12 +105,8 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     User sysadmin = getSysAdminUser();
     SystemPropertyValue dropboxAvailable =
         sysPropMger.findByName(SystemPropertyName.DROPBOX_AVAILABLE);
-    // save by name
-    sysPropMger.save(
-        SystemPropertyName.DROPBOX_AVAILABLE,
-        dropboxAvailable.getValue(),
-        sysadmin); // doesn't matter if value is different; just saving will trigger cache
-    // invalidation
+    // save by name; the same value still triggers cache invalidation
+    sysPropMger.save(SystemPropertyName.DROPBOX_AVAILABLE, dropboxAvailable.getValue(), sysadmin);
     IntegrationInfo dropboxAvailableReloaded =
         integrationsHandler.getIntegration(user, propertyToUpdate);
     assertNotSame(reloaded, dropboxAvailableReloaded);

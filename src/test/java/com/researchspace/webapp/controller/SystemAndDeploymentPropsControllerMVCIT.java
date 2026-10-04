@@ -67,7 +67,6 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
     assertNotNull(data.get(SystemPropertyName.DROPBOX_AVAILABLE.getPropertyName()));
     // .. and property files
     assertNotNull(data.get("baseURL"));
-    // both read endpoints share one allowlist, so these are no longer only in /ajax/property
     assertThat(data).containsKeys("sysadmin.delete.user", "deployment.cloud");
   }
 
@@ -91,7 +90,6 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
     result = res.getResponse().getContentAsString();
     assertEquals(egnyteClientId, result);
 
-    // nor only in /ajax/properties
     mockMvc
         .perform(get("/deploymentproperties/ajax/property").param("name", "box.client.id"))
         .andExpect(status().isOk());

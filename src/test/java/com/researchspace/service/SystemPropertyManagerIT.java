@@ -48,7 +48,6 @@ public class SystemPropertyManagerIT extends RealTransactionSpringTestBase {
     assertEquals(before, sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE).getValue());
 
     try {
-      // a null subject is the system itself, e.g. SystemConfigurationInitialisor at startup
       sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, null);
       assertEquals("DENIED", sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE).getValue());
     } finally {
