@@ -12,8 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * Runs Argon2 login-password checks (Shiro login and default-realm reauthentication) through one
  * shared pool of permits, so the per-check heap allocation is bounded however many requests arrive
  * (ADR 0011). A username has at most one check in flight, so one account cannot hold more than one
- * permit, and after a wrong guess the username stays held for a configured delay, so one account
- * gets at most one guess per delay. Encoding new passwords is not bounded.
+ * permit. Encoding new passwords is not bounded.
  */
 public class BoundedPasswordVerifier {
 
@@ -21,27 +20,21 @@ public class BoundedPasswordVerifier {
   private final Semaphore permits;
   private final int maxPermits;
   private final long waitNanos;
-  private final long failureDelayNanos;
   private final ConcurrentHashMap<String, PrincipalLock> principalLocks = new ConcurrentHashMap<>();
 
-  public BoundedPasswordVerifier(
-      PasswordEncoder encoder, int permits, Duration wait, Duration failureDelay) {
+  public BoundedPasswordVerifier(PasswordEncoder encoder, int permits, Duration wait) {
     Validate.notNull(encoder);
     Validate.isTrue(permits >= 1, "Password verification needs at least 1 permit, got %d", permits);
     Validate.isTrue(!wait.isNegative(), "Password verification wait must not be negative");
-    Validate.isTrue(
-        !failureDelay.isNegative(), "Password verification failure delay must not be negative");
     this.encoder = encoder;
     this.maxPermits = permits;
     this.permits = new Semaphore(permits, true);
     this.waitNanos = wait.toNanos();
-    this.failureDelayNanos = failureDelay.toNanos();
   }
 
   /**
    * Checks a password, waiting for the username's turn and then for a free permit, together bounded
-   * by the configured wait. A mismatch returns only after the failure delay, during which the
-   * username stays held but its permit is back in the pool.
+   * by the configured wait.
    *
    * @return whether the password matched
    * @throws LoginVerificationBusyException if the wait elapses first
@@ -55,11 +48,14 @@ public class BoundedPasswordVerifier {
         throw busy(username, "another check for this username is still running");
       }
       try {
-        boolean matches = matchesWithPermit(username, rawPassword, encodedPassword, deadline);
-        if (!matches) {
-          holdForFailureDelay();
+        if (!permits.tryAcquire(remaining(deadline), TimeUnit.NANOSECONDS)) {
+          throw busy(username, "all " + maxPermits + " verification permits are in use");
         }
-        return matches;
+        try {
+          return encoder.matches(rawPassword, encodedPassword);
+        } finally {
+          permits.release();
+        }
       } finally {
         principalLock.lock.unlock();
       }
@@ -68,27 +64,6 @@ public class BoundedPasswordVerifier {
       throw busy(username, "interrupted while waiting");
     } finally {
       releaseHolder(username);
-    }
-  }
-
-  private boolean matchesWithPermit(
-      String username, CharSequence rawPassword, String encodedPassword, long deadline)
-      throws InterruptedException {
-    if (!permits.tryAcquire(remaining(deadline), TimeUnit.NANOSECONDS)) {
-      throw busy(username, "all " + maxPermits + " verification permits are in use");
-    }
-    try {
-      return encoder.matches(rawPassword, encodedPassword);
-    } finally {
-      permits.release();
-    }
-  }
-
-  private void holdForFailureDelay() {
-    try {
-      TimeUnit.NANOSECONDS.sleep(failureDelayNanos);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
     }
   }
 
