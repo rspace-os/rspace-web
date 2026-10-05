@@ -411,5 +411,53 @@ describe("GitHub", () => {
       });
       expect(integrationState.credentials.length).toBe(0);
     });
+    test("Removing the last repository asks for GitHub authorisation again before another can be added.", async () => {
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onGet("github/oauthUrl").reply(200, {
+        success: true,
+        data: "https://github.com/login/oauth/authorize?scope=repo,user&client_id=",
+        error: null,
+      });
+      mockAxios.onGet("github/allRepositories").reply(200, {
+        success: true,
+        data: [{ full_name: "a repo", description: "" }],
+        error: null,
+      });
+      mockAxios.onPost("integration/saveAppOptions").reply(200, {
+        success: true,
+        data: {
+          available: true,
+          enabled: false,
+          name: "GITHUB",
+          options: { "1": { GITHUB_REPOSITORY_FULL_NAME: "a repo" } },
+        },
+      });
+      mockAxios.onPost("integration/deleteAppOptions").reply(200, {
+        success: true,
+        data: { available: true, enabled: false, name: "GITHUB", options: {} },
+      });
+      const openWindow = vi.spyOn(window, "open").mockImplementation(() => ({ close: () => {} }) as unknown as Window);
+      render(<GitHub integrationState={observable({ mode: "DISABLED", credentials: [] })} update={() => {}} />);
+
+      fireEvent.click(screen.getByRole("button"));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      act(() => {
+        for (const handler of broadcastHandlers)
+          handler({ data: { type: "GITHUB_CONNECTED" } } as MessageEvent<GitHubConnectedMessage>);
+      });
+      await waitFor(() => {
+        expect(screen.getAllByRole("table").length).toBe(2);
+      });
+      fireEvent.click(within(screen.getAllByRole("table")[1]).getByRole("button", { name: "common:actions.add" }));
+      fireEvent.click(await screen.findByRole("button", { name: "common:actions.remove" }));
+
+      await waitFor(() => {
+        expect(screen.getAllByRole("table").length).toBe(1);
+      });
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      await waitFor(() => {
+        expect(openWindow).toHaveBeenCalledTimes(2);
+      });
+    });
   });
 });
