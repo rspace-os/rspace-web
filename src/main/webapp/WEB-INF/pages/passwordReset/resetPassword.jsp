@@ -17,6 +17,7 @@
         <form:form action="${(passwordType == PasswordType.VERIFICATION_PASSWORD) ?
         '/vfpwd/verificationPasswordResetReply' : '/signup/passwordResetReply'}"
                    modelAttribute="passwordResetCommand">
+            <form:errors cssClass="text-danger" element="p"></form:errors>
             <form:errors class="rs-tooltip error" path="password"></form:errors>
             <div>
                 <label for="password"><spring:message code="resetPassword.newPasswordLabel" arguments="${passwordType.toString()}"/></label>
