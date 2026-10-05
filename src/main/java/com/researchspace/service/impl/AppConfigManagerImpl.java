@@ -71,25 +71,37 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
       Long appConfigSetDataId,
       boolean trustedOrigin,
       User user) {
+    return saveAppConfigElementSet(appConfigSetData, appConfigSetDataId, trustedOrigin, user, null);
+  }
+
+  @Override
+  public UserAppConfig saveAppConfigElementSet(
+      Map<String, String> appConfigSetData,
+      Long appConfigSetDataId,
+      boolean trustedOrigin,
+      User user,
+      String expectedAppName) {
     Validate.isTrue(!appConfigSetData.isEmpty(), "appConfigSetData is empty!");
     String propName = appConfigSetData.keySet().iterator().next();
 
     UserAppConfig cfg = appCfgDao.findByPropertyNameUser(propName, user);
+    App app = cfg == null ? appCfgDao.findAppByPropertyName(propName) : cfg.getApp();
+    if (app == null) {
+      throw new IllegalArgumentException(
+          messages.getMessage("apps.errors.notFoundByProperty", new Object[] {propName}));
+    }
+    Validate.isTrue(
+        expectedAppName == null || expectedAppName.equals(app.getName()),
+        "Configuration properties do not belong to the requested app");
     if (cfg == null) {
       logger.info(
           "No UserAppConfig set for user {} for property {}, setting",
           user.getUsername(),
           propName);
-      App app = appCfgDao.findAppByPropertyName(propName);
-      if (app == null) {
-        throw new IllegalArgumentException(
-            messages.getMessage("apps.errors.notFoundByProperty", new Object[] {propName}));
-      }
       cfg = new UserAppConfig(user, app, true);
       cfg = appCfgDao.save(cfg);
     }
     permUtils.assertIsPermitted(cfg, PermissionType.WRITE, user, " Update AppConfig ");
-    App app = cfg.getApp();
     if (!trustedOrigin) {
       assertAppCanBeUpdatedByUntrustedOrigin(app);
     }

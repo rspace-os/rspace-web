@@ -47,6 +47,8 @@ Once an integration is available at the system level (sysadmin toggle is on), in
    - Add your integration to `IntegrationsHandlerImpl.isAppConfigIntegration()` if it has more than one option set per user.
    - Otherwise, if it has only a single option set per user, add it to `isSingleOptionSetAppConfigIntegration()`.
 
+`saveAppOptions` and `deleteAppOptions` normalize incoming `appName` values to lowercase and validate that the configuration belongs to that app before saving or deleting it. Existing uppercase integration and `UserConnection` provider IDs remain the canonical storage and cache identifiers.
+
 ### 3) Deployment properties (where applicable)
 
 Some integrations require configuration that varies by deployment, such as API endpoints for the customer instance of the integration. These are defined in `PropertyHolder.java`.

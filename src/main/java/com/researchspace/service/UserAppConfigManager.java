@@ -39,6 +39,21 @@ public interface UserAppConfigManager extends GenericManager<UserAppConfig, Long
       User user);
 
   /**
+   * Saves a config set only when its properties belong to {@code expectedAppName}. Validates the
+   * app identity before creating or updating any configuration.
+   *
+   * @param expectedAppName the normalized database app name, e.g. {@code app.github}
+   * @throws IllegalArgumentException if the properties belong to a different app
+   */
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
+  UserAppConfig saveAppConfigElementSet(
+      Map<String, String> appConfigSetData,
+      Long appConfigSetDataId,
+      boolean trustedOrigin,
+      User user,
+      String expectedAppName);
+
+  /**
    * Deletes an {@link AppConfigElementSet}
    *
    * @param appConfigElementSetId
