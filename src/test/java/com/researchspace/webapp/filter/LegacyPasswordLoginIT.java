@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.auth.LoginAuthorizer;
 import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
+import com.researchspace.dao.customliquibaseupdates.WrapLegacyPasswordHashes_RSDEV894;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IReauthenticator;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -86,6 +88,28 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  void rawLegacyRowsLogInAfterTheWrapMigrationAndAreUpgradedOnce() throws Exception {
+    User salted = createAndSaveUser(randomAlphabetic(10));
+    User unsalted = createAndSaveUser(randomAlphabetic(10));
+    storeRaw(salted, SALTED_HEX, SALT);
+    storeRaw(unsalted, UNSALTED_UPPER_HEX, null);
+
+    runWrapMigration();
+    assertWrappedAtRest(salted);
+    assertWrappedAtRest(unsalted);
+
+    login(salted, "legacyPass1");
+    login(unsalted, "sysWisc23!");
+    String saltedUpgraded = assertArgon2(salted, "legacyPass1");
+    String unsaltedUpgraded = assertArgon2(unsalted, "sysWisc23!");
+
+    login(salted, "legacyPass1");
+    login(unsalted, "sysWisc23!");
+    assertEquals(saltedUpgraded, storedPassword(salted), "second login must not re-encode");
+    assertEquals(unsaltedUpgraded, storedPassword(unsalted), "second login must not re-encode");
+  }
+
+  @Test
   void newUserLogsInWithArgon2() throws Exception {
     User u = createAndSaveUser(randomAlphabetic(10));
     assertTrue(storedPassword(u).startsWith("{" + RSpacePasswordEncoder.ARGON2_ID + "}"));
@@ -145,6 +169,25 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
         "update User set password = ?, salt = null where id = ?",
         passwordEncoder.wrapLegacySha256(hex, salt),
         u.getId());
+  }
+
+  private void storeRaw(User u, String hex, String salt) {
+    jdbc.update("update User set password = ?, salt = ? where id = ?", hex, salt, u.getId());
+  }
+
+  // execute() opens and commits its own transaction, as when Liquibase runs it
+  private void runWrapMigration() throws Exception {
+    WrapLegacyPasswordHashes_RSDEV894 change = new WrapLegacyPasswordHashes_RSDEV894();
+    ReflectionTestUtils.setField(change, "context", applicationContext);
+    ReflectionTestUtils.setField(change, "sessionFactory", sessionFactory);
+    ReflectionTestUtils.invokeMethod(change, "addBeans");
+    change.execute(null);
+  }
+
+  private void assertWrappedAtRest(User u) {
+    String stored = storedPassword(u);
+    assertTrue(stored.startsWith("{" + RSpacePasswordEncoder.LEGACY_SHA256_ID + "}"), stored);
+    assertNull(jdbc.queryForObject("select salt from User where id = ?", String.class, u.getId()));
   }
 
   private User reload(User u) {
