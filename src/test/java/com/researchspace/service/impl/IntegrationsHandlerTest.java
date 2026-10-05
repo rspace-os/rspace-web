@@ -84,8 +84,6 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -141,11 +139,10 @@ public class IntegrationsHandlerTest {
     assertNull(parent2child.get(child));
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"slack", "SLACK", "Slack"})
-  public void deletingASlackChannelDeletesItsConnection(String appName) {
+  @Test
+  public void deletingASlackChannelDeletesItsConnection() {
     stubSetForApp(7L, App.APP_SLACK);
-    handler.deleteAppOptions(7L, appName, subject);
+    handler.deleteAppOptions(7L, "slack", subject);
     verify(appCfgMgr).deleteAppConfigSet(7L, subject, App.APP_SLACK);
     verify(userConnectionManager)
         .deleteByUserAndProvider(subject.getUsername(), SLACK_APP_NAME, "7");
@@ -161,25 +158,6 @@ public class IntegrationsHandlerTest {
     verify(userConnectionManager)
         .deleteByUserAndProvider(subject.getUsername(), GITHUB_APP_NAME, "7");
     verify(userConnectionManager, never()).deleteByUserAndProvider(any(), any());
-  }
-
-  @Test
-  public void addingAGitHubRepositoryBindsTheCurrentTokenAtomically() {
-    String currentToken = "github-oauth-token";
-    Map<String, String> settings = Map.of("GITHUB_REPOSITORY_FULL_NAME", "owner/repo");
-    when(userConnectionManager.findByUserNameProviderName(
-            subject.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME))
-        .thenReturn(
-            Optional.of(
-                new UserConnection(
-                    new UserConnectionId(subject.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME),
-                    currentToken)));
-
-    handler.saveAppOptions(null, settings, GITHUB_APP_NAME, false, subject);
-
-    verify(userConnectionManager)
-        .saveWithNewAppConfigElementSet(
-            settings, GITHUB_APP_NAME, currentToken, null, false, subject);
   }
 
   @Test

@@ -259,7 +259,6 @@ public class GitHubControllerMVCIT extends MVCTestBase {
 
     addExampleRepositories(user);
 
-    // Each repository is fetched with its own linked account's token.
     server
         .expect(requestTo("https://api.github.com/repos/rspace-integration-test-user/test1"))
         .andExpect(header("Authorization", "token " + GITHUB_ACCESS_TOKEN))

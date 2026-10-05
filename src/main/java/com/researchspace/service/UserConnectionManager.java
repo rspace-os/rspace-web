@@ -68,9 +68,7 @@ public interface UserConnectionManager extends GenericManager<UserConnection, Us
    *
    * @param settings the new set's non-secret settings
    * @param providerName the connection's provider, e.g. 'SLACK'
-   * @param accessToken the connection's access token
    * @param secret the connection's secret, may be null
-   * @param trustedOrigin whether the app config is being saved by a trusted origin
    * @param user the owner of the set and the connection
    * @return the saved connection
    */

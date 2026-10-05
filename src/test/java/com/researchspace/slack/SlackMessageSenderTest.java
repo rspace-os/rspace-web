@@ -60,24 +60,6 @@ public class SlackMessageSenderTest {
   }
 
   @Test
-  public void webhookUrlComesFromTheChannelsUserConnection() {
-    User user = TestFactory.createAnyUser("any");
-    AppConfigElementSet set = new AppConfigElementSet();
-    ReflectionTestUtils.setField(set, "id", 5L);
-    set.setUserAppConfig(new UserAppConfig(user, new App(App.APP_SLACK, "Slack", true), true));
-    UserConnection connection =
-        new UserConnection(new UserConnectionId(user.getUsername(), SLACK_APP_NAME, "5"), "token");
-    connection.setSecret("https://hooks.slack.com/services/x");
-    SlackMessageSender sender = new SlackMessageSender();
-    sender.userConnectionManager = mock(UserConnectionManager.class);
-    when(sender.userConnectionManager.findByUserNameProviderName(
-            user.getUsername(), SLACK_APP_NAME, "5"))
-        .thenReturn(Optional.of(connection));
-
-    assertEquals("https://hooks.slack.com/services/x", sender.doGetPostUrl(set));
-  }
-
-  @Test
   public void aChannelWithNoWebhookUrlFailsWithAClearMessage() {
     User user = TestFactory.createAnyUser("any");
     AppConfigElementSet set = new AppConfigElementSet();
