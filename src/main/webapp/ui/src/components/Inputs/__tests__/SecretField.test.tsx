@@ -79,6 +79,7 @@ describe("SecretField", () => {
     const input = screen.getByLabelText("Secret");
 
     await user.click(screen.getByRole("button", { name: "common:inputs.secretField.clear" }));
+    expect(input).toHaveFocus();
     expect(screen.getByRole("status")).toHaveTextContent('""');
     expect(input).not.toHaveAttribute("placeholder", "common:inputs.secretField.unchanged");
     expect(screen.queryByRole("button", { name: "common:inputs.secretField.clear" })).not.toBeInTheDocument();
@@ -87,14 +88,6 @@ describe("SecretField", () => {
     await user.type(input, "x");
     await user.clear(input);
     expect(screen.getByRole("status")).toHaveTextContent('""');
-  });
-
-  test("moves focus to the input after clearing", async () => {
-    const user = userEvent.setup();
-    render(<Harness initial={null} />);
-
-    await user.click(screen.getByRole("button", { name: "common:inputs.secretField.clear" }));
-    expect(screen.getByLabelText("Secret")).toHaveFocus();
   });
 
   test("undoes a clear, restoring the stored secret", async () => {

@@ -22,14 +22,6 @@ async function typeAndSaveKey(update: (s: IntegrationStates["FIELDMARK"]) => Pro
 }
 
 describe("Fieldmark", () => {
-  test("shows the API key as unchanged once the save succeeds", async () => {
-    const apiKeyField = await typeAndSaveKey(vi.fn().mockResolvedValue(undefined));
-
-    await waitFor(() => {
-      expect(apiKeyField).toHaveAttribute("placeholder", "common:inputs.secretField.unchanged");
-    });
-  });
-
   test("keeps the typed API key when the save fails", async () => {
     const update = vi.fn().mockRejectedValue(new Error("save failed"));
     const apiKeyField = await typeAndSaveKey(update);
@@ -63,5 +55,6 @@ describe("Fieldmark", () => {
     finishSave();
     await waitFor(() => expect(apiKeyField).not.toBeDisabled());
     expect(apiKeyField).toHaveAttribute("placeholder", "common:inputs.secretField.unchanged");
+    expect(apiKeyField).toHaveValue("");
   });
 });
