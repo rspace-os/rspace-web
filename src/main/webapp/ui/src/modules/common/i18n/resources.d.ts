@@ -5648,6 +5648,9 @@ export default interface Resources {
         "invalid": "Invalid password.",
         "notEqualUsername": "Please use a password other than your username."
       },
+      "passwordReset": {
+        "rateLimited": "Too many password resets are being processed right now. Please try again in a few seconds."
+      },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
         "failed": "Reauthentication failed, please try again."
@@ -8289,6 +8292,7 @@ export default interface Resources {
       "title": "Password verification"
     },
     "signup": {
+      "accountCreatedLoginBusy": "Your account has been created, but the server is busy and could not sign you in automatically. Please log in with your new username and password.",
       "browserWarning": {
         "chrome": "Chrome",
         "firefox": "Firefox",

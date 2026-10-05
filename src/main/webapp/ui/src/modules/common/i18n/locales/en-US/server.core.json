@@ -185,6 +185,9 @@
       }
     },
     "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
+    "passwordReset": {
+      "rateLimited": "Too many password resets are being processed right now. Please try again in a few seconds."
+    },
     "signup": {
       "rateLimited": "Too many sign-ups are being processed right now. Please try again in a few seconds."
     },

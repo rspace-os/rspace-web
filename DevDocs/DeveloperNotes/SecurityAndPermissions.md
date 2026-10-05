@@ -79,9 +79,16 @@ The design and its trade-offs are in
   bounded at the encoder. The two anonymous routes into `encode()` are
   capped in front of it instead: `SignupController` refuses submissions
   beyond `user.signup.maxPerFiveSeconds` (default 10) without waiting, and
-  `PasswordResetByEmailHandlerBase` accepts a reset reply only for a token
+  `PasswordResetByEmailHandlerBase` refuses replies beyond
+  `user.passwordReset.maxPerFiveSeconds` (default 10, one limiter per reset
+  handler) with the token left usable, and accepts a reply only for a token
   that is unused and unexpired. Authenticated encodes (password change,
   user creation, imports) are unbounded by choice (ADR 0011).
+- **Busy post-signup login.** Standalone signup logs the new user in
+  through the same verifier. A `LoginVerificationBusyException` there does
+  not abort signup: `DefaultPostUserCreate` finishes the PI promotion and
+  the audit event before rethrowing, and `SignupController` redirects to
+  the login page with a message saying the account was created.
 - **No writes, no reauthentication lockout.** A password check never
   writes to the `User` row: an earlier version re-encoded legacy hashes on
   login and counted reauthentication failures on the row, and both broke

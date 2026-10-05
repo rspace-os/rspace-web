@@ -4,6 +4,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 
 import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.Role;
@@ -54,6 +55,15 @@ public class SignupController extends BaseController {
 
   public static final String CLOUD_SIGNUP_ACCOUNT_ACTIVATION_FAIL_URL =
       "cloud/signup/accountActivationFail";
+
+  /**
+   * Query parameter on the login page after a signup whose automatic login was refused by the busy
+   * verifier; the page shows a message saying the account exists and to log in.
+   */
+  public static final String ACCOUNT_CREATED_LOGIN_BUSY_PARAM = "accountCreatedLoginBusy";
+
+  static final String ACCOUNT_CREATED_LOGIN_BUSY_VIEW =
+      "redirect:login?" + ACCOUNT_CREATED_LOGIN_BUSY_PARAM;
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
   private static final Duration SIGNUP_RATE_LIMIT_PERIOD = Duration.ofSeconds(5);
@@ -321,7 +331,16 @@ public class SignupController extends BaseController {
     if (properties.isCloud()) {
       organisationManager.checkAndSaveNonApprovedOrganisation(user);
     }
-    postSignup.postUserCreate(savedUser, request, originalPwd);
+    try {
+      postSignup.postUserCreate(savedUser, request, originalPwd);
+    } catch (LoginVerificationBusyException e) {
+      SECURITY_LOG.warn(
+          "Post-signup login for [{}] from {} refused: {}",
+          savedUser.getUsername(),
+          RequestUtil.remoteAddr(request),
+          e.getMessage());
+      return ACCOUNT_CREATED_LOGIN_BUSY_VIEW;
+    }
 
     return postSignup.getRedirect(savedUser);
   }

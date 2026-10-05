@@ -18,7 +18,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
   - New optional `deployment.properties` keys limit how many login, reauthentication and verification password checks run at once, since each check holds about 19 MiB of heap:
     - `login.passwordVerification.maxConcurrent`, default `8`
     - `login.passwordVerification.waitSeconds`, the seconds a check waits for a free slot, default `5`. A check that times out shows the usual wrong-password message but does not count toward account lockout.
-  - Self-signup is limited to `user.signup.maxPerFiveSeconds` submissions instance-wide (default `10`), because each signup hashes the new password with Argon2id. Submissions over the limit are refused at once with a message asking the user to try again. A password-reset link that has already been used or has expired is now refused when the new password is submitted, not only when the form is opened.
+  - Self-signup is limited to `user.signup.maxPerFiveSeconds` submissions instance-wide (default `10`), because each signup hashes the new password with Argon2id. Submissions over the limit are refused at once with a message asking the user to try again. Password-reset replies are limited the same way by `user.passwordReset.maxPerFiveSeconds` (default `10`), and a reply over the limit leaves the reset link usable. A password-reset link that has already been used or has expired is now refused when the new password is submitted, not only when the form is opened. If the server is too busy to sign a new user in right after sign-up, the account is still created and the login page says so.
 
 ### ELN Features
 
