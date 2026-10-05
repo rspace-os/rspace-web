@@ -6,6 +6,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import DSW from "@/eln/apps/integrations/DSW";
 import RaidIntegrationCard from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
+import CardPlacementContext from "./CardPlacementContext";
 import ApiDirect from "./integrations/ApiDirect";
 import Argos from "./integrations/Argos";
 import Box from "./integrations/Box";
@@ -55,6 +56,9 @@ type CardListingArgs = {
 function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactNode {
   const { t } = useTranslation("apps");
   const { update } = useIntegrationsEndpoint();
+  const { frozenModes } = React.useContext(CardPlacementContext);
+  const isShownHere = (integration: keyof IntegrationStates) =>
+    (frozenModes?.[integration] ?? integrationStates[integration].mode) === mode;
 
   /*
    * These memoised functions mean that when one integration is modified
@@ -313,11 +317,7 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
     [update, integrationStates.ZENODO],
   );
 
-  if (
-    Object.values(integrationStates)
-      .map((s) => s.mode)
-      .filter((m) => m === mode).length === 0
-  ) {
+  if ((Object.keys(integrationStates) as Array<keyof IntegrationStates>).every((key) => !isShownHere(key))) {
     return <Typography variant="body1">{t("page.nothingHere")}</Typography>;
   }
 
@@ -328,89 +328,57 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
    */
   return (
     <Grid container spacing={3} sx={{ alignItems: "stretch" }}>
-      {integrationStates.ARGOS.mode === mode && (
-        <Argos integrationState={integrationStates.ARGOS} update={argosUpdate} />
-      )}
-      {integrationStates.API_DIRECT.mode === mode && <ApiDirect />}
-      {integrationStates.API_DIRECT.mode === mode && <Jupyter />}
-      {integrationStates.API_DIRECT.mode === mode && <Jove />}
-      {integrationStates.BOX.mode === mode && <Box integrationState={integrationStates.BOX} update={boxUpdate} />}
-      {integrationStates.CHEMISTRY.mode === mode && (
+      {isShownHere("ARGOS") && <Argos integrationState={integrationStates.ARGOS} update={argosUpdate} />}
+      {isShownHere("API_DIRECT") && <ApiDirect />}
+      {isShownHere("API_DIRECT") && <Jupyter />}
+      {isShownHere("API_DIRECT") && <Jove />}
+      {isShownHere("BOX") && <Box integrationState={integrationStates.BOX} update={boxUpdate} />}
+      {isShownHere("CHEMISTRY") && (
         <Chemistry integrationState={integrationStates.CHEMISTRY} update={chemistryUpdate} />
       )}
-      {integrationStates.CLUSTERMARKET.mode === mode && (
+      {isShownHere("CLUSTERMARKET") && (
         <Clustermarket integrationState={integrationStates.CLUSTERMARKET} update={clustermarketUpdate} />
       )}
-      {integrationStates.DATAVERSE.mode === mode && (
+      {isShownHere("DATAVERSE") && (
         <Dataverse integrationState={integrationStates.DATAVERSE} update={dataverseUpdate} />
       )}
-      {integrationStates.DIGITALCOMMONSDATA.mode === mode && (
+      {isShownHere("DIGITALCOMMONSDATA") && (
         <DigitalCommonsData integrationState={integrationStates.DIGITALCOMMONSDATA} update={digitalCommonsDataUpdate} />
       )}
-      {integrationStates.DMPASSISTANT.mode === mode && (
+      {isShownHere("DMPASSISTANT") && (
         <DMPAssistant integrationState={integrationStates.DMPASSISTANT} update={dmpassistantUpdate} />
       )}
-      {integrationStates.DMPONLINE.mode === mode && (
+      {isShownHere("DMPONLINE") && (
         <DMPonline integrationState={integrationStates.DMPONLINE} update={dmponlineUpdate} />
       )}
-      {integrationStates.DMPTOOL.mode === mode && (
-        <DMPTool integrationState={integrationStates.DMPTOOL} update={dmptoolUpdate} />
-      )}
-      {integrationStates.DROPBOX.mode === mode && (
-        <Dropbox integrationState={integrationStates.DROPBOX} update={dropboxUpdate} />
-      )}
-      {integrationStates.DRYAD.mode === mode && (
-        <Dryad integrationState={integrationStates.DRYAD} update={dryadUpdate} />
-      )}
-      {integrationStates.DSW.mode === mode && <DSW integrationState={integrationStates.DSW} update={dswUpdate} />}
-      {integrationStates.EGNYTE.mode === mode && (
-        <Egnyte integrationState={integrationStates.EGNYTE} update={egnyteUpdate} />
-      )}
-      {integrationStates.FIELDMARK.mode === mode && (
+      {isShownHere("DMPTOOL") && <DMPTool integrationState={integrationStates.DMPTOOL} update={dmptoolUpdate} />}
+      {isShownHere("DROPBOX") && <Dropbox integrationState={integrationStates.DROPBOX} update={dropboxUpdate} />}
+      {isShownHere("DRYAD") && <Dryad integrationState={integrationStates.DRYAD} update={dryadUpdate} />}
+      {isShownHere("DSW") && <DSW integrationState={integrationStates.DSW} update={dswUpdate} />}
+      {isShownHere("EGNYTE") && <Egnyte integrationState={integrationStates.EGNYTE} update={egnyteUpdate} />}
+      {isShownHere("FIELDMARK") && (
         <Fieldmark integrationState={integrationStates.FIELDMARK} update={fieldmarkUpdate} />
       )}
-      {integrationStates.FIGSHARE.mode === mode && (
-        <Figshare integrationState={integrationStates.FIGSHARE} update={figshareUpdate} />
-      )}
-      {integrationStates.GALAXY.mode === mode && (
-        <Galaxy integrationState={integrationStates.GALAXY} update={galaxyUpdate} />
-      )}
-      {integrationStates.GITHUB.mode === mode && (
-        <GitHub integrationState={integrationStates.GITHUB} update={githubUpdate} />
-      )}
-      {integrationStates.GOOGLEDRIVE.mode === mode && (
+      {isShownHere("FIGSHARE") && <Figshare integrationState={integrationStates.FIGSHARE} update={figshareUpdate} />}
+      {isShownHere("GALAXY") && <Galaxy integrationState={integrationStates.GALAXY} update={galaxyUpdate} />}
+      {isShownHere("GITHUB") && <GitHub integrationState={integrationStates.GITHUB} update={githubUpdate} />}
+      {isShownHere("GOOGLEDRIVE") && (
         <GoogleDrive integrationState={integrationStates.GOOGLEDRIVE} update={googleDriveUpdate} />
       )}
-      {integrationStates.NEXTCLOUD.mode === mode && (
+      {isShownHere("NEXTCLOUD") && (
         <NextCloud integrationState={integrationStates.NEXTCLOUD} update={nextCloudUpdate} />
       )}
-      {integrationStates.OMERO.mode === mode && (
-        <Omero integrationState={integrationStates.OMERO} update={omeroUpdate} />
-      )}
-      {integrationStates.ONEDRIVE.mode === mode && (
-        <OneDrive integrationState={integrationStates.ONEDRIVE} update={onedriveUpdate} />
-      )}
-      {integrationStates.OWNCLOUD.mode === mode && (
-        <OwnCloud integrationState={integrationStates.OWNCLOUD} update={ownCloudUpdate} />
-      )}
-      {integrationStates.PROTOCOLS_IO.mode === mode && (
+      {isShownHere("OMERO") && <Omero integrationState={integrationStates.OMERO} update={omeroUpdate} />}
+      {isShownHere("ONEDRIVE") && <OneDrive integrationState={integrationStates.ONEDRIVE} update={onedriveUpdate} />}
+      {isShownHere("OWNCLOUD") && <OwnCloud integrationState={integrationStates.OWNCLOUD} update={ownCloudUpdate} />}
+      {isShownHere("PROTOCOLS_IO") && (
         <ProtocolsIO integrationState={integrationStates.PROTOCOLS_IO} update={protocolsioUpdate} />
       )}
-      {integrationStates.PYRAT.mode === mode && (
-        <Pyrat integrationState={integrationStates.PYRAT} update={pyratUpdate} />
-      )}
-      {integrationStates.RAID.mode === mode && (
-        <RaidIntegrationCard integrationState={integrationStates.RAID} update={raidUpdate} />
-      )}
-      {integrationStates.SLACK.mode === mode && (
-        <Slack integrationState={integrationStates.SLACK} update={slackUpdate} />
-      )}
-      {integrationStates.MSTEAMS.mode === mode && (
-        <MSTeams integrationState={integrationStates.MSTEAMS} update={teamsUpdate} />
-      )}
-      {integrationStates.ZENODO.mode === mode && (
-        <Zenodo integrationState={integrationStates.ZENODO} update={zenodoUpdate} />
-      )}
+      {isShownHere("PYRAT") && <Pyrat integrationState={integrationStates.PYRAT} update={pyratUpdate} />}
+      {isShownHere("RAID") && <RaidIntegrationCard integrationState={integrationStates.RAID} update={raidUpdate} />}
+      {isShownHere("SLACK") && <Slack integrationState={integrationStates.SLACK} update={slackUpdate} />}
+      {isShownHere("MSTEAMS") && <MSTeams integrationState={integrationStates.MSTEAMS} update={teamsUpdate} />}
+      {isShownHere("ZENODO") && <Zenodo integrationState={integrationStates.ZENODO} update={zenodoUpdate} />}
     </Grid>
   );
 }
