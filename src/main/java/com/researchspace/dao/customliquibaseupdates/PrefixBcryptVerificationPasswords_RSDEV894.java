@@ -8,10 +8,10 @@ import org.hibernate.Session;
 
 /**
  * Prefixes every bare BCrypt verification password with {@code {bcrypt}} so the shared password
- * encoder can read it; it is re-encoded as Argon2id on next successful use (RSDEV-894, ADR 0011).
- * Values already carrying a registered encoder id are skipped, so running it again changes nothing.
- * Any other value could never verify; it is cleared and logged at ERROR, so the user can set a new
- * verification password.
+ * encoder can read it (RSDEV-894, ADR 0011). The value then stays as it is until the user sets a
+ * new verification password, which is Argon2id. Values already carrying a registered encoder id are
+ * skipped, so running it again changes nothing. Any other value could never verify; it is cleared
+ * and logged at ERROR, so the user can set a new verification password.
  */
 public class PrefixBcryptVerificationPasswords_RSDEV894 extends AbstractCustomLiquibaseUpdater {
 
@@ -23,10 +23,18 @@ public class PrefixBcryptVerificationPasswords_RSDEV894 extends AbstractCustomLi
 
   private int prefixed;
   private int cleared;
+  private long loopNanos;
 
+  /** Includes the time taken, so every upgrade's startup log is a timing data point. */
   @Override
   public String getConfirmationMessage() {
-    return "Prefixed " + prefixed + " BCrypt verification passwords, cleared " + cleared;
+    return "Prefixed "
+        + prefixed
+        + " BCrypt verification passwords, cleared "
+        + cleared
+        + ": loop "
+        + loopNanos / 1_000_000
+        + " ms";
   }
 
   @Override
@@ -40,6 +48,7 @@ public class PrefixBcryptVerificationPasswords_RSDEV894 extends AbstractCustomLi
                 Object[].class)
             .list();
     String prefix = "{" + RSpacePasswordEncoder.BCRYPT_ID + "}";
+    long loopStart = System.nanoTime();
     for (Object[] row : rows) {
       Long id = ((Number) row[0]).longValue();
       String username = (String) row[1];
@@ -60,6 +69,7 @@ public class PrefixBcryptVerificationPasswords_RSDEV894 extends AbstractCustomLi
         cleared++;
       }
     }
+    loopNanos = System.nanoTime() - loopStart;
     logger.info(getConfirmationMessage());
   }
 
