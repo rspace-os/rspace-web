@@ -3,6 +3,7 @@ package com.researchspace.webapp.integrations.raid;
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -43,6 +44,7 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
   }
 
   @GetMapping("/callback")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String callback(@RequestParam Map<String, String> params, Model model, Principal principal)
       throws IOException, URISyntaxException, HttpClientErrorException {
     String redirectResult;

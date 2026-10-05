@@ -12,6 +12,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -95,6 +96,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
   }
 
   @GetMapping("/callback")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String callback(@RequestParam Map<String, String> params, Model model, Principal principal)
       throws IOException, URISyntaxException {
 

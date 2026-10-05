@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.ClientReadableSecret;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -123,6 +124,7 @@ public class NextCloudController extends BaseOAuth2Controller {
   NextCloudControllerConnector connector = new NextCloudControllerConnector();
 
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String handleNextCloudRedirect(@RequestParam Map<String, String> params, Model model) {
     // param code or error
     if (params.containsKey(ERROR)) {

@@ -4,6 +4,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.security.Principal;
 import java.util.HashMap;
@@ -44,6 +45,7 @@ public class OrcidController {
   private OrcidConnector connector;
 
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String onAuthorization(
       @RequestParam Map<String, String> params, Model model, Principal p) {
     if (params.containsKey("error")) {

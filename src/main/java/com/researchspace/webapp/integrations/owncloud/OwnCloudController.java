@@ -11,6 +11,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -127,6 +128,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
   OwnCloudControllerConnector connector = new OwnCloudControllerConnector();
 
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String handleOwnCloudRedirect(
       @RequestParam Map<String, String> params, Model model, HttpSession session) {
     // param code or error
