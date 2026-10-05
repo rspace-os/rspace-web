@@ -8,10 +8,14 @@ import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.model.dtos.RunAsUserCommand;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.webapp.integrations.github.GitHubController;
+import com.researchspace.webapp.integrations.slack.SlackController;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.Collection;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,6 +99,44 @@ public class LoggingInterceptorTest extends SpringTransactionalTest {
     assertThat(strglogger.logContents).contains(requestURI);
     assertThat(strglogger.logContents).doesNotContain("should be ignored");
     assertThat(strglogger.logContents).contains("should be logged");
+  }
+
+  @Test
+  public void testOAuthCallbacksDoNotLogCodeOrState() throws Exception {
+    assertOAuthCallbackParamsAreNotLogged(
+        new GitHubController(),
+        GitHubController.class.getMethod(
+            "onAuthorization", Map.class, Model.class, Principal.class, HttpServletRequest.class),
+        "/github/redirect_uri",
+        "github-code-secret",
+        "github-state-secret");
+    assertOAuthCallbackParamsAreNotLogged(
+        new SlackController(),
+        SlackController.class.getMethod(
+            "handleSlackRedirect",
+            Map.class,
+            Model.class,
+            Principal.class,
+            HttpServletRequest.class),
+        "/slack/redirect_uri",
+        "slack-code-secret",
+        "slack-state-secret");
+
+    assertThat(strglogger.logContents)
+        .contains("/github/redirect_uri", "/slack/redirect_uri")
+        .doesNotContain(
+            "github-code-secret", "github-state-secret", "slack-code-secret", "slack-state-secret");
+  }
+
+  private void assertOAuthCallbackParamsAreNotLogged(
+      Object controller, Method method, String uri, String code, String state) throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI(uri);
+    request.setParameter("code", code);
+    request.setParameter("state", state);
+
+    ServletInvocableHandlerMethod handler = new ServletInvocableHandlerMethod(controller, method);
+    assertTrue(logInterceptor.preHandle(request, httpResponse, handler));
   }
 
   protected void setUpRequestCoreData() {
