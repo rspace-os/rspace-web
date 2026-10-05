@@ -3,6 +3,7 @@ package com.researchspace.dao.customliquibaseupdates;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import liquibase.database.Database;
 import org.hibernate.Session;
@@ -21,15 +22,28 @@ public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUp
   private RSpacePasswordEncoder passwordEncoder;
   private int wrapped;
   private int skipped;
+  private long encodeNanos;
+  private long maxEncodeNanos;
+  private long loopNanos;
 
   @Override
   protected void addBeans() {
     passwordEncoder = context.getBean(RSpacePasswordEncoder.class);
   }
 
+  /** Includes the Argon2 time, so every upgrade's startup log is a timing data point. */
   @Override
   public String getConfirmationMessage() {
-    return "Wrapped " + wrapped + " legacy password hashes in Argon2id, skipped " + skipped;
+    return String.format(
+        Locale.ROOT,
+        "Wrapped %d legacy password hashes in Argon2id, skipped %d:"
+            + " encode %d ms (%.1f ms/row, max %d ms), loop %d ms",
+        wrapped,
+        skipped,
+        millis(encodeNanos),
+        wrapped == 0 ? 0.0 : encodeNanos / 1e6 / wrapped,
+        millis(maxEncodeNanos),
+        millis(loopNanos));
   }
 
   @Override
@@ -43,6 +57,7 @@ public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUp
                 Object[].class)
             .setParameter("encoderIdPrefix", "{%")
             .list();
+    long loopStart = System.nanoTime();
     for (Object[] row : rows) {
       Long id = ((Number) row[0]).longValue();
       String username = (String) row[1];
@@ -57,14 +72,24 @@ public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUp
         skipped++;
         continue;
       }
+      long encodeStart = System.nanoTime();
+      String wrappedHash = passwordEncoder.wrapLegacySha256(password, salt);
+      long encodeTook = System.nanoTime() - encodeStart;
+      encodeNanos += encodeTook;
+      maxEncodeNanos = Math.max(maxEncodeNanos, encodeTook);
       session
           .createNativeMutationQuery("update User set password = :pwd, salt = null where id = :id")
-          .setParameter("pwd", passwordEncoder.wrapLegacySha256(password, salt))
+          .setParameter("pwd", wrappedHash)
           .setParameter("id", id)
           .executeUpdate();
       wrapped++;
     }
+    loopNanos = System.nanoTime() - loopStart;
     logger.info(getConfirmationMessage());
+  }
+
+  private static long millis(long nanos) {
+    return nanos / 1_000_000;
   }
 
   private static boolean isBase64OrNull(String salt) {
