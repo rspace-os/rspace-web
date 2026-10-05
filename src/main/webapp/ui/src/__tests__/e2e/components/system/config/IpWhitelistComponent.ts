@@ -68,6 +68,7 @@ export class IpWhitelistComponent {
 
   // The page reloads the list on any 200, even when the body reports a validation error.
   private async submit(mutation: IpWhitelistMutation, trigger: Locator): Promise<void> {
+    await trigger.waitFor();
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === "POST" &&
@@ -75,9 +76,13 @@ export class IpWhitelistComponent {
     );
     await trigger.click();
     const response = await responsePromise;
-    const body = (await response.json()) as { success?: boolean };
-    if (!response.ok() || body.success !== true) {
-      throw new Error(`${mutation} failed: HTTP ${response.status()} ${JSON.stringify(body)}`);
+    const text = await response.text();
+    if (!response.ok()) {
+      throw new Error(`${mutation} failed: HTTP ${response.status()} ${text.slice(0, 300)}`);
+    }
+    const body = JSON.parse(text) as { success?: boolean };
+    if (body.success !== true) {
+      throw new Error(`${mutation} rejected: ${text}`);
     }
   }
 

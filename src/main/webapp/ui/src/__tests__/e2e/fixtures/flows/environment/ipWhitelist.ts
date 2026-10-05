@@ -5,11 +5,13 @@ import { apiTest } from "@/__tests__/e2e/fixtures/api";
 import { withSysadminPage } from "@/__tests__/e2e/fixtures/flows/sessions/sysadminSessions";
 import { SystemConfigPage } from "@/__tests__/e2e/pageObjects/system/SystemConfigPage";
 
+type WhitelistEntryKind = "address" | "range";
+
 type IpWhitelistFixtures = {
   flowIpWhitelist: {
     whitelist: IpWhitelistComponent;
     // Registers the entry for teardown removal, so tests never touch entries they didn't add.
-    uniqueIpAddress: (kind: "address" | "range") => string;
+    uniqueIpAddress: (kind: WhitelistEntryKind) => string;
   };
 };
 
@@ -24,7 +26,7 @@ export const test = apiTest.extend<IpWhitelistFixtures>({
       async (page) => new SystemConfigPage(page),
       async (config) => {
         const created: string[] = [];
-        const uniqueIpAddress = (kind: "address" | "range") => {
+        const uniqueIpAddress = (kind: WhitelistEntryKind) => {
           // RFC 3849 documentation prefix: never a real client address, and too large to collide.
           const entry = kind === "range" ? `2001:db8:${hexGroup()}::/48` : `2001:db8::${hexGroup()}:${hexGroup()}`;
           created.push(entry);
