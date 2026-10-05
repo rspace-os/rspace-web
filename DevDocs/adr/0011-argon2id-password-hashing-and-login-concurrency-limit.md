@@ -83,9 +83,10 @@ generic failure the user sees for a wrong password, but through a distinct excep
 `ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
 users out. Encoding new passwords is not bounded at the encoder; instead the two anonymous routes
 that reach it are capped in front of it, by an instance-wide limit on signup submissions
-(`user.signup.maxPerFiveSeconds`, default 10, refused immediately without waiting) and by
-accepting a password-reset reply only for an unused, unexpired token, so anonymous Argon2
-allocation cannot exceed about 190 MiB. Authenticated and sysadmin encodes (password change,
+(`user.signup.maxPerFiveSeconds`, default 10, refused immediately without waiting) and by a
+limit on password-reset replies (`user.passwordReset.maxPerFiveSeconds`, default 10, one limiter
+per reset handler, refused immediately with the token left usable), which also accept only an
+unused, unexpired token, so anonymous Argon2 allocation cannot exceed about 190 MiB per route. Authenticated and sysadmin encodes (password change,
 user creation, CSV and archive import) remain unbounded by choice, since they require an account
 and a bound there would have to either refuse or block every caller of the shared encoder. The
 at-rest migration runs serially at startup and is not bounded either.
