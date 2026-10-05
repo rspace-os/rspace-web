@@ -48,7 +48,8 @@ The design and its trade-offs are in
     as `<base64 salt>$<argon2 of Base64(SHA-256(salt || utf8 password))>`,
     with an empty salt for unsalted rows. The SHA-256 is fed to Argon2 as
     the Base64 of its decoded bytes, so the case of the old hex never
-    matters.
+    matters. These values are permanent: a check never rewrites them,
+    and they change only when the user sets a new password.
 
   An unknown or missing prefix throws `IllegalArgumentException` and the
   check fails closed.
@@ -63,20 +64,15 @@ The design and its trade-offs are in
   which the login filter and `ReauthenticatorImpl` deliberately do not
   count toward lockout. Encoding new passwords and the migration are not
   bounded.
-- **Upgrade on verify.** When a password matches a legacy hash, the
-  verifier returns a fresh Argon2id encoding and the matcher stores it
-  through `UserManager#upgradePasswordHash`, which calls
-  `UserDao#updatePasswordHash`. That is a compare-and-swap on the old
-  hash, so it never reverts a concurrent password change, and it bypasses
-  the change detection in `UserManager#save`, which would otherwise hash
-  the hash. A failed upgrade is logged and the login still succeeds.
-- **Reauthentication lockout.** `ReauthenticatorImpl` checks
-  `IUserAccountLockoutPolicy#isReauthenticationLocked` before any
-  password check, and records failures with
-  `handleReauthenticationFailure`. This shares the login failure counter
-  and window (4 failures in 2 minutes) but never sets `accountLocked`,
-  because API and SSO logins treat that flag as disabled until a form
-  login clears it.
+- **Guess spacing.** After a mismatch the verifier keeps the per-username
+  lock for `login.passwordVerification.failureDelayMillis` (default 1000)
+  with the permit already returned, so one account gets at most one guess
+  per second at login or reauthentication. No database state is involved.
+  A password check never writes to the `User` row: an earlier version
+  re-encoded legacy hashes on login and counted reauthentication failures
+  on the row, and both broke callers that held the same row in their own
+  transaction (ADR 0011, considered options). Failed reauthentication is
+  not counted toward the login-form lockout.
 
 ## Authorization
 
