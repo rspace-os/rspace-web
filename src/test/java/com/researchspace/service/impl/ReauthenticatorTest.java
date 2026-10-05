@@ -55,7 +55,7 @@ public class ReauthenticatorTest {
   @Test
   void fourWrongPasswordsLockTheAccountAndTheFifthSkipsTheCheck() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-    when(credentialsMatcher.verifyAndUpgrade(user, "wrong")).thenReturn(false);
+    when(credentialsMatcher.verify(user, "wrong")).thenReturn(false);
 
     for (int i = 0; i < 4; i++) {
       assertFalse(reauthenticator.reauthenticate(user, "wrong"));
@@ -65,14 +65,14 @@ public class ReauthenticatorTest {
     assertFalse(user.isAccountLocked());
 
     assertFalse(reauthenticator.reauthenticate(user, "right"));
-    verify(credentialsMatcher, never()).verifyAndUpgrade(user, "right");
+    verify(credentialsMatcher, never()).verify(user, "right");
   }
 
   @Test
   void correctPasswordResetsFailureCount() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-    when(credentialsMatcher.verifyAndUpgrade(user, "wrong")).thenReturn(false);
-    when(credentialsMatcher.verifyAndUpgrade(user, "right")).thenReturn(true);
+    when(credentialsMatcher.verify(user, "wrong")).thenReturn(false);
+    when(credentialsMatcher.verify(user, "right")).thenReturn(true);
 
     assertFalse(reauthenticator.reauthenticate(user, "wrong"));
     assertEquals(1, user.getNumConsecutiveLoginFailures());
@@ -84,7 +84,7 @@ public class ReauthenticatorTest {
   @Test
   void lockoutWindowOverLetsTheCheckRunAndResetsTheCounter() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-    when(credentialsMatcher.verifyAndUpgrade(user, "right")).thenReturn(true);
+    when(credentialsMatcher.verify(user, "right")).thenReturn(true);
     user.setAccountLocked(true);
     user.setNumConsecutiveLoginFailures((byte) 4);
     user.setLoginFailure(new Date(System.currentTimeMillis() - 8 * 60 * 1000));
@@ -108,7 +108,7 @@ public class ReauthenticatorTest {
   @Test
   void busyVerificationIsRefusedWithoutCountingAFailure() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-    when(credentialsMatcher.verifyAndUpgrade(user, "any"))
+    when(credentialsMatcher.verify(user, "any"))
         .thenThrow(new LoginVerificationBusyException("busy"));
 
     assertFalse(reauthenticator.reauthenticate(user, "any"));
@@ -119,12 +119,12 @@ public class ReauthenticatorTest {
   @Test
   void operateAsFailuresCountAgainstTheSysadmin() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(sysadmin);
-    when(credentialsMatcher.verifyAndUpgrade(sysadmin, "wrong")).thenReturn(false);
+    when(credentialsMatcher.verify(sysadmin, "wrong")).thenReturn(false);
 
     assertFalse(reauthenticator.reauthenticate(user, "wrong"));
     assertEquals(1, sysadmin.getNumConsecutiveLoginFailures());
     assertEquals(0, user.getNumConsecutiveLoginFailures());
-    verify(credentialsMatcher, never()).verifyAndUpgrade(user, "wrong");
+    verify(credentialsMatcher, never()).verify(user, "wrong");
   }
 
   @Test

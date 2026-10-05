@@ -26,11 +26,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * RSDEV-894: login with a hash wrapped at rest, through the realm and the filter's post-login save,
- * each in its own transaction as in production, re-encodes it once and leaves it verifiable.
+ * RSDEV-894: a hash wrapped at rest logs in and reauthenticates, through the realm and the filter's
+ * post-login save, each in its own transaction as in production, and stays wrapped: a password
+ * check never writes.
  */
 class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
 
@@ -66,47 +66,40 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  void legacySaltedUserLogsInAndIsUpgradedOnce() throws Exception {
+  void legacySaltedUserLogsInAndStaysWrapped() throws Exception {
     User u = createAndSaveUser(randomAlphabetic(10));
-    storeWrapped(u, SALTED_HEX, SALT);
+    String wrapped = storeWrapped(u, SALTED_HEX, SALT);
 
     login(u, "legacyPass1");
-    String upgraded = assertArgon2(u, "legacyPass1");
-
+    assertStillWrapped(u, wrapped, "legacyPass1");
     login(u, "legacyPass1");
-    assertEquals(upgraded, storedPassword(u), "second login must not re-encode");
+    assertStillWrapped(u, wrapped, "legacyPass1");
   }
 
   @Test
-  void legacyUnsaltedUppercaseUserLogsInAndIsUpgraded() throws Exception {
+  void legacyUnsaltedUppercaseUserLogsInAndStaysWrapped() throws Exception {
     User u = createAndSaveUser(randomAlphabetic(10));
-    storeWrapped(u, UNSALTED_UPPER_HEX, null);
+    String wrapped = storeWrapped(u, UNSALTED_UPPER_HEX, null);
 
     login(u, "sysWisc23!");
-    assertArgon2(u, "sysWisc23!");
-    login(u, "sysWisc23!");
+    assertStillWrapped(u, wrapped, "sysWisc23!");
   }
 
   @Test
-  void rawLegacyRowsLogInAfterTheWrapMigrationAndAreUpgradedOnce() throws Exception {
+  void rawLegacyRowsLogInAfterTheWrapMigration() throws Exception {
     User salted = createAndSaveUser(randomAlphabetic(10));
     User unsalted = createAndSaveUser(randomAlphabetic(10));
     storeRaw(salted, SALTED_HEX, SALT);
     storeRaw(unsalted, UNSALTED_UPPER_HEX, null);
 
     runWrapMigration();
-    assertWrappedAtRest(salted);
-    assertWrappedAtRest(unsalted);
+    String saltedWrapped = assertWrappedAtRest(salted);
+    String unsaltedWrapped = assertWrappedAtRest(unsalted);
 
     login(salted, "legacyPass1");
     login(unsalted, "sysWisc23!");
-    String saltedUpgraded = assertArgon2(salted, "legacyPass1");
-    String unsaltedUpgraded = assertArgon2(unsalted, "sysWisc23!");
-
-    login(salted, "legacyPass1");
-    login(unsalted, "sysWisc23!");
-    assertEquals(saltedUpgraded, storedPassword(salted), "second login must not re-encode");
-    assertEquals(unsaltedUpgraded, storedPassword(unsalted), "second login must not re-encode");
+    assertStillWrapped(salted, saltedWrapped, "legacyPass1");
+    assertStillWrapped(unsalted, unsaltedWrapped, "sysWisc23!");
   }
 
   @Test
@@ -117,32 +110,14 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  void legacySaltedUserReauthenticatesAndIsUpgraded() throws Exception {
+  void legacySaltedUserReauthenticatesAndStaysWrapped() throws Exception {
     User u = createAndSaveUser(randomAlphabetic(10));
-    storeWrapped(u, SALTED_HEX, SALT);
-    // reauthenticate while someone else is logged in, so login itself does not upgrade
+    String wrapped = storeWrapped(u, SALTED_HEX, SALT);
     login(createAndSaveUser(randomAlphabetic(10)), TESTPASSWD);
 
     assertFalse(reauthenticator.reauthenticate(reload(u), "legacyPass1x"));
     assertTrue(reauthenticator.reauthenticate(reload(u), "legacyPass1"));
-    assertArgon2(u, "legacyPass1");
-    assertTrue(reauthenticator.reauthenticate(reload(u), "legacyPass1"));
-  }
-
-  @Test
-  void hashUpgradeCommitsIndependentlyOfTheCallersTransaction() {
-    User u = createAndSaveUser(randomAlphabetic(10));
-    String before = storedPassword(u);
-    String upgraded = passwordEncoder.encode("other1234");
-
-    new TransactionTemplate(getTxMger())
-        .executeWithoutResult(
-            status -> {
-              assertTrue(userMgr.upgradePasswordHash(u.getUsername(), before, upgraded));
-              status.setRollbackOnly();
-            });
-
-    assertEquals(upgraded, storedPassword(u));
+    assertStillWrapped(u, wrapped, "legacyPass1");
   }
 
   private void login(User u, String password) throws Exception {
@@ -155,20 +130,16 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
     assertTrue(SecurityUtils.getSubject().isAuthenticated());
   }
 
-  private String assertArgon2(User u, String password) {
-    String stored = storedPassword(u);
-    assertTrue(stored.startsWith("{" + RSpacePasswordEncoder.ARGON2_ID + "}"), stored);
-    assertTrue(passwordEncoder.matches(password, stored));
-    assertFalse(passwordEncoder.upgradeEncoding(stored));
-    assertNull(jdbc.queryForObject("select salt from User where id = ?", String.class, u.getId()));
-    return stored;
+  private void assertStillWrapped(User u, String wrapped, String password) {
+    assertEquals(wrapped, storedPassword(u));
+    assertTrue(passwordEncoder.matches(password, wrapped));
+    assertNull(storedSalt(u));
   }
 
-  private void storeWrapped(User u, String hex, String salt) {
-    jdbc.update(
-        "update User set password = ?, salt = null where id = ?",
-        passwordEncoder.wrapLegacySha256(hex, salt),
-        u.getId());
+  private String storeWrapped(User u, String hex, String salt) {
+    String wrapped = passwordEncoder.wrapLegacySha256(hex, salt);
+    jdbc.update("update User set password = ?, salt = null where id = ?", wrapped, u.getId());
+    return wrapped;
   }
 
   private void storeRaw(User u, String hex, String salt) {
@@ -184,10 +155,11 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
     change.execute(null);
   }
 
-  private void assertWrappedAtRest(User u) {
+  private String assertWrappedAtRest(User u) {
     String stored = storedPassword(u);
     assertTrue(stored.startsWith("{" + RSpacePasswordEncoder.LEGACY_SHA256_ID + "}"), stored);
-    assertNull(jdbc.queryForObject("select salt from User where id = ?", String.class, u.getId()));
+    assertNull(storedSalt(u));
+    return stored;
   }
 
   private User reload(User u) {
@@ -196,5 +168,9 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
 
   private String storedPassword(User u) {
     return jdbc.queryForObject("select password from User where id = ?", String.class, u.getId());
+  }
+
+  private String storedSalt(User u) {
+    return jdbc.queryForObject("select salt from User where id = ?", String.class, u.getId());
   }
 }

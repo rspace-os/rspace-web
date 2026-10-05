@@ -16,25 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 public class BoundedPasswordVerifier {
 
-  /**
-   * @param matches whether the password matched
-   * @param upgradedHash the password re-encoded with the current default when it matched against an
-   *     outdated encoding, otherwise null
-   */
-  public record Result(boolean matches, String upgradedHash) {
-    public Result {
-      Validate.isTrue(matches || upgradedHash == null, "A mismatch has no upgraded hash");
-    }
-
-    public static Result mismatch() {
-      return new Result(false, null);
-    }
-
-    public static Result matched(String upgradedHash) {
-      return new Result(true, upgradedHash);
-    }
-  }
-
   private final PasswordEncoder encoder;
   private final Semaphore permits;
   private final int maxPermits;
@@ -55,10 +36,11 @@ public class BoundedPasswordVerifier {
    * Checks a password, waiting for the username's turn and then for a free permit, together bounded
    * by the configured wait.
    *
+   * @return whether the password matched
    * @throws LoginVerificationBusyException if the wait elapses first
    * @throws IllegalArgumentException if the stored value has no recognised encoding
    */
-  public Result verify(String username, CharSequence rawPassword, String encodedPassword) {
+  public boolean verify(String username, CharSequence rawPassword, String encodedPassword) {
     long deadline = System.nanoTime() + waitNanos;
     PrincipalLock principalLock = acquireHolder(username);
     try {
@@ -70,7 +52,7 @@ public class BoundedPasswordVerifier {
           throw busy(username, "all " + maxPermits + " verification permits are in use");
         }
         try {
-          return check(rawPassword, encodedPassword);
+          return encoder.matches(rawPassword, encodedPassword);
         } finally {
           permits.release();
         }
@@ -83,14 +65,6 @@ public class BoundedPasswordVerifier {
     } finally {
       releaseHolder(username);
     }
-  }
-
-  private Result check(CharSequence rawPassword, String encodedPassword) {
-    if (!encoder.matches(rawPassword, encodedPassword)) {
-      return Result.mismatch();
-    }
-    return Result.matched(
-        encoder.upgradeEncoding(encodedPassword) ? encoder.encode(rawPassword) : null);
   }
 
   private PrincipalLock acquireHolder(String username) {
