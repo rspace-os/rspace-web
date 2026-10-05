@@ -76,6 +76,7 @@
                role="form" modelAttribute="user"
                class="form-horizontal rs-sign-in-form__body">
       <fieldset>
+        <form:errors cssClass="text-danger col-lg-12" element="p"></form:errors>
 
         <spring:message code="signup.form.usernamePlaceholder" var="signupUsernamePlaceholder"/>
         <spring:message code="signup.form.usernameLengthTitle" arguments="${applicationScope['RS_DEPLOY_PROPS']['minUsernameLength']}" var="signupUsernameLengthTitle"/>

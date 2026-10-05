@@ -4,12 +4,14 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 
 import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
+import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.Role;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
+import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.RoleManager;
@@ -19,11 +21,17 @@ import com.researchspace.service.UserExistsException;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
 import com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterConfig;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
+import java.time.Duration;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +54,20 @@ public class SignupController extends BaseController {
 
   public static final String CLOUD_SIGNUP_ACCOUNT_ACTIVATION_FAIL_URL =
       "cloud/signup/accountActivationFail";
+
+  private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
+  private static final Duration SIGNUP_RATE_LIMIT_PERIOD = Duration.ofSeconds(5);
+
+  /**
+   * Signups accepted instance-wide per five seconds. Each one hashes the new password with Argon2id
+   * (about 19 MiB of heap) outside the login verifier's permits, so this caps what an anonymous
+   * burst can allocate (ADR 0011). Over the limit, submissions are refused at once; nothing waits.
+   */
+  @Value("${user.signup.maxPerFiveSeconds:10}")
+  @Setter(AccessLevel.PACKAGE) // for testing
+  private int maxSignupsPerFiveSeconds;
+
+  private RateLimiter signupRateLimiter;
 
   private @Autowired RoleManager roleManager;
 
@@ -94,6 +116,18 @@ public class SignupController extends BaseController {
   public SignupController() {
     setCancelView("redirect:login");
     setSuccessView("redirect:workspace");
+  }
+
+  @PostConstruct
+  void initSignupRateLimiter() {
+    signupRateLimiter =
+        RateLimiter.of(
+            "signup",
+            RateLimiterConfig.custom()
+                .limitForPeriod(maxSignupsPerFiveSeconds)
+                .limitRefreshPeriod(SIGNUP_RATE_LIMIT_PERIOD)
+                .timeoutDuration(Duration.ZERO)
+                .build());
   }
 
   @ModelAttribute
@@ -248,6 +282,17 @@ public class SignupController extends BaseController {
       user.setConfirmPassword(pwd);
     }
     addRole(user);
+
+    if (!signupRateLimiter.acquirePermission()) {
+      SECURITY_LOG.warn(
+          "Signup for [{}] from {} refused: more than {} signups in {} seconds",
+          user.getUsername(),
+          RequestUtil.remoteAddr(request),
+          maxSignupsPerFiveSeconds,
+          SIGNUP_RATE_LIMIT_PERIOD.toSeconds());
+      errors.reject("errors.signup.rateLimited");
+      return returnToSignupPage(user);
+    }
 
     String originalPwd = user.getPassword();
     User savedUser;
