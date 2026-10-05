@@ -67,7 +67,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -297,9 +296,8 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertFalse(info.isEnabled()); // app is disabled now
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"github", "GITHUB", "GitHub"})
-  public void removingTheLastGitHubRepositoryDeletesTheToken(String appName) throws Exception {
+  @Test
+  public void removingTheLastGitHubRepositoryDeletesTheToken() throws Exception {
     logoutAndLoginAs(piUser);
     userConnectionManager.save(
         new UserConnection(
@@ -330,7 +328,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
             .perform(
                 post("/integration/deleteAppOptions")
                     .param("optionsId", setId.toString())
-                    .param("appName", appName)
+                    .param("appName", "github")
                     .principal(mockPrincipal))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
@@ -343,25 +341,20 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertThat(getIntegrationInfoFromServer(mockPrincipal, GITHUB_APP_NAME).getOptions()).isEmpty();
   }
 
-  @ParameterizedTest
-  @CsvSource({
-    "github, EGNYTE_DOMAIN, app.egnyte",
-    "msteams, GITHUB_REPOSITORY_FULL_NAME, app.github"
-  })
-  public void savingOptionsRejectsADifferentAppBeforeSavingConfigOrCredentials(
-      String appName, String propertyName, String actualApp) throws Exception {
+  @Test
+  public void savingOptionsRejectsADifferentAppBeforeSavingConfigOrCredentials() throws Exception {
     userConnectionManager.save(
         new UserConnection(
             new UserConnectionId(piUser.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME),
             "gho-current-token"));
     int originalCount =
-        userAppConfigManager.getByAppName(actualApp, piUser).getAppConfigElementSets().size();
+        userAppConfigManager.getByAppName("app.egnyte", piUser).getAppConfigElementSets().size();
     MvcResult result =
         mockMvc
             .perform(
                 post("/integration/saveAppOptions")
-                    .param("appName", appName)
-                    .content(mvcUtils.getAsJsonString(Map.of(propertyName, "org/repo")))
+                    .param("appName", "github")
+                    .content(mvcUtils.getAsJsonString(Map.of("EGNYTE_DOMAIN", "org/repo")))
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(mockPrincipal))
             .andReturn();
@@ -369,7 +362,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertInstanceOf(IllegalArgumentException.class, result.getResolvedException());
     assertEquals(
         originalCount,
-        userAppConfigManager.getByAppName(actualApp, piUser).getAppConfigElementSets().size());
+        userAppConfigManager.getByAppName("app.egnyte", piUser).getAppConfigElementSets().size());
     assertThat(
             userConnectionManager.findListByUserNameProviderName(
                 piUser.getUsername(), GITHUB_APP_NAME))

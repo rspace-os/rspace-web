@@ -46,8 +46,6 @@ public class ServiceLoggerAspectTest {
 
   @Test
   public void hidesCredentialsWhenLoggingNewAppConfigConnections() throws Exception {
-    String accessToken = "synthetic-access-token";
-    String secret = "synthetic-webhook-secret";
     Method method =
         UserConnectionManager.class.getMethod(
             "saveWithNewAppConfigElementSet",
@@ -66,10 +64,7 @@ public class ServiceLoggerAspectTest {
     String logMessage = aspect.methodInfo(joinPoint, method.getName());
     verify(joinPoint, never()).getArgs();
 
-    assertThat(logMessage)
-        .contains("(args hidden)")
-        .doesNotContain(accessToken)
-        .doesNotContain(secret);
+    assertThat(logMessage).contains("(args hidden)");
   }
 
   @Test

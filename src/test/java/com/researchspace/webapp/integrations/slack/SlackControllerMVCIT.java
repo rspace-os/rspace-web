@@ -134,12 +134,7 @@ public class SlackControllerMVCIT extends MVCTestBase {
   public void connectingSavesTheChannelAndKeepsItsCredentialsInUserConnection() throws Exception {
     // the Apps page refetches the integration, so the callback must evict its cached copy
     assertThat(integrationsHandler.getIntegration(user, SLACK_APP_NAME).getOptions()).isEmpty();
-    MvcResult result =
-        callbackWithSlackResponding(
-            "{\"ok\":true,\"access_token\":\"xoxp-token\",\"user_id\":\"U1\","
-                + "\"team_id\":\"T1\",\"team_name\":\"Team\",\"incoming_webhook\":"
-                + "{\"channel\":\"#general\",\"channel_id\":\"C1\","
-                + "\"url\":\"https://hooks.slack.com/services/x\"}}");
+    MvcResult result = callbackWithSlackResponding(oauthAccessResponse("C1"));
 
     assertNull(result.getModelAndView().getModel().get("connectionError"));
     AppConfigElementSet channel =
@@ -157,13 +152,8 @@ public class SlackControllerMVCIT extends MVCTestBase {
     assertEquals("https://hooks.slack.com/services/x", connection.getSecret());
     assertThat(integrationsHandler.getIntegration(user, SLACK_APP_NAME).getOptions())
         .containsKey(channel.getId().toString());
-  }
 
-  @Test
-  public void eachConnectedChannelGetsItsOwnConnection() throws Exception {
-    callbackWithSlackResponding(oauthAccessResponse("C1"));
     callbackWithSlackResponding(oauthAccessResponse("C2"));
-
     assertThat(
             userConnectionManager.findListByUserNameProviderName(
                 user.getUsername(), SLACK_APP_NAME))
