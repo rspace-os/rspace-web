@@ -677,19 +677,18 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       String appName,
       boolean trustedOrigin,
       User user) {
-    appName = appName.toLowerCase(Locale.ROOT);
-    String providerName = appName.toUpperCase(Locale.ROOT);
+    appName = appName.toUpperCase(Locale.ROOT);
     Map<String, String> options;
     // remove the apiKey from the option otherwise it is saved in clear on the database
-    if (ENCODE_API_KEY_FOR_APPS.containsKey(providerName)) {
+    if (ENCODE_API_KEY_FOR_APPS.containsKey(appName)) {
       Map<String, String> safeMap = new HashMap<>(originalOptions);
-      safeMap.remove(ENCODE_API_KEY_FOR_APPS.get(providerName));
+      safeMap.remove(ENCODE_API_KEY_FOR_APPS.get(appName));
       options = safeMap;
     } else {
       options = originalOptions;
     }
     String existingAlias = null;
-    if ("dsw".equals(appName) && null != optionsId) {
+    if (DSW_APP_NAME.equals(appName) && null != optionsId) {
       Optional<AppConfigElementSet> prevSavedOptions =
           appConfigMgr.findByAppConfigElementSetId(optionsId);
       if (!prevSavedOptions.isEmpty()) {
@@ -703,7 +702,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     appConfigMgr.saveAppConfigElementSet(
         options, optionsId, trustedOrigin, user, getAppNameFromIntegrationName(appName));
     saveConfigOptionsForAppsWithMultipleOptionSet(
-        user, optionsId, providerName, originalOptions, existingAlias);
+        user, optionsId, appName, originalOptions, existingAlias);
   }
 
   @Override
@@ -711,26 +710,18 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       value = INTEGRATION_INFO,
       key = "#user.username + #appName.toUpperCase(T(java.util.Locale).ROOT)")
   public void deleteAppOptions(Long optionsId, String appName, User user) {
-    appName = appName.toLowerCase(Locale.ROOT);
-    String providerName = appName.toUpperCase(Locale.ROOT);
-    AppConfigElementSet configSetBeforeRemoval = appConfigMgr.getAppConfigElementSetById(optionsId);
+    appName = appName.toUpperCase(Locale.ROOT);
     // the cleanup below and the cache eviction trust appName, so it must name the set's own app
-    if (!configSetBeforeRemoval.getApp().getName().equals(getAppNameFromIntegrationName(appName))) {
-      throw new IllegalArgumentException("Options " + optionsId + " do not belong to " + appName);
-    }
-    appConfigMgr.deleteAppConfigSet(optionsId, user);
-    if ("pyrat".equals(appName)) {
-      deleteConfigOptionsForAppsWithMultipleOptionSet(
-          user, providerName, PYRAT_ALIAS, configSetBeforeRemoval);
-    } else if ("raid".equals(appName)) {
-      deleteConfigOptionsForAppsWithMultipleOptionSet(
-          user, providerName, RAID_ALIAS, configSetBeforeRemoval);
-    } else if ("dsw".equals(appName)) {
-      deleteConfigOptionsForAppsWithMultipleOptionSet(
-          user, providerName, DSW_ALIAS, configSetBeforeRemoval);
-    } else if ("galaxy".equals(appName)) {
-      deleteConfigOptionsForAppsWithMultipleOptionSet(
-          user, providerName, GALAXY_ALIAS, configSetBeforeRemoval);
+    AppConfigElementSet removed =
+        appConfigMgr.deleteAppConfigSet(optionsId, user, getAppNameFromIntegrationName(appName));
+    if (PYRAT_APP_NAME.equals(appName)) {
+      deleteConfigOptionsForAppsWithMultipleOptionSet(user, appName, PYRAT_ALIAS, removed);
+    } else if (RAID_APP_NAME.equals(appName)) {
+      deleteConfigOptionsForAppsWithMultipleOptionSet(user, appName, RAID_ALIAS, removed);
+    } else if (DSW_APP_NAME.equals(appName)) {
+      deleteConfigOptionsForAppsWithMultipleOptionSet(user, appName, DSW_ALIAS, removed);
+    } else if (GALAXY_APP_NAME.equals(appName)) {
+      deleteConfigOptionsForAppsWithMultipleOptionSet(user, appName, GALAXY_ALIAS, removed);
     }
   }
 

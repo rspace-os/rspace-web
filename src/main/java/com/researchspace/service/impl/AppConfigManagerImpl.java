@@ -70,15 +70,6 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
       Map<String, String> appConfigSetData,
       Long appConfigSetDataId,
       boolean trustedOrigin,
-      User user) {
-    return saveAppConfigElementSet(appConfigSetData, appConfigSetDataId, trustedOrigin, user, null);
-  }
-
-  @Override
-  public UserAppConfig saveAppConfigElementSet(
-      Map<String, String> appConfigSetData,
-      Long appConfigSetDataId,
-      boolean trustedOrigin,
       User user,
       String expectedAppName) {
     Validate.isTrue(!appConfigSetData.isEmpty(), "appConfigSetData is empty!");
@@ -91,7 +82,7 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
           messages.getMessage("apps.errors.notFoundByProperty", new Object[] {propName}));
     }
     Validate.isTrue(
-        expectedAppName == null || expectedAppName.equals(app.getName()),
+        app.getName().equalsIgnoreCase(expectedAppName),
         "Configuration properties do not belong to the requested app");
     if (cfg == null) {
       logger.info(
@@ -164,10 +155,18 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
   }
 
   @Override
-  public AppConfigElementSet deleteAppConfigSet(Long appConfigElementSetId, User subject) {
+  public AppConfigElementSet deleteAppConfigSet(
+      Long appConfigElementSetId, User subject, String expectedAppName) {
     AppConfigElementSet set = appCfgDao.getAppConfigElementSetById(appConfigElementSetId);
+    if (set == null) {
+      throw new AuthorizationException("Not permitted to delete this AppConfig set");
+    }
     UserAppConfig cfg = set.getUserAppConfig();
     permUtils.assertIsPermitted(cfg, PermissionType.DELETE, subject, " Update AppConfig ");
+    // checked after permission, so another user's set id reveals nothing about its app
+    Validate.isTrue(
+        cfg.getApp().getName().equalsIgnoreCase(expectedAppName),
+        "Options " + appConfigElementSetId + " do not belong to " + expectedAppName);
     cfg.removeConfigSet(set);
     appCfgDao.save(cfg);
     return set;
