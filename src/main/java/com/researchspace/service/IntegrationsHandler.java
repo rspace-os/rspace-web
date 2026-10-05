@@ -80,7 +80,8 @@ public interface IntegrationsHandler {
    *
    * @param optionsId if provided, updates existing AppConfigElementSet
    * @param options options to save
-   * @param appName used to update integration info cache
+   * @param appName case-insensitive integration name, normalized to lowercase; must match the
+   *     options' app
    * @param trustedOrigin some App options should be only updated from trusted sources, not by data
    *     provided by user
    * @param user
@@ -97,7 +98,8 @@ public interface IntegrationsHandler {
    * Deletes AppConfigElementSet
    *
    * @param optionsId id of AppConfigElementSet to delete
-   * @param appName used to update integration info cache
+   * @param appName case-insensitive integration name, normalized to lowercase; must match the set's
+   *     app
    * @param subject
    */
   void deleteAppOptions(Long optionsId, String appName, User subject);

@@ -50,6 +50,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -174,11 +175,12 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     if (isBlank(integrationName)) {
       return false;
     }
+    integrationName = integrationName.toUpperCase(Locale.ROOT);
     if (isAppConfigIntegration(integrationName)) {
       return true;
     }
     try {
-      Preference pref = Preference.valueOf(integrationName.toUpperCase());
+      Preference pref = Preference.valueOf(integrationName);
       return booleanIntegrationPrefs.contains(pref);
     } catch (IllegalArgumentException e) {
       return false;
@@ -187,8 +189,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   @Override
   // if method arguments change, remember to update the 'key' attribute
-  @Cacheable(value = INTEGRATION_INFO, key = "#user.username + #integrationName")
+  @Cacheable(
+      value = INTEGRATION_INFO,
+      key = "#user.username + #integrationName.toUpperCase(T(java.util.Locale).ROOT)")
   public IntegrationInfo getIntegration(User user, String integrationName) {
+    integrationName = integrationName.toUpperCase(Locale.ROOT);
     checkValidIntegration(integrationName);
     IntegrationInfo info = new IntegrationInfo();
     info.setName(integrationName);
@@ -663,24 +668,28 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   @Override
-  @CacheEvict(value = INTEGRATION_INFO, key = "#user.username + #appName")
+  @CacheEvict(
+      value = INTEGRATION_INFO,
+      key = "#user.username + #appName.toUpperCase(T(java.util.Locale).ROOT)")
   public void saveAppOptions(
       Long optionsId,
       Map<String, String> originalOptions,
       String appName,
       boolean trustedOrigin,
       User user) {
+    appName = appName.toLowerCase(Locale.ROOT);
+    String providerName = appName.toUpperCase(Locale.ROOT);
     Map<String, String> options;
     // remove the apiKey from the option otherwise it is saved in clear on the database
-    if (ENCODE_API_KEY_FOR_APPS.keySet().contains(appName)) {
+    if (ENCODE_API_KEY_FOR_APPS.containsKey(providerName)) {
       Map<String, String> safeMap = new HashMap<>(originalOptions);
-      safeMap.remove(ENCODE_API_KEY_FOR_APPS.get(appName));
+      safeMap.remove(ENCODE_API_KEY_FOR_APPS.get(providerName));
       options = safeMap;
     } else {
       options = originalOptions;
     }
     String existingAlias = null;
-    if (DSW_APP_NAME.equals(appName) && null != optionsId) {
+    if ("dsw".equals(appName) && null != optionsId) {
       Optional<AppConfigElementSet> prevSavedOptions =
           appConfigMgr.findByAppConfigElementSetId(optionsId);
       if (!prevSavedOptions.isEmpty()) {
@@ -691,28 +700,37 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         }
       }
     }
-    appConfigMgr.saveAppConfigElementSet(options, optionsId, trustedOrigin, user);
+    appConfigMgr.saveAppConfigElementSet(
+        options, optionsId, trustedOrigin, user, getAppNameFromIntegrationName(appName));
     saveConfigOptionsForAppsWithMultipleOptionSet(
-        user, optionsId, appName, originalOptions, existingAlias);
+        user, optionsId, providerName, originalOptions, existingAlias);
   }
 
   @Override
-  @CacheEvict(value = INTEGRATION_INFO, key = "#user.username + #appName")
+  @CacheEvict(
+      value = INTEGRATION_INFO,
+      key = "#user.username + #appName.toUpperCase(T(java.util.Locale).ROOT)")
   public void deleteAppOptions(Long optionsId, String appName, User user) {
+    appName = appName.toLowerCase(Locale.ROOT);
+    String providerName = appName.toUpperCase(Locale.ROOT);
     AppConfigElementSet configSetBeforeRemoval = appConfigMgr.getAppConfigElementSetById(optionsId);
+    // the cleanup below and the cache eviction trust appName, so it must name the set's own app
+    if (!configSetBeforeRemoval.getApp().getName().equals(getAppNameFromIntegrationName(appName))) {
+      throw new IllegalArgumentException("Options " + optionsId + " do not belong to " + appName);
+    }
     appConfigMgr.deleteAppConfigSet(optionsId, user);
-    if (PYRAT_APP_NAME.equals(appName)) {
+    if ("pyrat".equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
-          user, appName, PYRAT_ALIAS, configSetBeforeRemoval);
-    } else if (RAID_APP_NAME.equals(appName)) {
+          user, providerName, PYRAT_ALIAS, configSetBeforeRemoval);
+    } else if ("raid".equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
-          user, appName, RAID_ALIAS, configSetBeforeRemoval);
-    } else if (DSW_APP_NAME.equals(appName)) {
+          user, providerName, RAID_ALIAS, configSetBeforeRemoval);
+    } else if ("dsw".equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
-          user, appName, DSW_ALIAS, configSetBeforeRemoval);
-    } else if (GALAXY_APP_NAME.equals(appName)) {
+          user, providerName, DSW_ALIAS, configSetBeforeRemoval);
+    } else if ("galaxy".equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
-          user, appName, GALAXY_ALIAS, configSetBeforeRemoval);
+          user, providerName, GALAXY_ALIAS, configSetBeforeRemoval);
     }
   }
 
@@ -756,7 +774,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   private String getSysPropertyFromIntegrationName(String name) {
-    return name.toLowerCase() + ".available"; // see SystemProperty table
+    return name.toLowerCase(Locale.ROOT) + ".available"; // see SystemProperty table
   }
 
   /* For test purposes */

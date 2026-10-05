@@ -39,6 +39,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -197,6 +198,7 @@ public class IntegrationController extends BaseController {
       @RequestParam(value = "optionsId", required = false) Long optionsId,
       @RequestParam(value = "appName") String appName,
       @RequestBody Map<String, String> options) {
+    appName = appName.toLowerCase(Locale.ROOT);
     User subject = userManager.getAuthenticatedUserInSession();
     integrationsHandler.saveAppOptions(optionsId, options, appName, false, subject);
     return getIntegrationInfo(appName);
@@ -206,6 +208,7 @@ public class IntegrationController extends BaseController {
   public AjaxReturnObject<IntegrationInfo> deleteAppOptions(
       @RequestParam(value = "optionsId") Long optionsId,
       @RequestParam(value = "appName") String appName) {
+    appName = appName.toLowerCase(Locale.ROOT);
     User subject = userManager.getAuthenticatedUserInSession();
     integrationsHandler.deleteAppOptions(optionsId, appName, subject);
     return getIntegrationInfo(appName);

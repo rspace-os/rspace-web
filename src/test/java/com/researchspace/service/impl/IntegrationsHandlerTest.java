@@ -315,7 +315,7 @@ public class IntegrationsHandlerTest {
     Map<String, String> expectedOptions = new HashMap<>();
     expectedOptions.put(EGNYTE_DOMAIN_SETTING, testEgnyteDomain);
     Mockito.verify(appCfgMgr, times(1))
-        .saveAppConfigElementSet(expectedOptions, null, false, subject);
+        .saveAppConfigElementSet(expectedOptions, null, false, subject, "app.egnyte");
   }
 
   @Test
@@ -331,7 +331,8 @@ public class IntegrationsHandlerTest {
     handler.updateIntegrationInfo(subject, info);
 
     assertTrue(egnyteConfig.isEnabled());
-    Mockito.verify(appCfgMgr, never()).saveAppConfigElementSet(any(), any(), anyBoolean(), any());
+    Mockito.verify(appCfgMgr, never())
+        .saveAppConfigElementSet(any(), any(), anyBoolean(), any(), anyString());
   }
 
   @Test
