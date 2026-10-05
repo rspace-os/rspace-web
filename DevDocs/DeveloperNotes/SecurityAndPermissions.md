@@ -64,15 +64,14 @@ The design and its trade-offs are in
   which the login filter and `ReauthenticatorImpl` deliberately do not
   count toward lockout. Encoding new passwords and the migration are not
   bounded.
-- **Guess spacing.** After a mismatch the verifier keeps the per-username
-  lock for `login.passwordVerification.failureDelayMillis` (default 1000)
-  with the permit already returned, so one account gets at most one guess
-  per second at login or reauthentication. No database state is involved.
-  A password check never writes to the `User` row: an earlier version
-  re-encoded legacy hashes on login and counted reauthentication failures
-  on the row, and both broke callers that held the same row in their own
-  transaction (ADR 0011, considered options). Failed reauthentication is
-  not counted toward the login-form lockout.
+- **No writes, no reauthentication lockout.** A password check never
+  writes to the `User` row: an earlier version re-encoded legacy hashes on
+  login and counted reauthentication failures on the row, and both broke
+  callers that held the same row in their own transaction (ADR 0011,
+  considered options). Failed reauthentication is not counted toward the
+  login-form lockout and has no other per-account rate limit; the
+  per-username lock is the only bound. The anonymous OAuth password grant
+  is the exposed case and is tracked as a separate ticket.
 
 ## Authorization
 
