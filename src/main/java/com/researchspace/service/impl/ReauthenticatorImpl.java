@@ -88,7 +88,7 @@ public class ReauthenticatorImpl implements IReauthenticator {
     }
 
     // check provided password against default realm
-    return credentialsMatcher.verifyAndUpgrade(subject, pwd);
+    return credentialsMatcher.verify(subject, pwd);
   }
 
   private static String callingAction() {
