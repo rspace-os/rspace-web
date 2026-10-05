@@ -5434,20 +5434,17 @@ components:
         An amount an operation takes from an origin or gives each subsample it creates. Both
         properties are required and the amount must be greater than zero. Quantities are stored
         to three decimal places, so an amount with more decimal places is rejected rather than
-        rounded. The field that uses this schema says which measurement category the unit must
-        belong to.
+        rounded. The unit must be a count, volume or mass unit; any other unit is rejected. The
+        field that uses this schema says which of those categories the unit must belong to.
 
-        Units of one category are interchangeable: the server converts between them. The units,
-        by id, as `GET /api/v1/units` lists them:
+        Units of one category are interchangeable: the server converts between them. The units
+        amounts accept, by id, as `GET /api/v1/units` lists them:
 
         | Category | Units (id) |
         |---|---|
         | Count | items (1) |
         | Volume | pl (18), nl (19), µl (2), ml (3), l (4), mm³ (23), cm³ (24), dm³ (25), m³ (26) |
         | Mass | pg (20), ng (21), µg (5), mg (6), g (7), kg (22) |
-        | Molarity | nM (11), µM (12), mM (13), M (14) |
-        | Concentration | µg/µl (15), mg/ml (16), g/l (17) |
-        | Temperature | °C (8), K (9), °F (10), used by `storageTemp`, not by amounts |
       properties:
         numericValue:
           type: number
