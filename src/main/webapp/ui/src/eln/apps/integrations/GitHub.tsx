@@ -147,6 +147,8 @@ const DialogContent = observer(
                               copyOfRepos.splice(indexOfDeleted, 1);
                               integrationState.credentials.splice(indexOfDeleted, 1);
                             });
+                            // removing the last repository deletes the GitHub token, so adding another needs OAuth again
+                            if (copyOfRepos.length === 0) setAllRepositories(Optional.empty());
                             addAlert(
                               mkAlert({
                                 variant: "success",
