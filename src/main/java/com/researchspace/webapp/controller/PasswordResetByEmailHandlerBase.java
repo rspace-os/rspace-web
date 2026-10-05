@@ -120,6 +120,15 @@ public abstract class PasswordResetByEmailHandlerBase {
   protected ModelAndView submitResetPage(
       PasswordResetCommand cmd, BindingResult errors, HttpServletRequest request) throws Exception {
 
+    TokenBasedVerification change = userManager.getUserVerificationToken(cmd.getToken());
+    if (change == null
+        || !change.isValidLink(cmd.getToken(), TokenBasedVerificationType.PASSWORD_CHANGE)) {
+      SECURITY_LOG.warn(
+          "Reset password attempt with a used, expired or unknown token, from {}",
+          RequestUtil.remoteAddr(request));
+      throw new IllegalStateException(
+          "Could not reset " + getPasswordType() + " - the token is not valid");
+    }
     Optional<String> usernameOpt = userManager.getUsernameByToken(cmd.getToken());
     if (usernameOpt.isEmpty()) {
       SECURITY_LOG.warn(
