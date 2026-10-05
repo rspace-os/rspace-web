@@ -81,8 +81,14 @@ request volume. A request that cannot get its turn before the wait elapses fails
 generic failure the user sees for a wrong password, but through a distinct exception type,
 `LoginVerificationBusyException`. The login filter (`StandaloneShiroFormAuthFilterExt`) and
 `ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
-users out. Encoding new passwords and the at-rest migration do not go through the verifier and
-are not bounded; both are rare and not attacker-driven.
+users out. Encoding new passwords is not bounded at the encoder; instead the two anonymous routes
+that reach it are capped in front of it, by an instance-wide limit on signup submissions
+(`user.signup.maxPerFiveSeconds`, default 10, refused immediately without waiting) and by
+accepting a password-reset reply only for an unused, unexpired token, so anonymous Argon2
+allocation cannot exceed about 190 MiB. Authenticated and sysadmin encodes (password change,
+user creation, CSV and archive import) remain unbounded by choice, since they require an account
+and a bound there would have to either refuse or block every caller of the shared encoder. The
+at-rest migration runs serially at startup and is not bounded either.
 
 Some reauthentication does not reach the verifier at all: the SSO and Community verification
 password (bcrypt today, moved onto the shared encoder by the stacked PR described under
@@ -158,6 +164,15 @@ application are unaffected.
   to authentication. Refusing instead of sleeping would have let one wrong guess per second deny an
   account's correct logins. Neither is worth the one property it bought, a per-account guess cap
   at endpoints without lockout, so reauthentication keeps only the per-username rule.
+- **Bound new-password encoding inside the shared encoder**, with its own semaphore, either
+  refusing or blocking when full. Raised in review: anonymous signup and the password-reset reply
+  reach `encode()` outside the verifier's permits. Rejected: a refusing bound turns into exception
+  handling in every caller of the encoder (signup, two reset replies, two password-change
+  endpoints, CSV upload, API user creation, archive import) and partial failures in bulk imports; a
+  blocking bound parks servlet workers under flood, the same shape as the one-second delay above.
+  The anonymous routes are capped in front of the encoder instead (the signup limit and the
+  single-use reset token under Decision), and the authenticated routes are left unbounded because
+  they require an account.
 
 ## Consequences
 
