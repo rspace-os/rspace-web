@@ -120,7 +120,7 @@ public class SlackControllerMVCIT extends MVCTestBase {
                   .param("state", state)
                   .principal(user::getUsername))
           .andExpect(view().name(CONNECTED_VIEW))
-          .andExpect(modelAttributeContains("connectionError", "exception during token exchange"))
+          .andExpect(modelAttributeContains("connectionError", "Exception during token exchange"))
           .andExpect(modelAttributeDoesNotContain("connectionError", secret))
           .andExpect(modelAttributeDoesNotContain("connectionError", code));
     } finally {
@@ -184,6 +184,20 @@ public class SlackControllerMVCIT extends MVCTestBase {
     assertThat((String) result.getModelAndView().getModel().get("connectionError"))
         .contains("invalid_code");
     assertThat(userAppConfigManager.getByAppName("app.slack", user).getAppConfigElementSets())
+        .isEmpty();
+  }
+
+  @Test
+  public void missingResponseFieldsUseTheLocalizedErrorAndSaveNothing() throws Exception {
+    MvcResult result = callbackWithSlackResponding("{\"ok\":true}");
+
+    assertThat((String) result.getModelAndView().getModel().get("connectionError"))
+        .contains("The Slack response is missing required field team_name");
+    assertThat(userAppConfigManager.getByAppName("app.slack", user).getAppConfigElementSets())
+        .isEmpty();
+    assertThat(
+            userConnectionManager.findListByUserNameProviderName(
+                user.getUsername(), SLACK_APP_NAME))
         .isEmpty();
   }
 

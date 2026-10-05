@@ -84,6 +84,8 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -139,10 +141,11 @@ public class IntegrationsHandlerTest {
     assertNull(parent2child.get(child));
   }
 
-  @Test
-  public void deletingASlackChannelDeletesItsConnection() {
+  @ParameterizedTest
+  @ValueSource(strings = {"slack", "SLACK", "Slack"})
+  public void deletingASlackChannelDeletesItsConnection(String appName) {
     stubSetForApp(7L, App.APP_SLACK);
-    handler.deleteAppOptions(7L, SLACK_APP_NAME, subject);
+    handler.deleteAppOptions(7L, appName, subject);
     verify(appCfgMgr).deleteAppConfigSet(7L, subject, App.APP_SLACK);
     verify(userConnectionManager)
         .deleteByUserAndProvider(subject.getUsername(), SLACK_APP_NAME, "7");

@@ -47,7 +47,7 @@ Once an integration is available at the system level (sysadmin toggle is on), in
    - Add your integration to `IntegrationsHandlerImpl.isAppConfigIntegration()` if it has more than one option set per user.
    - Otherwise, if it has only a single option set per user, add it to `isSingleOptionSetAppConfigIntegration()`.
 
-`saveAppOptions` and `deleteAppOptions` accept `appName` in any case and normalize it to the uppercase integration name, which is also the `UserConnection` provider ID and cache key. `UserAppConfigManager` saves and deletes a config set only when it belongs to the expected database app name (for example `app.github`); the comparison is case-insensitive, like the database's.
+`saveAppOptions` and `deleteAppOptions` accept `appName` in any case and normalize it to the uppercase integration name, which is also the `UserConnection` provider ID and cache key. `UserAppConfigManager` saves and deletes a config set only when it belongs to the expected database app name (for example `app.github`); the comparison is case-insensitive, like the database's. When saving config with credentials, use `UserConnectionManager.saveWithNewAppConfigElementSet`, which passes the expected app name for you.
 
 ### 3) Deployment properties (where applicable)
 
@@ -74,6 +74,7 @@ For integrations using OAuth 2.0, implement both of the following:
 2. Create an OAuth controller (see `FigshareOAuthController`, `DMPToolOAuthController` for examples) that:
    - Redirects users to the third-party OAuth authorization page
    - Handles the OAuth callback
+   - Suppresses callback request parameters with `@IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)` so authorization codes and state values never enter request logs
    - Stores the access token using `UserConnectionManager`, never as an app setting (`AppConfigElement` values are not encrypted)
 
 Tokens are never returned to the browser (RSDEV-1525):

@@ -22,6 +22,7 @@ import com.researchspace.slack.SlackAuthToken;
 import com.researchspace.slack.SlackMessage;
 import com.researchspace.slack.SlackUser;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -135,6 +136,7 @@ public class SlackController extends BaseOAuth2Controller {
   }
 
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String handleSlackRedirect(
       @RequestParam Map<String, String> params,
       Model model,
@@ -195,13 +197,13 @@ public class SlackController extends BaseOAuth2Controller {
       log.warn("io exception on contacting oauth.access url: {}", details);
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(details)
               .build();
       model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
       return CONNECTED_VIEW;
     } catch (RuntimeException e) {
-      log.warn("Saving the Slack channel failed: {}", e.getMessage());
+      log.warn("Saving the Slack channel failed", e);
       OauthAuthorizationError error =
           getAuthErrorBuilder()
               .errorMsg(getText("apps.oauth.errors.connection", new Object[] {APP_DISPLAY_NAME}))
@@ -239,10 +241,11 @@ public class SlackController extends BaseOAuth2Controller {
         channel, SLACK_APP_NAME, accessToken, webhookUrl, true, user);
   }
 
-  private static String requiredText(JsonNode node, String field) {
+  private String requiredText(JsonNode node, String field) {
     JsonNode value = node.path(field);
     if (!value.isTextual() || value.asText().isEmpty()) {
-      throw new IllegalArgumentException("Slack's response has no " + field);
+      throw new IllegalArgumentException(
+          getText("apps.slack.errors.missingResponseField", new Object[] {field}));
     }
     return value.asText();
   }

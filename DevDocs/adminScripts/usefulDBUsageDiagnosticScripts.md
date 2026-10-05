@@ -129,7 +129,7 @@ Gets username and email of users who have registered >= 1 Slack channel
 ```mysql
 select u.username, u.email from User u where u.username in \
   (select userId from UserConnection where providerId = 'SLACK');
-```             
+```
 
 ### Figshare usage
 
