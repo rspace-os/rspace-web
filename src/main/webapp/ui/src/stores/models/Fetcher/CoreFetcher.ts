@@ -39,6 +39,7 @@ export const DEFAULT_SEARCH = {
   deletedItems: "EXCLUDE" as const,
   permalink: null,
   benchOwner: null,
+  requestable: null,
 };
 
 export const DEFAULT_FETCHER = {
@@ -82,11 +83,13 @@ export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): Core
     searchParams.get("deletedItems"),
     new Error(`Search parameter "deletedItems" is missing`),
   ).flatMap(parseDeletedItems);
+  const requestable = searchParams.get("requestable");
   return {
     ...(query ? { query } : {}),
     ...(orderBy ? { orderBy } : {}),
     ...(ownedBy ? { ownedBy } : {}),
     ...(parentGlobalId ? { parentGlobalId } : {}),
+    ...(requestable === "true" ? { requestable: true } : {}),
     ...deletedItems.map((dItems) => ({ deletedItems: dItems })).orElse({}),
     ...order.map((o) => ({ order: o })).orElse({}),
     ...pageNumber.map((pNumber) => ({ pageNumber: pNumber })).orElse({}),
@@ -155,6 +158,8 @@ export default class CoreFetcher {
   deletedItems: DeletedItems;
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   benchOwner: Person | null;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  requestable: boolean | null;
   /**
    * Set when a permalink fetch fails, so that the UI can show a specific
    * not-found state (e.g. "version 2 of this subsample was not found")
@@ -188,6 +193,7 @@ export default class CoreFetcher {
       owner: observable,
       deletedItems: observable,
       benchOwner: observable,
+      requestable: observable,
       permalinkNotFound: observable,
       setAttributes: action,
       setPage: action,
@@ -208,6 +214,7 @@ export default class CoreFetcher {
       setParentGlobalId: action,
       setOwner: action,
       setBenchOwner: action,
+      setRequestable: action,
       setLoading: action,
       setResultType: action,
       parentGlobalIdType: computed,
@@ -266,7 +273,9 @@ export default class CoreFetcher {
     }
     this.endpoint = "search";
     if (!this.parentGlobalId) {
-      if (!this.query && this.resultType === "SAMPLE") {
+      // The samples endpoint also accepts a free-text query alongside `requestable`, unlike the
+      // other type-specific endpoints below, so a query doesn't rule it out once requestable is set.
+      if ((!this.query || this.requestable !== null) && this.resultType === "SAMPLE") {
         this.endpoint = "samples";
       }
       if (!this.query && this.resultType === "SUBSAMPLE") {
@@ -632,6 +641,10 @@ export default class CoreFetcher {
 
   setParentGlobalId(parentGlobalId: GlobalId | null) {
     this.parentGlobalId = parentGlobalId;
+  }
+
+  setRequestable(value: boolean | null) {
+    this.requestable = value;
   }
 
   get isOrderDesc(): boolean {

@@ -20,12 +20,15 @@ import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationInProgressException;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import jakarta.ws.rs.NotFoundException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.NestedExceptionUtils;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -119,6 +122,23 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         messages.getMessage(
             "errors.inventory.operation.inProgress", new Object[] {ex.getGlobalId()}));
   }
+
+  /**
+   * MariaDB 11.6+ (innodb_snapshot_isolation) refuses to lock a row changed since the transaction
+   * began, with error 1020; that is a concurrent edit, not a server fault.
+   */
+  @ExceptionHandler(DataAccessException.class)
+  public ResponseEntity<Object> handleDataAccess(
+      final DataAccessException ex, final WebRequest request) {
+    if (NestedExceptionUtils.getMostSpecificCause(ex) instanceof SQLException sql
+        && sql.getErrorCode() == MARIADB_RECORD_CHANGED) {
+      log.warn("concurrent change refused by the database: {}", sql.getMessage());
+      return conflict(messages.getMessage("errors.concurrentChange"));
+    }
+    return handleAll(ex, request);
+  }
+
+  private static final int MARIADB_RECORD_CHANGED = 1020;
 
   // 403
   @ExceptionHandler({APIUnavailableException.class})

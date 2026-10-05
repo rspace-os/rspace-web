@@ -976,10 +976,28 @@ export default class InventoryBaseRecord
           : `${this.recordType}s/${id}`;
       this.fetchingAdditionalInfo = ApiService.query<object>(endpoint, new URLSearchParams(queryParameters));
       const { data } = await this.fetchingAdditionalInfo;
+      this.fetchingAdditionalInfo = null;
       runInAction(() => {
         this.infoLoaded = true;
       });
-      this.populateFromJson(this.factory.newFactory(), data);
+      /*
+       * Defence-in-depth (RSDEV-1309): this fetch can resolve after the record has entered
+       * editing - e.g. it's the fetch that setEditing(true) itself awaits before flipping
+       * `editing` to true, but observably that ordering isn't always honoured, and the user can
+       * start editing (and change a field) before this promise settles. Applying a snapshot taken
+       * before editing began would silently discard whatever the user has already changed.
+       * setEditing(false)'s own post-save/post-cancel refresh always runs after editing is back
+       * to false, and Save applies the server's response directly via update(), not through here,
+       * so neither legitimate caller is affected by skipping while mid-edit.
+       */
+      if (this.editing) {
+        console.warn(
+          `Discarding a stale additional-info refresh for ${this.globalId ?? "UNKNOWN"}: ` +
+            "the record started being edited while this fetch was in flight.",
+        );
+      } else {
+        this.populateFromJson(this.factory.newFactory(), data);
+      }
       await this.fetchImage("image");
       await this.fetchImage("thumbnail");
       return;
