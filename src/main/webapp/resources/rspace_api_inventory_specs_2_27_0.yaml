@@ -5379,7 +5379,12 @@ components:
           type: number
           minimum: 0
           exclusiveMinimum: true
-          description: The amount, greater than zero, to at most three decimal places.
+          multipleOf: 0.001
+          description: |
+            The amount, greater than zero, to at most three decimal places. The server checks the
+            number of decimal places exactly. A validator that computes `multipleOf` in binary
+            floating point needs its precision option (ajv: `multipleOfPrecision`), or it rejects
+            valid amounts such as 1.001.
           example: 5
         unitId:
           type: integer
