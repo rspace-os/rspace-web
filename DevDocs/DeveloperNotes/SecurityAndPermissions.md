@@ -76,7 +76,12 @@ The design and its trade-offs are in
   both waits. On timeout it throws `LoginVerificationBusyException`,
   which the login filter and `ReauthenticatorImpl` deliberately do not
   count toward lockout. Encoding new passwords and the migration are not
-  bounded.
+  bounded at the encoder. The two anonymous routes into `encode()` are
+  capped in front of it instead: `SignupController` refuses submissions
+  beyond `user.signup.maxPerFiveSeconds` (default 10) without waiting, and
+  `PasswordResetByEmailHandlerBase` accepts a reset reply only for a token
+  that is unused and unexpired. Authenticated encodes (password change,
+  user creation, imports) are unbounded by choice (ADR 0011).
 - **No writes, no reauthentication lockout.** A password check never
   writes to the `User` row: an earlier version re-encoded legacy hashes on
   login and counted reauthentication failures on the row, and both broke
