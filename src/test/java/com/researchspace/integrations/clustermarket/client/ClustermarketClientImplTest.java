@@ -26,7 +26,7 @@ class ClustermarketClientImplTest {
   @Mock private UserConnectionManager userConnectionManager;
 
   @Test
-  void detailsRequestsSendTheStoredTokenNotTheMask() {
+  void detailsRequestsSendTheStoredToken() {
     ClustermarketClientImpl client = new ClustermarketClientImpl(userConnectionManager);
     RestTemplate restTemplate = new RestTemplate();
     ReflectionTestUtils.setField(client, "restTemplate", restTemplate);

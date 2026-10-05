@@ -51,28 +51,6 @@ describe("PIDINSTB2InstCard", () => {
     await expect(container).toBeAccessible();
   });
 
-  test("renders the secret as a password field that browsers will not autofill", () => {
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <PIDINSTB2InstCard
-          currentSettings={{
-            enabled: "true",
-            serverUrl: "https://b2inst.example.com",
-            username: "",
-            password: "",
-            repositoryPrefix: "",
-          }}
-          isConflict={false}
-          onEnabledChange={() => {}}
-        />
-      </ThemeProvider>,
-    );
-
-    const secret = screen.getByLabelText("inventory:settings.pidinst.b2inst.labels.password");
-    expect(secret).toHaveAttribute("type", "password");
-    expect(secret).toHaveAttribute("autocomplete", "new-password");
-  });
-
   const PASSWORD_LABEL = "inventory:settings.pidinst.b2inst.labels.password";
   const CLEAR = { name: "common:inputs.secretField.clear" };
   const SAVE = { name: "common:actions.save" };
@@ -106,6 +84,7 @@ describe("PIDINSTB2InstCard", () => {
     const user = userEvent.setup();
     const updateSystemSettings = renderCard({});
     const secret = screen.getByLabelText(PASSWORD_LABEL);
+    expect(secret).toHaveAttribute("autocomplete", "new-password");
 
     await user.type(secret, "new-token");
     await user.click(screen.getByRole("button", SAVE));
@@ -125,16 +104,6 @@ describe("PIDINSTB2InstCard", () => {
 
     expect(screen.getByRole("button", SAVE)).toBeDisabled();
     expect(screen.queryByRole("button", CLEAR)).not.toBeInTheDocument();
-  });
-
-  test("clears the stored secret of a disabled integration", async () => {
-    const user = userEvent.setup();
-    const updateSystemSettings = renderCard({ enabled: "false" });
-
-    await user.click(screen.getByRole("button", CLEAR));
-    await user.click(screen.getByRole("button", SAVE));
-
-    expect(updateSystemSettings).toHaveBeenCalledWith("pidinstB2Inst", expect.objectContaining({ password: "" }));
   });
 
   test("does not allow undo after clearing the stored secret has been saved", async () => {

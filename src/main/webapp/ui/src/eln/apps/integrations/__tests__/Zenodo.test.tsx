@@ -207,25 +207,6 @@ describe("Zenodo", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
-  test("shows the API key as unchanged once the save succeeds", async () => {
-    const user = userEvent.setup();
-    update.mockImplementation((state) => ({
-      ...state,
-      credentials: { ZENODO_USER_TOKEN: Optional.present(null) },
-    }));
-    render(<ZenodoWrapper />);
-    await user.click(await screen.findByRole("button", { name: "apps:integrations.zenodo.name" }));
-    const apiKeyField = screen.getAllByLabelText("apps:integrations.zenodo.fields.apiKey")[0];
-
-    await user.type(apiKeyField, "new-key");
-    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
-
-    await waitFor(() => {
-      expect(apiKeyField).toHaveAttribute("placeholder", "common:inputs.secretField.unchanged");
-    });
-    expect(apiKeyField).toHaveValue("");
-  });
-
   test("locks the API key while a save is pending", async () => {
     const user = userEvent.setup();
     let finishSave!: () => void;
@@ -254,5 +235,6 @@ describe("Zenodo", () => {
     finishSave();
     await waitFor(() => expect(apiKeyField).not.toBeDisabled());
     expect(apiKeyField).toHaveAttribute("placeholder", "common:inputs.secretField.unchanged");
+    expect(apiKeyField).toHaveValue("");
   });
 });

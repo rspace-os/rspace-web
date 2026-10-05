@@ -483,7 +483,7 @@ public class IntegrationsHandlerTest {
 
     IntegrationInfo info = handler.getIntegration(subject, OMERO_APP_NAME);
     assertFalse(info.isOauthConnected());
-    assertNull(info.getOptions().get(ACCESS_TOKEN_SETTING));
+    assertThat(info.getOptions()).doesNotContainKey(ACCESS_TOKEN_SETTING);
   }
 
   @Test

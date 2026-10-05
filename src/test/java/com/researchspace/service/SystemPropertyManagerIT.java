@@ -45,6 +45,8 @@ public class SystemPropertyManagerIT extends RealTransactionSpringTestBase {
         AuthorizationException.class,
         () ->
             sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, user));
+    SystemPropertyValue spv = sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE);
+    assertThrows(AuthorizationException.class, () -> sysPropMgr.save(spv, user));
     assertEquals(before, sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE).getValue());
 
     try {
