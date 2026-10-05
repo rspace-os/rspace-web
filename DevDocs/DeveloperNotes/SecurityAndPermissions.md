@@ -49,7 +49,8 @@ The design and its trade-offs are in
     as `<base64 salt>$<argon2 of Base64(SHA-256(salt || utf8 password))>`,
     with an empty salt for unsalted rows. The SHA-256 is fed to Argon2 as
     the Base64 of its decoded bytes, so the case of the old hex never
-    matters.
+    matters. These values are permanent: a check never rewrites them,
+    and they change only when the user sets a new password.
   - `bcrypt`, verification passwords set before RSDEV-894, prefixed at
     rest by the Liquibase change
     `PrefixBcryptVerificationPasswords_RSDEV894`. It runs after the
@@ -57,7 +58,8 @@ The design and its trade-offs are in
     clears (sets to null) and logs at ERROR by username any other
     non-blank value, since that could never verify. This id only
     reads: it never encodes, and `UsernamePasswordCredentialsMatcher`
-    refuses it for login passwords.
+    refuses it for login passwords. Prefixed values are permanent too;
+    new verification passwords are Argon2id.
 
   An unknown or missing prefix throws `IllegalArgumentException` and the
   check fails closed.
@@ -75,32 +77,21 @@ The design and its trade-offs are in
   which the login filter and `ReauthenticatorImpl` deliberately do not
   count toward lockout. Encoding new passwords and the migration are not
   bounded.
-- **Upgrade on verify.** When a password matches a legacy hash, the
-  verifier returns a fresh Argon2id encoding and the matcher stores it
-  through `UserManager#upgradePasswordHash`, which calls
-  `UserDao#updatePasswordHash`. That is a compare-and-swap on the old
-  hash, so it never reverts a concurrent password change, and it bypasses
-  the change detection in `UserManager#save`, which would otherwise hash
-  the hash. Verification passwords work the same way through
-  `UserManager#upgradeVerificationPasswordHash` and
-  `UserDao#updateVerificationPasswordHash`, against the row of the
-  account whose verification password was checked (the sysadmin under
-  operate-as). Both upgrade methods run in their own transaction
-  (`REQUIRES_NEW`, `userManagerTxAdvice` in
-  `applicationContext-service.xml`), so a failed upgrade is logged and
-  the correct password is still accepted.
-- **Reauthentication lockout.** `ReauthenticatorImpl` checks
-  `IUserAccountLockoutPolicy#isReauthenticationLocked` before any
-  password check, and records failures with
-  `handleReauthenticationFailure`. Signing and witnessing go through
+- **Guess spacing.** After a mismatch the verifier keeps the per-username
+  lock for `login.passwordVerification.failureDelayMillis` (default 1000)
+  with the permit already returned, so one account gets at most one guess
+  per second at login, reauthentication or a verification password check.
+  No database state is involved. A password check never writes to the
+  `User` row: an earlier version re-encoded legacy hashes on login and
+  counted reauthentication failures on the row, and both broke callers
+  that held the same row in their own transaction (ADR 0011, considered
+  options). Failed reauthentication is not counted toward the login-form
+  lockout. Signing and witnessing go through
   `IReauthenticator#reauthenticate`. Changing a verification password
   checks the current one through
   `IReauthenticator#reauthenticateWithVerificationPassword`, which applies
-  the same lockout and busy handling but never substitutes an
-  operating-as sysadmin. This shares the login failure counter
-  and window (4 failures in 2 minutes) but never sets `accountLocked`,
-  because API and SSO logins treat that flag as disabled until a form
-  login clears it.
+  the same busy handling and security logging but never substitutes an
+  operating-as sysadmin.
 
 ## Authorization
 

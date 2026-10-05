@@ -6,10 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.password.BoundedPasswordVerifier;
@@ -24,22 +21,19 @@ import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.CannotAcquireLockException;
 
 @ExtendWith(MockitoExtension.class)
 public class IVerificationPasswordValidatorTest {
   @Mock IPropertyHolder propertyHolder;
-  @Mock UserManager userMgr;
   @Spy RSpacePasswordEncoder passwordEncoder = new RSpacePasswordEncoder();
 
   @Spy
   BoundedPasswordVerifier verifier =
-      new BoundedPasswordVerifier(passwordEncoder, 8, Duration.ofSeconds(5));
+      new BoundedPasswordVerifier(passwordEncoder, 8, Duration.ofSeconds(5), Duration.ZERO);
 
   @InjectMocks private VerificationPasswordValidatorImpl verificationValidator;
   User anyUser;
@@ -97,21 +91,13 @@ public class IVerificationPasswordValidatorTest {
   }
 
   @Test
-  public void prefixedBcryptVerificationPasswordMatchesAndIsUpgraded() {
+  public void prefixedBcryptVerificationPasswordMatchesAndIsNotRewritten() {
     String legacy = "{bcrypt}" + LEGACY_BCRYPT;
     anyUser.setVerificationPassword(legacy);
-    ArgumentCaptor<String> upgraded = ArgumentCaptor.forClass(String.class);
-    when(userMgr.upgradeVerificationPasswordHash(
-            eq(anyUser.getUsername()), eq(legacy), upgraded.capture()))
-        .thenReturn(true);
 
     assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify12345"));
     assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
-
-    assertTrue(upgraded.getValue().startsWith("{argon2@rspace_v1}"));
-    assertEquals(upgraded.getValue(), anyUser.getVerificationPassword());
-    assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
-    verify(userMgr).upgradeVerificationPasswordHash(anyString(), anyString(), anyString());
+    assertEquals(legacy, anyUser.getVerificationPassword());
   }
 
   @Test
@@ -120,21 +106,6 @@ public class IVerificationPasswordValidatorTest {
     assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
     anyUser.setVerificationPassword(null);
     assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
-    verify(userMgr, never()).upgradeVerificationPasswordHash(anyString(), anyString(), anyString());
-  }
-
-  @Test
-  public void failedOrSkippedUpgradeStillMatchesAndKeepsCallerCopy() {
-    String legacy = "{bcrypt}" + LEGACY_BCRYPT;
-    anyUser.setVerificationPassword(legacy);
-    when(userMgr.upgradeVerificationPasswordHash(
-            eq(anyUser.getUsername()), eq(legacy), anyString()))
-        .thenThrow(new CannotAcquireLockException("lock wait"))
-        .thenReturn(false);
-
-    assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
-    assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
-    assertEquals(legacy, anyUser.getVerificationPassword());
   }
 
   @Test
@@ -147,6 +118,5 @@ public class IVerificationPasswordValidatorTest {
     assertThrows(
         LoginVerificationBusyException.class,
         () -> verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
-    verify(userMgr, never()).upgradeVerificationPasswordHash(anyString(), anyString(), anyString());
   }
 }

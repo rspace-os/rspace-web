@@ -67,19 +67,19 @@ covered. A row whose password is not 64 hex characters, or whose salt is not val
 left unchanged and logged at ERROR by username; that user needs an administrator password reset.
 Rows with a null password are not touched. Rows already carrying a prefix are skipped, so a rerun
 changes nothing, and at 500 rows and roughly 50 ms each the change completes in well under a
-minute. On a successful login against a legacy row the hash is re-encoded as plain Argon2id, so
-the nested format disappears as users log in. That write is a compare-and-swap on the old hash
-(`UserDao.updatePasswordHash`), so it never reverts a password change made concurrently, and it
-bypasses the change detection in `UserManager.save` that would otherwise hash the hash.
+minute. The wrapped form is permanent. A password check never writes, so a legacy row stays
+`{argon2-legacy-sha256@rspace_v1}` until its owner changes their password, and Argon2 over the
+old SHA-256 is as hard to guess as Argon2 over the password itself. The change logs its row count
+and Argon2 time at INFO, so every upgrade leaves a timing data point in the server log.
 
 Verification passwords were bcrypt. A second custom change,
 `PrefixBcryptVerificationPasswords_RSDEV894`, runs after the login wrap and prefixes every bare
 bcrypt `verificationPassword` (`$2a`, `$2b`, `$2y`) with `{bcrypt}`, skipping values that already
 carry a registered id. Any other non-blank value could never verify, so it is cleared and logged
-at ERROR by username, and that user sets a new verification password. On next successful use a
-`{bcrypt}` value is re-encoded as Argon2id through the same compare-and-swap,
-`UserDao.updateVerificationPasswordHash`. Both upgrade writes run in their own transaction, so a
-failed upgrade never fails a correct password.
+at ERROR by username, and that user sets a new verification password. A `{bcrypt}` value is
+permanent, like the wrapped login hash: it is read through the shared encoder and never rewritten,
+and only a new verification password is stored as Argon2id. The change logs its row counts at
+INFO.
 
 **Password verification concurrency limit.** Login password verification, at Shiro login and
 at default-realm reauthentication (signing, witnessing, password change, API key and OAuth client
@@ -95,29 +95,25 @@ generic failure the user sees for a wrong password, but through a distinct excep
 users out. Encoding new passwords and the at-rest migration do not go through the verifier and
 are not bounded; both are rare and not attacker-driven.
 
-SSO and Community verification password checks go through the same verifier and pool. Changing
-the verification password checks the current one through
-`IReauthenticator.reauthenticateWithVerificationPassword`, which applies the lockout below and the
-busy handling but never substitutes an operating-as sysadmin. Only LDAP users, who reauthenticate
-against the directory, skip the verifier. Their failures still count toward lockout as described
-next.
+SSO and Community verification password checks go through the same verifier and pool, so the
+rules below apply to them too. Changing the verification password checks the current one through
+`IReauthenticator.reauthenticateWithVerificationPassword`, which applies the busy handling but
+never substitutes an operating-as sysadmin. Only LDAP users, who reauthenticate against the
+directory, skip the verifier; that path is as it was on main.
 
-Two further rules stop a single account from monopolising the pool. First, verifications are
-serialised per username ahead of the semaphore: one username has at most one verification in
-flight, so one account can hold at most one permit, and a burst of parallel login requests for a
-known username hashes one at a time while lockout catches up. One deadline covers both the
+Two further rules stop a single account from monopolising the pool, and neither writes to the
+database. First, verifications are serialised per username ahead of the semaphore: one username
+has at most one verification in flight, so one account can hold at most one permit, and a burst of
+parallel login requests for a known username hashes one at a time. One deadline covers both the
 per-username lock and the permit, so the total wait never exceeds the configured seconds. Second,
-failed reauthentications share the failed-login counter and window in `DefaultLockoutPolicy`
-(four failures inside two minutes, refused until seven minutes after the first).
-`ReauthenticatorImpl` checks `IUserAccountLockoutPolicy.isReauthenticationLocked`, which looks at
-the failure count and window, before any password is checked, and records a failure through
-`handleReauthenticationFailure`. Unlike a failed form login, a failed reauthentication never sets
-the `accountLocked` flag, because API and SSO logins treat that flag as a disabled account until a
-form login clears it, and a few mistyped signing passwords must not have that effect. The OAuth
-password grant reaches reauthentication before the client is validated, so setting the flag there
-would let anyone disable any user's API access with four bad grants. Without
-these rules, an authenticated low-privilege user scripting wrong passwords at the sign endpoint
-could hold every permit indefinitely and deny login to the whole instance.
+after a mismatch the verifier keeps the per-username lock for
+`login.passwordVerification.failureDelayMillis` (default 1000) with the permit already returned to
+the pool, so one account gets at most one guess per second at login or reauthentication, however
+many requests it sends, while other accounts are unaffected. The delay counts against the same
+deadline, so a guess queued behind it is refused as busy rather than piling up. The login-form
+lockout in `DefaultLockoutPolicy` is unchanged; failed reauthentication is not counted toward it.
+Without these rules, an authenticated low-privilege user scripting wrong passwords at the sign
+endpoint could hold every permit indefinitely and deny login to the whole instance.
 
 Only login and reauthentication degrade under attack. Authenticated sessions and the rest of the
 application are unaffected.
@@ -144,8 +140,8 @@ application are unaffected.
   Rejected because the deciding part of this ticket is the legacy wrapper, not the algorithm.
   Shiro's hash-format registry expects standard hashes, so Argon2-over-SHA-256 with an external
   salt needs a custom `HashFormat` or a custom `CredentialsMatcher` in front of `PasswordMatcher`
-  anyway, and Shiro has no built-in upgrade-on-verify hook. Spring's delegating encoder makes the
-  legacy format an ordinary `PasswordEncoder` under its own id and provides `upgradeEncoding`.
+  anyway. Spring's delegating encoder makes the legacy format an ordinary `PasswordEncoder` under
+  its own id.
   The `shiro-hashes-argon2` artifact would also be new to the tree, needs BouncyCastle just the
   same, and `spring-security-crypto` is already a dependency used for the verification password.
 - **OWASP's higher memory profiles (46 MiB or 64 MiB).** Stronger per hash. Rejected: the
@@ -157,6 +153,20 @@ application are unaffected.
   The semaphore does, and is blind to addresses. The two are complementary, not alternatives.
 - **Rely on the servlet thread pool.** Rejected: 200 threads times 19 MiB is 3.8 GB, above
   the heap most customer instances run with.
+- **Re-encode a wrapped hash as plain Argon2id on the next successful login.** Tidier at rest,
+  and Spring's `upgradeEncoding` invites it. Rejected after implementation: a password check must
+  not write. The write had to run in its own `REQUIRES_NEW` transaction so a failed upgrade could
+  not poison the caller's, and under MariaDB's default snapshot isolation (11.6 onwards) that
+  committed write made the caller's later locking read of the same row fail with "Record has
+  changed since last read", breaking the CSV user import on startup. The wrapped form is as strong
+  as plain Argon2id, so there is nothing to gain.
+- **Count failed reauthentications on the `User` row** with the login failure counter, refusing
+  reauthentication after four failures in two minutes. Rejected for the same reason: saving the
+  row from inside the caller's transaction failed the `@Version` check in the OAuth password-grant
+  controllers and changed the operate-as wrong-password path. Setting `accountLocked` was ruled out
+  earlier still, because API and SSO logins treat that flag as a disabled account and the OAuth
+  password grant reaches reauthentication before the client is validated, so four bad grants could
+  disable any user. Replaced by the per-account failure delay, which needs no state.
 
 ## Consequences
 
@@ -168,11 +178,12 @@ application are unaffected.
 - Login password rows the migration cannot parse are left as they were and logged at ERROR by
   username. Those users cannot log in until an administrator resets their password. Unusable
   verification passwords are cleared instead, and those users set a new one.
-- Three encoder ids exist in the database until every legacy user has logged in once and every
-  user with a bcrypt verification password has used it once. The legacy
-  verify path, including Shiro's exact byte ordering for the salted hash, was pinned by tests
-  against fixtures generated with the old Shiro code and then hard-coded, before that code was
-  removed. The salted `CryptoUtils.hashWithSha256inHex` helper is gone.
+- Three encoder ids exist permanently: two in `password` and `{bcrypt}` in `verificationPassword`.
+  A legacy row stays as it is until its owner changes that password.
+  `PasswordEncoder.upgradeEncoding` is implemented but nothing calls it. The legacy verify path,
+  including Shiro's exact byte ordering for the salted hash, was pinned by tests against fixtures
+  generated with the old Shiro code and then hard-coded, before that code was removed. The salted
+  `CryptoUtils.hashWithSha256inHex` helper is gone.
 - `Argon2PasswordEncoder` requires BouncyCastle. Two `bcprov` lines are already on the compile
   classpath: `bcprov-jdk15on` 1.70, a direct dependency since the initial commit and the final
   release of that line, and `bcprov-jdk18on` 1.84, transitive through Shiro 3's
@@ -191,6 +202,9 @@ application are unaffected.
 - The reauthentication path, verification passwords and sysadmin operate-as share the
   `BoundedPasswordVerifier` and so share the permit pool with login, so a login flood also slows
   document signing. Both are authenticated and low volume.
+- A wrong password at login, reauthentication or a verification password check answers after one
+  second instead of at once, and a correct one sent within that second of the same account's wrong
+  guess waits for it. A user who mistypes once notices nothing beyond the pause.
 - Argon2's cost makes the response time for an existing username measurably longer than for an
   unknown one, which never runs a hash. Accepted because usernames are not secret (see Context);
   equalising the timing is out of scope for this ticket.

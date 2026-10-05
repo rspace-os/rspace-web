@@ -3,7 +3,6 @@ package com.researchspace.auth;
 import com.researchspace.auth.password.BoundedPasswordVerifier;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.User;
-import com.researchspace.service.UserManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -14,9 +13,10 @@ import org.springframework.stereotype.Service;
 
 /**
  * Checks a login password against the stored hash for both Shiro login ({@link ShiroRealm}) and
- * reauthentication, through the shared {@link BoundedPasswordVerifier}. A hash stored in an
- * outdated encoding is replaced after a successful match; failing to store it never fails the
- * check.
+ * reauthentication, through the shared {@link BoundedPasswordVerifier}. A check never writes: a
+ * hash stored in the legacy encoding stays as it is (ADR 0011). The {@code {bcrypt}} id the shared
+ * encoder registers for verification passwords is refused here, so a verification password can
+ * never be used to log in.
  */
 @Slf4j
 @Service
@@ -25,15 +25,10 @@ public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
   private static final String BCRYPT_PREFIX = "{" + RSpacePasswordEncoder.BCRYPT_ID + "}";
 
   private @Autowired BoundedPasswordVerifier verifier;
-  private @Autowired UserManager userMgr;
 
-  /**
-   * Checks the password for reauthentication. If the stored hash is upgraded, the caller's {@code
-   * subject} is updated to match, so a later save of it does not treat the old hash as a new
-   * password.
-   */
-  public boolean verifyAndUpgrade(User subject, String suppliedPassword) {
-    return verify(subject.getUsername(), suppliedPassword, subject.getPassword(), subject);
+  /** Checks the password for reauthentication. */
+  public boolean verify(User subject, String suppliedPassword) {
+    return verify(subject.getUsername(), suppliedPassword, subject.getPassword());
   }
 
   @Override
@@ -43,25 +38,19 @@ public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
       return false;
     }
     String username = (String) info.getPrincipals().getPrimaryPrincipal();
-    return verify(username, new String(supplied), (String) info.getCredentials(), null);
+    return verify(username, new String(supplied), (String) info.getCredentials());
   }
 
-  private boolean verify(
-      String username, String suppliedPassword, String storedPassword, User callerCopy) {
+  private boolean verify(String username, String suppliedPassword, String storedPassword) {
     if (storedPassword != null && storedPassword.startsWith(BCRYPT_PREFIX)) {
       log.error("Login password of [{}] has the verification-password-only bcrypt id", username);
       return false;
     }
-    return verifier.verifyAndUpgrade(
-        username,
-        suppliedPassword,
-        storedPassword,
-        (verified, upgraded) -> userMgr.upgradePasswordHash(username, verified, upgraded),
-        upgraded -> {
-          if (callerCopy != null) {
-            callerCopy.setPassword(upgraded);
-            callerCopy.setSalt(null);
-          }
-        });
+    try {
+      return verifier.verify(username, suppliedPassword, storedPassword);
+    } catch (IllegalArgumentException e) {
+      log.error("Stored password of [{}] cannot be verified", username, e);
+      return false;
+    }
   }
 }

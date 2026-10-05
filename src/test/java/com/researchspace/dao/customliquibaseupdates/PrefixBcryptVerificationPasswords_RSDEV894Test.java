@@ -36,20 +36,6 @@ class PrefixBcryptVerificationPasswords_RSDEV894Test extends SpringTransactional
     assertNull(storedVerificationPassword(unknownId));
   }
 
-  @Test
-  void upgradeWriteIsACompareAndSwap() throws Exception {
-    User u = createAndSaveRandomUser();
-    storeVerificationPassword(u, "{bcrypt}" + LEGACY_BCRYPT);
-    assertEquals(
-        0, userDao.updateVerificationPasswordHash(u.getUsername(), "{bcrypt}stale", "{x}new"));
-    assertEquals("{bcrypt}" + LEGACY_BCRYPT, storedVerificationPassword(u));
-    assertEquals(
-        1,
-        userDao.updateVerificationPasswordHash(
-            u.getUsername(), "{bcrypt}" + LEGACY_BCRYPT, "{x}new"));
-    assertEquals("{x}new", storedVerificationPassword(u));
-  }
-
   private PrefixBcryptVerificationPasswords_RSDEV894 runChange() {
     PrefixBcryptVerificationPasswords_RSDEV894 change =
         new PrefixBcryptVerificationPasswords_RSDEV894();

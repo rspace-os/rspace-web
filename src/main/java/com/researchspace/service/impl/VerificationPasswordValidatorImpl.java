@@ -8,19 +8,17 @@ import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IVerificationPasswordValidator;
-import com.researchspace.service.UserManager;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class VerificationPasswordValidatorImpl implements IVerificationPasswordValidator {
 
   protected @Autowired IPropertyHolder properties;
   private @Autowired RSpacePasswordEncoder passwordEncoder;
   private @Autowired BoundedPasswordVerifier verifier;
-  // UserManagerImpl depends on this class
-  private @Autowired @Lazy UserManager userMgr;
 
   @Override
   public boolean isVerificationPasswordSet(User user) {
@@ -46,14 +44,12 @@ public class VerificationPasswordValidatorImpl implements IVerificationPasswordV
   @Override
   public boolean authenticateVerificationPassword(User passwordOwner, String password) {
     String username = passwordOwner.getUsername();
-    return verifier.verifyAndUpgrade(
-        username,
-        password,
-        passwordOwner.getVerificationPassword(),
-        (verified, upgraded) ->
-            userMgr.upgradeVerificationPasswordHash(username, verified, upgraded),
-        // keep the caller's copy in step, or a later save would write the old hash back
-        passwordOwner::setVerificationPassword);
+    try {
+      return verifier.verify(username, password, passwordOwner.getVerificationPassword());
+    } catch (IllegalArgumentException e) {
+      log.error("Stored verification password of [{}] cannot be verified", username, e);
+      return false;
+    }
   }
 
   /**

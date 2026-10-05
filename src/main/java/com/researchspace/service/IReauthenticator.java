@@ -19,8 +19,8 @@ public interface IReauthenticator {
   boolean reauthenticate(User subject, String pwd);
 
   /**
-   * Checks a user's own verification password, e.g. before changing it, with the same lockout and
-   * busy handling as {@link #reauthenticate}. Unlike that method it never substitutes an
+   * Checks a user's own verification password, e.g. before changing it, with the same busy handling
+   * and security logging as {@link #reauthenticate}. Unlike that method it never substitutes an
    * operating-as sysadmin.
    *
    * @param passwordOwner the user whose verification password is checked

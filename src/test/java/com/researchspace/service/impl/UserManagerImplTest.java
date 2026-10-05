@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -75,25 +74,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     ReflectionTestUtils.setField(
         userManager, "verificationPasswordValidator", verificationPasswordValidator);
     ReflectionTestUtils.setField(userManager, "passwordEncoder", passwordEncoder);
-  }
-
-  @Test
-  public void hashUpgradeRefusesValuesThatAreNotCurrentlyEncoded() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> userManager.upgradePasswordHash("any", "{old}x", "plaintext"));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> userManager.upgradePasswordHash("any", "{old}x", "{bcrypt}$2a$10$x"));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> userManager.upgradeVerificationPasswordHash("any", "{bcrypt}x", "plaintext"));
-    verify(userDao, never()).updatePasswordHash(anyString(), anyString(), anyString());
-    verify(userDao, never()).updateVerificationPasswordHash(anyString(), anyString(), anyString());
-
-    String encoded = passwordEncoder.encode("pw");
-    when(userDao.updatePasswordHash("any", "{old}x", encoded)).thenReturn(1);
-    assertTrue(userManager.upgradePasswordHash("any", "{old}x", encoded));
   }
 
   @Test

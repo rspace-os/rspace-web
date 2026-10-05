@@ -5,63 +5,49 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * Runs stored-password checks (Shiro login, default-realm reauthentication and SSO/Community
- * verification passwords) through one shared pool of permits, so the per-check heap allocation is
- * bounded however many requests arrive (ADR 0011). A username has at most one check in flight, so
- * one account cannot hold more than one permit. Encoding new passwords is not bounded.
+ * Runs Argon2 login-password checks (Shiro login and default-realm reauthentication) through one
+ * shared pool of permits, so the per-check heap allocation is bounded however many requests arrive
+ * (ADR 0011). A username has at most one check in flight, so one account cannot hold more than one
+ * permit, and after a wrong guess the username stays held for a configured delay, so one account
+ * gets at most one guess per delay. Encoding new passwords is not bounded.
  */
-@Slf4j
 public class BoundedPasswordVerifier {
-
-  /**
-   * @param matches whether the password matched
-   * @param upgradedHash the password re-encoded with the current default when it matched against an
-   *     outdated encoding, otherwise null
-   */
-  public record Result(boolean matches, String upgradedHash) {
-    public Result {
-      Validate.isTrue(matches || upgradedHash == null, "A mismatch has no upgraded hash");
-    }
-
-    public static Result mismatch() {
-      return new Result(false, null);
-    }
-
-    public static Result matched(String upgradedHash) {
-      return new Result(true, upgradedHash);
-    }
-  }
 
   private final PasswordEncoder encoder;
   private final Semaphore permits;
   private final int maxPermits;
   private final long waitNanos;
+  private final long failureDelayNanos;
   private final ConcurrentHashMap<String, PrincipalLock> principalLocks = new ConcurrentHashMap<>();
 
-  public BoundedPasswordVerifier(PasswordEncoder encoder, int permits, Duration wait) {
+  public BoundedPasswordVerifier(
+      PasswordEncoder encoder, int permits, Duration wait, Duration failureDelay) {
     Validate.notNull(encoder);
     Validate.isTrue(permits >= 1, "Password verification needs at least 1 permit, got %d", permits);
     Validate.isTrue(!wait.isNegative(), "Password verification wait must not be negative");
+    Validate.isTrue(
+        !failureDelay.isNegative(), "Password verification failure delay must not be negative");
     this.encoder = encoder;
     this.maxPermits = permits;
     this.permits = new Semaphore(permits, true);
     this.waitNanos = wait.toNanos();
+    this.failureDelayNanos = failureDelay.toNanos();
   }
 
   /**
    * Checks a password, waiting for the username's turn and then for a free permit, together bounded
-   * by the configured wait.
+   * by the configured wait. A mismatch returns only after the failure delay, during which the
+   * username stays held but its permit is back in the pool.
    *
+   * @return whether the password matched
    * @throws LoginVerificationBusyException if the wait elapses first
    * @throws IllegalArgumentException if the stored value has no recognised encoding
    */
-  public Result verify(String username, CharSequence rawPassword, String encodedPassword) {
+  public boolean verify(String username, CharSequence rawPassword, String encodedPassword) {
     long deadline = System.nanoTime() + waitNanos;
     PrincipalLock principalLock = acquireHolder(username);
     try {
@@ -69,14 +55,11 @@ public class BoundedPasswordVerifier {
         throw busy(username, "another check for this username is still running");
       }
       try {
-        if (!permits.tryAcquire(remaining(deadline), TimeUnit.NANOSECONDS)) {
-          throw busy(username, "all " + maxPermits + " verification permits are in use");
+        boolean matches = matchesWithPermit(username, rawPassword, encodedPassword, deadline);
+        if (!matches) {
+          holdForFailureDelay();
         }
-        try {
-          return check(rawPassword, encodedPassword);
-        } finally {
-          permits.release();
-        }
+        return matches;
       } finally {
         principalLock.lock.unlock();
       }
@@ -88,59 +71,25 @@ public class BoundedPasswordVerifier {
     }
   }
 
-  /** Writes an upgraded hash if the stored value is still the one that was verified. */
-  @FunctionalInterface
-  public interface HashStore {
-    /**
-     * @return whether the stored value was replaced
-     */
-    boolean replace(String verifiedHash, String upgradedHash);
-  }
-
-  /**
-   * Verifies a password and, when it matched an outdated encoding, stores the re-encoded hash.
-   * Storing is best effort: a failed or lost write is logged and the check still succeeds.
-   *
-   * @param store writes the upgraded hash, compare-and-swap on the verified value
-   * @param onStored called with the new hash only once it has been written, so callers can keep an
-   *     in-memory copy in step
-   * @return whether the password matched; false if the stored value has no recognised encoding
-   * @throws LoginVerificationBusyException if no verification slot is free in time
-   */
-  public boolean verifyAndUpgrade(
-      String username,
-      CharSequence rawPassword,
-      String encodedPassword,
-      HashStore store,
-      Consumer<String> onStored) {
-    Result result;
+  private boolean matchesWithPermit(
+      String username, CharSequence rawPassword, String encodedPassword, long deadline)
+      throws InterruptedException {
+    if (!permits.tryAcquire(remaining(deadline), TimeUnit.NANOSECONDS)) {
+      throw busy(username, "all " + maxPermits + " verification permits are in use");
+    }
     try {
-      result = verify(username, rawPassword, encodedPassword);
-    } catch (IllegalArgumentException e) {
-      log.error("Stored password of [{}] cannot be verified", username, e);
-      return false;
+      return encoder.matches(rawPassword, encodedPassword);
+    } finally {
+      permits.release();
     }
-    if (result.upgradedHash() != null) {
-      try {
-        if (store.replace(encodedPassword, result.upgradedHash())) {
-          onStored.accept(result.upgradedHash());
-        } else {
-          log.info(
-              "Stored password of [{}] changed during verification, upgrade skipped", username);
-        }
-      } catch (RuntimeException e) {
-        log.warn("Could not store upgraded password hash of [{}], old hash kept", username, e);
-      }
-    }
-    return result.matches();
   }
 
-  private Result check(CharSequence rawPassword, String encodedPassword) {
-    if (!encoder.matches(rawPassword, encodedPassword)) {
-      return Result.mismatch();
+  private void holdForFailureDelay() {
+    try {
+      TimeUnit.NANOSECONDS.sleep(failureDelayNanos);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
-    return Result.matched(
-        encoder.upgradeEncoding(encodedPassword) ? encoder.encode(rawPassword) : null);
   }
 
   private PrincipalLock acquireHolder(String username) {

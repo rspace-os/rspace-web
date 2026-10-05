@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,16 +17,12 @@ import com.researchspace.model.User;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
-import com.researchspace.webapp.filter.DefaultLockoutPolicy;
-import com.researchspace.webapp.filter.IUserAccountLockoutPolicy;
-import java.util.Date;
 import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,7 +31,6 @@ public class ReauthenticatorTest {
   private @Mock IVerificationPasswordValidator verificationPasswordValidator;
   private @Mock UserLdapRepo userLdapRepo;
   private @Mock UsernamePasswordCredentialsMatcher credentialsMatcher;
-  private @Spy IUserAccountLockoutPolicy lockoutPolicy = new DefaultLockoutPolicy();
 
   private ShiroTestUtils shiroUtils;
   private @Mock Subject subject;
@@ -53,95 +47,47 @@ public class ReauthenticatorTest {
   }
 
   @Test
-  void fourWrongPasswordsLockTheAccountAndTheFifthSkipsTheCheck() {
+  void busyVerificationIsRefused() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-    when(credentialsMatcher.verifyAndUpgrade(user, "wrong")).thenReturn(false);
-
-    for (int i = 0; i < 4; i++) {
-      assertFalse(reauthenticator.reauthenticate(user, "wrong"));
-    }
-    assertEquals(4, user.getNumConsecutiveLoginFailures());
-    // API and SSO logins treat this flag as disabled, and only a form login clears it
-    assertFalse(user.isAccountLocked());
-
-    assertFalse(reauthenticator.reauthenticate(user, "right"));
-    verify(credentialsMatcher, never()).verifyAndUpgrade(user, "right");
-  }
-
-  @Test
-  void correctPasswordResetsFailureCount() {
-    when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-    when(credentialsMatcher.verifyAndUpgrade(user, "wrong")).thenReturn(false);
-    when(credentialsMatcher.verifyAndUpgrade(user, "right")).thenReturn(true);
-
-    assertFalse(reauthenticator.reauthenticate(user, "wrong"));
-    assertEquals(1, user.getNumConsecutiveLoginFailures());
-    assertTrue(reauthenticator.reauthenticate(user, "right"));
-    assertEquals(0, user.getNumConsecutiveLoginFailures());
-    verify(userMgr, times(2)).save(user);
-  }
-
-  @Test
-  void lockoutWindowOverLetsTheCheckRunAndResetsTheCounter() {
-    when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-    when(credentialsMatcher.verifyAndUpgrade(user, "right")).thenReturn(true);
-    user.setAccountLocked(true);
-    user.setNumConsecutiveLoginFailures((byte) 4);
-    user.setLoginFailure(new Date(System.currentTimeMillis() - 8 * 60 * 1000));
-
-    assertTrue(reauthenticator.reauthenticate(user, "right"));
-    assertFalse(user.isAccountLocked());
-    assertEquals(0, user.getNumConsecutiveLoginFailures());
-  }
-
-  @Test
-  void failedLdapReauthenticationIsCounted() {
-    user.setSignupSource(SignupSource.LDAP);
-    when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-    when(userLdapRepo.authenticate(user.getUsername(), "wrong")).thenReturn(null);
-
-    assertFalse(reauthenticator.reauthenticate(user, "wrong"));
-    assertEquals(1, user.getNumConsecutiveLoginFailures());
-    verify(userMgr).save(user);
-  }
-
-  @Test
-  void ownVerificationPasswordCheckIsLockedOutWithoutOperateAsSubstitution() {
-    when(verificationPasswordValidator.authenticateVerificationPassword(user, "wrong"))
-        .thenReturn(false);
-    when(verificationPasswordValidator.authenticateVerificationPassword(user, "busy"))
-        .thenThrow(new LoginVerificationBusyException("busy"));
-
-    assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "busy"));
-    assertEquals(0, user.getNumConsecutiveLoginFailures());
-    for (int i = 0; i < 4; i++) {
-      assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "wrong"));
-    }
-    assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "right"));
-    verify(verificationPasswordValidator, never()).authenticateVerificationPassword(user, "right");
-    verify(userMgr, never()).getOriginalUserForOperateAs(user);
-  }
-
-  @Test
-  void busyVerificationIsRefusedWithoutCountingAFailure() {
-    when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-    when(credentialsMatcher.verifyAndUpgrade(user, "any"))
+    when(credentialsMatcher.verify(user, "any"))
         .thenThrow(new LoginVerificationBusyException("busy"));
 
     assertFalse(reauthenticator.reauthenticate(user, "any"));
+  }
+
+  @Test
+  void failedPasswordCheckWritesNothing() {
+    when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
+    when(credentialsMatcher.verify(user, "wrong")).thenReturn(false);
+
+    assertFalse(reauthenticator.reauthenticate(user, "wrong"));
     assertEquals(0, user.getNumConsecutiveLoginFailures());
     verify(userMgr, never()).save(any(User.class));
   }
 
   @Test
-  void operateAsFailuresCountAgainstTheSysadmin() {
+  void ownVerificationPasswordCheckSkipsOperateAsSubstitution() {
+    when(verificationPasswordValidator.authenticateVerificationPassword(user, "wrong"))
+        .thenReturn(false);
+    when(verificationPasswordValidator.authenticateVerificationPassword(user, "right"))
+        .thenReturn(true);
+    when(verificationPasswordValidator.authenticateVerificationPassword(user, "busy"))
+        .thenThrow(new LoginVerificationBusyException("busy"));
+
+    assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "busy"));
+    assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "wrong"));
+    assertTrue(reauthenticator.reauthenticateWithVerificationPassword(user, "right"));
+    verify(userMgr, never()).getOriginalUserForOperateAs(user);
+    verify(userMgr, never()).save(any(User.class));
+  }
+
+  @Test
+  void operateAsChecksTheSysadminPassword() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(sysadmin);
-    when(credentialsMatcher.verifyAndUpgrade(sysadmin, "wrong")).thenReturn(false);
+    when(credentialsMatcher.verify(sysadmin, "wrong")).thenReturn(false);
 
     assertFalse(reauthenticator.reauthenticate(user, "wrong"));
-    assertEquals(1, sysadmin.getNumConsecutiveLoginFailures());
-    assertEquals(0, user.getNumConsecutiveLoginFailures());
-    verify(credentialsMatcher, never()).verifyAndUpgrade(user, "wrong");
+    verify(credentialsMatcher, never()).verify(user, "wrong");
   }
 
   @Test

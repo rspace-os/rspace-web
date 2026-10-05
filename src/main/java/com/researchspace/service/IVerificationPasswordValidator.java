@@ -13,8 +13,8 @@ public interface IVerificationPasswordValidator {
   boolean isVerificationPasswordSet(User subject);
 
   /**
-   * Checks a candidate verification password through the shared bounded verifier. If it matches an
-   * outdated encoding, the stored hash is re-encoded and {@code passwordOwner} updated to match.
+   * Checks a candidate verification password through the shared bounded verifier. Nothing is
+   * written: a {@code {bcrypt}} value set before RSDEV-894 stays as it is.
    *
    * @param passwordOwner The password owner - can be the subject or an operating-as sysadmin
    * @param password Candidate password

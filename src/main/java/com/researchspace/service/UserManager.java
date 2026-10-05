@@ -315,29 +315,6 @@ public interface UserManager extends GenericManager<User, Long> {
   User getUserByUsernameNoSession(String username);
 
   /**
-   * Stores a login password re-encoded after a successful verification, replacing an outdated
-   * encoding. Writes the hash directly; never pass a plain-text password.
-   *
-   * @param username the login name
-   * @param verifiedPassword the stored value that was verified; nothing is written if the stored
-   *     password has changed since, so a concurrent password change is never undone
-   * @param encodedPassword the encoded password, including its encoder id prefix
-   * @return whether the hash was replaced
-   */
-  boolean upgradePasswordHash(String username, String verifiedPassword, String encodedPassword);
-
-  /**
-   * Stores a verification password re-encoded after a successful verification, replacing an
-   * outdated encoding. Writes the hash directly; never pass a plain-text password.
-   *
-   * @param username the login name of the password's owner
-   * @param verifiedHash the stored value that was verified; nothing is written if it has changed
-   * @param encodedHash the encoded verification password, including its encoder id prefix
-   * @return whether the hash was replaced
-   */
-  boolean upgradeVerificationPasswordHash(String username, String verifiedHash, String encodedHash);
-
-  /**
    * Updates email of existing user
    *
    * @return the updated user

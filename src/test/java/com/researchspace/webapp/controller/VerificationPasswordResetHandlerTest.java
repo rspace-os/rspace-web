@@ -29,7 +29,7 @@ class VerificationPasswordResetHandlerTest {
   private @InjectMocks VerificationPasswordResetHandler handler;
 
   @Test
-  void currentPasswordIsCheckedWithLockoutAndRefusalChangesNothing() {
+  void currentPasswordIsCheckedThroughTheReauthenticatorAndRefusalChangesNothing() {
     User user = TestFactory.createAnyUser("sso");
     when(reauthenticator.reauthenticateWithVerificationPassword(user, "current")).thenReturn(false);
     when(messages.getMessage("passwordChange.errors.incorrectCurrentPassword"))
