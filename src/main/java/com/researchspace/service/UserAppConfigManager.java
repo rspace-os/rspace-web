@@ -18,9 +18,12 @@ public interface UserAppConfigManager extends GenericManager<UserAppConfig, Long
    * @param appId appConfigSetDataId an optional ID, can be null if is a new, transient data
    * @param trustedOrigin some apps should be only updated from trusted sources
    * @param user
+   * @param expectedAppName the database app name, e.g. {@code app.github}; compared
+   *     case-insensitively, like the database does
    * @return
    * @throws IllegalArgumentException if:
    *     <ul>
+   *       <li>the properties belong to an app other than {@code expectedAppName}.
    *       <li>any property is unknown, i.e. it does not have an entry in the PropertyDescriptor
    *           table.
    *       <li>the map size is not the same as the number of configuration elements associated with
@@ -36,20 +39,6 @@ public interface UserAppConfigManager extends GenericManager<UserAppConfig, Long
       Map<String, String> appConfigSetData,
       Long appConfigSetDataId,
       boolean trustedOrigin,
-      User user);
-
-  /**
-   * Saves a config set only when its properties belong to {@code expectedAppName}. Validates the
-   * app identity before creating or updating any configuration.
-   *
-   * @param expectedAppName the normalized database app name, e.g. {@code app.github}
-   * @throws IllegalArgumentException if the properties belong to a different app
-   */
-  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
-  UserAppConfig saveAppConfigElementSet(
-      Map<String, String> appConfigSetData,
-      Long appConfigSetDataId,
-      boolean trustedOrigin,
       User user,
       String expectedAppName);
 
@@ -58,9 +47,16 @@ public interface UserAppConfigManager extends GenericManager<UserAppConfig, Long
    *
    * @param appConfigElementSetId
    * @param The current subject
+   * @param expectedAppName the database app name the set must belong to, compared
+   *     case-insensitively
    * @return The deleted item
+   * @throws org.apache.shiro.authz.AuthorizationException if the set does not exist or the subject
+   *     may not delete it
+   * @throws IllegalArgumentException if the set belongs to an app other than {@code
+   *     expectedAppName}
    */
-  AppConfigElementSet deleteAppConfigSet(Long appConfigElementSetId, User subject);
+  AppConfigElementSet deleteAppConfigSet(
+      Long appConfigElementSetId, User subject, String expectedAppName);
 
   /**
    * Creates or retrieves a {@link UserAppConfig} for the given user and app name

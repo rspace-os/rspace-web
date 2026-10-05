@@ -61,6 +61,8 @@ import org.apache.logging.log4j.util.Strings;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
@@ -256,8 +258,9 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertFalse(info.isEnabled());
   }
 
-  @Test
-  public void updateSlackIntegration() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"SLACK", "slack"})
+  public void updateSlackIntegration(String postedName) throws Exception {
 
     logoutAndLoginAs(piUser);
 
@@ -269,6 +272,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
 
     // now disable slack
     info.setEnabled(false);
+    info.setName(postedName);
     String integrationInfoJson = mvcUtils.getAsJsonString(info);
 
     MvcResult result =

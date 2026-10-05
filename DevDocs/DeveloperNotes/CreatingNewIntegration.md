@@ -47,7 +47,7 @@ Once an integration is available at the system level (sysadmin toggle is on), in
    - Add your integration to `IntegrationsHandlerImpl.isAppConfigIntegration()` if it has more than one option set per user.
    - Otherwise, if it has only a single option set per user, add it to `isSingleOptionSetAppConfigIntegration()`.
 
-`saveAppOptions` and `deleteAppOptions` normalize incoming `appName` values to lowercase and validate that the configuration belongs to that app before saving or deleting it. Existing uppercase integration and `UserConnection` provider IDs remain the canonical storage and cache identifiers.
+`saveAppOptions` and `deleteAppOptions` accept `appName` in any case and normalize it to the uppercase integration name, which is also the `UserConnection` provider ID and cache key. `UserAppConfigManager` saves and deletes a config set only when it belongs to the expected database app name (for example `app.github`); the comparison is case-insensitive, like the database's.
 
 ### 3) Deployment properties (where applicable)
 
