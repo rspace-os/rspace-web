@@ -1,7 +1,6 @@
 package com.researchspace.auth.password;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -56,7 +55,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void ninthConcurrentVerificationTimesOutAsBusy() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200), Duration.ZERO);
+        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200));
     List<Future<Boolean>> running = new ArrayList<>();
     for (int i = 0; i < PERMITS; i++) {
       String user = "user" + i;
@@ -78,7 +77,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void sameUsernameVerifiesOneAtATime() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(5), Duration.ZERO);
+        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(5));
     Future<Boolean> first = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
     awaitEntered(1);
     Future<Boolean> second = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
@@ -97,7 +96,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void sameUsernameBusyWhenFirstCheckOutlastsTheWait() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200), Duration.ZERO);
+        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200));
     Future<Boolean> first = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
     awaitEntered(1);
     assertThrows(
@@ -113,15 +112,10 @@ class BoundedPasswordVerifierTest {
   void rejectsConfigurationThatWouldRefuseEveryCheck() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new BoundedPasswordVerifier(encoder, 0, Duration.ofSeconds(5), Duration.ZERO));
+        () -> new BoundedPasswordVerifier(encoder, 0, Duration.ofSeconds(5)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(-1), Duration.ZERO));
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            new BoundedPasswordVerifier(
-                encoder, PERMITS, Duration.ofSeconds(5), Duration.ofSeconds(-1)));
+        () -> new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(-1)));
   }
 
   @Test
@@ -134,66 +128,10 @@ class BoundedPasswordVerifierTest {
           }
         };
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(failing, PERMITS, Duration.ofSeconds(1), Duration.ZERO);
+        new BoundedPasswordVerifier(failing, PERMITS, Duration.ofSeconds(1));
     assertThrows(IllegalArgumentException.class, () -> verifier.verify("alice", "x", "stored"));
     assertEquals(PERMITS, verifier.availablePermits());
     assertEquals(0, verifier.trackedPrincipals());
-  }
-
-  @Test
-  void wrongGuessHoldsTheUsernameForTheDelayButNotOtherUsernames() throws Exception {
-    encoder.release.countDown();
-    Duration delay = Duration.ofMillis(300);
-    BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(5), delay);
-
-    long start = System.nanoTime();
-    Future<Boolean> wrong = pool.submit(() -> verifier.verify("alice", "bad", "stored"));
-    awaitEntered(1);
-    assertTrue(verifier.verify("bob", "ok", "stored"));
-    assertTrue(elapsedSince(start) < delay.toMillis(), "another username must not wait");
-    assertTrue(verifier.verify("alice", "ok", "stored"));
-    long sameUserElapsed = elapsedSince(start);
-    assertTrue(sameUserElapsed >= delay.toMillis(), "took " + sameUserElapsed + " ms");
-    assertFalse(wrong.get(1, TimeUnit.SECONDS));
-
-    start = System.nanoTime();
-    assertTrue(verifier.verify("alice", "ok", "stored"));
-    assertTrue(elapsedSince(start) < delay.toMillis(), "a match is not delayed");
-  }
-
-  @Test
-  void delayCountsAgainstTheWaitSoAQueuedGuessTimesOutAsBusy() throws Exception {
-    encoder.release.countDown();
-    BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(
-            encoder, PERMITS, Duration.ofMillis(200), Duration.ofMillis(600));
-    Future<Boolean> wrong = pool.submit(() -> verifier.verify("alice", "bad", "stored"));
-    awaitEntered(1);
-
-    assertThrows(
-        LoginVerificationBusyException.class, () -> verifier.verify("alice", "ok", "stored"));
-    assertFalse(wrong.get(2, TimeUnit.SECONDS));
-    assertEquals(0, verifier.trackedPrincipals());
-  }
-
-  @Test
-  void permitIsFreeDuringTheDelay() throws Exception {
-    encoder.release.countDown();
-    BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, 1, Duration.ofMillis(200), Duration.ofSeconds(2));
-    Future<Boolean> wrong = pool.submit(() -> verifier.verify("alice", "bad", "stored"));
-    awaitEntered(1);
-
-    for (int i = 0; i < PERMITS; i++) {
-      assertTrue(verifier.verify("user" + i, "ok", "stored"));
-    }
-    assertFalse(wrong.isDone(), "alice must still be in her delay");
-    assertFalse(wrong.get(3, TimeUnit.SECONDS));
-  }
-
-  private static long elapsedSince(long startNanos) {
-    return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
   }
 
   private void awaitEntered(int count) throws InterruptedException {
