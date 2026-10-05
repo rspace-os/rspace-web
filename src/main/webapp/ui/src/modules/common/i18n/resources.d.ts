@@ -5664,6 +5664,9 @@ export default interface Resources {
       "signing": {
         "failed": "Signing failed"
       },
+      "signup": {
+        "rateLimited": "Too many sign-ups are being processed right now. Please try again in a few seconds."
+      },
       "signupCode": {
         "failed": "Please supply the correct signup code (this is case sensitive)."
       },

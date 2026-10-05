@@ -185,6 +185,9 @@
       }
     },
     "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
+    "signup": {
+      "rateLimited": "Too many sign-ups are being processed right now. Please try again in a few seconds."
+    },
     "composedId": {
       "missing": "No id to retrieve",
       "invalidFormat": "Incorrect id format - should be ''\\d+-\\d+'' but was ''{0}''"
