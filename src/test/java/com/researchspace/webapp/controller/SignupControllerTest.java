@@ -7,12 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
@@ -93,6 +95,25 @@ public class SignupControllerTest {
     BindingResult validErrors = new BeanPropertyBindingResult(valid, "user");
     assertEquals("redirect:workspace", signupCtrller.onSubmit(valid, validErrors, mockRequest));
     assertFalse(validErrors.hasErrors());
+  }
+
+  @Test
+  public void busyPostSignupLoginRedirectsToLoginWithTheAccountKept() throws UserExistsException {
+    signupCtrller.setMaxSignupsPerFiveSeconds(10);
+    signupCtrller.initSignupRateLimiter();
+    when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
+    User user = createAnyUser("busy1");
+    when(manualSignupPolicy.saveUser(eq(user), any())).thenReturn(user);
+    doThrow(new LoginVerificationBusyException("busy"))
+        .when(postSignup)
+        .postUserCreate(eq(user), any(), any());
+    BindingResult errors = new BeanPropertyBindingResult(user, "user");
+
+    String view = signupCtrller.onSubmit(user, errors, mockRequest);
+
+    assertEquals("redirect:login?" + SignupController.ACCOUNT_CREATED_LOGIN_BUSY_PARAM, view);
+    verify(manualSignupPolicy).saveUser(eq(user), any());
+    verify(postSignup, never()).getRedirect(user);
   }
 
   @Test
