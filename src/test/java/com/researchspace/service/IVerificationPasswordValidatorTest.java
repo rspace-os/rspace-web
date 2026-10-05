@@ -33,7 +33,7 @@ public class IVerificationPasswordValidatorTest {
 
   @Spy
   BoundedPasswordVerifier verifier =
-      new BoundedPasswordVerifier(passwordEncoder, 8, Duration.ofSeconds(5), Duration.ZERO);
+      new BoundedPasswordVerifier(passwordEncoder, 8, Duration.ofSeconds(5));
 
   @InjectMocks private VerificationPasswordValidatorImpl verificationValidator;
   User anyUser;
