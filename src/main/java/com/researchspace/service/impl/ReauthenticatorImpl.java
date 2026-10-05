@@ -9,7 +9,6 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.UserManager;
-import com.researchspace.webapp.filter.IUserAccountLockoutPolicy;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +22,11 @@ public class ReauthenticatorImpl implements IReauthenticator {
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
   private @Autowired UserLdapRepo userLdapRepo;
   private @Autowired UsernamePasswordCredentialsMatcher credentialsMatcher;
-  private @Autowired IUserAccountLockoutPolicy lockoutPolicy;
 
   /**
    * Reauthenticates a user; or if is sysadmin operating as a user, sysadmin can reauthenticate with
-   * his own password. Failures share the failed-login counter, and a locked-out account is refused
-   * without checking the password (RSDEV-894).
+   * his own password. A check the password verifier refuses as busy fails like a wrong password
+   * (RSDEV-894). Nothing is written to the user.
    *
    * @param subject The principal user - i.e., the subject, or whoever sysadmin is operating as.
    * @param pwd the password. This should be the subject's password, or the sysadmin password if
@@ -38,33 +36,17 @@ public class ReauthenticatorImpl implements IReauthenticator {
 
     // check this first, before doing any password validation:  rspac-2223
     subject = userMgr.getOriginalUserForOperateAs(subject);
-    String caller = callingAction();
-
-    if (lockoutPolicy.isReauthenticationLocked(subject)) {
-      SECURITY_LOG.warn(
-          "Reauthentication as [{}] by {} refused, the account is temporarily locked",
-          subject.getUsername(),
-          caller);
-      return false;
-    }
 
     boolean authenticated;
     try {
       authenticated = checkPassword(subject, pwd);
     } catch (LoginVerificationBusyException e) {
-      SECURITY_LOG.warn("Reauthentication by {}: {}", caller, e.getMessage());
+      SECURITY_LOG.warn("Reauthentication by {}: {}", callingAction(), e.getMessage());
       return false;
     }
-
-    if (authenticated) {
-      if (subject.getLoginFailure() != null) {
-        lockoutPolicy.handleLockoutOnSuccess(subject);
-        userMgr.save(subject);
-      }
-    } else {
-      SECURITY_LOG.warn("Failed reauthentication as [{}] by {}", subject.getUsername(), caller);
-      lockoutPolicy.handleReauthenticationFailure(subject);
-      userMgr.save(subject);
+    if (!authenticated) {
+      SECURITY_LOG.warn(
+          "Failed reauthentication as [{}] by {}", subject.getUsername(), callingAction());
     }
     return authenticated;
   }
