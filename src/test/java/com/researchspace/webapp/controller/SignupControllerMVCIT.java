@@ -2,7 +2,6 @@ package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -197,15 +196,13 @@ public class SignupControllerMVCIT extends MVCTestBase {
         .andExpect(view().name("passwordReset/resetPasswordFail"));
 
     // and submitting the form again with the used token is refused before any password change
-    MvcResult replay =
-        this.mockMvc
-            .perform(
-                post(SIGNUP_PASSWORD_RESET_REPLY)
-                    .param(PASSWORD_PARAM, "replayedPassword1")
-                    .param(CONFIRM_PASSWORD_PARAM, "replayedPassword1")
-                    .param(TOKEN_PARAM, token.getToken()))
-            .andReturn();
-    assertInstanceOf(IllegalStateException.class, replay.getResolvedException());
+    this.mockMvc
+        .perform(
+            post(SIGNUP_PASSWORD_RESET_REPLY)
+                .param(PASSWORD_PARAM, "replayedPassword1")
+                .param(CONFIRM_PASSWORD_PARAM, "replayedPassword1")
+                .param(TOKEN_PARAM, token.getToken()))
+        .andExpect(view().name("passwordReset/resetPasswordFail"));
 
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user.getUsername(), "newpasswordOK");
     RSpaceTestUtils.logout();
