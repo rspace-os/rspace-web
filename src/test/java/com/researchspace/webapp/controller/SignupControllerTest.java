@@ -4,14 +4,24 @@ import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.axiope.userimport.IPostUserSignup;
+import com.researchspace.Constants;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.ISignupHandlerPolicy;
+import com.researchspace.service.RoleManager;
 import com.researchspace.service.SignupCaptchaVerifier;
+import com.researchspace.service.UserEnablementUtils;
+import com.researchspace.service.UserExistsException;
 import com.researchspace.webapp.filter.SAMLRemoteUserPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,12 +39,60 @@ public class SignupControllerTest {
   @Mock IPropertyHolder properties;
   private @Mock UserValidator userValidator;
   private @Mock SignupCaptchaVerifier captchaVerifier;
+  private @Mock RoleManager roleManager;
+  private @Mock UserEnablementUtils userEnablementUtils;
+  private @Mock ISignupHandlerPolicy manualSignupPolicy;
+  private @Mock IPostUserSignup postSignup;
   MockHttpServletRequest mockRequest;
   @InjectMocks SignupController signupCtrller;
 
   @BeforeEach
   public void setUp() throws Exception {
     mockRequest = new MockHttpServletRequest();
+  }
+
+  @Test
+  public void signupBeyondTheRateLimitIsRefusedWithoutSaving() throws UserExistsException {
+    signupCtrller.setMaxSignupsPerFiveSeconds(1);
+    signupCtrller.initSignupRateLimiter();
+    when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
+    User first = createAnyUser("first1");
+    when(manualSignupPolicy.saveUser(eq(first), any())).thenReturn(first);
+    when(postSignup.getRedirect(first)).thenReturn("redirect:workspace");
+
+    BindingResult firstErrors = new BeanPropertyBindingResult(first, "user");
+    assertEquals("redirect:workspace", signupCtrller.onSubmit(first, firstErrors, mockRequest));
+
+    User second = createAnyUser("second2");
+    BindingResult secondErrors = new BeanPropertyBindingResult(second, "user");
+    assertEquals("signup", signupCtrller.onSubmit(second, secondErrors, mockRequest));
+    assertTrue(secondErrors.hasGlobalErrors());
+    assertEquals("errors.signup.rateLimited", secondErrors.getGlobalError().getCode());
+    verify(manualSignupPolicy, never()).saveUser(eq(second), any());
+  }
+
+  @Test
+  public void invalidSignupDoesNotConsumeARateLimitSlot() throws UserExistsException {
+    signupCtrller.setMaxSignupsPerFiveSeconds(1);
+    signupCtrller.initSignupRateLimiter();
+    when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
+    User invalid = createAnyUser("invalid1");
+    BindingResult invalidErrors = new BeanPropertyBindingResult(invalid, "user");
+    doAnswer(
+            invocation -> {
+              invalidErrors.rejectValue("email", "errors.required");
+              return null;
+            })
+        .when(userValidator)
+        .validate(invalid, invalidErrors);
+    assertEquals("signup", signupCtrller.onSubmit(invalid, invalidErrors, mockRequest));
+
+    User valid = createAnyUser("valid1");
+    when(manualSignupPolicy.saveUser(eq(valid), any())).thenReturn(valid);
+    when(postSignup.getRedirect(valid)).thenReturn("redirect:workspace");
+    BindingResult validErrors = new BeanPropertyBindingResult(valid, "user");
+    assertEquals("redirect:workspace", signupCtrller.onSubmit(valid, validErrors, mockRequest));
+    assertFalse(validErrors.hasErrors());
   }
 
   @Test

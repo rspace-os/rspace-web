@@ -5893,6 +5893,9 @@ export default interface Resources {
         "failed": "Signing failed",
         "structuredDocumentRequired": "only structured documents can be signed"
       },
+      "signup": {
+        "rateLimited": "Too many sign-ups are being processed right now. Please try again in a few seconds."
+      },
       "signupCode": {
         "failed": "Please supply the correct signup code (this is case sensitive)."
       },
