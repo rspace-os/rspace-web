@@ -5810,6 +5810,9 @@ export default interface Resources {
         "invalid": "Invalid password.",
         "notEqualUsername": "Please use a password other than your username."
       },
+      "passwordReset": {
+        "rateLimited": "Too many password resets are being processed right now. Please try again in a few seconds."
+      },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
         "failed": "Reauthentication failed, please try again."
