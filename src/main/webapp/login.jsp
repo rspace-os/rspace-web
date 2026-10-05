@@ -85,6 +85,9 @@
       ${applicationScope['RS_DEPLOY_PROPS']['customLoginContent']}
       <p/>
     </c:if>
+      <c:if test="${param.accountCreatedLoginBusy != null}">
+        <p class="text-info" style="padding: 5px" role="status"><spring:message code="signup.accountCreatedLoginBusy"/></p>
+      </c:if>
       <fieldset>
 
         <div class="form-group col-lg-12 rs-field rs-field--input">
