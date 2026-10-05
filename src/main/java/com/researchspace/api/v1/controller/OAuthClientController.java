@@ -11,6 +11,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
@@ -40,6 +41,8 @@ public class OAuthClientController {
   @Autowired private UserManager userManager;
 
   @Autowired private OAuthTokenManager tokenManager;
+
+  @Autowired private OAuthAppManager appManager;
 
   @Autowired private IReauthenticator reauthenticator;
 
@@ -86,6 +89,13 @@ public class OAuthClientController {
       if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
         throw new IllegalArgumentException(
             messages.getMessage("oauth.errors.passwordGrantMissingCredentials"));
+      }
+      if (!appManager.isClientSecretCorrect(clientId, clientSecret)) {
+        SECURITY_LOG.warn(
+            "OAuth password flow request with invalid client [{}], from {}",
+            clientId,
+            RequestUtil.remoteAddr(request));
+        throw new ApiAuthenticationException("oauth.errors.tokenCreationFailed");
       }
       try {
         User user = userManager.getUserByUsernameOrAlias(username);
