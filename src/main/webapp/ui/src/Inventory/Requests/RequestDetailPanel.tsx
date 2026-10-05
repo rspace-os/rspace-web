@@ -42,7 +42,7 @@ import type { OperationResult } from "../components/Operations/operationsApi";
 import { useOperationWizardLauncher } from "../components/Operations/useOperationWizardLauncher";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
-import type { ApiSampleRequestListItem } from "./RequestsList";
+import { type ApiSampleRequestListItem, userDisplayName } from "./RequestsList";
 import RequestsStatusChip, { STATUS_BACKGROUND } from "./RequestsStatusChip";
 import { notifySampleRequestStatusChanged } from "./sampleRequestEvents";
 
@@ -448,7 +448,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       });
   };
 
-  const requesterFullName = `${request.requester.firstName} ${request.requester.lastName}`;
+  const requesterFullName = userDisplayName(request.requester, t);
   const isActionableState = status === "PENDING" || status === "APPROVED";
   const prepareSampleEnabled = isActionableState && selectedSubsampleId !== null;
   const rejectColors = { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" };
@@ -552,11 +552,15 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <HeadingContext level={4}>
             <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               <DetailField label={t("requestsManagement.detail.fields.requester")}>
-                <UserDetails
-                  userId={request.requester.id}
-                  fullName={`${request.requester.firstName} ${request.requester.lastName}`}
-                  position={["bottom", "right"]}
-                />
+                {request.requester.id === null ? (
+                  requesterFullName
+                ) : (
+                  <UserDetails
+                    userId={request.requester.id}
+                    fullName={requesterFullName}
+                    position={["bottom", "right"]}
+                  />
+                )}
               </DetailField>
               <DetailField label={t("requestsManagement.detail.fields.submitted")}>
                 {isoToLocale(request.created)}

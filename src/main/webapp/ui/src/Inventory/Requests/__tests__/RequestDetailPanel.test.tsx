@@ -207,6 +207,44 @@ describe("RequestDetailPanel", () => {
     expect(screen.getByRole("button", { name: "inventory:requestsManagement.detail.rejectButton" })).toBeEnabled();
   });
 
+  it("shows the requester's username with a 'Deleted' suffix, rather than a user-details lookup, once their account has been deleted", async () => {
+    renderPanel(baseRequest({ requester: { ...REQUESTER, id: null } }));
+    await waitForInitialFetches();
+
+    // Not the firstName/lastName lookup chip used for a live account (no account exists any
+    // more to look up), and not the account's possibly-stale first/last name either.
+    expect(screen.queryByText("Rita Requester")).toBeNull();
+    expect(screen.getByText("inventory:requestsManagement.userDeleted")).toBeInTheDocument();
+  });
+
+  it("shows a Request History entry's createdBy username with a 'Deleted' suffix once their account has been deleted", async () => {
+    apiGet.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") {
+        return Promise.resolve({
+          data: {
+            statusChanges: [
+              {
+                id: 1,
+                status: "APPROVED",
+                created: "2026-01-02T10:00:00Z",
+                createdBy: { id: null, username: "old-owner", firstName: "Olive", lastName: "Owner" },
+                reason: null,
+                transferredSample: null,
+              },
+            ],
+            sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
+          },
+        });
+      }
+      if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }] } });
+      return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
+    });
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    expect(screen.getByText("inventory:requestsManagement.userDeleted")).toBeInTheDocument();
+  });
+
   it("hides owner-only actions and shows a Cancel option for a non-owner viewing a pending request", async () => {
     currentUser.value = REQUESTER;
     renderPanel(baseRequest());

@@ -16,13 +16,14 @@ import NoValue from "@/components/NoValue";
 import StyledMenu from "@/components/StyledMenu";
 import UserDetails from "@/components/UserDetails";
 import { isoToLocale } from "@/util/Util";
+import { userDisplayName } from "./RequestsList";
 import RequestsStatusChip from "./RequestsStatusChip";
 
 export type ApiSampleRequestStatusChangeItem = {
   id: number;
   status: string;
   created: string;
-  createdBy: { id: number; firstName: string; lastName: string };
+  createdBy: { id: number | null; username: string; firstName: string; lastName: string };
   reason: string | null;
   transferredSample: { id: number; globalId: string; name: string } | null;
 };
@@ -104,11 +105,15 @@ export default function RequestHistoryTable({
                 <RequestsStatusChip status={change.status} />
               </TableCell>
               <TableCell>
-                <UserDetails
-                  userId={change.createdBy.id}
-                  fullName={`${change.createdBy.firstName} ${change.createdBy.lastName}`}
-                  position={["bottom", "right"]}
-                />
+                {change.createdBy.id === null ? (
+                  userDisplayName(change.createdBy, t)
+                ) : (
+                  <UserDetails
+                    userId={change.createdBy.id}
+                    fullName={userDisplayName(change.createdBy, t)}
+                    position={["bottom", "right"]}
+                  />
+                )}
               </TableCell>
               <TableCell>
                 {column === "date" ? (

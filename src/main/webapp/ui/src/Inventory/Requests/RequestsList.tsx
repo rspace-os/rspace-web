@@ -11,6 +11,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import type { TFunction } from "i18next";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -33,9 +34,30 @@ export type ApiSampleRequestListItem = {
   status: string;
   created: string;
   note: string | null;
-  requester: { id: number; username: string; firstName: string; lastName: string };
+  requester: { id: number | null; username: string; firstName: string; lastName: string };
   sample: { id: number; globalId: string; name: string; owner: { id: number } };
 };
+
+/**
+ * Shared by every place a SampleRequest's response names a user by id/username/firstName/
+ * lastName: the requester, and each status change's createdBy. A null id means that account has
+ * since been deleted - there is then nothing to look up (no profile exists any more, under that
+ * id or otherwise), so firstName/lastName (whatever their state at deletion) are not shown
+ * either; username is the one field guaranteed to still meaningfully identify who it was.
+ *
+ * Takes `t` rather than calling useTranslation itself so it can be shared by any caller already
+ * resolving the "inventory" namespace (as every current caller does) regardless of which other
+ * namespaces they also requested - i18next's generated TFunction type is otherwise invariant in
+ * its namespace list, which would make this reject some of those callers for no real reason.
+ */
+export function userDisplayName(
+  person: { id: number | null; username: string; firstName: string; lastName: string },
+  t: TFunction<readonly ["inventory", "common"]>,
+): string {
+  return person.id === null
+    ? t("inventory:requestsManagement.userDeleted", { username: person.username })
+    : `${person.firstName} ${person.lastName}`;
+}
 
 export type RequestsFilter = "all" | "sent" | "received";
 export type StatusFilter = "all" | "active" | "past";
@@ -50,7 +72,9 @@ function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): n
     case "sample":
       return request.sample.id;
     case "requester":
-      return request.requester.id;
+      // A deleted account's id is null; sorting them consistently to one end beats a
+      // comparison against null/undefined behaving inconsistently across browsers.
+      return request.requester.id ?? Number.NEGATIVE_INFINITY;
     case "status":
       return request.status;
     case "submitted":
@@ -58,15 +82,21 @@ function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): n
   }
 }
 
-function renderColumnCell(request: ApiSampleRequestListItem, column: ColumnKey): React.ReactNode {
+function renderColumnCell(
+  request: ApiSampleRequestListItem,
+  column: ColumnKey,
+  t: TFunction<readonly ["inventory", "common"]>,
+): React.ReactNode {
   if (column === "sample") {
     return <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />;
   }
   if (column === "requester") {
-    return (
+    return request.requester.id === null ? (
+      userDisplayName(request.requester, t)
+    ) : (
       <UserDetails
         userId={request.requester.id}
-        fullName={`${request.requester.firstName} ${request.requester.lastName}`}
+        fullName={userDisplayName(request.requester, t)}
         position={["bottom", "right"]}
       />
     );
@@ -291,9 +321,9 @@ export default function RequestsList({
                   onClick={() => onSelect(request)}
                   sx={{ cursor: "pointer" }}
                 >
-                  <TableCell>{renderColumnCell(request, "sample")}</TableCell>
-                  <TableCell>{renderColumnCell(request, "requester")}</TableCell>
-                  <TableCell>{renderColumnCell(request, adjustableColumn)}</TableCell>
+                  <TableCell>{renderColumnCell(request, "sample", t)}</TableCell>
+                  <TableCell>{renderColumnCell(request, "requester", t)}</TableCell>
+                  <TableCell>{renderColumnCell(request, adjustableColumn, t)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

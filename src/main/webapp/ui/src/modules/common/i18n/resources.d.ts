@@ -4457,7 +4457,8 @@ export default interface Resources {
       "landmark": "Requests",
       "noResults": "No requests found.",
       "noSelection": "Select a request to see its details.",
-      "pageTitle": "Requests"
+      "pageTitle": "Requests",
+      "userDeleted": "{username} (Deleted)"
     },
     "sample": {
       "alerts": {
