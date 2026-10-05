@@ -44,9 +44,6 @@ public abstract class SecurityBaseConfig {
   @Value("${login.passwordVerification.waitSeconds:5}")
   private int passwordVerificationWaitSeconds;
 
-  @Value("${login.passwordVerification.failureDelayMillis:1000}")
-  private long passwordVerificationFailureDelayMillis;
-
   @Bean
   public RSpacePasswordEncoder passwordEncoder() {
     return new RSpacePasswordEncoder();
@@ -57,8 +54,7 @@ public abstract class SecurityBaseConfig {
     return new BoundedPasswordVerifier(
         passwordEncoder(),
         maxConcurrentPasswordVerifications,
-        Duration.ofSeconds(passwordVerificationWaitSeconds),
-        Duration.ofMillis(passwordVerificationFailureDelayMillis));
+        Duration.ofSeconds(passwordVerificationWaitSeconds));
   }
 
   @Bean
