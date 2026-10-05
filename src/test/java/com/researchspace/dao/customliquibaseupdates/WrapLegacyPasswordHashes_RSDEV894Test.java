@@ -28,7 +28,12 @@ class WrapLegacyPasswordHashes_RSDEV894Test extends SpringTransactionalTest {
     storeRaw(salted, SALTED_HEX, SALT);
     storeRaw(unsalted, UNSALTED_HEX, null);
 
-    runChange();
+    String message = runChange().getConfirmationMessage();
+    assertTrue(
+        message.matches(
+            "Wrapped 2 legacy password hashes in Argon2id, skipped 0:"
+                + " encode \\d+ ms \\(\\d+\\.\\d ms/row, max \\d+ ms\\), loop \\d+ ms"),
+        message);
     String saltedWrapped = storedPassword(salted);
     String unsaltedWrapped = storedPassword(unsalted);
     assertWrapped(saltedWrapped);
