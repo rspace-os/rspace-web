@@ -16,7 +16,6 @@ You can find our official changelog at https://documentation.researchspace.com/a
   - New optional `deployment.properties` keys limit how many login and reauthentication password checks run at once, since each check holds about 19 MiB of heap:
     - `login.passwordVerification.maxConcurrent`, default `8`
     - `login.passwordVerification.waitSeconds`, the seconds a check waits for a free slot, default `5`. A check that times out shows the usual wrong-password message but does not count toward account lockout.
-    - `login.passwordVerification.failureDelayMillis`, default `1000`. After a wrong password, the same account's next login or reauthentication check (signing, witnessing, password change, OAuth password grant) cannot start for this long, so one account gets at most one guess per second. Nothing is recorded against the account and the existing login lockout is unchanged.
 
 # 2.27.0 2026-10-02
 

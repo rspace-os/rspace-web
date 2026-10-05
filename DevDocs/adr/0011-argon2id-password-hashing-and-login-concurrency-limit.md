@@ -89,19 +89,15 @@ password (bcrypt today, moved onto the shared encoder by the stacked PR describe
 Consequences) and LDAP users, who reauthenticate against the directory. Those paths are as they
 were on main: no lockout, no spacing.
 
-Two further rules stop a single account from monopolising the pool, and neither writes to the
-database. First, verifications are serialised per username ahead of the semaphore: one username
-has at most one verification in flight, so one account can hold at most one permit, and a burst of
-parallel login requests for a known username hashes one at a time. One deadline covers both the
-per-username lock and the permit, so the total wait never exceeds the configured seconds. Second,
-after a mismatch the verifier keeps the per-username lock for
-`login.passwordVerification.failureDelayMillis` (default 1000) with the permit already returned to
-the pool, so one account gets at most one guess per second at login or reauthentication, however
-many requests it sends, while other accounts are unaffected. The delay counts against the same
-deadline, so a guess queued behind it is refused as busy rather than piling up. The login-form
-lockout in `DefaultLockoutPolicy` is unchanged; failed reauthentication is not counted toward it.
-Without these rules, an authenticated low-privilege user scripting wrong passwords at the sign
-endpoint could hold every permit indefinitely and deny login to the whole instance.
+One further rule stops a single account from monopolising the pool, and it writes nothing to the
+database: verifications are serialised per username ahead of the semaphore. One username has at
+most one verification in flight, so one account can hold at most one permit, and a burst of
+parallel requests for a known username hashes one at a time. One deadline covers both the
+per-username lock and the permit, so the total wait never exceeds the configured seconds. The
+login-form lockout in `DefaultLockoutPolicy` is unchanged; failed reauthentication is not counted
+toward it, and there is no other per-account rate limit on reauthentication (see Consequences).
+Without the per-username rule, an authenticated low-privilege user scripting wrong passwords at
+the sign endpoint could hold every permit indefinitely and deny login to the whole instance.
 
 Only login and reauthentication degrade under attack. Authenticated sessions and the rest of the
 application are unaffected.
@@ -154,7 +150,14 @@ application are unaffected.
   controllers and changed the operate-as wrong-password path. Setting `accountLocked` was ruled out
   earlier still, because API and SSO logins treat that flag as a disabled account and the OAuth
   password grant reaches reauthentication before the client is validated, so four bad grants could
-  disable any user. Replaced by the per-account failure delay, which needs no state.
+  disable any user.
+- **Hold the account for one second after a wrong guess**, in memory, as the stateless
+  replacement for the lockout above. Rejected after review: the delay slept on the servlet worker
+  while holding the per-username lock, so an anonymous burst of wrong guesses for one account could
+  park one Jetty worker per request for up to the five-second wait and starve requests unrelated
+  to authentication. Refusing instead of sleeping would have let one wrong guess per second deny an
+  account's correct logins. Neither is worth the one property it bought, a per-account guess cap
+  at endpoints without lockout, so reauthentication keeps only the per-username rule.
 
 ## Consequences
 
@@ -188,9 +191,12 @@ application are unaffected.
   intended failure mode, replacing an out-of-memory JVM.
 - The reauthentication path and sysadmin operate-as share the `BoundedPasswordVerifier` and so
   share the permit pool with login. Both are authenticated and low volume.
-- A wrong password at login or reauthentication answers after one second instead of at once, and
-  a correct one sent within that second of the same account's wrong guess waits for it. A user who
-  mistypes once notices nothing beyond the pause.
+- Reauthentication has no per-account rate limit beyond one check in flight at a time. The
+  anonymous OAuth password grant (`/oauth/token`) checks the user's password before validating the
+  client, so an unregistered client can try on the order of 10 to 40 passwords per second against
+  one account, bounded only by Argon2 cost and the per-username lock, and can tell a right password
+  from a wrong one by the error it gets. On `main` the same route hashed every guess with no limit.
+  Validating the client before the password closes it and is a separate ticket against `main`.
 - Argon2's cost makes the response time for an existing username measurably longer than for an
   unknown one, which never runs a hash. Accepted because usernames are not secret (see Context);
   equalising the timing is out of scope for this ticket.
