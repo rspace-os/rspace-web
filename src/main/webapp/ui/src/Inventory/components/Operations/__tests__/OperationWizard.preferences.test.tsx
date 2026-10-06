@@ -171,6 +171,7 @@ describe("OperationWizard with the real preference hook", () => {
           values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
           template: { mode: "pick", templateId: 5, templateName: "T5" },
           documentation: { globalId: "SD1", name: "D1" },
+          placement: null,
         },
       },
       names: { derive: ["dna extraction"] },

@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import ApiService from "@/common/InvApiService";
+import ContainerModel, { type ContainerAttrs } from "@/stores/models/ContainerModel";
+import MemoisedFactory from "@/stores/models/Factory/MemoisedFactory";
 import { getApiErrorDetails } from "@/util/error";
 import type { FacadeRequest } from "./buildOperationRequest";
 import type { InventoryOperation } from "./operations";
@@ -99,4 +101,13 @@ export async function placeSubSamples(records: ReadonlyArray<PlacementRecord>): 
     results: Array<{ error?: { errors: Array<string> } | null }>;
   }>(records, "MOVE", true);
   if (data.errorCount > 0) throw new PlacementRefused(data.results.flatMap((r) => r.error?.errors ?? []));
+}
+
+/** A container with its locations, as the placement step needs it. */
+export async function fetchContainer(id: number): Promise<ContainerModel> {
+  const { data } = await ApiService.query<ContainerAttrs>(
+    `containers/${id}`,
+    new URLSearchParams({ includeContent: "true" }),
+  );
+  return new ContainerModel(new MemoisedFactory(), data);
 }
