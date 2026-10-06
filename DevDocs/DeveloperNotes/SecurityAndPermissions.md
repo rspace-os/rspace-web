@@ -83,7 +83,9 @@ The design and its trade-offs are in
   default 4) through the hash and save, and refuse at once when none is
   free, leaving a reset token usable. The reset reply also accepts only a
   token that is unused and unexpired. Authenticated encodes (password change,
-  user creation, imports) are unbounded by choice (ADR 0011).
+  user creation, imports) are unbounded by choice (ADR 0011). The initial
+  verification-password set is serialised per user in memory, and a
+  duplicate submission returns success without hashing.
 - **Busy post-signup login.** Standalone signup logs the new user in
   through the same verifier. A `LoginVerificationBusyException` there does
   not abort signup: `DefaultPostUserCreate` finishes the PI promotion and

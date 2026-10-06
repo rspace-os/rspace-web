@@ -6,6 +6,12 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+import lombok.AccessLevel;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,6 +36,21 @@ public class VerificationPasswordController extends BaseController {
 
   private @Autowired UserValidator userValidator;
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
+
+  /**
+   * How long an initial set waits for another in-flight set by the same user, normally one hash and
+   * one save. The bound only matters if the database stalls.
+   */
+  @Setter(AccessLevel.PACKAGE) // for testing
+  private Duration initialSetWait = Duration.ofSeconds(5);
+
+  private final ConcurrentHashMap<String, InitialSetLock> initialSetLocks =
+      new ConcurrentHashMap<>();
+
+  private static class InitialSetLock {
+    final ReentrantLock lock = new ReentrantLock();
+    int holders;
+  }
 
   @Autowired
   @Qualifier("verificationPasswordResetHandler")
@@ -95,13 +116,50 @@ public class VerificationPasswordController extends BaseController {
       return new AjaxReturnObject<>(checkPasswordResult, null);
     }
 
-    String encryptedPass = verificationPasswordValidator.hashVerificationPassword(newPass);
+    // One initial set per user at a time, so one account cannot hold several Argon2 encodes and
+    // a duplicate submission does not overwrite the first.
+    String username = user.getUsername();
+    InitialSetLock initialSetLock = acquireHolder(username);
+    try {
+      if (!initialSetLock.lock.tryLock(initialSetWait.toNanos(), TimeUnit.NANOSECONDS)) {
+        SECURITY_LOG.warn(
+            "User [{}] could not set verification password, from {}: another set is still running",
+            username,
+            RequestUtil.remoteAddr(request));
+        return new AjaxReturnObject<>(getText("verificationPassword.set.errors.busy"), null);
+      }
+      try {
+        User current = userManager.getUserByUsername(username, true);
+        if (!verificationPasswordValidator.isVerificationPasswordSet(current)) {
+          current.setVerificationPassword(
+              verificationPasswordValidator.hashVerificationPassword(newPass));
+          userManager.saveUser(current);
+          SECURITY_LOG.info("User [{}] successfully set verification password", username);
+        }
+        return new AjaxReturnObject<>(getText("verificationPassword.set.success"), null);
+      } finally {
+        initialSetLock.lock.unlock();
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return new AjaxReturnObject<>(getText("verificationPassword.set.errors.busy"), null);
+    } finally {
+      releaseHolder(username);
+    }
+  }
 
-    user.setVerificationPassword(encryptedPass);
-    userManager.saveUser(user);
+  private InitialSetLock acquireHolder(String username) {
+    return initialSetLocks.compute(
+        username,
+        (k, existing) -> {
+          InitialSetLock lock = existing == null ? new InitialSetLock() : existing;
+          lock.holders++;
+          return lock;
+        });
+  }
 
-    SECURITY_LOG.info("User [{}] successfully set verification password", user.getUsername());
-    return new AjaxReturnObject<>(getText("verificationPassword.set.success"), null);
+  private void releaseHolder(String username) {
+    initialSetLocks.computeIfPresent(username, (k, lock) -> --lock.holders == 0 ? null : lock);
   }
 
   /**

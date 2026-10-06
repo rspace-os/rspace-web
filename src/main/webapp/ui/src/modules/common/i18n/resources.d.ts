@@ -5130,7 +5130,8 @@ export default interface Resources {
     "verificationPassword": {
       "set": {
         "errors": {
-          "alreadySet": "Verification password has already been set."
+          "alreadySet": "Verification password has already been set.",
+          "busy": "The server is busy, please try again."
         },
         "success": "Verification password set successfully"
       }
