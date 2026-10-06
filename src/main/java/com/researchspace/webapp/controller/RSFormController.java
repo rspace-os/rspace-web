@@ -58,6 +58,7 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
@@ -116,6 +117,7 @@ public class RSFormController extends BaseController {
     model.addAttribute("fieldKeys", FIELD_KEYS);
     model.addAttribute("editStatus", form.getEditStatus());
     model.addAttribute("templateOperation", FormOperation.CREATE);
+    model.addAttribute("copiedTemporaryFieldIds", Set.of());
     model.addAttribute(
         "publish_allowed",
         systemPropertyPermissionManager.isPropertyAllowed(subject, "public_sharing"));
@@ -319,6 +321,24 @@ public class RSFormController extends BaseController {
     return new ModelAndView("workspace/editor/editform_fieldforms");
   }
 
+  @GetMapping("ajax/getFieldRow")
+  public ModelAndView viewFieldRow(@RequestParam("fieldId") long fieldId, Model model) {
+    User subject = userManager.getAuthenticatedUserInSession();
+    FieldForm field = formManager.getField(fieldId);
+    AbstractForm form = field.getForm();
+    if (!permissionUtils.isPermitted(form, PermissionType.WRITE, subject)) {
+      throw new AuthorizationException(
+          getText(
+              "errors.authorization.failure.editFormDescription",
+              new Object[] {subject.getUsername()}));
+    }
+    model.addAttribute("field", field);
+    model.addAttribute("template", form);
+    model.addAttribute("templateOperation", formOperation(form));
+    model.addAttribute("copiedTemporaryFieldIds", copiedTemporaryFieldIds(form));
+    return new ModelAndView("workspace/editor/include/fieldFormRow");
+  }
+
   /**
    * Deletes a field from a form - TO BE USED WITH CAUTION as will lead to data integrity problems
    * with users' data
@@ -414,6 +434,18 @@ public class RSFormController extends BaseController {
     model.addAttribute("fieldKeys", FIELD_KEYS);
     model.addAttribute("editStatus", form.getEditStatus());
     model.addAttribute("templateOperation", FormOperation.EDIT);
+    model.addAttribute("copiedTemporaryFieldIds", copiedTemporaryFieldIds(form));
+  }
+
+  private Set<Long> copiedTemporaryFieldIds(AbstractForm form) {
+    if (form instanceof RSForm rsForm) {
+      return formManager.getCopiedTemporaryFieldIds(rsForm);
+    }
+    return Set.of();
+  }
+
+  private FormOperation formOperation(AbstractForm form) {
+    return form.isNewState() && !form.isTemporary() ? FormOperation.CREATE : FormOperation.EDIT;
   }
 
   @GetMapping("list")

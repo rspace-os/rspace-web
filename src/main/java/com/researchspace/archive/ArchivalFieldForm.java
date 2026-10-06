@@ -17,6 +17,9 @@ public class ArchivalFieldForm {
   @XmlAttribute(name = "id", required = true)
   private Long formFieldId;
 
+  @XmlAttribute(name = "required", required = true)
+  private boolean isMandatory;
+
   @XmlElement String code;
 
   @XmlElement private String name;
