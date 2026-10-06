@@ -221,5 +221,5 @@ amount whose category no longer fits is repaired before it reaches the form.
   and kept suggesting a suffix for a free name. The DAO query now excludes them. This also
   changes the advisory check behind `POST /samples`; there is no unique constraint on
   `Sample.name`, so nothing breaks.
-- **The wizard remounts on every open** (`key` toggled with `open` in `useOperationWizardLauncher`), so
-  no state from a cancelled run survives into the next one.
+- **The wizard remounts on every open**: `useOperationWizardLauncher` mounts it only while it is
+  open, so each launch is a fresh mount and no state from a cancelled run survives into the next one.

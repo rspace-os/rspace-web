@@ -9,8 +9,7 @@ to each) and can pour every origin out completely; **Destroy** is **terminal**, 
 creates no sample, empties the origin, and stamps a disposal date on the origin
 itself (DevDocs/adr/0011).
 
-The design rationale is in the single consolidated ADR `DevDocs/adr/0011`, whose
-2026-09-16 amendment records why the operations stopped being configuration. The
+The design rationale is in the single consolidated ADR `DevDocs/adr/0011`. The
 shared vocabulary is in the top-level `CONTEXT.md`.
 
 ## The one thing to know
@@ -44,7 +43,7 @@ to turn the property on first, as the operation MVCITs do in their `setup()`.
 operations.ts (a hand-typed constant)
           │
           ▼
-OperationWizard (UI) ──collects the operation's values──► buildFacadeRequest.ts
+OperationWizard (UI) ──collects the operation's values──► buildOperationRequest.ts
                                                                   │
                                                                   ▼
                                     POST /api/inventory/v1/operations/<key>
@@ -88,15 +87,15 @@ Files:
     the helpers the wizard derives from it. Label and field-name keys are typed as the
     `inventory:` catalog's own key union, so a mistyped key fails at compile time.
     `MAX_ORIGINS` repeats the Pool body's own ceiling.
-  - `buildFacadeRequest.ts` — pure: (operation + collected values + origins) into the
-    body that operation's endpoint takes. `withUniqueFieldNames` lives here too, for
+  - `buildOperationRequest.ts` — pure: `buildFacadeRequest` turns (operation + collected
+    values + origins) into the body that operation's endpoint takes. `withUniqueFieldNames` lives here too, for
     the confirmation preview; it is the same rule as `OperationFieldNames`, pinned to
     it by `FieldNameUniquenessParityTest` over the shared cases in
     `src/test/resources/inventory/fieldNameUniquenessCases.json`.
   - `types.ts` — the wizard's own types, mirroring the request bodies.
   - the wizard components (`OperationWizard`, `OperationPicker`,
-    `OperationDetailsStep`, `DocumentationStep`, `OperationConfirmation`,
-    `ProcessAction`).
+    `OperationDetailsStep`, `TemplateStep`, `WizardTemplatePicker`, `DocumentationStep`,
+    `OperationConfirmation`); `ProcessAction`, the context-menu entry, is in `ContextMenu/`.
   - `useOperationWizardLauncher` — the only sanctioned way to open the wizard. It runs
     the same checks the context menu runs (operations enabled, non-deleted subsamples
     only), owns the origins' edit locks for the wizard's lifetime, and returns
@@ -129,7 +128,7 @@ Files:
 
 3. **Add the endpoint**: one method on `InventoryOperationsApi`, one on the
    controller delegating to `perform(theOperation, request, errors, user)`, and one
-   `@Autowired` field for the operation. The controller has no per-operation logic.
+   constructor parameter and final field for the operation. The controller has no per-operation logic.
 
 4. **Add the wizard entry** to the `operations` constant in `operations.ts`,
    mirroring the Java class: which inputs the wizard collects, the effect wiring the
@@ -142,7 +141,7 @@ Files:
    Field names written onto records are resolved in the user's locale and stored as
    data; use ICU interpolation (single braces), never concatenation. Any new error
    message needs an entry in `server.inventory.json`, which
-   `InventoryOperationsErrorCatalogTest` enforces. See `FrontendI18nKeys.md`.
+   `InventoryOperationsErrorCatalogTest` enforces.
 
 6. **Add it to the published OpenAPI spec**
    (`src/main/webapp/resources/rspace_api_inventory_specs_2_27_0.yaml`, tag
@@ -224,8 +223,7 @@ defaults to 4 degrees Celsius. Both defaults are applied by the operation class.
 The core works with an origin LIST and a server-built sample, so the controller
 renames its error paths back to what the caller sent on the way out
 (`InventoryOperationsApiController.facadeField`): `origins[0].amountTaken` to
-`origin.amountTaken`, `origins[1].id` to `origins[1].globalId`,
-`newSample.templateId` to `templateId`, `newSample.subSamples[i].quantity` to
+`origin.amountTaken`, `newSample.templateId` and `newSample.fields[...]` to `templateId`, `newSample.subSamples[i].quantity` to
 `eachAmount`, `newSample.name` to `sampleName`, `newSample.storageTempMin`/`Max` to
 `storageTemp`. The caller's own field names pass through untouched.
 
@@ -271,7 +269,7 @@ enforced there too (Perform is blocked with the reason shown).
    amount** (0, or a quantity never set), this step shows an error
    (`operations.fields.originAmountZero`) and blocks Next: you cannot operate on an empty
    subsample.
-2. **Template** — its own step now (see below). For a first-time run the parent
+2. **Template** — its own step (see below). For a first-time run the parent
    sample's own template is preselected when it has one
    (`initialTemplateSelection`); otherwise Next is disabled until a choice is made.
 3. **Amounts** — the number of new subsamples (full width) and the two quantities
@@ -287,7 +285,9 @@ enforced there too (Perform is blocked with the reason shown).
    uses the origin subsample's own category (you remove mass from a mass sample),
    regardless of the template, and must not exceed the origin's current quantity
    (DevDocs/adr/0011): over-removal is flagged inline and blocks Next
-   (`amountTakenExceedsOrigin`).
+   (`amountTakenExceedsOrigin`). Pool offers one amount taken from every origin, a
+   separate amount per origin (`amountMode: "perSubsample"`), or taking all of every
+   origin, which sends `takeAll: true` and no amounts.
 
 Details and Amounts are two slices of the same `OperationDetailsStep` (a `section`
 prop selects which inputs render); the `count`/each-amount/amount-taken inputs are the
@@ -302,8 +302,7 @@ confirmation — (a plain
 checkbox with explanatory helper text beneath it, `rememberProcessValuesHelp`) governs
 everything kept for a process name — the template choice, the
 documentation link, and the collected amounts — as a single bundle
-(`processValues.ts`, preference `INVENTORY_OPERATIONS`; supersedes the
-earlier per-item template/doc/amount preferences). Ticking it only marks the current
+(`processValues.ts`, preference `INVENTORY_OPERATIONS`). Ticking it only marks the current
 form for saving; it never reloads the stored bundle, so untick, edit, re-tick saves the
 edited values. Unticking changes nothing on the form and deletes nothing that was
 saved; it only switches the save off. The checkbox reflects the saved state as the process name changes (checked +
@@ -375,8 +374,8 @@ fields in the wizard is deferred.
   `mvn test -Dtest='*Operation*Test' -Dfast=true`.
 - Backend, end to end: the operation `*MVCIT` classes. Run with
   `mvn verify -Denvironment=drop-recreate-db -Dtest=A,B`; this resets the database.
-- Frontend: `src/main/webapp/ui/src/Inventory/components/Operations/__tests__`, plus the
-  pure helpers' own tests beside the helpers. `pnpm test <path>` from the repo root.
+- Frontend: `src/main/webapp/ui/src/Inventory/components/Operations/__tests__`, plus
+  `ProcessAction.test.tsx` and `ContextActions.process.test.tsx` in `ContextMenu/__tests__`. `pnpm test <path>` from the repo root.
 - The field-name uniqueness rule is implemented in both languages, and
   `src/test/resources/inventory/fieldNameUniquenessCases.json` is the only thing tying
   them together: `FieldNameUniquenessParityTest` and `buildOperationRequest.test.ts` both
@@ -384,8 +383,7 @@ fields in the wizard is deferred.
 
 ## Out of scope (current)
 
-Per-origin (unequal) pooling amounts, link-field de-duplication across consecutive
-in-place operations, and list-view entry points. Multi-origin operations (Pool) are
+Link-field de-duplication across consecutive in-place operations. Multi-origin operations (Pool) are
 supported (DevDocs/adr/0011), and terminal operations that create no new sample and add a custom
 field to the origin (Destroy) are supported (DevDocs/adr/0011): the server adds the declared
 origin field itself. General in-place editing of arbitrary existing
