@@ -885,6 +885,7 @@ function OperationWizard({
           // A terminal operation (Destroy) has nothing to remember (no template/amounts/documentation),
           // so passing no handler hides the checkbox.
           onRememberChange={operation.noOutput ? undefined : onRememberChange}
+          placement={placement}
         />
       </>
     );
