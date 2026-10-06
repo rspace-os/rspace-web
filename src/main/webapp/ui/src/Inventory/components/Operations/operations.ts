@@ -35,6 +35,7 @@ export type ConfirmSummaryField =
   | "cryomedium"
   | "linkBack"
   | "documentation"
+  | "location"
   | "originEmptied"
   | "originFields";
 
@@ -122,7 +123,7 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       amountTakenFrom: "amountTaken",
       links: [{ relationType: "IsPartOf", fieldNameKey: "operations.aliquot.linkFieldName" }],
     },
-    confirmSummary: ["template", "subsamples", "amountTaken", "linkBack", "documentation"],
+    confirmSummary: ["template", "subsamples", "amountTaken", "linkBack", "documentation", "location"],
   },
   {
     key: "passage",
@@ -136,7 +137,7 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       eachAmountFrom: "eachAmount",
       links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.passage.linkFieldName" }],
     },
-    confirmSummary: ["template", "subsamples", "linkBack", "documentation"],
+    confirmSummary: ["template", "subsamples", "linkBack", "documentation", "location"],
   },
   {
     key: "pool",
@@ -153,7 +154,7 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       amountTakenFrom: "amountTaken",
       links: [{ relationType: "HasPart", fieldNameKey: "operations.pool.linkFieldName" }],
     },
-    confirmSummary: ["template", "subsamples", "amountTaken", "linkBack", "documentation"],
+    confirmSummary: ["template", "subsamples", "amountTaken", "linkBack", "documentation", "location"],
   },
   {
     key: "derive",
@@ -181,7 +182,7 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       processNameFrom: "processName",
       links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.derive.linkFieldName" }],
     },
-    confirmSummary: ["process", "template", "subsamples", "amountTaken", "linkBack", "documentation"],
+    confirmSummary: ["process", "template", "subsamples", "amountTaken", "linkBack", "documentation", "location"],
   },
   {
     key: "cryopreserve",
@@ -210,7 +211,16 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       storageTempFrom: "storageTemp",
       links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.cryopreserve.linkFieldName" }],
     },
-    confirmSummary: ["template", "subsamples", "amountTaken", "storageTemp", "cryomedium", "linkBack", "documentation"],
+    confirmSummary: [
+      "template",
+      "subsamples",
+      "amountTaken",
+      "storageTemp",
+      "cryomedium",
+      "linkBack",
+      "documentation",
+      "location",
+    ],
   },
   {
     key: "revive",
@@ -239,7 +249,7 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       storageTempFrom: "storageTemp",
       links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.revive.linkFieldName" }],
     },
-    confirmSummary: ["template", "subsamples", "amountTaken", "storageTemp", "linkBack", "documentation"],
+    confirmSummary: ["template", "subsamples", "amountTaken", "storageTemp", "linkBack", "documentation", "location"],
   },
   {
     key: "destroy",
