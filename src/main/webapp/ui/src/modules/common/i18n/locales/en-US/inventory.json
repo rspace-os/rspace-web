@@ -1792,6 +1792,17 @@
     "placement": {
       "container": "Place in a container",
       "description": "Choose where the new subsamples go once they are created.",
+      "status": {
+        "cannotStoreSamples": "This container cannot hold subsamples. Choose another container.",
+        "deleted": "This container is in the trash. Choose another container.",
+        "image": "Image containers are not supported yet. Choose a grid or list container.",
+        "loading": "Loading the container…",
+        "noPermission": "You do not have permission to place items in this container. Choose another container.",
+        "notEnoughSpace": "Only {free} of the {count} locations needed are free. Choose another container.",
+        "ready": "The new subsamples will be placed in {container}.",
+        "selectSlots": "{count, plural, one {Select # more location.} other {Select # more locations.}}",
+        "workbench": "To keep the new subsamples on your workbench, choose \"Leave on my workbench\"."
+      },
       "workbench": "Leave on my workbench"
     },
     "pool": {
