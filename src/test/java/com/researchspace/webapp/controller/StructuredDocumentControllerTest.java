@@ -5,6 +5,7 @@ import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -23,6 +24,7 @@ import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.audittrail.AuditTrailService;
@@ -250,10 +252,62 @@ public class StructuredDocumentControllerTest {
     verify(auditMgr, never()).restoredDeletedForView(anyLong());
   }
 
+  @Test
+  public void sanitizesDBRepoLinksForAnonymousStructuredDocumentView() {
+    StructuredDocument sd = setUpStructuredDocumentWithDBRepoLinks();
+    User anonymous = TestFactory.createAnyUser(RecordGroupSharing.ANONYMOUS_USER);
+
+    strucDocCtrller.sanitizeForPublicViewIfAnonymous(sd, anonymous);
+
+    String publicHtml = sd.getFields().get(0).getFieldData();
+    assertTrue(publicHtml.contains("Recent experiments"));
+    assertTrue(publicHtml.contains("table Experiments"));
+    assertTrue(publicHtml.contains("Alpha"));
+    assertFalse(publicHtml.contains("href="));
+    assertFalse(publicHtml.contains("target="));
+    assertFalse(publicHtml.contains("dbrepo_link"));
+    assertFalse(publicHtml.contains("data-dbrepo-"));
+    assertFalse(publicHtml.contains("SELECT * FROM private_data"));
+  }
+
+  @Test
+  public void doesNotSanitizeDBRepoLinksForNonAnonymousStructuredDocumentView() {
+    StructuredDocument sd = setUpStructuredDocumentWithDBRepoLinks();
+
+    strucDocCtrller.sanitizeForPublicViewIfAnonymous(sd, user);
+
+    String html = sd.getFields().get(0).getFieldData();
+    assertTrue(html.contains("href=\"https://dbrepo.example/database/db-1/view/view-1\""));
+    assertTrue(html.contains("target=\"_blank\""));
+    assertTrue(html.contains("dbrepo_link"));
+    assertTrue(html.contains("data-dbrepo-query=\"SELECT * FROM private_data\""));
+  }
+
   @NotNull
   private StructuredDocument setUpStructuredDocument() {
     final StructuredDocument sd = TestFactory.createAnySD();
     sd.setId(3L);
+    return sd;
+  }
+
+  @NotNull
+  private StructuredDocument setUpStructuredDocumentWithDBRepoLinks() {
+    StructuredDocument sd = setUpStructuredDocument();
+    sd.getFields()
+        .get(0)
+        .setFieldData(
+            """
+            <p><a class="dbrepo_link"
+               href="https://dbrepo.example/database/db-1/view/view-1"
+               target="_blank"
+               data-dbrepo-type="view"
+               data-dbrepo-query="SELECT * FROM private_data"
+               data-dbrepo-url="https://dbrepo.example/database/db-1/view/view-1">Recent experiments</a></p>
+            <table data-tableSource="dbrepo">
+              <tr><th><a href="https://dbrepo.example/database/db-1/table/table-1" target="_blank">table Experiments</a></th></tr>
+              <tr><td>Alpha</td></tr>
+            </table>
+            """);
     return sd;
   }
 

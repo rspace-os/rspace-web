@@ -94,6 +94,12 @@
         "loadingPlayer": "Loading the player ...",
         "playerNotAvailable": "Player not available"
       },
+      "dbrepo": {
+        "dialogTitle": "DBRepo link details",
+        "insertLink": "Insert link",
+        "insertRows": "Insert rows",
+        "insertRowsHint": "Insert rows needs a table or view. Expand a database to choose one."
+      },
       "nfs": {
         "actionFailed": "{0} action failed ({1}), if that does not work contact your System Admin",
         "actionLogin": "Login",

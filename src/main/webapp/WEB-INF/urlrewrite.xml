@@ -108,6 +108,10 @@
         <to>/scripts/externalTinymcePlugins/clustermarket/dialog.jsp</to>
     </rule>
     <rule>
+        <from>/scripts/externalTinymcePlugins/dbrepo/dialog.html</from>
+        <to>/scripts/externalTinymcePlugins/dbrepo/dialog.jsp</to>
+    </rule>
+    <rule>
         <from>/scripts/externalTinymcePlugins/galaxy/dialog.html</from>
         <to>/scripts/externalTinymcePlugins/galaxy/dialog.jsp</to>
     </rule>
