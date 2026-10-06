@@ -42,9 +42,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.PropertyDescriptor;
@@ -445,6 +447,62 @@ public class IntegrationsHandlerTest {
   }
 
   @Test
+  public void newConfigurationsRequireNonBlankCredentials() {
+    Map<String, String> credentials =
+        Map.of(
+            DATAVERSE_APP_NAME, DATAVERSE_APIKEY,
+            DSW_APP_NAME, DSW_APIKEY,
+            MSTEAMS_APP_NAME, MSTEAMS_WEBHOOK_URL);
+
+    for (Map.Entry<String, String> credential : credentials.entrySet()) {
+      Map<String, String> nullCredential = new HashMap<>();
+      nullCredential.put(credential.getValue(), null);
+      List<Map<String, String>> invalidOptions =
+          List.of(
+              Map.of(),
+              nullCredential,
+              Map.of(credential.getValue(), ""),
+              Map.of(credential.getValue(), " \t\n"));
+
+      for (Map<String, String> options : invalidOptions) {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> handler.saveAppOptions(null, options, credential.getKey(), false, subject));
+      }
+    }
+
+    verifyNoInteractions(appCfgMgr, userConnectionManager);
+  }
+
+  @Test
+  public void nonBlankCredentialsAllowNewConfigurations() {
+    AppConfigElementSet configSet = new AppConfigElementSet();
+    ReflectionTestUtils.setField(configSet, "id", 42L);
+    UserAppConfig savedConfig = Mockito.mock(UserAppConfig.class);
+    when(savedConfig.getAppConfigElementSets()).thenReturn(Set.of(configSet));
+    when(appCfgMgr.saveAppConfigElementSet(any(), isNull(), eq(false), eq(subject), anyString()))
+        .thenReturn(savedConfig);
+
+    Map<String, String> credentials =
+        Map.of(
+            DATAVERSE_APP_NAME, DATAVERSE_APIKEY,
+            DSW_APP_NAME, DSW_APIKEY,
+            MSTEAMS_APP_NAME, MSTEAMS_WEBHOOK_URL);
+    for (Map.Entry<String, String> credential : credentials.entrySet()) {
+      Map<String, String> options = new HashMap<>();
+      options.put(credential.getValue(), "new-credential");
+      if (DSW_APP_NAME.equals(credential.getKey())) {
+        options.put(DSW_ALIAS, "dswAlias");
+      }
+      handler.saveAppOptions(null, options, credential.getKey(), false, subject);
+    }
+
+    verify(appCfgMgr, times(3))
+        .saveAppConfigElementSet(any(), isNull(), eq(false), eq(subject), anyString());
+    verify(userConnectionManager, times(3)).save(any());
+  }
+
+  @Test
   public void nullCredentialOnUpdateKeepsStoredDataverseApiKey() {
     Map<String, String> settings = new HashMap<>();
     settings.put("DATAVERSE_ALIAS", "tenant");
@@ -761,7 +819,7 @@ public class IntegrationsHandlerTest {
   }
 
   @Test
-  public void testSaveDSWAppConfigOption() {
+  public void nullCredentialOnUpdateKeepsStoredDSWApiKey() {
     String origDswAlias = "dswAlias";
     String origDswUrl = "dsw.url.org";
     String origDswToken = "abc123";
@@ -783,26 +841,18 @@ public class IntegrationsHandlerTest {
                 new PropertyDescriptor(DSW_APIKEY, SettingsType.STRING, null)),
             origDswToken));
 
-    UserConnection existingConnection = new UserConnection();
-    existingConnection.setDisplayName("DSW Display Name");
-    existingConnection.setRank(1);
-    existingConnection.setId(
-        new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
-    existingConnection.setExpireTime(0l);
-    existingConnection.setAccessToken(origDswToken);
+    when(appCfgMgr.findByAppConfigElementSetId(1L)).thenReturn(Optional.of(aces));
 
-    // The potentially updated options that are being passed in
-    // from the UI.  Note that the API Key is null, which is how a stored
-    // key is returned to the UI and means "keep it".
+    // The UI posts null for the stored key, which means "keep it".
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, origDswAlias);
     dswOptions.put(DSW_URL, origDswUrl);
     dswOptions.put(DSW_APIKEY, null);
 
-    handler.saveAppOptions(null, dswOptions, DSW_APP_NAME, false, subject);
-    Mockito.verify(userConnectionManager, times(0))
+    handler.saveAppOptions(1L, dswOptions, DSW_APP_NAME, false, subject);
+    verify(userConnectionManager, never())
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
-    Mockito.verify(userConnectionManager, times(0)).save(any());
+    verify(userConnectionManager, never()).save(any());
   }
 
   @Test
