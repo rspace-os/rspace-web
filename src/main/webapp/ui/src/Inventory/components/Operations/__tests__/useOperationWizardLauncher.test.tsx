@@ -9,7 +9,7 @@ import type { OperationResult } from "../operationsApi";
 import { useOperationWizardLauncher } from "../useOperationWizardLauncher";
 import { fakeServerLocks } from "./fakeServerLocks";
 
-const created: OperationResult = { id: 9, globalId: "SA9", name: "New" };
+const created: OperationResult = { id: 9, globalId: "SA9", name: "New", subSamples: [] };
 const wizardMounted = vi.fn();
 vi.mock("../OperationWizard", () => ({
   default: (props: {

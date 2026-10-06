@@ -1432,6 +1432,98 @@ describe("OperationWizard remember bundle", () => {
   });
 });
 
+const BULK_URL = "/api/inventory/v1/bulk";
+
+/** The operation creates two subsamples, and every bulk request is recorded with `reply` as its answer. */
+function createTwoAndRecordBulk(reply: Record<string, unknown> = { errorCount: 0, successCount: 2, results: [] }) {
+  const bulkBodies: Array<Record<string, unknown>> = [];
+  server.use(
+    http.post(
+      OPERATION_URL,
+      () =>
+        HttpResponse.json(
+          {
+            sample: {
+              ...created.sample,
+              subSamples: [
+                { id: 21, globalId: "SS21" },
+                { id: 22, globalId: "SS22" },
+              ],
+            },
+          },
+          { status: 201 },
+        ),
+      { once: true },
+    ),
+    http.post(BULK_URL, async ({ request }) => {
+      bulkBodies.push((await request.json()) as Record<string, unknown>);
+      return HttpResponse.json(reply);
+    }),
+  );
+  return bulkBodies;
+}
+
+async function performIntoShelf(user: ReturnType<typeof userEvent.setup>, onClose: () => void, onPerformed = vi.fn()) {
+  const shelf = makeMockContainer({ id: 5, globalId: "IC5", name: "Shelf", cType: "LIST" });
+  placementTarget.container = shelf;
+  render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} onPerformed={onPerformed} />);
+  await reachPlacement(user, "dna");
+  await user.click(screen.getByTestId("place-container"));
+  await user.click(nextButton()); // placement -> confirm
+  await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+  return shelf;
+}
+
+describe("OperationWizard placement after Perform", () => {
+  it("moves the created subsamples into the chosen container after the operation", async () => {
+    const bulkBodies = createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    await performIntoShelf(user, onClose);
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(bulkBodies).toHaveLength(1);
+    expect(bulkBodies[0]).toMatchObject({
+      operationType: "MOVE",
+      rollbackOnError: true,
+      records: [
+        { id: 21, type: "SUBSAMPLE", globalId: "SS21", parentContainers: [expect.objectContaining({ id: 5 })] },
+        { id: 22, type: "SUBSAMPLE", globalId: "SS22", parentContainers: [expect.objectContaining({ id: 5 })] },
+      ],
+    });
+  });
+
+  it("leaves the subsamples on the workbench without a move when no container was chosen", async () => {
+    const bulkBodies = createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
+    await reachConfirm(user, "dna");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(bulkBodies).toHaveLength(0);
+  });
+
+  it("warns, still closes and still reports the operation when the move is refused", async () => {
+    createTwoAndRecordBulk({
+      errorCount: 1,
+      successCount: 0,
+      results: [{ error: { errors: ["Container is full"] } }, { error: { errors: [] } }],
+    });
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onPerformed = vi.fn();
+    await performIntoShelf(user, onClose, onPerformed);
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(onPerformed).toHaveBeenCalledWith(expect.objectContaining({ globalId: "SS9" }));
+    const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
+    expect(alerts).toEqual([expect.objectContaining({ variant: "warning", message: "Container is full" })]);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
 describe("OperationWizard rejection paths and multi-origin gating", () => {
   it("keeps a Pool open on a non-field rejection, shows its message and re-reads every origin", async () => {
     rejectOnce(409, { message: "The subsample's quantity changed", errors: [""] });

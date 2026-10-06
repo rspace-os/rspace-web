@@ -6,7 +6,7 @@ import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 import type { InventoryOperation } from "../operations";
 import { operations } from "../operations";
-import { performOperation, sampleNameAvailable, useDescribeOperationError } from "../operationsApi";
+import { performOperation, placeSubSamples, sampleNameAvailable, useDescribeOperationError } from "../operationsApi";
 
 function operationNamed(key: string): InventoryOperation {
   const operation = operations.find((o) => o.key === key);
@@ -18,10 +18,15 @@ const query = vi.fn((_resource: string, _params: URLSearchParams) =>
   Promise.resolve({ data: { valid: true } as { valid?: boolean; message?: string } }),
 );
 const post = vi.fn((_resource: string, _body: unknown) => Promise.resolve({ data: null as unknown }));
+const bulk = vi.fn((_records: unknown, _operationType: string, _rollbackOnError: boolean) =>
+  Promise.resolve({ data: { errorCount: 0, successCount: 1, results: [] } as unknown }),
+);
 vi.mock("@/common/InvApiService", () => ({
   default: {
     query: (resource: string, params: URLSearchParams) => query(resource, params),
     post: (resource: string, body: unknown) => post(resource, body),
+    bulk: (records: unknown, operationType: string, rollbackOnError: boolean) =>
+      bulk(records, operationType, rollbackOnError),
   },
 }));
 
@@ -147,5 +152,25 @@ describe("useDescribeOperationError", () => {
 
   it("uses the catalog's failure message when there is nothing to describe at all", () => {
     expect(describeError(undefined)).toEqual(["The operation could not be completed"]);
+  });
+});
+
+describe("placeSubSamples", () => {
+  const records = [{ id: 11, type: "SUBSAMPLE" as const, globalId: "SS11", parentContainers: [{ id: 5 }] }];
+
+  it("moves the records in one all-or-nothing bulk request", async () => {
+    await placeSubSamples(records);
+    expect(bulk).toHaveBeenCalledWith(records, "MOVE", true);
+  });
+
+  it("rejects with each record's reasons when the server refuses any of the moves", async () => {
+    bulk.mockResolvedValueOnce({
+      data: {
+        errorCount: 1,
+        successCount: 0,
+        results: [{ error: { errors: ["Location is already taken"] } }, { record: { globalId: "SS12" } }],
+      },
+    });
+    await expect(placeSubSamples(records)).rejects.toMatchObject({ reasons: ["Location is already taken"] });
   });
 });

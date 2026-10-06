@@ -1,5 +1,6 @@
 // See DevDocs/adr/0012-operation-wizard-placement-step.md for this module's design.
 import { runInAction } from "mobx";
+import type { BulkEndpointRecordSerialisation } from "@/common/InvApiService";
 import type ContainerModel from "@/stores/models/ContainerModel";
 
 /** Where the new subsamples go after the operation. `container` is null until one is picked. */
@@ -62,4 +63,35 @@ export function placementBlocker(container: ContainerModel, count: number): Plac
     if (selected.length < count) return { reason: "selectSlots", remaining: count - selected.length };
   }
   return null;
+}
+
+export type CreatedSubSample = { id: number; globalId: string };
+
+/** One record of a bulk MOVE request, in the shape MoveStore sends. */
+export type PlacementRecord = BulkEndpointRecordSerialisation & {
+  globalId: string;
+  parentContainers: ReadonlyArray<object>;
+  parentLocation?: object;
+};
+
+/**
+ * Pairs each new subsample, in the order the server returned them, with the container and, for a
+ * grid, the next chosen location in grid order.
+ */
+export function buildPlacementRecords(
+  subSamples: ReadonlyArray<CreatedSubSample>,
+  container: ContainerModel,
+): Array<PlacementRecord> {
+  const parentContainers = [container.paramsForBackend];
+  const base = (s: CreatedSubSample) => ({
+    id: s.id,
+    type: "SUBSAMPLE" as const,
+    globalId: s.globalId,
+    parentContainers,
+  });
+  if (container.cType !== "GRID") return subSamples.map(base);
+  const locations = container.selectedLocations ?? [];
+  if (locations.length !== subSamples.length)
+    throw new Error(`${subSamples.length} new subsamples but ${locations.length} chosen locations`);
+  return subSamples.map((s, i) => ({ ...base(s), parentLocation: locations[i].paramsForBackend }));
 }

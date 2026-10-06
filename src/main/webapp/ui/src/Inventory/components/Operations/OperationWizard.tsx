@@ -45,7 +45,9 @@ import {
 } from "./operations";
 import {
   type OperationResult,
+  PlacementRefused,
   performOperation,
+  placeSubSamples,
   sampleNameAvailable,
   useDescribeOperationError,
 } from "./operationsApi";
@@ -60,7 +62,14 @@ import {
   reconcileRestoredQuantities,
 } from "./operationValidation";
 import PlacementStep from "./PlacementStep";
-import { type PlacementSelection, placementBlocker, prepareContainer, releaseContainer, WORKBENCH } from "./placement";
+import {
+  buildPlacementRecords,
+  type PlacementSelection,
+  placementBlocker,
+  prepareContainer,
+  releaseContainer,
+  WORKBENCH,
+} from "./placement";
 import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
 import {
   fetchLatestOperationPreferences,
@@ -695,6 +704,24 @@ function OperationWizard({
     // From here the operation has committed (output created, origins decremented), so nothing below
     // may report it as failed or leave the wizard open for a retry that would charge the origins
     // again. Bookkeeping errors are warnings, and the wizard closes.
+    if (created && placement.mode === "container" && placement.container) {
+      const { container } = placement;
+      const failed = t("operations.placement.failedAfterCreate", { container: container.name });
+      try {
+        await placeSubSamples(buildPlacementRecords(created.subSamples ?? [], container));
+      } catch (error) {
+        getRootStore().uiStore.addAlert(
+          mkAlert({
+            title: failed,
+            message:
+              error instanceof PlacementRefused && error.reasons.length > 0
+                ? error.reasons.join("\n")
+                : getErrorMessage(error, failed),
+            variant: "warning",
+          }),
+        );
+      }
+    }
     try {
       onPerformed?.(created);
     } catch (error) {
