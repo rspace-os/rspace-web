@@ -2,16 +2,16 @@ package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.dtos.UserValidator;
@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -45,6 +46,7 @@ public class LoginPasswordResetByEmailHandlerTest {
   private @Mock EmailContentGenerator emailContentGenerator;
   private @Mock EmailBroadcast emailer;
   private @Mock EmailContent emailContent;
+  private @Spy NewPasswordEncodeGate encodeGate = new NewPasswordEncodeGate(1);
   private @InjectMocks LoginPasswordResetByEmailHandler handler;
 
   private MockHttpServletRequest request;
@@ -57,8 +59,6 @@ public class LoginPasswordResetByEmailHandlerTest {
     request.setRemoteAddr("127.0.0.1");
     cmd = newCommand();
     errors = new BeanPropertyBindingResult(cmd, "passwordResetCommand");
-    handler.setMaxResetsPerFiveSeconds(10);
-    handler.initResetRateLimiter();
   }
 
   @Test
@@ -107,34 +107,40 @@ public class LoginPasswordResetByEmailHandlerTest {
   }
 
   @Test
-  void resetBeyondTheRateLimitIsRefusedWithTheTokenUntouched() throws Exception {
-    handler.setMaxResetsPerFiveSeconds(1);
-    handler.initResetRateLimiter();
-    TokenBasedVerification first = freshToken();
-    stubCompletableReset(cmd, first);
-    assertEquals(COMPLETE_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
+  void resetWithNoFreeEncodePermitIsRefusedWithTheTokenUntouched() throws Exception {
+    TokenBasedVerification token = freshToken();
+    stubCompletableReset(cmd, token);
+    assertTrue(encodeGate.tryAcquire());
 
-    PasswordResetCommand secondCmd = newCommand();
-    TokenBasedVerification second = freshToken();
-    secondCmd.setToken(second.getToken());
-    when(userManager.getUserVerificationToken(second.getToken())).thenReturn(second);
-    when(userManager.getUsernameByToken(second.getToken())).thenReturn(Optional.of("other"));
-    BindingResult secondErrors = new BeanPropertyBindingResult(secondCmd, "passwordResetCommand");
-
-    ModelAndView mav = handler.submitResetPage(secondCmd, secondErrors, request);
+    ModelAndView mav = handler.submitResetPage(cmd, errors, request);
 
     assertEquals(RESET_VIEW, mav.getViewName());
-    assertTrue(secondErrors.hasGlobalErrors());
-    assertEquals("errors.passwordReset.rateLimited", secondErrors.getGlobalError().getCode());
-    assertFalse(second.isResetCompleted());
-    verify(userManager, times(1)).applyLoginPasswordChange(anyString(), anyString());
-    verify(userManager, never()).applyLoginPasswordChange(anyString(), eq(second.getToken()));
+    assertTrue(errors.hasGlobalErrors());
+    assertEquals("errors.passwordReset.rateLimited", errors.getGlobalError().getCode());
+    assertFalse(token.isResetCompleted());
+    verify(userManager, never()).applyLoginPasswordChange(anyString(), anyString());
+
+    encodeGate.release();
+    BindingResult retryErrors = new BeanPropertyBindingResult(cmd, "passwordResetCommand");
+    assertEquals(COMPLETE_VIEW, handler.submitResetPage(cmd, retryErrors, request).getViewName());
   }
 
   @Test
-  void invalidPasswordsDoNotConsumeARateLimitSlot() throws Exception {
-    handler.setMaxResetsPerFiveSeconds(1);
-    handler.initResetRateLimiter();
+  void failedPasswordChangeReleasesTheEncodePermit() {
+    TokenBasedVerification token = freshToken();
+    cmd.setToken(token.getToken());
+    when(userManager.getUserVerificationToken(token.getToken())).thenReturn(token);
+    when(userManager.getUsernameByToken(token.getToken())).thenReturn(Optional.of("someone"));
+    when(userManager.applyLoginPasswordChange(cmd.getPassword(), token.getToken()))
+        .thenThrow(new IllegalStateException("db down"));
+
+    assertThrows(IllegalStateException.class, () -> handler.submitResetPage(cmd, errors, request));
+
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
+  void invalidPasswordsDoNotTakeAnEncodePermit() throws Exception {
     TokenBasedVerification invalidToken = freshToken();
     cmd.setToken(invalidToken.getToken());
     when(userManager.getUserVerificationToken(invalidToken.getToken())).thenReturn(invalidToken);
@@ -149,13 +155,7 @@ public class LoginPasswordResetByEmailHandlerTest {
         .validatePasswords(cmd.getPassword(), cmd.getConfirmPassword(), "someone", errors);
     assertEquals(RESET_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
 
-    PasswordResetCommand validCmd = newCommand();
-    stubCompletableReset(validCmd, freshToken());
-    BindingResult validErrors = new BeanPropertyBindingResult(validCmd, "passwordResetCommand");
-
-    assertEquals(
-        COMPLETE_VIEW, handler.submitResetPage(validCmd, validErrors, request).getViewName());
-    assertFalse(validErrors.hasErrors());
+    assertTrue(encodeGate.tryAcquire());
   }
 
   private void stubCompletableReset(PasswordResetCommand command, TokenBasedVerification token) {
