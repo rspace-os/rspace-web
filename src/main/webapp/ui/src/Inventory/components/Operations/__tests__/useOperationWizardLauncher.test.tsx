@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Activity, StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import type { OperationResult } from "../operationsApi";
@@ -207,6 +208,36 @@ describe("useOperationWizardLauncher", () => {
     await user.click(await screen.findByRole("button", { name: "perform" }));
     expect(onPerformed).toHaveBeenCalledWith(created);
     expect(serverLocks.size).toBe(1);
+  });
+
+  it("logs a lock it could not take back when its effects re-run, and still closes", async () => {
+    const restoreConsole = silenceConsole(["warn"], ["Could not re-take the edit lock"]);
+    const warn = console.warn;
+    const user = userEvent.setup();
+    const { origin, acquire, release } = lockedOrigin();
+    const refused = new Error("Lock held elsewhere");
+    acquire.mockResolvedValueOnce("LOCKED_OK").mockRejectedValueOnce(refused);
+    const onClose = vi.fn();
+    const onLaunched = vi.fn();
+    const ui = (mode: "visible" | "hidden") => (
+      <Activity mode={mode}>
+        <Workflow origin={origin} onLaunched={onLaunched} onClose={onClose} />
+      </Activity>
+    );
+    const { rerender } = render(ui("visible"));
+
+    await user.click(screen.getByRole("button", { name: "launch" }));
+    await waitFor(() => expect(onLaunched).toHaveBeenLastCalledWith(true));
+    rerender(ui("hidden"));
+    rerender(ui("visible"));
+
+    await waitFor(() =>
+      expect(warn).toHaveBeenCalledWith("Could not re-take the edit lock on an operation origin", refused),
+    );
+    await user.click(await screen.findByRole("button", { name: "close wizard" }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledWith(false));
+    expect(release).toHaveBeenCalledTimes(2);
+    restoreConsole();
   });
 
   it("resolves false without opening or reporting a close when the lock is refused", async () => {

@@ -52,7 +52,15 @@ export function useOperationWizardLauncher(
     unmounted.current = false;
     const held = taken.current;
     if (held.length > 0)
-      renewals.current = renewals.current.then(() => Promise.allSettled(held.map((o) => o.acquireEditLock())));
+      renewals.current = renewals.current.then(() =>
+        Promise.allSettled(
+          held.map((o) =>
+            o.acquireEditLock().catch((error: unknown) => {
+              console.warn("Could not re-take the edit lock on an operation origin", error);
+            }),
+          ),
+        ),
+      );
     return () => {
       unmounted.current = true;
       const releasing = taken.current;
