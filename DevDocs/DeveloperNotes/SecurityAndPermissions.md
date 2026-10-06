@@ -64,7 +64,8 @@ The design and its trade-offs are in
   which the login filter and `ReauthenticatorImpl` deliberately do not
   count toward lockout. Encoding new passwords and the migration are not
   bounded at the encoder. The anonymous routes into `encode()` are
-  capped in front of it instead: `SignupController` and
+  capped in front of it instead: `SignupController`,
+  `ExternalAuthController` (Google sign-up on Community) and
   `PasswordResetByEmailHandlerBase` hold a permit from the shared
   `NewPasswordEncodeGate` (`password.anonymousEncode.maxConcurrent`,
   default 4) through the hash and save, and refuse at once when none is

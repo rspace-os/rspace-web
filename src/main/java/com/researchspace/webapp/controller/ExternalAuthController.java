@@ -7,6 +7,7 @@ import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
 import com.researchspace.auth.AccountEnabledAuthorizer;
 import com.researchspace.auth.LoginHelper;
+import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.googleauth.ExternalAuthTokenVerifier;
 import com.researchspace.googleauth.ExternalProfile;
@@ -59,6 +60,8 @@ public class ExternalAuthController extends BaseController {
 
   @Autowired private ExternalAuthTokenVerifier externalAuthVerifier;
 
+  @Autowired private NewPasswordEncodeGate encodeGate;
+
   @Autowired
   @Qualifier("postOAuthLoginHelper")
   private LoginHelper loginHelper;
@@ -79,8 +82,20 @@ public class ExternalAuthController extends BaseController {
     if (profile.isPresent()) {
       User newUser = createUserFromProfile(profile.get());
       log.info("{}", profile);
-      userEnablementUtils.checkLicenseForUserInRole(1, roleManager.getRole(newUser.getRole()));
-      newUser = externalPolicy.saveUser(newUser, request);
+      if (!encodeGate.tryAcquire()) {
+        SECURITY_LOG.warn(
+            "Google signup for [{}] from {} refused: no free new-password hashing slot",
+            newUser.getEmail(),
+            RequestUtil.remoteAddr(request));
+        return new AjaxReturnObject<String>(
+            null, ErrorList.createErrListWithSingleMsg(getText("externalAuth.errors.busy")));
+      }
+      try {
+        userEnablementUtils.checkLicenseForUserInRole(1, roleManager.getRole(newUser.getRole()));
+        newUser = externalPolicy.saveUser(newUser, request);
+      } finally {
+        encodeGate.release();
+      }
       defaultPostSignUp.postUserCreate(newUser, request, SSO_DUMMY_PASSWORD);
       return new AjaxReturnObject<String>(
           defaultPostSignUp.getRedirect(newUser).replace("redirect:", "/"), null);
