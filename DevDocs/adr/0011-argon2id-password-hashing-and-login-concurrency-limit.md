@@ -93,11 +93,12 @@ generic failure the user sees for a wrong password, but through a distinct excep
 `LoginVerificationBusyException`. The login filter (`StandaloneShiroFormAuthFilterExt`) and
 `ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
 users out. Encoding new passwords is not bounded at the encoder; instead the two anonymous routes
-that reach it are capped in front of it, by an instance-wide limit on signup submissions
-(`user.signup.maxPerFiveSeconds`, default 10, refused immediately without waiting) and by a
-limit on password-reset replies (`user.passwordReset.maxPerFiveSeconds`, default 10, one limiter
-per reset handler, refused immediately with the token left usable), which also accept only an
-unused, unexpired token, so anonymous Argon2 allocation cannot exceed about 190 MiB per route. Authenticated and sysadmin encodes (password change,
+that reach it (signup and the login and verification password-reset replies) take a permit from
+one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
+through the hash and the save and refused immediately when none is free, with a reset token left
+usable. The reset replies also accept only an unused, unexpired token. Anonymous Argon2
+allocation therefore cannot exceed 4 x 19 MiB, about 76 MiB, or about 228 MiB with the login
+verifier's permits. The default is small because each permit is also a busy core. Authenticated and sysadmin encodes (password change,
 user creation, CSV and archive import) remain unbounded by choice, since they require an account
 and a bound there would have to either refuse or block every caller of the shared encoder. The
 at-rest migration runs serially at startup and is not bounded either.
@@ -154,6 +155,9 @@ application are unaffected.
   it needs the real client address, which behind a customer's reverse proxy means trusting
   `X-Forwarded-For`, and it does nothing against a distributed source. It does not cap the heap.
   The semaphore does, and is blind to addresses. The two are complementary, not alternatives.
+- **Per-window rate limiter on the anonymous routes** (10 per 5 seconds, one each for signup
+  and the reset replies). Implemented and replaced: it counts admissions on a clock, not hashes
+  in flight, so admissions either side of a refresh overlap and it bounds rate, not heap.
 - **Rely on the servlet thread pool.** Rejected: 200 threads times 19 MiB is 3.8 GB, above
   the heap most customer instances run with.
 - **Re-encode a wrapped hash as plain Argon2id on the next successful login.** Tidier at rest,
