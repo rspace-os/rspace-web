@@ -201,6 +201,14 @@ describe("PidinstImportDialog", () => {
     await expect.element(dialog.nextPageButton).toBeDisabled();
   });
 
+  test("stops the pager at the last page the server serves, keeping the real total", async () => {
+    worker.use(searchHandler({ pageNumber: 199, totalHits: 10001 }));
+    await openAndSearch();
+
+    await expect.element(page.getByText(/^Showing 9951 to 9952 of 10,001 records/)).toBeVisible();
+    await expect.element(dialog.nextPageButton).toBeDisabled();
+  });
+
   test("keeps the pager in view on a short screen", async () => {
     // the viewport belongs to the shared browser, so it would leak into the next spec file
     const { innerWidth, innerHeight } = window;

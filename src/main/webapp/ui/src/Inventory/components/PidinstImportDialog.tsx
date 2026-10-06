@@ -85,6 +85,9 @@ const MIN_QUERY_LENGTH = 4;
 /** Mirrors PidinstLookupManager.PAGE_SIZE. */
 const PAGE_SIZE = 50;
 
+/** Mirrors PidinstLookupManager.MAX_PAGE_NUMBER, the last page the server serves. */
+const MAX_PAGE_NUMBER = 199;
+
 type Registry = "PIDINST_DATACITE" | "PIDINST_B2INST";
 const ALL_REGISTRIES: ReadonlyArray<Registry> = ["PIDINST_DATACITE", "PIDINST_B2INST"];
 
@@ -766,7 +769,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                 disableColumnFilter
                 hideFooterSelectedRowCount
                 paginationMode="server"
-                rowCount={result?.totalHits ?? 0}
+                rowCount={Math.min(result?.totalHits ?? 0, (MAX_PAGE_NUMBER + 1) * PAGE_SIZE)}
                 paginationModel={{ page: result?.pageNumber ?? 0, pageSize: PAGE_SIZE }}
                 pageSizeOptions={[PAGE_SIZE]}
                 onPaginationModelChange={({ page }) => {

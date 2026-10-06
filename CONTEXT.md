@@ -239,9 +239,10 @@ resolved during design. This file is a glossary only — no implementation detai
   PID, in order to import one. A lookup is anonymous and independent of any PIDINST provider: it
   is offered whether or not one is configured, and goes to the public registry of each registry
   the user has ticked, DataCite, B2INST or both. Hits from both form one list ordered by the
-  registry's update time, newest first, then creation time, fifty to a page, each hit naming its
-  registry. A lookup needs at least four characters, so a query shorter than that is refused
-  rather than answered with most of a registry. How free text matches depends on the registry: a
+  registry's update time, newest first, fifty to a page, each hit naming its registry; hits
+  updated at the same moment keep the registry's own order. A lookup needs at least four
+  characters, so a query shorter than that is refused rather than answered with most of a
+  registry. How free text matches depends on the registry: a
   B2INST lookup matches a *substring*, so part of a name finds the record that carries it, while a
   DataCite lookup matches whole indexed words, exactly as a search in DataCite's own portal does.
   Only *public* records are found: a PID whose registration is still in progress, or has been

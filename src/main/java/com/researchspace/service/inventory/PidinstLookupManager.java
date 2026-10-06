@@ -34,13 +34,14 @@ public interface PidinstLookupManager {
   /**
    * One merged page of PID lookup hits from the public registries named in {@code providers}
    * ({@code PIDINST_DATACITE}, {@code PIDINST_B2INST}, one or both), ordered by the registry's
-   * update time newest first, then creation time, then PID (ADR 0011). A DOI or Handle, bare or as
-   * a resolver address, is a direct lookup at the registry its shape names and yields nothing at
-   * the other. Only PUBLIC records are offered - B2INST {@code accepted}, DataCite {@code findable}
-   * - because only those may be linked to an instrument. A hit whose PID an instrument in this
-   * deployment already links is marked {@code alreadyLinked}, and carries {@code
-   * linkedInstrumentGlobalId} only when {@code user} may read that instrument (RSDEV-1505).
-   * Independent of any PIDINST provider: nothing here reads the minting settings.
+   * update time newest first; equal update times keep each registry's own order, the registries in
+   * the order {@code providers} names them (ADR 0011). A DOI or Handle, bare or as a resolver
+   * address, is a direct lookup at the registry its shape names and yields nothing at the other.
+   * Only PUBLIC records are offered - B2INST {@code accepted}, DataCite {@code findable} - because
+   * only those may be linked to an instrument. A hit whose PID an instrument in this deployment
+   * already links is marked {@code alreadyLinked}, and carries {@code linkedInstrumentGlobalId}
+   * only when {@code user} may read that instrument (RSDEV-1505). Independent of any PIDINST
+   * provider: nothing here reads the minting settings.
    *
    * @throws ApiRuntimeException {@code pidinstQueryTooShort} below {@link #MIN_QUERY_LENGTH} after
    *     trimming, so a direct caller is held to the same rule as the import dialog; {@code

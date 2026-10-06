@@ -47,10 +47,15 @@ Decided with Nico on 2026-10-05.
    and B2INST, both ticked by default; the search endpoint takes `providers` (one or both of
    `PIDINST_DATACITE` and `PIDINST_B2INST`, 422 for none or anything else) and `pageNumber`
    (0-based, as everywhere in the API), with a fixed page size of 50. Hits from the ticked
-   registries form one list ordered by the registry's update time, newest first, then creation
-   time, then PID, each hit naming its registry; the response carries `totalHits` and
-   `totalsByProvider`. The dialog's pager pages the search on screen, so it is disabled while the
-   search box or the checkboxes differ from that search: an edit takes effect only on Search, never
+   registries form one list ordered by the registry's update time, newest first, each hit naming
+   its registry; equal update times keep each registry's own order, the registries in the order
+   asked. Both registries sort by update time alone and DataCite stamps it to the second (345 of
+   its 2002 public instruments shared a second with another, 2026-10-06), so a tie-breaker of
+   RSpace's own, as first decided (creation time, then PID), reordered ties that span two registry
+   pages and made the next page repeat one hit and drop another (PullFrog on PR 1211). The
+   response carries `totalHits` and `totalsByProvider`. The dialog's pager pages the search on
+   screen, so it is disabled while the search box or the checkboxes differ from that search: an
+   edit takes effect only on Search, never
    as page 2 of a different search under the first one's totals (Nico, 2026-10-05). Supersedes
    the one-page, name-sorted search contract of RSDEV-1326 (decision 6 of its plan, the one the
    former `PidinstLookupManager.MAX_HITS` cited), which ADR 0009 took for granted. Tabs per
@@ -126,7 +131,10 @@ Decided with Nico on 2026-10-05.
   query runs once per registry per page.
 - Rob's request for admin-editable registry addresses is met by the deployment properties, not by
   a settings panel.
-- RSDEV-1518 also asks for imported "authoritative" fields to be read-only. That contradicts ADR
-  0009 decision 4 as shipped, where imported values are ordinary editable fields and only the
-  linked identifier stays tied to the registry, and it would be a new concept (a per-field lock).
-  Nico split it into RSDEV-1545 on 2026-10-05; this ADR leaves the fields editable.
+- Imported "authoritative" fields stay editable. RSDEV-1518 first asked for them to be read-only,
+  which contradicts the import as ADR 0009 decision 4 shipped it and CONTEXT.md's *Instrument
+  import* describes it (imported values are ordinary field values, and only the linked identifier
+  stays tied to the registry), and would be a new concept, a per-field lock. Nico split it into
+  RSDEV-1545 ("Keep authoritative imported metadata non-editable while allowing users to add
+  custom metadata") on 2026-10-05, and on 2026-10-07 the ticket itself moved it under its *Out of
+  scope*, handled by RSDEV-1545. Nothing in this ADR or in the code it describes locks a field.

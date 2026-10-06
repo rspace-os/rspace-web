@@ -66,7 +66,9 @@ import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -1235,16 +1237,17 @@ class PidinstLookupManagerImplTest {
   // ---------------------------------------------------------------------------------------------
 
   @Test
-  void hitsFromBothRegistriesFormOneListNewestUpdateFirstThenNewestCreationThenPid() {
+  void hitsFromBothRegistriesFormOneListNewestUpdateFirstWithTiesInTheOrderAsked() {
     when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
         .thenReturn(
             searchResultOf(
                 2,
+                // created after its DataCite twin, yet listed after it: DataCite was asked first
                 publishedRecord(
-                    "21.T11975/b-old",
-                    "b-old",
+                    "21.T11975/b-tie",
+                    "b-tie",
                     "2026-01-01T00:00:00+00:00",
-                    "2025-01-01T00:00:00+00:00"),
+                    "2025-12-01T00:00:00+00:00"),
                 publishedRecord(
                     "21.T11975/b-new",
                     "b-new",
@@ -1255,14 +1258,14 @@ class PidinstLookupManagerImplTest {
             dataCitePage(
                 2,
                 dataCiteInstrumentUpdatedAt(
-                    "10.1/d-tie-newer-created", "2026-01-01T00:00:00Z", "2025-06-01T00:00:00Z"),
+                    "10.1/d-tie", "2026-01-01T00:00:00Z", "2025-06-01T00:00:00Z"),
                 dataCiteInstrumentUpdatedAt(
                     "10.1/d-newest", "2026-09-30T00:00:00Z", "2024-01-01T00:00:00Z")));
 
     ApiPidinstSearchResult result = manager.search("Zeiss", BOTH, 0, user);
 
     assertIterableEquals(
-        List.of("10.1/d-newest", "21.T11975/b-new", "10.1/d-tie-newer-created", "21.T11975/b-old"),
+        List.of("10.1/d-newest", "21.T11975/b-new", "10.1/d-tie", "21.T11975/b-tie"),
         result.getHits().stream().map(ApiPidinstRecord::getPid).toList());
     assertEquals(List.of("PIDINST_DATACITE", "PIDINST_B2INST"), result.getProviders());
     assertEquals(4, result.getTotalHits());
@@ -1310,6 +1313,36 @@ class PidinstLookupManagerImplTest {
     // the DataCite page was short, so its second page was never asked for
     verify(dataCiteConnector, never()).searchPublicInstrumentDois("Zeiss", 1, 50);
     verify(b2instConnector).searchPublicRecords("*Zeiss*", 1, 50);
+  }
+
+  @Test
+  void pagingThroughEqualUpdateTimesAcrossARegistryPageBoundaryShowsEveryHitOnce() {
+    String sameUpdate = "2026-05-01T00:00:00+00:00";
+    B2instDraftRecord[] firstPage = new B2instDraftRecord[50];
+    for (int i = 0; i < 50; i++) {
+      firstPage[i] =
+          publishedRecord(
+              "21.T11975/first-" + i, "first-" + i, sameUpdate, "2025-01-01T00:00:00+00:00");
+    }
+    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+        .thenReturn(searchResultOf(51, firstPage));
+    // the registry orders by update time only, so its page 2 may hold a newer creation
+    when(b2instConnector.searchPublicRecords("*Zeiss*", 1, 50))
+        .thenReturn(
+            searchResultOf(
+                51,
+                publishedRecord(
+                    "21.T11975/late", "late", sameUpdate, "2026-04-01T00:00:00+00:00")));
+
+    List<String> seen = new ArrayList<>();
+    for (int page = 0; page <= 1; page++) {
+      manager.search("Zeiss", List.of("PIDINST_B2INST"), page, user).getHits().stream()
+          .map(ApiPidinstRecord::getPid)
+          .forEach(seen::add);
+    }
+
+    assertEquals(51, seen.size());
+    assertEquals(51, new HashSet<>(seen).size(), "a PID repeated: " + seen);
   }
 
   @Test

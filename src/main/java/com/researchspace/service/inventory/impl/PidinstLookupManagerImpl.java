@@ -145,15 +145,16 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
       Pattern.compile(
           "^(?:https?://hdl\\.handle\\.net/)?(21\\.[A-Za-z0-9.]+/\\S+)$", Pattern.CASE_INSENSITIVE);
 
-  /** Newest update first, then newest creation, then PID: the merged order of ADR 0011. */
+  /**
+   * Newest update first, the merged order of ADR 0011. Nothing else may break a tie: the registries
+   * sort by update time alone, so a tie-breaker of RSpace's own would reorder a tie that spans two
+   * registry pages, and merged page k+1 would repeat a hit of page k and drop another. The sort is
+   * stable, so a tie keeps each registry's order, the registries in the order they were asked.
+   */
   private static final Comparator<ApiPidinstRecord> NEWEST_FIRST =
       Comparator.comparing(
-              (ApiPidinstRecord record) -> instantOf(record.getUpdated()),
-              Comparator.nullsLast(Comparator.reverseOrder()))
-          .thenComparing(
-              record -> instantOf(record.getCreated()),
-              Comparator.nullsLast(Comparator.reverseOrder()))
-          .thenComparing(record -> StringUtils.defaultString(record.getPid()));
+          (ApiPidinstRecord record) -> instantOf(record.getUpdated()),
+          Comparator.nullsLast(Comparator.reverseOrder()));
 
   /**
    * B2INST writes "+00:00" offsets, the DataCite mapper writes Instant.toString(): both parse here.

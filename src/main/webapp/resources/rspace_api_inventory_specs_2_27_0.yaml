@@ -3394,7 +3394,8 @@ paths:
         A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address, is a direct lookup at
         the registry its shape names and yields nothing at the other; anything else is one
         full-text query per registry. Hits from the registries asked for form ONE list ordered by
-        the registry's update time, newest first, then creation time, then PID, 50 to a page;
+        the registry's update time, newest first, 50 to a page; equal update times keep each
+        registry's own order, the registries in the order `providers` names them;
         `totalHits` is the sum of the registries' own totals and `totalsByProvider` gives each.
         Registry pages are cached for 10 minutes.
 
