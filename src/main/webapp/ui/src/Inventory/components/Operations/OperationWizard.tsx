@@ -60,7 +60,7 @@ import {
   reconcileRestoredQuantities,
 } from "./operationValidation";
 import PlacementStep from "./PlacementStep";
-import { type PlacementSelection, releaseContainer, WORKBENCH } from "./placement";
+import { type PlacementSelection, placementBlocker, prepareContainer, releaseContainer, WORKBENCH } from "./placement";
 import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
 import {
   fetchLatestOperationPreferences,
@@ -220,6 +220,11 @@ function OperationWizard({
     names: processNames,
     defaults: processNameDefaults,
   } = normalizeOperationPreferences(storedOperationPreferences);
+
+  const createdCount = operation?.effect.countFrom ? Number(values[operation.effect.countFrom] ?? 1) : 0;
+  React.useEffect(() => {
+    if (open && placementContainer) prepareContainer(placementContainer, createdCount);
+  }, [open, placementContainer, createdCount]);
 
   const stepKeys: ReadonlyArray<string> = operation
     ? (operation.steps ?? ["details", "template", "amounts", "documentation", "placement", "confirm"])
@@ -616,7 +621,11 @@ function OperationWizard({
       return detailsValid(operation, values, detailKeys) && origins.every((o) => commonQuantity(o).greaterThan(0));
     if (key === "template") return templateStepValid(templateSelection);
     if (key === "amounts") return amountsStepValid();
-    if (key === "placement") return placement.mode === "workbench" || placement.container !== null;
+    if (key === "placement")
+      return (
+        placement.mode === "workbench" ||
+        (placement.container !== null && placementBlocker(placement.container, createdCount) === null)
+      );
     return true;
   };
 
@@ -802,13 +811,7 @@ function OperationWizard({
       );
     }
     if (key === "placement") {
-      return (
-        <PlacementStep
-          value={placement}
-          onChange={setPlacement}
-          count={operation.effect.countFrom ? Number(values[operation.effect.countFrom] ?? 1) : 0}
-        />
-      );
+      return <PlacementStep value={placement} onChange={setPlacement} count={createdCount} />;
     }
     return confirmationStep();
   };
