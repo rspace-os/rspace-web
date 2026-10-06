@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.UserAppConfig;
+import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -41,6 +43,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
 
   private @Autowired ExternalMessageHandler handler;
   private @Autowired UserAppConfigManager mgr;
+  private @Autowired UserConnectionManager userConnectionManager;
   private User testUser;
 
   @BeforeEach
@@ -88,9 +91,17 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
 
   private Long setUpAppConfigForUser(
       User user, String appName, Supplier<Map<String, String>> appConfigSupplier) {
-    UserAppConfig appConfig =
-        mgr.saveAppConfigElementSet(appConfigSupplier.get(), null, false, user, appName);
+    Map<String, String> options = appConfigSupplier.get();
+    String teamsWebhook = options.remove("MSTEAMS_WEBHOOK_URL");
+    UserAppConfig appConfig = mgr.saveAppConfigElementSet(options, null, false, user, appName);
     Long cfgSetId = appConfig.getAppConfigElementSets().iterator().next().getId();
+    if (App.APP_MSTEAMS.equals(appName) && teamsWebhook != null) {
+      UserConnection connection =
+          new UserConnection(
+              new UserConnectionId(user.getUsername(), "MSTEAMS", cfgSetId.toString()), "");
+      connection.setSecret(teamsWebhook);
+      userConnectionManager.save(connection);
+    }
     return cfgSetId;
   }
 

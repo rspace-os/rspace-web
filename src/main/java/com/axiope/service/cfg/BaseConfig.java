@@ -951,8 +951,8 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  ExternalMessageSender msteamsExternalMessageSender() {
-    return new MsTeamsMessageSender();
+  ExternalMessageSender msteamsExternalMessageSender(UserConnectionManager userConnectionManager) {
+    return new MsTeamsMessageSender(userConnectionManager);
   }
 
   /**
