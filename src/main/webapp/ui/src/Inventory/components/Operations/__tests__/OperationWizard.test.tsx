@@ -237,6 +237,22 @@ vi.mock("../DocumentationStep", () => ({
     </div>
   ),
 }));
+/** The container the placement stub picks; a test sets it before clicking "place-container". */
+const placementTarget = vi.hoisted(() => ({ container: null as unknown }));
+vi.mock("../PlacementStep", () => ({
+  default: ({ value, onChange, count }: { value: { mode: string }; onChange: (v: unknown) => void; count: number }) => (
+    <div>
+      <span data-testid="placement-mode">{value.mode}</span>
+      <span data-testid="placement-count">{String(count)}</span>
+      <button type="button" data-testid="place-workbench" onClick={() => onChange({ mode: "workbench" })} />
+      <button
+        type="button"
+        data-testid="place-container"
+        onClick={() => onChange({ mode: "container", container: placementTarget.container })}
+      />
+    </div>
+  ),
+}));
 vi.mock("../OperationConfirmation", () => ({
   default: ({ remember, onRememberChange }: { remember?: boolean; onRememberChange?: (remember: boolean) => void }) => (
     <div data-testid="confirm">
@@ -280,13 +296,18 @@ async function fillDerive(user: ReturnType<typeof userEvent.setup>, processName:
   await user.click(screen.getByTestId("fill-taken-1"));
 }
 
-async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processName: string) {
+async function reachPlacement(user: ReturnType<typeof userEvent.setup>, processName: string) {
   await fillDerive(user, processName);
   await user.click(nextButton()); // details -> template
   await user.click(screen.getByTestId("tmpl-pick5"));
   await user.click(nextButton()); // template -> amounts
   await user.click(nextButton()); // amounts -> documentation
-  await user.click(nextButton()); // documentation -> confirm
+  await user.click(nextButton()); // documentation -> placement
+}
+
+async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processName: string) {
+  await reachPlacement(user, processName);
+  await user.click(nextButton()); // placement -> confirm
 }
 
 /** The remembered bundle for "derive dna", the process name every test below types. */
@@ -616,6 +637,7 @@ describe("OperationWizard step flow", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.destroy\.label/i }));
     expect(screen.queryByText(/step\.template/)).not.toBeInTheDocument();
     expect(screen.queryByText(/step\.amounts/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/step\.placement/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeDisabled();
   });
 
@@ -651,6 +673,33 @@ describe("OperationWizard step flow", () => {
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
     expect(nextButton()).toBeDisabled();
     await user.click(screen.getByTestId("tmpl-pick5"));
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("puts the placement step between documentation and confirm", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.aliquot\.label/i }));
+    const labels = screen.getAllByText(/operations\.wizard\.step\./).map((el) => el.textContent?.split(".").pop());
+    expect(labels).toEqual(["details", "template", "amounts", "documentation", "placement", "confirm"]);
+  });
+
+  it("starts the placement step on the workbench, which lets Next through", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await reachPlacement(user, "dna");
+    expect(screen.getByTestId("placement-mode")).toHaveTextContent("workbench");
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("blocks Next on the placement step while no container has been picked", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await reachPlacement(user, "dna");
+    placementTarget.container = null;
+    await user.click(screen.getByTestId("place-container"));
+    expect(nextButton()).toBeDisabled();
+    await user.click(screen.getByTestId("place-workbench"));
     expect(nextButton()).toBeEnabled();
   });
 
@@ -947,7 +996,8 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
     await user.click(screen.getByRole("button", { name: "Next" })); // amounts -> documentation
-    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> placement
+    await user.click(screen.getByRole("button", { name: "Next" })); // placement -> confirm
     await user.click(screen.getByRole("button", { name: "Perform" }));
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
@@ -974,7 +1024,8 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
     await user.click(screen.getByRole("button", { name: "Next" })); // amounts -> documentation
-    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> placement
+    await user.click(screen.getByRole("button", { name: "Next" })); // placement -> confirm
     await user.click(screen.getByRole("button", { name: "Perform" }));
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
@@ -1016,7 +1067,8 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
-    await user.click(nextButton()); // -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     expect(screen.getByTestId("toggle-remember")).toBeInTheDocument();
     expect(screen.getByTestId("remember")).toHaveTextContent("false");
   });
@@ -1035,7 +1087,8 @@ describe("OperationWizard remember bundle", () => {
     await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
     await user.click(screen.getByTestId("doc-choose"));
-    await user.click(nextButton()); // -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember"));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
@@ -1079,7 +1132,8 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByTestId("fill-per-both"));
     await user.click(nextButton()); // amounts -> documentation
     await user.click(screen.getByTestId("doc-choose"));
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember"));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
@@ -1251,7 +1305,8 @@ describe("OperationWizard remember bundle", () => {
     expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9");
     await user.click(nextButton()); // template -> amounts
     await user.click(nextButton()); // amounts -> documentation
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     expect(screen.getByTestId("remember")).toHaveTextContent("false");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -1281,7 +1336,8 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
-    await user.click(nextButton()); // -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember")); // re-tick: must keep the new data
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
@@ -1347,7 +1403,8 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
-    await user.click(nextButton()); // -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember")); // tick on the confirm step
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
@@ -1372,7 +1429,8 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // template -> amounts
     await user.click(nextButton()); // amounts -> documentation
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
@@ -1440,7 +1498,8 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // template -> amounts (count 1 and each amount 1 ml prefilled)
     await user.click(nextButton()); // amounts -> documentation
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());

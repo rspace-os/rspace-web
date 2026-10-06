@@ -63,7 +63,7 @@ export type InventoryOperation = {
   requiresMultiple?: boolean;
   defaultAmountMode?: AmountMode;
   noOutput?: boolean;
-  steps?: ReadonlyArray<"details" | "template" | "amounts" | "documentation" | "confirm">;
+  steps?: ReadonlyArray<"details" | "template" | "amounts" | "documentation" | "placement" | "confirm">;
   inputs: ReadonlyArray<OperationInput>;
   effect: Effect;
   confirmSummary: ReadonlyArray<ConfirmSummaryField>;
