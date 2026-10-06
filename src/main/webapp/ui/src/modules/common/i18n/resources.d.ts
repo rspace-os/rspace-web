@@ -4051,6 +4051,7 @@ export default interface Resources {
         "container": "Place in a container",
         "description": "Choose where the new subsamples go once they are created.",
         "failedAfterCreate": "The new subsamples were created on your workbench, but could not be placed in {container}.",
+        "rememberedUnavailable": "The remembered container \"{container}\" can no longer take the new subsamples, so they will stay on your workbench.",
         "status": {
           "cannotStoreSamples": "This container cannot hold subsamples. Choose another container.",
           "deleted": "This container is in the trash. Choose another container.",
