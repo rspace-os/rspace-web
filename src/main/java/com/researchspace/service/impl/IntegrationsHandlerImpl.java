@@ -735,9 +735,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     }
     String credentialSetting = ENCODE_API_KEY_FOR_APPS.get(appName);
     if (optionsId == null
-        && (DATAVERSE_APP_NAME.equals(appName) || MSTEAMS_APP_NAME.equals(appName))
-        && (!originalOptions.containsKey(credentialSetting)
-            || originalOptions.get(credentialSetting) == null)) {
+        && (DATAVERSE_APP_NAME.equals(appName)
+            || DSW_APP_NAME.equals(appName)
+            || MSTEAMS_APP_NAME.equals(appName))
+        && isBlank(originalOptions.get(credentialSetting))) {
       throw new IllegalArgumentException("A new configuration must include its credential");
     }
     UserAppConfig savedConfig =
