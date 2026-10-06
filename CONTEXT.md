@@ -203,7 +203,7 @@ resolved during design. This file is a glossary only — no implementation detai
   identifier.
   _Avoid_: RSpace identifier, own identifier, minted identifier (as a noun)
 - **Linked identifier** — an identifier that records a PID minted by another party, found
-  in a public PID registry and attached to an Instrument on import. It carries the same
+  in a public registry and attached to an Instrument on import. It carries the same
   provider type as a registered identifier and mirrors the state the provider holds, but
   RSpace owns nothing on the provider side: it never pushes metadata to it, never
   refreshes, publishes, retracts or deletes it at the provider, and never serves a public
@@ -222,19 +222,34 @@ resolved during design. This file is a glossary only — no implementation detai
   Instrument does not undo it.
   _Avoid_: detaching, disconnecting, deleting the PID (nothing is deleted at the provider)
 
-- **PID lookup** — searching a PID registry for instrument records, by free text or by a
-  PID, in order to import one. A lookup always goes to the deployment's enabled PIDINST
-  provider, with that provider's configured server and credentials; while no PIDINST
-  provider is enabled there is no lookup, and there is never a choice of registry. A lookup needs
-  at least four characters, so a query shorter than that is refused rather than answered with most
-  of the registry. How free text matches depends on the provider: a B2INST lookup matches a
-  *substring*, so part of a name finds the record that carries it, while a DataCite lookup matches
-  whole indexed words, exactly as a search in DataCite's own portal does. Only
-  *public* records are found: a PID whose registration is still in progress, or has been
-  declined, is not a lookup result and cannot be imported, because it has no resolvable
-  landing page to link to.
-  _Avoid_: federated search (there is one registry per deployment), PIDINST search, DOI
-  search
+- **Public registry** — a PID registry's public search service, reached anonymously and
+  read-only at the address the deployment properties give for it: DataCite's REST API
+  (api.datacite.org) and B2INST's records API (b2inst.gwdg.de). A PID lookup goes to public
+  registries and nowhere else; they exist for every deployment, minting configured or not, and
+  a PIDINST provider pointing at a test server does not move the lookup there (ADR 0011).
+  _Avoid_: lookup server, search endpoint, provider (that is the minting side), registry host
+
+- **PIDINST provider** — the registry, DataCite or B2INST, that a deployment has configured in
+  the Inventory settings with a server, credentials and a prefix or community, to mint and manage
+  registered identifiers. At most one is enabled at a time, and *Enabled* governs minting only:
+  it does not decide whether a PID lookup or an instrument import is offered (ADR 0011).
+  _Avoid_: enabled registry, lookup provider, integration (the settings card's word, too broad)
+
+- **PID lookup** — searching the public registries for instrument records, by free text or by a
+  PID, in order to import one. A lookup is anonymous and independent of any PIDINST provider: it
+  is offered whether or not one is configured, and goes to the public registry of each registry
+  the user has ticked, DataCite, B2INST or both. Hits from both form one list ordered by the
+  registry's update time, newest first, then creation time, fifty to a page, each hit naming its
+  registry. A lookup needs at least four characters, so a query shorter than that is refused
+  rather than answered with most of a registry. How free text matches depends on the registry: a
+  B2INST lookup matches a *substring*, so part of a name finds the record that carries it, while a
+  DataCite lookup matches whole indexed words, exactly as a search in DataCite's own portal does.
+  Only *public* records are found: a PID whose registration is still in progress, or has been
+  declined, is not a lookup result and cannot be imported, because it has no resolvable landing
+  page to link to. A pasted PID is a direct lookup at the registry its shape names, a DOI at
+  DataCite and a Handle at B2INST, and yields nothing from the other.
+  _Avoid_: PIDINST search, DOI search, federated search (the registries are asked side by side,
+  not through a middle service), provider search
 
 - **Already-linked marker** — the note on a PID lookup hit saying that an Instrument in this
   RSpace already links its PID. Every user sees it, so refusing to import the hit always has
@@ -248,10 +263,10 @@ resolved during design. This file is a glossary only — no implementation detai
   principle, recorded for this case as an amendment to ADR 0009).
   _Avoid_: linked-to chip (the chip is only one of the marker's two forms), duplicate warning
 
-- **Instrument import** — creating an Instrument from a PID record found in a public PID
-  registry: RSpace fetches the record itself, fills the default PIDINST template's fields
-  from it by the inverse of the PIDINST mapping, and attaches a linked identifier for the
-  PID, all in one step. The imported values are ordinary field values afterwards: the user
+- **Instrument import** — creating an Instrument from a PID record found in a public
+  registry, which the import names: RSpace fetches the record itself from that registry, fills
+  the default PIDINST template's fields from it by the inverse of the PIDINST mapping, and
+  attaches a linked identifier for the PID, all in one step. The imported values are ordinary field values afterwards: the user
   edits them like any other, and only the identifier stays tied to the registry.
   The record's two related identifiers that RSpace itself writes at registration, labelled
   Measurement Technique and Calibration, are read back into the matching link fields, but

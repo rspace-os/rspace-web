@@ -1883,9 +1883,10 @@
       "name": "Name",
       "owners": "Owner",
       "pid": "PID",
+      "provider": "Registry",
       "state": "Registry state"
     },
-    "description": "Search the PID registry enabled for this RSpace for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
+    "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
     "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
     "helpTitle": "PIDINST help",
     "importError": "Could not import the instrument.",
@@ -1921,16 +1922,22 @@
       "b2inst": "B2INST",
       "datacite": "DataCite"
     },
+    "registries": {
+      "label": "Registries to search",
+      "validation": {
+        "none": "Tick at least one registry to search."
+      }
+    },
     "results": {
       "none": "No published instrument records match this search.",
+      "pageSummary": "Showing {from} to {to} of {total, plural, one {# record} other {# records}} ({breakdown}).",
       "prompt": "Search to list published instrument records.",
-      "summary": "{shown} of {total, plural, one {# record} other {# records}} found at {provider}.",
-      "truncated": "Only the first {shown, plural, one {# record is} other {# records are}} shown. Refine the search to find a specific instrument."
+      "registryTotal": "{provider}: {total}"
     },
     "search": {
-      "label": "Search the registry",
+      "label": "Search the registries",
       "placeholder": "Name, manufacturer, owner, DOI or Handle",
-      "searching": "Searching the PID registry…",
+      "searching": "Searching the registries…",
       "validation": {
         "tooShort": "Enter at least {min} characters to search."
       }

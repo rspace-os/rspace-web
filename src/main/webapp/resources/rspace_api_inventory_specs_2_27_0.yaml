@@ -143,10 +143,10 @@ paths:
           $ref: "#/components/responses/LicenseProblem"
   /instruments/importPidinst:
     post:
-      summary: Create an Instrument by importing a PID from the enabled PIDINST registry
+      summary: Create an Instrument by importing a PID from a public registry
       description: >
-        Fetches the record for `pid` from the PIDINST provider enabled on this deployment, creates
-        an Instrument from the locked default "Instrument (PIDINST 1.0)" template filled from that
+        Fetches the record for `pid` from the public registry named by `provider`, creates an
+        Instrument from the locked default "Instrument (PIDINST 1.0)" template filled from that
         record, and attaches a *linked identifier* for the PID.
 
 
@@ -166,12 +166,13 @@ paths:
 
 
         `pid` may be a bare DOI or Handle, or a `doi.org` / `hdl.handle.net` address. It must be
-        PUBLIC at the provider - B2INST `accepted`, DataCite `findable` - because RSpace links only
-        publicly resolvable PIDs. A PID of the registry that is *not* enabled on this deployment
-        also yields `404`; there is no cross-registry lookup.
+        PUBLIC at the registry - B2INST `accepted`, DataCite `findable` - because RSpace links only
+        publicly resolvable PIDs. A PID looked up at the wrong registry (a Handle at DataCite, a DOI
+        at B2INST) yields `404`, and a `provider` other than `PIDINST_DATACITE` or `PIDINST_B2INST`
+        is refused with a `422`.
 
 
-        Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
+        Needs Inventory only; the PIDINST minting settings do not apply.
       tags:
         - Instruments
       requestBody:
@@ -188,11 +189,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Instrument"
+        "400":
+          description: The body lacks `pid` or `provider`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: >
-            The enabled provider holds no PUBLIC instrument record for this PID, or no PIDINST
-            provider is enabled on this deployment. A PID that exists but is not published is
-            reported the same way as one that does not exist.
+            The public registry holds no PUBLIC instrument record for this PID. A PID that exists
+            but is not published is reported the same way as one that does not exist.
           content:
             application/json:
               schema:
@@ -3378,16 +3384,19 @@ paths:
           description: Details of connected attachment (ApiInventoryFile object).
   /pidinst/search:
     get:
-      summary: Search the enabled PIDINST registry for instrument records
+      summary: Search the public DataCite and B2INST registries for instrument records
       description: >
-        Searches the PIDINST provider enabled on this deployment, using that provider's configured
-        server and credentials. There is one registry per deployment and no provider filter.
+        Searches the public registries named in `providers`, anonymously, whatever the PIDINST
+        minting settings hold. The hosts are deployment properties (`pidinst.lookup.datacite.url`,
+        `pidinst.lookup.b2inst.url`).
 
 
-        A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address, is a direct lookup;
-        anything else is one full-text query. A PID belonging to the registry that is not enabled
-        here yields no hit. At most 50 hits are returned in one page, sorted by name, alongside the
-        provider's own `total`, which may be larger. Provider results are cached for 10 minutes.
+        A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address, is a direct lookup at
+        the registry its shape names and yields nothing at the other; anything else is one
+        full-text query per registry. Hits from the registries asked for form ONE list ordered by
+        the registry's update time, newest first, then creation time, then PID, 50 to a page;
+        `totalHits` is the sum of the registries' own totals and `totalsByProvider` gives each.
+        Registry pages are cached for 10 minutes.
 
 
         Only PUBLIC records are offered, because only a publicly resolvable PID may be linked to
@@ -3399,10 +3408,8 @@ paths:
         Each hit carries `alreadyLinked`, true when an Instrument in this deployment already links
         that PID, so a client can refuse importing it before the `409`; and
         `linkedInstrumentGlobalId` only when the caller may read that Instrument (read or limited
-        read). An Instrument the caller may not read is never named.
-
-
-        Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
+        read). An Instrument the caller may not read is never named. A failure at either registry
+        fails the whole search.
       tags:
         - External Identifiers
       parameters:
@@ -3412,25 +3419,48 @@ paths:
           description: >
             Free text, or a DOI or Handle for a direct lookup. At least 4 characters after
             trimming; shorter, blank or whitespace-only queries are refused with a 422 and never
-            reach the registry.
+            reach a registry.
           schema:
             type: string
             minLength: 4
+        - in: query
+          name: providers
+          required: true
+          description: >
+            The registries to search, comma-separated or repeated: `PIDINST_DATACITE`,
+            `PIDINST_B2INST` or both. Missing, empty or any other value is refused with a 422.
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [PIDINST_DATACITE, PIDINST_B2INST]
+          style: form
+          explode: false
+        - in: query
+          name: pageNumber
+          required: false
+          description: 0-based page of 50 merged hits; defaults to 0.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
       responses:
         "200":
-          description: One page of hits from the enabled provider.
+          description: One merged page of hits.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PidinstSearchResult"
         "404":
-          description: No PIDINST provider is enabled on this deployment.
+          description: Inventory is not available to this user.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "422":
-          description: The query is shorter than 4 characters after trimming.
+          description: >
+            The query is shorter than 4 characters after trimming, or `providers` names no usable
+            registry.
           content:
             application/json:
               schema:
@@ -4741,13 +4771,19 @@ components:
       description: Body of the instrument import; the PID is re-fetched server-side.
       required:
         - pid
+        - provider
       properties:
         pid:
           type: string
           description: >
-            A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address. Must belong to the
-            registry enabled on this deployment.
+            A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address, belonging to the
+            registry named by `provider`.
           example: https://hdl.handle.net/21.T11975/smzcd-1x840
+        provider:
+          type: string
+          enum: [PIDINST_DATACITE, PIDINST_B2INST]
+          description: The registry the PID belongs to; the search's hit carries it as `provider`.
+          example: PIDINST_B2INST
         newTargetLocation:
           description: Where to store the new Instrument. Absent means the user's own workbench.
           properties:
@@ -4917,24 +4953,35 @@ components:
             shown is never named.
           example: IN2
     PidinstSearchResult:
-      description: One page of PID lookup hits from the enabled provider.
+      description: One merged page of PID lookup hits from the registries asked for.
       properties:
-        provider:
-          type: string
-          description: The provider the search went to.
-          enum:
-            - PIDINST_B2INST
-            - PIDINST_DATACITE
-        total:
+        providers:
+          type: array
+          description: The registries searched, as asked.
+          items:
+            type: string
+            enum: [PIDINST_DATACITE, PIDINST_B2INST]
+        pageNumber:
           type: integer
-          description: >
-            The provider's total for the query, which may exceed the number of hits returned. Both
-            providers apply the public-only filter themselves, so the total describes the same set
-            as the page.
-          example: 2
+          description: 0-based.
+          example: 0
+        pageSize:
+          type: integer
+          description: Always 50.
+          example: 50
+        totalHits:
+          type: integer
+          description: The sum of the registries' own totals for the query.
+          example: 238
+        totalsByProvider:
+          type: object
+          description: Each registry's own total, keyed as in `providers`.
+          additionalProperties:
+            type: integer
+          example: { "PIDINST_DATACITE": 235, "PIDINST_B2INST": 3 }
         hits:
           type: array
-          description: At most 50 records, sorted by name.
+          description: This page, newest update first, then newest creation, then PID.
           items:
             $ref: "#/components/schemas/PidinstRecord"
     ContainerInfo:

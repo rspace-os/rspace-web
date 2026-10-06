@@ -4138,9 +4138,10 @@ export default interface Resources {
         "name": "Name",
         "owners": "Owner",
         "pid": "PID",
+        "provider": "Registry",
         "state": "Registry state"
       },
-      "description": "Search the PID registry enabled for this RSpace for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
+      "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
       "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
       "helpTitle": "PIDINST help",
       "importError": "Could not import the instrument.",
@@ -4176,16 +4177,22 @@ export default interface Resources {
         "b2inst": "B2INST",
         "datacite": "DataCite"
       },
+      "registries": {
+        "label": "Registries to search",
+        "validation": {
+          "none": "Tick at least one registry to search."
+        }
+      },
       "results": {
         "none": "No published instrument records match this search.",
+        "pageSummary": "Showing {from} to {to} of {total, plural, one {# record} other {# records}} ({breakdown}).",
         "prompt": "Search to list published instrument records.",
-        "summary": "{shown} of {total, plural, one {# record} other {# records}} found at {provider}.",
-        "truncated": "Only the first {shown, plural, one {# record is} other {# records are}} shown. Refine the search to find a specific instrument."
+        "registryTotal": "{provider}: {total}"
       },
       "search": {
-        "label": "Search the registry",
+        "label": "Search the registries",
         "placeholder": "Name, manufacturer, owner, DOI or Handle",
-        "searching": "Searching the PID registry…",
+        "searching": "Searching the registries…",
         "validation": {
           "tooShort": "Enter at least {min} characters to search."
         }
@@ -7058,9 +7065,11 @@ export default interface Resources {
           "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
           "pidinstAlreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
           "pidinstImportPidRequired": "A PID is required to import an instrument.",
+          "pidinstImportProviderRequired": "The registry the PID belongs to is required to import an instrument: PIDINST_DATACITE or PIDINST_B2INST.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
-          "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
+          "pidinstNotFound": "No published instrument record was found for \"{0}\" in the public registry.",
           "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registry.",
+          "pidinstRegistryRequired": "Choose at least one registry to search: PIDINST_DATACITE or PIDINST_B2INST.",
           "pidinstTemplateMissing": "This RSpace has no \"{0}\" template, which importing an instrument requires. Ask your system administrator to check the installation.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"

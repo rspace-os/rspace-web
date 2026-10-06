@@ -1,11 +1,17 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormGroup from "@mui/material/FormGroup";
+import FormHelperText from "@mui/material/FormHelperText";
+import FormLabel from "@mui/material/FormLabel";
 import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
@@ -75,9 +81,18 @@ export type PidinstRecord = {
 /** Mirrors PidinstLookupManager.MIN_QUERY_LENGTH, which rejects a shorter query with a 422. */
 const MIN_QUERY_LENGTH = 4;
 
+/** Mirrors PidinstLookupManager.PAGE_SIZE. */
+const PAGE_SIZE = 50;
+
+type Registry = "PIDINST_DATACITE" | "PIDINST_B2INST";
+const ALL_REGISTRIES: ReadonlyArray<Registry> = ["PIDINST_DATACITE", "PIDINST_B2INST"];
+
 type PidinstSearchResult = {
-  provider: string;
-  total: number;
+  providers: ReadonlyArray<string>;
+  pageNumber: number;
+  pageSize: number;
+  totalHits: number;
+  totalsByProvider: Record<string, number>;
   hits: ReadonlyArray<PidinstRecord>;
 };
 
@@ -284,9 +299,10 @@ type PidinstImportDialogArgs = {
 };
 
 /**
- * Search the deployment's enabled PIDINST provider for published instrument records and import
- * one as a new Instrument with a linked identifier. The server routes the search and re-fetches
- * the record on import, so this dialog only shows hits and sends back the chosen PID.
+ * Search the public PIDINST registries the user ticks for published instrument records and import
+ * one as a new Instrument with a linked identifier. The server merges and pages the hits and
+ * re-fetches the record on import, so this dialog only shows hits and sends back the chosen PID and
+ * its registry.
  */
 export default function PidinstImportDialog({ open, onClose, onImported }: PidinstImportDialogArgs): React.ReactNode {
   const confirm = useConfirm();
@@ -295,7 +311,9 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
   const { isViewportSmall } = useViewportDimensions();
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const [query, setQuery] = React.useState("");
+  const [registries, setRegistries] = React.useState<ReadonlySet<Registry>>(new Set(ALL_REGISTRIES));
   const [result, setResult] = React.useState<null | PidinstSearchResult>(null);
+  const [searched, setSearched] = React.useState<null | { query: string; providers: string }>(null);
   const [searching, setSearching] = React.useState(false);
   const [selectedPid, setSelectedPid] = React.useState<null | string>(null);
   const [importing, setImporting] = React.useState(false);
@@ -312,6 +330,12 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
   const selected = hits.find((hit) => hit.pid === selectedPid) ?? null;
 
   const queryTooShort = query.trim().length < MIN_QUERY_LENGTH;
+  const noRegistry = registries.size === 0;
+  const providers = ALL_REGISTRIES.filter((registry) => registries.has(registry)).join(",");
+  // the pager pages the search on screen, so an edit must not fetch page 2 of another search
+  // under the first one's totals (ADR 0011)
+  const formDiffersFromSearch =
+    searched !== null && (query.trim() !== searched.query || providers !== searched.providers);
 
   const providerLabel = (provider: string) => {
     if (provider === "PIDINST_B2INST") return t("pidinstImport.providers.b2inst");
@@ -342,18 +366,23 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
     );
   };
 
-  async function runSearch() {
+  async function runSearch(pageNumber = 0) {
     const trimmed = query.trim();
-    if (trimmed.length < MIN_QUERY_LENGTH) return;
+    if (trimmed.length < MIN_QUERY_LENGTH || noRegistry) return;
     const session = sessionRef.current;
     setSearching(true);
     setSelectedPid(null);
     // cleared before the request, not just on failure, so the summary does not report the previous
     // query's count over the rows the loading overlay is covering
     setResult(null);
+    setSearched({ query: trimmed, providers });
     try {
       const { data } = await axios.get<PidinstSearchResult>("/api/inventory/v1/pidinst/search", {
-        params: { query: trimmed },
+        params: {
+          query: trimmed,
+          providers,
+          pageNumber,
+        },
         headers: {
           Authorization: `Bearer ${await getToken()}`,
         },
@@ -389,7 +418,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
     try {
       const { data } = await axios.post<ImportedInstrumentResponse>(
         "/api/inventory/v1/instruments/importPidinst",
-        { pid: record.pid },
+        { pid: record.pid, provider: record.provider },
         {
           headers: {
             Authorization: `Bearer ${await getToken()}`,
@@ -451,7 +480,9 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
   function resetState() {
     sessionRef.current += 1;
     setQuery("");
+    setRegistries(new Set(ALL_REGISTRIES));
     setResult(null);
+    setSearched(null);
     setSearching(false);
     setSelectedPid(null);
     setImporting(false);
@@ -514,6 +545,30 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                 <TransRichText i18nKey="inventory:pidinstImport.descriptionLinks" />
               </Typography>
             </Box>
+            <FormControl component="fieldset" variant="standard">
+              <FormLabel component="legend">{t("pidinstImport.registries.label")}</FormLabel>
+              <FormGroup row>
+                {ALL_REGISTRIES.map((registry) => (
+                  <FormControlLabel
+                    key={registry}
+                    control={
+                      <Checkbox
+                        checked={registries.has(registry)}
+                        disabled={searching || importing}
+                        onChange={(event) => {
+                          const next = new Set(registries);
+                          if (event.target.checked) next.add(registry);
+                          else next.delete(registry);
+                          setRegistries(next);
+                        }}
+                      />
+                    }
+                    label={providerLabel(registry)}
+                  />
+                ))}
+              </FormGroup>
+              {noRegistry && <FormHelperText error>{t("pidinstImport.registries.validation.none")}</FormHelperText>}
+            </FormControl>
             <Box
               component="form"
               onSubmit={(event: React.FormEvent) => {
@@ -537,7 +592,11 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                       : " "
                   }
                 />
-                <Button type="submit" variant="outlined" disabled={searching || importing || queryTooShort}>
+                <Button
+                  type="submit"
+                  variant="outlined"
+                  disabled={searching || importing || queryTooShort || noRegistry}
+                >
                   {t("common:actions.search")}
                 </Button>
               </Stack>
@@ -546,21 +605,21 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                 is not announced, so the first search's summary would be silent */}
             <Typography variant="body2" aria-live="polite" role="status">
               {result && result.hits.length > 0 && (
-                <>
-                  <span>
-                    {t("pidinstImport.results.summary", {
-                      shown: result.hits.length,
-                      total: result.total,
-                      provider: providerLabel(result.provider),
-                    })}
-                  </span>
-                  {result.total > result.hits.length && (
-                    <>
-                      {" "}
-                      <span>{t("pidinstImport.results.truncated", { shown: result.hits.length })}</span>
-                    </>
-                  )}
-                </>
+                <span>
+                  {t("pidinstImport.results.pageSummary", {
+                    from: result.pageNumber * result.pageSize + 1,
+                    to: result.pageNumber * result.pageSize + result.hits.length,
+                    total: result.totalHits,
+                    breakdown: result.providers
+                      .map((provider) =>
+                        t("pidinstImport.results.registryTotal", {
+                          provider: providerLabel(provider),
+                          total: result.totalsByProvider[provider] ?? 0,
+                        }),
+                      )
+                      .join(", "),
+                  })}
+                </span>
               )}
               {result && result.hits.length === 0 && (
                 /* the grid says this too, but its empty-state overlay is not a live region, so a
@@ -571,8 +630,10 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                 </Box>
               )}
             </Typography>
-            {/* fixed so a long result set scrolls inside the grid instead of pushing the preview off-screen */}
-            <Box sx={{ height: "380px" }}>
+            {/* fixed so a long result set scrolls inside the grid instead of pushing the preview off-screen;
+                a short screen takes height from it, down to two rows, so the pager stays in view (the rest
+                of the dialog is about 560px tall) */}
+            <Box sx={{ height: "clamp(260px, calc(100vh - 560px), 380px)" }}>
               <DataGridWithRadioSelection
                 columns={[
                   DataGridColumn.newColumnWithValueGetter<"name", PidinstRecord, string>(
@@ -597,6 +658,15 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                         row.pid
                       ),
                   }),
+                  DataGridColumn.newColumnWithValueGetter<"provider", PidinstRecord, string>(
+                    "provider",
+                    (row) => providerLabel(row.provider),
+                    {
+                      headerName: t("pidinstImport.columns.provider"),
+                      flex: 0.6,
+                      sortable: false,
+                    },
+                  ),
                   DataGridColumn.newColumnWithValueGetter<"manufacturers", PidinstRecord, string>(
                     "manufacturers",
                     (row) => joined(row.manufacturers),
@@ -675,6 +745,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                 initialState={{
                   columns: {
                     columnVisibilityModel: {
+                      provider: !isViewportSmall,
                       manufacturers: !isViewportSmall,
                       owners: !isViewportSmall,
                       linkedTo: !isViewportSmall,
@@ -690,7 +761,14 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                 onSelectionChange={(newSelectionId) => setSelectedPid(String(newSelectionId))}
                 selectRadioAriaLabelFunc={(row) => t("pidinstImport.selectRadioLabel", { name: row.name ?? row.pid })}
                 disableColumnFilter
-                hideFooter
+                hideFooterSelectedRowCount
+                paginationMode="server"
+                rowCount={result?.totalHits ?? 0}
+                paginationModel={{ page: result?.pageNumber ?? 0, pageSize: PAGE_SIZE }}
+                pageSizeOptions={[PAGE_SIZE]}
+                onPaginationModelChange={({ page }) => {
+                  void runSearch(page);
+                }}
                 // without this the toolbar slot does not render, so the hidden columns have no Columns button
                 showToolbar
                 localeText={{
@@ -707,6 +785,9 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                   },
                   panel: {
                     target: columnsMenuAnchorEl,
+                  },
+                  basePagination: {
+                    disabled: formDiffersFromSearch,
                   },
                 }}
                 getRowId={(row) => row.pid}

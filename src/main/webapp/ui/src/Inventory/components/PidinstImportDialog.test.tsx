@@ -63,7 +63,16 @@ const HITS = [
   },
 ];
 
-const SEARCH_RESULT = { provider: "PIDINST_B2INST", total: 2, hits: HITS };
+const SEARCH_RESULT = {
+  providers: ["PIDINST_DATACITE", "PIDINST_B2INST"],
+  pageNumber: 0,
+  pageSize: 50,
+  totalHits: 2,
+  totalsByProvider: { PIDINST_DATACITE: 0, PIDINST_B2INST: 2 },
+  hits: HITS,
+};
+
+const lastSearch = () => mockAxios.history.get.filter((r) => r.url === SEARCH_URL).at(-1);
 
 const CREATED_INSTRUMENT = {
   id: 77,
@@ -146,22 +155,25 @@ describe("PidinstImportDialog", () => {
     await expectAccessible(baseElement);
   });
 
-  test("calls the search endpoint with the typed query and lists the hits", async () => {
+  test("lists the hits", async () => {
     const user = userEvent.setup();
     await renderOpenDialog();
 
     await search(user, "microscope");
 
-    const request = mockAxios.history.get.find((r) => r.url === SEARCH_URL);
-    expect(request?.params).toEqual({ query: "microscope" });
     expect(screen.getByRole("gridcell", { name: "Linked Spectrometer" })).toBeVisible();
     expect(screen.getByRole("link", { name: HITS[0].pid })).toHaveAttribute("href", HITS[0].publicUrl);
     expect(screen.getByRole("gridcell", { name: "Carl Zeiss; Zeiss Optics" })).toBeVisible();
   });
 
-  test("shows the result summary with the provider's total", async () => {
+  test("summarises the page with each registry's own total", async () => {
     const user = userEvent.setup();
-    stubEndpoints({ searchReply: [200, { ...SEARCH_RESULT, total: 128 }] });
+    stubEndpoints({
+      searchReply: [
+        200,
+        { ...SEARCH_RESULT, totalHits: 238, totalsByProvider: { PIDINST_DATACITE: 235, PIDINST_B2INST: 3 } },
+      ],
+    });
     await renderOpenDialog(
       await wrapWithRealI18n(<PidinstImportDialogStory />, {
         resources: { common: commonEn, inventory: inventoryEn },
@@ -169,11 +181,55 @@ describe("PidinstImportDialog", () => {
       }),
     );
 
-    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
+    await user.type(screen.getByRole("textbox", { name: "Search the registries" }), "microscope");
     await user.click(screen.getByRole("button", { name: "Search" }));
 
-    expect(await screen.findByText("2 of 128 records found at B2INST.")).toBeVisible();
-    expect(screen.getByText(/Only the first 2 records are shown/)).toBeVisible();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Showing 1 to 2 of 238 records (DataCite: 235, B2INST: 3).",
+    );
+  });
+
+  test("sends the ticked registries and the first page with the query", async () => {
+    const user = userEvent.setup();
+    await renderOpenDialog();
+
+    await search(user, "microscope");
+
+    expect(lastSearch()?.params).toEqual({
+      query: "microscope",
+      providers: "PIDINST_DATACITE,PIDINST_B2INST",
+      pageNumber: 0,
+    });
+  });
+
+  test("unticking a registry drops it from the request, and unticking both disables Search", async () => {
+    const user = userEvent.setup();
+    await renderOpenDialog();
+
+    await user.click(screen.getByRole("checkbox", { name: "inventory:pidinstImport.providers.datacite" }));
+    await search(user, "microscope");
+    expect(lastSearch()?.params).toMatchObject({ providers: "PIDINST_B2INST" });
+
+    await user.click(screen.getByRole("checkbox", { name: "inventory:pidinstImport.providers.b2inst" }));
+    expect(screen.getByRole("button", { name: "common:actions.search" })).toBeDisabled();
+    expect(screen.getByText("inventory:pidinstImport.registries.validation.none")).toBeInTheDocument();
+  });
+
+  test("names each hit's registry in the Registry column", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({
+      searchReply: [
+        200,
+        { ...SEARCH_RESULT, hits: [HITS[0], { ...HITS[1], pid: "10.1/d1", provider: "PIDINST_DATACITE" }] },
+      ],
+    });
+    await renderOpenDialog();
+
+    await search(user, "microscope");
+
+    expect(screen.getByRole("columnheader", { name: "inventory:pidinstImport.columns.provider" })).toBeInTheDocument();
+    expect(screen.getByRole("gridcell", { name: "inventory:pidinstImport.providers.b2inst" })).toBeInTheDocument();
+    expect(screen.getByRole("gridcell", { name: "inventory:pidinstImport.providers.datacite" })).toBeInTheDocument();
   });
 
   test("refuses a search shorter than the minimum without calling the server", async () => {
@@ -347,7 +403,7 @@ describe("PidinstImportDialog", () => {
     ).toBeVisible();
   });
 
-  test("imports the selected PID, toasts a link to the new instrument, and reports it", async () => {
+  test("imports the selected record, toasts a link to the new instrument, and reports it", async () => {
     const user = userEvent.setup();
     const onImported = vi.fn();
     const onClose = vi.fn();
@@ -357,14 +413,25 @@ describe("PidinstImportDialog", () => {
     await user.click(radioFor("Confocal Microscope"));
     await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
-    await waitFor(() => {
-      expect(mockAxios.history.post.find((r) => r.url === IMPORT_URL)?.data).toBe(
-        JSON.stringify({ pid: "21.T11975/aaaaa-11111" }),
-      );
-    });
     expect(await screen.findByText("inventory:pidinstImport.importSuccess")).toBeVisible();
     expect(onImported).toHaveBeenCalledWith({ id: 77, globalId: "IN77" });
     expect(onClose).toHaveBeenCalled();
+  });
+
+  test("sends the hit's registry with the import", async () => {
+    const user = userEvent.setup();
+    await renderOpenDialog();
+    await search(user, "microscope");
+    await user.click(radioFor(HITS[0].name as string));
+
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    await waitFor(() => {
+      expect(JSON.parse(mockAxios.history.post.at(-1)?.data as string)).toEqual({
+        pid: HITS[0].pid,
+        provider: "PIDINST_B2INST",
+      });
+    });
   });
 
   test("clears the previous hits when a search fails", async () => {
@@ -400,12 +467,23 @@ describe("PidinstImportDialog", () => {
 
     await search(user, "microscope");
 
-    expect(screen.getByRole("status")).toHaveTextContent("inventory:pidinstImport.results.summary");
+    expect(screen.getByRole("status")).toHaveTextContent("inventory:pidinstImport.results.pageSummary");
   });
 
   test("keeps the summary grammatical when a single record is found", async () => {
     const user = userEvent.setup();
-    stubEndpoints({ searchReply: [200, { provider: "PIDINST_B2INST", total: 1, hits: [HITS[0]] }] });
+    stubEndpoints({
+      searchReply: [
+        200,
+        {
+          ...SEARCH_RESULT,
+          providers: ["PIDINST_B2INST"],
+          totalHits: 1,
+          totalsByProvider: { PIDINST_B2INST: 1 },
+          hits: [HITS[0]],
+        },
+      ],
+    });
     await renderOpenDialog(
       await wrapWithRealI18n(<PidinstImportDialogStory />, {
         resources: { common: commonEn, inventory: inventoryEn },
@@ -413,18 +491,29 @@ describe("PidinstImportDialog", () => {
       }),
     );
 
-    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "21.T11975/aaaaa-11111");
+    await user.type(screen.getByRole("textbox", { name: "Search the registries" }), "21.T11975/aaaaa-11111");
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     // a direct PID lookup always returns one hit, so "1 of 1 records" is the common case
-    expect(await screen.findByText("1 of 1 record found at B2INST.")).toBeVisible();
+    expect(await screen.findByText("Showing 1 to 1 of 1 record (B2INST: 1).")).toBeVisible();
   });
 
   test("says nothing about totals when the search matched no importable records", async () => {
     const user = userEvent.setup();
     // DataCite reports what its index matched; the hits are what survives filtering to published
     // instruments, so "0 of 128" would sit directly above "no records match"
-    stubEndpoints({ searchReply: [200, { provider: "PIDINST_DATACITE", total: 128, hits: [] }] });
+    stubEndpoints({
+      searchReply: [
+        200,
+        {
+          ...SEARCH_RESULT,
+          providers: ["PIDINST_DATACITE"],
+          totalHits: 128,
+          totalsByProvider: { PIDINST_DATACITE: 128 },
+          hits: [],
+        },
+      ],
+    });
     await renderOpenDialog(
       await wrapWithRealI18n(<PidinstImportDialogStory />, {
         resources: { common: commonEn, inventory: inventoryEn },
@@ -432,14 +521,14 @@ describe("PidinstImportDialog", () => {
       }),
     );
 
-    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
+    await user.type(screen.getByRole("textbox", { name: "Search the registries" }), "microscope");
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     // once in the grid's empty overlay, and once in the live region, which is the only one of the
     // two that a screen reader announces
     expect(await screen.findAllByText("No published instrument records match this search.")).toHaveLength(2);
     expect(screen.getByRole("status")).toHaveTextContent("No published instrument records match this search.");
-    expect(screen.queryByText(/records found at/)).toBeNull();
+    expect(screen.queryByText(/Showing/)).toBeNull();
   });
 
   test("does not navigate away when the dialog is closed mid-import", async () => {
@@ -564,15 +653,17 @@ describe("PidinstImportDialog", () => {
     expect(screen.getByRole("status")).toHaveTextContent("");
   });
 
-  test("names DataCite as the registry a hit came from", async () => {
+  test("names a provider it has no label for rather than calling it DataCite", async () => {
     const user = userEvent.setup();
     stubEndpoints({
       searchReply: [
         200,
         {
-          provider: "PIDINST_DATACITE",
-          total: 1,
-          hits: [{ ...HITS[0], pid: "10.82316/qvtb-aw74", provider: "PIDINST_DATACITE" }],
+          ...SEARCH_RESULT,
+          providers: ["PIDINST_SOMETHING_NEW"],
+          totalHits: 1,
+          totalsByProvider: { PIDINST_SOMETHING_NEW: 1 },
+          hits: [HITS[0]],
         },
       ],
     });
@@ -583,30 +674,12 @@ describe("PidinstImportDialog", () => {
       }),
     );
 
-    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
-    await user.click(screen.getByRole("button", { name: "Search" }));
-
-    expect(await screen.findByText("1 of 1 record found at DataCite.")).toBeVisible();
-  });
-
-  test("names a provider it has no label for rather than calling it DataCite", async () => {
-    const user = userEvent.setup();
-    stubEndpoints({
-      searchReply: [200, { provider: "PIDINST_SOMETHING_NEW", total: 1, hits: [HITS[0]] }],
-    });
-    await renderOpenDialog(
-      await wrapWithRealI18n(<PidinstImportDialogStory />, {
-        resources: { common: commonEn, inventory: inventoryEn },
-        defaultNS: "inventory",
-      }),
-    );
-
-    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
+    await user.type(screen.getByRole("textbox", { name: "Search the registries" }), "microscope");
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     // every non-B2INST value used to be labelled DataCite, so a third registry would have been
     // named wrongly to every user with nothing failing
-    expect(await screen.findByText("1 of 1 record found at PIDINST_SOMETHING_NEW.")).toBeVisible();
+    expect(await screen.findByText("Showing 1 to 1 of 1 record (PIDINST_SOMETHING_NEW: 1).")).toBeVisible();
   });
 
   test("clears the previous result while the next search is running", async () => {
@@ -689,7 +762,7 @@ describe("PidinstImportDialog", () => {
         defaultNS: "inventory",
       }),
     );
-    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
+    await user.type(screen.getByRole("textbox", { name: "Search the registries" }), "microscope");
     await user.click(screen.getByRole("button", { name: "Search" }));
     await screen.findByRole("gridcell", { name: HITS[0].name });
     await user.click(radioFor("Confocal Microscope"));
