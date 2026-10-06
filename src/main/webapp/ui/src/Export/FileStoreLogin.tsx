@@ -87,7 +87,6 @@ export default function FileStoreLogin({
                 value={userName}
                 onChange={({ target: { value } }) => setUserName(value)}
                 autoComplete="username"
-                data-test-id="username"
               />
               {userNameError && (
                 <FormHelperText id="name-error-text">{t("export.fileStore.login.usernameBlank")}</FormHelperText>
@@ -100,20 +99,18 @@ export default function FileStoreLogin({
                 value={password}
                 onChange={setPassword}
                 autoComplete="current-password"
-                data-test-id="password"
               />
               {passwordError && <FormHelperText>{t("export.fileStore.login.passwordBlank")}</FormHelperText>}
               {loginError && <FormHelperText>{t("export.fileStore.login.authProblem")}</FormHelperText>}
-              <br />
             </FormControl>
           </Stack>
         </Grid>
         {!hideCancelButton && (
-          <Button variant="contained" color="primary" disabled={loading} data-test-id="cancel-button">
+          <Button variant="contained" color="primary" disabled={loading}>
             {t("common:actions.cancel")}
           </Button>
         )}
-        <Button variant="contained" color="primary" disabled={loading} onClick={login} data-test-id="login-button">
+        <Button variant="contained" color="primary" disabled={loading} onClick={login}>
           {t("common:actions.login")}
         </Button>
         <Snackbar
