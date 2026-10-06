@@ -111,7 +111,7 @@ public class LoggingInterceptorTest extends SpringTransactionalTest {
     request.setParameter("state", "github-state-secret");
 
     ServletInvocableHandlerMethod handler =
-        new ServletInvocableHandlerMethod(new GitHubController(), method);
+        new ServletInvocableHandlerMethod(new GitHubController(null), method);
     assertTrue(logInterceptor.preHandle(request, httpResponse, handler));
 
     assertThat(strglogger.logContents)

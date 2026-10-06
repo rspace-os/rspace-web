@@ -15,7 +15,6 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ChatBotFunctionalityHandler;
 import com.researchspace.service.UserAppConfigManager;
-import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.slack.SlackAttachment;
 import com.researchspace.slack.SlackAuthToken;
@@ -105,7 +104,6 @@ public class SlackController extends BaseOAuth2Controller {
   private String slackApiBaseUrl;
 
   private @Autowired UserAppConfigManager userAppCfgMgr;
-  private @Autowired UserConnectionManager userConnectionManager;
   private @Autowired SlackService slackService;
   private @Autowired ChatBotFunctionalityHandler chatBotFunctionalityHandler;
   @Autowired IPropertyHolder props;

@@ -11,7 +11,6 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserAppConfigManager;
-import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
@@ -33,7 +32,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -77,8 +75,7 @@ public class GitHubController extends BaseOAuth2Controller {
 
   private RestTemplate restTemplate;
 
-  @Autowired private UserConnectionManager userConnectionManager;
-  @Autowired private UserAppConfigManager userAppConfigManager;
+  private final UserAppConfigManager userAppConfigManager;
 
   private static class AccessDeniedException extends Exception {
     private static final long serialVersionUID = -4859611690834326921L;
@@ -132,8 +129,9 @@ public class GitHubController extends BaseOAuth2Controller {
     private @JsonProperty("error_uri") String errorUri;
   }
 
-  public GitHubController() {
+  public GitHubController(UserAppConfigManager userAppConfigManager) {
     this.restTemplate = new RestTemplate();
+    this.userAppConfigManager = userAppConfigManager;
   }
 
   public void setRestTemplate(RestTemplate restTemplate) {
