@@ -2796,7 +2796,8 @@ paths:
         temperature, linked to the origin with an `IsDerivedFrom` field.
 
 
-        `storageTemp` is optional: omit it and the new sample is stored at 4 degrees Celsius.
+        `storageTemp` is optional: omit it or send null and the new sample is stored at 4 degrees
+        Celsius.
         When sent, it must be between 4 and 120 degrees Celsius, to at most three decimal places.
       tags:
         - Operations
@@ -5700,7 +5701,7 @@ components:
         - $ref: "#/components/schemas/PoolTakeAll"
     PoolByAmounts:
       type: object
-      description: A Pool that takes a chosen amount from each origin. `takeAll` is absent or false.
+      description: A Pool that takes a chosen amount from each origin. `takeAll` is absent, null or false.
       allOf:
         - $ref: "#/components/schemas/CreatingOperationFields"
         - properties:
@@ -5712,8 +5713,10 @@ components:
                 $ref: "#/components/schemas/OperationOriginWithAmount"
             takeAll:
               type: boolean
+              nullable: true
               enum:
                 - false
+                - null
           required:
             - origins
       example:
@@ -5748,8 +5751,11 @@ components:
                   - $ref: "#/components/schemas/OperationOrigin"
                 properties:
                   amountTaken:
-                    not: {}
-                    description: Must be absent. `takeAll` takes each origin's whole quantity.
+                    type: object
+                    nullable: true
+                    enum:
+                      - null
+                    description: Must be absent or null. `takeAll` takes each origin's whole quantity.
             takeAll:
               type: boolean
               enum:
@@ -5839,16 +5845,18 @@ components:
     ReviveOperation:
       type: object
       description: |
-        Revive request. `storageTemp` is optional, defaults to 4 degrees Celsius, and must be
-        between 4 and 120 degrees Celsius. `count` is optional and defaults to 1; it may not
-        exceed 100.
+        Revive request. `storageTemp` is optional (absent or null), defaults to 4 degrees
+        Celsius, and must be between 4 and 120 degrees Celsius. `count` is optional and defaults
+        to 1; it may not exceed 100.
       allOf:
         - $ref: "#/components/schemas/CreatingOperationFields"
         - properties:
             origin:
               $ref: "#/components/schemas/OperationOriginWithAmount"
             storageTemp:
-              $ref: "#/components/schemas/ReviveStorageTemperature"
+              nullable: true
+              allOf:
+                - $ref: "#/components/schemas/ReviveStorageTemperature"
           required:
             - origin
       example:
