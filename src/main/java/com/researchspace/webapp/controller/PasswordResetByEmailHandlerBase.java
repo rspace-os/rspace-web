@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.webapp.controller.UsernameReminderByEmailHandler.MAX_REMINDERS_PER_EMAIL_PER_HOUR;
 
+import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
@@ -16,7 +17,6 @@ import com.researchspace.service.impl.EmailContentGenerator;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
-import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -25,13 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.AccessLevel;
-import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
@@ -39,21 +36,6 @@ import org.springframework.web.servlet.ModelAndView;
 /** Base class for password/verification-password reset by email */
 public abstract class PasswordResetByEmailHandlerBase {
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
-  private static final Duration RESET_RATE_LIMIT_PERIOD = Duration.ofSeconds(5);
-
-  /**
-   * Reset replies accepted per handler per five seconds. Each one hashes the new password with
-   * Argon2id (about 19 MiB of heap) outside the login verifier's permits, and one valid token can
-   * be posted concurrently until the first reply marks it used, so this caps what an anonymous
-   * burst can allocate (ADR 0011). Over the limit, submissions are refused at once; nothing waits
-   * and the token stays usable.
-   */
-  @Value("${user.passwordReset.maxPerFiveSeconds:10}")
-  @Setter(AccessLevel.PACKAGE) // for testing
-  private int maxResetsPerFiveSeconds;
-
-  private RateLimiter resetRateLimiter;
-
   @Autowired UserManager userManager;
   @Autowired IPropertyHolder properties;
 
@@ -62,21 +44,10 @@ public abstract class PasswordResetByEmailHandlerBase {
   EmailBroadcast emailer;
 
   @Autowired UserValidator userValidator;
+  @Autowired NewPasswordEncodeGate encodeGate;
   @Autowired MessageSourceUtils messages;
   private @Autowired EmailContentGenerator emailContentGenerator;
   Map<String, RateLimiter> resetsPerMinutePerUser = new ConcurrentHashMap<String, RateLimiter>();
-
-  @PostConstruct
-  void initResetRateLimiter() {
-    resetRateLimiter =
-        RateLimiter.of(
-            "passwordReset",
-            RateLimiterConfig.custom()
-                .limitForPeriod(maxResetsPerFiveSeconds)
-                .limitRefreshPeriod(RESET_RATE_LIMIT_PERIOD)
-                .timeoutDuration(Duration.ZERO)
-                .build());
-  }
 
   /** Generates a reset token and sends an email with the token if the given email address exists */
   protected void sendChangeCredentialsEmail(HttpServletRequest request, String email) {
@@ -169,19 +140,22 @@ public abstract class PasswordResetByEmailHandlerBase {
     if (errors.hasErrors()) {
       return new ModelAndView("passwordReset/resetPassword");
     }
-    if (!resetRateLimiter.acquirePermission()) {
+    if (!encodeGate.tryAcquire()) {
       SECURITY_LOG.warn(
-          "Reset of {} for [{}] from {} refused: more than {} resets in {} seconds",
+          "Reset of {} for [{}] from {} refused: no free new-password hashing slot",
           getPasswordType(),
           username,
-          RequestUtil.remoteAddr(request),
-          maxResetsPerFiveSeconds,
-          RESET_RATE_LIMIT_PERIOD.toSeconds());
+          RequestUtil.remoteAddr(request));
       errors.reject("errors.passwordReset.rateLimited");
       return new ModelAndView("passwordReset/resetPassword");
     }
     // update pwd, set as closed
-    TokenBasedVerification upc = applyPasswordChange(cmd);
+    TokenBasedVerification upc;
+    try {
+      upc = applyPasswordChange(cmd);
+    } finally {
+      encodeGate.release();
+    }
     if (upc != null) {
       sendPasswordChangeCompleteEmail(upc);
       SECURITY_LOG.info(
