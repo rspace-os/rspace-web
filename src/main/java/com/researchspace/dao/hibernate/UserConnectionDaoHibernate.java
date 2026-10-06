@@ -56,12 +56,15 @@ public class UserConnectionDaoHibernate
   }
 
   private UserConnection decrypt(UserConnection uc) {
+    // Decrypted credentials must never be flushed back as plaintext, including entities
+    // already loaded by an earlier save in the same transaction.
+    getSession().setReadOnly(uc, true);
     return uc.decryptTokens(textEncryptor);
   }
 
   private List<UserConnection> decrypt(List<UserConnection> userConnectionList) {
     for (UserConnection userConnection : userConnectionList) {
-      userConnection.decryptTokens(textEncryptor);
+      decrypt(userConnection);
     }
     return userConnectionList;
   }
@@ -121,12 +124,20 @@ public class UserConnectionDaoHibernate
     uc.encryptTokens(textEncryptor);
     Session session = getSession();
     // UserConnection has @EmbeddedId (always non-null), so check if it already exists
-    if (session.contains(uc)) {
+    if (session.contains(uc) && !session.isReadOnly(uc)) {
       // already managed
       uc.setTransientlyEncrypted(uc.isTransientlyEncrypted());
       return uc;
     }
+    if (session.contains(uc)) {
+      session.evict(uc);
+    }
     UserConnection existing = session.get(UserConnection.class, uc.getId());
+    if (existing != null && session.isReadOnly(existing)) {
+      // A read-only credential may also be a stale identity left after a bulk delete.
+      session.evict(existing);
+      existing = session.get(UserConnection.class, uc.getId());
+    }
     UserConnection saved;
     if (existing == null) {
       session.persist(uc);

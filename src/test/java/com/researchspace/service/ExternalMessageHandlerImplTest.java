@@ -99,9 +99,17 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
   private Long setUpAppConfigForUser(
       User user, String appName, Supplier<Map<String, String>> appConfigSupplier) {
     // trusted, as only Slack's OAuth callback may create a Slack channel
-    UserAppConfig appConfig =
-        mgr.saveAppConfigElementSet(appConfigSupplier.get(), null, true, user, appName);
+    Map<String, String> options = appConfigSupplier.get();
+    String teamsWebhook = options.remove("MSTEAMS_WEBHOOK_URL");
+    UserAppConfig appConfig = mgr.saveAppConfigElementSet(options, null, true, user, appName);
     Long cfgSetId = appConfig.getAppConfigElementSets().iterator().next().getId();
+    if (App.APP_MSTEAMS.equals(appName) && teamsWebhook != null) {
+      UserConnection connection =
+          new UserConnection(
+              new UserConnectionId(user.getUsername(), "MSTEAMS", cfgSetId.toString()), "");
+      connection.setSecret(teamsWebhook);
+      userConnectionManager.save(connection);
+    }
     return cfgSetId;
   }
 

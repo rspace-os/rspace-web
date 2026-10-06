@@ -67,6 +67,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  *
@@ -135,6 +136,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       Map.ofEntries(
           Map.entry(PYRAT_APP_NAME, PYRAT_APIKEY),
           Map.entry(DSW_APP_NAME, DSW_APIKEY),
+          Map.entry(DATAVERSE_APP_NAME, DATAVERSE_APIKEY),
+          Map.entry(MSTEAMS_APP_NAME, MSTEAMS_WEBHOOK_URL),
           Map.entry(GALAXY_APP_NAME, GALAXY_APIKEY));
 
   public void init() {
@@ -394,8 +397,38 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
                     .map(label -> elementSetOptions.put("_label", label));
                 options.put("" + set.getId(), elementSetOptions);
               });
+      if (DATAVERSE_APP_NAME.equals(info.getName())) {
+        setConnectionSecretsForConfigSets(
+            options, user, DATAVERSE_APP_NAME, DATAVERSE_APIKEY, false);
+      } else if (MSTEAMS_APP_NAME.equals(info.getName())) {
+        setConnectionSecretsForConfigSets(
+            options, user, MSTEAMS_APP_NAME, MSTEAMS_WEBHOOK_URL, true);
+      }
       info.setOptions(options);
     }
+  }
+
+  private void setConnectionSecretsForConfigSets(
+      Map<String, Object> options,
+      User user,
+      String providerName,
+      String settingName,
+      boolean secretField) {
+    options.forEach(
+        (configSetId, value) -> {
+          if (value instanceof Map<?, ?> configSet) {
+            Optional<UserConnection> connection =
+                userConnManager.findByUserNameProviderName(
+                    user.getUsername(), providerName, configSetId);
+            if (connection.isPresent()) {
+              String secret =
+                  secretField ? connection.get().getSecret() : connection.get().getAccessToken();
+              ((Map<String, String>) configSet).put(settingName, secretForBrowser(secret));
+            } else if (!configSet.containsKey(settingName)) {
+              ((Map<String, String>) configSet).put(settingName, "");
+            }
+          }
+        });
   }
 
   private static String hideIfSecret(String settingName, String value) {
@@ -659,6 +692,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   @Override
+  @Transactional
   @CacheEvict(
       value = INTEGRATION_INFO,
       key = "#user.username + #appName.toUpperCase(T(java.util.Locale).ROOT)")
@@ -701,13 +735,68 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         }
       }
     }
-    appConfigMgr.saveAppConfigElementSet(
-        options, optionsId, trustedOrigin, user, getAppNameFromIntegrationName(appName));
+    String credentialSetting = ENCODE_API_KEY_FOR_APPS.get(appName);
+    if (optionsId == null
+        && (DATAVERSE_APP_NAME.equals(appName) || MSTEAMS_APP_NAME.equals(appName))
+        && (!originalOptions.containsKey(credentialSetting)
+            || originalOptions.get(credentialSetting) == null)) {
+      throw new IllegalArgumentException("A new configuration must include its credential");
+    }
+    UserAppConfig savedConfig =
+        appConfigMgr.saveAppConfigElementSet(
+            options, optionsId, trustedOrigin, user, getAppNameFromIntegrationName(appName));
+    if (DATAVERSE_APP_NAME.equals(appName) || MSTEAMS_APP_NAME.equals(appName)) {
+      Long credentialSetId =
+          optionsId != null
+              ? optionsId
+              : savedConfig.getAppConfigElementSets().stream()
+                  .mapToLong(AppConfigElementSet::getId)
+                  .max()
+                  .orElseThrow();
+      saveConfigSetCredential(
+          user,
+          appName,
+          credentialSetId,
+          originalOptions.get(credentialSetting),
+          MSTEAMS_APP_NAME.equals(appName));
+    }
     saveConfigOptionsForAppsWithMultipleOptionSet(
         user, optionsId, appName, originalOptions, existingAlias);
   }
 
+  private void saveConfigSetCredential(
+      User user, String appName, Long configSetId, String credential, boolean secretField) {
+    if (credential == null) {
+      return;
+    }
+    String discriminant = String.valueOf(configSetId);
+    if (credential.isEmpty()) {
+      userConnManager.deleteByUserAndProvider(user.getUsername(), appName, discriminant);
+      return;
+    }
+    UserConnection connection =
+        userConnManager
+            .findByUserNameProviderName(user.getUsername(), appName, discriminant)
+            .orElseGet(
+                () -> {
+                  UserConnection newConnection =
+                      new UserConnection(
+                          new UserConnectionId(user.getUsername(), appName, discriminant), "");
+                  newConnection.setDisplayName(appName + " credential");
+                  newConnection.setRank(Math.toIntExact(configSetId));
+                  return newConnection;
+                });
+    if (secretField) {
+      connection.setSecret(credential);
+    } else {
+      connection.setAccessToken(credential);
+    }
+    connection.setExpireTime(0L);
+    userConnManager.save(connection);
+  }
+
   @Override
+  @Transactional
   @CacheEvict(
       value = INTEGRATION_INFO,
       key = "#user.username + #appName.toUpperCase(T(java.util.Locale).ROOT)")
@@ -733,6 +822,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       if (appConfigMgr.getByAppName(App.APP_GITHUB, user).getAppConfigElementSets().isEmpty()) {
         userConnManager.deleteByUserAndProvider(user.getUsername(), appName);
       }
+    } else if (DATAVERSE_APP_NAME.equals(appName) || MSTEAMS_APP_NAME.equals(appName)) {
+      userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
     }
   }
 

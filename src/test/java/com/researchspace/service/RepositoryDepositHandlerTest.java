@@ -7,7 +7,10 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
+import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
+import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.IRepository;
 import com.researchspace.repository.spi.RepositoryConfig;
@@ -18,9 +21,11 @@ import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.repositories.RSpaceRepoConnectionConfig;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -140,5 +145,28 @@ public class RepositoryDepositHandlerTest {
     handler.getDataverseRepoUIConfigInfo(
         appCfg.getAppConfigElementSets().iterator().next(), anyUser);
     verifyConfigurerCalledOK(DATAVERSE_REPOSITORY);
+  }
+
+  @Test
+  public void dataverseConfigReadsTheApiKeyFromUserConnection() throws MalformedURLException {
+    UserAppConfig appCfg =
+        SystemPropertyTestFactory.createAnyAppWithConfigElements(anyUser, App.APP_DATAVERSE);
+    AppConfigElementSet set = appCfg.getAppConfigElementSets().iterator().next();
+    org.springframework.test.util.ReflectionTestUtils.setField(set, "id", 42L);
+    UserConnection connection =
+        new UserConnection(
+            new UserConnectionId(anyUser.getUsername(), "DATAVERSE", "42"), "secret");
+    when(connectionRepo.findByUserNameProviderName(anyUser.getUsername(), "DATAVERSE", "42"))
+        .thenReturn(Optional.of(connection));
+    mockGetSessionUser();
+    setUpRepoExpectations(DATAVERSE_REPOSITORY);
+
+    handler.getDataverseRepoUIConfigInfo(set, anyUser);
+
+    ArgumentCaptor<RSpaceRepoConnectionConfig> config =
+        ArgumentCaptor.forClass(RSpaceRepoConnectionConfig.class);
+    verify(repositoryConfigFactory)
+        .createRepositoryConfigFromAppCfg(config.capture(), Mockito.eq(anyUser));
+    assertEquals("secret", config.getValue().getApiKey());
   }
 }
