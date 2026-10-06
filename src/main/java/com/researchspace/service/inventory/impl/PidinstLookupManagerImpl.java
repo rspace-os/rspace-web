@@ -52,7 +52,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -147,7 +146,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
           "^(?:https?://hdl\\.handle\\.net/)?(21\\.[A-Za-z0-9.]+/\\S+)$", Pattern.CASE_INSENSITIVE);
 
   /** Newest update first, then newest creation, then PID: the merged order of ADR 0011. */
-  static final Comparator<ApiPidinstRecord> NEWEST_FIRST =
+  private static final Comparator<ApiPidinstRecord> NEWEST_FIRST =
       Comparator.comparing(
               (ApiPidinstRecord record) -> instantOf(record.getUpdated()),
               Comparator.nullsLast(Comparator.reverseOrder()))
@@ -159,7 +158,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   /**
    * B2INST writes "+00:00" offsets, the DataCite mapper writes Instant.toString(): both parse here.
    */
-  static Instant instantOf(String iso) {
+  private static Instant instantOf(String iso) {
     if (StringUtils.isBlank(iso)) {
       return null;
     }
@@ -201,7 +200,10 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
           "errors.inventory.identifier.pidinstQueryTooShort", MIN_QUERY_LENGTH);
     }
     List<IdentifierType> registries = registriesOf(providers);
-    Validate.isTrue(pageNumber >= 0, "pageNumber must not be negative");
+    if (pageNumber < 0 || pageNumber > MAX_PAGE_NUMBER) {
+      throw new ApiRuntimeException(
+          "errors.inventory.identifier.pidinstPageOutOfRange", MAX_PAGE_NUMBER + 1);
+    }
     ApiPidinstSearchResult result = new ApiPidinstSearchResult();
     result.setProviders(registries.stream().map(Enum::name).toList());
     result.setPageNumber(pageNumber);

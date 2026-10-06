@@ -57,6 +57,7 @@ class ExternalUpdateMessageKeysTest {
         // RSDEV-1518: the public-registry lookup and the registry named on import
         "errors.inventory.identifier.pidinstRegistryRequired",
         "errors.inventory.identifier.pidinstImportProviderRequired",
+        "errors.inventory.identifier.pidinstPageOutOfRange",
         // RSDEV-1528: the text the import's missing-template 500 carries to the user
         "errors.inventory.identifier.pidinstTemplateMissing"
       })

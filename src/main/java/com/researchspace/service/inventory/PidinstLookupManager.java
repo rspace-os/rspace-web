@@ -10,8 +10,8 @@ import java.util.List;
 /**
  * PID lookup and instrument import against the public registries (RSDEV-1518, ADR 0011; CONTEXT.md
  * "PID lookup", "Instrument import"; ADR 0009). A {@code *Manager} in this package so the inventory
- * transaction advisor applies: the registry calls run inside the transaction, the same ceiling
- * registration already has.
+ * transaction advisor applies: the registry calls run inside the transaction, up to {@link
+ * #MAX_PAGE_NUMBER} + 1 of them per registry for one search on a cold cache.
  */
 public interface PidinstLookupManager {
 
@@ -23,6 +23,13 @@ public interface PidinstLookupManager {
    * the registry, which is a slow call for a page of results nobody wanted.
    */
   int MIN_QUERY_LENGTH = 4;
+
+  /**
+   * Last merged page a search serves, 0-based: 10,000 hits at {@link #PAGE_SIZE}. Merged page k
+   * fetches k+1 pages from each registry inside one transaction, and DataCite pages without limit,
+   * so this bounds the registry calls one request can cost (ADR 0011).
+   */
+  int MAX_PAGE_NUMBER = 199;
 
   /**
    * One merged page of PID lookup hits from the public registries named in {@code providers}
@@ -38,8 +45,8 @@ public interface PidinstLookupManager {
    * @throws ApiRuntimeException {@code pidinstQueryTooShort} below {@link #MIN_QUERY_LENGTH} after
    *     trimming, so a direct caller is held to the same rule as the import dialog; {@code
    *     pidinstRegistryRequired} when {@code providers} is null, empty or names anything but the
-   *     two PIDINST registries
-   * @throws IllegalArgumentException when {@code pageNumber} is negative
+   *     two PIDINST registries; {@code pidinstPageOutOfRange} when {@code pageNumber} is negative
+   *     or past {@link #MAX_PAGE_NUMBER}
    */
   ApiPidinstSearchResult search(String query, List<String> providers, int pageNumber, User user);
 

@@ -62,7 +62,7 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
    * deployment-wide (decision 7), so a shared constant would make every method after the first
    * fail with 409 against this shared dev database - and again on the next run of the suite. The
    * record id must equal the Handle suffix, because that is how B2INST resolves a Handle to its
-   * record (B2instConnector.getRecordByHandle).
+   * record (B2instConnector.getPublicRecordByHandle).
    */
   private static final String HANDLE_PREFIX = "21.T11975/";
 

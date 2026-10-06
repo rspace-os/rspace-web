@@ -21,7 +21,7 @@ public class ApiPidinstSearchResult {
   @JsonProperty("pageNumber")
   private int pageNumber;
 
-  /** Always {@link com.researchspace.service.inventory.PidinstLookupManager#PAGE_SIZE}. */
+  /** Always 50, the page size of every registry page and of the merged page. */
   @JsonProperty("pageSize")
   private int pageSize;
 

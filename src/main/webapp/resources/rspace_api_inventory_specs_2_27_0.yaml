@@ -3439,10 +3439,13 @@ paths:
         - in: query
           name: pageNumber
           required: false
-          description: 0-based page of 50 merged hits; defaults to 0.
+          description: >
+            0-based page of 50 merged hits; defaults to 0. Pages past 199 (the first 10,000
+            hits) are refused with a 422.
           schema:
             type: integer
             minimum: 0
+            maximum: 199
             default: 0
       responses:
         "200":

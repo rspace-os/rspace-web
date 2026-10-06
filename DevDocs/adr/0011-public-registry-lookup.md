@@ -23,9 +23,10 @@ APIs. `https://b2inst.gwdg.de/api/records?q=…` answers anonymously, is already
 (3904 records, the sum of the 14 communities' own counts), pages with `size`/`page` and honours
 `sort=updated-desc` although the EUDAT docs list that key only for drafts. DataCite allows 500
 anonymous requests per 5 minutes per IP, 1000 when the request carries an email in `User-Agent`
-or `mailto=`; B2INST answers `x-ratelimit-limit: 500` per minute. Both cap deep paging at 10,000
-results. Nothing at either registry blocks the ticket; what blocked it was RSpace's own gates and
-the credentials baked into both connectors and into datacite-java-client.
+or `mailto=`; B2INST answers `x-ratelimit-limit: 500` per minute. B2INST caps deep paging at
+10,000 results; DataCite does not (decision 4). Nothing at either registry blocks the ticket; what
+blocked it was RSpace's own gates and the credentials baked into both connectors and into
+datacite-java-client.
 
 ## Decision
 
@@ -58,13 +59,15 @@ Decided with Nico on 2026-10-05.
    items from each registry's first (k+1)×50, so the manager fetches registry pages 0..k of each
    ticked registry, stopping at a short page, each one cached ten minutes by registry, query and
    page as before, merges them and slices the page. Sequential paging costs one new registry call
-   per registry per page; a cold jump to page k costs k+1 per registry, then nothing. The
-   10,000-result ceiling of both registries bounds this at page 199; DataCite answers an empty page
-   past it and B2INST a 400, so no guard is added. The DOI-fragment retry of ADR 0009 decision 7
-   applies per page, and only while the free text matched nothing at all: when a DataCite page is
-   empty with a total of 0 and the query is a bare fragment, the same page is asked as
-   `doi:*<query>*`. An exhausted later page of a query that did match is not retried, which would
-   fill it from another query.
+   per registry per page; a cold jump to page k costs k+1 per registry, then nothing. The search
+   refuses any page past 199 (the first 10,000 hits) with a 422 (`pidinstPageOutOfRange`), so one
+   request costs at most 200 calls per registry. A guard is needed because DataCite pages without
+   limit: `query=climate` (about 614,000 hits) still served 50 records at page 5000 (checked
+   2026-10-06), and the endpoint is a public API, not only the dialog's pager. The DOI-fragment
+   retry of ADR 0009 decision 7 applies per page, and only while the free text matched nothing at
+   all: when a DataCite page is empty with a total of 0 and the query is a bare fragment, the same
+   page is asked as `doi:*<query>*`. An exhausted later page of a query that did match is not
+   retried, which would fill it from another query.
 5. **Import names its registry.** `POST /instruments/importPidinst` takes a required `provider`
    alongside `pid`; the dialog passes the hit's. A missing `provider` (400) and an unknown one (422)
    are both refused with the import's own message, not the search's (Nico, 2026-10-05). A PID of

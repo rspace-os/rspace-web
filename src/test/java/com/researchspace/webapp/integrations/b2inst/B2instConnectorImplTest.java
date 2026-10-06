@@ -1142,4 +1142,17 @@ class B2instConnectorImplTest {
     assertTrue(thrown.getMessage().contains("pidinst.lookup.b2inst.url"), thrown.getMessage());
     server.verify();
   }
+
+  @Test
+  void getPublicRecordByHandleRaisesARegistryFailureOtherThan404() {
+    MockRestServiceServer server = lookupServer();
+    server
+        .expect(requestTo("https://b2inst.gwdg.de/api/records/abc-123"))
+        .andRespond(withServerError());
+
+    assertThrows(
+        B2instConnectionException.class,
+        () -> connector.getPublicRecordByHandle("21.11157/abc-123"));
+    server.verify();
+  }
 }

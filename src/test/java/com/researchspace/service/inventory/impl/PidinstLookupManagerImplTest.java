@@ -61,6 +61,7 @@ import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
+import com.researchspace.service.inventory.PidinstLookupManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
@@ -1272,6 +1273,23 @@ class PidinstLookupManagerImplTest {
   }
 
   @Test
+  void aHitWithNoOrAnUnreadableUpdateTimeSortsAfterADatedOne() {
+    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+        .thenReturn(
+            searchResultOf(
+                3,
+                publishedRecord("21.T11975/a-undated", "a", null, null),
+                publishedRecord("21.T11975/b-garbled", "b", "not-a-date", null),
+                publishedRecord("21.T11975/c-dated", "c", "2020-01-01T00:00:00+00:00", null)));
+
+    ApiPidinstSearchResult result = manager.search("Zeiss", List.of("PIDINST_B2INST"), 0, user);
+
+    assertIterableEquals(
+        List.of("21.T11975/c-dated", "21.T11975/a-undated", "21.T11975/b-garbled"),
+        result.getHits().stream().map(ApiPidinstRecord::getPid).toList());
+  }
+
+  @Test
   void pageOneIsBuiltFromTheFirstTwoPagesOfEachRegistryAndHoldsFiftyHits() {
     when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
         .thenReturn(fullB2instPage(120, "2026-05-01T00:00:00+00:00"));
@@ -1355,10 +1373,25 @@ class PidinstLookupManagerImplTest {
         arguments(List.of("PIDINST_B2INST", "pidinst_b2inst_typo")));
   }
 
-  @Test
-  void aNegativePageIsRefused() {
-    assertThrows(IllegalArgumentException.class, () -> manager.search("Zeiss", BOTH, -1, user));
+  @ParameterizedTest
+  @ValueSource(ints = {-1, PidinstLookupManager.MAX_PAGE_NUMBER + 1})
+  void aPageOutsideTheRangeIsRefusedBeforeAnyRegistryCall(int pageNumber) {
+    ApiRuntimeException thrown =
+        assertThrows(
+            ApiRuntimeException.class, () -> manager.search("Zeiss", BOTH, pageNumber, user));
+
+    assertEquals("errors.inventory.identifier.pidinstPageOutOfRange", thrown.getErrorCode());
     verifyNoInteractions(b2instConnector, dataCiteConnector);
+  }
+
+  @Test
+  void aRegistryNameIsMatchedIgnoringCaseAndPadding() {
+    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+        .thenReturn(searchResultOf(publishedRecord(), 1));
+
+    assertEquals(
+        List.of("PIDINST_B2INST"),
+        manager.search("Zeiss", List.of(" pidinst_b2inst "), 0, user).getProviders());
   }
 
   @Test

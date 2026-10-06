@@ -94,6 +94,16 @@ class DataCiteConnectorImplLookupTest {
   }
 
   @Test
+  void anUnparsableLookupUrlLeavesNoClientAndFailsTheSearch() {
+    ReflectionTestUtils.setField(connector, "lookupServerUrl", "https://api.datacite.org/a b");
+    connector.initLookupClient();
+
+    assertThrows(
+        DataCiteConnectionException.class,
+        () -> connector.searchPublicInstrumentDois("Zeiss", 0, 50));
+  }
+
+  @Test
   void theLookupClientIsBuiltFromTheDeploymentPropertyAndTheSupportEmail() {
     ReflectionTestUtils.setField(connector, "lookupServerUrl", "https://api.datacite.org");
     ReflectionTestUtils.setField(connector, "supportEmail", "support@example.org");

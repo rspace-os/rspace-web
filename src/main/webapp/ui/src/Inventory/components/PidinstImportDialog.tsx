@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { useConfirm } from "@/components/ConfirmProvider";
 import useOauthToken from "@/hooks/auth/useOauthToken";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { getErrorMessage } from "@/util/error";
 import createAccentedTheme, { type AccentColor } from "../../accentedTheme";
@@ -306,7 +307,7 @@ type PidinstImportDialogArgs = {
  */
 export default function PidinstImportDialog({ open, onClose, onImported }: PidinstImportDialogArgs): React.ReactNode {
   const confirm = useConfirm();
-  const { t } = useTranslation(["inventory", "common"]);
+  const { t, i18n } = useTranslation(["inventory", "common"]);
   const { getToken } = useOauthToken();
   const { isViewportSmall } = useViewportDimensions();
   const { addAlert, removeAlert } = React.useContext(AlertContext);
@@ -610,14 +611,16 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                     from: result.pageNumber * result.pageSize + 1,
                     to: result.pageNumber * result.pageSize + result.hits.length,
                     total: result.totalHits,
-                    breakdown: result.providers
-                      .map((provider) =>
+                    breakdown: formatList(
+                      result.providers.map((provider) =>
                         t("pidinstImport.results.registryTotal", {
                           provider: providerLabel(provider),
                           total: result.totalsByProvider[provider] ?? 0,
                         }),
-                      )
-                      .join(", "),
+                      ),
+                      i18n.resolvedLanguage ?? i18n.language,
+                      { style: "long", type: "unit" },
+                    ),
                   })}
                 </span>
               )}
