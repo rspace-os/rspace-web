@@ -81,9 +81,9 @@ request volume. A request that cannot get its turn before the wait elapses fails
 generic failure the user sees for a wrong password, but through a distinct exception type,
 `LoginVerificationBusyException`. The login filter (`StandaloneShiroFormAuthFilterExt`) and
 `ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
-users out. Encoding new passwords is not bounded at the encoder; instead the two anonymous routes
-that reach it (signup and the login and verification password-reset replies) take a permit from
-one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
+users out. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
+that reach it (signup, Google sign-up on Community, and the login and verification password-reset
+replies) take a permit from one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
 through the hash and the save and refused immediately when none is free, with a reset token left
 usable. The reset replies also accept only an unused, unexpired token. Anonymous Argon2
 allocation therefore cannot exceed 4 x 19 MiB, about 76 MiB, or about 228 MiB with the login
@@ -144,7 +144,7 @@ application are unaffected.
   `X-Forwarded-For`, and it does nothing against a distributed source. It does not cap the heap.
   The semaphore does, and is blind to addresses. The two are complementary, not alternatives.
 - **Per-window rate limiter on the anonymous routes** (10 per 5 seconds, one each for signup
-  and the reset replies). Implemented and replaced: it counts admissions on a clock, not hashes
+  and the reset replies, none on Google sign-up). Implemented and replaced: it counts admissions on a clock, not hashes
   in flight, so admissions either side of a refresh overlap and it bounds rate, not heap.
 - **Rely on the servlet thread pool.** Rejected: 200 threads times 19 MiB is 3.8 GB, above
   the heap most customer instances run with.
