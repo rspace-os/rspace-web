@@ -5,6 +5,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
 import com.researchspace.auth.password.LoginVerificationBusyException;
+import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.Role;
@@ -22,12 +23,8 @@ import com.researchspace.service.UserExistsException;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
 import com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt;
-import io.github.resilience4j.ratelimiter.RateLimiter;
-import io.github.resilience4j.ratelimiter.RateLimiterConfig;
-import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
-import java.time.Duration;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -66,19 +63,8 @@ public class SignupController extends BaseController {
       "redirect:login?" + ACCOUNT_CREATED_LOGIN_BUSY_PARAM;
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
-  private static final Duration SIGNUP_RATE_LIMIT_PERIOD = Duration.ofSeconds(5);
 
-  /**
-   * Signups accepted instance-wide per five seconds. Each one hashes the new password with Argon2id
-   * (about 19 MiB of heap) outside the login verifier's permits, so this caps what an anonymous
-   * burst can allocate (ADR 0011). Over the limit, submissions are refused at once; nothing waits.
-   */
-  @Value("${user.signup.maxPerFiveSeconds:10}")
-  @Setter(AccessLevel.PACKAGE) // for testing
-  private int maxSignupsPerFiveSeconds;
-
-  private RateLimiter signupRateLimiter;
-
+  private @Autowired NewPasswordEncodeGate encodeGate;
   private @Autowired RoleManager roleManager;
 
   @Autowired
@@ -126,18 +112,6 @@ public class SignupController extends BaseController {
   public SignupController() {
     setCancelView("redirect:login");
     setSuccessView("redirect:workspace");
-  }
-
-  @PostConstruct
-  void initSignupRateLimiter() {
-    signupRateLimiter =
-        RateLimiter.of(
-            "signup",
-            RateLimiterConfig.custom()
-                .limitForPeriod(maxSignupsPerFiveSeconds)
-                .limitRefreshPeriod(SIGNUP_RATE_LIMIT_PERIOD)
-                .timeoutDuration(Duration.ZERO)
-                .build());
   }
 
   @ModelAttribute
@@ -293,13 +267,11 @@ public class SignupController extends BaseController {
     }
     addRole(user);
 
-    if (!signupRateLimiter.acquirePermission()) {
+    if (!encodeGate.tryAcquire()) {
       SECURITY_LOG.warn(
-          "Signup for [{}] from {} refused: more than {} signups in {} seconds",
+          "Signup for [{}] from {} refused: no free new-password hashing slot",
           user.getUsername(),
-          RequestUtil.remoteAddr(request),
-          maxSignupsPerFiveSeconds,
-          SIGNUP_RATE_LIMIT_PERIOD.toSeconds());
+          RequestUtil.remoteAddr(request));
       errors.reject("errors.signup.rateLimited");
       return returnToSignupPage(user);
     }
@@ -326,6 +298,8 @@ public class SignupController extends BaseController {
             null);
       }
       return returnToSignupPage(user);
+    } finally {
+      encodeGate.release();
     }
 
     if (properties.isCloud()) {
