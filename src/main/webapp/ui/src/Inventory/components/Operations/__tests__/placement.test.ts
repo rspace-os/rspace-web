@@ -1,8 +1,19 @@
 import "@/stores/stores/RootStore";
 import { describe, expect, it } from "vitest";
-import { makeMockBench, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import { benchAttrs, makeMockBench, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import {
+  makeMockSubSample,
+  makeMockSubSampleWithParentContainer,
+} from "@/stores/models/__tests__/SubSampleModel/mocking";
 import type { ContainerAttrs } from "@/stores/models/ContainerModel";
-import { buildPlacementRecords, placementBlocker, prepareContainer, releaseContainer } from "../placement";
+import {
+  buildPlacementRecords,
+  originContainerId,
+  placementBlocker,
+  prepareContainer,
+  releaseContainer,
+  usableContainer,
+} from "../placement";
 
 const summary = (totalCount: number) => ({
   totalCount,
@@ -133,5 +144,30 @@ describe("buildPlacementRecords", () => {
     prepareContainer(box, 2);
     box.locations?.[0].toggleSelected(true);
     expect(() => buildPlacementRecords(created, box)).toThrow();
+  });
+});
+
+describe("originContainerId", () => {
+  it("is the first origin's own container", () => {
+    expect(originContainerId([makeMockSubSampleWithParentContainer(), makeMockSubSample()])).toBe(2);
+  });
+
+  it("is null for an origin on a workbench or with no container", () => {
+    const onBench = makeMockSubSample({ parentContainers: [benchAttrs({ id: 3 })] });
+    expect(originContainerId([onBench])).toBeNull();
+    expect(originContainerId([makeMockSubSample()])).toBeNull();
+  });
+});
+
+describe("usableContainer", () => {
+  it("accepts a grid with room, whose locations are still to be picked", () => {
+    const box = gridBox(1);
+    expect(usableContainer(box, 3)).toBe(box);
+  });
+
+  it("rejects a container that cannot take the new subsamples", () => {
+    expect(usableContainer(gridBox(3), 2)).toBeNull();
+    expect(usableContainer(makeMockContainer({ cType: "IMAGE" }), 1)).toBeNull();
+    expect(usableContainer(makeMockContainer({ permittedActions: ["READ"] }), 1)).toBeNull();
   });
 });

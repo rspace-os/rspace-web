@@ -2,6 +2,7 @@
 import { runInAction } from "mobx";
 import type { BulkEndpointRecordSerialisation } from "@/common/InvApiService";
 import type ContainerModel from "@/stores/models/ContainerModel";
+import type SubSampleModel from "@/stores/models/SubSampleModel";
 
 /** Where the new subsamples go after the operation. `container` is null until one is picked. */
 export type PlacementSelection = { mode: "workbench" } | { mode: "container"; container: ContainerModel | null };
@@ -94,4 +95,17 @@ export function buildPlacementRecords(
   if (locations.length !== subSamples.length)
     throw new Error(`${subSamples.length} new subsamples but ${locations.length} chosen locations`);
   return subSamples.map((s, i) => ({ ...base(s), parentLocation: locations[i].paramsForBackend }));
+}
+
+/** The container a (remembered or default) placement may use: one still able to take the new subsamples. */
+export function usableContainer(container: ContainerModel, count: number): ContainerModel | null {
+  const blocker = placementBlocker(container, count);
+  return blocker === null || blocker.reason === "selectSlots" ? container : null;
+}
+
+/** The id of the first origin's own container (D5), or null when it is on a workbench or unknown. */
+export function originContainerId(origins: ReadonlyArray<SubSampleModel>): number | null {
+  const parent = origins[0]?.immediateParentContainer;
+  if (!parent || parent.cType === "WORKBENCH" || parent.id === null) return null;
+  return Number(parent.id);
 }
