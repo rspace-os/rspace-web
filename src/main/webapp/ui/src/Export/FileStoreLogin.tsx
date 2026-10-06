@@ -79,7 +79,6 @@ export default function FileStoreLogin({
     <div>
       <Grid container>
         <Grid size={12}>
-          {/* inline-flex sizes the column to the wider field and stretches the other to match */}
           <Stack sx={{ display: "inline-flex" }}>
             <FormControl error aria-describedby="name-error-text">
               <TextField
