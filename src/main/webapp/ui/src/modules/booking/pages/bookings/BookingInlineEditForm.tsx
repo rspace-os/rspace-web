@@ -35,7 +35,7 @@ function editable(booking: BookingDetails): booking is BookingDetails & {
 export default function BookingInlineEditForm() {
   const { t } = useTranslation(["booking", "common"]);
   const { t: bookingT } = useTranslation("booking");
-  const { booking, token, displayTimeZone, formId, editButtonRef, announce, setDirty, refreshBooking } =
+  const { booking, token, displayTimeZone, formId, editButtonRef, reportBookingUpdated, setDirty, refreshBooking } =
     useBookingEvent();
   const [base] = useState(booking);
   const [conflict, setConflict] = useState(false);
@@ -64,12 +64,13 @@ export default function BookingInlineEditForm() {
         ...(submission.window.end !== base.end ? { end: submission.window.end } : {}),
         ...(submission.purpose !== base.purpose ? { purpose: submission.purpose } : {}),
       };
-      if (Object.keys(patch).length !== 0) await updateBooking(base.id, base.version, patch, token);
+      if (Object.keys(patch).length === 0) return null;
+      return updateBooking(base.id, base.version, patch, token);
     },
-    onSuccess: async () => {
+    onSuccess: async (updated) => {
       await refreshBooking();
       setDirty(false);
-      announce(t("bookings.details.edit.saved"));
+      if (updated) reportBookingUpdated(updated, base.target?.value.name ?? t("common:values.unknownItem"));
       await toView();
     },
     onError: async (error) => {

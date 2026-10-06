@@ -191,8 +191,12 @@ describe("BookableItemPage", () => {
       start: "2099-01-01T09:00:00Z",
       end: "2099-01-01T10:00:00Z",
       state: "CONFIRMED" as const,
+      kind: "BOOKING" as const,
+      requesterId: 1,
+      canViewConfiguration: true,
       privacy: "full" as const,
       purpose: "Future calibration",
+      cancellationReason: null,
       bookedBy: "Ada Lovelace (ada)",
       canEdit: true,
       canCancel: false,
@@ -281,6 +285,9 @@ describe("BookableItemPage", () => {
     await expect.element(page.getByText("Future calibration", { exact: true }).first()).not.toBeInTheDocument();
     await expect.element(page.getByRole("link", { name: "Edit", exact: true }).first()).not.toBeInTheDocument();
     await expect.element(pageObj.lifecycleActions).toHaveFocus();
+    await expect
+      .element(page.getByRole("status").filter({ hasText: "Booking configuration archived." }))
+      .toHaveTextContent("Booking configuration archived.");
 
     await pageObj.lifecycleActions.click();
     await expect.element(pageObj.restoreAction).toBeVisible();
@@ -293,6 +300,9 @@ describe("BookableItemPage", () => {
     await expect.element(page.getByText("Future calibration", { exact: true }).first()).not.toBeInTheDocument();
     await expect.element(page.getByRole("link", { name: "Edit", exact: true }).first()).not.toBeInTheDocument();
     await expect.element(pageObj.lifecycleActions).toHaveFocus();
+    await expect
+      .element(page.getByRole("status").filter({ hasText: "Booking configuration restored." }))
+      .toHaveTextContent("Booking configuration restored.");
     await expectNoAxeViolations();
   });
 
@@ -370,6 +380,9 @@ describe("BookableItemPage", () => {
     expect(permanentRequest?.headers.get("If-Match")).toBe('"4"');
     await expect.poll(() => history.location.pathname).toBe("/booking/config/bookable-items");
     await expect.element(page.getByRole("heading", { name: "Bookable Items", exact: true })).toBeVisible();
+    const notices = page.getByRole("list", { name: "Recent changes" });
+    await expect.element(notices).toHaveTextContent("Confocal microscope was permanently deleted.");
+    await expect.element(notices.getByRole("link")).not.toBeInTheDocument();
   });
 
   test("supports the calendar flow by keyboard and announces a successful copy", async () => {
@@ -408,13 +421,34 @@ describe("BookableItemPage", () => {
       expect(document.activeElement).not.toBe(forwardFocus);
       expect(pageObj.calendarDialog.element().contains(document.activeElement)).toBe(true);
 
-      const copy = page.getByRole("button", { name: "Copy link" }).element();
-      for (let step = 0; step < 6 && document.activeElement !== copy; step += 1) {
+      const copy = page.getByRole("button", { name: "Copy link" });
+      const copyStatus = pageObj.calendarDialog.getByRole("status");
+      await expect.element(copyStatus).toHaveTextContent("");
+      const copyRect = () => {
+        const rect = pageObj.calendarDialog
+          .getByRole("button", { name: "Copy link" })
+          .element()
+          .getBoundingClientRect();
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      };
+      const replaceRect = () => {
+        const rect = pageObj.calendarDialog
+          .getByRole("button", { name: "Replace link" })
+          .element()
+          .getBoundingClientRect();
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      };
+      const copyPosition = copyRect();
+      const replacePosition = replaceRect();
+      for (let step = 0; step < 6 && document.activeElement !== copy.element(); step += 1) {
         await userEvent.keyboard("{Tab}");
       }
-      expect(document.activeElement).toBe(copy);
+      expect(document.activeElement).toBe(copy.element());
       await userEvent.keyboard("{Enter}");
       await expect.element(page.getByText("Copied", { exact: true })).toBeVisible();
+      await expect.element(copyStatus).toHaveTextContent("Copied");
+      await expect.poll(copyRect).toEqual(copyPosition);
+      await expect.poll(replaceRect).toEqual(replacePosition);
       await expect.element(page.getByRole("button", { name: "Copy link" })).toHaveFocus();
       expect(clipboard).toHaveBeenCalledOnce();
 
@@ -424,6 +458,37 @@ describe("BookableItemPage", () => {
     } finally {
       clipboard.mockRestore();
     }
+  });
+
+  test("keeps notification-save focus while disabling repeated submission", async () => {
+    let subscription = {
+      configurationId: 7,
+      enabled: false,
+      version: 1,
+      createdEnabled: true,
+      cancelledEnabled: true,
+      emailEnabled: false,
+    };
+    let writes = 0;
+    worker.use(
+      http.get("/api/v2/booking-configurations/7/notification-subscription", () => HttpResponse.json(subscription)),
+      http.put("/api/v2/booking-configurations/7/notification-subscription", async ({ request }) => {
+        writes += 1;
+        const body = (await request.json()) as { enabled: boolean; version: number };
+        subscription = { ...subscription, enabled: body.enabled, version: body.version + 1 };
+        return HttpResponse.json(subscription);
+      }),
+    );
+    render(<BookableItemPageStory history={history} />);
+    await page.getByRole("radio", { name: "On", exact: true }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    const saved = page.getByRole("button", { name: "Saved", exact: true });
+    await expect.element(saved).toHaveFocus();
+    await expect.element(saved).toHaveAttribute("aria-disabled", "true");
+    await expect.poll(() => writes).toBe(1);
+    await userEvent.keyboard("{Enter}");
+    expect(writes).toBe(1);
   });
 
   test("uses a distinct path for each tab", async () => {
@@ -598,13 +663,17 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.bookingsTab).toBeDisabled();
     await expect.element(pageObj.detailsTab).toBeDisabled();
     await expect.element(pageObj.auditTab).toBeDisabled();
-    await expect.element(page.getByRole("status")).toHaveTextContent("Saving booking configuration.");
+    await expect
+      .element(page.getByRole("status").filter({ hasText: "Saving booking configuration." }))
+      .toHaveTextContent("Saving booking configuration.");
     await expect.poll(() => releasePatch !== undefined).toBe(true);
     releasePatch?.();
 
     await expect.element(pageObj.edit).toHaveFocus();
     await expect.element(pageObj.auditTab).not.toBeDisabled();
-    await expect.element(page.getByRole("status")).toHaveTextContent("Booking configuration saved.");
+    await expect
+      .element(page.getByRole("list", { name: "Recent changes" }))
+      .toHaveTextContent("Booking configuration saved.");
   });
 
   test("focuses an invalid field and associates correction guidance", async () => {

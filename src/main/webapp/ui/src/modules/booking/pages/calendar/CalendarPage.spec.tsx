@@ -12,7 +12,10 @@ import {
   calendarBookingFields,
   resetBookingPageRequests,
 } from "@/modules/booking/pages/mocks/bookingPagesMocks";
-import { customNewYorkBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
+import {
+  customNewYorkBookingPreferences,
+  institutionBookingPreferences,
+} from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { bookableItemFixtures } from "../bookable-items/mocks/bookableItemsMocks";
 import { collectionResponse, noParentBooking, ownBooking } from "./__tests__/calendarTestHarness";
 import { CalendarPageStory } from "./CalendarPage.story";
@@ -1089,7 +1092,7 @@ describe("Calendar page", () => {
   });
 
   test("creates a booking through the targetless compact form and restores trigger focus", async () => {
-    render(<CalendarPageStory history={history} />);
+    render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
     const trigger = page.getByRole("button", { name: "New Booking" });
     const dialog = await calendar.openTargetlessBookingDialog();
     expect(getComputedStyle(dialog.element()).borderRadius).toBe("8px");
@@ -1100,8 +1103,8 @@ describe("Calendar page", () => {
       top: 13,
     });
     expect(getComputedStyle(dialog.getByRole("button", { name: "Cancel" }).element()).borderRadius).toBe("0px");
-    await dialog.getByLabelText("Start time").fill("10:00");
-    await dialog.getByLabelText("End time").fill("11:00");
+    await dialog.getByLabelText("Start time").fill("08:30");
+    await dialog.getByLabelText("End time").fill("09:30");
     await dialog.getByRole("textbox", { name: "Purpose" }).fill("Live-stack-shaped booking");
     await dialog.getByRole("button", { name: "Book", exact: true }).click();
 
@@ -1110,6 +1113,8 @@ describe("Calendar page", () => {
       target: { relationTo: "booking-instruments", value: 123 },
       kind: "BOOKING",
       purpose: "Live-stack-shaped booking",
+      start: "2026-08-17T08:30:00Z",
+      end: "2026-08-17T09:30:00Z",
     });
     await expect.element(dialog).not.toBeInTheDocument();
     await expect.poll(() => document.activeElement).toBe(trigger.element());
@@ -1215,6 +1220,47 @@ describe("Calendar page", () => {
     await confirmation.getByRole("button", { name: "Discard changes" }).click();
     await expect.element(dirtyDialog).not.toBeInTheDocument();
     await expect.poll(() => history.location.search).toContain("date=2026-08-16");
+  });
+
+  test("preserves the previous history entry when Back cancels a pending event focus", async () => {
+    const originalUrl = window.location.href;
+    const previousUrl = "/booking/calendar?date=2026-08-16&layout=agenda&calendar-resources.q=previous";
+    window.history.replaceState({}, "", previousUrl);
+    const browserHistory = createBrowserHistory();
+    let release = () => {};
+    let started = false;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", async ({ request }) => {
+        if (new URL(request.url).searchParams.get("where")?.includes("IN123")) {
+          started = true;
+          await held;
+        }
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+    const rendered = render(<CalendarPageStory history={browserHistory} />);
+    try {
+      await expect.element(calendar.heading).toBeVisible();
+      browserHistory.push(
+        "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=pending-back",
+      );
+      await expect.poll(() => started).toBe(true);
+      browserHistory.back();
+      await expect.poll(() => window.location.pathname + window.location.search).toBe(previousUrl);
+      release();
+      await expect.element(calendar.search).toHaveValue("previous");
+      expect(window.location.pathname + window.location.search).toBe(previousUrl);
+      browserHistory.forward();
+      await expect.poll(() => new URLSearchParams(window.location.search).get("date")).toBe("2026-08-17");
+    } finally {
+      release();
+      rendered.unmount();
+      browserHistory.destroy();
+      window.history.replaceState({}, "", originalUrl);
+    }
   });
 
   test("keeps beforeunload protection after cancelling a dirty discard dialog", async () => {
@@ -1370,6 +1416,8 @@ describe("Calendar page", () => {
     );
     const newBooking = page.getByRole("button", { name: "New Booking" });
     const moreCreationOptions = page.getByRole("button", { name: "More event creation options" });
+    await expect.element(newBooking).toBeVisible();
+    await expect.element(moreCreationOptions).toBeVisible();
     await expect
       .poll(() => {
         const bookingElement = newBooking.element();

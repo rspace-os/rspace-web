@@ -337,7 +337,7 @@ describe("AllBookableItemsPage", () => {
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
       http.delete("/api/v2/booking-configurations", ({ request }) => {
         archiveRequests.push(new URL(request.url).searchParams.get("where") ?? "");
-        return new HttpResponse(null, { status: 204 });
+        return HttpResponse.json({ docs: [{ id: 7 }, { id: 8 }] });
       }),
       ...bookableItemsHandlers(() => undefined),
     );
@@ -357,6 +357,11 @@ describe("AllBookableItemsPage", () => {
     await user.click(within(dialog).getByRole("button", { name: "Archive" }));
 
     await waitFor(() => expect(archiveRequests).toEqual(["id=in=(7,8)"]));
+    expect(
+      await screen.findByText(
+        "2 items are now archived. Their future bookings, if any, were cancelled and will not return when they are restored.",
+      ),
+    ).toBeVisible();
     await waitFor(() =>
       expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
     );
@@ -720,6 +725,8 @@ describe("AllBookableItemsPage", () => {
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
+      countsHandler(),
+      http.get("/api/v2/booking-configuration-targets", () => HttpResponse.json([])),
       http.get("/api/v2/booking-catalogue", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);

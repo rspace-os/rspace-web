@@ -1,6 +1,6 @@
 import { Tabs } from "@base-ui/react/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
@@ -10,6 +10,12 @@ import { bookableItemOption } from "@/modules/booking/creation/bookableItemOptio
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  BookingLocalNotices,
+  useBookingLocalNotices,
+  useBookingNoticeHost,
+  useBookingNotices,
+} from "@/modules/booking/feedback/BookingNotices";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
 import {
@@ -22,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/modules/common/ui/alert-dialog";
-import { Button } from "@/modules/common/ui/button";
+import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { Input } from "@/modules/common/ui/input";
 import { Heading } from "@/modules/common/ui/typography";
@@ -155,8 +161,11 @@ export function LoadedBookableItemPage({
   const { edit = false } = useSearch({ from: "/booking/bookable-items/$globalId/{-$tab}" });
   const navigate = useNavigate({ from: "/booking/bookable-items/$globalId/{-$tab}" });
   const queryClient = useQueryClient();
+  const notices = useBookingNotices();
+  const localNotices = useBookingLocalNotices();
+  useBookingNoticeHost("item-detail", localNotices.notify);
   const [cutoff] = useState(() => new Date().toISOString());
-  const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
+  const [saveAnnouncement, setSaveAnnouncement] = useState<"archived" | "restored" | null>(null);
   const [staleEdit, setStaleEdit] = useState(false);
   // The server version loaded after a conflict; the next Save of the kept draft targets it.
   const [conflictVersion, setConflictVersion] = useState<number | null>(null);
@@ -195,9 +204,22 @@ export function LoadedBookableItemPage({
     mutationFn: ({ input, version }: { input: BookingConfigurationUpdateInput; version: number }) =>
       updateBookingConfiguration(configuration.id, version, input, token),
     onMutate: () => setSaveAnnouncement(null),
-    onSuccess: async () => {
+    onSuccess: async (_data, { input }) => {
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      setSaveAnnouncement("saved");
+      localNotices.notify({
+        id: `bookable-item-${globalId}`,
+        tone: "success",
+        message: t("bookableItemDetails.update.saved"),
+        actions: input.enabled ? (
+          <Link
+            to="/booking/calendar"
+            search={{ target: globalId }}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            {t("bookableItems.feedback.viewCalendar")}
+          </Link>
+        ) : undefined,
+      });
       setStaleEdit(false);
       setConflictVersion(null);
       setEdit(false);
@@ -213,6 +235,7 @@ export function LoadedBookableItemPage({
     },
   });
   const archiveMutation = useMutation({
+    onMutate: () => setSaveAnnouncement(null),
     mutationFn: () => archiveBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
       await Promise.all([
@@ -221,6 +244,7 @@ export function LoadedBookableItemPage({
         queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configuration.id) }),
       ]);
       setArchiveOpen(false);
+      localNotices.clear();
       setSaveAnnouncement("archived");
     },
     onError: async (error) => {
@@ -232,6 +256,7 @@ export function LoadedBookableItemPage({
     },
   });
   const restoreMutation = useMutation({
+    onMutate: () => setSaveAnnouncement(null),
     mutationFn: () => restoreBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
       await Promise.all([
@@ -259,6 +284,13 @@ export function LoadedBookableItemPage({
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
       ]);
       setPermanentDeleteOpen(false);
+      notices.notify("bookable-items", {
+        id: `bookable-item-${globalId}`,
+        tone: "success",
+        message: t("bookableItems.feedback.deleted", {
+          item: target?.value.name ?? commonT("values.unknownItem"),
+        }),
+      });
       void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
@@ -339,7 +371,8 @@ export function LoadedBookableItemPage({
   };
 
   return (
-    <main className={itemPageClassName}>
+    <main className={itemPageClassName} tabIndex={-1}>
+      <BookingLocalNotices alerts={localNotices.alerts} onDismiss={localNotices.dismiss} />
       <div className="@container">
         <Tabs.Root
           value={tab}
@@ -364,6 +397,7 @@ export function LoadedBookableItemPage({
                 (configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout) ? (
                   <BookingCreationButtonGroup
                     ownerId={`bookable-item-${configuration.id}`}
+                    originHost="item-detail"
                     target={bookableItemOption({ ...configuration, target })}
                     lockTarget
                     disabled={!configuration.enabled}
@@ -619,13 +653,11 @@ export function LoadedBookableItemPage({
       <p role="status" aria-live="polite" className="sr-only">
         {updateMutation.isPending
           ? t("bookableItemDetails.update.pending")
-          : saveAnnouncement === "saved"
-            ? t("bookableItemDetails.update.saved")
-            : saveAnnouncement === "archived"
-              ? t("bookableItemDetails.update.archived")
-              : saveAnnouncement === "restored"
-                ? t("bookableItemDetails.update.restored")
-                : null}
+          : saveAnnouncement === "archived"
+            ? t("bookableItemDetails.update.archived")
+            : saveAnnouncement === "restored"
+              ? t("bookableItemDetails.update.restored")
+              : null}
       </p>
     </main>
   );

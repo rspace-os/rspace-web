@@ -1,5 +1,5 @@
 import { onlineManager } from "@tanstack/react-query";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useImperativeHandle, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { TooltipProvider } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
@@ -13,8 +13,10 @@ import { type TableListControlPanel as ControlPanel, TableListToolbar } from "./
 import type { TableListProps } from "./tableListState";
 import { useTableListQueryString } from "./useTableListQueryString";
 
+export type { TableListAlertItemProps } from "./components/TableListAlerts";
 export {
   type TableListAlert,
+  TableListAlertItem,
   type TableListAlertsApi,
   useTableListAlerts,
 } from "./components/TableListAlerts";
@@ -63,6 +65,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   runtimeFieldDefinitions,
   runtimeFieldAuthScope,
   restoredViewIssue,
+  alertsRef,
 }: TableListProps<TDocument>) {
   const { t } = useTranslation("common");
   const online = useSyncExternalStore(subscribeOnline, getOnline, getOnline);
@@ -74,6 +77,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   getRowIdRef.current = getRowId;
   const rowIds = useMemo(() => rows.map(getRowId), [getRowId, rows]);
   const alerts = useTableListAlertsState({ root: rootRef, rowIds });
+  useImperativeHandle(alertsRef, () => alerts.api, [alerts.api]);
   const collectionLabel = t(config.labels.pluralKey as never);
   const filterCount = features.filtering === false ? 0 : topLevelFilterCount(features.filtering.value.expression);
   const tableUiColumns = useMemo(() => {

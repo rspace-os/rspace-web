@@ -22,6 +22,8 @@ export type TableListAlert = {
   /** Pushing an alert with an existing id replaces it. */
   id: string;
   message: ReactNode;
+  /** Optional controls related to the result, such as View details or Focus on calendar. */
+  actions?: ReactNode;
   tone?: "default" | "success" | "warning" | "destructive";
   icon?: ReactNode;
   undo?: {
@@ -39,7 +41,7 @@ export type TableListAlertsApi = {
   dismiss: (id: string) => void;
 };
 
-type AlertEntry = TableListAlert & { status: "idle" | "undoing" | "failed"; failure?: string };
+type AlertEntry = TableListAlert & { renderKey: number; status: "idle" | "undoing" | "failed"; failure?: string };
 
 const TableListAlertsContext = createContext<TableListAlertsApi | null>(null);
 
@@ -117,19 +119,18 @@ export function useTableListAlertsState({
     | null
   >(null);
   const alertsRef = useRef(alerts);
+  const nextRenderKey = useRef(0);
   useLayoutEffect(() => {
     alertsRef.current = alerts;
   }, [alerts]);
 
   const push = useCallback((...next: TableListAlert[]) => {
     if (next.length === 0) return;
+    const entries = next.map((alert) => ({ ...alert, renderKey: ++nextRenderKey.current, status: "idle" as const }));
     setAlerts((current) => {
-      const ids = new Set(next.map(({ id }) => id));
+      const ids = new Set(entries.map(({ id }) => id));
       // Newest first, directly above the table.
-      return [
-        ...next.toReversed().map((alert) => ({ ...alert, status: "idle" as const })),
-        ...current.filter(({ id }) => !ids.has(id)),
-      ];
+      return [...entries.toReversed(), ...current.filter(({ id }) => !ids.has(id))];
     });
     // Only take focus once the control that acted has gone, so a persistent toolbar or bulk-action button keeps it.
     setFocusRequest({ kind: "alertIfFocusLost", id: next[next.length - 1].id });
@@ -139,7 +140,7 @@ export function useTableListAlertsState({
     const current = alertsRef.current;
     const index = current.findIndex((alert) => alert.id === id);
     const remaining = current.filter((alert) => alert.id !== id);
-    setAlerts(remaining);
+    setAlerts((alerts) => alerts.filter((alert) => alert.id !== id));
     const neighbour = remaining[Math.min(Math.max(index, 0), remaining.length - 1)];
     setFocusRequest(neighbour ? { kind: "alert", id: neighbour.id } : { kind: "fallback" });
   }, []);
@@ -250,7 +251,7 @@ export function TableListAlertStack({
       {alerts.length > 0 ? (
         <ul aria-label={t("tableList.alerts.label")} className="mb-3 space-y-2 pt-3">
           {alerts.map((alert) => (
-            <TableListAlertItem key={alert.id} alert={alert} onUndo={onUndo} onDismiss={onDismiss} />
+            <TableListAlertItem key={alert.renderKey} alert={alert} onUndo={onUndo} onDismiss={onDismiss} />
           ))}
         </ul>
       ) : null}
@@ -258,15 +259,13 @@ export function TableListAlertStack({
   );
 }
 
-function TableListAlertItem({
-  alert,
-  onUndo,
-  onDismiss,
-}: {
-  alert: AlertEntry;
-  onUndo: (id: string) => void;
+export type TableListAlertItemProps = {
+  alert: TableListAlert & { status?: "idle" | "undoing" | "failed"; failure?: string };
+  onUndo?: (id: string) => void;
   onDismiss: (id: string) => void;
-}) {
+};
+
+export function TableListAlertItem({ alert, onUndo, onDismiss }: TableListAlertItemProps) {
   const { t } = useTranslation("common");
   const messageId = useId();
   const undoing = alert.status === "undoing";
@@ -278,7 +277,7 @@ function TableListAlertItem({
       tabIndex={-1}
       aria-labelledby={messageId}
       className={cn(
-        "flex items-center gap-3 rounded-sm border px-4 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        "flex flex-wrap items-center gap-x-3 gap-y-2 rounded-sm border px-4 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
         toneClassName[failed ? "destructive" : (alert.tone ?? "default")],
       )}
     >
@@ -286,7 +285,8 @@ function TableListAlertItem({
       <p id={messageId} className="min-w-0 flex-1">
         {failed ? (alert.failure ?? t("tableList.alerts.undoFailed")) : alert.message}
       </p>
-      {alert.undo && !failed ? (
+      {alert.actions ? <div className="flex flex-wrap items-center gap-2">{alert.actions}</div> : null}
+      {alert.undo && !failed && onUndo ? (
         <Button
           type="button"
           size="sm"

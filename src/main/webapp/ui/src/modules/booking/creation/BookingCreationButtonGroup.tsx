@@ -5,6 +5,7 @@ import type { BookableItemOption } from "@/modules/booking/creation/bookableItem
 import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import type { BookingEventKind } from "@/modules/booking/domain/booking";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
+import type { BookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
@@ -16,6 +17,7 @@ export function BookingCreationButtonGroup({
   initialDate,
   initialWindow,
   lockTarget = false,
+  originHost = "calendar",
   disabled = false,
   size = "sm",
 }: {
@@ -24,6 +26,7 @@ export function BookingCreationButtonGroup({
   initialDate?: string;
   initialWindow?: BookingWindowDraft;
   lockTarget?: boolean;
+  originHost?: BookingNoticeHost;
   disabled?: boolean;
   /** "default" matches the page-heading create action other collection pages render. */
   size?: "sm" | "default";
@@ -47,6 +50,7 @@ export function BookingCreationButtonGroup({
       ownerId,
       triggerId,
       eventKind,
+      originHost,
       target,
       initialDate,
       window: initialWindow,

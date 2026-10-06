@@ -16,6 +16,12 @@ import { useTranslation } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import {
+  BookingLocalNotices,
+  BookingNoticesProvider,
+  useBookingLocalNotices,
+  useBookingNoticeHost,
+} from "@/modules/booking/feedback/BookingNotices";
 import { createAddBookableItemRoute } from "../routes";
 
 const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123", deleted: false };
@@ -70,7 +76,14 @@ function availabilityHandler(
 
 function DestinationPage() {
   const { t } = useTranslation("booking");
-  return <h1>{t("bookableItems.plural")}</h1>;
+  const notices = useBookingLocalNotices();
+  useBookingNoticeHost("bookable-items", notices.notify);
+  return (
+    <>
+      <h1>{t("bookableItems.plural")}</h1>
+      <BookingLocalNotices alerts={notices.alerts} onDismiss={notices.dismiss} />
+    </>
+  );
 }
 
 function ExistingConfigurationPage() {
@@ -85,7 +98,11 @@ function renderPage(path = "/booking/bookable-items/add", defaults: object = set
   const bookingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/booking",
-    component: Outlet,
+    component: () => (
+      <BookingNoticesProvider>
+        <Outlet />
+      </BookingNoticesProvider>
+    ),
   });
   const destinationRoute = createRoute({
     getParentRoute: () => bookingRoute,
@@ -193,54 +210,73 @@ describe("AddBookableItemPage", () => {
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
   });
 
-  it("submits the selected booking configuration and returns to the list", async () => {
-    const user = userEvent.setup();
-    let requestBody: unknown;
-    let authorization: string | null = null;
-    server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      targetsHandler(),
-      availabilityHandler(),
-      http.post("/api/v2/booking-configurations", async ({ request }) => {
-        requestBody = await request.json();
-        authorization = request.headers.get("Authorization");
-        return HttpResponse.json({ id: 7 }, { status: 201 });
-      }),
-    );
-    const { container } = renderPage();
+  it.each([true, false])(
+    "submits the configuration and gates its calendar action when enabled is %s",
+    async (enabled) => {
+      const user = userEvent.setup();
+      let requestBody: unknown;
+      let authorization: string | null = null;
+      server.use(
+        http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+        targetsHandler(),
+        availabilityHandler(),
+        http.post("/api/v2/booking-configurations", async ({ request }) => {
+          requestBody = await request.json();
+          authorization = request.headers.get("Authorization");
+          return HttpResponse.json({ id: 7 }, { status: 201 });
+        }),
+      );
+      const { container } = renderPage();
 
-    expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
-    expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
-    await completeForm(user);
+      expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
+      expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+      await completeForm(user);
 
-    await expectAccessible(container);
+      await expectAccessible(container);
 
-    const timezone = screen.getByRole("combobox", { name: "booking:bookableItems.fields.timezone" });
-    expect(timezone).toHaveValue("Etc/UTC");
-    await user.clear(timezone);
-    await user.type(timezone, "Europe/Berl");
-    await user.click(await screen.findByRole("option", { name: "Europe/Berlin" }));
+      const timezone = screen.getByRole("combobox", { name: "booking:bookableItems.fields.timezone" });
+      expect(timezone).toHaveValue("Etc/UTC");
+      await user.clear(timezone);
+      await user.type(timezone, "Europe/Berl");
+      await user.click(await screen.findByRole("option", { name: "Europe/Berlin" }));
+      if (!enabled) await user.click(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" }));
 
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+      await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
-    expect(authorization).toBe("Bearer test-token");
-    expect(requestBody).toEqual({
-      target: { relationTo: "booking-instruments", value: 123 },
-      enabled: true,
-      timezone: "Europe/Berlin",
-      slotGranularityMinutes: 5,
-      openingStart: "00:00",
-      openingEnd: "24:00",
-      openDays: [1, 2, 3, 4, 5, 6, 7],
-      openingExceptions: [],
-      bufferBeforeMinutes: 0,
-      bufferAfterMinutes: 0,
-      maxBookingDurationMinutes: 0,
-      allowDoubleBooking: false,
-    });
-  });
+      expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+      expect(await screen.findByText("booking:bookableItems.feedback.added")).toBeVisible();
+      expect(screen.getByRole("link", { name: "booking:bookableItems.feedback.viewDetails" })).toHaveAttribute(
+        "href",
+        "/booking/bookable-items/IN123",
+      );
+      if (enabled) {
+        expect(screen.getByRole("link", { name: "booking:bookableItems.feedback.viewCalendar" })).toHaveAttribute(
+          "href",
+          "/booking/calendar?target=IN123",
+        );
+      } else {
+        expect(
+          screen.queryByRole("link", { name: "booking:bookableItems.feedback.viewCalendar" }),
+        ).not.toBeInTheDocument();
+      }
+      expect(authorization).toBe("Bearer test-token");
+      expect(requestBody).toEqual({
+        target: { relationTo: "booking-instruments", value: 123 },
+        enabled,
+        timezone: "Europe/Berlin",
+        slotGranularityMinutes: 5,
+        openingStart: "00:00",
+        openingEnd: "24:00",
+        openDays: [1, 2, 3, 4, 5, 6, 7],
+        openingExceptions: [],
+        bufferBeforeMinutes: 0,
+        bufferAfterMinutes: 0,
+        maxBookingDurationMinutes: 0,
+        allowDoubleBooking: false,
+      });
+    },
+  );
 
   it("copies default weekday exceptions and blocks submission while a day edit is pending", async () => {
     const user = userEvent.setup();

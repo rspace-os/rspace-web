@@ -278,6 +278,7 @@ describe("BookingEventPage", () => {
     expect(hiddenAtFocus).toEqual([false]);
     expect(screen.getByText("booking:bookings.details.cancellationReason")).toBeVisible();
     expect(screen.getByText("Instrument needs recalibration")).toBeVisible();
+    expect(within(screen.getByRole("main")).getByText("booking:bookings.details.bookingCancelled")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41");
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
   });

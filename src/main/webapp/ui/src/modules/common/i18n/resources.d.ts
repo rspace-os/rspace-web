@@ -1010,6 +1010,7 @@ export default interface Resources {
         "replaceConfirm": "Replace link",
         "replaceConflict": "This link was changed elsewhere. The current link is shown above.",
         "replaceWarning": "Calendars using the current link will stop updating.",
+        "replaced": "Calendar link replaced.",
         "retry": "Retry",
         "statusError": "Calendar subscription status could not be loaded.",
         "title": "Add to your calendar",
@@ -1165,6 +1166,20 @@ export default interface Resources {
       },
       "editError": "Could not update the bookable item. Try again.",
       "editTitle": "Edit Bookable Item",
+      "feedback": {
+        "added": "{item} was added as a bookable item.",
+        "archived": "{item} is now archived. Its future bookings, if any, were cancelled and will not return when it is restored.",
+        "bulkArchived": "{count, plural, =0 {No items were archived.} one {# item is now archived. Its future bookings, if any, were cancelled and will not return when it is restored.} other {# items are now archived. Their future bookings, if any, were cancelled and will not return when they are restored.}}",
+        "bulkArchivedUnknown": "The archive request succeeded. Refreshing the items to confirm their current state.",
+        "bulkDisabled": "{count, plural, =0 {No items were disabled.} one {# item is now disabled.} other {# items are now disabled.}}",
+        "bulkDisabledUnknown": "The disable request succeeded. Refreshing the items to confirm their current state.",
+        "bulkEnabled": "{count, plural, =0 {No items were enabled.} one {# item is now enabled.} other {# items are now enabled.}}",
+        "bulkEnabledUnknown": "The enable request succeeded. Refreshing the items to confirm their current state.",
+        "deleted": "{item} was permanently deleted.",
+        "restored": "{item} is now restored. Previously cancelled bookings remain cancelled.",
+        "viewCalendar": "View calendar",
+        "viewDetails": "View item details"
+      },
       "fields": {
         "actions": "Actions",
         "enabled": "Enabled",
@@ -1264,7 +1279,6 @@ export default interface Resources {
           "conflict": "This event changed while you were editing. Copy any changes you want to keep, then refresh this page.",
           "discard": "Discard",
           "maintenanceTitle": "Edit maintenance event",
-          "saved": "Changes saved.",
           "title": "Edit booking"
         },
         "lastUpdated": "Last updated",
@@ -1322,6 +1336,14 @@ export default interface Resources {
         "startInPast": "The booking starts in the past and cannot be created.",
         "targetUnavailable": "This bookable item is unavailable.",
         "windowRequired": "Enter a valid start and end."
+      },
+      "feedback": {
+        "eventAdded": "{itemName} event added.",
+        "eventUpdated": "{itemName} event updated.",
+        "focusOnCalendar": "Focus on calendar",
+        "maintenanceAdded": "Maintenance for {itemName} added.",
+        "maintenanceUpdated": "Maintenance for {itemName} updated.",
+        "viewDetails": "View details"
       },
       "form": {
         "cancel": "Cancel",
@@ -1416,6 +1438,7 @@ export default interface Resources {
       "detailLoading": "Loading bookings.",
       "detailUnavailable": "Bookings are unavailable.",
       "event": "Booking event",
+      "eventFocusUnavailable": "This event is no longer available in the calendar.",
       "feed": {
         "bookedBy": "Booked by: {0}",
         "booking": "Booking",
@@ -1454,6 +1477,10 @@ export default interface Resources {
         "events": "Booking events",
         "items": "Bookable items",
         "legend": "Calendar filters"
+      },
+      "focusFallback": {
+        "overflow": "Opened the Time grid day view to show the event hidden in the week view.",
+        "resources": "Opened the Time grid day view because this event's item has no enabled resource row."
       },
       "grid": "Calendar grid",
       "inlineEditor": {
@@ -1840,9 +1867,11 @@ export default interface Resources {
         "create": "Create calendar subscription",
         "createError": "The calendar subscription could not be created. Try again.",
         "description": "Subscribe to your confirmed RSpace bookings across all bookable items. The private link updates automatically in your calendar app.",
+        "disconnected": "Calendar link disconnected.",
         "google": "Google Calendar",
         "loading": "Loading calendar subscription.",
         "other": "Other",
+        "ready": "Calendar link is ready.",
         "replace": "Replace private link",
         "replaceConflict": "This link was changed elsewhere. The current link is shown above.",
         "replaceDialog": {
@@ -1851,6 +1880,7 @@ export default interface Resources {
           "description": "Calendars using the current link will stop updating. Add the new link to them to keep seeing your bookings.",
           "title": "Replace your private link?"
         },
+        "replaced": "Calendar link replaced.",
         "retry": "Retry",
         "revoke": "Disconnect calendar",
         "statusError": "The calendar subscription could not be loaded.",

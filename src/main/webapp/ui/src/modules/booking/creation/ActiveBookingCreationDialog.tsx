@@ -16,6 +16,7 @@ import {
 import { bookingConflicts } from "@/modules/booking/domain/availability";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
+import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import {
   calendarAvailabilityRow,
   useCalendarAvailability,
@@ -42,6 +43,8 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
   const pathname = useLocation({ select: (location) => location.pathname });
+  const searchStr = useLocation({ select: (location) => location.searchStr });
+  const notices = useBookingNotices();
   const endCreation = useBookingCreationStore((state) => state.endCreation);
   const mutation = useCreateBooking(token);
   const [formState, setFormState] = React.useState<BookingFormState | null>(null);
@@ -288,7 +291,23 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             onMoreOptions={maintenance ? undefined : openMoreOptions}
             onStateChange={updateFormState}
             onSubmit={async (submission) => {
-              await mutation.mutateAsync(submission);
+              const created = await mutation.mutateAsync(submission);
+              notices.notify(
+                creation.originHost ?? "calendar",
+                createBookingEventNotice({
+                  event: created,
+                  message:
+                    submission.eventKind === "MAINTENANCE"
+                      ? t("bookings.feedback.maintenanceAdded", {
+                          itemName: submission.target.name,
+                        })
+                      : t("bookings.feedback.eventAdded", {
+                          itemName: submission.target.name,
+                        }),
+                  timeZone: preferences.timeZone,
+                  searchStr,
+                }),
+              );
               finish();
             }}
           />
