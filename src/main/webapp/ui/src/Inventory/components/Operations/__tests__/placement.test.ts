@@ -2,7 +2,7 @@ import "@/stores/stores/RootStore";
 import { describe, expect, it } from "vitest";
 import { makeMockBench, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
 import type { ContainerAttrs } from "@/stores/models/ContainerModel";
-import { placementBlocker, prepareContainer, releaseContainer } from "../placement";
+import { buildPlacementRecords, placementBlocker, prepareContainer, releaseContainer } from "../placement";
 
 const summary = (totalCount: number) => ({
   totalCount,
@@ -94,5 +94,44 @@ describe("releaseContainer", () => {
       onlyAllowSelectingEmptyLocations: false,
     });
     expect(box.selectedLocations).toEqual([]);
+  });
+});
+
+describe("buildPlacementRecords", () => {
+  const created = [
+    { id: 11, globalId: "SS11" },
+    { id: 12, globalId: "SS12" },
+  ];
+
+  it("moves every new subsample into a list container with no location", () => {
+    const list = makeMockContainer({ id: 5, globalId: "IC5", cType: "LIST" });
+    const records = buildPlacementRecords(created, list);
+    expect(records.map(({ id, type, globalId }) => ({ id, type, globalId }))).toEqual([
+      { id: 11, type: "SUBSAMPLE", globalId: "SS11" },
+      { id: 12, type: "SUBSAMPLE", globalId: "SS12" },
+    ]);
+    for (const record of records) {
+      expect(record.parentContainers).toEqual([list.paramsForBackend]);
+      expect(record).not.toHaveProperty("parentLocation");
+    }
+  });
+
+  it("pairs the new subsamples, in server order, with the chosen grid locations in grid order", () => {
+    const box = gridBox();
+    prepareContainer(box, 2);
+    box.locations?.[3].toggleSelected(true);
+    box.locations?.[1].toggleSelected(true);
+    const records = buildPlacementRecords(created, box);
+    expect(records.map((r) => [r.globalId, r.parentLocation])).toEqual([
+      ["SS11", box.locations?.[1].paramsForBackend],
+      ["SS12", box.locations?.[3].paramsForBackend],
+    ]);
+  });
+
+  it("refuses to build a request when the chosen locations do not match the new subsamples", () => {
+    const box = gridBox();
+    prepareContainer(box, 2);
+    box.locations?.[0].toggleSelected(true);
+    expect(() => buildPlacementRecords(created, box)).toThrow();
   });
 });
