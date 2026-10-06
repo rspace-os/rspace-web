@@ -65,10 +65,12 @@ import {
 import PlacementStep from "./PlacementStep";
 import {
   buildPlacementRecords,
+  originContainerId,
   type PlacementSelection,
   placementBlocker,
   prepareContainer,
   releaseContainer,
+  usableContainer,
   WORKBENCH,
 } from "./placement";
 import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
@@ -239,18 +241,31 @@ function OperationWizard({
 
   // A remembered container is stored by id, so it is fetched again: it may since have been trashed,
   // filled or unshared, in which case the run falls back to the workbench and says so. Until the
-  // fetch settles, the placement is an unpicked container, which holds back the fast path.
-  const [rememberedPlacement, setRememberedPlacement] = React.useState<RememberedPlacement | null>(null);
+  // fetch settles, the placement is an unpicked container, which holds back the fast path. With no
+  // remembered run, the first origin's own container is offered instead when it can take the new
+  // subsamples (D5); the workbench stands in while it loads, and silently if it cannot.
+  const [pendingPlacement, setPendingPlacement] = React.useState<{
+    containerId: number;
+    remembered: RememberedPlacement | null;
+  } | null>(null);
   const [placementNote, setPlacementNote] = React.useState<string | null>(null);
   const placementCheckId = React.useRef(0);
   const createdCountRef = React.useRef(createdCount);
   createdCountRef.current = createdCount;
 
-  const applyRememberedPlacement = (remembered: RememberedPlacement | null) => {
+  /** `undefined` when there is no remembered run, `null` when the run remembered the workbench. */
+  const applyRememberedPlacement = (remembered: RememberedPlacement | null | undefined) => {
     placementCheckId.current++;
     setPlacementNote(null);
     setPlacement(remembered ? { mode: "container", container: null } : WORKBENCH);
-    setRememberedPlacement(remembered);
+    const originId = remembered === undefined ? originContainerId(origins) : null;
+    setPendingPlacement(
+      remembered
+        ? { containerId: remembered.containerId, remembered }
+        : originId === null
+          ? null
+          : { containerId: originId, remembered: null },
+    );
   };
 
   const onPlacementChange = (next: PlacementSelection) => {
@@ -260,27 +275,26 @@ function OperationWizard({
   };
 
   React.useEffect(() => {
-    if (!rememberedPlacement) return;
+    if (!pendingPlacement) return;
     const checkId = ++placementCheckId.current;
+    const { containerId, remembered } = pendingPlacement;
     void (async () => {
       let container: Awaited<ReturnType<typeof fetchContainer>> | null = null;
       try {
-        container = await fetchContainer(rememberedPlacement.containerId);
+        container = usableContainer(await fetchContainer(containerId), createdCountRef.current);
       } catch (error) {
-        console.warn("Could not fetch the remembered container", error);
+        console.warn("Could not fetch the container to place the new subsamples in", error);
       }
       if (checkId !== placementCheckId.current) return;
-      const blocker = container ? placementBlocker(container, createdCountRef.current) : null;
-      if (container && (blocker === null || blocker.reason === "selectSlots")) {
+      if (container) {
         setPlacement({ mode: "container", container });
-      } else {
-        setPlacement(WORKBENCH);
-        setPlacementNote(
-          t("operations.placement.rememberedUnavailable", { container: rememberedPlacement.containerName }),
-        );
+        return;
       }
+      setPlacement(WORKBENCH);
+      if (remembered)
+        setPlacementNote(t("operations.placement.rememberedUnavailable", { container: remembered.containerName }));
     })();
-  }, [rememberedPlacement, t]);
+  }, [pendingPlacement, t]);
 
   const stepKeys: ReadonlyArray<string> = operation
     ? (operation.steps ?? ["details", "template", "amounts", "documentation", "placement", "confirm"])
@@ -483,7 +497,7 @@ function OperationWizard({
       documentation: null,
       amountMode: resolveDefaultAmountMode(op),
       perSubsampleAmounts: {},
-      placement: null,
+      placement: undefined,
       remember: false,
     };
   };
