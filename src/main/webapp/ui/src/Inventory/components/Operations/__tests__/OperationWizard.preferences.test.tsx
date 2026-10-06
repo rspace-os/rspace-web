@@ -153,7 +153,8 @@ describe("OperationWizard with the real preference hook", () => {
     await user.click(nextButton()); // template -> amounts
     await user.click(nextButton()); // amounts -> documentation
     await user.click(screen.getByTestId("doc-choose"));
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember"));
     beforePerform();
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));

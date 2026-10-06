@@ -59,6 +59,8 @@ import {
   quantityExceedsOrigin,
   reconcileRestoredQuantities,
 } from "./operationValidation";
+import PlacementStep from "./PlacementStep";
+import { type PlacementSelection, releaseContainer, WORKBENCH } from "./placement";
 import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
 import {
   fetchLatestOperationPreferences,
@@ -108,6 +110,7 @@ const stepLabelKeys = {
   template: "operations.wizard.step.template",
   amounts: "operations.wizard.step.amounts",
   documentation: "operations.wizard.step.documentation",
+  placement: "operations.wizard.step.placement",
 } as const;
 
 function freshValues(operation: InventoryOperation, origin: SubSampleModel, current: OperationInputs): OperationInputs {
@@ -185,6 +188,12 @@ function OperationWizard({
   const [operation, setOperation] = React.useState<InventoryOperation | null>(null);
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
+  const [placement, setPlacement] = React.useState<PlacementSelection>(WORKBENCH);
+  const placementContainer = placement.mode === "container" ? placement.container : null;
+  React.useEffect(() => {
+    if (!open || !placementContainer) return;
+    return () => releaseContainer(placementContainer);
+  }, [open, placementContainer]);
   // A remembered document may have been trashed since it was saved. The link is kept (the user
   // decides), but the user is told, on the summary as well because a complete bundle skips the step.
   const documentationTrashed = useLinkTargetSummary(documentation?.globalId ?? "")?.deleted === true;
@@ -213,7 +222,7 @@ function OperationWizard({
   } = normalizeOperationPreferences(storedOperationPreferences);
 
   const stepKeys: ReadonlyArray<string> = operation
-    ? (operation.steps ?? ["details", "template", "amounts", "documentation", "confirm"])
+    ? (operation.steps ?? ["details", "template", "amounts", "documentation", "placement", "confirm"])
     : [];
   const isLast = activeStep === stepKeys.length - 1;
 
@@ -427,6 +436,7 @@ function OperationWizard({
     setValues(s.values);
     setTemplateSelection(s.templateSelection);
     setDocumentation(s.documentation);
+    setPlacement(WORKBENCH);
     setRemember(s.remember);
     setAmountMode(s.amountMode);
     setPerSubsampleAmounts(s.perSubsampleAmounts);
@@ -606,6 +616,7 @@ function OperationWizard({
       return detailsValid(operation, values, detailKeys) && origins.every((o) => commonQuantity(o).greaterThan(0));
     if (key === "template") return templateStepValid(templateSelection);
     if (key === "amounts") return amountsStepValid();
+    if (key === "placement") return placement.mode === "workbench" || placement.container !== null;
     return true;
   };
 
@@ -788,6 +799,15 @@ function OperationWizard({
           {trashedDocumentationWarning()}
           <DocumentationStep value={documentation} onChange={setDocumentation} />
         </>
+      );
+    }
+    if (key === "placement") {
+      return (
+        <PlacementStep
+          value={placement}
+          onChange={setPlacement}
+          count={operation.effect.countFrom ? Number(values[operation.effect.countFrom] ?? 1) : 0}
+        />
       );
     }
     return confirmationStep();
