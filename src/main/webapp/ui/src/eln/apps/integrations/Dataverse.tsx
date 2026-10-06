@@ -8,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
-import React, { useContext, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dataverse";
@@ -69,6 +69,7 @@ const DialogContent = observer(
     const { addAlert } = useContext(AlertContext);
     const { test } = useDataverseTestEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
+    const unsavedKeyCount = useRef(0);
 
     /*
      * We take a copy of the current state for the user to edit in the UI. When
@@ -153,7 +154,7 @@ const DialogContent = observer(
                   _label: config.DATAVERSE_ALIAS,
                   optionsId: "",
                 }),
-                _key: newlySavedConfig?.optionsId ?? crypto.randomUUID(),
+                _key: newlySavedConfig?.optionsId ?? `unsaved-${++unsavedKeyCount.current}`,
                 dirty: false,
               }),
             );
