@@ -8171,6 +8171,7 @@ export default interface Resources {
     "externalAuth": {
       "errors": {
         "accountNotFound": "No account found for email [{0}], please sign up",
+        "busy": "Sign-up is busy right now. Please try again in a moment.",
         "invalidIdToken": "Couldn't create or sign in, idToken was invalid."
       }
     },
