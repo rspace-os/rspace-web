@@ -239,7 +239,7 @@ The wizard is a modal dialog rendered via `ContextDialog` with `disableBackdropC
 so a click outside does not dismiss it and discard progress (Escape and Cancel still
 close it).
 
-Five steps: **Details → Template → Amounts → Documentation (optional) → Confirm**.
+Six steps: **Details → Template → Amounts → Documentation (optional) → Location → Confirm**.
 An operation may show a subset by declaring `steps` (DevDocs/adr/0011): a terminal operation
 (Destroy) uses **Confirm** only, skipping Details, Template and Amounts (it needs no input,
 creates no sample, and empties the origin, so none applies). Its description is shown on the
@@ -289,6 +289,20 @@ enforced there too (Perform is blocked with the reason shown).
    separate amount per origin (`amountMode: "perSubsample"`), or taking all of every
    origin, which sends `takeAll: true` and no amounts.
 
+4. **Documentation** — an optional ELN document the new sample is documented by.
+5. **Location** (`PlacementStep.tsx`, DevDocs/adr/0012) — where the new subsamples go.
+   "Leave on my workbench" is always one click and is the step's skip. "Place in a
+   container" shows a container picker with its own `Search`, never the global
+   `moveStore`. One destination per run. A grid container also shows its content grid,
+   in which the user picks one empty location per new subsample (the selection limit is
+   the count; lowering the count on the Amounts step drops surplus locations from the
+   end). A list container needs no locations. `placementBlocker` (`placement.ts`) gates
+   Next and shows why: loading, trashed, no edit permission, an image container (not
+   supported yet), the workbench itself, a container that cannot hold subsamples, fewer
+   free locations than new subsamples (with the free count), or grid locations still to
+   pick. With no remembered run, the first origin's own container is pre-selected when it
+   can take the new subsamples (for Pool, the first origin's).
+
 Details and Amounts are two slices of the same `OperationDetailsStep` (a `section`
 prop selects which inputs render); the `count`/each-amount/amount-taken inputs are the
 Amounts slice, everything else is Details. `detailsValid(operation, values, keys)`
@@ -313,6 +327,13 @@ All three live in the one preference, `{ values, names, defaults }`, saved in a 
 `useUiPreference` call. That call writes the page's copy, so the wizard first re-reads the
 preference from the server (`fetchLatestOperationPreferences`) and applies this run's changes
 to that: a second tab that loaded earlier cannot overwrite what was saved since.
+
+The bundle also keeps the Location choice as `placement: { containerId, containerName }`, or
+`null` for the workbench. Grid locations are never remembered. On restore the container is
+fetched again; if it is gone or can no longer take the new subsamples, the run falls back to
+the workbench with a note (`operations.placement.rememberedUnavailable`). A remembered list
+container keeps the step-one fast path. A remembered grid container cannot, because its
+locations must be picked again, so the wizard opens on the steps with the box pre-selected.
 
 ## The amount model (DevDocs/adr/0011)
 
@@ -381,10 +402,21 @@ fields in the wizard is deferred.
   them together: `FieldNameUniquenessParityTest` and `buildOperationRequest.test.ts` both
   assert it, so changing the rule on one side alone turns the other red.
 
+### Placing the new subsamples
+
+Placement is a second request, made only after the operation has committed: the bulk
+endpoint with `operationType: "MOVE"` and `rollbackOnError: true`, one record per new
+subsample from the operation response's `sample.subSamples`. The server checks permission,
+capacity and empty locations as for any move, and records the usual move audit event. A
+refused or failed move leaves every new subsample on the workbench and shows a warning; the
+operation is never reported as failed and the wizard still closes (DevDocs/adr/0012).
+
 ## Out of scope (current)
 
 Link-field de-duplication across consecutive in-place operations. Multi-origin operations (Pool) are
 supported (DevDocs/adr/0011), and terminal operations that create no new sample and add a custom
 field to the origin (Destroy) are supported (DevDocs/adr/0011): the server adds the declared
 origin field itself. General in-place editing of arbitrary existing
-origin fields (beyond adding new ones) is still out of scope.
+origin fields (beyond adding new ones) is still out of scope. Placement into image containers, automatic location filling, more
+than one destination per run, a temperature check against the destination, and placing in
+the operations request itself are out of scope (DevDocs/adr/0012).
