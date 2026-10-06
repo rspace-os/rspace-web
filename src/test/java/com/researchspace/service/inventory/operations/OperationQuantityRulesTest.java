@@ -110,21 +110,33 @@ class OperationQuantityRulesTest {
   }
 
   @Test
-  void aTemperatureWithAFractionOfADegreeIsRejectedInAnyUnit() {
-    // Whole degrees as sent, in the unit sent: the wizard takes whole degrees and the sample form
-    // can only show and save whole degrees, so an operation must not create what they cannot keep.
+  void aTemperatureWithAFractionOfADegreeIsAcceptedInAnyUnit() {
+    // 77.5 K is -195.65 C.
     for (ApiQuantityInfo fractional :
         List.of(
             celsius("-18.5"),
             new ApiQuantityInfo(new BigDecimal("77.5"), RSUnitDef.KELVIN.getId()))) {
       MapBindingResult own = new MapBindingResult(new HashMap<>(), "request");
-      OperationQuantityRules.temperature(fractional, "storageTemp", null, null, own);
-      assertEquals(
-          "errors.inventory.operation.storageTempNotWhole",
-          own.getFieldError("storageTemp") == null
-              ? null
-              : own.getFieldError("storageTemp").getCode());
+      OperationQuantityRules.temperature(
+          fractional, "storageTemp", null, new BigDecimal("-18"), own);
+      assertNull(own.getFieldError("storageTemp"), fractional.getNumericValue().toString());
     }
+  }
+
+  @Test
+  void aFractionalTemperatureIsJudgedByItsBound() {
+    OperationQuantityRules.temperature(
+        celsius("-17.5"), "storageTemp", null, new BigDecimal("-18"), errors);
+
+    assertEquals("errors.inventory.operation.storageTempAboveMax", codeOn("storageTemp"));
+  }
+
+  @Test
+  void aTemperatureFinerThanThreeDecimalPlacesIsRejected() {
+    OperationQuantityRules.temperature(
+        celsius("-18.1234"), "storageTemp", null, new BigDecimal("-18"), errors);
+
+    assertEquals("errors.inventory.temperature.notStorable", codeOn("storageTemp"));
   }
 
   @Test

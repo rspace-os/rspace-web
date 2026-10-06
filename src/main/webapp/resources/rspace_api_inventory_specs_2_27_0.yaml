@@ -2746,8 +2746,8 @@ paths:
         temperature, linked to the origin with an `IsDerivedFrom` field.
 
 
-        `storageTemp` is required and must be at or below -18 degrees Celsius, in whole degrees
-        of the unit sent. It is stored as both the storage temperature bounds of the new sample.
+        `storageTemp` is required and must be at or below -18 degrees Celsius, to at most three
+        decimal places. It is stored as both the storage temperature bounds of the new sample.
         Send it in any temperature unit; the limit is compared on the temperature it denotes,
         not on its number.
 
@@ -2769,8 +2769,8 @@ paths:
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName`, `eachAmount`, `storageTemp` or
-            the origin's `amountTaken` is missing; `storageTemp` is above -18 degrees Celsius, is
-            not whole degrees or does not use a temperature unit; `count` is below 1 or above 100;
+            the origin's `amountTaken` is missing; `storageTemp` is above -18 degrees Celsius, has
+            more than three decimal places or does not use a temperature unit; `count` is below 1 or above 100;
             the amount taken is
             not positive, does not use a unit of the origin's measurement category, or is more
             than the origin currently holds; the origin is empty; or `templateId` names a
@@ -2797,7 +2797,7 @@ paths:
 
 
         `storageTemp` is optional: omit it and the new sample is stored at 4 degrees Celsius.
-        When sent, it must be between 4 and 120 degrees Celsius, in whole degrees of the unit sent.
+        When sent, it must be between 4 and 120 degrees Celsius, to at most three decimal places.
       tags:
         - Operations
       requestBody:
@@ -2813,8 +2813,8 @@ paths:
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName`, `eachAmount` or the origin's
-            `amountTaken` is missing; `storageTemp` is outside 4 to 120 degrees Celsius, is not
-            whole degrees or does not use a temperature unit; `count` is below 1 or above 100;
+            `amountTaken` is missing; `storageTemp` is outside 4 to 120 degrees Celsius, has
+            more than three decimal places or does not use a temperature unit; `count` is below 1 or above 100;
             the amount taken is not
             positive, does not use a unit of the origin's measurement category, or is more than
             the origin currently holds; the origin is empty; or `templateId` names a template the
@@ -5469,13 +5469,15 @@ components:
       type: object
       description: |
         Cryopreserve's storage temperature: at or below -18 degrees Celsius and not below absolute
-        zero, in whole degrees of the unit sent. Kelvin and Fahrenheit are converted to Celsius
+        zero, to at most three decimal places. Kelvin and Fahrenheit are converted to Celsius
         before the bounds are checked, so the bounds are given per unit.
       properties:
         numericValue:
           type: number
-          multipleOf: 1
-          description: Whole degrees, in the unit `unitId` names.
+          multipleOf: 0.001
+          description: |
+            Degrees to at most three decimal places, in the unit `unitId` names. See
+            `OperationAmount.numericValue` for the `multipleOf` precision note.
         unitId:
           type: integer
           description: Celsius (8), Kelvin (9) or Fahrenheit (10).
@@ -5484,46 +5486,48 @@ components:
         - unitId
       oneOf:
         - title: Celsius
-          description: Celsius, whole degrees from -273 to -18.
+          description: Celsius, from -273.15 to -18.
           properties:
             unitId:
               enum:
                 - 8
             numericValue:
-              minimum: -273
+              minimum: -273.15
               maximum: -18
         - title: Kelvin
-          description: Kelvin, whole degrees from 0 to 255.
+          description: Kelvin, from 0 to 255.15.
           properties:
             unitId:
               enum:
                 - 9
             numericValue:
               minimum: 0
-              maximum: 255
+              maximum: 255.15
         - title: Fahrenheit
-          description: Fahrenheit, whole degrees from -459 to -1.
+          description: Fahrenheit, from -459.669 to -0.4.
           properties:
             unitId:
               enum:
                 - 10
             numericValue:
-              minimum: -459
-              maximum: -1
+              minimum: -459.669
+              maximum: -0.4
       example:
         numericValue: -80
         unitId: 8
     ReviveStorageTemperature:
       type: object
       description: |
-        Revive's storage temperature: from 4 to 120 degrees Celsius, in whole degrees of the unit
-        sent. Kelvin and Fahrenheit are converted to Celsius before the bounds are checked, so the
+        Revive's storage temperature: from 4 to 120 degrees Celsius, to at most three decimal
+        places. Kelvin and Fahrenheit are converted to Celsius before the bounds are checked, so the
         bounds are given per unit.
       properties:
         numericValue:
           type: number
-          multipleOf: 1
-          description: Whole degrees, in the unit `unitId` names.
+          multipleOf: 0.001
+          description: |
+            Degrees to at most three decimal places, in the unit `unitId` names. See
+            `OperationAmount.numericValue` for the `multipleOf` precision note.
         unitId:
           type: integer
           description: Celsius (8), Kelvin (9) or Fahrenheit (10).
@@ -5532,7 +5536,7 @@ components:
         - unitId
       oneOf:
         - title: Celsius
-          description: Celsius, whole degrees from 4 to 120.
+          description: Celsius, from 4 to 120.
           properties:
             unitId:
               enum:
@@ -5541,22 +5545,22 @@ components:
               minimum: 4
               maximum: 120
         - title: Kelvin
-          description: Kelvin, whole degrees from 278 to 393.
+          description: Kelvin, from 277.15 to 393.15.
           properties:
             unitId:
               enum:
                 - 9
             numericValue:
-              minimum: 278
-              maximum: 393
+              minimum: 277.15
+              maximum: 393.15
         - title: Fahrenheit
-          description: Fahrenheit, whole degrees from 40 to 248.
+          description: Fahrenheit, from 39.2 to 248.
           properties:
             unitId:
               enum:
                 - 10
             numericValue:
-              minimum: 40
+              minimum: 39.2
               maximum: 248
       example:
         numericValue: 4

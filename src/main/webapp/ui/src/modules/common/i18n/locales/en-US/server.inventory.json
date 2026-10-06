@@ -191,7 +191,6 @@
         "passageLimitReached": "The parent sample is already at passage {0}, the highest supported, so it cannot be passaged again.",
         "passageNumberUnreadable": "The parent sample''s passage number ''{0}'' is not a whole number from 0 to 9999. Correct it on the parent sample, then try again.",
         "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
-        "storageTempNotWhole": "The storage temperature must be whole degrees.",
         "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
         "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
         "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
