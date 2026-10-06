@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
 import com.researchspace.auth.password.LoginVerificationBusyException;
+import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -45,6 +47,7 @@ public class SignupControllerTest {
   private @Mock UserEnablementUtils userEnablementUtils;
   private @Mock ISignupHandlerPolicy manualSignupPolicy;
   private @Mock IPostUserSignup postSignup;
+  private @Spy NewPasswordEncodeGate encodeGate = new NewPasswordEncodeGate(1);
   MockHttpServletRequest mockRequest;
   @InjectMocks SignupController signupCtrller;
 
@@ -54,30 +57,26 @@ public class SignupControllerTest {
   }
 
   @Test
-  public void signupBeyondTheRateLimitIsRefusedWithoutSaving() throws UserExistsException {
-    signupCtrller.setMaxSignupsPerFiveSeconds(1);
-    signupCtrller.initSignupRateLimiter();
+  public void signupWithNoFreeEncodePermitIsRefusedWithoutSaving() throws UserExistsException {
     when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
-    User first = createAnyUser("first1");
-    when(manualSignupPolicy.saveUser(eq(first), any())).thenReturn(first);
-    when(postSignup.getRedirect(first)).thenReturn("redirect:workspace");
+    User user = createAnyUser("refused1");
+    assertTrue(encodeGate.tryAcquire());
 
-    BindingResult firstErrors = new BeanPropertyBindingResult(first, "user");
-    assertEquals("redirect:workspace", signupCtrller.onSubmit(first, firstErrors, mockRequest));
+    BindingResult errors = new BeanPropertyBindingResult(user, "user");
+    assertEquals("signup", signupCtrller.onSubmit(user, errors, mockRequest));
+    assertTrue(errors.hasGlobalErrors());
+    assertEquals("errors.signup.rateLimited", errors.getGlobalError().getCode());
+    verify(manualSignupPolicy, never()).saveUser(eq(user), any());
 
-    User second = createAnyUser("second2");
-    BindingResult secondErrors = new BeanPropertyBindingResult(second, "user");
-    assertEquals("signup", signupCtrller.onSubmit(second, secondErrors, mockRequest));
-    assertTrue(secondErrors.hasGlobalErrors());
-    assertEquals("errors.signup.rateLimited", secondErrors.getGlobalError().getCode());
-    verify(manualSignupPolicy, never()).saveUser(eq(second), any());
+    encodeGate.release();
+    when(manualSignupPolicy.saveUser(eq(user), any())).thenReturn(user);
+    when(postSignup.getRedirect(user)).thenReturn("redirect:workspace");
+    BindingResult retryErrors = new BeanPropertyBindingResult(user, "user");
+    assertEquals("redirect:workspace", signupCtrller.onSubmit(user, retryErrors, mockRequest));
   }
 
   @Test
-  public void invalidSignupDoesNotConsumeARateLimitSlot() throws UserExistsException {
-    signupCtrller.setMaxSignupsPerFiveSeconds(1);
-    signupCtrller.initSignupRateLimiter();
-    when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
+  public void invalidSignupDoesNotTakeAnEncodePermit() throws UserExistsException {
     User invalid = createAnyUser("invalid1");
     BindingResult invalidErrors = new BeanPropertyBindingResult(invalid, "user");
     doAnswer(
@@ -89,18 +88,23 @@ public class SignupControllerTest {
         .validate(invalid, invalidErrors);
     assertEquals("signup", signupCtrller.onSubmit(invalid, invalidErrors, mockRequest));
 
-    User valid = createAnyUser("valid1");
-    when(manualSignupPolicy.saveUser(eq(valid), any())).thenReturn(valid);
-    when(postSignup.getRedirect(valid)).thenReturn("redirect:workspace");
-    BindingResult validErrors = new BeanPropertyBindingResult(valid, "user");
-    assertEquals("redirect:workspace", signupCtrller.onSubmit(valid, validErrors, mockRequest));
-    assertFalse(validErrors.hasErrors());
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
+  public void existingUserReleasesTheEncodePermit() throws UserExistsException {
+    when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
+    User user = createAnyUser("exists1");
+    when(manualSignupPolicy.saveUser(eq(user), any())).thenThrow(new UserExistsException("exists"));
+    BindingResult errors = new BeanPropertyBindingResult(user, "user");
+
+    assertEquals("signup", signupCtrller.onSubmit(user, errors, mockRequest));
+
+    assertTrue(encodeGate.tryAcquire());
   }
 
   @Test
   public void busyPostSignupLoginRedirectsToLoginWithTheAccountKept() throws UserExistsException {
-    signupCtrller.setMaxSignupsPerFiveSeconds(10);
-    signupCtrller.initSignupRateLimiter();
     when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
     User user = createAnyUser("busy1");
     when(manualSignupPolicy.saveUser(eq(user), any())).thenReturn(user);

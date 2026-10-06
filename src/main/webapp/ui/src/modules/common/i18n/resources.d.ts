@@ -5877,7 +5877,7 @@ export default interface Resources {
         "notEqualUsername": "Please use a password other than your username."
       },
       "passwordReset": {
-        "rateLimited": "Too many password resets are being processed right now. Please try again in a few seconds."
+        "rateLimited": "Too many password resets are being processed right now. Please try again in a moment."
       },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
@@ -5897,7 +5897,7 @@ export default interface Resources {
         "structuredDocumentRequired": "only structured documents can be signed"
       },
       "signup": {
-        "rateLimited": "Too many sign-ups are being processed right now. Please try again in a few seconds."
+        "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment."
       },
       "signupCode": {
         "failed": "Please supply the correct signup code (this is case sensitive)."
