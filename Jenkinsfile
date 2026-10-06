@@ -26,6 +26,7 @@ pipeline {
         booleanParam(name: 'STORYBOOK', defaultValue: false, description: 'Build and bundle Storybook in the WAR; serving requires dev.storybook.preview.enabled=true')
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
+        booleanParam(name: 'ACCESS_OUTSIDE_VPN', defaultValue: false, description: 'Only used with AWS deploy. Tick if the deployed instance should be accessible outside of VPN (HTTPS access from 0.0.0.0), e.g. to test on a mobile device or share the instance with external users')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
@@ -200,6 +201,11 @@ pipeline {
                                         $class: 'StringParameterValue',
                                         name: 'DEPLOYMENT_PROPERTY_OVERRIDE',
                                         value: "$WORKSPACE/${SAFE_BRANCH_NAME}.properties"
+                                ],
+                                [
+                                        $class: 'BooleanParameterValue',
+                                        name: 'ACCESS_OUTSIDE_VPN',
+                                        value: params.ACCESS_OUTSIDE_VPN
                                 ]
                         ],
                         wait: false
