@@ -10,6 +10,7 @@ import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
+import { makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
 
@@ -700,6 +701,23 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByTestId("place-container"));
     expect(nextButton()).toBeDisabled();
     await user.click(screen.getByTestId("place-workbench"));
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("blocks Next on the placement step for a container with too few free locations", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await reachPlacement(user, "dna");
+    placementTarget.container = makeMockContainer({
+      cType: "GRID",
+      gridLayout: { columnsNumber: 1, rowsNumber: 1, columnsLabelType: "N123", rowsLabelType: "ABC" },
+      locationsCount: 1,
+      contentSummary: { totalCount: 1, subSampleCount: 1, containerCount: 0, instrumentCount: 0 },
+    });
+    await user.click(screen.getByTestId("place-container"));
+    expect(nextButton()).toBeDisabled();
+    placementTarget.container = makeMockContainer({ cType: "LIST" });
+    await user.click(screen.getByTestId("place-container"));
     expect(nextButton()).toBeEnabled();
   });
 
