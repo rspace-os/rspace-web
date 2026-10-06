@@ -8,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
-import React, { useContext, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import AnalyticsContext from "@/stores/contexts/Analytics";
@@ -69,6 +69,7 @@ const DialogContent = observer(
     const { addAlert } = useContext(AlertContext);
     const { test } = useDSWTestEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
+    const unsavedKeyCount = useRef(0);
     const { trackEvent } = React.useContext(AnalyticsContext);
 
     /*
@@ -149,7 +150,7 @@ const DialogContent = observer(
             copyOfState.credentials.push(
               observable({
                 ...(newlySavedConfig ?? { ...config, DSW_APIKEY: secretAfterSave(config.DSW_APIKEY), optionsId: "" }),
-                _key: newlySavedConfig?.optionsId ?? crypto.randomUUID(),
+                _key: newlySavedConfig?.optionsId ?? `unsaved-${++unsavedKeyCount.current}`,
                 dirty: false,
               }),
             );
