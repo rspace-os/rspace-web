@@ -94,7 +94,6 @@ export class PlacementRefused extends Error {
   }
 }
 
-/** Moves the new subsamples with the bulk endpoint, all or nothing. */
 export async function placeSubSamples(records: ReadonlyArray<PlacementRecord>): Promise<void> {
   const { data } = await ApiService.bulk<{
     errorCount: number;
@@ -103,7 +102,6 @@ export async function placeSubSamples(records: ReadonlyArray<PlacementRecord>): 
   if (data.errorCount > 0) throw new PlacementRefused(data.results.flatMap((r) => r.error?.errors ?? []));
 }
 
-/** A container with its locations, as the placement step needs it. */
 export async function fetchContainer(id: number): Promise<ContainerModel> {
   const { data } = await ApiService.query<ContainerAttrs>(
     `containers/${id}`,
