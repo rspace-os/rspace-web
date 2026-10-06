@@ -1,13 +1,15 @@
 import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
 import type * as React from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import type { RuntimeFieldDefinition } from "@/modules/common/table-list/adapters/apiV2/runtimeFieldCatalog";
-import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
+import { TableList, type TableListAlertsApi, type TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterExpression, FilterState } from "@/modules/common/table-list/tableListState";
 import { Button } from "@/modules/common/ui/button";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
@@ -73,6 +75,8 @@ export function BookingEventsCalendar({
   view,
   layout,
   timezone,
+  focusUnavailable = false,
+  focusFallback = null,
   availabilityStartMinute = 7 * 60,
   availabilityEndMinute = 19 * 60,
   events,
@@ -112,6 +116,8 @@ export function BookingEventsCalendar({
   view: CalendarView;
   layout: CalendarLayout;
   timezone: string;
+  focusUnavailable?: boolean;
+  focusFallback?: "resources" | "overflow" | null;
   availabilityStartMinute?: number;
   availabilityEndMinute?: number;
   events: readonly BookingListDocument[];
@@ -160,6 +166,18 @@ export function BookingEventsCalendar({
   ) => void;
 }) {
   const { t } = useTranslation("booking");
+  const alertsRef = useRef<TableListAlertsApi | null>(null);
+  const [alertsReady, setAlertsReady] = useState(false);
+  const attachAlerts = useCallback((api: TableListAlertsApi | null) => {
+    alertsRef.current = api;
+    setAlertsReady(api !== null);
+  }, []);
+  const deliverNotice = useCallback((alert: Parameters<TableListAlertsApi["push"]>[0]) => {
+    if (!alertsRef.current) return false;
+    alertsRef.current.push(alert);
+    return true;
+  }, []);
+  useBookingNoticeHost("calendar", deliverNotice, alertsReady);
   const todayValue = todayInTimeZone(timezone);
   const eventConfig = eventFilterConfig ?? calendarEventFallbackConfig;
   const eventFiltering:
@@ -229,12 +247,30 @@ export function BookingEventsCalendar({
       {isError && (
         <div role="alert" className="flex items-center gap-3">
           <span>{t("calendar.unavailable")}</span>
-          <Button type="button" variant="outline" onClick={onRetry}>
+          <Button type="button" variant="outline" onClick={onRetry} data-calendar-focus-keep-pending>
             {t("calendar.retry")}
           </Button>
         </div>
       )}
+      <div role="status" className={focusUnavailable && !isError ? "flex items-center gap-3" : "sr-only"}>
+        {focusUnavailable && !isError ? (
+          <>
+            <span>{t("calendar.eventFocusUnavailable")}</span>
+            <Button type="button" variant="outline" onClick={onRetry} data-calendar-focus-keep-pending>
+              {t("calendar.retry")}
+            </Button>
+          </>
+        ) : null}
+      </div>
+      <div role="status" className="sr-only">
+        {focusFallback === "resources"
+          ? t("calendar.focusFallback.resources", {})
+          : focusFallback === "overflow"
+            ? t("calendar.focusFallback.overflow", {})
+            : null}
+      </div>
       <TableList
+        alertsRef={attachAlerts}
         config={eventConfig}
         rows={events}
         getRowId={(event) => String(event.id)}

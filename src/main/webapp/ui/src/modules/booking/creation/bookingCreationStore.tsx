@@ -4,11 +4,14 @@ import { devtools } from "zustand/middleware";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
+import type { BookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 
 export type BookingCreationContext = Readonly<{
   ownerId: string;
   triggerId: string;
   eventKind: "BOOKING" | "MAINTENANCE";
+  /** Page that opened compact creation; its host owns the completion notice. */
+  originHost?: BookingNoticeHost;
   target?: Readonly<BookableItemOption>;
   window?: Readonly<BookingWindowDraft>;
   initialDate?: string;

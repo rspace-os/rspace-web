@@ -401,7 +401,7 @@ export function DayTimeline({
                 return (
                   <li
                     key={event.id}
-                    className="absolute z-10"
+                    className="absolute z-10 data-[calendar-event-focus-highlight=true]:ring-4 data-[calendar-event-focus-highlight=true]:ring-ring data-[calendar-event-focus-highlight=true]:ring-offset-2"
                     style={{
                       left: `${(startMinute / dayMinutes) * 100}%`,
                       width: `${((visualEndMinute - startMinute) / dayMinutes) * 100}%`,
@@ -409,6 +409,7 @@ export function DayTimeline({
                       height: EVENT_CARD_HEIGHT,
                     }}
                     data-event-id={event.id}
+                    data-calendar-event-focus={`${date}:${event.id}`}
                     data-lane={lane}
                   >
                     <DayTimelineEventCard

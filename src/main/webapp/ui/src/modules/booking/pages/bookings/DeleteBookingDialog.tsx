@@ -102,7 +102,6 @@ export function DeleteBookingDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorKey, setErrorKey] = useState<DeleteErrorKey | null>(null);
   const [reason, setReason] = useState("");
-  const [announcement, setAnnouncement] = useState("");
   const reasonId = useId();
   const reasonHintId = `${reasonId}-hint`;
   const reasonCountId = `${reasonId}-count`;
@@ -129,11 +128,8 @@ export function DeleteBookingDialog({
     setErrorKey(null);
     try {
       const cancelled = await cancelBooking(bookingId, bookingVersion, token, reason);
-      await invalidateBookingQueries();
       await onDeleted(cancelled);
-      setAnnouncement(
-        maintenance ? t("bookings.details.maintenanceCancelled") : t("bookings.details.bookingCancelled"),
-      );
+      await invalidateBookingQueries();
       setOpen(false);
     } catch (error) {
       const nextErrorKey = deleteErrorKey(error);
@@ -227,9 +223,6 @@ export function DeleteBookingDialog({
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
-      <p role="status" aria-live="polite" className="sr-only">
-        {announcement}
-      </p>
     </AlertDialog>
   );
 }

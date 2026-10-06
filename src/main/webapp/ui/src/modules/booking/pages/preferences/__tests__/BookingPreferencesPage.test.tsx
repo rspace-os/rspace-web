@@ -24,6 +24,19 @@ function renderPage() {
   return { ...rendered, queryClient };
 }
 
+async function expectStatusMessage(message: string) {
+  await waitFor(() => {
+    const matchingStatuses = screen.getAllByRole("status").filter((status) => status.textContent === message);
+    expect(matchingStatuses).toHaveLength(1);
+    expect(matchingStatuses[0]).toHaveTextContent(message);
+  });
+}
+
+function expectNoAlertMessage(message: string) {
+  const matchingAlerts = screen.getAllByRole("alert").filter((alert) => alert.textContent === message);
+  expect(matchingAlerts).toHaveLength(0);
+}
+
 describe("BookingPreferencesPage", () => {
   beforeEach(() => {
     server.use(
@@ -101,7 +114,7 @@ describe("BookingPreferencesPage", () => {
     const saveButton = screen.getByRole("button", { name: "booking:preferences.actions.saved" });
     await waitFor(() => expect(saveButton).toHaveClass("bg-emerald-600"));
     expect(saveButton).toBeDisabled();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await expectStatusMessage("booking:preferences.actions.saved");
     await user.click(saveButton);
     expect(writes).toBe(1);
     expect(body).toEqual({
@@ -188,7 +201,7 @@ describe("BookingPreferencesPage", () => {
     expect(custom).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
     await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectNoAlertMessage("booking:preferences.errors.invalid");
     await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
 
     await waitFor(() => expect(bodies).toHaveLength(1));
@@ -231,7 +244,7 @@ describe("BookingPreferencesPage", () => {
     const saveButton = screen.getByRole("button", { name: "booking:preferences.actions.saved" });
     await waitFor(() => expect(saveButton).toHaveClass("bg-emerald-600"));
     expect(saveButton).toBeDisabled();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await expectStatusMessage("booking:preferences.actions.saved");
     expect(body).toMatchObject({ availabilityWindowEnd: "24:00" });
   });
 
@@ -254,7 +267,7 @@ describe("BookingPreferencesPage", () => {
 
     await user.click(await screen.findByRole("button", { name: "booking:preferences.actions.reset" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.resetComplete");
+    await expectStatusMessage("booking:preferences.resetComplete");
     expect(deletes).toBe(1);
     expect(reads).toBe(2);
     expect(queryClient.getQueryData(bookingDisplayPreferencesQueryKey)).toEqual({
@@ -280,14 +293,14 @@ describe("BookingPreferencesPage", () => {
     const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
     await user.clear(start);
     await user.type(start, "19:00");
-    expect(screen.getByRole("alert")).toHaveTextContent("booking:preferences.errors.invalid");
+    expect(screen.getByText("booking:preferences.errors.invalid")).toHaveAttribute("role", "alert");
     expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
     expect(writes).toBe(0);
 
     await user.clear(start);
     await user.type(start, "09:00");
     await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("booking:preferences.errors.save");
+    expect(await screen.findByText("booking:preferences.errors.save")).toHaveAttribute("role", "alert");
     expect(writes).toBe(1);
   });
 
@@ -345,7 +358,7 @@ describe("BookingPreferencesPage", () => {
     expect(await screen.findByLabelText("booking:preferences.calendarSubscription.copyPrompt")).toHaveValue(
       "https://example.test/public/booking/calendars/feed.ics?token=existing",
     );
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectNoAlertMessage("booking:preferences.calendarSubscription.createError");
   });
 
   it("replaces the private link only after the user confirms", async () => {
@@ -433,7 +446,10 @@ describe("BookingPreferencesPage", () => {
     await user.click(on);
     const save = screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" });
     await user.click(save);
-    expect(await screen.findByText("booking:notificationSubscriptions.preferences.saveError")).toBeVisible();
+    expect(await screen.findByText("booking:notificationSubscriptions.preferences.saveError")).toHaveAttribute(
+      "role",
+      "alert",
+    );
     expect(on).toBeChecked();
     expect(save).toBeEnabled();
     await user.click(save);
@@ -464,13 +480,13 @@ describe("BookingPreferencesPage", () => {
     const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
     expect(savedButton).toHaveClass("bg-emerald-600");
     expect(savedButton).toBeDisabled();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await expectStatusMessage("booking:preferences.actions.saved");
     expect(saved).toEqual({ autoSubscribeOwnedItems: true, notifyOnCreated: true, notifyOnCancelled: true });
 
     await user.click(
       screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.unsubscribeAll" }),
     );
-    expect(await screen.findByText("booking:notificationSubscriptions.preferences.unsubscribed")).toBeVisible();
+    await expectStatusMessage("booking:notificationSubscriptions.preferences.unsubscribed");
     expect(deleted).toBe(1);
     expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
     expect(
@@ -509,6 +525,7 @@ describe("BookingPreferencesPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" }));
 
     expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    await expectStatusMessage("booking:preferences.actions.saved");
     expect(saved).toEqual({ autoSubscribeOwnedItems: false, notifyOnCreated: true, notifyOnCancelled: false });
     expect(cancelled).not.toBeChecked();
     await expectAccessible(container);

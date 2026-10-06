@@ -194,9 +194,13 @@ export function CalendarWeekTimeGrid({
                     <li
                       key={item.event.id}
                       data-event-id={item.event.id}
+                      data-calendar-event-focus={`${day}:${item.event.id}`}
                       data-lane={item.lane}
                       data-lane-count={item.laneCount}
-                      className={cn("absolute z-10 px-0.5 py-px", expanded && "z-[15]")}
+                      className={cn(
+                        "absolute z-10 px-0.5 py-px data-[calendar-event-focus-highlight=true]:ring-4 data-[calendar-event-focus-highlight=true]:ring-ring data-[calendar-event-focus-highlight=true]:ring-offset-2",
+                        expanded && "z-[15]",
+                      )}
                       style={weekGridEventBox(item)}
                     >
                       <DayTimelineEventCard
