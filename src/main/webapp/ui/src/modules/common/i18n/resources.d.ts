@@ -4069,6 +4069,11 @@ export default interface Resources {
         "singleOnly": "Select a single subsample for this operation.",
         "tooManySelected": "Select at most 100 subsamples for this operation."
       },
+      "placement": {
+        "container": "Place in a container",
+        "description": "Choose where the new subsamples go once they are created.",
+        "workbench": "Leave on my workbench"
+      },
       "pool": {
         "description": "Combine an equal amount from several subsamples into one new pooled sample.",
         "label": "Pool",
@@ -4116,6 +4121,7 @@ export default interface Resources {
           "confirm": "Confirm",
           "details": "Details",
           "documentation": "Documentation",
+          "placement": "Location",
           "template": "Template"
         },
         "title": "Process subsample"
