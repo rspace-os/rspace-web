@@ -42,10 +42,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class SlackMessageSenderTest {
 
   private ExternalMessageSender slackSender;
+  private UserConnectionManager userConnections;
 
   @BeforeEach
   public void setUp() throws Exception {
-    slackSender = new SlackMessageSender();
+    userConnections = mock(UserConnectionManager.class);
+    slackSender = new SlackMessageSender(userConnections);
   }
 
   @Test
@@ -65,12 +67,10 @@ public class SlackMessageSenderTest {
     AppConfigElementSet set = new AppConfigElementSet();
     ReflectionTestUtils.setField(set, "id", 5L);
     set.setUserAppConfig(new UserAppConfig(user, new App(App.APP_SLACK, "Slack", true), true));
-    SlackMessageSender sender = new SlackMessageSender();
+    SlackMessageSender sender = new SlackMessageSender(userConnections);
     MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
     ReflectionTestUtils.setField(sender, "messages", messages);
-    sender.userConnectionManager = mock(UserConnectionManager.class);
-    when(sender.userConnectionManager.findByUserNameProviderName(
-            user.getUsername(), SLACK_APP_NAME, "5"))
+    when(userConnections.findByUserNameProviderName(user.getUsername(), SLACK_APP_NAME, "5"))
         .thenReturn(Optional.empty());
 
     IllegalStateException e =
@@ -122,10 +122,8 @@ public class SlackMessageSenderTest {
           new UserConnection(
               new UserConnectionId(user.getUsername(), SLACK_APP_NAME, "5"), "token");
       connection.setSecret("http://localhost:" + server.getAddress().getPort() + "/slack");
-      UserConnectionManager userConnections = mock(UserConnectionManager.class);
       when(userConnections.findByUserNameProviderName(user.getUsername(), SLACK_APP_NAME, "5"))
           .thenReturn(Optional.of(connection));
-      ReflectionTestUtils.setField(slackSender, "userConnectionManager", userConnections);
 
       IPropertyHolder props = mock(IPropertyHolder.class);
       when(props.getServerUrl()).thenReturn("https://rspace.example.com");

@@ -26,7 +26,11 @@ public class SlackMessageSender extends AbstractExternalWebhookMessageSender
 
   int MAX_ATTACHMENTS = 20;
   @Autowired IPropertyHolder props;
-  @Autowired UserConnectionManager userConnectionManager;
+  private final UserConnectionManager userConnectionManager;
+
+  public SlackMessageSender(UserConnectionManager userConnectionManager) {
+    this.userConnectionManager = userConnectionManager;
+  }
 
   @Override
   public boolean supportsApp(App app) {

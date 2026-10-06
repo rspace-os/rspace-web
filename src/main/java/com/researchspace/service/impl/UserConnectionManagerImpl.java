@@ -24,11 +24,13 @@ public class UserConnectionManagerImpl extends GenericManagerImpl<UserConnection
 
   static final String SAVE_CONNECTION_SPEL = "#connection.id.userId + #connection.id.providerId";
   private UserConnectionDao userConnectionDao;
-  private @Autowired UserAppConfigManager userAppConfigManager;
+  private final UserAppConfigManager userAppConfigManager;
 
-  public UserConnectionManagerImpl(@Autowired UserConnectionDao userDao) {
+  public UserConnectionManagerImpl(
+      @Autowired UserConnectionDao userDao, UserAppConfigManager userAppConfigManager) {
     this.dao = userDao;
     this.userConnectionDao = userDao;
+    this.userAppConfigManager = userAppConfigManager;
   }
 
   @Override
