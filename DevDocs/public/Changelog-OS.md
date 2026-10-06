@@ -9,6 +9,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
 ### Server
 
 - RSDEV-1546 the OAuth password grant (`/oauth/token`, `grant_type=password`) now validates the client id and secret before checking the user's password, so an unregistered client can no longer trigger a password check or learn whether a password was correct. With a valid client, the grant now answers a username with the ordinary invalid-credentials response, at the cost of one password check, after `oauth.passwordGrant.maxFailures` wrong passwords (default 5) within `oauth.passwordGrant.failureWindowSeconds` (default 600), until the window passes. Administrators see a block in the security log. The count is held in memory and does not touch the account's login-page lockout. Unknown usernames are answered after one password check, so for ordinary accounts their response time is close to that of a wrong password.
+- RSDEV-1525 moves integration credentials into encrypted storage using a Java/Hibernate database migration. When upgrading an existing installation, install and start this release before upgrading to a later release; do not skip it. Later Hibernate mappings may reference schema changes that are not yet present when this migration runs.
 
 # 2.27.0 2026-10-02
 
