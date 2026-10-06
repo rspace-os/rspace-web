@@ -3958,6 +3958,7 @@ export default interface Resources {
           "amountTakenEach": "Amount taken from each subsample",
           "documentation": "Documented by",
           "linkBack": "Links back to",
+          "location": "Location",
           "originEmptied": "Origin volume",
           "process": "Process",
           "storageTemp": "Storage temperature",
@@ -3968,9 +3969,11 @@ export default interface Resources {
           "amountTaken": "{amount} {unit}",
           "emptied": "Will be set to 0",
           "originAmount": "{origin}: {amount}",
+          "placedIn": "{container}: {slots}",
           "storageTemp": "{temp} °C",
           "subsamples": "{count} × {amount} {unit} each",
-          "takeAll": "All (subsamples emptied)"
+          "takeAll": "All (subsamples emptied)",
+          "workbench": "Your workbench"
         }
       },
       "cryopreserve": {
