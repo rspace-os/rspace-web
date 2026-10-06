@@ -17,6 +17,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller.AccessToken;
 import java.io.IOException;
@@ -79,6 +80,7 @@ public class DMPOnlineControllerTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(testUser);
     assertTrue(testUser.isContentInitialized());
 
+    logoutAndLoginAs(testUser);
     principal = new MockPrincipal(testUser.getUsername());
 
     userConnectionId =
@@ -105,7 +107,13 @@ public class DMPOnlineControllerTest extends SpringTransactionalTest {
     UserConnection actualConnection = getUserConnection(testUser);
     String clientCode = "CODE_RETURNED_BY_CONNECT";
 
-    Map<String, String> params = Map.of("code", clientCode);
+    Map<String, String> params =
+        Map.of(
+            "code",
+            clientCode,
+            "state",
+            (String)
+                SessionAttributeUtils.getSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE));
 
     AccessToken tokenObject = new AccessToken();
     tokenObject.setAccessToken("NEW_ACCESS_TOKEN");

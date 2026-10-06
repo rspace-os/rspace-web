@@ -21,10 +21,10 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.session.GitHubPendingToken;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
 import com.researchspace.webapp.integrations.github.GitHubController.TreeNode;
@@ -220,11 +220,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
   }
 
   private void storeToken(User user, String token) {
-    UserConnection connection =
-        new UserConnection(
-            new UserConnectionId(user.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME), token);
-    connection.setRank(0);
-    userConnectionManager.save(connection);
+    GitHubPendingToken.store(user.getUsername(), token);
   }
 
   private String repositoryToken(User user, String repositoryName) {
@@ -245,10 +241,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
   }
 
   private String storedToken(User user) {
-    return userConnectionManager
-        .findByUserNameProviderName(user.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME)
-        .map(UserConnection::getAccessToken)
-        .orElse(null);
+    return GitHubPendingToken.get(user.getUsername());
   }
 
   @Test

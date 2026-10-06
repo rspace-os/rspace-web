@@ -94,9 +94,6 @@ public class SlackController extends BaseOAuth2Controller {
   @Value("${slack.secret}")
   private String clientSecret;
 
-  @Value("${slack.verification.token}")
-  private String verificationToken;
-
   @Value("${slack.oauth.authorize.url}")
   private String slackOauthAuthorizeUrl;
 
@@ -253,10 +250,9 @@ public class SlackController extends BaseOAuth2Controller {
   }
 
   @PostMapping("/callbacks/search")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   @ResponseBody
   public SlackMessage basicSearch(@RequestParam Map<String, String> params) throws Exception {
-    assertVerificationCode(params);
-
     User user;
     String searchTerm;
 
@@ -381,10 +377,9 @@ public class SlackController extends BaseOAuth2Controller {
   }
 
   @PostMapping("/callbacks/save_conversation")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   @ResponseBody
   public SlackMessage saveConversation(@RequestParam Map<String, String> params) throws Exception {
-    assertVerificationCode(params);
-
     try {
       String timePeriodString = params.get("text");
       // Show help if the search term is empty or 'help'
@@ -435,12 +430,6 @@ public class SlackController extends BaseOAuth2Controller {
     }
   }
 
-  private void assertVerificationCode(Map<String, String> params) {
-    if (!params.get("token").equals(verificationToken)) {
-      throw new IllegalArgumentException(getText("apps.slack.errors.verificationCodeMismatch"));
-    }
-  }
-
   private SlackMessage getSaveConversationHelp() {
     return new SlackMessage(getText("apps.slack.saveConversation.help"));
   }
@@ -485,10 +474,6 @@ public class SlackController extends BaseOAuth2Controller {
   /* ==============
    *  for tests
    * ============== */
-  protected void setVerificationToken(String verificationToken) {
-    this.verificationToken = verificationToken;
-  }
-
   protected void setUserAppCfgMgr(UserAppConfigManager userAppCfgMgr) {
     this.userAppCfgMgr = userAppCfgMgr;
   }

@@ -1,6 +1,5 @@
 package com.researchspace.webapp.integrations.helper;
 
-import static com.researchspace.session.SessionAttributeUtils.getSessionAttribute;
 import static com.researchspace.session.SessionAttributeUtils.removeSessionAttribute;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -38,7 +37,7 @@ public class BaseOAuth2Controller extends BaseController {
    * @return
    */
   protected String generateState() {
-    String state = SecureStringUtils.getSecureRandomAlphanumeric(10);
+    String state = SecureStringUtils.getSecureRandomAlphanumeric(32);
     SessionAttributeUtils.setSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE, state);
     return state;
   }
@@ -49,16 +48,20 @@ public class BaseOAuth2Controller extends BaseController {
    * @param request
    */
   protected void verifyStateParameter(HttpServletRequest request) {
-    String state = request.getParameter("state");
+    verifyStateParameter(request.getParameter("state"));
+  }
+
+  protected void verifyStateParameter(String state) {
     String originalState = extractCachedOAuth2State();
-    if (originalState != null && (state == null || !state.equals(originalState))) {
+    if (originalState == null
+        || originalState.isEmpty()
+        || state == null
+        || !state.equals(originalState)) {
       throw new IllegalStateException(getText("connect.authorizationError.stateMismatch"));
     }
   }
 
   private String extractCachedOAuth2State() {
-    String state = (String) getSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE);
-    removeSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE);
-    return state;
+    return (String) removeSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE);
   }
 }

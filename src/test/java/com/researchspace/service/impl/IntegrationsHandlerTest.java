@@ -72,6 +72,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.session.GitHubPendingToken;
 import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.ServerConfigurationDTO;
@@ -187,18 +188,16 @@ public class IntegrationsHandlerTest {
   @Test
   public void addingAGitHubRepositoryWithoutOAuthTokenDoesNotSaveTheConfig() {
     Map<String, String> settings = Map.of("GITHUB_REPOSITORY_FULL_NAME", "owner/repo");
-    when(userConnectionManager.findByUserNameProviderName(
-            subject.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME))
-        .thenReturn(Optional.empty());
+    try (var pending = Mockito.mockStatic(GitHubPendingToken.class)) {
+      assertThrows(
+          IllegalStateException.class,
+          () -> handler.saveAppOptions(null, settings, GITHUB_APP_NAME, false, subject));
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> handler.saveAppOptions(null, settings, GITHUB_APP_NAME, false, subject));
-
-    verify(userConnectionManager, never())
-        .saveWithNewAppConfigElementSet(any(), any(), any(), any(), anyBoolean(), any());
-    verify(appCfgMgr, never())
-        .saveAppConfigElementSet(any(), any(), anyBoolean(), any(), anyString());
+      verify(userConnectionManager, never())
+          .saveWithNewAppConfigElementSet(any(), any(), any(), any(), anyBoolean(), any());
+      verify(appCfgMgr, never())
+          .saveAppConfigElementSet(any(), any(), anyBoolean(), any(), anyString());
+    }
   }
 
   private UserAppConfig stubSetForApp(Long setId, String appName) {
