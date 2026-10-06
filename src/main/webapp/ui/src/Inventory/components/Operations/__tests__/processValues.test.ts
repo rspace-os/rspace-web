@@ -102,3 +102,21 @@ describe("normalizeProcessValues: the stored template choice", () => {
     expect(bundleWith({ mode: "none", templateId: null })?.template).toEqual({ mode: "none", templateId: null });
   });
 });
+
+describe("normalizeProcessValues (placement)", () => {
+  it("keeps a remembered container and a remembered workbench (null)", () => {
+    const shelf = { containerId: 5, containerName: "Shelf" };
+    expect(normalizeProcessValues({ values: {}, placement: shelf })?.placement).toEqual(shelf);
+    expect(normalizeProcessValues({ values: {}, placement: null })?.placement).toBeNull();
+  });
+
+  it("leaves placement out of a bundle saved before the step existed", () => {
+    expect(normalizeProcessValues({ values: {} })).not.toHaveProperty("placement");
+  });
+
+  it("reads a malformed placement as the workbench", () => {
+    for (const stored of ["IC5", { containerId: "5", containerName: "Shelf" }, { containerId: 5 }]) {
+      expect(normalizeProcessValues({ values: {}, placement: stored })?.placement).toBeNull();
+    }
+  });
+});

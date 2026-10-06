@@ -44,6 +44,7 @@ import {
   usesAmountModes,
 } from "./operations";
 import {
+  fetchContainer,
   type OperationResult,
   PlacementRefused,
   performOperation,
@@ -78,6 +79,7 @@ import {
   OPERATION_PREFERENCES,
   type OperationPreferences,
   type ProcessValues,
+  type RememberedPlacement,
 } from "./processValues";
 import { derivedSampleName, firstAvailableName } from "./sampleNaming";
 import TemplateStep, { type TemplateSelection } from "./TemplateStep";
@@ -234,6 +236,51 @@ function OperationWizard({
   React.useEffect(() => {
     if (open && placementContainer) prepareContainer(placementContainer, createdCount);
   }, [open, placementContainer, createdCount]);
+
+  // A remembered container is stored by id, so it is fetched again: it may since have been trashed,
+  // filled or unshared, in which case the run falls back to the workbench and says so. Until the
+  // fetch settles, the placement is an unpicked container, which holds back the fast path.
+  const [rememberedPlacement, setRememberedPlacement] = React.useState<RememberedPlacement | null>(null);
+  const [placementNote, setPlacementNote] = React.useState<string | null>(null);
+  const placementCheckId = React.useRef(0);
+  const createdCountRef = React.useRef(createdCount);
+  createdCountRef.current = createdCount;
+
+  const applyRememberedPlacement = (remembered: RememberedPlacement | null) => {
+    placementCheckId.current++;
+    setPlacementNote(null);
+    setPlacement(remembered ? { mode: "container", container: null } : WORKBENCH);
+    setRememberedPlacement(remembered);
+  };
+
+  const onPlacementChange = (next: PlacementSelection) => {
+    placementCheckId.current++;
+    setPlacementNote(null);
+    setPlacement(next);
+  };
+
+  React.useEffect(() => {
+    if (!rememberedPlacement) return;
+    const checkId = ++placementCheckId.current;
+    void (async () => {
+      let container: Awaited<ReturnType<typeof fetchContainer>> | null = null;
+      try {
+        container = await fetchContainer(rememberedPlacement.containerId);
+      } catch (error) {
+        console.warn("Could not fetch the remembered container", error);
+      }
+      if (checkId !== placementCheckId.current) return;
+      const blocker = container ? placementBlocker(container, createdCountRef.current) : null;
+      if (container && (blocker === null || blocker.reason === "selectSlots")) {
+        setPlacement({ mode: "container", container });
+      } else {
+        setPlacement(WORKBENCH);
+        setPlacementNote(
+          t("operations.placement.rememberedUnavailable", { container: rememberedPlacement.containerName }),
+        );
+      }
+    })();
+  }, [rememberedPlacement, t]);
 
   const stepKeys: ReadonlyArray<string> = operation
     ? (operation.steps ?? ["details", "template", "amounts", "documentation", "placement", "confirm"])
@@ -426,6 +473,7 @@ function OperationWizard({
         documentation: bundle.documentation,
         amountMode: bundle.amountMode ?? resolveDefaultAmountMode(op),
         perSubsampleAmounts: reconciled.perSubsampleAmounts,
+        placement: bundle.placement ?? null,
         remember: true,
       };
     }
@@ -435,6 +483,7 @@ function OperationWizard({
       documentation: null,
       amountMode: resolveDefaultAmountMode(op),
       perSubsampleAmounts: {},
+      placement: null,
       remember: false,
     };
   };
@@ -450,7 +499,7 @@ function OperationWizard({
     setValues(s.values);
     setTemplateSelection(s.templateSelection);
     setDocumentation(s.documentation);
-    setPlacement(WORKBENCH);
+    applyRememberedPlacement(s.placement);
     setRemember(s.remember);
     setAmountMode(s.amountMode);
     setPerSubsampleAmounts(s.perSubsampleAmounts);
@@ -475,6 +524,7 @@ function OperationWizard({
       setValues(v);
       setTemplateSelection(s.templateSelection);
       setDocumentation(s.documentation);
+      applyRememberedPlacement(s.placement);
       setRemember(s.remember);
       setAmountMode(s.amountMode);
       setPerSubsampleAmounts(s.perSubsampleAmounts);
@@ -737,6 +787,10 @@ function OperationWizard({
           ),
           template: templateSelectionToDefault(templateSelection),
           documentation,
+          placement:
+            placement.mode === "container" && placement.container
+              ? { containerId: Number(placement.container.id), containerName: placement.container.name }
+              : null,
           ...(usesAmountModes(operation)
             ? { amountMode, perSubsampleAmounts: amountMode === "perSubsample" ? perSubsampleAmounts : {} }
             : {}),
@@ -838,7 +892,12 @@ function OperationWizard({
       );
     }
     if (key === "placement") {
-      return <PlacementStep value={placement} onChange={setPlacement} count={createdCount} />;
+      return (
+        <>
+          {placementNoteAlert()}
+          <PlacementStep value={placement} onChange={onPlacementChange} count={createdCount} />
+        </>
+      );
     }
     return confirmationStep();
   };
@@ -847,6 +906,13 @@ function OperationWizard({
     documentationTrashed && documentation ? (
       <Alert severity="warning" sx={{ mb: 1 }}>
         {t("operations.documentation.trashed", { name: documentation.name })}
+      </Alert>
+    ) : null;
+
+  const placementNoteAlert = (): React.ReactNode =>
+    placementNote ? (
+      <Alert severity="info" sx={{ mb: 1 }}>
+        {placementNote}
       </Alert>
     ) : null;
 
@@ -870,6 +936,7 @@ function OperationWizard({
           </Alert>
         ) : null}
         {trashedDocumentationWarning()}
+        {placementNoteAlert()}
         <OperationConfirmation
           operation={operation}
           values={values}

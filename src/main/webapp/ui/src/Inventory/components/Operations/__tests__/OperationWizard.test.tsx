@@ -10,7 +10,7 @@ import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
-import { makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import { containerAttrs, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
 
@@ -86,6 +86,7 @@ const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
+    moveStore: { isMoving: false },
     searchStore: { search: { performSearch, fetcher }, getTemplate },
     uiStore: { addAlert },
     unitStore: {
@@ -1126,6 +1127,7 @@ describe("OperationWizard remember bundle", () => {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 5, templateName: "T5" },
         documentation: { globalId: "SD1", name: "D1" },
+        placement: null,
       },
     });
     expect(ops().names).toEqual({ derive: ["dna extraction"] });
@@ -1366,6 +1368,7 @@ describe("OperationWizard remember bundle", () => {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 5, templateName: "T5" },
         documentation: null,
+        placement: null,
       },
     });
   });
@@ -1521,6 +1524,109 @@ describe("OperationWizard placement after Perform", () => {
     const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
     expect(alerts).toEqual([expect.objectContaining({ variant: "warning", message: "Container is full" })]);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("OperationWizard remembered placement", () => {
+  const CONTAINER_URL = "/api/inventory/v1/containers/:id";
+  const grid = { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" } as const;
+
+  function rememberBoil(placement: unknown) {
+    ops().defaults = { derive: "boil" };
+    ops().values = {
+      "derive boil": {
+        values: { count: 1, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "none", templateId: null },
+        documentation: null,
+        placement,
+      },
+    };
+  }
+
+  function serveContainer(attrs: Parameters<typeof containerAttrs>[0] | null) {
+    server.use(
+      http.get(CONTAINER_URL, () =>
+        attrs ? HttpResponse.json(containerAttrs(attrs)) : HttpResponse.json({ message: "Not found" }, { status: 404 }),
+      ),
+    );
+  }
+
+  it("saves the chosen container by id and name, never its locations", async () => {
+    createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const box = makeMockContainer({
+      id: 6,
+      globalId: "IC6",
+      name: "Box",
+      cType: "GRID",
+      gridLayout: grid,
+      locationsCount: 4,
+    });
+    box.locations?.[0].toggleSelected(true);
+    placementTarget.container = box;
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
+    await reachPlacement(user, "dna");
+    await user.click(screen.getByTestId("place-container"));
+    await user.click(nextButton()); // placement -> confirm
+    await user.click(screen.getByTestId("toggle-remember"));
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect((ops().values["derive dna"] as { placement: unknown }).placement).toEqual({
+      containerId: 6,
+      containerName: "Box",
+    });
+  });
+
+  it("offers the one-click fast path for a remembered list container and places into it", async () => {
+    rememberBoil({ containerId: 5, containerName: "Shelf" });
+    serveContainer({ id: 5, globalId: "IC5", name: "Shelf", cType: "LIST" });
+    const bulkBodies = createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.click(await screen.findByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(bulkBodies).toHaveLength(1);
+  });
+
+  it("withholds the fast path for a remembered grid container, whose locations must be picked again", async () => {
+    rememberBoil({ containerId: 6, containerName: "Box" });
+    serveContainer({ id: 6, globalId: "IC6", name: "Box", cType: "GRID", gridLayout: grid, locationsCount: 4 });
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[mockOrigin()]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+
+    await waitFor(() => expect(nextButton()).toBeEnabled());
+    expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
+    for (let step = 0; step < 4; step++) await user.click(nextButton());
+    expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
+    expect(nextButton()).toBeDisabled();
+  });
+
+  it("falls back to the workbench, with a note, when the remembered container is gone", async () => {
+    rememberBoil({ containerId: 5, containerName: "Shelf" });
+    serveContainer(null);
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[mockOrigin()]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+
+    expect(await screen.findByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+    expect(screen.getByText(/placement\.rememberedUnavailable/)).toBeInTheDocument();
+  });
+
+  it("falls back to the workbench when the remembered container can no longer hold the new subsamples", async () => {
+    rememberBoil({ containerId: 5, containerName: "Shelf" });
+    serveContainer({ id: 5, globalId: "IC5", name: "Shelf", cType: "LIST", deleted: true });
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[mockOrigin()]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+
+    expect(await screen.findByText(/placement\.rememberedUnavailable/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
   });
 });
 
