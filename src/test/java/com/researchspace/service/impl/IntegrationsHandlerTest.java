@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.service.IntegrationsHandler.ACCESS_TOKEN_SETTING;
+import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APIKEY;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_USER_TOKEN;
@@ -9,6 +10,8 @@ import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
 import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.MSTEAMS_WEBHOOK_URL;
 import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ONBOARDING_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
@@ -84,6 +87,7 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -146,6 +150,26 @@ public class IntegrationsHandlerTest {
     verify(appCfgMgr).deleteAppConfigSet(7L, subject, App.APP_SLACK);
     verify(userConnectionManager)
         .deleteByUserAndProvider(subject.getUsername(), SLACK_APP_NAME, "7");
+  }
+
+  @Test
+  public void deletingDataverseConfigDeletesItsCredential() {
+    stubSetForApp(7L, App.APP_DATAVERSE);
+
+    handler.deleteAppOptions(7L, DATAVERSE_APP_NAME, subject);
+
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), DATAVERSE_APP_NAME, "7");
+  }
+
+  @Test
+  public void deletingTeamsConfigDeletesItsWebhook() {
+    stubSetForApp(7L, App.APP_MSTEAMS);
+
+    handler.deleteAppOptions(7L, MSTEAMS_APP_NAME, subject);
+
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), MSTEAMS_APP_NAME, "7");
   }
 
   @Test
@@ -315,6 +339,124 @@ public class IntegrationsHandlerTest {
     assertThat(options).containsEntry("DATAVERSE_APIKEY", null);
     assertThat(options).containsEntry("DATAVERSE_UNLISTED", null); // fail-closed for new settings
     assertEquals("https://dataverse.example", options.get("DATAVERSE_URL"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void dataverseApiKeyStatusComesFromItsEncryptedConnection() {
+    App app = new App(App.APP_DATAVERSE, "Dataverse", true);
+    UserAppConfig cfg = new UserAppConfig(subject, app, true);
+    AppConfigElementSet set = new AppConfigElementSet();
+    ReflectionTestUtils.setField(set, "id", 42L);
+    set.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor("DATAVERSE_ALIAS", SettingsType.STRING, "")),
+            "tenant"));
+    set.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor("DATAVERSE_URL", SettingsType.STRING, "")),
+            "https://dataverse.example"));
+    cfg.addConfigSet(set);
+    when(appCfgMgr.getByAppName(App.APP_DATAVERSE, subject)).thenReturn(cfg);
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), DATAVERSE_APP_NAME, "42"))
+        .thenReturn(
+            Optional.of(
+                new UserConnection(
+                    new UserConnectionId(subject.getUsername(), DATAVERSE_APP_NAME, "42"),
+                    "stored-key")));
+
+    IntegrationInfo info = handler.getIntegration(subject, DATAVERSE_APP_NAME);
+
+    Map<String, String> options = (Map<String, String>) info.getOptions().get("42");
+    assertThat(options).containsEntry(DATAVERSE_APIKEY, null);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void teamsWebhookStatusComesFromItsEncryptedConnection() {
+    App app = new App(App.APP_MSTEAMS, "Microsoft Teams", true);
+    UserAppConfig cfg = new UserAppConfig(subject, app, true);
+    AppConfigElementSet set = new AppConfigElementSet();
+    ReflectionTestUtils.setField(set, "id", 43L);
+    set.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor("MSTEAMS_CHANNEL_LABEL", SettingsType.STRING, "")),
+            "general"));
+    cfg.addConfigSet(set);
+    when(appCfgMgr.getByAppName(App.APP_MSTEAMS, subject)).thenReturn(cfg);
+    UserConnection connection =
+        new UserConnection(new UserConnectionId(subject.getUsername(), MSTEAMS_APP_NAME, "43"), "");
+    connection.setSecret("https://teams.example/webhook");
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), MSTEAMS_APP_NAME, "43"))
+        .thenReturn(Optional.of(connection));
+
+    IntegrationInfo info = handler.getIntegration(subject, MSTEAMS_APP_NAME);
+
+    Map<String, String> options = (Map<String, String>) info.getOptions().get("43");
+    assertThat(options).containsEntry(MSTEAMS_WEBHOOK_URL, null);
+  }
+
+  @Test
+  public void dataverseApiKeyIsSavedOnlyInUserConnection() {
+    Map<String, String> settings =
+        Map.of(
+            "DATAVERSE_ALIAS",
+            "tenant",
+            "DATAVERSE_URL",
+            "https://dataverse.example",
+            DATAVERSE_APIKEY,
+            "dataverse-secret");
+    Map<String, String> publicSettings =
+        Map.of("DATAVERSE_ALIAS", "tenant", "DATAVERSE_URL", "https://dataverse.example");
+
+    handler.saveAppOptions(42L, settings, DATAVERSE_APP_NAME, false, subject);
+
+    verify(appCfgMgr)
+        .saveAppConfigElementSet(publicSettings, 42L, false, subject, App.APP_DATAVERSE);
+    ArgumentCaptor<UserConnection> savedConnection = ArgumentCaptor.forClass(UserConnection.class);
+    verify(userConnectionManager).save(savedConnection.capture());
+    assertEquals(
+        new UserConnectionId(subject.getUsername(), DATAVERSE_APP_NAME, "42"),
+        savedConnection.getValue().getId());
+    assertEquals("dataverse-secret", savedConnection.getValue().getAccessToken());
+  }
+
+  @Test
+  public void teamsWebhookIsSavedAsEncryptedConnectionSecret() {
+    Map<String, String> settings =
+        Map.of(
+            "MSTEAMS_CHANNEL_LABEL", "general", MSTEAMS_WEBHOOK_URL, "https://teams.example/hook");
+    Map<String, String> publicSettings = Map.of("MSTEAMS_CHANNEL_LABEL", "general");
+
+    handler.saveAppOptions(42L, settings, MSTEAMS_APP_NAME, false, subject);
+
+    verify(appCfgMgr).saveAppConfigElementSet(publicSettings, 42L, false, subject, App.APP_MSTEAMS);
+    ArgumentCaptor<UserConnection> savedConnection = ArgumentCaptor.forClass(UserConnection.class);
+    verify(userConnectionManager).save(savedConnection.capture());
+    assertEquals(
+        new UserConnectionId(subject.getUsername(), MSTEAMS_APP_NAME, "42"),
+        savedConnection.getValue().getId());
+    assertEquals("", savedConnection.getValue().getAccessToken());
+    assertEquals("https://teams.example/hook", savedConnection.getValue().getSecret());
+  }
+
+  @Test
+  public void nullCredentialOnUpdateKeepsStoredDataverseApiKey() {
+    Map<String, String> settings = new HashMap<>();
+    settings.put("DATAVERSE_ALIAS", "tenant");
+    settings.put("DATAVERSE_URL", "https://dataverse.example");
+    settings.put(DATAVERSE_APIKEY, null);
+
+    handler.saveAppOptions(42L, settings, DATAVERSE_APP_NAME, false, subject);
+
+    verify(userConnectionManager, never()).save(any());
+    verify(userConnectionManager, never())
+        .deleteByUserAndProvider(subject.getUsername(), DATAVERSE_APP_NAME, "42");
   }
 
   @Test

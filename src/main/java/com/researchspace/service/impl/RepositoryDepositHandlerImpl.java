@@ -7,6 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
+import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.properties.IPropertyHolder;
@@ -126,7 +127,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
       Optional<AppConfigElementSet> cfg, App app, User subject) throws MalformedURLException {
     RSpaceRepoConnectionConfig uiConnectionConfig;
     if (cfg.isPresent() && app.getName().equals(App.APP_DATAVERSE)) {
-      uiConnectionConfig = new RSDataverseConnectionConfig(cfg.get());
+      uiConnectionConfig = createDataverseConnectionConfig(cfg.get(), subject);
     } else if (app.getName().equalsIgnoreCase(App.APP_FIGSHARE)) {
       uiConnectionConfig = new FigshareUIConnectionConfig(userConnectionManager, subject);
     } else if (app.getName().equalsIgnoreCase(App.APP_DRYAD)) {
@@ -180,7 +181,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     User subject = userManager.getAuthenticatedUserInSession();
     checkConnectionState(appSet.getUserAppConfig().getApp(), subject);
     App app = appSet.getApp();
-    RSDataverseConnectionConfig connectionCfg = new RSDataverseConnectionConfig(appSet);
+    RSDataverseConnectionConfig connectionCfg = createDataverseConnectionConfig(appSet, subject);
     RepositoryConfig repoCfg =
         repoCfgFactory.createRepositoryConfigFromAppCfg(connectionCfg, subject);
     IRepository repo = repoFactory.getRepository(getRepoName(app));
@@ -197,10 +198,24 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
       throws MalformedURLException {
     App app = appSet.getApp();
     checkConnectionState(app, userManager.getAuthenticatedUserInSession());
-    RSDataverseConnectionConfig rsDataverseConnectionCfg = new RSDataverseConnectionConfig(appSet);
+    RSDataverseConnectionConfig rsDataverseConnectionCfg =
+        createDataverseConnectionConfig(appSet, subject);
     RepositoryConfig repoConfig =
         repoCfgFactory.createRepositoryConfigFromAppCfg(rsDataverseConnectionCfg, subject);
     return getRepositoryConfiguration(app, repoConfig);
+  }
+
+  private RSDataverseConnectionConfig createDataverseConnectionConfig(
+      AppConfigElementSet appSet, User subject) {
+    String apiKey =
+        userConnectionManager
+            .findByUserNameProviderName(
+                subject.getUsername(),
+                IntegrationsHandler.DATAVERSE_APP_NAME,
+                String.valueOf(appSet.getId()))
+            .map(UserConnection::getAccessToken)
+            .orElse("");
+    return new RSDataverseConnectionConfig(appSet, apiKey);
   }
 
   @Override

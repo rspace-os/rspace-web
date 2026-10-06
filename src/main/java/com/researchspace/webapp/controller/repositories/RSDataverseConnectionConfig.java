@@ -8,9 +8,11 @@ import java.util.Optional;
 public class RSDataverseConnectionConfig implements RSpaceRepoConnectionConfig {
 
   AppConfigElementSet source;
+  private final String apiKey;
 
-  public RSDataverseConnectionConfig(AppConfigElementSet source) {
+  public RSDataverseConnectionConfig(AppConfigElementSet source, String apiKey) {
     this.source = source;
+    this.apiKey = apiKey;
   }
 
   @Override
@@ -22,7 +24,7 @@ public class RSDataverseConnectionConfig implements RSpaceRepoConnectionConfig {
 
   @Override
   public String getApiKey() {
-    return source.findElementByPropertyName("DATAVERSE_APIKEY").getValue();
+    return apiKey;
   }
 
   @Override

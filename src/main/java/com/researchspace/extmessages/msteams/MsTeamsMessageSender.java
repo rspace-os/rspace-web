@@ -1,5 +1,7 @@
 package com.researchspace.extmessages.msteams;
 
+import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
+
 import com.researchspace.analytics.service.AnalyticsEvent;
 import com.researchspace.extmessages.base.AbstractExternalWebhookMessageSender;
 import com.researchspace.extmessages.base.ExternalMessageSender;
@@ -8,9 +10,12 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.core.IRSpaceDoc;
+import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.UserConnectionManager;
 import java.net.URI;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +24,14 @@ import org.springframework.http.ResponseEntity;
 public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
     implements ExternalMessageSender {
 
-  private String webhookPropertyName = "MSTEAMS_WEBHOOK_URL";
   Logger log = LoggerFactory.getLogger(MsTeamsMessageSender.class);
 
   private @Autowired IPropertyHolder props;
+  private final UserConnectionManager userConnectionManager;
+
+  public MsTeamsMessageSender(UserConnectionManager userConnectionManager) {
+    this.userConnectionManager = userConnectionManager;
+  }
 
   @Override
   public boolean supportsApp(App app) {
@@ -31,7 +40,14 @@ public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
 
   @Override
   protected String doGetPostUrl(AppConfigElementSet messageConfig) {
-    return messageConfig.findElementByPropertyName(webhookPropertyName).getValue();
+    return userConnectionManager
+        .findByUserNameProviderName(
+            messageConfig.getUserAppConfig().getUser().getUsername(),
+            MSTEAMS_APP_NAME,
+            String.valueOf(messageConfig.getId()))
+        .map(UserConnection::getSecret)
+        .filter(StringUtils::isNotBlank)
+        .orElseThrow(() -> new IllegalStateException("Microsoft Teams webhook is not configured"));
   }
 
   /**

@@ -5,20 +5,12 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
     <changeSet id="rsdev-1525-galaxy-apikey" context="run" author="tchoi-rs">
-        <comment>RSDEV-1525: Galaxy API keys live in the encrypted UserConnection table, which
-            GalaxyService reads; remove the plaintext copies kept as Galaxy app settings, and the
-            GALAXY_APIKEY setting itself. Like PyRAT and DSW keys, Galaxy keys are no longer saved
-            as app settings.</comment>
-        <sql>
-            delete from AppConfigElement where appConfigElementDescriptor_id in (
-                select d.id from AppConfigElementDescriptor d
-                    join PropertyDescriptor pd on d.descriptor_id = pd.id
-                    join App a on d.app_id = a.id
-                where a.name = 'app.galaxy' and pd.name = 'GALAXY_APIKEY');
-
-            delete from AppConfigElementDescriptor
-            where app_id in (select id from App where name = 'app.galaxy')
-              and descriptor_id in (select id from PropertyDescriptor where name = 'GALAXY_APIKEY');
-        </sql>
+        <!-- The previous version deleted Galaxy keys before copying them. Keep its checksum valid
+             for installations that applied it, but defer all credential cleanup to the verified
+             copy in the final customChanges changelog. -->
+        <validCheckSum>9:3f8b0d53396eea009de5811ea9c05033</validCheckSum>
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">SELECT 0</sqlCheck>
+        </preConditions>
     </changeSet>
 </databaseChangeLog>
