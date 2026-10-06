@@ -3,8 +3,10 @@ package com.researchspace.webapp.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -12,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.auth.LoginHelper;
+import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.googleauth.ExternalAuthTokenVerifier;
 import com.researchspace.googleauth.ExternalProfile;
@@ -34,6 +37,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -48,6 +52,7 @@ public class ExternalOAuthControllerTest {
   @Mock UserManager userMgr;
   @Mock ISignupHandlerPolicy policy;
   @Mock UserEnablementUtils userEnablementUtils;
+  @Spy NewPasswordEncodeGate encodeGate = new NewPasswordEncodeGate(1);
 
   @InjectMocks ExternalAuthController signupCtrller;
   String clientId = "client";
@@ -139,5 +144,49 @@ public class ExternalOAuthControllerTest {
         signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest());
     assertNotNull(rc.getData());
     verify(userEnablementUtils, times(1)).checkLicenseForUserInRole(anyInt(), any());
+  }
+
+  @Test
+  public void externalSignupWithNoFreeEncodePermitReturnsBusyWithoutSaving() throws Exception {
+    when(verifier.verify(clientId, token)).thenReturn(Optional.of(createEXternalPRofile()));
+    assertTrue(encodeGate.tryAcquire());
+
+    AjaxReturnObject<String> rc =
+        signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest());
+
+    assertNotNull(rc.getError());
+    assertEquals(
+        signupCtrller.messages.getMessage("externalAuth.errors.busy"),
+        rc.getError().getErrorMessages().get(0));
+    verifyNoInteractions(policy);
+    verify(signup, never()).postUserCreate(any(), any(), any());
+
+    encodeGate.release();
+    when(signup.getRedirect(any(User.class))).thenReturn("redirect:/workspace");
+    when(policy.saveUser(any(User.class), any(MockHttpServletRequest.class)))
+        .thenReturn(TestFactory.createAnyUser("any"));
+    assertNotNull(
+        signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest()).getData());
+  }
+
+  @Test
+  public void existingUserReleasesTheEncodePermit() throws Exception {
+    when(verifier.verify(clientId, token)).thenReturn(Optional.of(createEXternalPRofile()));
+    when(policy.saveUser(any(User.class), any(MockHttpServletRequest.class)))
+        .thenThrow(new UserExistsException("exists"));
+    MockHttpServletRequest request = new MockHttpServletRequest();
+
+    assertThrows(
+        UserExistsException.class, () -> signupCtrller.externalSignup(token, clientId, request));
+
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
+  public void unverifiedTokenDoesNotTakeAnEncodePermit() throws Exception {
+    when(verifier.verify(clientId, token)).thenReturn(Optional.empty());
+    signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest());
+
+    assertTrue(encodeGate.tryAcquire());
   }
 }
