@@ -138,7 +138,7 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
     return Optional.ofNullable(uri);
   }
 
-  String doGetPostUrl(AppConfigElementSet messageConfig) {
+  protected String doGetPostUrl(AppConfigElementSet messageConfig) {
     return messageConfig.findElementByPropertyName(getPostUrlSetting()).getValue();
   }
 

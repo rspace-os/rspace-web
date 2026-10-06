@@ -13,7 +13,13 @@ and App names.
 
 #### Conventions for `Communication` apps posting to webhooks
 
-* Property name for webhook is `<CAPITALIZED_APP_NAME>_WEBHOOK_URL` e.g. for Slack, is `SLACK_WEBHOOK_URL`
+* Property name for a webhook option is `<CAPITALIZED_APP_NAME>_WEBHOOK_URL`, e.g. `MSTEAMS_WEBHOOK_URL` for Microsoft Teams.
+  Teams webhook URLs are credentials kept in the encrypted `UserConnection`, not deployment properties.
 * Property name for a channel name is `<CAPITALIZED_APP_NAME>_CHANNEL_LABEL` e.g. for Slack, is `SLACK_CHANNEL_LABEL`
 
-These conventions enable a generic UI to choose where to post 
+User-specific credentials must be stored in the encrypted `UserConnection` table rather than as plaintext
+`AppConfigElement` values. Dataverse API keys and Teams webhook URLs are associated with the user's config-set ID;
+use that ID as the connection discriminant so each configuration keeps its own credential. See
+[Creating a new integration](/DevDocs/DeveloperNotes/CreatingNewIntegration.md) for the storage pattern.
+
+These conventions enable a generic UI to choose where to post

@@ -79,6 +79,7 @@ For integrations using OAuth 2.0, implement both of the following:
 Tokens are never returned to the browser (RSDEV-1525):
 
 - `IntegrationsHandlerImpl` withholds OAuth tokens in `IntegrationInfo`: a connected app's `ACCESS_TOKEN` key is present with a `null` value. The only exceptions are apps listed in `CLIENT_READABLE_TOKEN_APPS`, whose browser code calls the provider directly. Add an app there only when there is no server-side alternative, and annotate any endpoint or value that sends a secret to the browser with `@ClientReadableSecret("why the browser needs it")`.
+- Use the config-set ID as the connection discriminant for credentials that belong to an individual configuration, including Dataverse API keys (`accessToken`) and Microsoft Teams webhook URLs (`secret`).
 
 #### Single-user token/API key
 
