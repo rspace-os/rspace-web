@@ -262,18 +262,20 @@ const DialogContent = observer(
             </Box>
           ))
           .orElse(null)}
-        {allRepositories.isEmpty() && (
-          <Box>
-            <Button
-              disabled={loadingAllRepositories}
-              onClick={() => {
-                void addHandler();
-              }}
-            >
-              {loadingAllRepositories ? t("integrations.github.repositories.loading") : t("common:actions.add")}
-            </Button>
-          </Box>
-        )}
+        <Box>
+          <Button
+            disabled={loadingAllRepositories}
+            onClick={() => {
+              void addHandler();
+            }}
+          >
+            {loadingAllRepositories
+              ? t("integrations.github.repositories.loading")
+              : allRepositories.isEmpty()
+                ? t("common:actions.add")
+                : t("actions.connect")}
+          </Button>
+        </Box>
       </Stack>
     );
   },
