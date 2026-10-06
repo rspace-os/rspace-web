@@ -11,7 +11,10 @@ import { server } from "@/__tests__/mswServer";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 import { containerAttrs, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
-import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
+import {
+  makeMockSubSample,
+  makeMockSubSampleWithParentContainer,
+} from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
 
 let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
@@ -1627,6 +1630,39 @@ describe("OperationWizard remembered placement", () => {
 
     expect(await screen.findByText(/placement\.rememberedUnavailable/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+  });
+});
+
+describe("OperationWizard origin container pre-selection", () => {
+  it("pre-selects the origin's own container, leaving the workbench one click away", async () => {
+    server.use(
+      http.get("/api/inventory/v1/containers/:id", () =>
+        HttpResponse.json(containerAttrs({ id: 2, globalId: "IC2", name: "Rack", cType: "LIST" })),
+      ),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSampleWithParentContainer();
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await reachPlacement(user, "dna");
+
+    await waitFor(() => expect(screen.getByTestId("placement-mode")).toHaveTextContent("container"));
+    await user.click(screen.getByTestId("place-workbench"));
+    expect(screen.getByTestId("placement-mode")).toHaveTextContent("workbench");
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("stays on the workbench when the origin's container cannot take the new subsamples", async () => {
+    server.use(
+      http.get("/api/inventory/v1/containers/:id", () =>
+        HttpResponse.json(containerAttrs({ id: 2, globalId: "IC2", canStoreSamples: false })),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSampleWithParentContainer()]} />);
+    await reachPlacement(user, "dna");
+
+    expect(screen.getByTestId("placement-mode")).toHaveTextContent("workbench");
+    expect(screen.queryByText(/placement\.rememberedUnavailable/)).not.toBeInTheDocument();
   });
 });
 
