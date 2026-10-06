@@ -15,6 +15,7 @@ import com.researchspace.auth.SSOPassThruRealm;
 import com.researchspace.auth.ShiroRealm;
 import com.researchspace.auth.SlackRealm;
 import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.auth.wopi.WopiRealm;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
@@ -44,6 +45,9 @@ public abstract class SecurityBaseConfig {
   @Value("${login.passwordVerification.waitSeconds:5}")
   private int passwordVerificationWaitSeconds;
 
+  @Value("${password.anonymousEncode.maxConcurrent:4}")
+  private int maxConcurrentAnonymousEncodes;
+
   @Bean
   public RSpacePasswordEncoder passwordEncoder() {
     return new RSpacePasswordEncoder();
@@ -55,6 +59,11 @@ public abstract class SecurityBaseConfig {
         passwordEncoder(),
         maxConcurrentPasswordVerifications,
         Duration.ofSeconds(passwordVerificationWaitSeconds));
+  }
+
+  @Bean
+  public NewPasswordEncodeGate newPasswordEncodeGate() {
+    return new NewPasswordEncodeGate(maxConcurrentAnonymousEncodes);
   }
 
   @Bean
