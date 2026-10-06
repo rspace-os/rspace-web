@@ -85,7 +85,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
             "/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=read_dmps+edit_dmps",
             clientId, URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8));
     String dmptoolAuthUrl = String.valueOf(new URL(baseUrl, pathAndQuery));
-    return new RedirectView(dmptoolAuthUrl);
+    return new RedirectView(dmptoolAuthUrl + "&state=" + generateState());
   }
 
   @DeleteMapping("/connect")
@@ -99,6 +99,20 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
   @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String callback(@RequestParam Map<String, String> params, Model model, Principal principal)
       throws IOException, URISyntaxException {
+    try {
+      verifyStateParameter(params.get("state"));
+    } catch (IllegalStateException invalidState) {
+      log.warn("DMPTool OAuth state mismatch");
+      OauthAuthorizationError error =
+          OauthAuthorizationError.builder()
+              .appName("DMPTool")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"DMPTool"}))
+              .errorDetails(invalidState.getMessage())
+              .build();
+      ConnectionResultPage.addError(
+          model, "DMPTool", "rspace.apps.dmptool.connection", "DMPTOOL_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
+    }
 
     AccessToken accessToken;
     try {

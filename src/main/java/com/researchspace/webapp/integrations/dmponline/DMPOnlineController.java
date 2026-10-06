@@ -127,13 +127,28 @@ public class DMPOnlineController extends BaseOAuth2Controller {
         String.format(
             "?client_id=%s&redirect_uri=%s&response_type=code&scope=%s",
             clientId, URLEncoder.encode(URL_CALLBACK, StandardCharsets.UTF_8), scope);
-    return new RedirectView(URL_AUTH_END_POINT + pathAndQuery);
+    return new RedirectView(URL_AUTH_END_POINT + pathAndQuery + "&state=" + generateState());
   }
 
   @GetMapping("/callback")
   @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String callback(@RequestParam Map<String, String> params, Model model, Principal principal)
       throws IOException, URISyntaxException, HttpClientErrorException {
+    try {
+      verifyStateParameter(params.get("state"));
+    } catch (IllegalStateException invalidState) {
+      log.warn("DMPonline OAuth state mismatch");
+      OauthAuthorizationError error =
+          OauthAuthorizationError.builder()
+              .appName("DMPonline")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"DMPonline"}))
+              .errorDetails(invalidState.getMessage())
+              .build();
+      ConnectionResultPage.addError(
+          model, "DMPonline", "rspace.apps.dmponline.connection", "DMPONLINE_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
+    }
+
     String redirectResult;
     OauthAuthorizationErrorBuilder error = OauthAuthorizationError.builder().appName("DMPonline");
     try {

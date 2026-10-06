@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
@@ -12,10 +13,15 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.impl.ShiroTestUtils;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.shiro.session.mgt.SimpleSession;
+import org.apache.shiro.subject.Subject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -32,6 +38,12 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.RedirectView;
 
 class DryadOAuthControllerTest {
+  private final ShiroTestUtils shiro = new ShiroTestUtils();
+
+  @AfterEach
+  void clearSubject() {
+    shiro.clearSubject();
+  }
 
   @InjectMocks private DryadOAuthController dryadOAuthController;
   @Mock private UserConnectionManager userConnectionManager;
@@ -46,6 +58,9 @@ class DryadOAuthControllerTest {
   @BeforeEach
   void setUp() {
     openMocks(this);
+    Subject subject = mock(Subject.class);
+    when(subject.getSession()).thenReturn(new SimpleSession());
+    shiro.setSubject(subject);
     ReflectionTestUtils.setField(dryadOAuthController, "restTemplate", restTemplateMock);
     ReflectionTestUtils.setField(dryadOAuthController, "baseUrl", "https://sandbox.datadryad.org");
     ReflectionTestUtils.setField(dryadOAuthController, "clientId", "client-id");
@@ -63,7 +78,10 @@ class DryadOAuthControllerTest {
     RedirectView response = dryadOAuthController.connect();
     assertEquals(
         "https://sandbox.datadryad.org/oauth/authorize?client_id=client-id&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fapps%2Fdryad%2Fcallback&response_type=code&scope=all",
-        response.getUrl());
+        response.getUrl().split("&state=")[0]);
+    assertEquals(
+        SessionAttributeUtils.getSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE),
+        response.getUrl().split("&state=")[1]);
   }
 
   @Test
@@ -77,6 +95,7 @@ class DryadOAuthControllerTest {
             any(HttpEntity.class),
             eq(DryadOAuthController.DryadOAuthTest.class)))
         .thenReturn(new ResponseEntity<>(getTestDryadUser(), HttpStatus.OK));
+    SessionAttributeUtils.setSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE, "a-state");
     Map<String, String> params = Map.of("code", "my-auth-code", "state", "a-state");
     String result = dryadOAuthController.callback(params, new ExtendedModelMap(), () -> "auser");
     verify(userConnectionManager).save(any(UserConnection.class));

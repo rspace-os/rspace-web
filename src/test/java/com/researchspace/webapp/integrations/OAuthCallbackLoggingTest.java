@@ -32,7 +32,11 @@ class OAuthCallbackLoggingTest {
             AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
         if (mapping == null
             || Stream.concat(Arrays.stream(mapping.value()), Arrays.stream(mapping.path()))
-                .noneMatch(path -> path.endsWith("/redirect_uri") || path.endsWith("/callback"))) {
+                .noneMatch(
+                    path ->
+                        path.endsWith("/redirect_uri")
+                            || path.endsWith("/callback")
+                            || path.startsWith("/callbacks/"))) {
           continue;
         }
         String name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
@@ -43,7 +47,11 @@ class OAuthCallbackLoggingTest {
         }
       }
     }
-    assertThat(callbacks).contains("GitHubController.onAuthorization");
+    assertThat(callbacks)
+        .contains(
+            "GitHubController.onAuthorization",
+            "SlackController.basicSearch",
+            "SlackController.saveConversation");
     assertThat(unprotected).isEmpty();
   }
 }

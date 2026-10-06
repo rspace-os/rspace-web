@@ -1,7 +1,6 @@
 package com.researchspace.webapp.integrations.github;
 
 import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
-import static com.researchspace.session.SessionAttributeUtils.getSessionAttribute;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,9 +8,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserAppConfigManager;
-import com.researchspace.session.SessionAttributeUtils;
+import com.researchspace.session.GitHubPendingToken;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
@@ -207,6 +205,7 @@ public class GitHubController extends BaseOAuth2Controller {
   @GetMapping("/oauthUrl")
   @ResponseBody
   public AjaxReturnObject<String> oauthUrl() {
+    GitHubPendingToken.clear();
     String state = generateState();
     var url =
         githubAuthorizeUrl + "?scope=repo,user&client_id=" + this.clientId + "&state=" + state;
@@ -217,7 +216,14 @@ public class GitHubController extends BaseOAuth2Controller {
   @ResponseBody
   public AjaxReturnObject<List<Repository>> allRepositories(Principal principal) {
     try {
-      return new AjaxReturnObject<>(getUserRepositories(getStoredToken(principal)), null);
+      String token = getStoredToken(principal);
+      if (token == null) {
+        return new AjaxReturnObject<>(
+            null,
+            ErrorList.of(
+                messages.getMessage("apps.oauth.errors.accessDenied", new Object[] {"GitHub"})));
+      }
+      return new AjaxReturnObject<>(getUserRepositories(token), null);
     } catch (RestClientException e) {
       log.error("Getting GitHub repositories list failed", e);
       return new AjaxReturnObject<>(null, ErrorList.of(e.getMessage()));
@@ -232,12 +238,6 @@ public class GitHubController extends BaseOAuth2Controller {
       Principal principal,
       HttpServletRequest request) {
     try {
-      // oauthUrl() always issues a state param, so a callback with no cached state is a forged or
-      // replayed request. verifyStateParameter only compares when a cached state exists (it passes
-      // when there is none), so require its presence here to keep the CSRF check fail-closed.
-      if (getSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE) == null) {
-        throw new IllegalStateException(getText("connect.authorizationError.stateMismatch"));
-      }
       verifyStateParameter(request);
     } catch (IllegalStateException e) {
       log.error("GitHub OAuth state mismatch", e);
@@ -294,15 +294,7 @@ public class GitHubController extends BaseOAuth2Controller {
     }
 
     log.info(String.format("User %s successfully authenticated with GitHub", principal.getName()));
-    // Keep the current OAuth token for listing available repositories. Per-repository connections
-    // remain untouched when a user reconnects with another GitHub account.
-    UserConnection currentConnection =
-        new UserConnection(
-            new UserConnectionId(principal.getName(), GITHUB_APP_NAME, GITHUB_APP_NAME),
-            accessToken);
-    // Config set ids are positive ranks, leaving 0 unique for this server-only current token.
-    currentConnection.setRank(0);
-    userConnectionManager.save(currentConnection);
+    GitHubPendingToken.store(principal.getName(), accessToken);
     ConnectionResultPage.addConnectionAttributes(
         model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED");
 
@@ -315,10 +307,7 @@ public class GitHubController extends BaseOAuth2Controller {
 
   // null when the user has not connected, so GitHub rejects the request
   private String getStoredToken(Principal principal) {
-    return userConnectionManager
-        .findByUserNameProviderName(principal.getName(), GITHUB_APP_NAME, GITHUB_APP_NAME)
-        .map(UserConnection::getAccessToken)
-        .orElse(null);
+    return GitHubPendingToken.get(principal.getName());
   }
 
   private Map<String, String> getConfiguredRepositoriesWithTokens(Principal principal) {

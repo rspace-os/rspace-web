@@ -42,6 +42,7 @@ import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
+import com.researchspace.session.GitHubPendingToken;
 import com.researchspace.webapp.integrations.MultiInstanceClient;
 import com.researchspace.webapp.integrations.ServerConfigurationDTO;
 import com.researchspace.webapp.integrations.pyrat.PyratClient;
@@ -684,6 +685,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   private void saveEnablementInUserAppConfig(User user, IntegrationInfo newInfo) {
+    if (GITHUB_APP_NAME.equals(newInfo.getName()) && !newInfo.isEnabled()) {
+      GitHubPendingToken.clear();
+    }
     UserAppConfig userAppConfig = getAppConfig(newInfo.getName(), user);
     if (userAppConfig.isEnabled() != newInfo.isEnabled()) {
       userAppConfig.setEnabled(newInfo.isEnabled());
@@ -713,12 +717,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       options = originalOptions;
     }
     if (GITHUB_APP_NAME.equals(appName) && optionsId == null) {
-      String accessToken =
-          userConnManager
-              .findByUserNameProviderName(user.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME)
-              .map(UserConnection::getAccessToken)
-              .filter(StringUtils::isNotBlank)
-              .orElseThrow(() -> new IllegalStateException("GitHub OAuth connection is required"));
+      String accessToken = GitHubPendingToken.get(user.getUsername());
+      if (StringUtils.isBlank(accessToken)) {
+        throw new IllegalStateException("GitHub OAuth connection is required");
+      }
       userConnManager.saveWithNewAppConfigElementSet(
           options, GITHUB_APP_NAME, accessToken, null, trustedOrigin, user);
       return;
@@ -821,6 +823,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
       if (appConfigMgr.getByAppName(App.APP_GITHUB, user).getAppConfigElementSets().isEmpty()) {
         userConnManager.deleteByUserAndProvider(user.getUsername(), appName);
+        GitHubPendingToken.clear();
       }
     } else if (DATAVERSE_APP_NAME.equals(appName) || MSTEAMS_APP_NAME.equals(appName)) {
       userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());

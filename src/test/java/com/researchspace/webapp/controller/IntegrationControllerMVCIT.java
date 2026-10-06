@@ -56,6 +56,7 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.session.GitHubPendingToken;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
@@ -299,10 +300,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
   @Test
   public void removingTheLastGitHubRepositoryDeletesTheToken() throws Exception {
     logoutAndLoginAs(piUser);
-    userConnectionManager.save(
-        new UserConnection(
-            new UserConnectionId(piUser.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME),
-            "gho-token"));
+    GitHubPendingToken.store(piUser.getUsername(), "gho-token");
     Long setId =
         userAppConfigManager
             .saveAppConfigElementSet(
@@ -337,16 +335,15 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
             userConnectionManager.findListByUserNameProviderName(
                 piUser.getUsername(), GITHUB_APP_NAME))
         .isEmpty();
+    assertNull(GitHubPendingToken.get(piUser.getUsername()));
     assertThat(getFromJsonAjaxReturnObject(deleted, IntegrationInfo.class).getOptions()).isEmpty();
     assertThat(getIntegrationInfoFromServer(mockPrincipal, GITHUB_APP_NAME).getOptions()).isEmpty();
   }
 
   @Test
   public void savingOptionsRejectsADifferentAppBeforeSavingConfigOrCredentials() throws Exception {
-    userConnectionManager.save(
-        new UserConnection(
-            new UserConnectionId(piUser.getUsername(), GITHUB_APP_NAME, GITHUB_APP_NAME),
-            "gho-current-token"));
+    logoutAndLoginAs(piUser);
+    GitHubPendingToken.store(piUser.getUsername(), "gho-current-token");
     int originalCount =
         userAppConfigManager.getByAppName("app.egnyte", piUser).getAppConfigElementSets().size();
     MvcResult result =
@@ -366,7 +363,8 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertThat(
             userConnectionManager.findListByUserNameProviderName(
                 piUser.getUsername(), GITHUB_APP_NAME))
-        .hasSize(1);
+        .isEmpty();
+    assertEquals("gho-current-token", GitHubPendingToken.get(piUser.getUsername()));
   }
 
   @Test

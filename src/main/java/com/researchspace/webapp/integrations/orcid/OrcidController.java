@@ -61,7 +61,6 @@ public class OrcidController {
 
     if (params.containsKey("code")) {
       String code = params.get("code");
-      log.warn("received code from Orcid: " + code);
 
       ResponseEntity<Map> restResponse = getOrcidConnector().getOrcidIdForAuthorizationCode(code);
       if (!restResponse.getStatusCode().is2xxSuccessful()) {
