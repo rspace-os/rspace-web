@@ -3,8 +3,8 @@ package com.researchspace.webapp.integrations.orcid;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.service.IntegrationsHandler;
-import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
+import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.security.Principal;
 import java.util.HashMap;
@@ -21,11 +21,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /** Class responsible for handling connection between RSpace and Orcid API */
 @Controller
 @RequestMapping("/orcid")
-public class OrcidController {
+public class OrcidController extends BaseOAuth2Controller {
 
   private Logger log = LoggerFactory.getLogger(OrcidController.class);
 
@@ -40,14 +42,28 @@ public class OrcidController {
 
   @Autowired private IntegrationsHandler integrationsHandler;
 
-  @Autowired protected UserManager userManager;
-
   private OrcidConnector connector;
+
+  @GetMapping("/authorize")
+  public RedirectView authorize() {
+    String url =
+        UriComponentsBuilder.fromUriString("https://orcid.org/oauth/authorize")
+            .queryParam("client_id", clientId)
+            .queryParam("redirect_uri", properties.getServerUrl() + "/orcid/redirect_uri")
+            .queryParam("response_type", "code")
+            .queryParam("scope", "/authenticate")
+            .queryParam("state", generateState())
+            .build()
+            .encode()
+            .toUriString();
+    return new RedirectView(url);
+  }
 
   @GetMapping("/redirect_uri")
   @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String onAuthorization(
       @RequestParam Map<String, String> params, Model model, Principal p) {
+    verifyStateParameter(params.get("state"));
     if (params.containsKey("error")) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
