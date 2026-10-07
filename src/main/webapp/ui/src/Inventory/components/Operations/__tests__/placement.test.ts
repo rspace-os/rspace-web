@@ -1,6 +1,11 @@
 import "@/stores/stores/RootStore";
 import { describe, expect, it } from "vitest";
-import { benchAttrs, makeMockBench, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import {
+  benchAttrs,
+  containerAttrs,
+  makeMockBench,
+  makeMockContainer,
+} from "@/stores/models/__tests__/ContainerModel/mocking";
 import {
   makeMockSubSample,
   makeMockSubSampleWithParentContainer,
@@ -65,6 +70,22 @@ describe("placementBlocker", () => {
     expect(placementBlocker(box, 2)).toEqual({ reason: "selectSlots", remaining: 1 });
     box.locations?.[3].toggleSelected(true);
     expect(placementBlocker(box, 2)).toBeNull();
+  });
+
+  it("blocks a grid with an occupied location selected", () => {
+    const box = gridBox(1, {
+      locations: [{ id: 11, coordX: 1, coordY: 1, content: containerAttrs({ id: 9, globalId: "IC9" }) }],
+    });
+    prepareContainer(box, 1);
+    box.locations?.[0].toggleSelected(true);
+    expect(placementBlocker(box, 1)).toEqual({ reason: "occupiedSlot" });
+  });
+
+  it("blocks a grid with more locations selected than new subsamples, with the surplus", () => {
+    const box = gridBox();
+    prepareContainer(box, 1);
+    for (const location of box.locations ?? []) location.toggleSelected(true);
+    expect(placementBlocker(box, 1)).toEqual({ reason: "tooManySlots", surplus: 3 });
   });
 });
 

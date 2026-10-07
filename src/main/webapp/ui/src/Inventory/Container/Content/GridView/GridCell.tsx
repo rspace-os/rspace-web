@@ -1,7 +1,8 @@
 import TableCell from "@mui/material/TableCell";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import React, { type ReactNode, useEffect, useRef } from "react";
+import React, { type ReactNode, useContext, useEffect, useRef } from "react";
+import SearchContext from "../../../../stores/contexts/Search";
 import type { Location } from "../../../../stores/definitions/Container";
 import useResizeObserver from "../../../components/ResizeObserver";
 import * as DragAndDrop from "../DragAndDrop";
@@ -57,6 +58,7 @@ function GridCell({
   hoverEffect,
 }: GridCellArgs): ReactNode {
   const cellRef = useRef<HTMLTableCellElement>(null);
+  const { search } = useContext(SearchContext);
 
   const resizeObserver = useRef(
     new ResizeObserver(() => {
@@ -86,6 +88,10 @@ function GridCell({
         e.preventDefault();
       }}
       onFocus={() => {
+        const { uiConfig } = search;
+        const full = (location.parentContainer.selectedLocations?.length ?? 0) >= uiConfig.selectionLimit;
+        if (uiConfig.onlyAllowSelectingEmptyLocations && !location.selected && (full || !location.isSelectable(search)))
+          return;
         location.toggleSelected(true);
       }}
       onMouseEnter={() => {

@@ -301,8 +301,9 @@ enforced there too (Perform is blocked with the reason shown).
    end). The grid is selection-only: drag-and-drop is off while the wizard uses it. A list container needs no locations. `placementBlocker` (`placement.ts`) gates
    Next and shows why: loading, trashed, no edit permission, an image container (not
    supported yet), the workbench itself, a container that cannot hold subsamples, fewer
-   free locations than new subsamples (with the free count), or grid locations still to
-   pick. With no remembered run, the first origin's own container is pre-selected when it
+   free locations than new subsamples (with the free count), grid locations still to
+   pick, or a selection that is not exactly `count` empty locations (an occupied or
+   surplus location to deselect). With no remembered run, the first origin's own container is pre-selected when it
    can take the new subsamples (for Pool, the first origin's).
 
 Details and Amounts are two slices of the same `OperationDetailsStep` (a `section`

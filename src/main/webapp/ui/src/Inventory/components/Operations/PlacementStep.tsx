@@ -84,6 +84,10 @@ function PlacementStep({
         return t("operations.placement.status.notEnoughSpace", { free: b.free, count });
       case "selectSlots":
         return t("operations.placement.status.selectSlots", { count: b.remaining });
+      case "occupiedSlot":
+        return t("operations.placement.status.occupiedSlot");
+      case "tooManySlots":
+        return t("operations.placement.status.tooManySlots", { count: b.surplus });
     }
   };
 
@@ -98,14 +102,18 @@ function PlacementStep({
     // role="alert" for a dead end the user must change containers to get out of; "status" for
     // progress they make in place.
     const inProgress = blocker.reason === "loading" || blocker.reason === "selectSlots";
+    const fixInGrid = blocker.reason === "occupiedSlot" || blocker.reason === "tooManySlots";
+    const severity = inProgress ? "info" : fixInGrid ? "warning" : "error";
     return (
-      <Alert severity={inProgress ? "info" : "error"} role={inProgress ? "status" : "alert"}>
+      <Alert severity={severity} role={inProgress || fixInGrid ? "status" : "alert"}>
         {blockerMessage(blocker)}
       </Alert>
     );
   };
 
-  const showGrid = container?.cType === "GRID" && (blocker === null || blocker.reason === "selectSlots");
+  const showGrid =
+    container?.cType === "GRID" &&
+    (blocker === null || ["selectSlots", "occupiedSlot", "tooManySlots"].includes(blocker.reason));
 
   return (
     <Stack spacing={1}>
