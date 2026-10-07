@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render as renderWithoutQueryClient, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
-import { HttpResponse, http } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import type React from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
@@ -1534,23 +1534,29 @@ describe("OperationWizard remembered placement", () => {
   const CONTAINER_URL = "/api/inventory/v1/containers/:id";
   const grid = { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" } as const;
 
-  function rememberBoil(placement: unknown) {
+  function rememberBoil(
+    placement: unknown,
+    { count = 1, template = { mode: "none", templateId: null } }: { count?: number; template?: unknown } = {},
+  ) {
     ops().defaults = { derive: "boil" };
     ops().values = {
       "derive boil": {
-        values: { count: 1, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
-        template: { mode: "none", templateId: null },
+        values: { count, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template,
         documentation: null,
         placement,
       },
     };
   }
 
-  function serveContainer(attrs: Parameters<typeof containerAttrs>[0] | null) {
+  function serveContainer(attrs: Parameters<typeof containerAttrs>[0] | null, delayMs = 0) {
     server.use(
-      http.get(CONTAINER_URL, () =>
-        attrs ? HttpResponse.json(containerAttrs(attrs)) : HttpResponse.json({ message: "Not found" }, { status: 404 }),
-      ),
+      http.get(CONTAINER_URL, async () => {
+        if (delayMs) await delay(delayMs);
+        return attrs
+          ? HttpResponse.json(containerAttrs(attrs))
+          : HttpResponse.json({ message: "Not found" }, { status: 404 });
+      }),
     );
   }
 
@@ -1596,18 +1602,79 @@ describe("OperationWizard remembered placement", () => {
     expect(bulkBodies).toHaveLength(1);
   });
 
-  it("withholds the fast path for a remembered grid container, whose locations must be picked again", async () => {
-    rememberBoil({ containerId: 6, containerName: "Box" });
-    serveContainer({ id: 6, globalId: "IC6", name: "Box", cType: "GRID", gridLayout: grid, locationsCount: 4 });
-    const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origins={[mockOrigin()]} />);
-    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+  const currentStep = () => document.querySelector('[aria-current="step"]');
+  const gridBox = { id: 6, globalId: "IC6", name: "Box", cType: "GRID", gridLayout: grid, locationsCount: 4 } as const;
 
-    await waitFor(() => expect(nextButton()).toBeEnabled());
-    expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
-    for (let step = 0; step < 4; step++) await user.click(nextButton());
+  async function openRememberedDerive(user: ReturnType<typeof userEvent.setup>, onClose = vi.fn()) {
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+  }
+
+  it("opens a remembered run with a grid container on the Location step, where only the locations are left", async () => {
+    rememberBoil({ containerId: 6, containerName: "Box" }, { count: 2 });
+    serveContainer(gridBox);
+    const bulkBodies = createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    await openRememberedDerive(user, onClose);
+
+    await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
     expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
     expect(nextButton()).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
+
+    const box = makeMockContainer({ ...gridBox });
+    box.locations?.[0].toggleSelected(true);
+    box.locations?.[3].toggleSelected(true);
+    placementTarget.container = box;
+    await user.click(screen.getByTestId("place-container"));
+    await user.click(nextButton()); // placement -> confirm
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const records = (bulkBodies[0] as { records: Array<Record<string, unknown>> }).records;
+    expect(records).toHaveLength(2);
+    for (const record of records) expect(record).toHaveProperty("parentLocation");
+  });
+
+  it("walks back from the landed Location step through the earlier steps, never to the summary", async () => {
+    rememberBoil({ containerId: 6, containerName: "Box" });
+    serveContainer(gridBox);
+    const user = userEvent.setup();
+    await openRememberedDerive(user);
+    await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
+
+    await user.click(backButton());
+    expect(currentStep()).toHaveTextContent(/step\.documentation/);
+    for (let step = 0; step < 3; step++) await user.click(backButton());
+    expect(currentStep()).toHaveTextContent(/step\.details/);
+    expect(screen.queryByTestId("confirm")).not.toBeInTheDocument();
+  });
+
+  it("stays on Details when the remembered template is trashed as well as the grid needing locations", async () => {
+    getTemplate.mockResolvedValue(template({ name: "Cell line", deleted: true }));
+    rememberBoil(
+      { containerId: 6, containerName: "Box" },
+      { template: { mode: "pick", templateId: 9, templateName: "Cell line" } },
+    );
+    serveContainer(gridBox);
+    const user = userEvent.setup();
+    await openRememberedDerive(user);
+
+    await waitFor(() => expect(getTemplate).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(currentStep()).toHaveTextContent(/step\.details/);
+  });
+
+  it("does not jump to Location once the user has moved on before the container arrives", async () => {
+    rememberBoil({ containerId: 6, containerName: "Box" });
+    serveContainer(gridBox, 200);
+    const user = userEvent.setup();
+    await openRememberedDerive(user);
+
+    await user.click(nextButton()); // details -> template, before the container has loaded
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(currentStep()).toHaveTextContent(/step\.template/);
   });
 
   it("falls back to the workbench, with a note, when the remembered container is gone", async () => {

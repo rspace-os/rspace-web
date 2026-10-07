@@ -249,14 +249,19 @@ function OperationWizard({
     remembered: RememberedPlacement | null;
   } | null>(null);
   const [placementNote, setPlacementNote] = React.useState<string | null>(null);
+  // Set when a remembered run keeps a container: if Location turns out to be the only step left to
+  // complete (a grid's locations are never remembered), the wizard opens there instead of on
+  // Details. One decision per bundle; any navigation or edit before it is taken cancels it.
+  const [landOnPlacement, setLandOnPlacement] = React.useState(false);
   const placementCheckId = React.useRef(0);
   const createdCountRef = React.useRef(createdCount);
   createdCountRef.current = createdCount;
 
   /** `undefined` when there is no remembered run, `null` when the run remembered the workbench. */
-  const applyRememberedPlacement = (remembered: RememberedPlacement | null | undefined) => {
+  const applyRememberedPlacement = (remembered: RememberedPlacement | null | undefined, mayLand: boolean) => {
     placementCheckId.current++;
     setPlacementNote(null);
+    setLandOnPlacement(mayLand && Boolean(remembered));
     setPlacement(remembered ? { mode: "container", container: null } : WORKBENCH);
     const originId = remembered === undefined ? originContainerId(origins) : null;
     setPendingPlacement(
@@ -270,6 +275,7 @@ function OperationWizard({
 
   const onPlacementChange = (next: PlacementSelection) => {
     placementCheckId.current++;
+    setLandOnPlacement(false);
     setPlacementNote(null);
     setPlacement(next);
   };
@@ -286,6 +292,7 @@ function OperationWizard({
         console.warn("Could not fetch the container to place the new subsamples in", error);
       }
       if (checkId !== placementCheckId.current) return;
+      setPendingPlacement(null);
       if (container) {
         setPlacement({ mode: "container", container });
         return;
@@ -513,7 +520,7 @@ function OperationWizard({
     setValues(s.values);
     setTemplateSelection(s.templateSelection);
     setDocumentation(s.documentation);
-    applyRememberedPlacement(s.placement);
+    applyRememberedPlacement(s.placement, true);
     setRemember(s.remember);
     setAmountMode(s.amountMode);
     setPerSubsampleAmounts(s.perSubsampleAmounts);
@@ -538,7 +545,7 @@ function OperationWizard({
       setValues(v);
       setTemplateSelection(s.templateSelection);
       setDocumentation(s.documentation);
-      applyRememberedPlacement(s.placement);
+      applyRememberedPlacement(s.placement, Boolean(source?.picked));
       setRemember(s.remember);
       setAmountMode(s.amountMode);
       setPerSubsampleAmounts(s.perSubsampleAmounts);
@@ -548,6 +555,7 @@ function OperationWizard({
       return;
     }
     if (nameFrom && next[nameFrom] !== values[nameFrom]) setSampleNameEdited(true);
+    setLandOnPlacement(false);
     setValues(next);
   };
 
@@ -648,11 +656,13 @@ function OperationWizard({
 
   const next = () => {
     extendOriginLocks();
+    setLandOnPlacement(false);
     setActiveStep((s) => s + 1);
   };
 
   const back = () => {
     extendOriginLocks();
+    setLandOnPlacement(false);
     if (activeStep === 0) {
       setOperation(null);
       return;
@@ -705,6 +715,20 @@ function OperationWizard({
   const stepValid = (): boolean => stepValidFor(stepKeys[activeStep]);
   const allStepsValid = (): boolean => operation !== null && stepKeys.every(stepValidFor);
   const fastPath = operation !== null && activeStep === 0 && remember && !reviewing && allStepsValid();
+
+  const placementIndex = stepKeys.indexOf("placement");
+  const placementSettled =
+    pendingPlacement === null && templateSelection.pendingCheck !== true && !parentTemplateChecking;
+  const placementValid = stepValidFor("placement");
+  const otherStepsValid = stepKeys.every((k) => k === "placement" || stepValidFor(k));
+  React.useEffect(() => {
+    if (!landOnPlacement || !placementSettled) return;
+    setLandOnPlacement(false);
+    if (placementIndex < 0 || placementValid || !otherStepsValid) return;
+    setActiveStep(placementIndex);
+    // Reviewing, so stepping back to Details never flips the view to the one-click summary.
+    setReviewing(true);
+  }, [landOnPlacement, placementSettled, placementValid, otherStepsValid, placementIndex]);
 
   const closeUnlessSubmitting = () => {
     if (!submitting) closeAfterRenewals();
@@ -1025,7 +1049,13 @@ function OperationWizard({
         {operation ? (
           fastPath ? (
             <>
-              <Button onClick={() => setReviewing(true)} disabled={submitting}>
+              <Button
+                onClick={() => {
+                  setLandOnPlacement(false);
+                  setReviewing(true);
+                }}
+                disabled={submitting}
+              >
                 {t("operations.wizard.reviewEdit")}
               </Button>
               <SubmitSpinnerButton
