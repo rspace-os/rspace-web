@@ -5,6 +5,7 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -36,6 +37,9 @@ function PlacementStep({
   const descriptionId = React.useId();
   const onChangeRef = React.useRef(onChange);
   onChangeRef.current = onChange;
+  // A pick resolves only after the container loads, by which time the user may have left container mode.
+  const modeRef = React.useRef(value.mode);
+  modeRef.current = value.mode;
 
   // Step-local, not the global moveStore: ContainerModel's move checks read moveStore's selection.
   const [search] = React.useState(
@@ -47,7 +51,7 @@ function PlacementStep({
         factory: new MemoisedFactory(),
         callbacks: {
           setActiveResult: (record) => {
-            if (!(record instanceof ContainerModel)) return;
+            if (!(record instanceof ContainerModel) || modeRef.current !== "container") return;
             record.refreshAssociatedSearch();
             onChangeRef.current({ mode: "container", container: record });
           },
@@ -111,9 +115,17 @@ function PlacementStep({
       <RadioGroup
         aria-labelledby={descriptionId}
         value={value.mode}
-        onChange={(e) =>
-          onChange(e.target.value === "container" ? { mode: "container", container: null } : { mode: "workbench" })
-        }
+        onChange={(e) => {
+          if (e.target.value === "container") {
+            onChange({ mode: "container", container: null });
+            return;
+          }
+          // Direct assignment: setActiveResult would await the record and fire the callback again.
+          runInAction(() => {
+            search.activeResult = null;
+          });
+          onChange({ mode: "workbench" });
+        }}
       >
         <FormControlLabel value="workbench" control={<Radio />} label={t("operations.placement.workbench")} />
         <FormControlLabel value="container" control={<Radio />} label={t("operations.placement.container")} />
