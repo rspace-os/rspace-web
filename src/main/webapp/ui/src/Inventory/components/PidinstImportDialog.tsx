@@ -19,6 +19,7 @@ import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
+import { enableMapSet, produce } from "immer";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
@@ -37,6 +38,8 @@ import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import LinkableRecordFromGlobalId from "../../stores/models/LinkableRecordFromGlobalId";
 import { DataGridColumn } from "../../util/table";
+
+enableMapSet();
 
 /**
  * Instrument colours for the dialog. `main` is `theme.palette.record.instrument.bg` (#ab4c08)
@@ -559,10 +562,12 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                         checked={registries.has(registry)}
                         disabled={searching || importing}
                         onChange={(event) => {
-                          const next = new Set(registries);
-                          if (event.target.checked) next.add(registry);
-                          else next.delete(registry);
-                          setRegistries(next);
+                          setRegistries(
+                            produce(registries, (draft) => {
+                              if (event.target.checked) draft.add(registry);
+                              else draft.delete(registry);
+                            }),
+                          );
                         }}
                       />
                     }
