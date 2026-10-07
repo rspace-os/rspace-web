@@ -94,24 +94,42 @@ In CI (`e2e.yml`), mock mode starts the containers. Real mode uses these reposit
 stay local because GitHub can't reach their internal hosts. Real-mode CI uploads only `e2e-junit.xml`,
 since the HTML report and traces record filled passwords.
 
+For RSpace running directly on the host, including CI:
+
 ```bash
-# Starts (or reuses) the containers, seeds playwright-test/, prints the E2E_* variables.
 src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> src/main/webapp/ui/.env
 ```
 
-- Ports 9000, 2222, 445 and 1247 on 127.0.0.1 must be free; RSpace's Samba client requires 445.
+For the per-worktree Docker dev stack, start it first, then attach the filestore containers to its network:
+
+```bash
+./docker/dev/rspace-dev up --e2e
+dev_project=$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' docker/dev/.env)
+FILESTORE_DOCKER_NETWORK="${dev_project}_default" \
+FILESTORE_CONTAINER_PREFIX="${dev_project}-filestore" \
+  src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> src/main/webapp/ui/.env
+```
+
+Both commands seed `playwright-test/` and print the test configuration. Docker-network mode emits
+container names and internal ports reachable by Java; it publishes no host ports. Host Playwright
+passes these addresses to RSpace and does not connect to the filestore servers directly.
+Use the app URL and mock port from `rspace-dev ps` as `RSPACE_BASE_URL` and `E2E_MOCK_PORT` when running tests.
+
+- In host mode, ports 9000, 2222, 445 and 1247 on 127.0.0.1 must be free; RSpace's Samba client requires 445.
 - MinIO uses a digest-pinned [Coollabs community build](https://github.com/coollabsio/minio) on GHCR.
   When updating it, verify that `mc` and `sh` are available and bucket seeding still works.
 - The iRODS image is about 5 GB; the first start pulls it.
-- RSpace must be started with `-Dnetfilestores.s3.global.credentials.accessKey=rspacetest` and
-  `-Dnetfilestores.s3.global.credentials.secretKey=rspacetestsecret` (the containers' throwaway login).
-- Set `FILESTORE_CONTAINER_PREFIX` to reuse containers you started under another name prefix
-  (default `rspace-e2e`); a wrong prefix starts new ones and fails on taken ports.
+- Host RSpace must be started with `-Dnetfilestores.s3.global.credentials.accessKey=rspacetest` and
+  `-Dnetfilestores.s3.global.credentials.secretKey=rspacetestsecret`. CI and `rspace-dev up --e2e`
+  supply these throwaway credentials and the ROR mock override automatically.
+- `FILESTORE_CONTAINER_PREFIX` defaults to `rspace-e2e`. Containers are reused only when their recorded
+  networking matches. Use a different prefix when switching modes or migrating containers created by
+  an older script; stop old containers first if their host ports are needed.
 - `>>` appends on every run. Delete the old `E2E_*` filestore lines first: a recreated SFTP container has a
   new host key.
 
 `specs/system/config/rorRegistry.e2e.ts` runs in both modes. Real mode calls `api.ror.org`; mock mode
-starts RSpace with `-Dror.api.url=http://localhost:<E2E_MOCK_PORT>/ror`, served by `mocks/ror.ts`.
+requires `-Dror.api.url=http://localhost:<E2E_MOCK_PORT>/ror`, served by `mocks/ror.ts`.
 The IGSN publication scenario also reads the DOI directly from DataCite with `affiliation=true`.
 In mock mode, the DataCite handler returns the metadata RSpace submitted for that DOI; in real mode,
 the test reads the configured DataCite server. This checks the institution's ROR name and identifier
