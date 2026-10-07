@@ -9,7 +9,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
-import { makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import { containerAttrs, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
 import type ContainerModel from "@/stores/models/ContainerModel";
 import type { ContainerAttrs } from "@/stores/models/ContainerModel";
 import type Search from "@/stores/models/Search";
@@ -179,6 +179,25 @@ describe("PlacementStep", () => {
     box.locations?.[0].toggleSelected(true);
     renderStep({ mode: "container", container: box }, 2);
     expect(screen.getByRole("status")).toHaveTextContent("Select 1 more location.");
+    expect(screen.getByTestId("container-content")).toBeInTheDocument();
+  });
+
+  it("asks the user to deselect an occupied location", () => {
+    const box = gridBox(1, {
+      locations: [{ id: 11, coordX: 1, coordY: 1, content: containerAttrs({ id: 9, globalId: "IC9" }) }],
+    });
+    prepareContainer(box, 1);
+    box.locations?.[0].toggleSelected(true);
+    renderStep({ mode: "container", container: box }, 1);
+    expect(screen.getByRole("status")).toHaveTextContent("A selected location is already occupied. Deselect it.");
+  });
+
+  it("asks the user to deselect the surplus locations", () => {
+    const box = gridBox();
+    prepareContainer(box, 1);
+    for (const location of box.locations?.slice(0, 3) ?? []) location.toggleSelected(true);
+    renderStep({ mode: "container", container: box }, 1);
+    expect(screen.getByRole("status")).toHaveTextContent("Deselect 2 locations.");
     expect(screen.getByTestId("container-content")).toBeInTheDocument();
   });
 
