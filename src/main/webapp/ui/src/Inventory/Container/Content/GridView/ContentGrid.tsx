@@ -224,7 +224,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           }}
           onKeyDown={(e: KeyboardEvent) => {
             if (e.key === " ") {
-              setInKeyboardDragAndDropMode(true);
+              if (!search.uiConfig.dragAndDropDisabled) setInKeyboardDragAndDropMode(true);
               return;
             }
             if (inKeyboardDragAndDropMode && (e.key === "Enter" || e.key === "Return" || e.key === "Escape")) {
