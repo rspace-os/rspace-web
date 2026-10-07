@@ -113,9 +113,11 @@ test.describe("Community group invitations", () => {
     await test.step("Then I am notified that the request was rejected", async () => {
       await creator.workspace.open();
       await creator.notifications.open();
-      expect(await creator.notifications.getNotificationTexts()).toContainEqual(
-        expect.stringContaining(`${nominatedPi.fullName} updated request status, altered from NEW to REJECTED`),
-      );
+      await expect(
+        creator.notifications.notification(
+          `${nominatedPi.fullName} updated request status, altered from NEW to REJECTED`,
+        ),
+      ).toBeVisible();
       await creator.notifications.close();
     });
 
