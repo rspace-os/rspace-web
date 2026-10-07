@@ -20,6 +20,7 @@ export function releaseContainer(container: ContainerModel): void {
     uiConfig.selectionMode = "MULTIPLE";
     uiConfig.selectionLimit = Infinity;
     uiConfig.onlyAllowSelectingEmptyLocations = false;
+    uiConfig.dragAndDropDisabled = false;
   });
   for (const location of container.selectedLocations ?? []) location.toggleSelected(false);
 }
@@ -34,6 +35,7 @@ export function prepareContainer(container: ContainerModel, count: number): void
     uiConfig.selectionMode = container.cType === "GRID" ? "MULTIPLE" : "NONE";
     uiConfig.selectionLimit = count;
     uiConfig.onlyAllowSelectingEmptyLocations = true;
+    uiConfig.dragAndDropDisabled = true;
   });
   for (const location of (container.selectedLocations ?? []).slice(count)) location.toggleSelected(false);
 }
