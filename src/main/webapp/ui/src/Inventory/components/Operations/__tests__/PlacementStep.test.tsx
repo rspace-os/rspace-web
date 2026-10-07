@@ -1,9 +1,9 @@
 import "@/stores/stores/RootStore";
 import "@/__tests__/__mocks__/resizeObserver";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type React from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
@@ -22,7 +22,7 @@ beforeAll(async () => {
   InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
 });
 
-const picked = vi.hoisted(() => ({ container: null as unknown }));
+const picked = vi.hoisted(() => ({ container: null as unknown, loaded: Promise.resolve() }));
 /** The results view: inside a container it is that container's grid, otherwise the step's own search. */
 vi.mock("../../../Search/SearchView", async () => {
   const { useContext } = await import("react");
@@ -31,11 +31,18 @@ vi.mock("../../../Search/SearchView", async () => {
     default: () => {
       const { search, scopedResult } = useContext(SearchContext);
       if (scopedResult) return <div data-testid="container-content" />;
+      const pick = async () => {
+        const record = picked.container as ContainerModel;
+        (search as Search).activeResult = record;
+        await picked.loaded;
+        (search as Search).callbacks?.setActiveResult?.(record);
+      };
       return (
         <button
           type="button"
           data-testid="picker-pick"
-          onClick={() => (search as Search).callbacks?.setActiveResult?.(picked.container as ContainerModel)}
+          data-active={(search as Search).activeResult?.name ?? ""}
+          onClick={() => void pick()}
         />
       );
     },
@@ -110,6 +117,55 @@ describe("PlacementStep", () => {
     await user.click(screen.getByTestId("picker-pick"));
     const [selection] = onChange.mock.lastCall as [PlacementSelection];
     expect(selection.mode === "container" && selection.container).toBe(container);
+  });
+
+  describe("a container still loading when the user switches to the workbench", () => {
+    function Harness({ onChange }: { onChange: (next: PlacementSelection) => void }) {
+      const [value, setValue] = React.useState<PlacementSelection>({ mode: "container", container: null });
+      return (
+        <PlacementStep
+          value={value}
+          onChange={(next) => {
+            onChange(next);
+            setValue(next);
+          }}
+          count={1}
+        />
+      );
+    }
+
+    async function pickThenLeaveOnWorkbench() {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      let finishLoading = () => {};
+      picked.container = makeMockContainer({ name: "Shelf" });
+      picked.loaded = new Promise((resolve) => {
+        finishLoading = resolve;
+      });
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <InEnglish>
+            <Harness onChange={onChange} />
+          </InEnglish>
+        </ThemeProvider>,
+      );
+      await user.click(screen.getByTestId("picker-pick"));
+      await user.click(screen.getByRole("radio", { name: "Leave on my workbench" }));
+      await act(async () => finishLoading());
+      return { user, onChange };
+    }
+
+    it("is not applied once it finishes loading", async () => {
+      const { onChange } = await pickThenLeaveOnWorkbench();
+      expect(onChange).toHaveBeenLastCalledWith({ mode: "workbench" });
+      expect(screen.getByRole("radio", { name: "Leave on my workbench" })).toBeChecked();
+    });
+
+    it("is not shown as picked when the user chooses a location again", async () => {
+      const { user } = await pickThenLeaveOnWorkbench();
+      await user.click(screen.getByRole("radio", { name: "Choose a location" }));
+      expect(screen.getByTestId("picker-pick")).toHaveAttribute("data-active", "");
+    });
   });
 
   it("tells the user how many locations are free when the container is too full", () => {
