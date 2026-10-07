@@ -76,6 +76,7 @@ describe("prepareContainer", () => {
       selectionMode: "MULTIPLE",
       selectionLimit: 3,
       onlyAllowSelectingEmptyLocations: true,
+      dragAndDropDisabled: true,
     });
   });
 
@@ -103,6 +104,7 @@ describe("releaseContainer", () => {
       selectionMode: "MULTIPLE",
       selectionLimit: Infinity,
       onlyAllowSelectingEmptyLocations: false,
+      dragAndDropDisabled: false,
     });
     expect(box.selectedLocations).toEqual([]);
   });
