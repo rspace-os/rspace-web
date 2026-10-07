@@ -4985,7 +4985,7 @@ components:
           example: { "PIDINST_DATACITE": 235, "PIDINST_B2INST": 3 }
         hits:
           type: array
-          description: This page, newest update first, then newest creation, then PID.
+          description: This page, newest update first; equal update times keep each registry's own order.
           items:
             $ref: "#/components/schemas/PidinstRecord"
     ContainerInfo:
