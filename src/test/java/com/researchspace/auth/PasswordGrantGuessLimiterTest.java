@@ -1,5 +1,6 @@
 package com.researchspace.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -10,6 +11,13 @@ import static org.mockito.Mockito.verify;
 
 import com.google.common.base.Ticker;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,48 +49,74 @@ public class PasswordGrantGuessLimiterTest {
     limiter = new PasswordGrantGuessLimiter(5, WINDOW, 3, ticker, matcher);
   }
 
-  private void fail(String username, int times) {
+  private void acquire(String username, int times) {
     for (int i = 0; i < times; i++) {
-      limiter.recordFailure(username);
+      assertTrue(limiter.tryAcquire(username));
     }
   }
 
   @Test
-  public void blocksOnlyAtTheFailureLimit() {
-    fail("bob", 4);
-    assertFalse(limiter.isBlocked("bob"));
-    fail("bob", 1);
-    assertTrue(limiter.isBlocked("bob"));
+  public void admitsUpToTheLimitThenRefuses() {
+    acquire("bob", 5);
+    assertFalse(limiter.tryAcquire("bob"));
   }
 
   @Test
   public void successClearsTheCount() {
-    fail("bob", 4);
+    acquire("bob", 4);
     limiter.recordSuccess("bob");
-    fail("bob", 4);
-    assertFalse(limiter.isBlocked("bob"));
+    acquire("bob", 5);
   }
 
   @Test
-  public void blockEndsAWindowAfterTheLastCountedFailure() {
-    fail("bob", 4);
+  public void blockEndsAWindowAfterTheLastAdmittedAttempt() {
+    acquire("bob", 4);
     ticker.advance(Duration.ofMinutes(9));
-    fail("bob", 1);
+    acquire("bob", 1);
     ticker.advance(Duration.ofMinutes(9));
-    assertTrue(limiter.isBlocked("bob"));
+    assertFalse(limiter.tryAcquire("bob"));
     ticker.advance(Duration.ofMinutes(2));
-    assertFalse(limiter.isBlocked("bob"));
+    assertTrue(limiter.tryAcquire("bob"));
   }
 
   @Test
   public void capEvictsTheOldestEntry() {
-    fail("a", 5);
+    acquire("a", 5);
     ticker.advance(Duration.ofSeconds(1));
-    fail("b", 5);
-    fail("c", 5);
-    fail("d", 5);
-    assertFalse(limiter.isBlocked("a"));
-    assertTrue(limiter.isBlocked("d"));
+    acquire("b", 5);
+    acquire("c", 5);
+    acquire("d", 5);
+    assertTrue(limiter.tryAcquire("a"));
+    assertFalse(limiter.tryAcquire("d"));
+  }
+
+  @Test
+  public void concurrentAttemptsAreAdmittedOnlyUpToTheLimit() throws Exception {
+    acquire("bob", 4);
+    int threads = 20;
+    CountDownLatch start = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(threads);
+    try {
+      List<Future<Boolean>> results = new ArrayList<>();
+      for (int i = 0; i < threads; i++) {
+        results.add(
+            pool.submit(
+                () -> {
+                  start.await();
+                  return limiter.tryAcquire("bob");
+                }));
+      }
+      start.countDown();
+      int admitted = 0;
+      for (Future<Boolean> result : results) {
+        if (result.get(10, TimeUnit.SECONDS)) {
+          admitted++;
+        }
+      }
+      assertEquals(1, admitted);
+    } finally {
+      pool.shutdownNow();
+    }
   }
 
   @Test

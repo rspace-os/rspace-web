@@ -15,8 +15,8 @@ import org.apache.shiro.lang.util.ByteSource;
  * once it reaches the limit. Held in memory per JVM and never persisted, so it resets on restart.
  * Only the OAuth password grant reads it; the web login form's lockout is separate and unchanged.
  *
- * <p>Refused attempts are not recorded, so a block ends {@code window} after the last counted
- * failure and cannot be extended by repeating refused requests.
+ * <p>Each attempt is counted before its password check and a correct password clears the count.
+ * Refused attempts are not counted, so a block ends {@code window} after the last admitted attempt.
  */
 public class PasswordGrantGuessLimiter {
 
@@ -51,15 +51,29 @@ public class PasswordGrantGuessLimiter {
             .build();
   }
 
-  /** Whether {@code username} has reached the failure limit inside the current window. */
-  public boolean isBlocked(String username) {
-    Integer count = failures.getIfPresent(username);
-    return count != null && count >= maxFailures;
-  }
-
-  /** Counts one wrong password for {@code username}, restarting its window. */
-  public void recordFailure(String username) {
-    failures.asMap().merge(username, 1, Integer::sum);
+  /**
+   * Counts one password attempt for {@code username} in a single atomic step, before the password
+   * is checked, so overlapping requests cannot exceed the limit. Returns false, without counting,
+   * once the limit is reached.
+   */
+  public boolean tryAcquire(String username) {
+    Integer current = failures.getIfPresent(username);
+    if (current != null && current >= maxFailures) {
+      return false;
+    }
+    boolean[] admitted = {false};
+    failures
+        .asMap()
+        .compute(
+            username,
+            (key, count) -> {
+              if (count != null && count >= maxFailures) {
+                return count;
+              }
+              admitted[0] = true;
+              return count == null ? 1 : count + 1;
+            });
+    return admitted[0];
   }
 
   /** Clears the count for {@code username} after a correct password. */

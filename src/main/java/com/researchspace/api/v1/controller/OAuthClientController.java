@@ -102,13 +102,6 @@ public class OAuthClientController {
       }
       try {
         User user = userManager.getUserByUsernameOrAlias(username);
-        if (guessLimiter.isBlocked(user.getUsername())) {
-          SECURITY_LOG.warn(
-              "OAuth password flow request for [{}] refused: too many failed attempts, from {}",
-              user.getUsername(),
-              RequestUtil.remoteAddr(request));
-          throw new ApiAuthenticationException("oauth.errors.tooManyAttempts");
-        }
         if (!username.equals(user.getUsername())) {
           SECURITY_LOG.info(
               String.format(
@@ -184,10 +177,16 @@ public class OAuthClientController {
       Boolean isJwt,
       HttpServletRequest request) {
 
+    if (!guessLimiter.tryAcquire(subject.getUsername())) {
+      SECURITY_LOG.warn(
+          "OAuth password flow request for [{}] refused: too many failed attempts, from {}",
+          subject.getUsername(),
+          RequestUtil.remoteAddr(request));
+      throw new ApiAuthenticationException("oauth.errors.tooManyAttempts");
+    }
     boolean credentialsMatch = reauthenticator.reauthenticate(subject, password);
 
     if (!credentialsMatch) {
-      guessLimiter.recordFailure(subject.getUsername());
       SECURITY_LOG.warn(
           "OAuth password flow request with invalid credentials " + "for username [{}], from {}",
           subject.getUsername(),
