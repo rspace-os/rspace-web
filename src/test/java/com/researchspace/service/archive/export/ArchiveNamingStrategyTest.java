@@ -2,7 +2,7 @@ package com.researchspace.service.archive.export;
 
 import static com.researchspace.testutils.TestFactory.createAnyGroup;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -40,8 +40,8 @@ public class ArchiveNamingStrategyTest {
     String name = archiveNamingStrategy.generateArchiveName(cfg, context);
     Matcher m = ArchiveNamingStrategy.NAME_PATTERN.matcher(name);
     assertTrue(m.matches());
-    assertTrue(name.contains(ExportScope.SELECTION.name()), name);
-    assertTrue(name.contains("xml"));
+    assertThat(name).as(name).contains(ExportScope.SELECTION.name());
+    assertThat(name).contains("xml");
   }
 
   private ArchiveExportConfig createXmlSelectionCfg() {
@@ -66,10 +66,10 @@ public class ArchiveNamingStrategyTest {
     String name = archiveNamingStrategy.generateArchiveName(cfg, context);
     Matcher m = ArchiveNamingStrategy.NAME_PATTERN.matcher(name);
     assertTrue(m.matches());
-    assertFalse(name.contains(ExportScope.SELECTION.name()), name);
-    assertTrue(name.contains("xml"), name);
-    assertTrue(name.contains(docNameExpectedFileName), name);
-    assertFalse(name.contains(docName));
+    assertThat(name).as(name).doesNotContain(ExportScope.SELECTION.name());
+    assertThat(name).as(name).contains("xml");
+    assertThat(name).as(name).contains(docNameExpectedFileName);
+    assertThat(name).doesNotContain(docName);
   }
 
   private ExportContext createExportContext(StructuredDocument expected) {
@@ -95,8 +95,8 @@ public class ArchiveNamingStrategyTest {
     String name = archiveNamingStrategy.generateArchiveName(cfg, context);
     Matcher m = ArchiveNamingStrategy.NAME_PATTERN.matcher(name);
     assertTrue(m.matches());
-    assertTrue(name.contains(ArchiveExportConfig.HTML));
-    assertTrue(name.contains(any.getUsername()), name);
+    assertThat(name).contains(ArchiveExportConfig.HTML);
+    assertThat(name).as(name).contains(any.getUsername());
   }
 
   @Test
@@ -112,8 +112,8 @@ public class ArchiveNamingStrategyTest {
     String name = archiveNamingStrategy.generateArchiveName(cfg, context);
     Matcher m = ArchiveNamingStrategy.NAME_PATTERN.matcher(name);
     assertTrue(m.matches());
-    assertTrue(name.contains(ArchiveExportConfig.HTML));
-    assertTrue(name.contains(anyGroup.getDisplayName()), name);
+    assertThat(name).contains(ArchiveExportConfig.HTML);
+    assertThat(name).as(name).contains(anyGroup.getDisplayName());
   }
 
   private Group createAGroup() {

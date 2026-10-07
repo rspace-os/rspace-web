@@ -2,8 +2,8 @@ package com.researchspace.webapp.integrations.protocolsio;
 
 import static com.researchspace.core.util.JacksonUtil.fromJson;
 import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -127,7 +127,7 @@ public class ProtocolsIOConverterTest {
     File testFile = RSpaceTestUtils.getResource("pio-with-images.html");
     String htmlString = FileUtils.readFileToString(testFile, UTF_8);
     Map<String, File> downloadedMap = impl.downloadImagesToTempFiles(impl.getImages(htmlString));
-    assertEquals(5, downloadedMap.size());
+    assertThat(downloadedMap).hasSize(5);
     assertEquals(5, impl.downloadCount);
   }
 
@@ -150,7 +150,7 @@ public class ProtocolsIOConverterTest {
         impl.getTempFileFromURL(
             new URL(
                 "https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bmzeh4hw.jpg"));
-    assertTrue(tempFile.getName().endsWith(".jpg"));
+    assertThat(tempFile.getName()).endsWith(".jpg");
   }
 
   private void setupmocks(Protocol protocol, RSForm aform) {
@@ -178,7 +178,7 @@ public class ProtocolsIOConverterTest {
             .toString());
     String html = impl.generateHtml(protocol);
     log.info(html);
-    assertFalse(html.contains("$"));
+    assertThat(html).doesNotContain("$");
     FileUtils.write(new File(tempFolder, "pio.html"), html, UTF_8);
     log.info("File written to {}", tempFolder + "/" + "pio.html");
   }
@@ -196,7 +196,7 @@ public class ProtocolsIOConverterTest {
             .toString());
     String html = impl.generateHtml(protocol);
     log.info(html);
-    assertFalse(html.contains("$"));
+    assertThat(html).doesNotContain("$");
     FileUtils.write(new File(tempFolder, "pio2.html"), html, UTF_8);
     log.info("File written to {}", tempFolder + "/" + "pio2.html");
   }
@@ -214,7 +214,7 @@ public class ProtocolsIOConverterTest {
             .toString());
     String html = impl.generateHtml(protocol);
     log.info(html);
-    assertFalse(html.contains("$"));
+    assertThat(html).doesNotContain("$");
     FileUtils.write(new File(tempFolder, "shakerStepComponentProtocol.html"), html, UTF_8);
     log.info("File written to {}", tempFolder + "/" + "shakerStepComponentProtocol.html");
   }

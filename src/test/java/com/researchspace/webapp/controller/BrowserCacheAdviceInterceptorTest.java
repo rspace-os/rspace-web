@@ -1,7 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +25,6 @@ public class BrowserCacheAdviceInterceptorTest extends SpringTransactionalTest {
     ServletInvocableHandlerMethod handler =
         new ServletInvocableHandlerMethod(sysAdminCtrller, method);
     interceptor.postHandle(request, response, handler, null);
-    assertThat(response.getHeader("Expires"), containsString("1970"));
+    assertThat(response.getHeader("Expires")).as(response.getHeader("Expires")).contains("1970");
   }
 }

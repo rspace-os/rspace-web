@@ -15,6 +15,7 @@ import static com.researchspace.testutils.SearchTestUtils.createSimpleFullTextSe
 import static com.researchspace.testutils.SearchTestUtils.createSimpleGeneralSearchCfg;
 import static com.researchspace.testutils.SearchTestUtils.createSimpleOwnerSearchCfg;
 import static com.researchspace.testutils.SearchTestUtils.createSimpleTagSearchCfg;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -41,6 +42,8 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.core.util.IPagination;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.dao.FormDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.hibernate.FullTextSearcherImpl;
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatDocumentFile;
@@ -58,6 +61,7 @@ import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
@@ -68,6 +72,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
+import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.testutils.FieldTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SearchTestUtils;
@@ -90,9 +95,12 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class SearchManagerTest extends SearchSpringTestBase {
-  private @Autowired FormManager formMgr;
-  private @Autowired MediaManager mediaMgr;
+  private @Autowired DocumentTagManager documentTagManager;
+  private @Autowired FormDao formDao;
+  private @Autowired InventoryPermissionUtils invPermissionUtils;
+  private @Autowired IPermissionUtils permissionUtils;
   private @Autowired RecordFavoritesManager favoritesManager;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   @Autowired FullTextSearcherImpl fullTextSearchSearchManagerTester;
   @Autowired FileIndexSearcher fileIndexSearcher;
 
@@ -119,7 +127,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     initialiseContentWithEmptyContent(newUser);
 
     Folder root = initialiseContentWithExampleContent(newUser);
-    assertFalse(root.getChildren().isEmpty());
+    assertThat(root.getChildren()).isNotEmpty();
 
     logoutAndLoginAs(newUser);
 
@@ -280,7 +288,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     WorkspaceListingConfig cfg = createSimpleFullTextSearchCfg("commentxyz");
     ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results);
-    assertTrue(results.getResults().contains(sd), "doc was not retrieved");
+    assertThat(results.getResults()).as("doc was not retrieved").contains(sd);
   }
 
   @Test
@@ -292,7 +300,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     WorkspaceListingConfig cfg = createSimpleFullTextSearchCfg(sd.getGlobalIdentifier());
     ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results);
-    assertTrue(results.getResults().contains(sd));
+    assertThat(results.getResults()).contains(sd);
   }
 
   @Test
@@ -307,7 +315,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     WorkspaceListingConfig cfg = createSimpleFullTextSearchCfg("qwerty");
     ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results);
-    assertTrue(results.getResults().contains(sd));
+    assertThat(results.getResults()).contains(sd);
 
     // check another record
     InputStream fis =
@@ -335,7 +343,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
     ISearchResults<BaseRecord> results3 = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results3);
-    assertTrue(results3.getResults().contains(audio));
+    assertThat(results3.getResults()).contains(audio);
 
     // check document
     InputStream is2 =
@@ -348,7 +356,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
     results2 = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results2);
-    assertTrue(results2.getResults().contains(doc));
+    assertThat(results2.getResults()).contains(doc);
 
     // check video
     InputStream is3 =
@@ -361,7 +369,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
     results2 = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results2);
-    assertTrue(results2.getResults().contains(vid));
+    assertThat(results2.getResults()).contains(vid);
   }
 
   @Test
@@ -386,7 +394,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     cfg = createSimpleFullTextSearchCfg(content);
     results = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results);
-    assertTrue(results.getResults().contains(sd));
+    assertThat(results.getResults()).contains(sd);
     // should just be 1 record returned.
     assertEquals(initHitCount + 1, results.getTotalHits().intValue());
   }
@@ -402,7 +410,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     WorkspaceListingConfig cfg = createSimpleGeneralSearchCfg(random);
     ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results);
-    assertTrue(results.getResults().contains(sd));
+    assertThat(results.getResults()).contains(sd);
     // should just be 1 record returned.
     assertEquals(1, results.getTotalHits().intValue());
   }
@@ -559,7 +567,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
     results = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results);
-    assertTrue(results.getResults().contains(sd));
+    assertThat(results.getResults()).contains(sd);
     // should just be 2 records returned.
     assertEquals(2, results.getTotalHits().intValue());
   }
@@ -582,7 +590,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     WorkspaceListingConfig cfg = createSimpleFullTextSearchCfg(content);
     ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results);
-    assertTrue(results.getResults().contains(sd));
+    assertThat(results.getResults()).contains(sd);
   }
 
   @Test
@@ -976,28 +984,28 @@ public class SearchManagerTest extends SearchSpringTestBase {
     config.getPgCrit().setGetAllResults();
     ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
-    assertTrue(results.getResults().contains(doc));
+    assertThat(results.getResults()).contains(doc);
 
     // Searching by creation date and choosing modification date should not
     // include the record
     config = SearchTestUtils.createSimpleCreationDateSearchCfg(";" + dModificationMinus1);
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
-    assertFalse(results.getResults().contains(doc));
+    assertThat(results.getResults()).doesNotContain(doc);
 
     // Searching by modification date and choosing creation date should not
     // include the record
     config = SearchTestUtils.createSimpleModificationDateSearchCfg(dCreation + ";");
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
-    assertFalse(results.getResults().contains(doc));
+    assertThat(results.getResults()).doesNotContain(doc);
 
     // Searching by modification date and choosing the modification date
     // should include the record
     config = SearchTestUtils.createSimpleModificationDateSearchCfg(rangeToGetModifiedOnlyString);
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
-    assertTrue(results.getResults().contains(doc));
+    assertThat(results.getResults()).contains(doc);
   }
 
   /**
@@ -1158,7 +1166,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertNotNull(results);
     final int expectedCount = numFolders + 13;
     assertEquals(expectedCount, results.getTotalHits().intValue());
-    assertEquals(recordsPerPage, results.getResults().size());
+    assertThat(results.getResults()).hasSize(recordsPerPage);
 
     // Advanced search by modification date 'from'.
     config =
@@ -1167,7 +1175,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
     assertEquals(expectedCount, results.getTotalHits().intValue());
-    assertEquals(recordsPerPage, results.getResults().size());
+    assertThat(results.getResults()).hasSize(recordsPerPage);
 
     // Advanced search by creation dates (from date - to date).
     config =
@@ -1177,7 +1185,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
     assertEquals(expectedCount, results.getTotalHits().intValue());
-    assertEquals(recordsPerPage, results.getResults().size());
+    assertThat(results.getResults()).hasSize(recordsPerPage);
 
     // Advanced search by creation date 'from'.
     config =
@@ -1186,7 +1194,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
     assertEquals(expectedCount, results.getTotalHits().intValue());
-    assertEquals(recordsPerPage, results.getResults().size());
+    assertThat(results.getResults()).hasSize(recordsPerPage);
 
     // Search for basic document
     config = createAdvSearchCfg(new String[] {FORM_SEARCH_OPTION}, new String[] {"Basic*"});
@@ -1208,7 +1216,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
     assertEquals(expectedCount + 1, results.getTotalHits().intValue());
-    assertEquals(recordsPerPage, results.getResults().size());
+    assertThat(results.getResults()).hasSize(recordsPerPage);
 
     // Advanced search by form name (using wildcard strategy).
     config = createAdvSearchCfg(new String[] {FORM_SEARCH_OPTION}, new String[] {"basic document"});
@@ -1282,21 +1290,21 @@ public class SearchManagerTest extends SearchSpringTestBase {
     WorkspaceListingConfig input =
         createSimpleOwnerSearchCfg(pi.getUsername() + "," + userInGroup.getUsername());
     List<BaseRecord> results = searchMgr.searchWorkspaceRecords(input, pi).getResults();
-    assertTrue(results.contains(docUserA));
-    assertTrue(results.contains(docPi));
-    assertFalse(results.contains(docUserB));
+    assertThat(results).contains(docUserA);
+    assertThat(results).contains(docPi);
+    assertThat(results).doesNotContain(docUserB);
 
     // Pi shouldn't be able to see otherUser's files
     input = createSimpleOwnerSearchCfg(pi.getUsername() + "," + otherUser.getUsername());
     results = searchMgr.searchWorkspaceRecords(input, pi).getResults();
-    assertFalse(results.contains(docUserA));
-    assertTrue(results.contains(docPi));
-    assertFalse(results.contains(docUserB));
+    assertThat(results).doesNotContain(docUserA);
+    assertThat(results).contains(docPi);
+    assertThat(results).doesNotContain(docUserB);
 
     // userInGroup can only see their files
     input = createSimpleOwnerSearchCfg(pi.getUsername() + "," + otherUser.getUsername());
     results = searchMgr.searchWorkspaceRecords(input, userInGroup).getResults();
-    assertTrue(results.isEmpty());
+    assertThat(results).isEmpty();
   }
 
   @Test
@@ -1884,7 +1892,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
         searchMgr.searchWorkspaceRecords(createSimpleFullTextSearchCfg("avocet"), sysadmin);
 
     assertEquals(2, results.getTotalHits().intValue());
-    assertTrue(results.getResults().stream().anyMatch(br -> br.getOwner().equals(user)));
+    assertThat(results.getResults()).anyMatch(br -> br.getOwner().equals(user));
   }
 
   @Test
@@ -1982,13 +1990,13 @@ public class SearchManagerTest extends SearchSpringTestBase {
     ISearchResults<BaseRecord> results =
         searchMgr.searchWorkspaceRecords(
             createSimpleFormSearchCfg(form.getOid().getIdString()), user);
-    assertEquals(numRecords, results.getResults().size());
+    assertThat(results.getResults()).hasSize(numRecords);
 
     // Search by global id should have 4 results (All field)
     results =
         searchMgr.searchWorkspaceRecords(
             createSimpleGeneralSearchCfg(form.getOid().getIdString()), user);
-    assertEquals(numRecords, results.getResults().size());
+    assertThat(results.getResults()).hasSize(numRecords);
 
     // Modify the form
     RSForm formToEdit = formMgr.getForEditing(form.getId(), user, anySessionTracker());
@@ -2011,28 +2019,28 @@ public class SearchManagerTest extends SearchSpringTestBase {
     results =
         searchMgr.searchWorkspaceRecords(
             createSimpleFormSearchCfg(form.getOid().getIdString()), user);
-    assertEquals(numRecords + numRecordsUpdated, results.getResults().size());
+    assertThat(results.getResults()).hasSize(numRecords + numRecordsUpdated);
 
     // Search by global id (original form global id) should have results from both versions of the
     // form (All field)
     results =
         searchMgr.searchWorkspaceRecords(
             createSimpleGeneralSearchCfg(form.getOid().getIdString()), user);
-    assertEquals(numRecords + numRecordsUpdated, results.getResults().size());
+    assertThat(results.getResults()).hasSize(numRecords + numRecordsUpdated);
 
     // Search by global id (updated form global id) should have results from both versions of the
     // form (Form field)
     results =
         searchMgr.searchWorkspaceRecords(
             createSimpleFormSearchCfg(updatedForm.getOid().getIdString()), user);
-    assertEquals(numRecords + numRecordsUpdated, results.getResults().size());
+    assertThat(results.getResults()).hasSize(numRecords + numRecordsUpdated);
 
     // Search by global id (updated form global id) should have results from both versions of the
     // form (All field)
     results =
         searchMgr.searchWorkspaceRecords(
             createSimpleGeneralSearchCfg(updatedForm.getOid().getIdString()), user);
-    assertEquals(numRecords + numRecordsUpdated, results.getResults().size());
+    assertThat(results.getResults()).hasSize(numRecords + numRecordsUpdated);
   }
 
   @Test
@@ -2052,11 +2060,10 @@ public class SearchManagerTest extends SearchSpringTestBase {
     flushToSearchIndices();
     // Login as user2 and search for the documents from that form
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user2.getUsername(), TESTPASSWD);
+    String formId = form.getOid().getIdString();
+    var searchConfig = createSimpleFormSearchCfg(formId);
     assertThrows(
-        AuthorizationException.class,
-        () ->
-            searchMgr.searchWorkspaceRecords(
-                createSimpleFormSearchCfg(form.getOid().getIdString()), user2));
+        AuthorizationException.class, () -> searchMgr.searchWorkspaceRecords(searchConfig, user2));
   }
 
   @Test
@@ -2065,9 +2072,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
     User user = createAndSaveUserIfNotExists(getRandomName(length));
     initialiseContentWithExampleContent(user);
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user.getUsername(), TESTPASSWD);
+    var searchConfig = createSimpleFormSearchCfg("FM425346143");
     assertThrows(
-        AuthorizationException.class,
-        () -> searchMgr.searchWorkspaceRecords(createSimpleFormSearchCfg("FM425346143"), user));
+        AuthorizationException.class, () -> searchMgr.searchWorkspaceRecords(searchConfig, user));
   }
 
   @Test
@@ -2093,9 +2100,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertNotNull(results);
     assertEquals(1, results.getTotalHits().intValue());
 
-    assertExceptionThrown(
-        () -> searchMgr.searchUserRecordsWithSimpleQuery(user, "", null),
-        IllegalArgumentException.class);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> searchMgr.searchUserRecordsWithSimpleQuery(user, "", null));
   }
 
   @Test
@@ -2256,7 +2263,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
     // two results for "mysample" name, default ordering (name asc)
     result = searchMgr.searchInventoryWithSimpleQuery("mysample", null, null, null, null, null, u);
-    assertEquals(2, result.getRecords().size());
+    assertThat(result.getRecords()).hasSize(2);
     assertEquals(2, result.getTotalHits().intValue());
     assertEquals(sample1.getGlobalId(), result.getRecords().get(0).getGlobalId());
 
@@ -2266,7 +2273,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     pg.setResultsPerPage(1);
     pg.setOrderBy(SearchUtils.ORDER_BY_NAME);
     result = searchMgr.searchInventoryWithSimpleQuery("mysample", null, null, null, null, pg, u);
-    assertEquals(1, result.getRecords().size());
+    assertThat(result.getRecords()).hasSize(1);
     assertEquals(2, result.getTotalHits().intValue());
     assertEquals(sample2.getGlobalId(), result.getRecords().get(0).getGlobalId());
 
@@ -2307,9 +2314,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals(1, result.getTotalHits().intValue());
 
     // full-wildcard search rejected
-    assertExceptionThrown(
-        () -> searchMgr.searchInventoryWithSimpleQuery("**", null, null, null, null, null, u),
-        IllegalArgumentException.class);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> searchMgr.searchInventoryWithSimpleQuery("**", null, null, null, null, null, u));
   }
 
   @Test
@@ -2574,11 +2581,11 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals("u2's inventorySearchTestSample", result.getRecords().get(2).getName());
 
     // partial-wildcard search rejected for sysadmin
-    assertExceptionThrown(
+    assertThrows(
+        IllegalArgumentException.class,
         () ->
             searchMgr.searchInventoryWithSimpleQuery(
-                "inve*", null, null, null, null, null, sysAdminUser),
-        IllegalArgumentException.class);
+                "inve*", null, null, null, null, null, sysAdminUser));
   }
 
   @Test

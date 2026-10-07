@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -50,7 +51,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
     when(propHolder.getSignupCaptchaEnabled()).thenReturn("false");
     assertEquals(
         SignupCaptchaVerifier.CAPTCHA_OK, captchaVerifier.verifyCaptchaFromRequest(mockRequest));
-    assertEquals("", stringLogger.logContents);
+    assertThat(stringLogger.logContents).isEmpty();
 
     /* captcha enabled, but token not provided in request */
     when(propHolder.getSignupCaptchaEnabled()).thenReturn("true");

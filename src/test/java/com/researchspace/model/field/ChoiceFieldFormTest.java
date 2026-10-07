@@ -1,6 +1,6 @@
 package com.researchspace.model.field;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -25,11 +25,11 @@ public class ChoiceFieldFormTest {
 
   @Test
   public void testGetDefaultChoiceOptionAsList() {
-    assertEquals(0, cft.getDefaultChoiceOptionAsList().size());
+    assertThat(cft.getDefaultChoiceOptionAsList()).isEmpty();
     cft.setDefaultChoiceOption("");
-    assertEquals(0, cft.getDefaultChoiceOptionAsList().size());
+    assertThat(cft.getDefaultChoiceOptionAsList()).isEmpty();
     cft.setDefaultChoiceOption("a=b");
-    assertEquals(1, cft.getDefaultChoiceOptionAsList().size());
+    assertThat(cft.getDefaultChoiceOptionAsList()).hasSize(1);
   }
 
   @Test

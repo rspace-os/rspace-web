@@ -1,6 +1,6 @@
 package com.researchspace.archive.model;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.TransformerUtils;
@@ -38,8 +38,8 @@ public class ArchiveMessagesTest {
     // check empty lists are handled OK
     ArchiveMessages originalMessages =
         archiver.generateMessagesXML(tempExportFolder, Collections.emptyList());
-    assertEquals(0, originalMessages.getMessages().size());
-    assertEquals(0, originalMessages.getUsernames().size());
+    assertThat(originalMessages.getMessages()).isEmpty();
+    assertThat(originalMessages.getUsernames()).isEmpty();
 
     User sender = TestFactory.createAnyUser("sender");
     User target = TestFactory.createAnyUser("target");
@@ -53,8 +53,8 @@ public class ArchiveMessagesTest {
 
     originalMessages =
         archiver.generateMessagesXML(tempExportFolder, TransformerUtils.toList(mor, reply, reply2));
-    assertEquals(3, originalMessages.getUsernames().size());
-    assertEquals(3, originalMessages.getMessages().size());
+    assertThat(originalMessages.getUsernames()).hasSize(3);
+    assertThat(originalMessages.getMessages()).hasSize(3);
 
     File xml = new File(tempExportFolder, ExportImport.MESSAGES);
     File schema = new File(tempExportFolder, ExportImport.MESSAGES_SCHEMA);

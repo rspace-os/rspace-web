@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,6 +41,6 @@ public class GlobalExceptionHandlerTest {
   public void testDisplayMaxSizeExceededExceptionMsg() {
     GlobalExceptionHandler globalHandler = new GlobalExceptionHandler();
     String msg = globalHandler.convertBytesToDisplay(EXC_MSG);
-    assertTrue(msg.contains("(21 MB)"), "Message was not formatted");
+    assertThat(msg).as("Message was not formatted").contains("(21 MB)");
   }
 }

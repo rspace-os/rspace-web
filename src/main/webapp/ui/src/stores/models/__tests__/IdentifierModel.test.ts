@@ -183,3 +183,46 @@ describe("externalMetadataUpdateAlerts", () => {
     expect(alerts[0]).toMatchObject({ variant: "error", message: reason, isInfinite: true });
   });
 });
+
+describe("a linked identifier and the B2INST required fields (RSDEV-1326)", () => {
+  const b2instAttrs = () => ({
+    ...mockIGSNAttrs(),
+    doiType: "PIDINST_B2INST",
+    doi: "21.T11975/twwkx-1zd85",
+    state: "accepted" as const,
+    resourceType: "Instrument",
+    resourceTypeGeneral: "Instrument",
+  });
+
+  test("the linked flag is read off the payload", () => {
+    expect(new IdentifierModel({ ...b2instAttrs(), linked: true }, "IN5").linked).toBe(true);
+    expect(new IdentifierModel(b2instAttrs(), "IN5").linked).toBe(false);
+  });
+
+  /*
+   * Publisher and Publication Year are DataCite minting metadata. B2INST keeps its own
+   * community metadata and the UI hides those fields for a B2INST identifier, so requiring
+   * them only produced a "some required details are missing" warning nobody could act on -
+   * most visibly on an imported identifier, which has neither.
+   */
+  test("a B2INST identifier is valid without Publisher or Publication Year", () => {
+    const model = new IdentifierModel(
+      { ...b2instAttrs(), publisher: undefined as unknown as string, publicationYear: undefined as unknown as number },
+      "IN5",
+    );
+    expect(model.requiredFields.map((f) => f.key)).not.toContain("Publisher");
+    expect(model.requiredFields.map((f) => f.key)).not.toContain("Publication Year");
+    expect(model.isValid).toBe(true);
+  });
+
+  test("a DataCite identifier still requires them", () => {
+    const model = new IdentifierModel({ ...mockIGSNAttrs(), publisher: "" }, "SA1");
+    expect(model.requiredFields.map((f) => f.key)).toContain("Publisher");
+    expect(model.isValid).toBe(false);
+  });
+
+  test("a missing Publication Year is empty, never the string 'undefined'", () => {
+    const model = new IdentifierModel({ ...mockIGSNAttrs(), publicationYear: undefined as unknown as number }, "SA1");
+    expect(model.publicationYear).toBe("");
+  });
+});

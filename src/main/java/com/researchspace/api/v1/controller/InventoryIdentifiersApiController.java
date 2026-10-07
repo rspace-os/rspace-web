@@ -134,7 +134,10 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
       Set.of("declined", "cancelled", "expired");
 
   private boolean isDeletableState(ApiInventoryDOI identifier) {
-    return "draft".equals(identifier.getState())
+    // a linked identifier is deletable in every state: deleting it only removes the link
+    // (RSDEV-1326), nothing is deleted at the provider
+    return identifier.isLinked()
+        || "draft".equals(identifier.getState())
         || (IdentifierType.PIDINST_B2INST.name().equals(identifier.getDoiType())
             && CLOSED_B2INST_REVIEW_STATES.contains(identifier.getState()));
   }

@@ -5,6 +5,7 @@ import com.researchspace.datacite.client.DataCiteClient;
 import com.researchspace.datacite.client.DataCiteClientImpl;
 import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
+import com.researchspace.datacite.model.DataCiteDoiSearchResult;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
@@ -12,15 +13,23 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 
 @Slf4j
 public class DataCiteConnectorImpl implements DataCiteConnector {
+
+  /** The only DataCite state a PID lookup offers: a DOI that resolves publicly (RSDEV-1326). */
+  private static final String STATE_FINDABLE = "findable";
 
   @Autowired private SystemPropertyManager sysPropertyMgr;
 
@@ -32,6 +41,7 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
 
   @EventListener(ContextRefreshedEvent.class)
   @Transactional(readOnly = true)
+  @CacheEvict(value = "pidinstLookupResults", allEntries = true)
   public void reloadDataCiteClient() {
     Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
     reloadClientForType(
@@ -141,5 +151,39 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
   @Override
   public DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
     return getClient(settingType).updateDoi(dataCiteDoi);
+  }
+
+  @Override
+  public Optional<DataCiteDoi> findDoi(String doiId, InventorySettingType settingType) {
+    try {
+      return Optional.ofNullable(getClient(settingType).retrieveDoi(doiId));
+    } catch (HttpClientErrorException.NotFound e) {
+      return Optional.empty();
+    } catch (IllegalArgumentException e) {
+      // DataCiteClientImpl refuses to put a non-DOI in a request path: nothing to find
+      log.info("Not looking up '{}' in DataCite: {}", doiId, e.getMessage());
+      return Optional.empty();
+    } catch (RestClientException e) {
+      /*
+       * Anything else - 401, 403, 429, 5xx - is a real failure and must not be read as "no such
+       * DOI". It is wrapped rather than rethrown because in Spring 6
+       * RestClientResponseException.getMessage() embeds the raw response body, and an unhandled
+       * exception reaches the caller through handle500Error, which echoes getLocalizedMessage()
+       * into the API response. searchInstrumentDois is already wrapped inside the client.
+       */
+      throw new DataCiteConnectionException("Problem with looking up a DOI in DataCite API.", e);
+    }
+  }
+
+  @Override
+  // settingType is in the key because it selects the client, and so the registry and credentials:
+  // only PIDINST calls this today, but an IGSN search would otherwise read the other registry's
+  // page
+  @Cacheable(
+      value = "pidinstLookupResults",
+      key = "'datacite:' + #settingType + ':' + #query + ':' + #pageSize")
+  public DataCiteDoiSearchResult searchInstrumentDois(
+      String query, int pageSize, InventorySettingType settingType) {
+    return getClient(settingType).searchDois(query, "instrument", STATE_FINDABLE, pageSize);
   }
 }

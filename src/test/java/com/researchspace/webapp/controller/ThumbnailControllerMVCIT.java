@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -251,8 +251,8 @@ public class ThumbnailControllerMVCIT extends MVCTestBase {
     byte[] receivedStrange =
         getThumbnail(STRANGE_ID, 50, documentId, testUser, null, "application/octet-stream");
 
-    assertArrayEquals(jpegBytes, receivedJpeg);
-    assertArrayEquals(tiffBytes, receivedTiff);
-    assertArrayEquals(strangeBytes, receivedStrange);
+    assertThat(receivedJpeg).containsExactly(jpegBytes);
+    assertThat(receivedTiff).containsExactly(tiffBytes);
+    assertThat(receivedStrange).containsExactly(strangeBytes);
   }
 }

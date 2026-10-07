@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.elninventory.ListOfMaterials;
@@ -39,7 +40,7 @@ public class ApiListOfMaterialsTest {
     incomingLom.applyChangesToDatabaseListOfMaterials(dbLom, null, null);
     assertEquals("newName", dbLom.getName());
     assertEquals("description", dbLom.getDescription());
-    assertEquals(1, dbLom.getMaterials().size());
+    assertThat(dbLom.getMaterials()).hasSize(1);
     assertEquals("10 g", dbLom.getMaterials().get(0).getUsedQuantity().toPlainString());
   }
 }

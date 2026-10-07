@@ -593,36 +593,63 @@ public abstract class BaseRecord
 
   private boolean doMove(Folder from, Folder to, User u, boolean allowUnsafeMove)
       throws IllegalAddChildOperation {
-    if (from == null || to == null || u == null) {
+    if (!isMoveValid(from, to, u, allowUnsafeMove)) {
       return false;
-    }
-    if (!this.getParentFolders().contains(from)) {
-      return false;
-    }
-    if (from.isNotebook() && !getOwner().equals(from.getOwner())) {
-      return false;
-    }
-    if (!allowUnsafeMove) {
-      if (isFolder() && ((Folder) this).isSystemFolder()) {
-        return false;
-      }
-      if (from.isTopLevelSharedFolder()) {
-        return false;
-      }
-      if (from.isSharedFolder() && !(to.isSharedFolder() || to.isNotebook())) {
-        return false;
-      }
-      if (!from.isSharedFolder() && to.isSharedFolder()) {
-        return false;
-      }
-      if (!from.isSharedFolder() && !from.getOwner().equals(to.getOwner())) {
-        return false; // block move from user's Workspace folder into somebody else's
-      }
     }
 
     boolean removed = from.removeChild(this);
     RecordToFolder added = to.addChild(this, u);
     return added != null && removed;
+  }
+
+  private boolean isMoveValid(Folder from, Folder to, User u, boolean allowUnsafeMove) {
+    if (from == null || to == null || u == null || !getParentFolders().contains(from)) {
+      return false;
+    }
+    if (from.isNotebook() && !getOwner().equals(from.getOwner())) {
+      return false;
+    }
+    return allowUnsafeMove || satisfiesMoveRestrictions(from, to);
+  }
+
+  private boolean satisfiesMoveRestrictions(Folder from, Folder to) {
+    if (isFolder() && ((Folder) this).isSystemFolder()) {
+      return false;
+    }
+    if (from.isTopLevelSharedFolder()) {
+      return false;
+    }
+    if (from.isSharedFolder()) {
+      // a notebook inside a shared folder is never typed SHARED_FOLDER (see
+      // Folder.updateRecordTypeIfAddingSubfolderToSharedFolder), so every notebook takes the
+      // audience check
+      return to.isSharedFolder() || (to.isNotebook() && keepsSourceAudience(from, to));
+    }
+    if (to.isSharedFolder()) {
+      return false;
+    }
+    return from.getOwner().equals(to.getOwner());
+  }
+
+  /**
+   * Whether moving into {@code to} keeps this record visible to every user or group that {@code
+   * from} shared it with. Removing the record from {@code from} strips all of the sharing it has in
+   * common with {@code from}, so the destination must cover all of that audience or someone loses
+   * access silently. The record's own owner does not count, since the owner keeps access wherever
+   * the record goes. An empty audience has nothing to lose, so it passes.
+   */
+  private boolean keepsSourceAudience(Folder from, Folder to) {
+    Set<String> audienceToKeep = sharedWithNames(from);
+    audienceToKeep.remove(this.getOwner().getUniqueName());
+    return sharedWithNames(to).containsAll(audienceToKeep);
+  }
+
+  /** Unique names of the users and groups a record is shared with, ignoring the anonymous guest. */
+  private static Set<String> sharedWithNames(BaseRecord record) {
+    return record.getSharingACL().getAclElements().stream()
+        .map(ACLElement::getUserOrGrpUniqueName)
+        .filter(name -> !ANONYMOUS_USER.equals(name))
+        .collect(toCollection(HashSet::new));
   }
 
   /**

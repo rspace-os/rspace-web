@@ -1,6 +1,8 @@
 package com.researchspace.service;
 
 import static com.researchspace.service.StoichiometryTestMother.createStoichiometry;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -96,7 +98,7 @@ public class StoichiometryManagerImplTest {
 
     Optional<Stoichiometry> result = stoichiometryManager.findByParentReactionId(parentReactionId);
 
-    assertFalse(result.isPresent());
+    assertThat(result).isNotPresent();
   }
 
   @Test
@@ -124,7 +126,7 @@ public class StoichiometryManagerImplTest {
 
     Stoichiometry finalSave = savedStoichiometries.get(1);
     assertEquals(parentReaction, finalSave.getParentReaction());
-    assertEquals(1, finalSave.getMolecules().size());
+    assertThat(finalSave.getMolecules()).hasSize(1);
     StoichiometryMolecule molecule = finalSave.getMolecules().get(0);
     assertEquals(name, molecule.getName());
     assertEquals(smiles, molecule.getSmiles());
@@ -152,7 +154,7 @@ public class StoichiometryManagerImplTest {
 
     Stoichiometry finalSave = savedStoichiometries.get(1);
     assertEquals(parentReaction, finalSave.getParentReaction());
-    assertEquals(1, finalSave.getMolecules().size());
+    assertThat(finalSave.getMolecules()).hasSize(1);
     StoichiometryMolecule molecule = finalSave.getMolecules().get(0);
     assertNull(molecule.getName());
 
@@ -227,7 +229,7 @@ public class StoichiometryManagerImplTest {
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
 
     Stoichiometry finalSave = savedStoichiometries.get(1);
-    assertEquals(3, finalSave.getMolecules().size());
+    assertThat(finalSave.getMolecules()).hasSize(3);
 
     // First reactant should be limiting reagent
     StoichiometryMolecule firstReactant = finalSave.getMolecules().get(0);
@@ -283,7 +285,7 @@ public class StoichiometryManagerImplTest {
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
 
     Stoichiometry saved = savedStoichiometries.get(1);
-    assertEquals(1, saved.getMolecules().size());
+    assertThat(saved.getMolecules()).hasSize(1);
 
     // Product should not be limiting reagent
     StoichiometryMolecule productMolecule = saved.getMolecules().get(0);
@@ -302,10 +304,8 @@ public class StoichiometryManagerImplTest {
             StoichiometryException.class,
             () -> stoichiometryManager.update(stoichiometryUpdateDTO, user));
 
-    assertTrue(
-        exception
-            .getMessage()
-            .contains(String.format("Stoichiometry not found with ID: %s", stoichiometryId)));
+    assertThat(exception.getMessage())
+        .contains(String.format("Stoichiometry not found with ID: %s", stoichiometryId));
   }
 
   @Test
@@ -329,13 +329,11 @@ public class StoichiometryManagerImplTest {
             StoichiometryException.class,
             () -> stoichiometryManager.update(stoichiometryUpdateDTO, user));
 
-    assertTrue(
-        exception
-            .getMessage()
-            .contains(
-                String.format(
-                    "Molecule ID %s not found in existing stoichiometry molecules.",
-                    nonExistentMoleculeId)));
+    assertThat(exception.getMessage())
+        .contains(
+            String.format(
+                "Molecule ID %s not found in existing stoichiometry molecules.",
+                nonExistentMoleculeId));
   }
 
   @Test
@@ -363,10 +361,10 @@ public class StoichiometryManagerImplTest {
     verify(stoichiometryDao, times(1)).save(any(Stoichiometry.class));
 
     Stoichiometry savedStoichiometry = stoichiometryCaptor.getValue();
-    assertEquals(1, savedStoichiometry.getMolecules().size());
+    assertThat(savedStoichiometry.getMolecules()).hasSize(1);
     StoichiometryMolecule updatedMolecule = savedStoichiometry.getMolecules().get(0);
-    assertEquals(2.5, updatedMolecule.getCoefficient(), 0.001);
-    assertEquals(100.0, updatedMolecule.getMass(), 0.001);
+    assertThat(updatedMolecule.getCoefficient()).isCloseTo(2.5, within(0.001));
+    assertThat(updatedMolecule.getMass()).isCloseTo(100.0, within(0.001));
     assertEquals(MoleculeRole.PRODUCT, updatedMolecule.getRole());
     assertEquals("Updated notes", updatedMolecule.getNotes());
 
@@ -415,7 +413,7 @@ public class StoichiometryManagerImplTest {
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
     Stoichiometry lastSavedStoichiometry =
         savedStoichiometries.get(savedStoichiometries.size() - 1);
-    assertEquals(2, lastSavedStoichiometry.getMolecules().size());
+    assertThat(lastSavedStoichiometry.getMolecules()).hasSize(2);
 
     StoichiometryMolecule addedMolecule =
         result.getMolecules().stream()
@@ -467,15 +465,15 @@ public class StoichiometryManagerImplTest {
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
     Stoichiometry lastSavedStoichiometry =
         savedStoichiometries.get(savedStoichiometries.size() - 1);
-    assertEquals(2, lastSavedStoichiometry.getMolecules().size());
+    assertThat(lastSavedStoichiometry.getMolecules()).hasSize(2);
 
     StoichiometryMolecule updatedMolecule =
         result.getMolecules().stream()
             .filter(m -> existingMoleculeId.equals(m.getId()))
             .findFirst()
             .orElse(null);
-    assertEquals(3.0, updatedMolecule.getCoefficient(), 0.001);
-    assertEquals(150.0, updatedMolecule.getMass(), 0.001);
+    assertThat(updatedMolecule.getCoefficient()).isCloseTo(3.0, within(0.001));
+    assertThat(updatedMolecule.getMass()).isCloseTo(150.0, within(0.001));
 
     StoichiometryMolecule newMol =
         result.getMolecules().stream()
@@ -508,7 +506,7 @@ public class StoichiometryManagerImplTest {
 
     Stoichiometry finalSave = savedStoichiometries.get(savedStoichiometries.size() - 1);
     assertEquals(targetParentReaction, finalSave.getParentReaction());
-    assertEquals(3, finalSave.getMolecules().size());
+    assertThat(finalSave.getMolecules()).hasSize(3);
   }
 
   @Test
@@ -581,10 +579,8 @@ public class StoichiometryManagerImplTest {
             StoichiometryException.class,
             () -> stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user));
 
-    assertTrue(
-        exception
-            .getMessage()
-            .contains("No stoichiometry found for reaction id " + sourceParentReactionId));
+    assertThat(exception.getMessage())
+        .contains("No stoichiometry found for reaction id " + sourceParentReactionId);
   }
 
   @Test
@@ -618,11 +614,11 @@ public class StoichiometryManagerImplTest {
     StoichiometryDTO result = StoichiometryMapper.fromAnalysisDTO(analysisDTO);
 
     assertNotNull(result);
-    assertEquals(1, result.getMolecules().size());
+    assertThat(result.getMolecules()).hasSize(1);
 
     StoichiometryMoleculeDTO molecule = result.getMolecules().get(0);
     assertEquals(MoleculeRole.REACTANT, molecule.getRole());
-    assertEquals(46.07, molecule.getMolecularWeight(), 0.001);
+    assertThat(molecule.getMolecularWeight()).isCloseTo(46.07, within(0.001));
   }
 
   private Stoichiometry createStoichiometryWith2Molecules(Long id, Long parentReactionId) {
@@ -784,14 +780,14 @@ public class StoichiometryManagerImplTest {
         result.getParentReaction(),
         "Imported reaction-less stoichiometry must not link to a parent reaction");
     assertEquals(record, result.getRecord());
-    assertEquals(2, result.getMolecules().size());
+    assertThat(result.getMolecules()).hasSize(2);
 
     StoichiometryMolecule firstMol = result.getMolecules().get(0);
     assertEquals(MoleculeRole.REACTANT, firstMol.getRole());
     assertEquals("CCO", firstMol.getSmiles());
     assertEquals("Ethanol", firstMol.getName());
     assertEquals("C2H6O", firstMol.getFormula());
-    assertEquals(46.07, firstMol.getMolecularWeight(), 0.001);
+    assertThat(firstMol.getMolecularWeight()).isCloseTo(46.07, within(0.001));
     assertTrue(firstMol.getLimitingReagent());
     assertNotNull(
         firstMol.getRsChemElement(),

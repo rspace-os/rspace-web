@@ -52,6 +52,7 @@ import javax.naming.InvalidNameException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,7 +97,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   public ApiInventoryRecordInfo findPublishedItemVersionByPublicLink(String publicLink) {
     Optional<DigitalObjectIdentifier> doiOptional =
         doiDao.getLastPublishedIdentifierByPublicLink(publicLink);
-    if (doiOptional.isEmpty()) {
+    // no public page for a linked identifier: RSpace did not publish it and is not its landing page
+    if (doiOptional.isEmpty() || doiOptional.get().isLinked()) {
       return null;
     }
     return ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(
@@ -230,6 +232,17 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
   }
 
+  /**
+   * A linked identifier is a PID another party minted; RSpace holds no provider-side record of its
+   * own to publish, retract or refresh, so those calls are refused up front rather than sent with a
+   * Handle where the provider expects a record id (RSDEV-1326, ADR 0009).
+   */
+  private void assertNotLinked(DigitalObjectIdentifier doi) {
+    if (doi.isLinked()) {
+      throw new ApiRuntimeException("errors.inventory.identifier.linkedReadOnly");
+    }
+  }
+
   @Override
   public List<ApiInventoryDOI> registerBulkIdentifiers(Integer igsnsToAllocate, User user) {
     List<ApiInventoryDOI> result = new LinkedList<>();
@@ -307,6 +320,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       throw new IllegalArgumentException(
           "record " + invRecOid.toString() + " has no identifier to publish");
     }
+    assertNotLinked(invRec.getActiveIdentifiers().get(0));
     return updateInventoryRecordWithDoiUpdate(
         user, invRec, createUpdateWithPublishedDoi(invRec, user));
   }
@@ -319,6 +333,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       throw new IllegalArgumentException(
           "record " + invRecOid.toString() + " has no identifier to publish");
     }
+    assertNotLinked(invRec.getActiveIdentifiers().get(0));
     return updateInventoryRecordWithDoiUpdate(
         user, invRec, createUpdateWithRetractedDoi(invRec, user));
   }
@@ -332,6 +347,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       throw new ApiRuntimeException("errors.inventory.identifier.refreshNoIdentifier");
     }
     DigitalObjectIdentifier doi = invRec.getActiveIdentifiers().get(0);
+    assertNotLinked(doi);
     if (!isB2inst(doi.getType())) {
       // DataCite state changes only through RSpace's own publish/retract calls, so the stored
       // state is already current and there is no provider read to make.
@@ -399,10 +415,15 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
    *
    * <p>Called while building the post-registration update, so the provider has already accepted: a
    * failed registration never reaches here and leaves the field as it was.
+   *
+   * <p>Never for a linked identifier: the field already holds the provider's landing page, and
+   * RSpace serves no public page for a PID it did not mint.
    */
   private void seedLandingPageForNewPidinst(
       ApiInstrument update, InventoryRecord invRec, ApiInventoryDOI identifier) {
-    if (!identifier.isRegisterIdentifierRequest() || !invRec.isInstrument()) {
+    if (!identifier.isRegisterIdentifierRequest()
+        || identifier.isLinked()
+        || !invRec.isInstrument()) {
       return;
     }
     IdentifierType type = EnumUtils.getEnum(IdentifierType.class, identifier.getDoiType());
@@ -562,7 +583,11 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private ApiInventoryDOI createUpdateWithDeleteDoi(InventoryRecord invRec, User user) {
 
     DigitalObjectIdentifier doi = invRec.getActiveIdentifiers().get(0);
-    deleteFromDatacite(doi);
+    // Deleting a linked identifier is unlinking: a purely local change, because RSpace never
+    // owned a provider record for it (CONTEXT.md, "Linked identifier").
+    if (!doi.isLinked()) {
+      deleteFromDatacite(doi);
+    }
 
     ApiInventoryDOI deleteDoi = new ApiInventoryDOI();
     deleteDoi.setId(invRec.getActiveIdentifiers().get(0).getId());
@@ -818,6 +843,17 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
           "Inventory Item [" + invRecOid.toString() + "] has got already an identifier");
     }
     return invRec;
+  }
+
+  @Override
+  public ApiInventoryRecordInfo linkExternalIdentifier(
+      GlobalIdentifier invRecOid, ApiInventoryDOI linkedIdentifier, User user) {
+    Validate.isTrue(
+        linkedIdentifier.isLinked() && linkedIdentifier.isRegisterIdentifierRequest(),
+        "only a linked identifier flagged for attachment can be linked");
+    InventoryRecord invRec = getInventoryRecordIfNotAlreadyAssociated(invRecOid);
+    return updateInventoryRecordWithDoiUpdate(
+        user, invRec, updateNewAssociatedDoi(invRec, linkedIdentifier));
   }
 
   /* for testing */

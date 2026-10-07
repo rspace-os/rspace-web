@@ -1,11 +1,13 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.model.ApiPidinstRecord;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.service.inventory.InventoryUrls;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
@@ -30,11 +32,58 @@ final class PidinstFields {
    */
   static final String LANDING_PAGE = "Landing page";
 
+  static final String OWNER = "Owner";
+  static final String MANUFACTURER = "Manufacturer";
+  static final String MODEL = "Model";
+  static final String INSTRUMENT_TYPE = "Instrument type";
+  static final String COMMISSIONED = "Commissioned";
+  static final String DECOMMISSIONED = "Decommissioned";
+  static final String MEASUREMENT_TECHNIQUE = "Measurement technique";
+  static final String MEASURED_QUANTITY = "Measured quantity";
+  static final String CALIBRATION = "Calibration";
+  static final String ALTERNATE_IDENTIFIER = "Alternate Identifier";
+
+  /**
+   * The labels RSpace gives the two link fields as PIDINST related identifiers, on B2INST's
+   * relatedIdentifierName and DataCite's relationTypeInformation (ADR 0007): the ticket's spelling,
+   * capital T, not the field name's. Shared by the registration that writes them and the import
+   * that reads them back (RSDEV-1528), so the two cannot drift.
+   */
+  static final String RELATED_ID_NAME_MEASUREMENT_TECHNIQUE = "Measurement Technique";
+
+  static final String RELATED_ID_NAME_CALIBRATION = "Calibration";
+
+  /**
+   * A link field the import fills from a related identifier. The registry's own relation is always
+   * IsDescribedBy (ADR 0007) and says nothing, so each field's relation is fixed here; both must
+   * stay in the locked template's whitelist, which the create path enforces with a 422.
+   */
+  record ImportedLink(String registryLabel, String fieldName, String relationType) {}
+
+  /** Measurement Technique first, Calibration second: the registration order. */
+  static final List<ImportedLink> IMPORTED_LINKS =
+      List.of(
+          new ImportedLink(
+              RELATED_ID_NAME_MEASUREMENT_TECHNIQUE, MEASUREMENT_TECHNIQUE, "IsDocumentedBy"),
+          new ImportedLink(RELATED_ID_NAME_CALIBRATION, CALIBRATION, "IsCalibratedBy"));
+
+  /**
+   * The values of the entries carrying this label, compared case-insensitively, in registry order.
+   * The one label match for the import and the search preview, so the preview lists exactly the
+   * entries the import tries.
+   */
+  static List<String> valuesLabelled(
+      List<ApiPidinstRecord.RelatedIdentifier> entries, String registryLabel) {
+    return entries.stream()
+        .filter(entry -> registryLabel.equalsIgnoreCase(entry.label()))
+        .map(ApiPidinstRecord.RelatedIdentifier::value)
+        .toList();
+  }
+
   private PidinstFields() {}
 
   /**
-   * The record's field with the given canonical name and type, matched case-insensitively and
-   * ignoring surrounding whitespace, so a field is recognised however it was created.
+   * The record's field with the given canonical name and type, matched by {@link #isNamed}.
    *
    * <p>Only active fields are considered, so a soft-deleted field is never treated as the mapped
    * one.
@@ -43,8 +92,17 @@ final class PidinstFields {
       InstrumentEntity record, String canonicalName, FieldType expectedType) {
     return record.getActiveFields().stream()
         .filter(f -> f.getType() == expectedType)
-        .filter(f -> f.getName() != null && canonicalName.equalsIgnoreCase(f.getName().trim()))
+        .filter(f -> isNamed(f, canonicalName))
         .findFirst();
+  }
+
+  /**
+   * Whether the field carries this canonical name: case-insensitively and ignoring surrounding
+   * whitespace, so a field is recognised however it was created. The one rule every PIDINST mapping
+   * matches field names by.
+   */
+  static boolean isNamed(InventoryEntityField field, String canonicalName) {
+    return field.getName() != null && canonicalName.equalsIgnoreCase(field.getName().trim());
   }
 
   /**

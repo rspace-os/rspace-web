@@ -1,6 +1,6 @@
 package com.researchspace.model.audittrail;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ShareConfigElement;
@@ -24,6 +24,6 @@ public class ShareAuditEventTest {
     ShareConfigElement element = new ShareConfigElement(1234L, "write");
     ShareRecordAuditEvent event =
         new ShareRecordAuditEvent(user, shared, new ShareConfigElement[] {element});
-    assertTrue(event.getAuditData().getData().containsKey("sharing"));
+    assertThat(event.getAuditData().getData()).containsKey("sharing");
   }
 }

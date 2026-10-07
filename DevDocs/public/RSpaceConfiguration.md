@@ -299,6 +299,11 @@ The following optional properties enable RSpace to connect to Orcid  API (if thi
 * **orcid.client.id** Client id of Orcid App registered for given RSpace instance
 * **orcid.client.secret** Client secret of Orcid App registered for given RSpace instance
 
+The following properties enable BioPortal ontology term suggestions in tag autocomplete:
+* **bioportal.base.url** BioPortal website, used only to build a display link for a matched term
+* **bioportal.api.base.url** BioPortal REST API URL for search suggestions. It must be `https://data.bioontology.org`; requests always use that fixed origin
+* **bioportal.api.key** API key for the BioPortal REST API; without it, BioPortal suggestions are silently unavailable
+
 The following optional properties enable RSpace to connect to RaID API (if this integration is enabled):
 * **raid.server.config** configures the RaID server alias associated to *server url* .
   **raid.server.config** should be configured (for local use) in dev/deployment.properties as we 

@@ -1,51 +1,101 @@
-import { FieldEditorDialogComponent } from "@/__tests__/e2e/components/myrspace/FieldEditorDialogComponent";
-import { WorkspaceRenameDialog } from "@/__tests__/e2e/components/workspace/WorkspaceRenameDialog";
+import type { Locator } from "@playwright/test";
+import {
+  FieldEditorDialogComponent,
+  type FormFieldType,
+} from "@/__tests__/e2e/components/myrspace/FieldEditorDialogComponent";
+import { FormAccessDialogComponent } from "@/__tests__/e2e/components/myrspace/FormAccessDialogComponent";
+import { ReorderFieldsDialogComponent } from "@/__tests__/e2e/components/myrspace/ReorderFieldsDialogComponent";
 import { BasePage } from "../BasePage";
 import { ManageFormsPage } from "./ManageFormsPage";
 
 export class CreateFormPage extends BasePage {
   readonly path = "/workspace/editor/form/";
 
-  private get saveAndCloseButton() {
-    return this.page.getByRole("button", { name: "Save and Close", exact: true });
+  async waitUntilLoaded(): Promise<void> {
+    await this.page.getByRole("button", { name: "Save and Close" }).waitFor({ state: "visible" });
   }
 
-  private get addFieldButton() {
-    return this.page.getByRole("button", { name: "Add Field", exact: true });
+  get statusNew(): Locator {
+    return this.page.getByText("Status - NEW", { exact: true });
   }
 
-  // Legacy jQuery-rendered form-name span
-  private get formNameDisplay() {
-    return this.page.locator("#documentName .recordName");
+  async rename(name: string): Promise<void> {
+    await this.page.getByText("Name: Untitled", { exact: true }).click();
+    const dialog = this.page.getByRole("dialog", { name: "Rename" });
+    await dialog.getByRole("textbox", { name: "Please enter a new name" }).fill(name);
+    await dialog.getByRole("button", { name: "Rename" }).click();
+    await this.page.getByText(`Name: ${name}`, { exact: true }).waitFor({ state: "visible" });
   }
 
-  async isLoaded(): Promise<void> {
-    await this.saveAndCloseButton.waitFor({ state: "visible" });
+  async openFieldEditor(type: FormFieldType): Promise<FieldEditorDialogComponent> {
+    await this.page.getByRole("button", { name: "Add Field" }).click();
+    const editor = new FieldEditorDialogComponent(this.page);
+    await editor.waitUntilVisible();
+    await editor.selectType(type);
+    return editor;
   }
 
-  async addNumberField(fieldName: string, { required = true }: { required?: boolean } = {}): Promise<void> {
-    await this.addFieldButton.click();
-    const dialog = new FieldEditorDialogComponent(this.page);
+  async addField(type: FormFieldType, name: string, required = false): Promise<void> {
+    const editor = await this.openFieldEditor(type);
+    await editor.setName(name);
+    await editor.setRequired(required);
+    if (type === "Text") {
+      await editor.fillTextDefault("def");
+    }
+    if (type === "Radio" || type === "Choice") {
+      await editor.addOption("Option 1");
+    }
+    await editor.save();
+    await this.fieldRow(name).waitFor({ state: "visible" });
+  }
+
+  fieldRow(name: string): Locator {
+    return this.page.getByRole("row").filter({ has: this.page.getByText(name, { exact: false }) });
+  }
+
+  fieldRowAt(index: number): Locator {
+    return this.page.getByRole("row").nth(index + 1);
+  }
+
+  async openFieldForEditing(name: string): Promise<FieldEditorDialogComponent> {
+    await this.fieldRow(name).getByRole("button", { name: "Edit" }).click();
+    const editor = new FieldEditorDialogComponent(this.page);
+    await editor.waitUntilVisible();
+    return editor;
+  }
+
+  async reorderFields(): Promise<ReorderFieldsDialogComponent> {
+    await this.page.getByRole("button", { name: "Reorder Fields" }).click();
+    const dialog = new ReorderFieldsDialogComponent(this.page);
     await dialog.waitUntilVisible();
-    await dialog.selectType("Number");
-    await dialog.setName(fieldName);
-    await dialog.setRequired(required);
-    await dialog.save();
+    return dialog;
   }
 
-  async rename(newName: string): Promise<void> {
-    await this.formNameDisplay.click();
-    const dialog = new WorkspaceRenameDialog(this.page);
+  async publish(): Promise<FormAccessDialogComponent> {
+    await this.page.getByRole("button", { name: "Publish" }).click();
+    const dialog = new FormAccessDialogComponent(this.page);
     await dialog.waitUntilVisible();
-    await dialog.submit(newName);
-    await this.formNameDisplay.filter({ hasText: newName }).waitFor({ state: "visible" });
+    return dialog;
+  }
+
+  async deleteField(name: string): Promise<void> {
+    await this.fieldRow(name).getByRole("button", { name: "Delete" }).click();
+    await this.fieldRow(name).waitFor({ state: "hidden" });
+  }
+
+  async revert(): Promise<void> {
+    await this.page.getByRole("button", { name: "Revert" }).click();
+  }
+
+  async update(): Promise<void> {
+    await this.page.getByRole("button", { name: "Update" }).click();
   }
 
   async saveAndClose(): Promise<ManageFormsPage> {
-    await this.saveAndCloseButton.click();
-    await this.page.waitForURL("**/workspace/editor/form/list**");
-    const manageForms = new ManageFormsPage(this.page);
-    await manageForms.isLoaded();
-    return manageForms;
+    await this.page.getByRole("button", { name: "Save and Close" }).click();
+    await this.page.waitForURL((url) => url.pathname === "/workspace/editor/form/list");
+    const page = new ManageFormsPage(this.page);
+    await page.waitUntilLoaded();
+    return page;
   }
 }

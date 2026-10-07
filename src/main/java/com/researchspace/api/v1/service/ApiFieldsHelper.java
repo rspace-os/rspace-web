@@ -311,13 +311,18 @@ public class ApiFieldsHelper {
 
   /**
    * Checks if the provided apiFields are matching formFields, or throws IllegalArgumentException if
-   * there is a problem.
+   * there is a problem. Deleted form fields are ignored because documents contain only active
+   * fields.
    *
    * @param user
    */
   public void checkApiFieldsMatchingFormFields(
       List<? extends ApiField> apiFields, List<FieldForm> formFields, User user) {
-    checkApiFieldsMatchingFormFields(apiFields, formFields, user, this::consumeErrorMsgAndThrowIAE);
+    checkApiFieldsMatchingFormFields(
+        apiFields,
+        formFields.stream().filter(field -> !field.isDeleted()).toList(),
+        user,
+        this::consumeErrorMsgAndThrowIAE);
   }
 
   /**

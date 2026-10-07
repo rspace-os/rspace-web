@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
@@ -53,7 +53,8 @@ public class DeleteFromSharedFolderExecutorTest {
     RSPath path = new RSPath(pathElements1);
     plan = new DeletionPlan(anyUser, path, parentFolder);
     plan.add(aDocument());
-    assertThrows(IllegalStateException.class, () -> executor.execute(anyResults(), plan));
+    var results = anyResults();
+    assertThrows(IllegalStateException.class, () -> executor.execute(results, plan));
   }
 
   @Test
@@ -65,7 +66,7 @@ public class DeleteFromSharedFolderExecutorTest {
     executor.execute(result, plan);
     // unshare not called as we're deleting a single folder
     Mockito.verifyNoInteractions(sharingMgr);
-    assertEquals(1, result.getRecords().size());
+    assertThat(result.getRecords()).hasSize(1);
   }
 
   @Test
@@ -81,7 +82,7 @@ public class DeleteFromSharedFolderExecutorTest {
     Mockito.verifyNoInteractions(sharingMgr);
     // child folder removed
     Mockito.verify(folderMgr).removeBaseRecordFromFolder(child, toDelete.getId());
-    assertEquals(2, result.getRecords().size());
+    assertThat(result.getRecords()).hasSize(2);
   }
 
   @Test
@@ -102,7 +103,7 @@ public class DeleteFromSharedFolderExecutorTest {
     Mockito.verify(sharingMgr).unshareFromSharedFolder(plan.getUser(), nb, plan.getPath());
     // child folder removed
     Mockito.verify(folderMgr).removeBaseRecordFromFolder(child, toDelete.getId());
-    assertEquals(3, result.getRecords().size()); // 2 folders and nb
+    assertThat(result.getRecords()).hasSize(3); // 2 folders and nb
   }
 
   private StructuredDocument aDocument() {

@@ -1,4 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Resolves a fixture file relative to the calling spec.
+export function fixturePath(importMetaUrl: string, ...segments: string[]): string {
+  return resolve(dirname(fileURLToPath(importMetaUrl)), ...segments);
+}
 
 export const DYNAMIC_USER_PASSWORD = "Passw0rd!23";
 

@@ -3,10 +3,10 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.testutil.MockLoggingUtils.assertNoLogging;
 import static com.researchspace.session.SessionAttributeUtils.USER_INFO;
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
-import static org.hamcrest.Matchers.hasProperty;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -17,7 +17,6 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -33,11 +32,12 @@ import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
+import com.researchspace.model.dto.UserPublicInfo;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.UserEnablementUtils;
-import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.ConfigurableLogger;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
 import com.researchspace.testutils.MockAndStubUtils;
@@ -57,6 +57,7 @@ import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authz.AuthorizationException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
@@ -87,8 +88,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   private User sysAdmin;
 
   private @Autowired UserEnablementUtils userEnablementUtils;
+  private @Autowired IMutablePropertyHolder propertyHolder;
   private @Autowired SysAdminController controller;
-  private @Autowired UserManager userMgr;
 
   @AfterEach
   public void teardown() throws Exception {
@@ -156,7 +157,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   private void assertDuplicateEmailOrUsername(MvcResult result) throws IOException {
     Map response = parseJSONObjectFromResponseStream(result);
     assertNull(response.get("data"));
-    assertTrue(result.getResponse().getContentAsString().contains(DUPLICATE_EMAILOR_UNAME_MSG));
+    assertThat(result.getResponse().getContentAsString()).contains(DUPLICATE_EMAILOR_UNAME_MSG);
   }
 
   private MockHttpServletRequestBuilder addUserParams(
@@ -192,8 +193,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     communityMgr.addGroupToCommunity(g1.getId(), comm1.getId(), admin);
     communityMgr.addGroupToCommunity(g2.getId(), comm1.getId(), admin);
     // sanity check
-    assertEquals(
-        2, communityMgr.getCommunityWithAdminsAndGroups(comm1.getId()).getLabGroups().size());
+    assertThat(communityMgr.getCommunityWithAdminsAndGroups(comm1.getId()).getLabGroups())
+        .hasSize(2);
     // basic default listing
     MockPrincipal adminPrincipal = new MockPrincipal(admin.getUsername());
     MvcResult result =
@@ -204,22 +205,22 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=fileUsage()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=fileUsage&sortOrder=DESC")
                     .principal(adminPrincipal))
             .andReturn();
     UserInfoListDTO uui2 = getUserListFromMvcResult(result2);
-    assertEquals(2, uui2.getResults().size());
+    assertThat(uui2.getResults()).hasSize(2);
     assertEquals(2, uui2.getTotalHits().intValue());
 
     // now lets order by recordcount
     MvcResult result3 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=recordCount()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=recordCount&sortOrder=DESC")
                     .principal(adminPrincipal))
             .andReturn();
     UserInfoListDTO uui3 = getUserListFromMvcResult(result3);
-    assertEquals(2, uui3.getResults().size());
+    assertThat(uui3.getResults()).hasSize(2);
     assertEquals(2, uui3.getTotalHits().intValue());
 
     // what happens if admin user is not assigned to community?
@@ -230,21 +231,21 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result4 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=recordCount()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=recordCount&sortOrder=DESC")
                     .principal(new MockPrincipal(newadmin.getUsername())))
             .andReturn();
     UserInfoListDTO uui4 = getUserListFromMvcResult(result4);
-    assertEquals(0, uui4.getResults().size());
+    assertThat(uui4.getResults()).isEmpty();
     assertEquals(0, uui4.getTotalHits().intValue());
 
     MvcResult result5 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=fileUsage()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=fileUsage&sortOrder=DESC")
                     .principal(new MockPrincipal(newadmin.getUsername())))
             .andReturn();
     UserInfoListDTO uui5 = getUserListFromMvcResult(result5);
-    assertEquals(0, uui5.getResults().size());
+    assertThat(uui5.getResults()).isEmpty();
     assertEquals(0, uui5.getTotalHits().intValue());
   }
 
@@ -288,7 +289,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
                 get("/system/ajax/getAllCommunities").principal(new MockPrincipal(SYS_ADMIN_UNAME)))
             .andReturn();
     Map data = parseJSONObjectFromResponseStream(result);
-    assertEquals(communityCount, ((List) data.get("data")).size());
+    assertThat(((List) data.get("data"))).hasSize(communityCount);
   }
 
   @Test
@@ -296,7 +297,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=fileUsage()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=fileUsage&sortOrder=DESC")
                     .principal(sysAdminPrincipal))
             .andExpect(status().isOk())
             .andReturn();
@@ -310,12 +311,12 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=fileUsage()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=fileUsage&sortOrder=DESC")
                     .principal(sysAdminPrincipal))
             .andExpect(status().isOk())
             .andReturn();
     UserInfoListDTO uui2 = getUserListFromMvcResult(result2);
-    assertTrue(uui2.getResults().stream().anyMatch(info -> info.getCreationDate() != null));
+    assertThat(uui2.getResults()).anyMatch(info -> info.getCreationDate() != null);
     // should be 1 person in FS now
     assertEquals(initialList + 1, uui2.getTotalHits().intValue());
 
@@ -325,13 +326,13 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result3 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=recordCount()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=recordCount&sortOrder=DESC")
                     .principal(sysAdminPrincipal))
             .andExpect(status().isOk())
             .andReturn();
     UserInfoListDTO uui3 = getUserListFromMvcResult(result3);
     // should be 3 person with records now
-    assertTrue(uui3.getTotalHits().intValue() > 0);
+    assertThat(uui3.getTotalHits().intValue()).isGreaterThan(0);
   }
 
   @Test
@@ -457,15 +458,13 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     getBeanOfClass(ConfigurableLogger.class).setLogger(log);
     MockHttpServletRequestBuilder operateAsPost =
         preparePostOperateAs(targetuser, sysAdminPrincipal);
-    this.mockMvc
-        .perform(operateAsPost)
-        .andExpect(status().isOk())
-        .andExpect(
-            request()
-                .sessionAttribute(
-                    USER_INFO,
-                    hasProperty(
-                        "username", equalToIgnoringCase(targetuser.getUsername())))); // RSPAC-1018
+    MvcResult operateAsResult =
+        this.mockMvc.perform(operateAsPost).andExpect(status().isOk()).andReturn();
+    UserPublicInfo sessionUser =
+        (UserPublicInfo) operateAsResult.getRequest().getSession().getAttribute(USER_INFO);
+    assertEquals(
+        targetuser.getUsername().toLowerCase(),
+        sessionUser.getUsername().toLowerCase()); // RSPAC-1018
     assertEquals(targetuser.getUsername(), SecurityUtils.getSubject().getPrincipal());
 
     verify(log, times(1))
@@ -590,7 +589,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     User createdUser = userMgr.getUserByUsername(userToCreate.getUsername());
     EcatImage image = addImageToGallery(createdUser);
     File imageFile = new File(new URI(image.getFileUri()));
-    assertTrue(imageFile.exists());
+    assertThat(imageFile).exists();
 
     MockHttpServletRequestBuilder removeBuilder =
         post("/system/ajax/removeUserAccount")
@@ -599,9 +598,9 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
 
     MvcResult removeResult = mockMvc.perform(removeBuilder).andExpect(status().isOk()).andReturn();
     String removeResultString = removeResult.getResponse().getContentAsString();
-    assertTrue(
-        removeResultString.contains("] deleted\""),
-        "expected remove success: " + removeResultString);
+    assertThat(removeResultString)
+        .as("expected remove success: " + removeResultString)
+        .contains("] deleted\"");
     assertFalse(imageFile.exists());
   }
 
@@ -626,7 +625,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
             .perform(buildOKUserRequest(admin, newusername, password, grp))
             .andExpect(status().isOk())
             .andReturn();
-    assertTrue(result.getResponse().getContentAsString().contains("Success"));
+    assertThat(result.getResponse().getContentAsString()).contains("Success");
 
     String resultString = result.getResponse().getContentAsString();
     assertSuccessResponse(resultString);
@@ -788,7 +787,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   }
 
   private void assertSuccessResponse(String resultString) {
-    assertTrue(resultString.contains("Success"), "Result string was " + resultString);
+    assertThat(resultString).as("Result string was " + resultString).contains("Success");
   }
 
   @Test
@@ -844,11 +843,14 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     assertEquals(SignupSource.SSO_BACKDOOR, internalSysAdmin.getSignupSource());
 
     // default sso password shouldn't work
+    logoutCurrentUser();
+    var subject = SecurityUtils.getSubject();
+    var credentials =
+        new UsernamePasswordToken(
+            nonSsoSysAdmin.getUsername(), RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD);
     AuthenticationException ae =
-        assertThrows(
-            AuthenticationException.class,
-            () -> logoutAndLoginAs(nonSsoSysAdmin, RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD));
-    assertTrue(ae.getMessage().contains("could not be authenticated"));
+        assertThrows(AuthenticationException.class, () -> subject.login(credentials));
+    assertThat(ae.getMessage()).contains("could not be authenticated");
 
     // provided non-sso password should be the one to use
     logoutAndLoginAs(nonSsoSysAdmin, NON_SSO_SYSADMIN_PASSWORD);
@@ -864,7 +866,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
     addUserParams(builder, toCreate).principal(new MockPrincipal(admin.getUsername()));
     MvcResult result = mockMvc.perform(builder).andReturn();
-    assertAuthorizationExceptionThrown(result);
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
   }
 
   @Test
@@ -908,7 +910,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
                     .principal(otherUser::getUsername)
                     .param("userId", anyUser.getId() + ""))
             .andReturn();
-    assertException(result, AuthorizationException.class);
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
   }
 
   @Test
@@ -984,12 +986,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     addUserParams(builder, userToCreate).principal(new MockPrincipal(user.getUsername()));
 
     MvcResult result = mockMvc.perform(builder).andExpect(status().isOk()).andReturn();
-    assertAuthorizationExceptionThrown(result);
-  }
-
-  private void assertAuthorizationExceptionThrown(MvcResult result) {
-    assertNotNull(result.getResolvedException());
-    assertTrue(result.getResolvedException() instanceof AuthorizationException);
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
   }
 
   @Test
@@ -1030,20 +1027,16 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertNull(result.getResolvedException());
     Map data = parseJSONObjectFromResponseStream(result);
-    assertEquals(4, data.size());
+    assertThat(data).hasSize(4);
     assertNotNull(data.get("userStats"));
     assertNotNull(data.get("pgCrit"));
     assertNotNull(data.get("userInfo"));
     assertNotNull(data.get("pagination"));
 
     UsageListingDTO responseDTO = getFromJsonResponseBody(result, UsageListingDTO.class);
-    assertTrue(
-        responseDTO
-            .getUserStats()
-            .getAvailableSeats()
-            .startsWith(
-                "214748")); // integer.MAX_VALUE minus number of created users, which could vary
+    assertThat(responseDTO.getUserStats().getAvailableSeats())
+        .startsWith("214748"); // integer.MAX_VALUE minus number of created users, which could vary
     assertEquals(Integer.valueOf(10), responseDTO.getPgCrit().getResultsPerPage());
-    assertEquals(10, responseDTO.getUserInfo().getResults().size());
+    assertThat(responseDTO.getUserInfo().getResults()).hasSize(10);
   }
 }

@@ -1,0 +1,12 @@
+{
+  "PropertyTable": {
+    "Properties": [
+      {
+        "CID": 493570,
+        "MolecularFormula": "C17H20N4O6",
+        "SMILES": "CC1=CC2=C(C=C1C)N(C3=NC(=O)NC(=O)C3=N2)CC(C(C(CO)O)O)O",
+        "Title": "Riboflavin"
+      }
+    ]
+  }
+}

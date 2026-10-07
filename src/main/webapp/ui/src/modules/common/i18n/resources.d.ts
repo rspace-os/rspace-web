@@ -2656,6 +2656,7 @@ export default interface Resources {
         "sample": "Info on creating samples.",
         "template": "Info on creating templates."
       },
+      "importPidinst": "From PIDINST registry",
       "newContainer": "New Container",
       "newInstrument": "New Instrument",
       "newInstrumentTemplate": "New Instrument Template",
@@ -3017,7 +3018,6 @@ export default interface Resources {
           "pidinstDocLink": "See PIDINST Documentation for details",
           "preview": "Preview",
           "publishAwaitingReview": "This instrument PID has been submitted to the B2INST community and is awaiting curator review.",
-          "publishPidinstPublished": "The community accepted this submission. The instrument PID is already published and cannot be published again.",
           "refresh": "Refresh",
           "rorError": "Could not get RoR data.",
           "show": "Show",
@@ -3026,6 +3026,7 @@ export default interface Resources {
             "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
             "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
             "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+            "linkedPidinst": "This PIDINST was minted outside RSpace and is linked to this instrument. It resolves at its own registry, not on an RSpace page, and RSpace does not publish or update it.",
             "pidinstAccepted": "This PIDINST ID is Accepted. The PIDINST ID is a citable ePIC Handle that redirects to the <externalLink href=\"{link}\">registered landing page</externalLink>. The metadata is publicly available through that page and the instrument's B2INST record.",
             "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft. You can delete this identifier and register a new one.",
             "pidinstCreated": "The review request was created but has not been submitted to the community yet. Press Publish to submit it.",
@@ -3051,6 +3052,7 @@ export default interface Resources {
           "tooltips": {
             "deleteClosedReview": "Delete this identifier so a new one can be registered",
             "deleteDraft": "Delete Draft",
+            "linkedReadOnly": "This PID was minted outside RSpace, so RSpace cannot publish, retract or refresh it. Removing the link is an API operation.",
             "missingData": "Some missing data",
             "notPublished": "Not published yet",
             "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
@@ -3253,7 +3255,7 @@ export default interface Resources {
           "editLink": "Edit link",
           "editToChangePinned": "Edit the link to change the pinned version",
           "noAccess": "No access",
-          "noPermission": "You do not have permission to view this item",
+          "noPermission": "This item is not available to you: it may not be shared with you, or it may no longer exist",
           "openLabel": "Open {globalId}",
           "pinVersionLabel": "Pin version for {globalId}",
           "showInfoLabel": "Show info for {globalId}",
@@ -3962,6 +3964,93 @@ export default interface Resources {
       },
       "pending": {
         "exportData": "Exporting User Data..."
+      }
+    },
+    "pidinstImport": {
+      "appBarTitle": "PIDINST",
+      "closeConfirm": {
+        "cancel": "Continue importing",
+        "confirm": "Close anyway",
+        "message": "An import is in progress. Closing this dialog will not stop it, but you will not see the result here.",
+        "title": "Import in progress"
+      },
+      "columns": {
+        "commissioned": "Commissioned",
+        "instrumentTypes": "Instrument type",
+        "linkedTo": "Linked to",
+        "manufacturers": "Manufacturer",
+        "model": "Model",
+        "name": "Name",
+        "owners": "Owner",
+        "pid": "PID",
+        "state": "Registry state"
+      },
+      "description": "Search the PID registry enabled for this RSpace for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
+      "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
+      "helpTitle": "PIDINST help",
+      "importError": "Could not import the instrument.",
+      "importSuccess": "Successfully imported the instrument.",
+      "importing": {
+        "message": "Importing \"{name}\" from the PID registry.",
+        "title": "Importing instrument"
+      },
+      "linkedTo": {
+        "noAccess": "No access",
+        "noAccessDetail": "An instrument you cannot access"
+      },
+      "preview": {
+        "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
+        "alternateIdentifier": "Alternate identifier",
+        "calibration": "Calibration",
+        "commissioned": "Commissioned",
+        "decommissioned": "Decommissioned",
+        "description": "Description",
+        "instrumentTypes": "Instrument types",
+        "landingPage": "Landing page",
+        "manufacturers": "Manufacturers",
+        "measuredVariables": "Measured variables",
+        "measurementTechnique": "Measurement technique",
+        "model": "Model",
+        "owners": "Owners",
+        "pid": "PID",
+        "providerRecord": "Registry record",
+        "title": "Selected record"
+      },
+      "providers": {
+        "b2inst": "B2INST",
+        "datacite": "DataCite"
+      },
+      "results": {
+        "none": "No published instrument records match this search.",
+        "prompt": "Search to list published instrument records.",
+        "summary": "{shown} of {total, plural, one {# record} other {# records}} found at {provider}.",
+        "truncated": "Only the first {shown, plural, one {# record is} other {# records are}} shown. Refine the search to find a specific instrument."
+      },
+      "search": {
+        "label": "Search the registry",
+        "placeholder": "Name, manufacturer, owner, DOI or Handle",
+        "searching": "Searching the PID registry…",
+        "validation": {
+          "tooShort": "Enter at least {min} characters to search."
+        }
+      },
+      "searchError": "Could not search the PID registry.",
+      "selectRadioLabel": "Select record: {name}",
+      "skipped": {
+        "message": "{count, plural, one {# entry} other {# entries}} of the registry record could not be linked from the new instrument. Each is listed here with the reason.",
+        "reasons": {
+          "notAnAddressHere": "It is not the address of an item in this RSpace: <address/>",
+          "notAvailable": "The item it points at is not available to you: <address/>",
+          "otherServer": "It points at another server ({host}): <address/>"
+        },
+        "title": "Some registry entries were not imported"
+      },
+      "title": "Import Instrument from PIDINST",
+      "validation": {
+        "alreadyLinked": "This PID is already linked to instrument {globalId}.",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
+        "noSelection": "Select a record to import."
       }
     },
     "print": {
@@ -5644,6 +5733,7 @@ export default interface Resources {
     "validation": {
       "errors": {
         "allVersionsRequired": "allVersions is a required field.",
+        "archiveTypeInvalid": "archiveType must be one of xml, html or eln.",
         "archiveTypeRequired": "archiveType is a required field.",
         "authorsCollectionRange": "Authors must contain between {min} and {max} entries.",
         "authorsRequired": "Authors are required.",
@@ -6792,6 +6882,7 @@ export default interface Resources {
           "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
           "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
+          "b2instSubmitActionOtherHost": "B2INST offered a submit action on a different server, so the record was not submitted.",
           "b2instUnreachable": "B2INST could not be reached.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
@@ -6804,17 +6895,27 @@ export default interface Resources {
           "externalUpdateNotPossibleB2inst": "The instrument metadata held by {0} could not be updated because its community review has been accepted, so the record no longer has a draft open for changes. The instrument itself was saved.",
           "externalUpdateNotPossibleDataCite": "The instrument metadata held by {0} could not be updated because its identifier is no longer a draft. Publishing or republishing the identifier sends its current metadata. The instrument itself was saved.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
+          "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
+          "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
+          "pidinstAlreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
+          "pidinstImportPidRequired": "A PID is required to import an instrument.",
+          "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
+          "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
+          "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registry.",
+          "pidinstTemplateMissing": "This RSpace has no \"{0}\" template, which importing an instrument requires. Ask your system administrator to check the installation.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },
         "imageTooLarge": "Image cannot be larger than 10MB",
         "import": {
+          "csvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
           "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
+          "importIdentifierAlreadyUsed": "Import identifier {0} was already used in row {1}",
           "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",
-          "instrumentCsvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
           "instrumentTemplateIdAndTemplateInfoConflict": "Provide either ''templateId'' to use an existing instrument template or ''templateInfo'' to create a new one, but not both.",
           "instrumentUnrecognizedFieldMapping": "Unrecognized field mapping for instrument import: {0}",
+          "linkValueInvalid": "Link value ''{0}'' must be a DataCite relation type followed by a link URL on this server, for example ''IsDerivedFrom https://your-rspace/globalId/SA123v2''",
           "parentContainerGlobalIdInvalid": "Parent Container Global Id ''{0}'' is not a valid global id of an inventory container",
           "parentContainerImportIdWithGlobalId": "Parent container should be set via either 'Parent Container Import ID' or 'Parent Container Global ID', but not both at the same time",
           "parentContainerNotEditable": "Parent container with global id ''{0}'' doesn''t exist, or user has no permission to move items into it",
@@ -9811,7 +9912,7 @@ export default interface Resources {
       "apiKey": {
         "confirmPasswordLabel": "Please confirm your password",
         "docsLinkPrefix": "See <a href=\"/public/apiDocs\" target=\"_blank\">API Documentation</a>.",
-        "docsLinkSuffix": "For more examples, check out our <a href=\"https://github.com/rspace-os\" target=\"_blank\">GitHub</a>.",
+        "docsLinkSuffix": "For more examples, check out our <a href=\"https://github.com/rspace-os/api-tutorial\" target=\"_blank\">GitHub</a>.",
         "generateKeyButton": "Generate key",
         "generateWarningIntro": "This API key provides access to your account, research data, and intellectual property. If exposed or compromised:",
         "generateWarningRisk1": "Unauthorized users could access and steal your data",

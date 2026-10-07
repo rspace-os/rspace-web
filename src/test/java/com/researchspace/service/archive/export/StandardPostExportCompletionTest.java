@@ -1,5 +1,6 @@
 package com.researchspace.service.archive.export;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -105,7 +106,7 @@ public class StandardPostExportCompletionTest {
     assertNull(noResultData.getExportScope());
     assertNull(noResultData.getExportedUserOrGroupId());
     assertFalse(noResultData.isNfsLinksIncluded());
-    assertTrue(noResultData.getExportedRecords().isEmpty());
+    assertThat(noResultData.getExportedRecords()).isEmpty();
     assertNull(noResultData.getExportedNfsLinks());
 
     // add one record with nfs link
@@ -152,8 +153,8 @@ public class StandardPostExportCompletionTest {
         Long.valueOf(expCfg.getMaxNfsFileSize()), oneResultAndLinkData.getMaxNfsFileSize());
     assertEquals(
         expCfg.getExcludedNfsFileExtensions(), oneResultAndLinkData.getExcludedNfsFileExtensions());
-    assertEquals(1, oneResultAndLinkData.getExportedRecords().size());
-    assertEquals(2, oneResultAndLinkData.getExportedNfsLinks().size());
+    assertThat(oneResultAndLinkData.getExportedRecords()).hasSize(1);
+    assertThat(oneResultAndLinkData.getExportedNfsLinks()).hasSize(2);
 
     ExportedRecordData exportedRecord = oneResultAndLinkData.getExportedRecords().get(0);
     assertEquals("SD1", exportedRecord.getGlobalId());

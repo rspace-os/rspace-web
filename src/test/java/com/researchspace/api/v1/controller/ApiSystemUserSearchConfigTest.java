@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
@@ -10,11 +10,11 @@ public class ApiSystemUserSearchConfigTest {
   @Test
   public void tempUsersOnlyByDefault() {
     ApiSystemUserSearchConfig cfg = new ApiSystemUserSearchConfig();
-    assertEquals(0, cfg.toMap().size());
+    assertThat(cfg.toMap()).isEmpty();
 
     cfg.setCreatedBefore(LocalDate.now().minusDays(5));
     cfg.setLastLoginBefore(LocalDate.now().minusDays(5));
     cfg.setTempAccountsOnly(false);
-    assertEquals(3, cfg.toMap().size()); // no other options configured by default
+    assertThat(cfg.toMap()).hasSize(3); // no other options configured by default
   }
 }

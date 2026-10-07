@@ -3,7 +3,6 @@ package com.researchspace.model.dtos;
 import com.researchspace.model.User;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -14,10 +13,10 @@ import org.springframework.validation.Validator;
 @Component("CreateCloudGroupValidator")
 public class CreateCloudGroupValidator implements Validator {
 
-  private Matcher matcher;
-
   /** Valid Email pattern for creating new group */
-  public static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\\\<>' \"]+@[^\\\\<>' \"]+$");
+  // "@" is excluded from both sides so exactly one split point exists and matching stays linear
+  public static final Pattern EMAIL_PATTERN =
+      Pattern.compile("^[^\\\\<>' \"@\\r\\n]+@[^\\\\<>' \"@\\r\\n]+$");
 
   private static final int EMAIL_LENGTH = 255;
 
@@ -60,10 +59,9 @@ public class CreateCloudGroupValidator implements Validator {
   }
 
   private boolean isEmailValid(String email) {
-    if (StringUtils.isBlank(email)) {
+    if (StringUtils.isBlank(email) || email.length() >= EMAIL_LENGTH) {
       return false;
     }
-    matcher = EMAIL_PATTERN.matcher(email);
-    return matcher.matches() && email.length() < EMAIL_LENGTH;
+    return EMAIL_PATTERN.matcher(email).matches();
   }
 }

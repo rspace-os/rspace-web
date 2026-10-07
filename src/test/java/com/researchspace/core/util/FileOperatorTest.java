@@ -1,9 +1,7 @@
 package com.researchspace.core.util;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -51,7 +49,7 @@ public class FileOperatorTest {
             "a" + File.separator + "b" + File.separator + "c" + File.separator, anyFile, "xyz.pdf");
     String manualPath =
         (fileOps.getFoldOp().getBaseDir() + "/a/b/c/xyz.pdf").replaceAll("\\\\", "/");
-    assertThat(inserted.toString(), containsString(manualPath));
+    assertThat(inserted.toString()).as(inserted.toString()).contains(manualPath);
   }
 
   private void createFileOperator() {
@@ -65,16 +63,16 @@ public class FileOperatorTest {
     File outfile = newFile(fileStoreRoot, "xxxx.pdf");
     fileOps.copyFile(outfile, anyFile, false);
     assertEquals(outfile.length(), anyFile.length());
-    assertTrue(outfile.exists());
-    assertTrue(anyFile.exists());
+    assertThat(outfile).exists();
+    assertThat(anyFile).exists();
 
     // copy outfile into another file, removing the original
     File outfile2 = newFile(fileStoreRoot, "yyyy.pdf");
     fileOps.copyFile(outfile2, outfile, true);
     assertEquals(outfile2.length(), anyFile.length());
-    assertTrue(outfile2.exists());
-    assertTrue(anyFile.exists());
-    assertFalse(outfile.exists());
+    assertThat(outfile2).exists();
+    assertThat(anyFile).exists();
+    assertThat(outfile).doesNotExist();
   }
 
   @Test
@@ -86,8 +84,8 @@ public class FileOperatorTest {
     long expectedCopiedByteCount = fileOps.copyStream(outStream, fis, 0L);
     assertEquals(241366L, expectedCopiedByteCount);
     assertEquals(outfile.length(), anyFile.length());
-    assertTrue(outfile.exists());
-    assertTrue(anyFile.exists());
+    assertThat(outfile).exists();
+    assertThat(anyFile).exists();
     fis.close();
     outStream.close();
 
@@ -97,19 +95,19 @@ public class FileOperatorTest {
     FileInputStream fis2 = new FileInputStream(outfile);
     fileOps.copyStream(outStream2, fis2, 0L);
     assertEquals(outfile2.length(), anyFile.length());
-    assertTrue(outfile2.exists());
-    assertTrue(anyFile.exists());
+    assertThat(outfile2).exists();
+    assertThat(anyFile).exists();
   }
 
   @Test
   public void testRemoveFile() throws IOException {
     createFileOperator();
     File outfile = File.createTempFile("junit", null, fileStoreRoot);
-    assertTrue(outfile.exists());
+    assertThat(outfile).exists();
 
     // try delete
     fileOps.deleteFile(outfile);
-    assertFalse(outfile.exists());
+    assertThat(outfile).doesNotExist();
 
     // try delete same path again
     try {

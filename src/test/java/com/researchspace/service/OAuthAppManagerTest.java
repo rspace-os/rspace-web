@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,10 +26,10 @@ public class OAuthAppManagerTest extends SpringTransactionalTest {
     assertTrue(additionResult.isSucceeded());
 
     apps = appManager.getApps(user);
-    assertEquals(1, apps.size());
+    assertThat(apps).hasSize(1);
 
     OAuthAppInfo appInfo = additionResult.getEntity();
-    assertTrue(apps.contains(new PublicOAuthAppInfo(appInfo.getAppName(), appInfo.getClientId())));
+    assertThat(apps).contains(new PublicOAuthAppInfo(appInfo.getAppName(), appInfo.getClientId()));
 
     assertTrue(
         appManager.isClientSecretCorrect(appInfo.getClientId(), appInfo.getUnhashedClientSecret()));
@@ -38,7 +38,7 @@ public class OAuthAppManagerTest extends SpringTransactionalTest {
     assertTrue(removalResult.isSucceeded());
 
     apps = appManager.getApps(user);
-    assertEquals(0, apps.size());
+    assertThat(apps).isEmpty();
   }
 
   @Test
@@ -50,9 +50,9 @@ public class OAuthAppManagerTest extends SpringTransactionalTest {
     OAuthAppInfo app2 = appManager.addApp(user2, "newApp2").getEntity();
 
     assertFalse(appManager.removeApp(user1, app2.getClientId()).isSucceeded());
-    assertFalse(appManager.getApp(user2, app1.getClientId()).isPresent());
-    assertEquals(1, appManager.getApps(user1).size());
-    assertEquals(1, appManager.getApps(user2).size());
+    assertThat(appManager.getApp(user2, app1.getClientId())).isNotPresent();
+    assertThat(appManager.getApps(user1)).hasSize(1);
+    assertThat(appManager.getApps(user2)).hasSize(1);
   }
 
   @Test

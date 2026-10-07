@@ -5,9 +5,8 @@ import static com.researchspace.testutils.TestFactory.createAnyGroup;
 import static com.researchspace.testutils.TestFactory.createAnyMessageForRecipientOfType;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static com.researchspace.testutils.TestFactory.createAnyUserWithRole;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.CommunicationDao;
@@ -69,14 +68,12 @@ public class PostPiChangeHandlerTest {
   }
 
   private void assertNewPiHasWitnessRequest(User newPi, MessageOrRequest mor) {
-    assertTrue(
-        mor.getRecipients().stream()
-            .anyMatch(ct -> ct.getRecipient().getUsername().equals(newPi.getUsername())));
+    assertThat(mor.getRecipients())
+        .anyMatch(ct -> ct.getRecipient().getUsername().equals(newPi.getUsername()));
   }
 
   private void assertOldPiNoLongerHasWitnessRequest(User oldPi, MessageOrRequest mor) {
-    assertFalse(
-        mor.getRecipients().stream()
-            .anyMatch(ct -> ct.getRecipient().getUsername().equals(oldPi.getUsername())));
+    assertThat(mor.getRecipients())
+        .noneMatch(ct -> ct.getRecipient().getUsername().equals(oldPi.getUsername()));
   }
 }

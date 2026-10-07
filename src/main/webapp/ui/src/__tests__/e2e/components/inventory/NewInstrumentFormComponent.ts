@@ -9,7 +9,18 @@ export function newInstrumentFormComponent(page: Page) {
     ...delegateToForm(form),
 
     async selectTemplate(name: string): Promise<void> {
-      await new SearchableResultsTable(form.root).select(name);
+      const prefix = "/api/inventory/v1/instrumentTemplates/";
+      await Promise.all([
+        page.waitForResponse((res) => {
+          const { pathname } = new URL(res.url());
+          return (
+            res.request().method() === "GET" &&
+            pathname.startsWith(prefix) &&
+            !pathname.slice(prefix.length).includes("/")
+          );
+        }),
+        new SearchableResultsTable(form.root).select(name),
+      ]);
     },
   };
 }

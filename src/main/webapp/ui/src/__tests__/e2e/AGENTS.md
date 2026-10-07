@@ -98,6 +98,21 @@ Authentication is provided by each project's `storageState`. Use
 `pageLogin`/`pageWorkspace` directly only when login is the behaviour under
 test or when a deliberately unauthenticated context is required.
 
+## Must: deleting a dynamic user leaves a dangling reference unless you release it
+
+`users.deleteUser(username)` removes the account from RSpace, but `clientSysadmin` still holds its
+id and will try to disable it at teardown — a disable-by-id against a user that's already gone,
+which the backend answers with an uncaught 500, not a not-found. Delete and release together:
+
+```ts
+import { deleteDynamicUser } from "@/__tests__/e2e/deleteDynamicUser";
+await deleteDynamicUser(users, clientSysadmin, username); // deletes + releases the id, together
+```
+
+Teardown cleanup failures aren't just logged anymore, either: an unexpected one now **fails the
+test**, even one that otherwise passed. Deliberate — a silently-swallowed cleanup failure used to
+let leaked/broken accounts pass CI invisibly.
+
 ## Must: import style — relative within a folder, `@/` across feature folders
 
 `pageObjects/` and `components/` are grouped by feature subfolder. Use a

@@ -14,6 +14,7 @@ import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
@@ -128,6 +129,19 @@ public class InstrumentTemplateDaoHibernateImpl
               .uniqueResult();
     }
     return defaultTemplateOwner;
+  }
+
+  @Override
+  public Optional<InstrumentTemplate> findLockedTemplateByName(String name) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from InstrumentTemplate where editInfo.name=:name and editable = false"
+                + " and deleted = false order by id",
+            InstrumentTemplate.class)
+        .setParameter("name", name)
+        .setMaxResults(1)
+        .uniqueResultOptional();
   }
 
   @Override

@@ -1,9 +1,8 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.webapp.controller.AuditTrailSearchResultCsvGenerator.ATTACHMENT_FILENAME_RSPACE_AUDIT_TRAIL_CSV;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -59,7 +58,7 @@ public class AuditTrailControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     Map data = parseJSONObjectFromResponseStream(result);
-    assertTrue(data.keySet().contains("data"));
+    assertThat(data).containsKey("data");
   }
 
   @Test
@@ -83,7 +82,7 @@ public class AuditTrailControllerMVCIT extends MVCTestBase {
     String csv = result.getResponse().getContentAsString();
     String[] rows = csv.split("\\n");
     // 1 row per event, plus header plus comment line
-    assertEquals(TOTAL_HITS + 2, rows.length);
+    assertThat(rows).hasSize(TOTAL_HITS + 2);
   }
 
   @Test

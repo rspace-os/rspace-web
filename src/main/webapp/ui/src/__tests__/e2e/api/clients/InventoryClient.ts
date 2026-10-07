@@ -66,6 +66,12 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
+  async getSubSample(subSampleId: number): Promise<ApiInventorySubSample> {
+    return this.requestJson("get", `/api/inventory/v1/subSamples/${subSampleId}`, {
+      action: "getInventorySubSample",
+    });
+  }
+
   async moveSubSample(subSampleId: number, move: ApiInventorySubSampleMoveRequest): Promise<ApiInventorySubSample> {
     return this.requestJson("put", `/api/inventory/v1/subSamples/${subSampleId}`, {
       data: move,
@@ -87,6 +93,12 @@ export class InventoryClient extends BaseApiClient {
     return this.requestJson("post", `/api/inventory/v1/baskets/${basketId}/addItems`, {
       data: { globalIds },
       action: "addItemsToInventoryBasket",
+    });
+  }
+
+  async deleteBasket(basketId: number): Promise<void> {
+    await this.requestVoid("delete", `/api/inventory/v1/baskets/${basketId}`, {
+      action: "deleteInventoryBasket",
     });
   }
 

@@ -1,5 +1,6 @@
 package com.researchspace.webapp.filter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,11 +85,11 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
     assertTrue(
         resp.containsHeader("Location"),
         "should be redirected to maintenance, but no location header");
-    assertTrue(
-        resp.getHeaderValue("Location")
-            .toString()
-            .contains(MaintenanceLoginAuthorizer.REDIRECT_FOR_MAINTENANCE),
-        "should be redirected to maintenance, but location was " + resp.getHeaderValue("Location"));
+    assertThat(resp.getHeaderValue("Location").toString())
+        .as(
+            "should be redirected to maintenance, but location was "
+                + resp.getHeaderValue("Location"))
+        .contains(MaintenanceLoginAuthorizer.REDIRECT_FOR_MAINTENANCE);
 
     Subject subject = SecurityUtils.getSubject();
     assertFalse(subject.isAuthenticated());
@@ -116,11 +117,11 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
     assertTrue(
         resp.containsHeader("Location"),
         "should be redirected to maintenance, but no location header");
-    assertTrue(
-        resp.getHeaderValue("Location")
-            .toString()
-            .contains(MaintenanceLoginAuthorizer.REDIRECT_FOR_MAINTENANCE),
-        "should be redirected to maintenance, but location was " + resp.getHeaderValue("Location"));
+    assertThat(resp.getHeaderValue("Location").toString())
+        .as(
+            "should be redirected to maintenance, but location was "
+                + resp.getHeaderValue("Location"))
+        .contains(MaintenanceLoginAuthorizer.REDIRECT_FOR_MAINTENANCE);
 
     initHttpReqAndResp();
     req.addParameter(MaintenanceLoginAuthorizer.MAINTENANCE_LOGIN_REQUEST_PARAM, "");

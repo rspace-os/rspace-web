@@ -42,6 +42,13 @@ export class NotebookPage extends BasePage {
     return editor;
   }
 
+  async addEntryNamed(name: string): Promise<void> {
+    const editor = await this.addEntry();
+    await editor.header.rename(name);
+    await editor.editToolbar.saveAndClose();
+    await this.isLoaded();
+  }
+
   async openRecordInfo(): Promise<RecordInfoDialog> {
     return this.header.openRecordInfo();
   }

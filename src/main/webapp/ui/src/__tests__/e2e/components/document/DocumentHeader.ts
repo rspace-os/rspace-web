@@ -24,6 +24,13 @@ export class DocumentHeader {
     return this.name.innerText();
   }
 
+  async rename(newName: string): Promise<void> {
+    await this.editNameButton.click();
+    await this.page.getByRole("textbox", { name: "Name:" }).fill(newName);
+    await this.page.keyboard.press("Enter");
+    await this.name.filter({ hasText: newName }).waitFor({ state: "visible" });
+  }
+
   async getUniqueId(): Promise<string> {
     return this.uniqueIdLink.innerText();
   }

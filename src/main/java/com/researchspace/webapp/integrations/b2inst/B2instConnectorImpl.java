@@ -5,12 +5,14 @@ import com.researchspace.b2inst.model.request.B2instReviewReceiver;
 import com.researchspace.b2inst.model.request.B2instReviewRequest;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import jakarta.annotation.PostConstruct;
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,8 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -66,6 +70,7 @@ public class B2instConnectorImpl implements B2instConnector {
 
   @PostConstruct
   @Override
+  @CacheEvict(value = "pidinstLookupResults", allEntries = true)
   public void reloadClient() {
     Map<String, SystemPropertyValue> props = sysPropertyMgr.getAllSysadminPropertiesAsMap();
     enabled = Boolean.parseBoolean(getProperty(props, SystemPropertyName.PIDINST_B2INST_ENABLED));
@@ -177,6 +182,16 @@ public class B2instConnectorImpl implements B2instConnector {
         throw new B2instConnectionException(
             "B2INST review did not return a submit action for record " + rid,
             messages.getMessage("errors.inventory.identifier.b2instNoSubmitAction"));
+      }
+      if (!isOnConfiguredServer(submitUrl)) {
+        throw new B2instConnectionException(
+            "B2INST submit action for record "
+                + rid
+                + " points away from "
+                + serverUrl
+                + ": "
+                + submitUrl,
+            messages.getMessage("errors.inventory.identifier.b2instSubmitActionOtherHost"));
       }
       return restTemplate.postForObject(submitUrl, emptyJsonBody(), B2instRequestResponse.class);
     } catch (RestClientException e) {
@@ -359,6 +374,37 @@ public class B2instConnectorImpl implements B2instConnector {
     return getRecord(recordUrl(rid, "draft"), rid);
   }
 
+  @Override
+  @Cacheable(value = "pidinstLookupResults", key = "'b2inst:' + #query + ':' + #size")
+  public B2instSearchResult searchRecords(String query, int size) {
+    // /api/records is the PUBLISHED index, which is the whole of what may be imported: the
+    // account's own drafts live under /api/user/records and are deliberately not searched
+    /*
+     * A URI, not a String. RestTemplate treats a String as a URI template and encodes it again, so
+     * the percent sequences produced by encode() were themselves encoded and a space reached
+     * B2INST as %2520 - every multi-word search looked for a literal "a%20b". Handing it an
+     * already-built URI skips that second pass. The encoding still holds the safety property:
+     * Spring's QUERY_PARAM type escapes '=' and '&', so a query cannot add or override a
+     * parameter, and the host comes only from the pidinst.b2inst.* sysadmin properties.
+     */
+    URI url =
+        UriComponentsBuilder.fromUriString(apiBase())
+            .pathSegment("records")
+            .queryParam("q", query)
+            .queryParam("size", size)
+            .build()
+            .encode()
+            .toUri();
+    try {
+      B2instSearchResult result = restTemplate.getForObject(url, B2instSearchResult.class);
+      return result == null ? new B2instSearchResult() : result;
+    } catch (RestClientException e) {
+      String reason = describeFailure(e);
+      throw new B2instConnectionException(
+          "Error searching B2INST records: " + developerDetail(e), reason, e);
+    }
+  }
+
   private Optional<B2instDraftRecord> getRecord(String url, String rid) {
     try {
       return Optional.ofNullable(restTemplate.getForObject(url, B2instDraftRecord.class));
@@ -394,6 +440,21 @@ public class B2instConnectorImpl implements B2instConnector {
       return null;
     }
     return created.getLinks().getActions().getSubmit();
+  }
+
+  /**
+   * The bearer token goes on every request this client makes, so a link taken from a B2INST
+   * response is only followed when its scheme and authority (user info, host, port) are the
+   * configured server's. A plain prefix check would accept {@code
+   * https://<server>.attacker.example}.
+   */
+  private boolean isOnConfiguredServer(String url) {
+    try {
+      return URI.create(url).resolve("/").equals(URI.create(serverUrl).resolve("/"));
+    } catch (IllegalArgumentException e) {
+      log.warn("B2INST submit action is not a usable URL: {}", url, e);
+      return false;
+    }
   }
 
   private String apiBase() {

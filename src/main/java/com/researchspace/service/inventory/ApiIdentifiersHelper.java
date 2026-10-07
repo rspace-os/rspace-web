@@ -114,7 +114,17 @@ public class ApiIdentifiersHelper {
     }
     DigitalObjectIdentifier newDoi =
         new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());
-    addPublicLandingPageUrl(newDoi, parentInvRec.getGlobalIdentifier());
+    /*
+     * Only for an identifier RSpace actually registered. A linked one rides this path purely so
+     * the attach code persists it, and findPublishedItemVersionByPublicLink deliberately serves no
+     * public page for it (ADR 0009), so a LOCAL_URL here would surface over the API as the
+     * identifier's url and resolve to a permanent 404. The suffix is still generated and stored,
+     * because the registered path's no-blank-suffix guard runs before this and the column is
+     * populated for every identifier.
+     */
+    if (!apiIdentifier.isLinked()) {
+      addPublicLandingPageUrl(newDoi, parentInvRec.getGlobalIdentifier());
+    }
     newDoi.setOwner(parentInvRec.getOwner());
     apiIdentifier.applyChangesToDatabaseDOI(newDoi);
     parentInvRec.addIdentifier(newDoi);
@@ -128,6 +138,10 @@ public class ApiIdentifiersHelper {
     parentInvRec.addIdentifier(existingDoi);
   }
 
+  /**
+   * Needs no linked guard, unlike the register path above: its only production caller is bulk IGSN
+   * allocation, which builds every DTO itself, and a linked identifier cannot reach it.
+   */
   public DigitalObjectIdentifier createDoiToSave(ApiInventoryDOI apiIdentifier, User creator) {
     DigitalObjectIdentifier newDoi =
         new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());

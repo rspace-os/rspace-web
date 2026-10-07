@@ -1,8 +1,8 @@
 package com.researchspace.service.archive.export;
 
 import static com.researchspace.core.testutil.FileTestUtils.assertFolderHasFile;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 
 import com.researchspace.dao.IconImgDao;
@@ -76,12 +76,11 @@ public class FormIconWriterTest {
     icon.setId(ICON_ID);
     icon.setImgType("png");
     assertEquals("formIcon_1234.png", writer.getFormIconFileName(icon, 1234L));
-    assertTrue(writer.getFormIconFileName(icon, 1234L).matches(FormIconWriter.FORM_ICON_REGEX));
+    assertThat(writer.getFormIconFileName(icon, 1234L)).matches(FormIconWriter.FORM_ICON_REGEX);
   }
 
   private void assertNFilesInExportFolder(int expectedFileCount) {
-    assertEquals(
-        expectedFileCount,
-        FileUtils.listFiles(tempFolder, FileFilterUtils.trueFileFilter(), null).size());
+    assertThat(FileUtils.listFiles(tempFolder, FileFilterUtils.trueFileFilter(), null))
+        .hasSize(expectedFileCount);
   }
 }

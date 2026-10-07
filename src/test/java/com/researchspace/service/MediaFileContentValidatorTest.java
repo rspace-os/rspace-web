@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,21 +29,19 @@ class MediaFileContentValidatorTest {
   @ParameterizedTest
   @ValueSource(strings = {"image.jpg", "image.jpeg", "image.png", "image.gif", "IMAGE.JPG"})
   void rejectsNonImageContentWithImageExtension(String fileName) {
+    ByteArrayInputStream content = new ByteArrayInputStream(JSP_CONTENT);
     assertThrows(
         MediaContentMismatchException.class,
-        () ->
-            MediaFileContentValidator.verifyContentMatchesExtension(
-                new ByteArrayInputStream(JSP_CONTENT), fileName));
+        () -> MediaFileContentValidator.verifyContentMatchesExtension(content, fileName));
   }
 
   @Test
   void rejectsUnrecognisableContentWithImageExtension() {
     byte[] noMagicBytes = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    ByteArrayInputStream content = new ByteArrayInputStream(noMagicBytes);
     assertThrows(
         MediaContentMismatchException.class,
-        () ->
-            MediaFileContentValidator.verifyContentMatchesExtension(
-                new ByteArrayInputStream(noMagicBytes), "image.jpg"));
+        () -> MediaFileContentValidator.verifyContentMatchesExtension(content, "image.jpg"));
   }
 
   @ParameterizedTest
@@ -56,11 +54,10 @@ class MediaFileContentValidatorTest {
   void rejectsImageContentUnderADifferentImageExtension(String fixture, String claimedName)
       throws IOException {
     byte[] realImage = RSpaceTestUtils.getResourceAsByteArray(fixture);
+    ByteArrayInputStream content = new ByteArrayInputStream(realImage);
     assertThrows(
         MediaContentMismatchException.class,
-        () ->
-            MediaFileContentValidator.verifyContentMatchesExtension(
-                new ByteArrayInputStream(realImage), claimedName));
+        () -> MediaFileContentValidator.verifyContentMatchesExtension(content, claimedName));
   }
 
   /** jpg/jpeg and tif/tiff name the same format, so those spellings must be interchangeable. */
@@ -76,7 +73,7 @@ class MediaFileContentValidatorTest {
     InputStream validated =
         MediaFileContentValidator.verifyContentMatchesExtension(
             new ByteArrayInputStream(realImage), claimedName);
-    assertArrayEquals(realImage, IOUtils.toByteArray(validated));
+    assertThat(IOUtils.toByteArray(validated)).containsExactly(realImage);
   }
 
   @ParameterizedTest
@@ -87,7 +84,7 @@ class MediaFileContentValidatorTest {
     try (InputStream validated =
         MediaFileContentValidator.verifyContentMatchesExtension(
             RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder(fileName), fileName)) {
-      assertArrayEquals(expected, IOUtils.toByteArray(validated));
+      assertThat(IOUtils.toByteArray(validated)).containsExactly(expected);
     }
   }
 
@@ -117,7 +114,7 @@ class MediaFileContentValidatorTest {
     InputStream validated =
         MediaFileContentValidator.verifyContentMatchesExtension(
             new ByteArrayInputStream(bmp.toByteArray()), "shape.bmp");
-    assertArrayEquals(bmp.toByteArray(), IOUtils.toByteArray(validated));
+    assertThat(IOUtils.toByteArray(validated)).containsExactly(bmp.toByteArray());
   }
 
   @ParameterizedTest

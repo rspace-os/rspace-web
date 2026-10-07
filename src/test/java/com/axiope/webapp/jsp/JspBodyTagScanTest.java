@@ -1,6 +1,6 @@
 package com.axiope.webapp.jsp;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,10 +47,12 @@ class JspBodyTagScanTest {
                 }
               });
     }
-    assertTrue(
-        offenders.isEmpty(),
-        "JSPs with duplicated or unpaired <body>/</body> tags (breaks SiteMesh 3 body extraction): "
-            + offenders);
+    assertThat(offenders)
+        .as(
+            "JSPs with duplicated or unpaired <body>/</body> tags (breaks SiteMesh 3 body"
+                + " extraction): "
+                + offenders)
+        .isEmpty();
   }
 
   private static String read(Path file) {

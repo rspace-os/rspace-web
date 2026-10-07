@@ -1,5 +1,6 @@
 package com.researchspace.model.permissions;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -9,12 +10,12 @@ public class PermissionTestUtils {
   public static void assertPermissionsAreEquivalent(
       ConstraintBasedPermission p1, ConstraintBasedPermission p2) {
     if (p1.getIdConstraint() != null) {
-      assertTrue(p1.getIdConstraint().getId().size() == p2.getIdConstraint().getId().size());
+      assertThat(p1.getIdConstraint().getId()).hasSize(p2.getIdConstraint().getId().size());
       assertTrue(p1.getIdConstraint().getString().equals(p2.getIdConstraint().getString()));
     }
-    assertTrue(p1.getPropertyConstraints().size() == p2.getPropertyConstraints().size());
-    assertTrue(p1.getActions().size() == p2.getActions().size());
-    assertTrue(p1.getLocationConstraints().size() == p2.getLocationConstraints().size());
+    assertThat(p1.getPropertyConstraints()).hasSize(p2.getPropertyConstraints().size());
+    assertThat(p1.getActions()).hasSize(p2.getActions().size());
+    assertThat(p1.getLocationConstraints()).hasSize(p2.getLocationConstraints().size());
 
     assertEquals(p1.getDomain(), p2.getDomain());
     assertEquals(p1.getGroupConstraint(), p2.getGroupConstraint());

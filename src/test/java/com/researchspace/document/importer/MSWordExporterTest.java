@@ -1,8 +1,8 @@
 package com.researchspace.document.importer;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalStateExceptionThrown;
 import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -64,8 +64,10 @@ public class MSWordExporterTest {
     Mockito.verify(creator, Mockito.never())
         .create(
             any(ContentProvider.class), eq(targetFolder), any(Folder.class), eq(docName), eq(any));
-    assertIllegalStateExceptionThrown(
-        () -> wordImporter.create(fis, any, targetFolder, null, inputFile.getName()));
+    String inputFileName = inputFile.getName();
+    assertThrows(
+        IllegalStateException.class,
+        () -> wordImporter.create(fis, any, targetFolder, null, inputFileName));
   }
 
   @Test
@@ -90,7 +92,8 @@ public class MSWordExporterTest {
         .thenReturn(result);
 
     try (FileInputStream fis = new FileInputStream(inputFile)) {
-      assertIllegalStateExceptionThrown(
+      assertThrows(
+          IllegalStateException.class,
           () -> wordImporter.replace(fis, any, 123L, inputFile.getName()));
     }
     verify(creator, never()).replace(any(Long.class), any(ContentProvider.class), any(), any());

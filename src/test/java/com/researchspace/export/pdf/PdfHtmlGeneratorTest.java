@@ -1,8 +1,8 @@
 package com.researchspace.export.pdf;
 
 import static com.researchspace.export.pdf.PdfHtmlGenerator.MAX_TITLE_WIDTH;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -116,7 +116,7 @@ public class PdfHtmlGeneratorTest {
         ReflectionTestUtils.invokeMethod(
             pdfHtmlGenerator, "makeHtmlStyleElement", "A4", false, "", Locale.ENGLISH);
 
-    Assertions.assertTrue(styles.contains("content: 'L\\'utilisateur: ' counter(page);"));
+    assertThat(styles).contains("content: 'L\\'utilisateur: ' counter(page);");
   }
 
   @Test
@@ -138,7 +138,7 @@ public class PdfHtmlGeneratorTest {
     // output contains the shortened title with ellipsis but not the original one
     Assertions.assertTrue(
         htmlElementContains(processedHtml, "div.runningHeaderCenter", shortenedTitle));
-    Assertions.assertFalse(processedHtml.contains(sixtyCharacterTitle));
+    assertThat(processedHtml).doesNotContain(sixtyCharacterTitle);
   }
 
   @Test
@@ -448,15 +448,16 @@ public class PdfHtmlGeneratorTest {
     assertFalse(
         processedHtml.contains("&∅∈∌") || processedHtml.contains("&#x3"),
         "unexpected: " + processedHtml);
-    assertTrue(
-        processedHtml.contains("name with non-ascii &amp;</span>"), "unexpected: " + processedHtml);
-    assertTrue(
-        processedHtml.contains("<span style=\"font-family: noto sans math;\">∅∈∌ </span>"),
-        "unexpected: " + processedHtml);
-    assertTrue(processedHtml.contains("&amp;#x3"), "unexpected: " + processedHtml);
+    assertThat(processedHtml)
+        .as("unexpected: " + processedHtml)
+        .contains("name with non-ascii &amp;</span>");
+    assertThat(processedHtml)
+        .as("unexpected: " + processedHtml)
+        .contains("<span style=\"font-family: noto sans math;\">∅∈∌ </span>");
+    assertThat(processedHtml).as("unexpected: " + processedHtml).contains("&amp;#x3");
     // verify owner name chars converted
-    assertFalse(processedHtml.contains("Dev&Ops"), "unexpected: " + processedHtml);
-    assertTrue(processedHtml.contains("Dev&amp;Ops"), "unexpected: " + processedHtml);
+    assertThat(processedHtml).as("unexpected: " + processedHtml).doesNotContain("Dev&Ops");
+    assertThat(processedHtml).as("unexpected: " + processedHtml).contains("Dev&amp;Ops");
   }
 
   private List<ArchivalNfsFile> makeArchiveFileList() {

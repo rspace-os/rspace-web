@@ -13,8 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
@@ -49,13 +47,6 @@ public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
 
     protected ResponseEntity<String> doSendMessage(String jsonMessage, URI uri) {
       return super.doSendMessage(jsonMessage, uri);
-    }
-
-    @Override
-    protected HttpHeaders createPostHeaders() {
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      return headers;
     }
 
     @Override

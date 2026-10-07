@@ -1,5 +1,6 @@
 package com.researchspace.model.audittrail;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.core.util.BasicPaginationCriteria;
@@ -44,7 +45,7 @@ public class AuditTrailHistoricalEventVisitorTest {
     auditTestObject = new AuditTrailTestObjectSubClass();
     GenericEvent event = new GenericEvent(subject, auditTestObject, AuditAction.CREATE);
     event.accept(visitor);
-    Assertions.assertEquals(hData, visitor.getHistoryData().get(0));
+    assertThat(visitor.getHistoryData()).element(0).isEqualTo(hData);
   }
 
   @Test
@@ -56,7 +57,7 @@ public class AuditTrailHistoricalEventVisitorTest {
     }
     GenericEvent event = new GenericEvent(subject, delegator, AuditAction.CREATE);
     event.accept(visitor);
-    Assertions.assertEquals(NUM_OBJECTS, visitor.getHistoryData().size());
+    assertThat(visitor.getHistoryData()).hasSize(NUM_OBJECTS);
   }
 
   @Test
@@ -80,7 +81,7 @@ public class AuditTrailHistoricalEventVisitorTest {
             subject.getUniqueName());
     GenericEvent event = new GenericEvent(subject, auditTestObject, AuditAction.CREATE);
     event.accept(visitor);
-    Assertions.assertEquals(expectedhData, visitor.getHistoryData().get(0));
+    assertThat(visitor.getHistoryData()).element(0).isEqualTo(expectedhData);
   }
 
   @Test
@@ -95,7 +96,7 @@ public class AuditTrailHistoricalEventVisitorTest {
     // data  field will be null, as it is a class argument.
     GenericEvent event = new GenericEvent(subject, auditTestObject.getClass(), AuditAction.CREATE);
     event.accept(visitor);
-    Assertions.assertEquals(expectedhData, visitor.getHistoryData().get(0));
+    assertThat(visitor.getHistoryData()).element(0).isEqualTo(expectedhData);
   }
 
   @Test
@@ -104,7 +105,7 @@ public class AuditTrailHistoricalEventVisitorTest {
 
     GenericEvent event = new GenericEvent(subject, auditTestObject, AuditAction.CREATE);
     event.accept(visitor);
-    Assertions.assertEquals(hData, visitor.getHistoryData().get(0));
+    assertThat(visitor.getHistoryData()).element(0).isEqualTo(hData);
   }
 
   @Test
@@ -120,11 +121,11 @@ public class AuditTrailHistoricalEventVisitorTest {
     NotAnnotatedForAuditing object = new NotAnnotatedForAuditing();
     GenericEvent event = new GenericEvent(subject, object, AuditAction.CREATE);
     event.accept(visitor);
-    Assertions.assertEquals(hData, visitor.getHistoryData().get(0));
+    assertThat(visitor.getHistoryData()).element(0).isEqualTo(hData);
     // and works when declared as object, as well
     event = new GenericEvent(subject, object, AuditAction.CREATE);
     event.accept(visitor);
-    Assertions.assertEquals(hData, visitor.getHistoryData().get(0));
+    assertThat(visitor.getHistoryData()).element(0).isEqualTo(hData);
   }
 
   @Test
@@ -140,7 +141,7 @@ public class AuditTrailHistoricalEventVisitorTest {
             subject.getFullName(),
             new AuditData(),
             subject.getUniqueName());
-    Assertions.assertEquals(EXPECTEDlogged, visitor.getHistoryData().get(0));
+    assertThat(visitor.getHistoryData()).element(0).isEqualTo(EXPECTEDlogged);
   }
 
   @Test
@@ -164,7 +165,7 @@ public class AuditTrailHistoricalEventVisitorTest {
     GenericEvent event = new GenericEvent(subject, complex, AuditAction.CREATE);
     event.accept(visitor);
     String json = visitor.getHistoryData().get(0).getData().toJson();
-    Assertions.assertTrue(json.contains("\"id\":2"));
+    assertThat(json).contains("\"id\":2");
   }
 
   class AuditTrailTestObjectSubClass extends AuditTrailTestObject {}

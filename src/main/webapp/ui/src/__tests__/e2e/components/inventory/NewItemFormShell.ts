@@ -42,9 +42,24 @@ export class NewItemFormShell {
     return await this.saveButton.isEnabled();
   }
 
+  // Save button detaches before the unsaved-changes guard actually clears -- that waits on
+  // a GET re-fetch after edit-mode exit. Navigating too fast trips a spurious "Leave the
+  // editor?" prompt, so this also waits for that re-fetch.
   async save(): Promise<void> {
+    const refetchResponse = this.page.waitForResponse((r) => {
+      if (r.request().method() !== "GET") return false;
+      const segments = new URL(r.url()).pathname.split("/");
+      const [entity, id] = segments.slice(-2);
+      return (
+        segments.slice(0, -2).join("/") === "/api/inventory/v1" && !!entity && !!id && Number.isInteger(Number(id))
+      );
+    });
     await this.saveButton.click();
     await this.saveButton.waitFor({ state: "detached" });
+    const response = await refetchResponse;
+    if (!response.ok()) {
+      throw new Error(`Post-save re-fetch failed: ${response.status()} ${response.statusText()}`);
+    }
   }
 
   customFields(): CustomFieldsEditor {

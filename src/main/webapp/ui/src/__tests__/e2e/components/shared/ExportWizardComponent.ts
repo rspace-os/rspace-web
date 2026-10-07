@@ -96,9 +96,7 @@ export class ExportWizardComponent {
   }
 
   async selectLinkedDocumentsDepth(depth: LinkedDocumentsDepth): Promise<void> {
-    await this.root
-      .getByRole("combobox", { name: "Should linked RSpace documents be included in export?", exact: true })
-      .click();
+    await this.root.locator('[data-test-id="include-links"]').getByRole("combobox").click();
     await this.root.page().getByRole("option", { name: LINKED_DOCUMENTS_OPTION_TEXT[depth] }).click();
   }
 

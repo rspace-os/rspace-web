@@ -1,9 +1,9 @@
 package com.researchspace.service.archive.export;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.archive.ArchivalField;
@@ -58,8 +58,8 @@ public class RsChemElementFieldExporterTest {
 
     final int initRecordFolderContentLength = archiveRecordFolder.listFiles().length;
     String replacementUrl = chemExporter.getReplacementUrl(context, chem);
-    assertTrue(replacementUrl.matches("chem(.*)\\.png"));
-    assertEquals(initRecordFolderContentLength + 1, archiveRecordFolder.listFiles().length);
+    assertThat(replacementUrl).matches("chem(.*)\\.png");
+    assertThat(archiveRecordFolder.listFiles()).hasSize(initRecordFolderContentLength + 1);
 
     chemExporter.createFieldArchiveObject(chem, replacementUrl, context);
     ArchivalGalleryMetadata archivalChem = archiveField.getChemElementMeta().get(0);
@@ -90,17 +90,17 @@ public class RsChemElementFieldExporterTest {
 
     final int initRecordFolderContentLength = archiveRecordFolder.listFiles().length;
     String replacementUrl = chemExporter.getReplacementUrl(context, chem);
-    assertTrue(replacementUrl.matches("chem(.*)\\.png"));
+    assertThat(replacementUrl).matches("chem(.*)\\.png");
 
     // verify two images are created in archive folder added
-    assertEquals(initRecordFolderContentLength + 2, archiveRecordFolder.listFiles().length);
+    assertThat(archiveRecordFolder.listFiles()).hasSize(initRecordFolderContentLength + 2);
     File smallImageInArchive = new File(archiveRecordFolder, replacementUrl);
-    assertTrue(smallImageInArchive.exists());
-    assertEquals(smallImageBytes.length, smallImageInArchive.length());
+    assertThat(smallImageInArchive).exists();
+    assertThat(smallImageInArchive).hasSize(smallImageBytes.length);
     String largeImageFileName = chemExporter.getLargePreviewUrlForReplacementUrl(replacementUrl);
     File largeImageInArchive = new File(archiveRecordFolder, largeImageFileName);
-    assertTrue(largeImageInArchive.exists());
-    assertEquals(largeImageBytes.length, largeImageInArchive.length());
+    assertThat(largeImageInArchive).exists();
+    assertThat(largeImageInArchive).hasSize(largeImageBytes.length);
 
     chemExporter.createFieldArchiveObject(chem, replacementUrl, context);
     ArchivalGalleryMetadata archivalChem = archiveField.getChemElementMeta().get(0);

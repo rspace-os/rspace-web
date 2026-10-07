@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
@@ -164,7 +164,7 @@ public class PubchemSearchApiControllerTest {
         (List<ChemicalImportSearchResult>) response.getBody();
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertTrue(responseBody.isEmpty());
+    assertThat(responseBody).isEmpty();
   }
 
   @Test

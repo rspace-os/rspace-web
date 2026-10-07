@@ -85,7 +85,13 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
     RESOURCE_TYPE_GENERAL,
     LOCAL_URL,
     PUBLIC_URL,
-    PROVIDER_URL
+    PROVIDER_URL,
+    /**
+     * Where the identifier was minted. Absent for every identifier RSpace registered itself; {@link
+     * DigitalObjectIdentifier#ORIGIN_EXTERNAL} for a linked identifier, a PID another party minted
+     * that an instrument import attached (RSDEV-1326, ADR 0009). Read through {@link #isLinked()}.
+     */
+    ORIGIN
   }
 
   public enum IdentifierOtherListProperty {
@@ -210,6 +216,25 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
   @Transient
   public boolean isAssociated() {
     return getInventoryRecord() != null;
+  }
+
+  /** The {@link IdentifierOtherProperty#ORIGIN} value of a linked identifier. */
+  public static final String ORIGIN_EXTERNAL = "EXTERNAL";
+
+  /**
+   * Whether this is a linked identifier: a PID minted outside RSpace and attached to an instrument
+   * by an import. RSpace owns nothing on the provider side for it, so every flow that writes to the
+   * provider, or serves a public page for the identifier, checks this first (CONTEXT.md, "Linked
+   * identifier"; ADR 0009).
+   */
+  @Transient
+  public boolean isLinked() {
+    return ORIGIN_EXTERNAL.equals(getOtherData(IdentifierOtherProperty.ORIGIN));
+  }
+
+  /** Marks a transient identifier as linked. Only the import path, via the DTO, calls this. */
+  public void markLinked() {
+    addOtherData(IdentifierOtherProperty.ORIGIN, ORIGIN_EXTERNAL);
   }
 
   @Transient

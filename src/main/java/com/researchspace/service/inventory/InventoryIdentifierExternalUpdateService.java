@@ -253,8 +253,10 @@ public class InventoryIdentifierExternalUpdateService {
    * a failure sentence on every later save of every instrument still holding a draft.
    */
   private boolean isPushable(ApiInventoryDOI doi) {
+    // a linked identifier is a PID another party minted: RSpace holds no provider record to update
     return isNotBlank(doi.getDoi())
         && isNotBlank(doi.getState())
+        && !doi.isLinked()
         && isEnabledPidinstProvider(typeOf(doi));
   }
 

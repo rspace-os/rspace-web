@@ -1,6 +1,6 @@
 package com.researchspace.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.jupiter.api.Test;
@@ -12,11 +12,11 @@ public class DBIntegrityDAOTest extends SpringTransactionalTest {
 
   @Test
   public void testGetOrphanedRecords() {
-    assertEquals(0, dao.getOrphanedRecords().size());
+    assertThat(dao.getOrphanedRecords()).isEmpty();
   }
 
   @Test
   public void testGetTemporaryFavouriteDocs() {
-    assertEquals(0, dao.getTemporaryFavouriteDocs().size());
+    assertThat(dao.getTemporaryFavouriteDocs()).isEmpty();
   }
 }

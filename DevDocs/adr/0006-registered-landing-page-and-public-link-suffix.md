@@ -154,6 +154,14 @@ address with the provider.
   but it is still the user's value, so it is neither overwritten nor cleared.
   The substitution is logged at WARN, since the field goes on showing their text
   and nothing else would tell them.
+- Omitting LandingPage is worse than "a curator may mention it": B2INST enforces
+  it. Verified on b2inst-test (InvenioRDM 13.0) on 2026-09-09 while testing
+  something else — accepting a community submission without it answers **HTTP
+  400** with `metadata.LandingPage`: "Landing Page is required for PIDINST
+  compliance." The record therefore cannot be published at all, rather than
+  being published with a property missing. That confirms the premise of decision
+  2 and makes the WARN on omission (a deployment with no server URL and no typed
+  value) the only warning an operator will get before publication fails.
 - Because a legacy auto-filled value reads as empty, registering overwrites it.
   A user who deliberately typed some RSpace's `/globalId/<same id>` address
   loses it. Accepted for the same reason as in item 2: an address needing a
@@ -165,3 +173,9 @@ address with the provider.
   generating the suffix up front.
 - `DigitalObjectIdentifier` lives in rspace-core-model, so the constructor
   change rides a core-model release and a pinned-version bump here.
+- The page also stops being served at the other end of the identifier's life, and
+  since RSDEV-1504 that end arrives without anyone deleting the identifier by hand:
+  trashing the instrument soft-deletes it, and `getLatestIdentifierByPublicLink`
+  filters on `deleted = false`. A findable DataCite DOI therefore goes on resolving
+  to an address RSpace no longer answers. Accepted in ADR 0010, which also records
+  why the Landing page *field* is left alone there while item 5 clears it here.

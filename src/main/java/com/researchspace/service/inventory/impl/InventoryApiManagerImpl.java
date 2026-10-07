@@ -303,10 +303,37 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     }
   }
 
+  /**
+   * Rejects a record that links to itself, checked after the record has been persisted and so has
+   * an id. {@link #rejectSelfLink} cannot cover creation: link fields are applied before the row
+   * exists, so the source has no Global ID to compare against. That used to be closed indirectly,
+   * because a target that did not exist yet was rejected as not-found; CSV import no longer makes
+   * that check (RSDEV-1354), so a crafted file can name the id the new record is about to be given.
+   * This is the backstop for that case.
+   */
+  protected void assertNoSelfLinkAfterSave(
+      InventoryRecord savedRecord, List<InventoryEntityField> activeFields) {
+    if (savedRecord == null || savedRecord.getId() == null || savedRecord.getOid() == null) {
+      return;
+    }
+    String ownGlobalId = savedRecord.getOid().toString();
+    for (InventoryEntityField field : activeFields) {
+      if (!(field instanceof InventoryLinkField linkField) || linkField.getLink() == null) {
+        continue;
+      }
+      GlobalIdentifier target = parseTargetOrNull(linkField.getLink().getTargetGlobalId());
+      if (target != null && InventoryLinkValidator.isSelfLink(target, ownGlobalId)) {
+        throw new ApiRuntimeException(
+            "errors.inventory.field.link.selfLinkForbidden",
+            linkField.getLink().getTargetGlobalId());
+      }
+    }
+  }
+
   private void rejectSelfLink(ApiInventoryLink apiLink, InventoryRecord dbRecord) {
     // getId() first: getOid() throws on an unsaved record, and this is reached while creating a
-    // template. Not a hole: an unsaved template is not in the database either, so createLink's
-    // target-exists check rejects its own future Global ID before any row is written.
+    // template. Creation is covered by assertNoSelfLinkAfterSave instead: the target-exists check
+    // used to make a future self Global ID impossible, but CSV import no longer runs it.
     if (apiLink == null || dbRecord.getId() == null || dbRecord.getOid() == null) {
       return;
     }

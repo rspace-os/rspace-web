@@ -1,7 +1,7 @@
 package com.researchspace.comms;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -62,7 +62,7 @@ class StrictPermissionCheckingRecipientFinderPolicyUnitTest {
     verify(userDao, never()).searchUsers(anyString());
     assertEquals(nullTermTargets, emptyTermTargets);
     assertEquals(nullTermTargets, whitespaceTermTargets);
-    assertTrue(emptyTermTargets.containsAll(new HashSet<>(Arrays.asList(pi, member))));
+    assertThat(emptyTermTargets).containsAll(new HashSet<>(Arrays.asList(pi, member)));
   }
 
   @Test

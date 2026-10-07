@@ -3,34 +3,26 @@ package com.researchspace.dao.hibernate;
 import com.axiope.search.SearchConstants;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
-import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.NameDateFilter;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.FormState;
-import com.researchspace.model.record.ObjectToIdPropertyTransformer;
-import com.researchspace.model.record.RSForm;
+import com.researchspace.model.sort.RecordSort;
 import java.util.*;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 /**
- * Simple filter mechanism to filter a folder's contents by name, date or form <br>
+ * Simple filter mechanism to filter a folder's contents by name or date <br>
  * This uses database search only, not Lucene.
  */
 @Repository("nameDateFormfilter")
 public class NameDateFilterImpl implements NameDateFilter {
-
-  private final Logger log = LoggerFactory.getLogger(getClass());
 
   private @Autowired SessionFactory sf;
   private @Autowired RecordDao recordDao;
@@ -51,19 +43,6 @@ public class NameDateFilterImpl implements NameDateFilter {
 
     List<String> pname = new ArrayList<String>();
     List<Object> pval = new ArrayList<Object>();
-
-    if (SearchConstants.FORM_SEARCH_OPTION.equals(options[0])) {
-
-      List<RSForm> rc = searchDBForForms(terms[0]);
-      // if no forms match search term, there can't be any results
-      if (rc.isEmpty()) {
-        return new SearchResultsImpl<>(Collections.emptyList(), 0, 0L);
-      }
-
-      List<Long> formIds =
-          rc.stream().map(new ObjectToIdPropertyTransformer()).collect(Collectors.toList());
-      return filterStrucDocsOnly(input, pname, pval, formIds);
-    }
 
     String q1 = generateCountQueryString(input, pname, pval);
 
@@ -106,63 +85,25 @@ public class NameDateFilterImpl implements NameDateFilter {
     }
   }
 
-  private ISearchResults<BaseRecord> filterStrucDocsOnly(
-      WorkspaceListingConfig input, List<String> pname, List<Object> pval, List<Long> formIds) {
-    String fromquery = generateFilterStrucDocByFormQuery(input, pname, pval, formIds);
-    int pageSize = input.getPgCrit().getResultsPerPage(); // as default
-    int pageNumber = input.getPgCrit().getPageNumber().intValue();
-
-    int firstResult = pageNumber * pageSize;
-    int maxResults = pageSize;
-
-    String countQuery = "select count(r) " + fromquery;
-    Query<Long> q = sf.getCurrentSession().createQuery(countQuery, Long.class);
-    applyNamedParameterToQuery(q, pname, pval);
-
-    Long numHits = q.uniqueResult();
-    String getQuery = "select r " + fromquery;
-    Query<BaseRecord> q2 = sf.getCurrentSession().createQuery(getQuery, BaseRecord.class);
-    applyNamedParameterToQuery(q2, pname, pval);
-    q2.setFirstResult(firstResult);
-    q2.setMaxResults(maxResults);
-    List<BaseRecord> records = q2.list();
-    return new SearchResultsImpl<BaseRecord>(records, pageNumber, numHits, maxResults);
-    // return null;
-  }
-
-  protected String generateFilterStrucDocByFormQuery(
-      WorkspaceListingConfig input, List<String> pname, List<Object> pval, List<Long> formIds) {
-    String term = input.getSrchTerms()[0];
-    StringBuffer sbf = new StringBuffer();
-    sbf.append(" from StructuredDocument r join r.parents flders");
-    sbf.append(" where flders.folder.id = :parentId and flders.recordInFolderDeleted=:deleted ");
-    pname.add("parentId");
-    pname.add("deleted");
-
-    pval.add(input.getParentFolderId());
-    pval.add(Boolean.FALSE);
-
-    addForm(pname, pval, term, sbf, formIds);
-
-    addOrderBy(sbf, input.getPgCrit(), "r.id");
-    return sbf.toString();
-  }
-
   private void addOrderBy(
       StringBuffer sbf, PaginationCriteria<BaseRecord> pgCrit, String fallbackOrderBy) {
-    String orderBy = null;
-    SortOrder so = null;
-    if (pgCrit != null && pgCrit.getOrderBy() != null) {
-      if (pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
-        orderBy = pgCrit.getOrderBy();
-        so = pgCrit.getSortOrder();
-        sbf.append(" order by " + orderBy + "  " + so);
-      } else {
-        log.warn("Ignoring unsafe orderBy value in name/date filter");
+    if (pgCrit == null) {
+      return;
+    }
+    RecordSort sort = RecordSort.fromRequest(pgCrit.getOrderBy());
+    switch (sort) {
+      case NAME:
+      case CREATION_DATE:
+      case CREATION_DATE_MILLIS:
+      case MODIFICATION_DATE:
+      case MODIFICATION_DATE_MILLIS:
+        // these queries select the sort columns under their own names
+        sbf.append(" order by " + sort.key() + "  " + pgCrit.getSortOrder());
+        break;
+      default:
         if (fallbackOrderBy != null) {
           sbf.append(" order by ").append(fallbackOrderBy).append(" ASC");
         }
-      }
     }
   }
 
@@ -294,34 +235,6 @@ public class NameDateFilterImpl implements NameDateFilter {
       pname.add("creationDate2");
       pval.add(out[1]);
     }
-  }
-
-  private void addForm(
-      List<String> pname, List<Object> pval, String term, StringBuffer sbf, List<Long> formIds) {
-
-    if (formIds != null && formIds.size() > 0) {
-      sbf.append("and form_id in (:forms)  ");
-      pname.add("forms");
-      pval.add(formIds);
-    }
-  }
-
-  private List<RSForm> searchDBForForms(String searchTerm) {
-    StringBuilder hql =
-        new StringBuilder("from RSForm r where r.publishingState = :publishingState");
-    if (searchTerm.endsWith(SearchConstants.WILDCARD)) {
-      searchTerm = StringUtils.removeEnd(searchTerm, SearchConstants.WILDCARD);
-      hql.append(" and lower(r.editInfo.name) like :name");
-      searchTerm = "%" + searchTerm.toLowerCase() + "%";
-    } else {
-      hql.append(" and lower(r.editInfo.name) = :name");
-      searchTerm = searchTerm.toLowerCase();
-    }
-    return sf.getCurrentSession()
-        .createQuery(hql.toString(), RSForm.class)
-        .setParameter("publishingState", FormState.PUBLISHED)
-        .setParameter("name", searchTerm)
-        .list();
   }
 
   private void addName(List<String> pname, List<Object> pval, String term, StringBuffer sbf) {
