@@ -43,7 +43,9 @@ export function prepareContainer(container: ContainerModel, count: number): void
 export type PlacementBlocker =
   | { reason: "loading" | "deleted" | "noPermission" | "image" | "workbench" | "cannotStoreSamples" }
   | { reason: "notEnoughSpace"; free: number }
-  | { reason: "selectSlots"; remaining: number };
+  | { reason: "selectSlots"; remaining: number }
+  | { reason: "occupiedSlot" }
+  | { reason: "tooManySlots"; surplus: number };
 
 /**
  * Why `count` new subsamples cannot be placed in `container` yet, or null when they can. Reads the
@@ -63,6 +65,8 @@ export function placementBlocker(container: ContainerModel, count: number): Plac
   if (container.cType === "GRID") {
     const selected = container.selectedLocations;
     if (selected === null) return { reason: "loading" };
+    if (selected.some((l) => l.hasContent)) return { reason: "occupiedSlot" };
+    if (selected.length > count) return { reason: "tooManySlots", surplus: selected.length - count };
     if (selected.length < count) return { reason: "selectSlots", remaining: count - selected.length };
   }
   return null;

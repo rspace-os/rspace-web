@@ -4059,8 +4059,10 @@ export default interface Resources {
           "loading": "Loading the container…",
           "noPermission": "You do not have permission to place items in this container. Choose another container.",
           "notEnoughSpace": "Only {free} of the {count} locations needed are free. Choose another container.",
+          "occupiedSlot": "A selected location is already occupied. Deselect it.",
           "ready": "The new subsamples will be placed in {container}.",
           "selectSlots": "{count, plural, one {Select # more location.} other {Select # more locations.}}",
+          "tooManySlots": "{count, plural, one {Deselect # location.} other {Deselect # locations.}}",
           "workbench": "To keep the new subsamples on your workbench, choose \"Leave on my workbench\"."
         },
         "workbench": "Leave on my workbench"
