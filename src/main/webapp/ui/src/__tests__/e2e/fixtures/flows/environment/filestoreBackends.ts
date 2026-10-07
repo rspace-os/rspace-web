@@ -172,7 +172,7 @@ function backendConfig(backend: FilestoreBackend): BackendConfig {
               dataset: SHARED_PLAYWRIGHT_TEST,
             }),
             skipReason: "Real SFTP needs the VPN; set E2E_REAL_SFTP_* locally (CI can't reach the host).",
-            remoteHost: { host: env.realSftpUrl, port: 22, hint: "connect the VPN" },
+            remoteHost: { ...sftpHostAndPort(env.realSftpUrl), hint: "connect the VPN" },
           };
     case "samba":
       return isMock
@@ -332,6 +332,12 @@ function s3Config(
 
 function hostOf(url: string): string {
   return url ? new URL(url).hostname : "";
+}
+
+// The backend accepts "host", "host:port" or "sftp://host[:port]", so new URL() can't parse it.
+function sftpHostAndPort(url: string): { host: string; port: number } {
+  const [host, port] = url.replace("sftp://", "").split(":");
+  return { host, port: port ? Number(port) : 22 };
 }
 
 async function assertReachable(backend: FilestoreBackend, host: string, port: number, hint: string): Promise<void> {
