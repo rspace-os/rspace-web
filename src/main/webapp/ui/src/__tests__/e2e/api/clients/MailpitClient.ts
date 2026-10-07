@@ -1,4 +1,4 @@
-import type { APIRequestContext } from "@playwright/test";
+import { type APIRequestContext, expect } from "@playwright/test";
 import { JSDOM } from "jsdom";
 import type { MailpitMessage, MailpitMessageSummary } from "../models/mailpit";
 
@@ -38,17 +38,17 @@ export class MailpitClient {
 
   /** Polls until an email with `subject` reaches `to`, then returns it. */
   async waitForMessage(to: string, subject: string, timeoutMs = 15_000): Promise<MailpitMessage> {
-    const deadline = Date.now() + timeoutMs;
-    for (;;) {
-      const summary = (await this.listMessages(`to:${to}`)).find((m) => m.Subject === subject);
-      if (summary) {
-        return this.getMessage(summary.ID);
-      }
-      if (Date.now() > deadline) {
-        throw new Error(`no "${subject}" email reached ${to} within ${timeoutMs}ms`);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
+    let summary: MailpitMessageSummary | undefined;
+    await expect
+      .poll(
+        async () => {
+          summary = (await this.listMessages(`to:${to}`)).find((m) => m.Subject === subject);
+          return summary?.ID;
+        },
+        { message: `"${subject}" email to ${to}`, timeout: timeoutMs },
+      )
+      .toBeDefined();
+    return this.getMessage(summary?.ID ?? "");
   }
 
   /** Waits for the email as {@link waitForMessage}, then returns its first link whose URL contains `pathFragment`. */

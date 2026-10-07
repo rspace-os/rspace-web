@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { GroupRequestToastComponent } from "@/__tests__/e2e/components/groups/GroupRequestToastComponent";
+import { NotificationsDialogComponent } from "@/__tests__/e2e/components/shared/NotificationsDialogComponent";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { loginInNewContext, test as userSessionTest } from "@/__tests__/e2e/fixtures/flows/sessions/userSessions";
 import { CloudVerificationPage } from "@/__tests__/e2e/pageObjects/auth/CloudVerificationPage";
@@ -9,17 +10,21 @@ import { CreateCloudGroupPage } from "@/__tests__/e2e/pageObjects/groups/CreateC
 import { DirectoryPage } from "@/__tests__/e2e/pageObjects/myrspace/DirectoryPage";
 import { UserProfilePage } from "@/__tests__/e2e/pageObjects/myrspace/UserProfilePage";
 import { GroupDetailsPage } from "@/__tests__/e2e/pageObjects/system/groups/GroupDetailsPage";
+import { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
 import { DYNAMIC_USER_PASSWORD } from "@/__tests__/e2e/testData";
 
 /** A logged-in community user in their own browser context. */
 export type CloudUser = {
   username: string;
+  fullName: string;
   email: string;
   page: Page;
   createGroup: CreateCloudGroupPage;
   profile: UserProfilePage;
   groupDetails: GroupDetailsPage;
   verification: CloudVerificationPage;
+  workspace: WorkspacePage;
+  notifications: NotificationsDialogComponent;
   groupRequest: (groupName: string) => GroupRequestToastComponent;
 };
 
@@ -43,7 +48,7 @@ export const test = userSessionTest.extend<CloudSessionFixtures>({
     const closers: Array<() => Promise<void>> = [];
     try {
       await use(async (namePrefix) => {
-        const { username, email } = await createDynamicUser(clientSysadmin, "ROLE_USER", namePrefix);
+        const { username, fullName, email } = await createDynamicUser(clientSysadmin, "ROLE_USER", namePrefix);
         const { page, close } = await loginInNewContext(
           browser,
           browserContextOptions,
@@ -53,12 +58,15 @@ export const test = userSessionTest.extend<CloudSessionFixtures>({
         closers.push(close);
         return {
           username,
+          fullName,
           email,
           page,
           createGroup: new CreateCloudGroupPage(page),
           profile: new UserProfilePage(page),
           groupDetails: new GroupDetailsPage(page),
           verification: new CloudVerificationPage(page),
+          workspace: new WorkspacePage(page),
+          notifications: new NotificationsDialogComponent(page),
           groupRequest: (groupName) => new GroupRequestToastComponent(page, groupName),
         };
       });

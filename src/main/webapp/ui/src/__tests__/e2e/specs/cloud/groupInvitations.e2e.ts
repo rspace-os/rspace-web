@@ -89,4 +89,41 @@ test.describe("Community group invitations", () => {
       await expect(nominatedPi.groupDetails.memberRole(member.username)).toHaveText("User");
     });
   });
+
+  test("As a group creator, when my nominated PI declines, no group is created and I am told it was rejected", async ({
+    flowCloudUser,
+  }) => {
+    const creator = await flowCloudUser("e2eCloudCreator");
+    const nominatedPi = await flowCloudUser("e2eCloudDecliner");
+    const groupName = uniqueName("e2eCloudDeclined");
+
+    await test.step("Given I request a group with another user as PI", async () => {
+      await creator.createGroup.open();
+      await creator.createGroup.createGroup({ name: groupName, nominatedPiEmail: nominatedPi.email });
+      await expect(creator.createGroup.resultAlert(groupName)).toHaveText(
+        `Group creation request for ${groupName} sent successfully`,
+      );
+    });
+
+    await test.step("When the nominated PI declines", async () => {
+      await nominatedPi.page.reload();
+      await nominatedPi.groupRequest(groupName).decline();
+    });
+
+    await test.step("Then I am notified that the request was rejected", async () => {
+      await creator.workspace.open();
+      await creator.notifications.open();
+      expect(await creator.notifications.getNotificationTexts()).toContainEqual(
+        expect.stringContaining(`${nominatedPi.fullName} updated request status, altered from NEW to REJECTED`),
+      );
+      await creator.notifications.close();
+    });
+
+    await test.step("And neither of us belongs to the group", async () => {
+      await creator.profile.open();
+      await expect(creator.profile.groupLink(groupName)).toHaveCount(0);
+      await nominatedPi.profile.open();
+      await expect(nominatedPi.profile.groupLink(groupName)).toHaveCount(0);
+    });
+  });
 });
