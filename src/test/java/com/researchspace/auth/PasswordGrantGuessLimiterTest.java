@@ -2,6 +2,11 @@ package com.researchspace.auth;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.base.Ticker;
 import java.time.Duration;
@@ -26,12 +31,14 @@ public class PasswordGrantGuessLimiterTest {
   }
 
   private FakeTicker ticker;
+  private UsernamePasswordCredentialsMatcher matcher;
   private PasswordGrantGuessLimiter limiter;
 
   @BeforeEach
   public void setUp() {
     ticker = new FakeTicker();
-    limiter = new PasswordGrantGuessLimiter(5, WINDOW, 3, ticker);
+    matcher = mock(UsernamePasswordCredentialsMatcher.class);
+    limiter = new PasswordGrantGuessLimiter(5, WINDOW, 3, ticker, matcher);
   }
 
   private void fail(String username, int times) {
@@ -76,5 +83,12 @@ public class PasswordGrantGuessLimiterTest {
     fail("d", 5);
     assertFalse(limiter.isBlocked("a"));
     assertTrue(limiter.isBlocked("d"));
+  }
+
+  @Test
+  public void padUnknownUserRunsOneCheckAgainstTheSentinel() {
+    limiter.padUnknownUser("guess");
+    verify(matcher, times(1))
+        .test(argThat(u -> "oauth-sentinel".equals(u.getUsername())), eq("guess"));
   }
 }

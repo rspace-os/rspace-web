@@ -128,6 +128,7 @@ public class OAuthClientController {
         response = passwordGrant(clientId, clientSecret, user, password, isJwt, request);
 
       } catch (DataAccessException e) {
+        guessLimiter.padUnknownUser(password);
         SECURITY_LOG.warn(
             "OAuth password flow request for unknown username [{}], from {}",
             username,

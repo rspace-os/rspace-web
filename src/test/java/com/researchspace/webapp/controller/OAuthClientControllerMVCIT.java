@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
+import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
 import com.researchspace.model.User;
 import com.researchspace.model.frontend.OAuthAppInfo;
 import com.researchspace.service.IReauthenticator;
@@ -40,6 +41,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
 
   @Autowired private OAuthAppManager oAuthAppManager;
   @MockitoSpyBean private IReauthenticator reauthenticator;
+  @MockitoSpyBean private UsernamePasswordCredentialsMatcher credentialsMatcher;
 
   /**
    * These tests disable API access mid-method, and the system property outlives the test, so a
@@ -373,6 +375,24 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
     passwordGrant(app, alias, password)
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.message").value(TOO_MANY_ATTEMPTS));
+  }
+
+  @Test
+  public void passwordGrantWithPublicClientAndUnknownUsernameCostsOnePasswordCheck()
+      throws Exception {
+    mockMvc
+        .perform(
+            post("/oauth/token")
+                .param("client_id", "rsInventoryWebClient")
+                .param("client_secret", "rsInventoryPublicSecret")
+                .param("grant_type", "password")
+                .param("username", RandomStringUtils.randomAlphabetic(12))
+                .param("password", "any-password"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
+
+    verify(reauthenticator, never()).reauthenticate(any(), any());
+    verify(credentialsMatcher, times(1)).test(any(), any());
   }
 
   private ResultActions passwordGrant(OAuthAppInfo app, String username, String password)
