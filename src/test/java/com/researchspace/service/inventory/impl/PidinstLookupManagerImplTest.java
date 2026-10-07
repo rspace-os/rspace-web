@@ -1272,7 +1272,6 @@ class PidinstLookupManagerImplTest {
     assertEquals(2, result.getTotalsByProvider().get("PIDINST_B2INST"));
     assertEquals(2, result.getTotalsByProvider().get("PIDINST_DATACITE"));
     assertEquals(0, result.getPageNumber());
-    assertEquals(50, result.getPageSize());
   }
 
   @Test

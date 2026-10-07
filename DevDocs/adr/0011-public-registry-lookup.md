@@ -114,7 +114,8 @@ Decided with Nico on 2026-10-05.
 - `/pidinst/search` and `/instruments/importPidinst` change shape days after shipping in 2.27.0:
   `providers` is required on the search (`pageNumber` defaults to 0), `provider` on the import
   body, and the search response replaces `{provider, total, hits}` with
-  `{providers, pageNumber, pageSize, totalHits, totalsByProvider, hits}`. The OpenAPI spec says so.
+  `{providers, pageNumber, totalHits, totalsByProvider, hits}` (no `pageSize`: it is always 50).
+  The OpenAPI spec says so.
 - Linked identifiers can now exist on a deployment that has no PIDINST provider. Every
   provider-side flow already checks `isLinked()` first (ADR 0009 decision 2), so nothing calls a
   registry for them; the one gap is `DELETE /identifiers/{id}`, which still asserts a PIDINST

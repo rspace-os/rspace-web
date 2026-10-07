@@ -94,7 +94,6 @@ const ALL_REGISTRIES: ReadonlyArray<Registry> = ["PIDINST_DATACITE", "PIDINST_B2
 type PidinstSearchResult = {
   providers: ReadonlyArray<string>;
   pageNumber: number;
-  pageSize: number;
   totalHits: number;
   totalsByProvider: Record<string, number>;
   hits: ReadonlyArray<PidinstRecord>;
@@ -611,8 +610,8 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
               {result && result.hits.length > 0 && (
                 <span>
                   {t("pidinstImport.results.pageSummary", {
-                    from: result.pageNumber * result.pageSize + 1,
-                    to: result.pageNumber * result.pageSize + result.hits.length,
+                    from: result.pageNumber * PAGE_SIZE + 1,
+                    to: result.pageNumber * PAGE_SIZE + result.hits.length,
                     total: result.totalHits,
                     breakdown: formatList(
                       result.providers.map((provider) =>

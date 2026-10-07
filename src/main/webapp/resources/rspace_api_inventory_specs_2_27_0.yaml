@@ -4969,10 +4969,6 @@ components:
           type: integer
           description: 0-based.
           example: 0
-        pageSize:
-          type: integer
-          description: Always 50.
-          example: 50
         totalHits:
           type: integer
           description: The sum of the registries' own totals for the query.

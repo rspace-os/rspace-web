@@ -208,7 +208,6 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     ApiPidinstSearchResult result = new ApiPidinstSearchResult();
     result.setProviders(registries.stream().map(Enum::name).toList());
     result.setPageNumber(pageNumber);
-    result.setPageSize(PAGE_SIZE);
     // merged page k can only hold items from each registry's first (k+1) pages, so those are
     // all that is fetched (each page is cached by the connectors), merged, and sliced
     List<ApiPidinstRecord> candidates = new ArrayList<>();

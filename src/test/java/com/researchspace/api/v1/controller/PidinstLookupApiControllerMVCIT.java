@@ -259,7 +259,6 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(1, search.getTotalHits());
     assertEquals(1, search.getTotalsByProvider().get("PIDINST_B2INST"));
     assertEquals(0, search.getPageNumber());
-    assertEquals(50, search.getPageSize());
     assertEquals(handle, search.getHits().get(0).getPid());
     assertEquals("Test microscope", search.getHits().get(0).getName());
     assertNull(search.getHits().get(0).getLinkedInstrumentGlobalId());

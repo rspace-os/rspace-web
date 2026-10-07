@@ -21,10 +21,6 @@ public class ApiPidinstSearchResult {
   @JsonProperty("pageNumber")
   private int pageNumber;
 
-  /** Always 50, the page size of every registry page and of the merged page. */
-  @JsonProperty("pageSize")
-  private int pageSize;
-
   /** The sum of the registries' own totals for the query. */
   @JsonProperty("totalHits")
   private int totalHits;

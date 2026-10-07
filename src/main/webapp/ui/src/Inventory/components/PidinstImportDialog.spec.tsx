@@ -64,7 +64,6 @@ const CREATED_INSTRUMENT = {
 const SEARCH_RESULT = {
   providers: ["PIDINST_DATACITE", "PIDINST_B2INST"],
   pageNumber: 0,
-  pageSize: 50,
   totalHits: 2,
   totalsByProvider: { PIDINST_B2INST: 2, PIDINST_DATACITE: 0 },
   hits: HITS,

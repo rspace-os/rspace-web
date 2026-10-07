@@ -66,7 +66,6 @@ const HITS = [
 const SEARCH_RESULT = {
   providers: ["PIDINST_DATACITE", "PIDINST_B2INST"],
   pageNumber: 0,
-  pageSize: 50,
   totalHits: 2,
   totalsByProvider: { PIDINST_DATACITE: 0, PIDINST_B2INST: 2 },
   hits: HITS,
