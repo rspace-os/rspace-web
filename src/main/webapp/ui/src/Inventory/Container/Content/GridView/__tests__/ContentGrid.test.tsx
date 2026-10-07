@@ -4,10 +4,10 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import SearchContext from "@/stores/contexts/Search";
 import { containerAttrs, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
 import type ContainerModel from "@/stores/models/ContainerModel";
-import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import materialTheme from "@/theme";
 import ContentGrid from "../ContentGrid";
 
@@ -35,7 +35,11 @@ function renderGrid(box: ContainerModel) {
   render(
     <ThemeProvider theme={materialTheme}>
       <SearchContext.Provider
-        value={{ search: box.contentSearch, scopedResult: box, differentSearchForSettingActiveResult: box.contentSearch }}
+        value={{
+          search: box.contentSearch,
+          scopedResult: box,
+          differentSearchForSettingActiveResult: box.contentSearch,
+        }}
       >
         <ContentGrid />
       </SearchContext.Provider>
@@ -68,6 +72,44 @@ describe("ContentGrid", () => {
       await user.tab();
       await user.keyboard(" {ArrowRight}");
       expect(screen.getAllByRole("cell")[1]).toHaveAttribute("aria-selected", "true");
+    });
+  });
+
+  describe("keyboard selection", () => {
+    const cells = () => screen.getAllByRole("cell");
+    const selectedCount = () => cells().filter((c) => c.getAttribute("aria-selected") === "true").length;
+
+    it("selects the focused location and Shift+Arrow selects a rectangle, filled or empty", async () => {
+      const user = userEvent.setup();
+      renderGrid(boxWithA1Taken());
+      await user.tab();
+      expect(cells()[0]).toHaveAttribute("aria-selected", "true");
+      await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+      expect(selectedCount()).toBe(2);
+    });
+
+    describe("when choosing empty locations for new records", () => {
+      it("does not select an occupied location on focus or Escape", async () => {
+        const user = userEvent.setup();
+        const box = boxWithA1Taken();
+        prepareContainer(box, 1);
+        renderGrid(box);
+        await user.tab();
+        expect(cells()[0]).toHaveAttribute("aria-selected", "false");
+        await user.keyboard("{Escape}");
+        expect(cells()[0]).toHaveAttribute("aria-selected", "false");
+      });
+
+      it("selects no more locations than the selection limit", async () => {
+        const user = userEvent.setup();
+        const box = boxWithA1Taken();
+        prepareContainer(box, 1);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard("{ArrowRight}{Shift>}{ArrowDown}{/Shift}");
+        expect(cells()[1]).toHaveAttribute("aria-selected", "true");
+        expect(selectedCount()).toBe(1);
+      });
     });
   });
 });
