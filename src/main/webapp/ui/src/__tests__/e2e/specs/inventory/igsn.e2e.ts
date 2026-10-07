@@ -12,11 +12,11 @@ test.describe(`Inventory IGSN Identifiers`, { tag: [tags.INVENTORY, tags.MOBILE]
     "real mode needs IGSN_ACCOUNT_ID, IGSN_PASSWORD, and IGSN_REPO_PREFIX",
   );
 
-  test(`As a user, I can mint, preview, and publish a Draft identifier`, async ({
+  test(`As a user, I can mint, preview, and publish a Draft identifier, credited to my institution's ROR record`, async ({
     pageInventory,
     componentToasts,
     flowIgsnConfig,
-    page,
+    flowLinkedRor,
   }) => {
     void flowIgsnConfig;
     const sampleName = uniqueName("e2e-igsn-sample");
@@ -50,14 +50,25 @@ test.describe(`Inventory IGSN Identifiers`, { tag: [tags.INVENTORY, tags.MOBILE]
 
     await identifiers.waitForState("Draft");
 
-    await identifiers.clickPreview();
+    const draftPreview = await identifiers.clickPreview();
     await expect(identifiers.subjects).toBeVisible();
-    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(draftPreview.creatorAffiliation(flowLinkedRor.name)).toBeVisible();
+    await draftPreview.close();
 
     await identifiers.clickPublish();
     await expect(componentToasts.byText("published")).toBeVisible();
 
     await identifiers.waitForState("Findable");
+
+    // A published identifier's preview is read back from the public API, so it shows the affiliation
+    // RSpace stored and sent to DataCite on publish.
+    const publishedPreview = await identifiers.clickPreview();
+    await expect(publishedPreview.creatorAffiliation(flowLinkedRor.name)).toBeVisible();
+    await expect(publishedPreview.creatorAffiliationIdentifier(flowLinkedRor.id)).toHaveAttribute(
+      "href",
+      flowLinkedRor.id,
+    );
+    await publishedPreview.close();
   });
 
   test(`As a user, I can retract a published identifier`, async ({

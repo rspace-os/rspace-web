@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
+import { assertAjaxSuccess, responseTo } from "@/__tests__/e2e/responses";
 
 type IpWhitelistMutation = "addIpAddress" | "updateIpAddress" | "removeIpAddress";
 
@@ -69,24 +70,15 @@ export class IpWhitelistComponent {
   // The page reloads the list on any 200, even when the body reports a validation error.
   private async submit(mutation: IpWhitelistMutation, trigger: Locator): Promise<void> {
     await trigger.waitFor();
-    const responsePromise = this.page.waitForResponse(
-      (response) =>
-        response.request().method() === "POST" &&
-        new URL(response.url()).pathname.startsWith(`/system/config/ajax/${mutation}`),
+    const response = await responseTo(
+      this.page,
+      "POST",
+      ({ pathname }) => pathname.startsWith(`/system/config/ajax/${mutation}`),
+      () => trigger.click(),
     );
-    await trigger.click();
-    const response = await responsePromise;
-    const text = await response.text();
-    if (!response.ok()) {
-      throw new Error(`${mutation} failed: HTTP ${response.status()} ${text.slice(0, 300)}`);
-    }
-    const body = JSON.parse(text) as { success?: boolean };
-    if (body.success !== true) {
-      throw new Error(`${mutation} rejected: ${text}`);
-    }
+    assertAjaxSuccess(await response.text(), mutation);
   }
 
-  // `previous` leaves only when the list is emptied; the heading returns once it is re-rendered.
   private async waitForReload(previous: Locator): Promise<void> {
     await previous.waitFor({ state: "detached" });
     await this.waitUntilLoaded();
