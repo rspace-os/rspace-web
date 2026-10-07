@@ -702,6 +702,12 @@ Set `form: false` for a field that the form must omit. A field form configuratio
 description, widget, width, or display condition. `RenderFields` also supports row and section
 layout entries.
 
+In WebKit only, the shared `Input` hides native time text for empty, controlled time fields
+while unfocused, so Safari's stand-in current time cannot look like a selected time. Other
+engines keep their `--:--` hint. Focus restores the native editor, and a half-typed time
+(`validity.badInput`) stays visible after blur. This also covers booking windows and opening
+hours; see the `DesignSystem/Input` time stories.
+
 A relationship field uses `relationshipSources` when its target has a registered remote source.
 Otherwise, pass static choices through `relationshipOptions`. Pass
 `relationshipOptionAvailability` when another record can make an option unavailable.
