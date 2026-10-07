@@ -8,7 +8,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
 
 ### Server
 
-- RSDEV-1546 the OAuth password grant (`/oauth/token`, `grant_type=password`) now validates the client id and secret before checking the user's password, so an unregistered client can no longer trigger a password check or learn whether a password was correct.
+- RSDEV-1546 the OAuth password grant (`/oauth/token`, `grant_type=password`) now validates the client id and secret before checking the user's password, so an unregistered client can no longer trigger a password check or learn whether a password was correct. With a valid client, the grant now refuses a username after `oauth.passwordGrant.maxFailures` wrong passwords (default 5) within `oauth.passwordGrant.failureWindowSeconds` (default 600). The count is held in memory and does not touch the account's login-page lockout. Unknown usernames are answered at the same cost as a wrong password.
 
 # 2.27.0 2026-10-02
 

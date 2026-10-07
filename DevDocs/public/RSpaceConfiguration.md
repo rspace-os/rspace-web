@@ -611,6 +611,11 @@ Settings to rate-limit the number of API calls made to the server.
 
 * **api.beta.enabled** Whether beta API is enabled or not. Default=true
 
+* **oauth.passwordGrant.maxFailures** Wrong passwords allowed per username on the OAuth password grant (`/oauth/token`, `grant_type=password`) inside the window. After that the username is refused on this route, without a password check, until the window passes with no further counted failure. Default=5
+* **oauth.passwordGrant.failureWindowSeconds** Length of that window in seconds. Default=600
+
+The public Inventory client that every install ships is accepted on this route by design, so the client check is not a guessing control; these two settings are. The count is held in memory and resets on restart. The web login page lockout and API keys are unaffected.
+
 ### Monitoring
 
 RSpace contains an embedded monitoring capability to monitor CPU usage, memory, server load etc at `/monitoring` . The login username is
