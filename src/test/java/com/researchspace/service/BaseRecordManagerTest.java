@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
@@ -74,6 +75,19 @@ public class BaseRecordManagerTest extends SpringTransactionalTest {
     long missingRecordId = createdDocument.getId() + 1;
     assertThrows(
         ObjectRetrievalFailureException.class, () -> baseRecordManager.get(missingRecordId, user));
+  }
+
+  /** The lookup callers use when a failed get must not mark their transaction rollback-only. */
+  @Test
+  public void getSafeNullFindsADocumentOrAFolderAndIsEmptyForAMissingId() {
+    StructuredDocument document =
+        recordManager.createBasicDocument(user.getRootFolder().getId(), user);
+
+    assertEquals(document, baseRecordManager.getSafeNull(document.getId()).orElseThrow());
+    assertEquals(
+        user.getRootFolder(),
+        baseRecordManager.getSafeNull(user.getRootFolder().getId()).orElseThrow());
+    assertTrue(baseRecordManager.getSafeNull(Long.MAX_VALUE).isEmpty());
   }
 
   @Test

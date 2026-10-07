@@ -3255,7 +3255,7 @@ export default interface Resources {
           "editLink": "Edit link",
           "editToChangePinned": "Edit the link to change the pinned version",
           "noAccess": "No access",
-          "noPermission": "You do not have permission to view this item",
+          "noPermission": "This item is not available to you: it may not be shared with you, or it may no longer exist",
           "openLabel": "Open {globalId}",
           "pinVersionLabel": "Pin version for {globalId}",
           "showInfoLabel": "Show info for {globalId}",
@@ -3994,9 +3994,15 @@ export default interface Resources {
         "message": "Importing \"{name}\" from the PID registry.",
         "title": "Importing instrument"
       },
+      "linkedTo": {
+        "noAccess": "No access",
+        "noAccessDetail": "An instrument you cannot access"
+      },
       "preview": {
         "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "alternateIdentifier": "Alternate identifier",
+        "calibration": "Calibration",
         "commissioned": "Commissioned",
         "decommissioned": "Decommissioned",
         "description": "Description",
@@ -4004,6 +4010,7 @@ export default interface Resources {
         "landingPage": "Landing page",
         "manufacturers": "Manufacturers",
         "measuredVariables": "Measured variables",
+        "measurementTechnique": "Measurement technique",
         "model": "Model",
         "owners": "Owners",
         "pid": "PID",
@@ -4030,9 +4037,19 @@ export default interface Resources {
       },
       "searchError": "Could not search the PID registry.",
       "selectRadioLabel": "Select record: {name}",
+      "skipped": {
+        "message": "{count, plural, one {# entry} other {# entries}} of the registry record could not be linked from the new instrument. Each is listed here with the reason.",
+        "reasons": {
+          "notAnAddressHere": "It is not the address of an item in this RSpace: <address/>",
+          "notAvailable": "The item it points at is not available to you: <address/>",
+          "otherServer": "It points at another server ({host}): <address/>"
+        },
+        "title": "Some registry entries were not imported"
+      },
       "title": "Import Instrument from PIDINST",
       "validation": {
         "alreadyLinked": "This PID is already linked to instrument {globalId}.",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "noSelection": "Select a record to import."
       }
     },
@@ -6881,20 +6898,24 @@ export default interface Resources {
           "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
+          "pidinstAlreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
           "pidinstImportPidRequired": "A PID is required to import an instrument.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
           "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
           "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registry.",
+          "pidinstTemplateMissing": "This RSpace has no \"{0}\" template, which importing an instrument requires. Ask your system administrator to check the installation.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },
         "imageTooLarge": "Image cannot be larger than 10MB",
         "import": {
+          "csvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
           "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
+          "importIdentifierAlreadyUsed": "Import identifier {0} was already used in row {1}",
           "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",
-          "instrumentCsvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
           "instrumentTemplateIdAndTemplateInfoConflict": "Provide either ''templateId'' to use an existing instrument template or ''templateInfo'' to create a new one, but not both.",
           "instrumentUnrecognizedFieldMapping": "Unrecognized field mapping for instrument import: {0}",
+          "linkValueInvalid": "Link value ''{0}'' must be a DataCite relation type followed by a link URL on this server, for example ''IsDerivedFrom https://your-rspace/globalId/SA123v2''",
           "parentContainerGlobalIdInvalid": "Parent Container Global Id ''{0}'' is not a valid global id of an inventory container",
           "parentContainerImportIdWithGlobalId": "Parent container should be set via either 'Parent Container Import ID' or 'Parent Container Global ID', but not both at the same time",
           "parentContainerNotEditable": "Parent container with global id ''{0}'' doesn''t exist, or user has no permission to move items into it",

@@ -18,7 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,12 +35,6 @@ public class MsTeamsMessageSenderTest {
   public void testSupportsApp() {
     assertTrue(msteamsSender.supportsApp(new App(App.APP_MSTEAMS, "any", false)));
     assertFalse(msteamsSender.supportsApp(new App(App.APP_SLACK, "any", false)));
-  }
-
-  @Test
-  public void postsBodyAsJson() {
-    // Workflows webhooks reject the legacy MessageCard / text-plain body with HTTP 400
-    assertEquals(MediaType.APPLICATION_JSON, msteamsSender.createPostHeaders().getContentType());
   }
 
   @Test

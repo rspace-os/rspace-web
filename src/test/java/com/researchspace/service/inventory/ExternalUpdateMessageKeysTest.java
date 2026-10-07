@@ -49,10 +49,13 @@ class ExternalUpdateMessageKeysTest {
         // RSDEV-1326: the linked-PID lookup and import path
         "errors.inventory.identifier.linkedReadOnly",
         "errors.inventory.identifier.pidinstAlreadyLinked",
+        "errors.inventory.identifier.pidinstAlreadyLinkedNoAccess",
         "errors.inventory.identifier.pidinstMandatoryMissing",
         "errors.inventory.identifier.pidinstNotFound",
         "errors.inventory.identifier.pidinstImportPidRequired",
-        "errors.inventory.identifier.pidinstQueryTooShort"
+        "errors.inventory.identifier.pidinstQueryTooShort",
+        // RSDEV-1528: the text the import's missing-template 500 carries to the user
+        "errors.inventory.identifier.pidinstTemplateMissing"
       })
   void everyCodeResolvesToRealText(String code) {
     // an unknown code throws NoSuchMessageException here, which is the failure this exists to catch

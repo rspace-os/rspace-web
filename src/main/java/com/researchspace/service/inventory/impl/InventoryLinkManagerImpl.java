@@ -32,17 +32,25 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
-    validateForWrite(apiLink);
-    assertTargetExistsAndReadable(apiLink, actor);
+    assertWritable(apiLink, actor);
     InventoryLink entity = new InventoryLink();
     applyApiToEntity(apiLink, entity);
     return linkDao.save(entity);
   }
 
   @Override
+  public boolean canCreateLink(ApiInventoryLink apiLink, User actor) {
+    try {
+      assertWritable(apiLink, actor);
+      return true;
+    } catch (ApiRuntimeException rejected) {
+      return false;
+    }
+  }
+
+  @Override
   public InventoryLink updateLink(InventoryLink existing, ApiInventoryLink apiLink, User actor) {
-    validateForWrite(apiLink);
-    assertTargetExistsAndReadable(apiLink, actor);
+    assertWritable(apiLink, actor);
     applyApiToEntity(apiLink, existing);
     return linkDao.save(existing);
   }
@@ -114,10 +122,13 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   }
 
   /**
-   * Rejects links whose target does not resolve to a real record the actor can READ. Applies to all
-   * targets, Inventory and ELN alike. The version suffix (if any) is ignored: only the base record
-   * needs to exist and be readable.
+   * The checks every link write runs, and so canCreateLink too: one place, so they cannot drift.
    */
+  private void assertWritable(ApiInventoryLink apiLink, User actor) {
+    validateForWrite(apiLink);
+    assertTargetAcceptable(apiLink, actor);
+  }
+
   /**
    * Structural validation of an incoming link payload, mirroring {@link InventoryLinkValidator}.
    * The controller-layer validator can be bypassed (an extra-field update payload that omits {@code
@@ -152,7 +163,17 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     return gid;
   }
 
-  private void assertTargetExistsAndReadable(ApiInventoryLink apiLink, User actor) {
+  /**
+   * Rejects a link whose target does not resolve to a record the actor can READ, on both write
+   * paths. CSV import (RSDEV-1354) is exempt: it stores the link whatever state the target is in,
+   * because distinguishing "gone" from "not yours" is exactly the disclosure ADR-0002 prevents. The
+   * card reports either as "No access" at read time, so nothing is claimed that the viewer cannot
+   * verify, and one unresolvable target does not discard the rest of the import.
+   */
+  private void assertTargetAcceptable(ApiInventoryLink apiLink, User actor) {
+    if (apiLink.isSkipTargetCheck()) {
+      return;
+    }
     GlobalIdentifier gid = new GlobalIdentifier(apiLink.getTargetGlobalId());
     if (!linkTargetResolver.targetExistsAndIsReadable(gid, actor)) {
       throw new ApiRuntimeException(

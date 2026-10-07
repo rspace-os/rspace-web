@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -9,6 +10,7 @@ import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
@@ -59,9 +61,14 @@ export type PidinstRecord = {
   commissioned?: string;
   decommissioned?: string;
   landingPage?: string;
+  measurementTechniques: ReadonlyArray<string>;
+  calibrations: ReadonlyArray<string>;
   alternateIdentifier?: string;
   created?: string;
   updated?: string;
+  /** Whether an Instrument in this RSpace already links this PID; Import is refused either way. */
+  alreadyLinked: boolean;
+  /** Present only when the current user may read that Instrument (RSDEV-1505). */
   linkedInstrumentGlobalId?: string;
 };
 
@@ -74,10 +81,18 @@ type PidinstSearchResult = {
   hits: ReadonlyArray<PidinstRecord>;
 };
 
+type SkippedRelatedIdentifier = {
+  field: string;
+  reason: string;
+  address: string;
+  host?: string;
+};
+
 type ImportedInstrumentResponse = {
   id: number;
   globalId: string;
   name: string;
+  skippedRelatedIdentifiers?: ReadonlyArray<SkippedRelatedIdentifier>;
 };
 
 const joined = (values: ReadonlyArray<string>): string => values.join("; ");
@@ -147,6 +162,13 @@ function ExternalLink({ href }: { href: string }) {
   );
 }
 
+const isWebAddress = (value: string): boolean =>
+  URL.canParse(value) && ["http:", "https:"].includes(new URL(value).protocol);
+
+function Address({ value }: { value: string }) {
+  return isWebAddress(value) ? <ExternalLink href={value} /> : <span>{value}</span>;
+}
+
 function RecordPreview({ record }: { record: PidinstRecord }) {
   const { t } = useTranslation("inventory");
   const headingId = React.useId();
@@ -155,12 +177,16 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
       <Typography id={headingId} variant="h6" component="h3" sx={{ mb: 1 }}>
         {t("pidinstImport.preview.title")}
       </Typography>
-      {record.linkedInstrumentGlobalId && (
+      {record.alreadyLinked && (
         <Alert severity="info" sx={{ mb: 1, alignItems: "center" }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <span>{t("pidinstImport.preview.alreadyLinked")}</span>
-            <GlobalId record={new LinkableRecordFromGlobalId(record.linkedInstrumentGlobalId)} />
-          </Stack>
+          {record.linkedInstrumentGlobalId ? (
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <span>{t("pidinstImport.preview.alreadyLinked")}</span>
+              <GlobalId record={new LinkableRecordFromGlobalId(record.linkedInstrumentGlobalId)} />
+            </Stack>
+          ) : (
+            t("pidinstImport.preview.alreadyLinkedNoAccess")
+          )}
         </Alert>
       )}
       <Box component="dl" sx={{ m: 0, columnCount: { xs: 1, md: 2 }, columnGap: 4 }}>
@@ -206,7 +232,25 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
         )}
         {record.landingPage && (
           <PreviewField label={t("pidinstImport.preview.landingPage")}>
-            <ExternalLink href={record.landingPage} />
+            <Address value={record.landingPage} />
+          </PreviewField>
+        )}
+        {record.measurementTechniques.length > 0 && (
+          <PreviewField label={t("pidinstImport.preview.measurementTechnique")}>
+            <Stack component="span">
+              {record.measurementTechniques.map((value) => (
+                <Address key={value} value={value} />
+              ))}
+            </Stack>
+          </PreviewField>
+        )}
+        {record.calibrations.length > 0 && (
+          <PreviewField label={t("pidinstImport.preview.calibration")}>
+            <Stack component="span">
+              {record.calibrations.map((value) => (
+                <Address key={value} value={value} />
+              ))}
+            </Stack>
           </PreviewField>
         )}
         {record.alternateIdentifier && (
@@ -276,6 +320,28 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
     return provider;
   };
 
+  const skippedReason = (entry: SkippedRelatedIdentifier): React.ReactNode => {
+    const address = <Address value={entry.address} />;
+    if (entry.reason === "NOT_AVAILABLE")
+      return <TransRichText i18nKey="inventory:pidinstImport.skipped.reasons.notAvailable" components={{ address }} />;
+    if (entry.reason === "OTHER_SERVER")
+      return entry.host ? (
+        <TransRichText
+          i18nKey="inventory:pidinstImport.skipped.reasons.otherServer"
+          values={{ host: entry.host }}
+          components={{ address }}
+        />
+      ) : (
+        <TransRichText i18nKey="inventory:pidinstImport.skipped.reasons.notAnAddressHere" components={{ address }} />
+      );
+    // a reason this dialog has no words for: the code itself beats a wrong sentence (as providerLabel)
+    return (
+      <>
+        {entry.reason} {address}
+      </>
+    );
+  };
+
   async function runSearch() {
     const trimmed = query.trim();
     if (trimmed.length < MIN_QUERY_LENGTH) return;
@@ -343,8 +409,24 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
           ],
         }),
       );
+      const skipped = data.skippedRelatedIdentifiers ?? [];
+      if (skipped.length > 0) {
+        addAlert(
+          mkAlert({
+            variant: "warning",
+            isInfinite: true,
+            title: t("pidinstImport.skipped.title"),
+            message: t("pidinstImport.skipped.message", { count: skipped.length }),
+            details: skipped.map((entry) => ({
+              variant: "warning",
+              title: entry.field,
+              help: skippedReason(entry),
+            })),
+          }),
+        );
+      }
       // closing mid-import promises only that the result will not be shown here; moving the user
-      // to the new instrument anyway would be the opposite of what they chose. The toast above
+      // to the new instrument anyway would be the opposite of what they chose. The success toast
       // still links to it, so the import is not lost. Reporting failure to the caller is what stops
       // it closing the dialog a second time, over whatever session is open by then.
       if (sessionRef.current !== session) return false;
@@ -397,13 +479,15 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
 
   const importValidation = !selected
     ? IsInvalid(t("pidinstImport.validation.noSelection"))
-    : selected.linkedInstrumentGlobalId
-      ? IsInvalid(
-          t("pidinstImport.validation.alreadyLinked", {
-            globalId: selected.linkedInstrumentGlobalId,
-          }),
-        )
-      : IsValid();
+    : !selected.alreadyLinked
+      ? IsValid()
+      : selected.linkedInstrumentGlobalId
+        ? IsInvalid(
+            t("pidinstImport.validation.alreadyLinked", {
+              globalId: selected.linkedInstrumentGlobalId,
+            }),
+          )
+        : IsInvalid(t("pidinstImport.validation.alreadyLinkedNoAccess"));
 
   return (
     <ThemeProvider theme={createAccentedTheme(INSTRUMENT_ACCENT_COLOR)}>
@@ -539,9 +623,16 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                       flex: 0.7,
                       sortable: false,
                       renderCell: ({ row }) =>
-                        row.linkedInstrumentGlobalId ? (
+                        !row.alreadyLinked ? null : row.linkedInstrumentGlobalId ? (
                           <GlobalId record={new LinkableRecordFromGlobalId(row.linkedInstrumentGlobalId)} />
-                        ) : null,
+                        ) : (
+                          // the same chip the link fields show for an unreadable target: the grid
+                          // clips a cell, and only adds its own hover title when there is no
+                          // renderCell, so a sentence here would be cut off with no way to read it
+                          <Tooltip title={t("pidinstImport.linkedTo.noAccessDetail")}>
+                            <Chip size="small" color="warning" label={t("pidinstImport.linkedTo.noAccess")} />
+                          </Tooltip>
+                        ),
                     },
                   ),
                   DataGridColumn.newColumnWithValueGetter<"model", PidinstRecord, string>(
