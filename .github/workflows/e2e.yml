@@ -283,7 +283,6 @@ jobs:
       - name: Start filestore servers
         if: inputs.mode == 'mock' && contains(fromJSON('["chromium", "firefox", "webkit"]'), matrix.project)
         run: |
-          sudo ss -ltnp 'sport = :22' || true
           src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> "$GITHUB_ENV"
 
       - run: pnpm install --frozen-lockfile

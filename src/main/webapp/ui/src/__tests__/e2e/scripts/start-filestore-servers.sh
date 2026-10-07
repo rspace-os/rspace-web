@@ -10,7 +10,8 @@
 #   -Dnetfilestores.s3.global.credentials.accessKey / .secretKey
 # These are throwaway credentials for local containers, never real keys.
 #
-# Fixed host ports: SftpClient can't combine "sftp://" with a port, and SmbjClient always uses 445.
+# Fixed host ports: SFTP uses 2222 because hosted runners hold 22, and SmbjClient always uses 445.
+# The SFTP URL is "localhost:2222" because SftpClient can't combine "sftp://" with a port.
 # iRODS needs a PostgreSQL catalogue next to it; the image is large (about 5 GB) and pulled once.
 set -euo pipefail
 
@@ -57,7 +58,7 @@ SEED='mkdir -p "$1/playwright-test/sub" && echo hello > "$1/playwright-test/hell
 start "$PREFIX-minio" -p 127.0.0.1:9000:9000 \
   -e MINIO_ROOT_USER="$USER_NAME" -e MINIO_ROOT_PASSWORD="$MINIO_SECRET" \
   reg.mini.dev/minio@sha256:8450927bb28a0c15572a49acf840b6c1281f135faf97c3c2b4aa547b49bf7bc5 server /data
-start "$PREFIX-sftp" -p 127.0.0.1:22:22 \
+start "$PREFIX-sftp" -p 127.0.0.1:2222:22 \
   atmoz/sftp "$USER_NAME:$USER_PASSWORD:1001:1001:upload"
 start "$PREFIX-samba" -p 127.0.0.1:445:445 \
   dperson/samba -u "$USER_NAME;$USER_PASSWORD" -s "share;/share;yes;no;no;$USER_NAME"
@@ -95,7 +96,7 @@ log "seeded all four; variables follow"
 cat <<EOF
 E2E_S3_FILESTORE_URL=http://localhost:9000
 E2E_S3_FILESTORE_BUCKET=$BUCKET
-E2E_SFTP_FILESTORE_URL=sftp://localhost
+E2E_SFTP_FILESTORE_URL=localhost:2222
 E2E_SFTP_FILESTORE_HOST_KEY=$SFTP_HOST_KEY
 E2E_SAMBA_FILESTORE_URL=smb://localhost
 E2E_IRODS_FILESTORE_URL=localhost
