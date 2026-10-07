@@ -222,8 +222,9 @@ export function BookingLocalNotices({
     (notice ?? hostRef.current?.closest<HTMLElement>("main"))?.focus();
   }, [alerts]);
 
+  // An empty host stays mounted for announcements but must not take a layout gap.
   return (
-    <div ref={hostRef} aria-live="polite" aria-relevant="additions text">
+    <div ref={hostRef} aria-live="polite" aria-relevant="additions text" className="empty:absolute">
       {alerts.length > 0 ? (
         <ul aria-label={t("tableList.alerts.label")} className="mb-3 space-y-2 pt-3">
           {alerts.map((alert) => (

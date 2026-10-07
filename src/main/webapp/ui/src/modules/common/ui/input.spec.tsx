@@ -7,8 +7,10 @@ import { Input } from "./input";
 afterEach(cleanup);
 
 const TRANSPARENT = "rgba(0, 0, 0, 0)";
-// Only WebKit draws a misleading current time in an empty field.
-const hiddenWhenEmpty = server.browser === "webkit";
+// Only Apple's WebKit draws a misleading current time in an empty field, and only it supports the
+// font keyword the input uses to detect it. Linux WebKit (as in CI) has neither, nor a segmented time field.
+const hiddenWhenEmpty = CSS.supports("font", "-apple-system-body");
+const linuxWebKit = server.browser === "webkit" && !hiddenWhenEmpty;
 
 function TimeInput() {
   const [value, setValue] = useState("");
@@ -56,7 +58,7 @@ test("hides empty native time text in WebKit only, without hiding entered times"
   if (hiddenWhenEmpty) await expect.poll(color).toBe(TRANSPARENT);
 });
 
-test("keeps a half-typed time visible after blur", async () => {
+test.skipIf(linuxWebKit)("keeps a half-typed time visible after blur", async () => {
   const { input, color } = renderTimeInput();
 
   await input.click();

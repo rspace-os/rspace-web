@@ -1077,7 +1077,6 @@ describe("CalendarPage", () => {
         location: null,
       };
     });
-    const catalogueRequests: Array<{ q: string | null; page: number }> = [];
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
@@ -1086,7 +1085,6 @@ describe("CalendarPage", () => {
         const url = new URL(request.url);
         const query = url.searchParams.get("q");
         const page = Number(url.searchParams.get("page") ?? "1");
-        catalogueRequests.push({ q: url.searchParams.get("q"), page });
         const pageSize = Number(url.searchParams.get("limit") ?? "20");
         catalogueRequests.push({ query, page });
         const start = (page - 1) * pageSize;
@@ -1106,8 +1104,6 @@ describe("CalendarPage", () => {
     await user.type(search, "No-event");
     // The unfiltered first page lists the same resources; page only once the debounced search has been requested,
     // because applying a search returns to the first page.
-    await waitFor(() => expect(catalogueRequests).toContainEqual({ q: "No-event", page: 1 }));
-
     await waitFor(() => expect(catalogueRequests).toContainEqual({ query: "No-event", page: 1 }));
     expect(await screen.findByText("No-event microscope 1")).toBeVisible();
     expect(screen.getByText("1–20 of 21 records")).toBeVisible();
@@ -1116,7 +1112,7 @@ describe("CalendarPage", () => {
     await user.click(nextPage);
     await waitFor(() => expect(catalogueRequests).toContainEqual({ query: "No-event", page: 2 }));
     await waitFor(() => expect(screen.getByText("No-event microscope 21")).toBeVisible());
-    expect(catalogueRequests.at(-1)).toEqual({ q: "No-event", page: 2 });
+    expect(catalogueRequests.at(-1)).toEqual({ query: "No-event", page: 2 });
   });
 
   it("shows an empty state when a calendar search has no matches", async () => {
