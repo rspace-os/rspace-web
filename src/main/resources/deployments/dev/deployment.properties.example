@@ -116,8 +116,8 @@ dryad.client.secret=
 ror.enabled=true
 
 # Public PID registries searched by "From PIDINST registry"; override only for a sandbox
-pidinst.lookup.datacite.url=https://api.test.datacite.org
-pidinst.lookup.b2inst.url=https://b2inst-test.gwdg.de
+#pidinst.lookup.datacite.url=https://api.test.datacite.org
+#pidinst.lookup.b2inst.url=https://b2inst-test.gwdg.de
 
 user.signup.captcha.enabled=false
 user.signup.captcha.site.key=
