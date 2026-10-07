@@ -93,7 +93,7 @@ public class OAuthClientController {
       if (!appManager.isClientSecretCorrect(clientId, clientSecret)) {
         SECURITY_LOG.warn(
             "OAuth password flow request with invalid client [{}], from {}",
-            clientId,
+            clientId.replaceAll("[\\r\\n]", " "),
             RequestUtil.remoteAddr(request));
         throw new ApiAuthenticationException("oauth.errors.tokenCreationFailed");
       }

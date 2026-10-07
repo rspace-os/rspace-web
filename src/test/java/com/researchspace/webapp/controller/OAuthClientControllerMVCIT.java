@@ -26,7 +26,6 @@ import org.springframework.test.context.bean.override.BeanOverrideTestExecutionL
 import org.springframework.test.context.bean.override.mockito.MockitoResetTestExecutionListener;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.ResultActions;
 
 @TestExecutionListeners(
     value = {BeanOverrideTestExecutionListener.class, MockitoResetTestExecutionListener.class},
@@ -284,9 +283,18 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
     String password = RandomStringUtils.randomAlphabetic(10);
     createAndSaveUser(username, Constants.USER_ROLE, password);
 
-    passwordGrantWithUnknownClient(username, password)
+    mockMvc
+        .perform(
+            post("/oauth/token")
+                .param("client_id", RandomStringUtils.randomAlphanumeric(16))
+                .param("client_secret", RandomStringUtils.randomAlphanumeric(32))
+                .param("grant_type", "password")
+                .param("username", username)
+                .param("password", password))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.message").value(CLIENT_ERROR));
+
+    verify(reauthenticator, never()).reauthenticate(any(), any());
   }
 
   @Test
@@ -306,27 +314,5 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
                 .param("password", "wrong-password"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.message").value(CLIENT_ERROR));
-  }
-
-  @Test
-  public void passwordGrantWithUnknownClientDoesNotHashThePassword() throws Exception {
-    String username = RandomStringUtils.randomAlphabetic(10);
-    String password = RandomStringUtils.randomAlphabetic(10);
-    createAndSaveUser(username, Constants.USER_ROLE, password);
-
-    passwordGrantWithUnknownClient(username, password).andExpect(status().isUnauthorized());
-
-    verify(reauthenticator, never()).reauthenticate(any(), any());
-  }
-
-  private ResultActions passwordGrantWithUnknownClient(String username, String password)
-      throws Exception {
-    return mockMvc.perform(
-        post("/oauth/token")
-            .param("client_id", RandomStringUtils.randomAlphanumeric(16))
-            .param("client_secret", RandomStringUtils.randomAlphanumeric(32))
-            .param("grant_type", "password")
-            .param("username", username)
-            .param("password", password));
   }
 }
