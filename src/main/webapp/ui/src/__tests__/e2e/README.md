@@ -76,6 +76,40 @@ Boot the dev stack (see `docker/dev/README.md`):
 Then run tests with the default `RSPACE_BASE_URL=http://localhost:8080`. No
 extra config needed — the Docker stack listens on 8080 by default.
 
+## Filestore and ROR specs
+
+`specs/system/config/filestores/` follows `E2E_INTEGRATION_MODE`. Mock mode tests RSpace against local
+containers; real mode tests it against the real hosts. A backend that isn't configured for the mode is skipped;
+a configured one that can't be reached fails.
+
+| Backend | Mock mode (containers) | Real mode (real hosts) |
+|---|---|---|
+| S3 | MinIO | Cloudflare R2 test bucket (`E2E_REAL_S3_URL`, `_BUCKET`, `_REGION`) |
+| SFTP | atmoz/sftp | internal test host, **VPN required** (`E2E_REAL_SFTP_URL`, `_HOST_KEY`, `_USERNAME`, `_PASSWORD`); skipped in CI |
+| Samba | dperson/samba | internal test host, **VPN required** (`E2E_REAL_SAMBA_URL`, `_SHARE`, `_USERNAME`, `_PASSWORD`); skipped in CI |
+| iRODS | bihealth/irods-docker + PostgreSQL | shared test host (`E2E_REAL_IRODS_URL`, `_USERNAME`, `_PASSWORD`) |
+
+In CI (`e2e.yml`), mock mode starts the containers. Real mode uses these repository secrets: `R2_ACCESS_KEY`,
+`R2_SECRET_KEY`, `E2E_REAL_S3_URL`, `E2E_REAL_IRODS_USERNAME` and `E2E_REAL_IRODS_PASSWORD`. SFTP and Samba
+stay local because GitHub can't reach their internal hosts.
+
+```bash
+# Starts (or reuses) the containers, seeds playwright-test/, prints the E2E_* variables.
+src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> src/main/webapp/ui/.env
+```
+
+- Ports 9000, 22, 445 and 1247 on 127.0.0.1 must be free; RSpace's SFTP and Samba clients can't use others.
+- The iRODS image is about 5 GB; the first start pulls it.
+- RSpace must be started with `-Dnetfilestores.s3.global.credentials.accessKey=rspacetest` and
+  `-Dnetfilestores.s3.global.credentials.secretKey=rspacetestsecret` (the containers' throwaway login).
+- Set `FILESTORE_CONTAINER_PREFIX` to reuse containers you started under another name prefix
+  (default `rspace-e2e`); a wrong prefix starts new ones and fails on taken ports.
+- `>>` appends on every run. Delete the old `E2E_*` filestore lines first: a recreated SFTP container has a
+  new host key.
+
+`specs/system/config/rorRegistry.e2e.ts` runs in both modes. Real mode calls `api.ror.org`; mock mode
+starts RSpace with `-Dror.api.url=http://localhost:<E2E_MOCK_PORT>/ror`, served by `mocks/ror.ts`.
+
 ## File naming — wrong suffix = test silently never runs
 
 | Suffix | Project | Description |

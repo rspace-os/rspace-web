@@ -13,6 +13,19 @@ export function uniqueName(prefix: string): string {
   return `${prefix}-${randomUUID().slice(0, 12)}`;
 }
 
+/** Hands out unique names and remembers them, so teardown removes only what the test created. */
+export function trackedUniqueNames(prefix: string): { next: () => string; created: ReadonlySet<string> } {
+  const created = new Set<string>();
+  return {
+    next: () => {
+      const name = uniqueName(prefix);
+      created.add(name);
+      return name;
+    },
+    created,
+  };
+}
+
 export function alphaNumericUnique(prefix: string): string {
   return uniqueName(prefix).replaceAll("-", "");
 }

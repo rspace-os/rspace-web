@@ -1,4 +1,8 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+import {
+  type FilestoreCredentials,
+  FilestoreLoginDialog,
+} from "@/__tests__/e2e/components/gallery/FilestoreLoginDialog";
 import { GalleryActionsMenu } from "@/__tests__/e2e/components/gallery/GalleryActionsMenu";
 import type { GallerySection } from "@/__tests__/e2e/components/gallery/GallerySidebar";
 import { GallerySidebar } from "@/__tests__/e2e/components/gallery/GallerySidebar";
@@ -11,6 +15,7 @@ export class GalleryPickerComponent {
   readonly actions: GalleryActionsMenu;
   readonly sidebar: GallerySidebar;
   readonly versionHistoryDialog: GalleryVersionHistoryDialog;
+  private readonly loginDialog: FilestoreLoginDialog;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Gallery" });
@@ -19,6 +24,7 @@ export class GalleryPickerComponent {
     this.actions = new GalleryActionsMenu(page);
     this.sidebar = new GallerySidebar(page);
     this.versionHistoryDialog = new GalleryVersionHistoryDialog(page);
+    this.loginDialog = new FilestoreLoginDialog(page);
   }
 
   async waitForOpen(): Promise<void> {
@@ -43,8 +49,24 @@ export class GalleryPickerComponent {
     await this.root.getByText(name, { exact: true }).last().click();
   }
 
-  async openFolder(name: string): Promise<void> {
+  /**
+   * The first is clicked, the rest added with Ctrl/Cmd-click. Forced: filestore items are marked aria-disabled
+   * although a mouse user can select them.
+   */
+  async selectFilestoreItems(names: [string, ...string[]]): Promise<void> {
+    for (const [index, name] of names.entries()) {
+      const cell = this.root.getByRole("gridcell", { name, exact: true });
+      await cell.click({ force: true, modifiers: index === 0 ? [] : ["ControlOrMeta"] });
+      await expect(cell).toHaveAttribute("aria-selected", "true");
+    }
+  }
+
+  /** Filestores open like folders; pass credentials when their file system asks for a login. */
+  async openFolder(name: string, credentials?: FilestoreCredentials): Promise<void> {
     await this.root.getByText(name, { exact: true }).last().dblclick();
+    if (credentials) {
+      await this.loginDialog.login(credentials);
+    }
     await this.root
       .getByRole("navigation", { name: "Breadcrumbs" })
       .getByRole("button", { name, exact: true })

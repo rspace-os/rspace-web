@@ -22,8 +22,36 @@ export class IdentifierCreateDialog {
   }
 }
 
+export class IdentifierPreviewDialog {
+  readonly root: Locator;
+
+  constructor(page: Page) {
+    this.root = page.getByRole("dialog").filter({
+      has: page.getByRole("heading", { name: "Review your page before publishing", exact: true }),
+    });
+  }
+
+  async waitForOpen(): Promise<void> {
+    await this.root.waitFor({ state: "visible" });
+  }
+
+  creatorAffiliation(organisationName: string): Locator {
+    return this.root.getByText(organisationName, { exact: true });
+  }
+
+  creatorAffiliationIdentifier(rorId: string): Locator {
+    return this.root.getByRole("link", { name: rorId, exact: true });
+  }
+
+  async close(): Promise<void> {
+    await this.root.getByRole("button", { name: "Close", exact: true }).click();
+    await this.root.waitFor({ state: "hidden" });
+  }
+}
+
 export class IdentifierPanel {
   readonly root: Locator;
+  private readonly preview: IdentifierPreviewDialog;
   private readonly previewButton: Locator;
   private readonly publishButton: Locator;
   private readonly retractButton: Locator;
@@ -34,6 +62,7 @@ export class IdentifierPanel {
     section: Locator,
   ) {
     this.root = section;
+    this.preview = new IdentifierPreviewDialog(page);
     this.previewButton = this.root.getByRole("button", { name: "Preview", exact: true });
     this.publishButton = this.root.getByRole("button", { name: "Publish", exact: true });
     this.retractButton = this.root.getByRole("button", { name: "Retract", exact: true });
@@ -100,10 +129,11 @@ export class IdentifierPanel {
     return this.page.getByRole("group", { name: "Subjects" });
   }
 
-  async clickPreview(): Promise<void> {
+  async clickPreview(): Promise<IdentifierPreviewDialog> {
     await this.ensureExpanded();
     await this.previewButton.click();
-    await this.page.getByRole("heading", { name: "Review your page before publishing", exact: true }).waitFor();
+    await this.preview.waitForOpen();
+    return this.preview;
   }
 
   async clickPublish(): Promise<void> {

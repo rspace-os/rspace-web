@@ -1,17 +1,23 @@
 import type { Locator, Page } from "@playwright/test";
+import { FileSystemsComponent } from "@/__tests__/e2e/components/system/config/FileSystemsComponent";
 import { IpWhitelistComponent } from "@/__tests__/e2e/components/system/config/IpWhitelistComponent";
+import { RorRegistryComponent } from "@/__tests__/e2e/components/system/config/RorRegistryComponent";
 import { BasePage } from "../BasePage";
 
 export type SystemPropertyValue = "ALLOWED" | "DENIED_BY_DEFAULT" | "DENIED";
-type ConfigPanel = "System Settings" | "Sysadmin IP White List";
+type ConfigPanel = "System Settings" | "Sysadmin IP White List" | "Institutional File Systems" | "ROR Registry";
 
 export class SystemConfigPage extends BasePage {
   readonly path = "/system/config";
   readonly ipWhitelist: IpWhitelistComponent;
+  readonly fileSystems: FileSystemsComponent;
+  readonly rorRegistry: RorRegistryComponent;
 
   constructor(page: Page) {
     super(page);
     this.ipWhitelist = new IpWhitelistComponent(page);
+    this.fileSystems = new FileSystemsComponent(page);
+    this.rorRegistry = new RorRegistryComponent(page);
   }
 
   override async open(): Promise<void> {
@@ -24,6 +30,18 @@ export class SystemConfigPage extends BasePage {
     await this.openPanel("Sysadmin IP White List");
     await this.ipWhitelist.waitUntilLoaded();
     return this.ipWhitelist;
+  }
+
+  async openFileSystems(): Promise<FileSystemsComponent> {
+    await this.openPanel("Institutional File Systems");
+    await this.fileSystems.waitUntilLoaded();
+    return this.fileSystems;
+  }
+
+  async openRorRegistry(): Promise<RorRegistryComponent> {
+    await this.openPanel("ROR Registry");
+    await this.rorRegistry.waitUntilLoaded();
+    return this.rorRegistry;
   }
 
   async getSetting(name: string): Promise<string> {

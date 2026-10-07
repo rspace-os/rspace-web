@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { FilestoreExportStepComponent } from "./FilestoreExportStepComponent";
 
 export type ExportFormat = "pdf" | "doc" | "xml" | "html" | "eln";
 
@@ -25,8 +26,11 @@ export class ExportWizardComponent {
   readonly backButton: Locator;
   readonly cancelButton: Locator;
 
+  private readonly filestoreStep: FilestoreExportStepComponent;
+
   constructor(page: Page) {
     this.root = page.getByRole("dialog");
+    this.filestoreStep = new FilestoreExportStepComponent(page);
     this.backButton = this.root.getByRole("button", { name: "Back", exact: true });
     this.cancelButton = this.root.getByRole("button", { name: "Cancel" });
   }
@@ -44,6 +48,10 @@ export class ExportWizardComponent {
     if ((await toggle.isChecked()) !== enabled) {
       await toggle.click();
     }
+  }
+
+  async setIncludeFilestoreLinks(enabled: boolean): Promise<void> {
+    await this.root.getByRole("checkbox", { name: "Include filestore links", exact: true }).setChecked(enabled);
   }
 
   async setReportToRaid(enabled: boolean): Promise<void> {
@@ -106,6 +114,12 @@ export class ExportWizardComponent {
 
   async next(): Promise<void> {
     await this.root.getByRole("button", { name: "Next", exact: true }).click();
+  }
+
+  async nextToFilestoreLinks(): Promise<FilestoreExportStepComponent> {
+    await this.next();
+    await this.filestoreStep.waitForOpen();
+    return this.filestoreStep;
   }
 
   async submit(): Promise<void> {

@@ -174,6 +174,8 @@ jobs:
           PROTOCOLIO_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_CLIENT_SECRET || '' }}
           ORCID_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_ID || '' }}
           ORCID_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_SECRET || '' }}
+          R2_ACCESS_KEY: ${{ inputs.mode == 'real' && secrets.R2_ACCESS_KEY || '' }}
+          R2_SECRET_KEY: ${{ inputs.mode == 'real' && secrets.R2_SECRET_KEY || '' }}
         run: |
           set -euo pipefail
           if [ "${{ inputs.mode }}" = "mock" ]; then
@@ -223,6 +225,10 @@ jobs:
               "-Dslack.verification.token=mock-verification-token"
               "-Dslack.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/slack/oauth/authorize"
               "-Dslack.api.base.url=http://localhost:$E2E_MOCK_PORT/slack-api"
+              "-Dror.api.url=http://localhost:$E2E_MOCK_PORT/ror"
+              # S3 credentials are global; these are the MinIO container's throwaway login.
+              "-Dnetfilestores.s3.global.credentials.accessKey=rspacetest"
+              "-Dnetfilestores.s3.global.credentials.secretKey=rspacetestsecret"
             )
           else
             INTEGRATION_ARGS=(
@@ -246,6 +252,8 @@ jobs:
               "-Dprotocolsio.secret=$PROTOCOLIO_CLIENT_SECRET"
               "-Dorcid.client.id=$ORCID_CLIENT_ID"
               "-Dorcid.secret=$ORCID_CLIENT_SECRET"
+              "-Dnetfilestores.s3.global.credentials.accessKey=$R2_ACCESS_KEY"
+              "-Dnetfilestores.s3.global.credentials.secretKey=$R2_SECRET_KEY"
             )
           fi
           nohup ./mvnw jetty:run-war \
@@ -270,6 +278,13 @@ jobs:
             -DRS.devlogLevel=INFO \
             "${INTEGRATION_ARGS[@]}" \
             > /tmp/jetty.log 2>&1 &
+
+      # Mock-mode MinIO, SFTP, Samba and iRODS for specs/system/config/filestores.
+      - name: Start filestore servers
+        if: inputs.mode == 'mock' && contains(fromJSON('["chromium", "firefox", "webkit"]'), matrix.project)
+        run: |
+          sudo ss -ltnp 'sport = :22' || true
+          src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> "$GITHUB_ENV"
 
       - run: pnpm install --frozen-lockfile
 
@@ -327,6 +342,11 @@ jobs:
           PROTOCOLIO_PASSWORD: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_PASSWORD || '' }}
           RSPACE_DEV_ORCID_EMAIL: ${{ inputs.mode == 'real' && secrets.RSPACE_DEV_ORCID_EMAIL || '' }}
           RSPACE_DEV_ORCID_PASS: ${{ inputs.mode == 'real' && secrets.RSPACE_DEV_ORCID_PASS || '' }}
+          E2E_REAL_S3_URL: ${{ inputs.mode == 'real' && secrets.E2E_REAL_S3_URL || '' }}
+          E2E_REAL_S3_BUCKET: ${{ inputs.mode == 'real' && 'test-bucket-s3' || '' }}
+          E2E_REAL_IRODS_URL: ${{ inputs.mode == 'real' && 'irods-test.researchspace.com' || '' }}
+          E2E_REAL_IRODS_USERNAME: ${{ inputs.mode == 'real' && secrets.E2E_REAL_IRODS_USERNAME || '' }}
+          E2E_REAL_IRODS_PASSWORD: ${{ inputs.mode == 'real' && secrets.E2E_REAL_IRODS_PASSWORD || '' }}
         run: pnpm run test-e2e --shard=${{ matrix.shard }}/${{ env.E2E_SHARD_OF }}
 
       - name: Dump server log on failure

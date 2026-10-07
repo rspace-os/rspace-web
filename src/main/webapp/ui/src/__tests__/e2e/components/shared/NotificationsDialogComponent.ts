@@ -1,4 +1,6 @@
+import type { Buffer } from "node:buffer";
 import { expect, type Locator, type Page } from "@playwright/test";
+import { assertOk } from "@/__tests__/e2e/responses";
 import { ToastsComponent } from "./ToastsComponent";
 
 export class NotificationsDialogComponent {
@@ -47,13 +49,26 @@ export class NotificationsDialogComponent {
     return this.root.locator("tr.notificationRow").allInnerTexts();
   }
 
-  // The archive-export notification's own link text is the download URL
-  async getExportDownloadHref(rowText: string): Promise<string> {
-    const row = this.root.locator("tr.notificationRow").filter({ hasText: rowText });
-    const link = row.locator("a[href*='/export/ajax/downloadArchive/']");
+  async downloadExportArchive(rowText: string): Promise<Buffer> {
+    // The download link's text is its URL, so it has no stable accessible name to query by.
+    const link = this.notificationRow(rowText).locator("a[href*='/export/ajax/downloadArchive/']");
+    const response = await this.page.request.get(await this.hrefOf(link, rowText));
+    await assertOk(response, "GET");
+    return response.body();
+  }
+
+  async getExportReportHref(rowText: string): Promise<string> {
+    return this.hrefOf(this.notificationRow(rowText).getByRole("link", { name: "export report page" }), rowText);
+  }
+
+  private notificationRow(rowText: string): Locator {
+    return this.root.locator("tr.notificationRow").filter({ hasText: rowText });
+  }
+
+  private async hrefOf(link: Locator, rowText: string): Promise<string> {
     const href = await link.getAttribute("href");
     if (!href) {
-      throw new Error(`getExportDownloadHref: no download link found in a notification matching "${rowText}"`);
+      throw new Error(`No link found in the notification matching "${rowText}"`);
     }
     return href;
   }
