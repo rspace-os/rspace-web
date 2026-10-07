@@ -140,6 +140,12 @@ export type UiConfig = {
    * locations -- that is when this flag should be true.
    */
   onlyAllowSelectingEmptyLocations: boolean;
+
+  /**
+   * Turns off drag-and-drop in a grid used only to select locations, such as one that picks empty
+   * locations for new records. The container's own page leaves it false.
+   */
+  dragAndDropDisabled: boolean;
 };
 
 export type PermalinkType =
