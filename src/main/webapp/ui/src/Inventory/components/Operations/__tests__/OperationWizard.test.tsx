@@ -1677,27 +1677,25 @@ describe("OperationWizard remembered placement", () => {
     expect(currentStep()).toHaveTextContent(/step\.template/);
   });
 
-  it("falls back to the workbench, with a note, when the remembered container is gone", async () => {
-    rememberBoil({ containerId: 5, containerName: "Shelf" });
-    serveContainer(null);
-    const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origins={[mockOrigin()]} />);
-    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+  it.each([
+    ["is gone", null],
+    ["can no longer hold the new subsamples", { id: 5, globalId: "IC5", name: "Shelf", cType: "LIST", deleted: true }],
+  ] as const)(
+    "opens on Location with a note, no container picked, when the remembered container %s",
+    async (_, attrs) => {
+      rememberBoil({ containerId: 5, containerName: "Shelf" });
+      serveContainer(attrs);
+      const user = userEvent.setup();
+      await openRememberedDerive(user);
 
-    expect(await screen.findByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
-    expect(screen.getByText(/placement\.rememberedUnavailable/)).toBeInTheDocument();
-  });
-
-  it("falls back to the workbench when the remembered container can no longer hold the new subsamples", async () => {
-    rememberBoil({ containerId: 5, containerName: "Shelf" });
-    serveContainer({ id: 5, globalId: "IC5", name: "Shelf", cType: "LIST", deleted: true });
-    const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origins={[mockOrigin()]} />);
-    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-
-    expect(await screen.findByText(/placement\.rememberedUnavailable/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
-  });
+      await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
+      expect(screen.getByText(/placement\.rememberedUnavailable/)).toBeInTheDocument();
+      expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
+      expect(nextButton()).toBeDisabled();
+      await user.click(screen.getByTestId("place-workbench"));
+      expect(nextButton()).toBeEnabled();
+    },
+  );
 });
 
 describe("OperationWizard origin container pre-selection", () => {
