@@ -5415,6 +5415,7 @@ export default interface Resources {
         "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
         "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
         "tokenCreationFailed": "OAuth token could not be created.",
+        "tooManyAttempts": "Too many failed attempts for this account. Please try again later.",
         "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time.",
         "userApiAccessDisabled": "User ''{0}'' doesn''t have access to API",
         "userLockedOrDisabled": "User ''{0}'' has their account locked or disabled."

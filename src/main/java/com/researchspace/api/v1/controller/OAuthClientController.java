@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
+import com.researchspace.auth.PasswordGrantGuessLimiter;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.OAuthTokenType;
@@ -45,6 +46,8 @@ public class OAuthClientController {
   @Autowired private OAuthAppManager appManager;
 
   @Autowired private IReauthenticator reauthenticator;
+
+  @Autowired private PasswordGrantGuessLimiter guessLimiter;
 
   @Autowired private ApiAvailabilityHandler apiHandler;
 
@@ -99,6 +102,13 @@ public class OAuthClientController {
       }
       try {
         User user = userManager.getUserByUsernameOrAlias(username);
+        if (guessLimiter.isBlocked(user.getUsername())) {
+          SECURITY_LOG.warn(
+              "OAuth password flow request for [{}] refused: too many failed attempts, from {}",
+              user.getUsername(),
+              RequestUtil.remoteAddr(request));
+          throw new ApiAuthenticationException("oauth.errors.tooManyAttempts");
+        }
         if (!username.equals(user.getUsername())) {
           SECURITY_LOG.info(
               String.format(
@@ -176,12 +186,14 @@ public class OAuthClientController {
     boolean credentialsMatch = reauthenticator.reauthenticate(subject, password);
 
     if (!credentialsMatch) {
+      guessLimiter.recordFailure(subject.getUsername());
       SECURITY_LOG.warn(
           "OAuth password flow request with invalid credentials " + "for username [{}], from {}",
           subject.getUsername(),
           RequestUtil.remoteAddr(request));
       throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
     }
+    guessLimiter.recordSuccess(subject.getUsername());
     ServiceOperationResult<NewOAuthTokenResponse> response;
     if (isJwt) {
       response =

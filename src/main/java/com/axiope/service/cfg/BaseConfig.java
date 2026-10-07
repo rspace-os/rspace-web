@@ -14,6 +14,7 @@ import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.auth.GroupPermissionUtils;
 import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.ManualLoginHelperImpl;
+import com.researchspace.auth.PasswordGrantGuessLimiter;
 import com.researchspace.auth.PostOAuthLoginHelperImpl;
 import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.auth.WhiteListIPCheckerImpl;
@@ -252,6 +253,7 @@ import io.vavr.control.Option;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -843,6 +845,15 @@ public abstract class BaseConfig {
   @Bean
   IReauthenticator reauthenticatorImpl() {
     return new ReauthenticatorImpl();
+  }
+
+  @Bean
+  PasswordGrantGuessLimiter passwordGrantGuessLimiter(
+      @Value("${oauth.passwordGrant.maxFailures:5}") int maxFailures,
+      @Value("${oauth.passwordGrant.failureWindowSeconds:600}") long failureWindowSeconds) {
+    final long maxTrackedAccounts = 10_000;
+    return new PasswordGrantGuessLimiter(
+        maxFailures, Duration.ofSeconds(failureWindowSeconds), maxTrackedAccounts);
   }
 
   /** For PDF export */
