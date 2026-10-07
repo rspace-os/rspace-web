@@ -330,10 +330,15 @@ to that: a second tab that loaded earlier cannot overwrite what was saved since.
 
 The bundle also keeps the Location choice as `placement: { containerId, containerName }`, or
 `null` for the workbench. Grid locations are never remembered. On restore the container is
-fetched again; if it is gone or can no longer take the new subsamples, the run falls back to
-the workbench with a note (`operations.placement.rememberedUnavailable`). A remembered list
-container keeps the step-one fast path. A remembered grid container cannot, because its
-locations must be picked again, so the wizard opens on the steps with the box pre-selected.
+fetched again. A remembered list container keeps the step-one fast path. A remembered grid
+container cannot, because its locations must be picked again, so the wizard opens on the
+Location step with the box pre-selected and its grid shown. A remembered container that is gone
+or can no longer take the new subsamples also opens on Location, with no container picked and a
+note (`operations.placement.rememberedUnavailable`). The wizard lands on Location only when it
+is the one step left to complete; otherwise it opens on Details, as for any incomplete bundle.
+Landing counts as reviewing, so Back walks the earlier steps and never returns to the one-click
+summary. The decision is taken once, after the container and template checks settle, and any
+edit or navigation before then cancels it.
 
 ## The amount model (DevDocs/adr/0011)
 
