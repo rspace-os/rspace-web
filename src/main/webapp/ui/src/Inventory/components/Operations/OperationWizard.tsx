@@ -240,8 +240,8 @@ function OperationWizard({
   }, [open, placementContainer, createdCount]);
 
   // A remembered container is stored by id, so it is fetched again: it may since have been trashed,
-  // filled or unshared, in which case the run falls back to the workbench and says so. Until the
-  // fetch settles, the placement is an unpicked container, which holds back the fast path. With no
+  // filled or unshared, in which case it stays unpicked and the user is told. Until the fetch
+  // settles, the placement is an unpicked container, which holds back the fast path. With no
   // remembered run, the first origin's own container is offered instead when it can take the new
   // subsamples (D5); the workbench stands in while it loads, and silently if it cannot.
   const [pendingPlacement, setPendingPlacement] = React.useState<{
@@ -297,9 +297,11 @@ function OperationWizard({
         setPlacement({ mode: "container", container });
         return;
       }
-      setPlacement(WORKBENCH);
+      // A remembered choice that cannot be honoured stays an unpicked container, so the run lands on
+      // the picker with the note; the origin's container (D5) was only a suggestion.
       if (remembered)
         setPlacementNote(t("operations.placement.rememberedUnavailable", { container: remembered.containerName }));
+      else setPlacement(WORKBENCH);
     })();
   }, [pendingPlacement, t]);
 
