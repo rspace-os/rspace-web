@@ -1,4 +1,6 @@
 import "@/stores/stores/RootStore";
+import "@/__tests__/__mocks__/resizeObserver";
+import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
@@ -10,6 +12,7 @@ import { makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mock
 import type ContainerModel from "@/stores/models/ContainerModel";
 import type { ContainerAttrs } from "@/stores/models/ContainerModel";
 import type Search from "@/stores/models/Search";
+import materialTheme from "@/theme";
 import PlacementStep from "../PlacementStep";
 import { type PlacementSelection, prepareContainer } from "../placement";
 
@@ -19,17 +22,24 @@ beforeAll(async () => {
 });
 
 const picked = vi.hoisted(() => ({ container: null as unknown }));
-vi.mock("../../Picker/Picker", () => ({
-  default: ({ search }: { search: Search }) => (
-    <button
-      type="button"
-      data-testid="picker-pick"
-      onClick={() => search.callbacks?.setActiveResult?.(picked.container as ContainerModel)}
-    />
-  ),
-}));
-
-vi.mock("../../../Search/SearchView", () => ({ default: () => <div data-testid="container-content" /> }));
+/** The results view: inside a container it is that container's grid, otherwise the step's own search. */
+vi.mock("../../../Search/SearchView", async () => {
+  const { useContext } = await import("react");
+  const { default: SearchContext } = await import("@/stores/contexts/Search");
+  return {
+    default: () => {
+      const { search, scopedResult } = useContext(SearchContext);
+      if (scopedResult) return <div data-testid="container-content" />;
+      return (
+        <button
+          type="button"
+          data-testid="picker-pick"
+          onClick={() => (search as Search).callbacks?.setActiveResult?.(picked.container as ContainerModel)}
+        />
+      );
+    },
+  };
+});
 
 /** A 2x2 grid box with `used` of its four locations taken. */
 const gridBox = (used = 0, attrs: Partial<ContainerAttrs> = {}) => {
@@ -48,9 +58,11 @@ const gridBox = (used = 0, attrs: Partial<ContainerAttrs> = {}) => {
 function renderStep(value: PlacementSelection, count = 1) {
   const onChange = vi.fn();
   render(
-    <InEnglish>
-      <PlacementStep value={value} onChange={onChange} count={count} />
-    </InEnglish>,
+    <ThemeProvider theme={materialTheme}>
+      <InEnglish>
+        <PlacementStep value={value} onChange={onChange} count={count} />
+      </InEnglish>
+    </ThemeProvider>,
   );
   return onChange;
 }
@@ -62,10 +74,30 @@ describe("PlacementStep", () => {
     expect(screen.queryByTestId("picker-pick")).not.toBeInTheDocument();
   });
 
+  it("offers a plain search box over the results, with no filter controls or parameter chips", () => {
+    renderStep({ mode: "container", container: null });
+    expect(screen.getByRole("searchbox")).toBeInTheDocument();
+    expect(screen.getByTestId("picker-pick")).toBeInTheDocument();
+    for (const name of ["Type", "Owner", "Bench", "Status", "Tags"])
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    expect(screen.queryByText(/^(Type|Status):/)).not.toBeInTheDocument();
+  });
+
+  it("lets the user switch the results between tree and list", async () => {
+    const user = userEvent.setup();
+    renderStep({ mode: "container", container: null });
+    await user.click(screen.getByRole("button", { name: "Change view" }));
+    expect(screen.getByRole("menuitem", { name: "Tree View" })).toHaveAttribute("aria-current", "true");
+    await user.click(screen.getByRole("menuitem", { name: "List View" }));
+    await user.click(screen.getByRole("button", { name: "Change view" }));
+    expect(screen.getByRole("menuitem", { name: "List View" })).toHaveAttribute("aria-current", "true");
+    expect(screen.queryByRole("menuitem", { name: "Card View" })).not.toBeInTheDocument();
+  });
+
   it("switches to container mode with nothing picked yet", async () => {
     const user = userEvent.setup();
     const onChange = renderStep({ mode: "workbench" });
-    await user.click(screen.getByRole("radio", { name: "Place in a container" }));
+    await user.click(screen.getByRole("radio", { name: "Choose a location" }));
     expect(onChange).toHaveBeenCalledWith({ mode: "container", container: null });
   });
 

@@ -9,15 +9,18 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import SearchContext from "@/stores/contexts/Search";
+import type { SearchView as SearchViewType } from "@/stores/definitions/Search";
 import ContainerModel from "@/stores/models/ContainerModel";
 import MemoisedFactory from "@/stores/models/Factory/MemoisedFactory";
 import Search from "@/stores/models/Search";
 import { menuIDs } from "@/util/menuIDs";
+import Searchbar from "../../Search/components/Searchbar";
+import ToggleView from "../../Search/components/ToggleView";
 import SearchView from "../../Search/SearchView";
-import InventoryPicker from "../Picker/Picker";
+import InnerSearchNavigationContext from "../InnerSearchNavigationContext";
 import { type PlacementBlocker, type PlacementSelection, placementBlocker } from "./placement";
 
-const ignoreAddition = () => {};
+const RESULT_VIEWS: Array<SearchViewType> = ["LIST", "TREE"];
 
 function PlacementStep({
   value,
@@ -116,9 +119,29 @@ function PlacementStep({
         <FormControlLabel value="container" control={<Radio />} label={t("operations.placement.container")} />
       </RadioGroup>
       {value.mode === "container" ? (
-        <Box sx={{ maxHeight: 320, overflowY: "auto" }}>
-          <InventoryPicker search={search} onAddition={ignoreAddition} paddingless testId="placementPicker" />
-        </Box>
+        // The search box and the results only: the shared picker's type, status, owner and basket
+        // controls and its parameter chips have nothing to offer when choosing one container.
+        <SearchContext.Provider value={{ search, differentSearchForSettingActiveResult: search, isChild: false }}>
+          <InnerSearchNavigationContext>
+            <Stack spacing={1} sx={{ maxHeight: 320, overflowY: "auto" }} data-test-id="placementPicker">
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <Box sx={{ flexGrow: 1 }}>
+                  <Searchbar
+                    handleSearch={(query) =>
+                      void search.fetcher.performInitialSearch({ query, resultType: "CONTAINER" })
+                    }
+                  />
+                </Box>
+                <ToggleView
+                  onChange={(view) => search.setSearchView(view)}
+                  currentView={search.searchView}
+                  views={RESULT_VIEWS}
+                />
+              </Stack>
+              <SearchView contextMenuId={menuIDs.PICKER} />
+            </Stack>
+          </InnerSearchNavigationContext>
+        </SearchContext.Provider>
       ) : null}
       {status()}
       {container && showGrid ? (
