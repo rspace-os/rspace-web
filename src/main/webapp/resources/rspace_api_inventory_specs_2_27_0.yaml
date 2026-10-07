@@ -5854,9 +5854,13 @@ components:
             origin:
               $ref: "#/components/schemas/OperationOriginWithAmount"
             storageTemp:
-              nullable: true
-              allOf:
+              anyOf:
                 - $ref: "#/components/schemas/ReviveStorageTemperature"
+                - type: object
+                  nullable: true
+                  enum:
+                    - null
+                  description: Absent or null; the default of 4 degrees Celsius is used.
           required:
             - origin
       example:
