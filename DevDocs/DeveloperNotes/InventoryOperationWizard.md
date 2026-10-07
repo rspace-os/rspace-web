@@ -336,8 +336,8 @@ Location step with the box pre-selected and its grid shown. A remembered contain
 or can no longer take the new subsamples also opens on Location, with no container picked and a
 note (`operations.placement.rememberedUnavailable`). The wizard lands on Location only when it
 is the one step left to complete; otherwise it opens on Details, as for any incomplete bundle.
-Landing counts as reviewing, so Back walks the earlier steps and never returns to the one-click
-summary. The decision is taken once, after the container and template checks settle, and any
+The landed step offers "Review / edit" in place of Back, as the fast path does; it goes to
+Details. Landing counts as reviewing, so Details never flips back to the one-click summary. The decision is taken once, after the container and template checks settle, and any
 edit or navigation before then cancels it.
 
 ## The amount model (DevDocs/adr/0011)
