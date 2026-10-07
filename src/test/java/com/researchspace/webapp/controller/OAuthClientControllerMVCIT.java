@@ -21,6 +21,7 @@ import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.OAuthAppManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestExecutionListeners;
@@ -44,11 +45,12 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
   @MockitoSpyBean private UsernamePasswordCredentialsMatcher credentialsMatcher;
 
   /**
-   * These tests disable API access mid-method, and the system property outlives the test, so a
-   * failure before the re-enabling line left every later API test unauthorised.
+   * OAuth starts disabled on a fresh database, so each test enables it first. Some tests disable it
+   * mid-method and the system property outlives the test, so it is restored afterwards too.
    */
+  @BeforeEach
   @AfterEach
-  public void restoreApiAccess() {
+  public void enableApiAccess() {
     enableGlobalApiAccess();
     enableApiOAuthAuthentication();
   }
