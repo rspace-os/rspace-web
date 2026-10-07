@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import Badge from "@mui/material/Badge";
 import React, { type ReactNode } from "react";
+import SearchContext from "../../../../stores/contexts/Search";
 import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
 import type { Container, Location } from "../../../../stores/definitions/Container";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
@@ -117,7 +118,9 @@ export function Draggable({ container, location, content, tabIndex, hasFocus, ch
    * than having to cancel the current move operation, move it to where it
    * should be, and then re-attempt the A to B move.
    */
-  const disabled = areAnyOfTheSelectedLocationsEmpty(container) || moveStore.isMoving;
+  const { search } = React.useContext(SearchContext);
+  const disabled =
+    areAnyOfTheSelectedLocationsEmpty(container) || moveStore.isMoving || search.uiConfig.dragAndDropDisabled;
 
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     disabled,
