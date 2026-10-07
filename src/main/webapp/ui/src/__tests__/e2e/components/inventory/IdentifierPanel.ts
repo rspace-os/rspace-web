@@ -43,6 +43,15 @@ export class IdentifierPreviewDialog {
     return this.root.getByRole("link", { name: rorId, exact: true });
   }
 
+  async getDoi(): Promise<string> {
+    const href = await this.root.getByTitle("DOI - address", { exact: true }).getAttribute("href");
+    const prefix = "https://doi.org/";
+    if (!href?.startsWith(prefix)) {
+      throw new Error(`Invalid DOI URL in identifier preview: ${href}`);
+    }
+    return href.slice(prefix.length);
+  }
+
   async close(): Promise<void> {
     await this.root.getByRole("button", { name: "Close", exact: true }).click();
     await this.root.waitFor({ state: "hidden" });

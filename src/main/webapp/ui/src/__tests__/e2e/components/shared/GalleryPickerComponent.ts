@@ -19,7 +19,7 @@ export class GalleryPickerComponent {
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Gallery" });
-    this.addButton = this.root.getByRole("button", { name: "Add" });
+    this.addButton = this.root.getByRole("button", { name: "Add", exact: true });
     this.cancelButton = this.root.getByRole("button", { name: "Cancel" });
     this.actions = new GalleryActionsMenu(page);
     this.sidebar = new GallerySidebar(page);

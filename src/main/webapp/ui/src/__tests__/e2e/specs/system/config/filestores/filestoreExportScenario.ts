@@ -63,12 +63,17 @@ export function describeFilestoreExport(backend: FilestoreBackend): void {
       }
       for (const folder of folders) {
         await expect(pageExportReport.addedToArchive(folder.path)).toHaveText("yes");
-        await expect(pageExportReport.folderSummary(folder.path)).toContainText(folder.skippedEntry);
+        await expect(pageExportReport.folderSummary(folder.path)).toContainText(
+          `${folder.skippedEntry} (file skipped (${folder.reason}))`,
+        );
       }
 
       // The report only says what the server intended; the archive shows which files it really holds.
       const entries = listZipEntries(archive);
       expect(entries).not.toContainEqual(expect.stringContaining(excludedFile.path.slice(1)));
+      for (const folder of folders) {
+        expect(entries).not.toContainEqual(expect.stringContaining(`${folder.path.slice(1)}${folder.skippedEntry}`));
+      }
       for (const file of archivedFiles) {
         expect(entries).toContainEqual(expect.stringContaining(file.path.slice(1)));
       }

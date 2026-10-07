@@ -91,14 +91,17 @@ a configured one that can't be reached fails.
 
 In CI (`e2e.yml`), mock mode starts the containers. Real mode uses these repository secrets: `R2_ACCESS_KEY`,
 `R2_SECRET_KEY`, `E2E_REAL_S3_URL`, `E2E_REAL_IRODS_USERNAME` and `E2E_REAL_IRODS_PASSWORD`. SFTP and Samba
-stay local because GitHub can't reach their internal hosts.
+stay local because GitHub can't reach their internal hosts. Real-mode CI uploads only `e2e-junit.xml`,
+since the HTML report and traces record filled passwords.
 
 ```bash
 # Starts (or reuses) the containers, seeds playwright-test/, prints the E2E_* variables.
 src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> src/main/webapp/ui/.env
 ```
 
-- Ports 9000, 22, 445 and 1247 on 127.0.0.1 must be free; RSpace's SFTP and Samba clients can't use others.
+- Ports 9000, 2222, 445 and 1247 on 127.0.0.1 must be free; RSpace's Samba client requires 445.
+- MinIO uses a digest-pinned [Coollabs community build](https://github.com/coollabsio/minio) on GHCR.
+  When updating it, verify that `mc` and `sh` are available and bucket seeding still works.
 - The iRODS image is about 5 GB; the first start pulls it.
 - RSpace must be started with `-Dnetfilestores.s3.global.credentials.accessKey=rspacetest` and
   `-Dnetfilestores.s3.global.credentials.secretKey=rspacetestsecret` (the containers' throwaway login).
@@ -109,6 +112,10 @@ src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> src/m
 
 `specs/system/config/rorRegistry.e2e.ts` runs in both modes. Real mode calls `api.ror.org`; mock mode
 starts RSpace with `-Dror.api.url=http://localhost:<E2E_MOCK_PORT>/ror`, served by `mocks/ror.ts`.
+The IGSN publication scenario also reads the DOI directly from DataCite with `affiliation=true`.
+In mock mode, the DataCite handler returns the metadata RSpace submitted for that DOI; in real mode,
+the test reads the configured DataCite server. This checks the institution's ROR name and identifier
+at the provider as well as on RSpace's public preview.
 
 ## File naming — wrong suffix = test silently never runs
 

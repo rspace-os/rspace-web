@@ -54,10 +54,11 @@ wait_for() {
 # Same tree everywhere: playwright-test/{hello.txt,clip.flv,sub/nested.txt}.
 SEED='mkdir -p "$1/playwright-test/sub" && echo hello > "$1/playwright-test/hello.txt" && echo video > "$1/playwright-test/clip.flv" && echo nested > "$1/playwright-test/sub/nested.txt"'
 
-# MinIO removed its Docker Hub images; Minimus's free tier only tags latest, so pin the digest.
+# Community build of MinIO RELEASE.2025-10-15T17-29-55Z, including mc and the shell used below.
+# Build source: https://github.com/coollabsio/minio
 start "$PREFIX-minio" -p 127.0.0.1:9000:9000 \
   -e MINIO_ROOT_USER="$USER_NAME" -e MINIO_ROOT_PASSWORD="$MINIO_SECRET" \
-  reg.mini.dev/minio@sha256:8450927bb28a0c15572a49acf840b6c1281f135faf97c3c2b4aa547b49bf7bc5 server /data
+  ghcr.io/coollabsio/minio@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9 server /data
 start "$PREFIX-sftp" -p 127.0.0.1:2222:22 \
   atmoz/sftp "$USER_NAME:$USER_PASSWORD:1001:1001:upload"
 start "$PREFIX-samba" -p 127.0.0.1:445:445 \

@@ -364,7 +364,7 @@ jobs:
           retention-days: 3
 
       - name: Upload Playwright report
-        if: always()
+        if: always() && inputs.mode == 'mock'
         uses: actions/upload-artifact@v7.0.1
         with:
           name: e2e-report-${{ inputs.mode }}-${{ matrix.project }}-${{ matrix.shard }}
@@ -372,4 +372,13 @@ jobs:
             src/main/webapp/ui/playwright-report
             src/main/webapp/ui/test-results
             src/main/webapp/ui/e2e-junit.xml
+          retention-days: 14
+
+      # Real mode keeps only JUnit: report steps and traces record filled values, including secret passwords.
+      - name: Upload JUnit report
+        if: always() && inputs.mode == 'real'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: e2e-report-${{ inputs.mode }}-${{ matrix.project }}-${{ matrix.shard }}
+          path: src/main/webapp/ui/e2e-junit.xml
           retention-days: 14

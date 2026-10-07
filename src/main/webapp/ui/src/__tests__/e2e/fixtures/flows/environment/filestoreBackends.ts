@@ -10,7 +10,7 @@ import { trackedUniqueNames } from "@/__tests__/e2e/testData";
 
 export type FilestoreBackend = "s3" | "sftp" | "samba" | "irods";
 
-/** Relative to the filestore; folders end in "/". */
+/** Relative to the filestore folders end in "/". */
 type FilestoreLinkPath = `/${string}`;
 
 interface LinkDetail {
@@ -30,7 +30,7 @@ interface FilestoreDataset {
     excludedFile: { path: FilestoreLinkPath; reason: string };
     /** `content` is checked in the archive when the file is text. */
     archivedFiles: { path: FilestoreLinkPath; content?: string }[];
-    folders: { path: FilestoreLinkPath; skippedEntry: string }[];
+    folders: { path: FilestoreLinkPath; skippedEntry: string; reason: string }[];
   };
 }
 
@@ -63,7 +63,7 @@ const SEEDED: FilestoreDataset = {
     excludedTypes: "txt",
     excludedFile: { path: "/hello.txt", reason: TXT_EXCLUDED },
     archivedFiles: [{ path: "/clip.flv", content: "video" }],
-    folders: [{ path: "/sub/", skippedEntry: "nested.txt" }],
+    folders: [{ path: "/sub/", skippedEntry: "nested.txt", reason: TXT_EXCLUDED }],
   },
 };
 
@@ -76,7 +76,7 @@ const SHARED_PLAYWRIGHT_TEST: FilestoreDataset = {
     excludedTypes: "txt",
     excludedFile: { path: "/test.txt", reason: TXT_EXCLUDED },
     archivedFiles: [],
-    folders: [{ path: "/playwright-subfolder/", skippedEntry: "test3.txt" }],
+    folders: [{ path: "/playwright-subfolder/", skippedEntry: "test3.txt", reason: TXT_EXCLUDED }],
   },
 };
 
@@ -89,7 +89,7 @@ const SHARED_R2_PLAYWRIGHT_TEST: FilestoreDataset = {
     excludedTypes: "txt",
     excludedFile: { path: "/test1.txt", reason: TXT_EXCLUDED },
     archivedFiles: [],
-    folders: [{ path: "/playwright-test subfolder/", skippedEntry: "test2.txt" }],
+    folders: [{ path: "/playwright-test subfolder/", skippedEntry: "test2.txt", reason: TXT_EXCLUDED }],
   },
 };
 

@@ -17,6 +17,7 @@ test.describe(`Inventory IGSN Identifiers`, { tag: [tags.INVENTORY, tags.MOBILE]
     componentToasts,
     flowIgsnConfig,
     flowLinkedRor,
+    clientDataCite,
   }) => {
     void flowIgsnConfig;
     const sampleName = uniqueName("e2e-igsn-sample");
@@ -60,15 +61,32 @@ test.describe(`Inventory IGSN Identifiers`, { tag: [tags.INVENTORY, tags.MOBILE]
 
     await identifiers.waitForState("Findable");
 
-    // A published identifier's preview is read back from the public API, so it shows the affiliation
-    // RSpace stored and sent to DataCite on publish.
+    // The preview reads RSpace's public API; check DataCite separately for the published metadata.
     const publishedPreview = await identifiers.clickPreview();
     await expect(publishedPreview.creatorAffiliation(flowLinkedRor.name)).toBeVisible();
     await expect(publishedPreview.creatorAffiliationIdentifier(flowLinkedRor.id)).toHaveAttribute(
       "href",
       flowLinkedRor.id,
     );
+    const doi = await publishedPreview.getDoi();
     await publishedPreview.close();
+    expect(await clientDataCite.getDoi(doi)).toMatchObject({
+      id: doi,
+      attributes: {
+        state: "findable",
+        creators: [
+          {
+            affiliation: [
+              {
+                name: flowLinkedRor.name,
+                affiliationIdentifier: flowLinkedRor.id,
+                affiliationIdentifierScheme: "ROR",
+              },
+            ],
+          },
+        ],
+      },
+    });
   });
 
   test(`As a user, I can retract a published identifier`, async ({
