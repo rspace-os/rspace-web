@@ -41,10 +41,24 @@ function importableDoiRecord(doi: string, suffix: string) {
 
 /**
  * Every DOI this mock has minted, as its last POST/PUT left it, so the retrieve-by-id GET can return it
- * with the `metadataVersion` real DataCite bumps on each metadata update - proof of a push the UI never
- * reports, or of its absence.
+ * with its `metadataVersion`.
  */
 const storedDois = new Map<string, ReturnType<typeof responseData>>();
+
+/** The metadata a DOI's XML carries: everything but the lifecycle event and server-managed fields. */
+function metadataOf(attributes: DoiData["attributes"]): string {
+  const { event, state, doi, metadataVersion, ...metadata } = attributes ?? {};
+  return JSON.stringify(metadata);
+}
+
+// Like real DataCite, a PUT advances the revision only when the metadata changes, not on a publish
+// or hide that resends the same metadata.
+function nextMetadataVersion(id: string, attributes: DoiData["attributes"]): number {
+  const stored = storedDois.get(id);
+  if (!stored) return 1;
+  const current = stored.attributes.metadataVersion;
+  return metadataOf(stored.attributes) === metadataOf(attributes) ? current : current + 1;
+}
 
 /** A magic word in the outbound title that makes the PUT below fail - a real outage on demand. */
 export const FORCE_EXTERNAL_UPDATE_FAILURE_SENTINEL = "e2e-pidinst-forcefail";
@@ -95,7 +109,7 @@ export const dataciteHandlers = [
     const id = `${params.prefix}/${params.suffix}`;
     const event = body.data?.attributes?.event;
     const state = event === "publish" ? "findable" : event === "hide" ? "registered" : "draft";
-    const metadataVersion = (storedDois.get(id)?.attributes.metadataVersion ?? 0) + 1;
+    const metadataVersion = nextMetadataVersion(id, body.data?.attributes);
     const data = responseData({ ...body.data, id }, state, metadataVersion);
     storedDois.set(id, data);
     return HttpResponse.json({ data });

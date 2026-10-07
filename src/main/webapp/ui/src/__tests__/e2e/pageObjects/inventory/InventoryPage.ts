@@ -6,11 +6,14 @@ import { InventoryCreateMenu } from "@/__tests__/e2e/components/inventory/Invent
 import { InventoryDetailsPanel } from "@/__tests__/e2e/components/inventory/InventoryDetailsPanel";
 import { InventorySearchPanel } from "@/__tests__/e2e/components/inventory/InventorySearchPanel";
 import { InventorySidebar } from "@/__tests__/e2e/components/inventory/InventorySidebar";
+import { isWholeNumberSegment } from "@/__tests__/e2e/pathSegments";
 import { FieldmarkDialogComponent } from "@/modules/fieldmark/__tests__/pageObjects/FieldmarkDialogComponent";
 import { BasePage } from "../BasePage";
 import { InventoryImportPage, type InventoryImportRecordType } from "./InventoryImportPage";
 
 type InventoryResultType = "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "INSTRUMENT" | "INSTRUMENT_TEMPLATE";
+
+const PIDINST_ENABLED_PATH = "/api/inventory/v1/identifiers/pidinstEnabled/";
 
 export class InventoryPage extends BasePage {
   readonly path = "/inventory";
@@ -41,7 +44,7 @@ export class InventoryPage extends BasePage {
   // so absence of the menu item is only meaningful once that response has arrived.
   async openAndReadPidinstEnabled(): Promise<boolean> {
     const flagResponse = this.page.waitForResponse(
-      (r) => r.request().method() === "GET" && /\/identifiers\/pidinstEnabled\/?$/.test(new URL(r.url()).pathname),
+      (r) => r.request().method() === "GET" && new URL(r.url()).pathname === PIDINST_ENABLED_PATH,
     );
     await this.open();
     const response = await flagResponse;
@@ -75,11 +78,17 @@ export class InventoryPage extends BasePage {
    * caller already on an instrument page from getting the old id back.
    */
   async waitForNewInstrumentPage(trigger: () => Promise<void>): Promise<number> {
-    const instrumentPath = new RegExp(`^${this.path}/instrument/(\\d+)$`);
+    const instrumentPrefix = `${this.path}/instrument/`;
+    const instrumentIdOf = (pathname: string): number | undefined => {
+      const id = pathname.startsWith(instrumentPrefix) ? pathname.slice(instrumentPrefix.length) : "";
+      return isWholeNumberSegment(id) ? Number(id) : undefined;
+    };
     const before = new URL(this.page.url()).pathname;
     await trigger();
-    await this.page.waitForURL((url) => url.pathname !== before && instrumentPath.test(url.pathname));
-    return Number(instrumentPath.exec(new URL(this.page.url()).pathname)?.[1]);
+    await this.page.waitForURL((url) => url.pathname !== before && instrumentIdOf(url.pathname) !== undefined);
+    const id = instrumentIdOf(new URL(this.page.url()).pathname);
+    if (id === undefined) throw new Error(`Expected an instrument page, got ${this.page.url()}`);
+    return id;
   }
 
   async openNewContainerForm() {

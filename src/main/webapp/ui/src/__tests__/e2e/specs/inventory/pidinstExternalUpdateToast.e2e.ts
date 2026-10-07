@@ -45,7 +45,7 @@ test.describe(`Inventory PIDINST external metadata update on save`, { tag: [tags
       "real mode needs IGSN_ACCOUNT_ID, IGSN_PASSWORD, and IGSN_REPO_PREFIX",
     );
 
-    test(`As a user, saving an instrument with a Findable PIDINST identifier leaves it unchanged`, async ({
+    test(`As a user, renaming an instrument preserves its Findable PIDINST metadata`, async ({
       pageInventory,
       clientInventory,
       clientDataCite,
@@ -56,16 +56,21 @@ test.describe(`Inventory PIDINST external metadata update on save`, { tag: [tags
       const instrument = await clientInventory.createInstrument({ name: uniqueName("e2e-pidinst-toast-datacite") });
       const info = await clientInventory.registerIdentifier({ parentGlobalId: instrument.globalId });
       await clientInventory.publishIdentifier(info.id);
-      const versionBeforeSave = await clientDataCite.getMetadataVersion(info.doi);
+      const metadataBeforeSave = await clientDataCite.getMetadata(info.doi);
+      expect(metadataBeforeSave.name).toBe(instrument.name);
+      const renamed = uniqueName("e2e-pidinst-toast-datacite-renamed");
 
       await pageInventory.openInstrument(instrument.id);
       await pageInventory.detailsPanel.enterEditMode();
+      await pageInventory.detailsPanel.rename(renamed);
       await pageInventory.detailsPanel.saveEdit();
 
       const toast = componentToasts.byVariant("notice", "Instrument PID left unchanged");
       await expect(toast).toBeVisible();
       await expect(toast).toContainText("Publishing or republishing the identifier sends its current metadata.");
-      expect(await clientDataCite.getMetadataVersion(info.doi)).toBe(versionBeforeSave);
+      await pageInventory.openInstrument(instrument.id);
+      await expect(pageInventory.detailsPanel.headingNamed(renamed)).toBeVisible();
+      expect(await clientDataCite.getMetadata(info.doi)).toEqual(metadataBeforeSave);
     });
 
     test(`As a user, saving an instrument fails to update a PIDINST identifier the provider rejects`, async ({

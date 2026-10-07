@@ -47,6 +47,11 @@ export class InventoryDetailsPanel {
     this.moreActions = new MoreActionsMenu(page, this.root.getByRole("button", { name: "More actions" }).first());
   }
 
+  /** The record title heading, matched by its name so another level-2 heading on the page can't stand in. */
+  headingNamed(name: string): Locator {
+    return this.root.getByRole("heading", { level: 2, name, exact: true });
+  }
+
   async name(): Promise<string> {
     return this.heading.innerText();
   }

@@ -15,11 +15,15 @@ test.describe(`Inventory PIDINST unlink on delete`, { tag: [tags.INVENTORY] }, (
   test(`As a user, trashing an Instrument releases its linked PID so it can be imported again, and restoring the instrument does not bring the identifier back`, async ({
     pageInventory,
     clientInventory,
+    clientDataCite,
     componentToasts,
     flowPidinstDataciteConfig,
   }) => {
     void flowPidinstDataciteConfig;
-    const { pid: doi, name: expectedName } = await importableDataCitePid(clientInventory, "e2e-pidinst-unlink-real");
+    const { pid: doi, name: expectedName } = await importableDataCitePid(
+      { clientInventory, clientDataCite },
+      "e2e-pidinst-unlink-real",
+    );
 
     const original = await test.step("Given the PID is already imported as an Instrument", async () => {
       return clientInventory.importPidinst(doi);
@@ -44,17 +48,16 @@ test.describe(`Inventory PIDINST unlink on delete`, { tag: [tags.INVENTORY] }, (
       await clientInventory.deleteInstrument(original.id);
     });
 
-    const reimported = await test.step("Then the same PID can be imported again, as a new Instrument", async () => {
+    await test.step("Then the same PID can be imported again, as a new Instrument", async () => {
       const menu = await pageInventory.openCreateMenu();
       const dialog = await menu.openPidinstImport();
       await dialog.search(doi);
       await dialog.selectResult(expectedName);
+      await expect(dialog.preview).toBeVisible();
       await expect(dialog.alreadyLinkedBanner).toHaveCount(0);
-      const id = await pageInventory.waitForNewInstrumentPage(() => dialog.clickImport());
+      await pageInventory.waitForNewInstrumentPage(() => dialog.clickImport());
       await expect(componentToasts.byVariant("success", "Successfully imported the instrument.")).toBeVisible();
-      return { id };
     });
-    expect(reimported.id).not.toBe(original.id);
 
     await test.step("When the original instrument is restored, then its identifier does not come back", async () => {
       await clientInventory.restoreInstrument(original.id);

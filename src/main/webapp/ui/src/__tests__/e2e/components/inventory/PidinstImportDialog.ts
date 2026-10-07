@@ -33,7 +33,7 @@ export class PidinstImportDialog {
     }
   }
 
-  resultRow(name: string): Locator {
+  private resultRow(name: string): Locator {
     return this.root.getByRole("radio", { name: `Select record: ${name}` });
   }
 
@@ -45,9 +45,14 @@ export class PidinstImportDialog {
     return this.root.getByRole("region", { name: "Selected record" });
   }
 
-  previewField(label: string): Locator {
-    const term = this.page.getByRole("term").filter({ hasText: new RegExp(`^${label}$`) });
-    return this.preview.locator("div").filter({ has: term }).getByRole("definition");
+  /**
+   * The preview's label/value pairs. Each <dd> follows its <dt> with no accessible link between them,
+   * so they are paired by position; read through `expect.poll` so it retries until the preview settles.
+   */
+  async previewFields(): Promise<Record<string, string>> {
+    const labels = await this.preview.getByRole("term").allInnerTexts();
+    const values = await this.preview.getByRole("definition").allInnerTexts();
+    return Object.fromEntries(labels.map((label, i) => [label.trim(), values[i]?.trim() ?? ""]));
   }
 
   /** The preview's already-linked notice, naming the instrument that holds the PID. */

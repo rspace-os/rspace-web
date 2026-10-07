@@ -1,10 +1,19 @@
 import type { Locator, Page } from "@playwright/test";
+import { isWholeNumberSegment } from "@/__tests__/e2e/pathSegments";
 import { CollapsibleSections } from "./CollapsibleSections";
 import { CustomFieldsEditor } from "./CustomFieldsEditor";
 
-// Templates re-fetch their pinned version (sampleTemplates/5/versions/1); other sub-resources are not a re-fetch.
-const SAVED_ENTITY_REFETCH =
-  /^\/api\/inventory\/v1\/(containers|samples|instruments|instrumentTemplates|sampleTemplates)\/\d+(\/versions\/\d+)?$/;
+const INVENTORY_API = "/api/inventory/v1/";
+const SAVED_ENTITY_TYPES = new Set(["containers", "samples", "instruments", "instrumentTemplates", "sampleTemplates"]);
+
+// The record's own GET, optionally pinned to a version (sampleTemplates/5/versions/1). Image,
+// thumbnail and other sub-resource GETs (samples/5/image/x) are not the re-fetch.
+function isSavedEntityRefetch(pathname: string): boolean {
+  if (!pathname.startsWith(INVENTORY_API)) return false;
+  const [entity, id, versions, version, ...extra] = pathname.slice(INVENTORY_API.length).split("/");
+  if (!SAVED_ENTITY_TYPES.has(entity) || !isWholeNumberSegment(id) || extra.length > 0) return false;
+  return versions === undefined || (versions === "versions" && isWholeNumberSegment(version));
+}
 
 export class NewItemFormShell {
   readonly root: Locator;
@@ -51,7 +60,7 @@ export class NewItemFormShell {
   // editor?" prompt, so this also waits for that re-fetch.
   async save(): Promise<void> {
     const refetchResponse = this.page.waitForResponse(
-      (r) => r.request().method() === "GET" && SAVED_ENTITY_REFETCH.test(new URL(r.url()).pathname),
+      (r) => r.request().method() === "GET" && isSavedEntityRefetch(new URL(r.url()).pathname),
     );
     await this.saveButton.click();
     await this.saveButton.waitFor({ state: "detached" });

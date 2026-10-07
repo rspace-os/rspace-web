@@ -133,7 +133,7 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       void flowPidinstB2instConfig;
 
       /** Leaves the instrument open with its Identifiers section expanded, ready for Refresh. */
-      async function mintAndSubmit(namePrefix: string): Promise<{ rid: string }> {
+      async function mintAndSubmit(namePrefix: string): Promise<{ instrumentId: number; rid: string }> {
         const instrument = await clientInventory.createInstrument({ name: uniqueName(namePrefix) });
         const info = await clientInventory.registerIdentifier({ parentGlobalId: instrument.globalId });
 
@@ -144,11 +144,11 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
         await identifiers.clickPublish();
         await identifiers.waitForState("Submitted");
 
-        return { rid: info.doi };
+        return { instrumentId: instrument.id, rid: info.doi };
       }
 
       await test.step("When Refresh runs after the community declines, then only Delete remains", async () => {
-        const { rid } = await mintAndSubmit("e2e-pidinst-refresh-declined");
+        const { instrumentId, rid } = await mintAndSubmit("e2e-pidinst-refresh-declined");
         await setB2instReviewStatus(rid, "declined");
 
         const identifiers = pageInventory.detailsPanel.identifiers();
@@ -158,10 +158,15 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
         await expect(identifiers.publish).toBeHidden();
         await expect(identifiers.refresh).toBeHidden();
         await expect(identifiers.delete).toBeEnabled();
+
+        // Refresh saves the provider's decision, so it must survive reopening the instrument.
+        await pageInventory.openInstrument(instrumentId);
+        await pageInventory.detailsPanel.expandSection("Identifiers");
+        await expect(identifiers.stateLabel("Declined")).toBeVisible();
       });
 
       await test.step("When Refresh runs after the community accepts, then Retract is disabled", async () => {
-        const { rid } = await mintAndSubmit("e2e-pidinst-refresh-accepted");
+        const { instrumentId, rid } = await mintAndSubmit("e2e-pidinst-refresh-accepted");
         await setB2instReviewStatus(rid, "accepted");
 
         const identifiers = pageInventory.detailsPanel.identifiers();
@@ -172,6 +177,11 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
         await expect(identifiers.publish).toBeHidden();
         await expect(identifiers.refresh).toBeVisible();
         await expect(identifiers.retract).toBeDisabled();
+
+        await pageInventory.openInstrument(instrumentId);
+        await pageInventory.detailsPanel.expandSection("Identifiers");
+        await expect(identifiers.stateLabel("Accepted")).toBeVisible();
+        await expect(identifiers.identifierLink(mintedHandleUrl(rid))).toBeVisible();
       });
     });
   });

@@ -30,13 +30,17 @@ test.describe(`Inventory PIDINST Import`, { tag: [tags.INVENTORY] }, () => {
       await dialog.selectResult(expectedName);
       await expect(dialog.preview).toBeVisible();
 
-      await expect(dialog.previewField("PID")).toHaveText(handle);
-      await expect(dialog.previewField("Registry record")).toHaveText(`https://b2inst-test.gwdg.de/records/${rid}`);
-      await expect(dialog.previewField("Owners")).toHaveText("E2E Test Institution");
-      await expect(dialog.previewField("Manufacturers")).toHaveText("E2E Instrument Co");
+      await expect
+        .poll(() => dialog.previewFields())
+        .toMatchObject({
+          PID: handle,
+          "Registry record": `https://b2inst-test.gwdg.de/records/${rid}`,
+          Owners: "E2E Test Institution",
+          Manufacturers: "E2E Instrument Co",
+        });
       const importedGlobalId = `IN${await pageInventory.waitForNewInstrumentPage(() => dialog.clickImport())}`;
       await expect(componentToasts.byVariant("success", "Successfully imported the instrument.")).toBeVisible();
-      await expect(pageInventory.detailsPanel.heading).toContainText(expectedName);
+      await expect(pageInventory.detailsPanel.headingNamed(expectedName)).toBeVisible();
 
       const identifiers = pageInventory.detailsPanel.identifiers();
       await pageInventory.detailsPanel.expandSection("Identifiers");
@@ -71,11 +75,13 @@ test.describe(`Inventory PIDINST Import`, { tag: [tags.INVENTORY] }, () => {
     test(`As a user, I can import an instrument by searching a PIDINST registry for its PID`, async ({
       pageInventory,
       clientInventory,
+      clientDataCite,
       componentToasts,
       flowPidinstDataciteConfig,
     }) => {
       void flowPidinstDataciteConfig;
-      const { pid: doi, name: expectedName } = await importableDataCitePid(clientInventory, "e2e-pidinst-import-real");
+      const importable = await importableDataCitePid({ clientInventory, clientDataCite }, "e2e-pidinst-import-real");
+      const { pid: doi, name: expectedName } = importable;
 
       await pageInventory.open();
       await pageInventory.isLoaded();
@@ -85,10 +91,10 @@ test.describe(`Inventory PIDINST Import`, { tag: [tags.INVENTORY] }, () => {
       await dialog.selectResult(expectedName);
       await expect(dialog.preview).toBeVisible();
 
-      await expect(dialog.previewField("PID")).toHaveText(doi);
+      await expect.poll(() => dialog.previewFields()).toMatchObject({ PID: doi });
       const importedGlobalId = `IN${await pageInventory.waitForNewInstrumentPage(() => dialog.clickImport())}`;
       await expect(componentToasts.byVariant("success", "Successfully imported the instrument.")).toBeVisible();
-      await expect(pageInventory.detailsPanel.heading).toContainText(expectedName);
+      await expect(pageInventory.detailsPanel.headingNamed(expectedName)).toBeVisible();
 
       const identifiers = pageInventory.detailsPanel.identifiers();
       await pageInventory.detailsPanel.expandSection("Identifiers");
@@ -97,12 +103,10 @@ test.describe(`Inventory PIDINST Import`, { tag: [tags.INVENTORY] }, () => {
       await identifiers.waitForType("DATACITE");
       await identifiers.waitForState("Findable");
 
-      if (INTEGRATION_MODE !== "real") {
-        const customFields = pageInventory.detailsPanel.customFields();
-        await pageInventory.detailsPanel.expandSection("Custom Fields");
-        await expect(customFields.fieldValue("Owner")).toHaveValue("E2E Test Institution");
-        await expect(customFields.fieldValue("Manufacturer")).toHaveValue("E2E Instrument Co");
-      }
+      const customFields = pageInventory.detailsPanel.customFields();
+      await pageInventory.detailsPanel.expandSection("Custom Fields");
+      await expect(customFields.fieldValue("Owner")).toHaveValue(importable.owner);
+      await expect(customFields.fieldValue("Manufacturer")).toHaveValue(importable.manufacturer);
 
       menu = await pageInventory.openCreateMenu();
       dialog = await menu.openPidinstImport();
