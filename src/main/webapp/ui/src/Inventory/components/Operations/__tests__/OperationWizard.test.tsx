@@ -1637,18 +1637,19 @@ describe("OperationWizard remembered placement", () => {
     for (const record of records) expect(record).toHaveProperty("parentLocation");
   });
 
-  it("walks back from the landed Location step through the earlier steps, never to the summary", async () => {
+  it("offers Review / edit on the landed Location step, which goes to Details and never to the summary", async () => {
     rememberBoil({ containerId: 6, containerName: "Box" });
     serveContainer(gridBox);
     const user = userEvent.setup();
     await openRememberedDerive(user);
     await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
+    expect(screen.queryByRole("button", { name: /actions\.back/i })).not.toBeInTheDocument();
 
-    await user.click(backButton());
-    expect(currentStep()).toHaveTextContent(/step\.documentation/);
-    for (let step = 0; step < 3; step++) await user.click(backButton());
+    await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
     expect(currentStep()).toHaveTextContent(/step\.details/);
     expect(screen.queryByTestId("confirm")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /wizard\.reviewEdit/i })).not.toBeInTheDocument();
+    expect(backButton()).toBeInTheDocument();
   });
 
   it("stays on Details when the remembered template is trashed as well as the grid needing locations", async () => {

@@ -253,6 +253,9 @@ function OperationWizard({
   // complete (a grid's locations are never remembered), the wizard opens there instead of on
   // Details. One decision per bundle; any navigation or edit before it is taken cancels it.
   const [landOnPlacement, setLandOnPlacement] = React.useState(false);
+  // While on the step it landed on, the wizard offers "Review / edit" in place of Back, as the
+  // fast path does.
+  const [landed, setLanded] = React.useState(false);
   const placementCheckId = React.useRef(0);
   const createdCountRef = React.useRef(createdCount);
   createdCountRef.current = createdCount;
@@ -262,6 +265,7 @@ function OperationWizard({
     placementCheckId.current++;
     setPlacementNote(null);
     setLandOnPlacement(mayLand && Boolean(remembered));
+    setLanded(false);
     setPlacement(remembered ? { mode: "container", container: null } : WORKBENCH);
     const originId = remembered === undefined ? originContainerId(origins) : null;
     setPendingPlacement(
@@ -659,6 +663,7 @@ function OperationWizard({
   const next = () => {
     extendOriginLocks();
     setLandOnPlacement(false);
+    setLanded(false);
     setActiveStep((s) => s + 1);
   };
 
@@ -728,7 +733,8 @@ function OperationWizard({
     setLandOnPlacement(false);
     if (placementIndex < 0 || placementValid || !otherStepsValid) return;
     setActiveStep(placementIndex);
-    // Reviewing, so stepping back to Details never flips the view to the one-click summary.
+    setLanded(true);
+    // Reviewing, so returning to Details never flips the view to the one-click summary.
     setReviewing(true);
   }, [landOnPlacement, placementSettled, placementValid, otherStepsValid, placementIndex]);
 
@@ -1069,9 +1075,22 @@ function OperationWizard({
             </>
           ) : (
             <>
-              <Button onClick={back} disabled={submitting}>
-                {t("common:actions.back")}
-              </Button>
+              {landed ? (
+                <Button
+                  onClick={() => {
+                    extendOriginLocks();
+                    setLanded(false);
+                    setActiveStep(0);
+                  }}
+                  disabled={submitting}
+                >
+                  {t("operations.wizard.reviewEdit")}
+                </Button>
+              ) : (
+                <Button onClick={back} disabled={submitting}>
+                  {t("common:actions.back")}
+                </Button>
+              )}
               {isLast ? (
                 <SubmitSpinnerButton
                   onClick={() => void submit()}
