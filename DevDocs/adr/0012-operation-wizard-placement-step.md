@@ -46,7 +46,9 @@ example RSDEV-1309 fulfilment) need placement in one call.
 - The client's capacity check can go stale: someone may fill the box before Perform. The
   server then refuses the move and the fallback above applies.
 - Only the container is remembered, never grid locations, so a remembered grid container
-  withholds the step-one fast path.
+  withholds the step-one fast path and the wizard opens on the Location step instead, the only
+  step with work left. A remembered container that can no longer be used opens there too, with
+  no container picked and a note, rather than silently becoming the workbench.
 
 ## Trap: ContainerModel's move checks read the global moveStore
 
