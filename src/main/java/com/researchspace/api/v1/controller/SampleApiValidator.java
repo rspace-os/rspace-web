@@ -21,16 +21,10 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
   QuantityUtils impl = new QuantityUtils();
 
   void validateStorageTemperatures(Errors errors, ApiSampleInfo apiSamplePost) {
-    QuantityInfo max = null;
-    QuantityInfo min = null;
-    if (apiSamplePost.getStorageTempMax() != null) {
-      max = apiSamplePost.getStorageTempMax().toQuantityInfo();
-      validateTemperatureUnit(max, "storageTempMax", errors);
-    }
-    if (apiSamplePost.getStorageTempMin() != null) {
-      min = apiSamplePost.getStorageTempMin().toQuantityInfo();
-      validateTemperatureUnit(min, "storageTempMin", errors);
-    }
+    QuantityInfo max =
+        validatedTemperature(apiSamplePost.getStorageTempMax(), "storageTempMax", errors);
+    QuantityInfo min =
+        validatedTemperature(apiSamplePost.getStorageTempMin(), "storageTempMin", errors);
     if (max != null && min != null) {
 
       if (!impl.isComparableQuantities(min, max)) {
@@ -40,26 +34,43 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
       List<QuantityInfo> toSort = toList(min, max);
       impl.sortAsc(toSort);
 
-      // unit comparison of temperature
       if (!toSort.get(0).equals(min)) {
         errors.rejectValue("storageTempMin", "errors.inventory.temperature.minGreaterThanMax");
       }
     }
   }
 
-  void validateTemperatureUnit(QuantityInfo temp, String field, Errors errors) {
-    RSUnitDef def = RSUnitDef.getUnitById(temp.getUnitId());
-    if (!def.isTemperature()) {
-      errors.rejectValue(field, "errors.inventory.temperature.invalidUnit");
+  private QuantityInfo validatedTemperature(
+      com.researchspace.api.v1.model.ApiQuantityInfo temperature, String field, Errors errors) {
+    if (temperature == null) {
+      return null;
     }
+    if (temperature.getUnitId() == null
+        || !RSUnitDef.exists(temperature.getUnitId())
+        || !RSUnitDef.getUnitById(temperature.getUnitId()).isTemperature()) {
+      errors.rejectValue(field, "errors.inventory.temperature.invalidUnit");
+      return null;
+    }
+    // A missing number stays unresolved: whether a temperature is required at all is each
+    // caller's own rule, and the min/max comparison below dereferences the number.
+    if (temperature.getNumericValue() == null) {
+      return null;
+    }
+    if (!QuantityInfo.canStoreWithoutRounding(temperature.getNumericValue())) {
+      errors.rejectValue(field, "errors.inventory.temperature.notStorable");
+      return null;
+    }
+    return temperature.toQuantityInfo();
   }
 
-  // use supplier to reuse for ApiSampleFull and ApiSample
   void validateSubsampleQuantities(
       Supplier<List<? extends ApiSubSampleInfo>> apiSamplePost, Errors errors) {
     for (int i = 0; i < apiSamplePost.get().size(); i++) {
       ApiSubSampleInfo sub = apiSamplePost.get().get(i);
-      if (sub.getQuantity() != null) {
+      // A null element ("subSamples": [null]) is already a bean-validation error at binding, but
+      // the controllers accept a BindingResult so this validator still runs; dereferencing the
+      // element would turn that reported 400 into a 500.
+      if (sub != null && sub.getQuantity() != null) {
         errors.pushNestedPath("subSamples[" + i + "]");
         validateInventoryRecordQuantity(sub, errors);
         errors.popNestedPath();

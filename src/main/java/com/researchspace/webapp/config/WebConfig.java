@@ -1,5 +1,6 @@
 package com.researchspace.webapp.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.researchspace.api.v1.controller.APIFileUploadThrottlingInterceptor;
 import com.researchspace.api.v1.controller.APIRequestThrottlingInterceptor;
@@ -212,8 +213,11 @@ public class WebConfig extends WebMvcConfigurationSupport {
   protected void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
     // now let's reconfigure Jackson to use PrettyPrinted object mapper.
     for (HttpMessageConverter<?> converter : converters) {
-      if (converter instanceof MappingJackson2HttpMessageConverter) {
-        ((MappingJackson2HttpMessageConverter) converter).setPrettyPrint(true);
+      if (converter instanceof MappingJackson2HttpMessageConverter jacksonConverter) {
+        jacksonConverter.setPrettyPrint(true);
+        jacksonConverter
+            .getObjectMapper()
+            .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
       }
       // and string response bodies to be UTF8
       if (converter instanceof StringHttpMessageConverter) {
