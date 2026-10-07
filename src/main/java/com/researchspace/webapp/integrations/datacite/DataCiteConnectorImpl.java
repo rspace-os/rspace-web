@@ -41,10 +41,10 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
   private final Map<InventorySettingType, Boolean> dataCiteEnabled =
       new EnumMap<>(InventorySettingType.class);
 
-  @Value("${pidinst.lookup.datacite.url:}")
+  @Value("${pidinst.lookup.datacite.url}")
   private String lookupServerUrl;
 
-  @Value("${sysadmin.rspace.support.email:}")
+  @Value("${sysadmin.rspace.support.email}")
   private String supportEmail;
 
   /**

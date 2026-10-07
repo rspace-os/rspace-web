@@ -75,7 +75,7 @@ public class B2instConnectorImpl implements B2instConnector {
    * The public registry (ADR 0011). A deployment property, so it is injected once and never
    * reloaded.
    */
-  @Value("${pidinst.lookup.b2inst.url:}")
+  @Value("${pidinst.lookup.b2inst.url}")
   private String lookupServerUrl;
 
   /**
