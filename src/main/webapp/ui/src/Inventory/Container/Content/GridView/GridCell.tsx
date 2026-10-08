@@ -2,7 +2,7 @@ import TableCell from "@mui/material/TableCell";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useContext, useEffect, useRef } from "react";
-import SearchContext from "../../../../stores/contexts/Search";
+import SearchContext from "@/stores/contexts/Search";
 import type { Location } from "../../../../stores/definitions/Container";
 import useResizeObserver from "../../../components/ResizeObserver";
 import * as DragAndDrop from "../DragAndDrop";
