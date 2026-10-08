@@ -20,6 +20,7 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
+import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
@@ -33,6 +34,7 @@ import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,6 +54,7 @@ class BookingCatalogueManagerImplTest {
   @Mock private BookingItemQuery itemQuery;
   @Mock private BookingCalendarQuery calendarQuery;
   @Mock private User caller;
+  @Mock private InstrumentReadAccess instrumentReadAccess;
 
   private BookingCatalogueManagerImpl manager;
 
@@ -201,6 +204,58 @@ class BookingCatalogueManagerImplTest {
 
     verify(configurations)
         .getConfigurations(any(ResourceRequest.class), same(caller), same(ownership));
+  }
+
+  @Test
+  void combinesCapabilityAndMineWithIndependentTrustedBindings() {
+    User subject = caller;
+    when(subject.isEnabled()).thenReturn(true);
+    when(subject.getUsername()).thenReturn("booking-user");
+    when(instrumentReadAccess.documentation())
+        .thenReturn(AccessFunction.authenticated().documentation());
+    FilterExpression notDeleted =
+        new FilterExpression.Comparison("deleted", Operator.EQUAL, List.of(false), false);
+    when(instrumentReadAccess.constraint(subject, true)).thenReturn(notDeleted);
+    when(instrumentReadAccess.constraint(subject, false)).thenReturn(notDeleted);
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(subject), any(RsqlCollectionQuery.Predicate.class)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
+    when(instruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
+    when(instruments.getReadableParentLocationSummaries(Set.of(), subject)).thenReturn(Map.of());
+
+    BookingCatalogueManagerImpl managerWithRealItemQuery =
+        new BookingCatalogueManagerImpl(
+            configurations,
+            instruments,
+            featureFlags,
+            new BookingItemQuery(instrumentReadAccess),
+            calendarQuery);
+
+    managerWithRealItemQuery.search(
+        null,
+        null,
+        ResourceRequest.unpaged(null),
+        List.of(),
+        List.of(),
+        BookingCatalogueManager.Capability.CREATE_BOOKING,
+        true,
+        1,
+        20,
+        subject);
+
+    ArgumentCaptor<RsqlCollectionQuery.Predicate> restriction =
+        ArgumentCaptor.forClass(RsqlCollectionQuery.Predicate.class);
+    verify(configurations)
+        .getConfigurations(any(ResourceRequest.class), same(subject), restriction.capture());
+    RsqlCollectionQuery.Predicate combined = restriction.getValue();
+
+    assertTrue(combined.expression().contains("EXISTS bookingItemCapability"));
+    assertTrue(combined.expression().contains("EXISTS ownedBookingItemCapability"));
+    assertTrue(combined.parameters().containsKey("bookingItemType"));
+    assertTrue(combined.parameters().containsKey("ownedBookingItemType"));
+    assertTrue(combined.parameters().containsValue(subject.getUsername()));
+    assertTrue(combined.subqueries().containsKey("bookingItemCapability"));
+    assertTrue(combined.subqueries().containsKey("ownedBookingItemCapability"));
   }
 
   private BookingCatalogueManager.Page search(
