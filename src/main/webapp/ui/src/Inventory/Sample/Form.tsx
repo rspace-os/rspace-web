@@ -18,10 +18,12 @@ import ApiService from "../../common/InvApiService";
 import { Heading } from "../../components/DynamicHeadingLevel";
 import FieldLabel from "../../components/Inputs/FieldLabel";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
+import { mkAlert } from "../../stores/contexts/Alert";
 import NavigateContext from "../../stores/contexts/Navigate";
 import type { Person } from "../../stores/definitions/Person";
 import SampleModel from "../../stores/models/SampleModel";
 import useStores from "../../stores/use-stores";
+import { getErrorMessage } from "../../util/error";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parser from "../../util/parsers";
 import { capitaliseJustFirstChar } from "../../util/Util";
@@ -97,7 +99,6 @@ const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel 
                 onChange={({ target: { checked } }) => activeResult.setAttributesDirty({ requestable: checked })}
                 color="primary"
                 disabled={!activeResult.isFieldEditable("requestable")}
-                slotProps={{ input: { role: "checkbox" } }}
               />
             }
             label={t("sample.requestsSection.switchLabel")}
@@ -192,8 +193,13 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
     status: string;
     created: string;
   } | null>(null);
+  // Guards sendRequest/cancelRequest below against double-clicks; the two are never both
+  // available at once (the Cancel button only shows once a request already exists), so one
+  // shared flag is enough.
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
+  const { uiStore } = useStores();
   const viewRequest = () => {
     if (!existingRequest) return;
     navigate(`/inventory/requests?requestId=${existingRequest.id}`);
@@ -208,8 +214,12 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   // Check whether the current user already has a request against this sample, so that the
   // request button can be replaced with the existing request's status instead. Further UI
   // enhancements around this (richer status display, etc.) will come later.
+  //
+  // Gated on sampleRequestsAvailable too, not just below in the render: this whole component
+  // renders nothing once the property is DENIED (see the early return below), so without this
+  // guard the fetch would still fire on every mount for no UI benefit at all.
   useEffect(() => {
-    if (!activeResult.requestable || activeResult.id == null) {
+    if (!sampleRequestsAvailable || !activeResult.requestable || activeResult.id == null) {
       setCheckingForExistingRequest(false);
       setExistingRequest(null);
       return;
@@ -240,15 +250,25 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
     return () => {
       cancelled = true;
     };
-  }, [activeResult.id, activeResult.requestable]);
+  }, [activeResult.id, activeResult.requestable, sampleRequestsAvailable]);
 
   if (!sampleRequestsAvailable || activeResult.currentUserIsOwner) return null;
 
-  // Richer UI responses to the outcome (error state, etc.) are handled separately; for now,
-  // on success the newly-created request's status simply replaces the request button, and the
+  const showActionError = (action: string, error: unknown) => {
+    console.error(action, error);
+    uiStore.addAlert(
+      mkAlert({
+        variant: "error",
+        message: t("errors.genericActionError", { error: getErrorMessage(error, t("errors.unknownReason")) }),
+      }),
+    );
+  };
+
+  // On success the newly-created request's status simply replaces the request button, and the
   // dialog closes.
   const sendRequest = () => {
-    if (!activeResult.globalId) return;
+    if (!activeResult.globalId || isProcessingAction) return;
+    setIsProcessingAction(true);
     void ApiService.post<{ id: number; status: string; created: string }>("sampleRequests", {
       sampleGlobalId: activeResult.globalId,
       note: requestText,
@@ -256,15 +276,18 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
       .then(({ data }) => {
         setExistingRequest(data);
         setDialogOpen(false);
+        setRequestText("");
       })
       .catch((error: unknown) => {
-        console.error("Failed to send sample request", error);
-      });
+        showActionError("Failed to send sample request", error);
+      })
+      .finally(() => setIsProcessingAction(false));
   };
 
   // Cancelling is only legal for the requester, and only while the request is PENDING.
   const cancelRequest = () => {
-    if (!existingRequest) return;
+    if (!existingRequest || isProcessingAction) return;
+    setIsProcessingAction(true);
     void ApiService.update<{ id: number; status: string; created: string }>(
       "sampleRequests",
       `${existingRequest.id}/status`,
@@ -274,8 +297,9 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
         setExistingRequest(data);
       })
       .catch((error: unknown) => {
-        console.error("Failed to cancel sample request", error);
-      });
+        showActionError("Failed to cancel sample request", error);
+      })
+      .finally(() => setIsProcessingAction(false));
   };
 
   return (
@@ -313,6 +337,7 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
                   <Button
                     size="small"
                     variant="outlined"
+                    disabled={isProcessingAction}
                     onClick={cancelRequest}
                     sx={{
                       // The Inventory accented theme's MuiButton override out-specifies a plain
@@ -385,7 +410,7 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>{t("common:actions.cancel")}</Button>
-          <Button color="primary" variant="contained" onClick={sendRequest}>
+          <Button color="primary" variant="contained" disabled={isProcessingAction} onClick={sendRequest}>
             {t("sample.requestMaterialSection.sendRequestButton")}
           </Button>
         </DialogActions>

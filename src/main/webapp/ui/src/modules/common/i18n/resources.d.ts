@@ -2511,13 +2511,12 @@ export default interface Resources {
         },
         "locationsImage": {
           "alt": "The marked locations of {name}",
-          "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
           "editLocations": "Edit Locations",
           "explanation": "See the documentation for information on <helpDocs docLink=\"editLocationsInVisualContainers\">choosing an image and marking locations</helpDocs>.",
+          "instructions": "Tap on the image to add a location marker.<br />Tap and hold on a marker, and then drag to adjust the marked location.",
           "label": "Locations Image",
           "noMarkers": "No marked locations yet; click on the image to add a location marker.",
           "setPreviewImage": "Set preview image too?",
-          "tapInstruction": "Tap on the image to add a location marker.",
           "warningNoImage": "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
           "warningNoMarkers": "Click on 'Edit Locations' to add locations and start using the visual container."
         },
@@ -2688,6 +2687,7 @@ export default interface Resources {
     },
     "errors": {
       "expandForMoreDetails": "Expand for more details.",
+      "genericActionError": "An error occurred whilst attempting to process this request: {error}",
       "unknownReason": "Unknown reason."
     },
     "export": {
@@ -4427,6 +4427,7 @@ export default interface Resources {
           "rejected": "Closed. Your reason for rejecting is shown in the history."
         },
         "title": "Request {id}: {sampleName}",
+        "transferCancelledErrorMessage": "Sample {sampleName} could not be transferred as the request has already been cancelled.",
         "transferDialog": {
           "bullets": {
             "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
@@ -4460,7 +4461,15 @@ export default interface Resources {
       "landmark": "Requests",
       "noResults": "No requests found.",
       "noSelection": "Select a request to see its details.",
-      "pageTitle": "Requests"
+      "pageTitle": "Requests",
+      "rowLabel": "Request for {sampleGlobalId} from {requester}, {status}",
+      "status": {
+        "approved": "Approved",
+        "cancelled": "Cancelled",
+        "fulfilled": "Fulfilled",
+        "pending": "Pending",
+        "rejected": "Rejected"
+      }
     },
     "sample": {
       "alerts": {
@@ -7282,9 +7291,12 @@ export default interface Resources {
           "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
           "originCountMinimum": "This operation requires at least two origin subsamples.",
           "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+          "originFieldNameClash": "The origin subsample already has a field named {0} of a different type. Rename or remove that field, then try again.",
           "originGlobalIdInvalid": "Each origin must be identified by a subsample global id (SS followed by a number), was [{0}].",
           "originIdRequired": "Each origin must identify a subsample by id.",
           "originsRequired": "At least one origin subsample must be provided for the operation.",
+          "passageLimitReached": "The parent sample is already at passage {0}, the highest supported, so it cannot be passaged again.",
+          "passageNumberUnreadable": "The parent sample''s passage number ''{0}'' is not a whole number from 0 to 9999. Correct it on the parent sample, then try again.",
           "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
           "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
           "storageTempNotWhole": "The storage temperature must be whole degrees.",

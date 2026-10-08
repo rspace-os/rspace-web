@@ -1421,6 +1421,7 @@ export default class Search implements SearchInterface {
     this.staticFetcher.setBenchOwner(user);
     this.dynamicFetcher.setBenchOwner(user);
     this.cacheFetcher.setBenchOwner(user);
+    this.clearRequestableIfOutOfScope();
     if (doSearch) this.performSearch();
 
     // in the move dialog, choosing a bench should set it as the target
@@ -1436,6 +1437,7 @@ export default class Search implements SearchInterface {
     this.staticFetcher.setResultType(resultType);
     this.dynamicFetcher.setResultType(resultType);
     this.cacheFetcher.setResultType(resultType);
+    this.clearRequestableIfOutOfScope();
     if (doSearch) this.performSearch();
   }
 
@@ -1450,6 +1452,7 @@ export default class Search implements SearchInterface {
     this.staticFetcher.setParentGlobalId(parentGlobalId);
     this.dynamicFetcher.setParentGlobalId(parentGlobalId);
     this.cacheFetcher.setParentGlobalId(parentGlobalId);
+    this.clearRequestableIfOutOfScope();
     if (doSearch) this.performSearch();
   }
 
@@ -1474,6 +1477,23 @@ export default class Search implements SearchInterface {
     this.dynamicFetcher.setRequestable(value);
     this.cacheFetcher.setRequestable(value);
     if (doSearch) this.performSearch();
+  }
+
+  /*
+   * The "samples" endpoint is the only one that honours `requestable` (see
+   * CoreFetcher.setEndpoint), and setRequestable above only ever turns it on
+   * once the search is scoped down to exactly that: SAMPLE results, with no
+   * container/bench narrowing it further. Any later change that moves the
+   * search back out of that scope - switching the type filter away from
+   * Sample, or opening a container/bench - would otherwise leave the
+   * "Requestable" chip showing while the filter silently stopped applying to
+   * whichever endpoint the search moved to instead. Called from every setter
+   * that can make such a move, right after it updates the fetchers.
+   */
+  private clearRequestableIfOutOfScope(): void {
+    if (this.fetcher.requestable === null) return;
+    if (this.fetcher.resultType === "SAMPLE" && this.fetcher.parentGlobalId === null) return;
+    this.setRequestable(null, false);
   }
 
   get benchSearch(): boolean {

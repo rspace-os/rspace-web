@@ -9,6 +9,7 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
+import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import type React from "react";
@@ -18,6 +19,7 @@ import GlobalId from "@/components/GlobalId";
 import UserDetails from "@/components/UserDetails";
 import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
+import { paginationOptions } from "@/util/table";
 import { isoToLocale } from "@/util/Util";
 import ApiService from "../../common/InvApiService";
 import DropdownButton from "../../components/DropdownButton";
@@ -25,7 +27,7 @@ import HelpLinkIcon from "../../components/HelpLinkIcon";
 import StyledMenu from "../../components/StyledMenu";
 import RequestsParameterChips from "./RequestsParameterChips";
 import RequestsSearchbar from "./RequestsSearchbar";
-import RequestsStatusChip from "./RequestsStatusChip";
+import RequestsStatusChip, { requestStatusLabel } from "./RequestsStatusChip";
 import RequestsTableHead, { type ColumnKey, type SortDirection } from "./RequestsTableHead";
 import { SAMPLE_REQUEST_STATUS_CHANGED_EVENT } from "./sampleRequestEvents";
 
@@ -44,6 +46,21 @@ export type StatusFilter = "all" | "active" | "past";
 const ACTIVE_STATUSES = "PENDING,APPROVED";
 const PAST_STATUSES = "REJECTED,FULFILLED,CANCELLED";
 
+// Smaller than the main Inventory search's (5, 10, 25, 100): this list is rarely as long.
+const REQUEST_PAGE_SIZES = [10, 25, 50];
+const DEFAULT_REQUEST_PAGE_SIZE = 25;
+// Decoupled from REQUEST_PAGE_SIZES' own max (50): without this, "All" would disappear for any
+// count over 50, even though fetching and rendering a few hundred requests at once is still fine.
+const REQUEST_ALL_THRESHOLD = 200;
+
+// ApiPaginationCriteria.MAX_PAGE_SIZE on the backend - the most this endpoint will ever return
+// from a single call; requesting more is rejected outright, so "fetch everything" means walking
+// through it a page at a time instead.
+const BACKEND_MAX_PAGE_SIZE = 100;
+// Safety bound on how many pages that walk will take, in case a filter combination genuinely
+// matches thousands of requests; ordinary use comes nowhere near this.
+const MAX_FETCH_PAGES = 50;
+
 function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): number | string {
   switch (column) {
     case "id":
@@ -51,12 +68,31 @@ function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): n
     case "sample":
       return request.sample.id;
     case "requester":
-      return request.requester.id;
+      // Matches the name shown in the UserDetails chip below, rather than the
+      // underlying id, since that's the value a user sorting this column sees.
+      return `${request.requester.firstName} ${request.requester.lastName}`;
     case "status":
       return request.status;
     case "submitted":
       return Date.parse(request.created);
   }
+}
+
+/**
+ * The /sampleRequests endpoint has no free-text query parameter (see
+ * SampleRequestApiSearchConfig), so the searchbar filters the already-fetched
+ * `requests` array client-side instead - the same approach already taken for
+ * sorting and pagination, for the same reason.
+ */
+function requestMatchesQuery(request: ApiSampleRequestListItem, lowerCaseQuery: string): boolean {
+  const searchableText = [
+    request.sample.globalId,
+    request.sample.name,
+    `${request.requester.firstName} ${request.requester.lastName}`,
+    request.requester.username,
+    request.note ?? "",
+  ];
+  return searchableText.some((text) => text.toLowerCase().includes(lowerCaseQuery));
 }
 
 function renderColumnCell(request: ApiSampleRequestListItem, column: ColumnKey): React.ReactNode {
@@ -95,13 +131,13 @@ export default function RequestsList({
   const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(null);
   const [requests, setRequests] = useState<Array<ApiSampleRequestListItem>>([]);
   const [loading, setLoading] = useState(true);
-  // Not wired up to any filtering yet; that will come once the /sampleRequests
-  // endpoint supports a free-text query.
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<ColumnKey>("submitted");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [adjustableColumn, setAdjustableColumn] = useState<ColumnKey>("status");
   const [refreshToken, setRefreshToken] = useState(0);
+  const [pageNumber, setPageNumber] = useState(0);
+  const [pageSize, setPageSize] = useState(DEFAULT_REQUEST_PAGE_SIZE);
 
   // Refetch whenever a request's status changes elsewhere (e.g. approved/rejected
   // from the detail pane), since the active filters may mean it should appear,
@@ -117,17 +153,37 @@ export default function RequestsList({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const params = new URLSearchParams({ pageSize: "100" });
-    if (requestsFilter === "sent") params.set("role", "REQUESTER");
-    if (requestsFilter === "received") params.set("role", "OWNER");
-    // "all" omits the role filter entirely, so the API returns both sent and received requests.
-    if (statusFilter === "active") params.set("status", ACTIVE_STATUSES);
-    if (statusFilter === "past") params.set("status", PAST_STATUSES);
 
-    ApiService.query<{ requests: Array<ApiSampleRequestListItem> }>("sampleRequests", params)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setRequests(data.requests);
+    const fetchAllRequests = async (): Promise<Array<ApiSampleRequestListItem>> => {
+      const filterParams: Record<string, string> = {};
+      if (requestsFilter === "sent") filterParams.role = "REQUESTER";
+      if (requestsFilter === "received") filterParams.role = "OWNER";
+      // "all" omits the role filter entirely, so the API returns both sent and received requests.
+      if (statusFilter === "active") filterParams.status = ACTIVE_STATUSES;
+      if (statusFilter === "past") filterParams.status = PAST_STATUSES;
+
+      const allRequests: Array<ApiSampleRequestListItem> = [];
+      for (let pageNum = 0; pageNum < MAX_FETCH_PAGES; pageNum++) {
+        const params = new URLSearchParams({
+          ...filterParams,
+          pageSize: String(BACKEND_MAX_PAGE_SIZE),
+          pageNumber: String(pageNum),
+        });
+        const { data } = await ApiService.query<{
+          requests: Array<ApiSampleRequestListItem>;
+          totalHits: number | null;
+        }>("sampleRequests", params);
+        allRequests.push(...data.requests);
+        const gotFullPage = data.requests.length === BACKEND_MAX_PAGE_SIZE;
+        const moreToFetch = typeof data.totalHits === "number" ? allRequests.length < data.totalHits : gotFullPage;
+        if (!gotFullPage || !moreToFetch) break;
+      }
+      return allRequests;
+    };
+
+    fetchAllRequests()
+      .then((allRequests) => {
+        if (!cancelled) setRequests(allRequests);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -142,6 +198,12 @@ export default function RequestsList({
     };
   }, [requestsFilter, statusFilter, refreshToken]);
 
+  // A page number left over from a longer list would otherwise point past the end of a shorter
+  // one once the filters, search, sort, or page size change what "the list" even is.
+  useEffect(() => {
+    setPageNumber(0);
+  }, [requestsFilter, statusFilter, searchQuery, sortBy, sortDirection, pageSize]);
+
   const handleSort = (column: ColumnKey) => {
     if (sortBy === column) {
       setSortDirection((direction) => (direction === "asc" ? "desc" : "asc"));
@@ -155,8 +217,14 @@ export default function RequestsList({
     setAdjustableColumn(newColumn);
   };
 
+  const searchedRequests = useMemo(() => {
+    const lowerCaseQuery = searchQuery.trim().toLowerCase();
+    if (!lowerCaseQuery) return requests;
+    return requests.filter((request) => requestMatchesQuery(request, lowerCaseQuery));
+  }, [requests, searchQuery]);
+
   const sortedRequests = useMemo(() => {
-    const sorted = [...requests].sort((a, b) => {
+    const sorted = [...searchedRequests].sort((a, b) => {
       const aValue = getColumnValue(a, sortBy);
       const bValue = getColumnValue(b, sortBy);
       if (aValue < bValue) return -1;
@@ -165,7 +233,12 @@ export default function RequestsList({
     });
     if (sortDirection === "desc") sorted.reverse();
     return sorted;
-  }, [requests, sortBy, sortDirection]);
+  }, [searchedRequests, sortBy, sortDirection]);
+
+  const pagedRequests = useMemo(
+    () => sortedRequests.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize),
+    [sortedRequests, pageNumber, pageSize],
+  );
 
   const requestsFilterLabel =
     requestsFilter === "all"
@@ -274,7 +347,7 @@ export default function RequestsList({
         severity="info"
         role="status"
       >
-        {t("requestsManagement.feedback", { count: requests.length })}
+        {t("requestsManagement.feedback", { count: searchedRequests.length })}
       </Alert>
       <Box sx={{ flexGrow: 1, overflow: "auto" }}>
         <TableContainer>
@@ -287,13 +360,36 @@ export default function RequestsList({
               onAdjustableColumnChange={handleAdjustableColumnChange}
             />
             <TableBody>
-              {sortedRequests.map((request) => (
+              {pagedRequests.map((request) => (
                 <TableRow
                   key={request.id}
                   hover
                   selected={request.id === selectedRequestId}
+                  aria-selected={request.id === selectedRequestId}
+                  // Makes each row its own Tab stop, in document order, so a keyboard user can
+                  // reach any request without a mouse; Enter/Space below then opens it, mirroring
+                  // the onClick handler rather than requiring a separate keyboard-only code path.
+                  tabIndex={0}
+                  aria-label={t("requestsManagement.rowLabel", {
+                    sampleGlobalId: request.sample.globalId,
+                    requester: `${request.requester.firstName} ${request.requester.lastName}`,
+                    status: requestStatusLabel(request.status, t),
+                  })}
                   onClick={() => onSelect(request)}
-                  sx={{ cursor: "pointer" }}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter" && e.key !== " ") return;
+                    // Space would otherwise scroll the page, as it does for any other focused,
+                    // non-form element.
+                    e.preventDefault();
+                    onSelect(request);
+                  }}
+                  sx={(theme) => ({
+                    cursor: "pointer",
+                    "&:focus-visible": {
+                      outline: `2px solid ${theme.palette.primary.main}`,
+                      outlineOffset: "-2px",
+                    },
+                  })}
                 >
                   <TableCell>{renderColumnCell(request, "sample")}</TableCell>
                   <TableCell>{renderColumnCell(request, "requester")}</TableCell>
@@ -303,12 +399,35 @@ export default function RequestsList({
             </TableBody>
           </Table>
         </TableContainer>
-        {!loading && requests.length === 0 && (
+        {!loading && searchedRequests.length === 0 && (
           <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
             {t("requestsManagement.noResults")}
           </Typography>
         )}
       </Box>
+      {searchedRequests.length > 0 && (
+        <nav>
+          <TablePagination
+            sx={{ overflow: "unset" }}
+            labelRowsPerPage=""
+            component="div"
+            count={searchedRequests.length}
+            rowsPerPageOptions={paginationOptions(searchedRequests.length, REQUEST_PAGE_SIZES, REQUEST_ALL_THRESHOLD)}
+            rowsPerPage={Math.min(pageSize, searchedRequests.length)}
+            page={pageNumber}
+            onPageChange={(_event: unknown, page: number) => setPageNumber(page)}
+            onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
+            slotProps={{
+              select: {
+                renderValue: (value: unknown) =>
+                  typeof value === "number" && value < searchedRequests.length
+                    ? value
+                    : t("search.resultsTable.allRows", { count: String(value) }),
+              },
+            }}
+          />
+        </nav>
+      )}
     </Box>
   );
 }

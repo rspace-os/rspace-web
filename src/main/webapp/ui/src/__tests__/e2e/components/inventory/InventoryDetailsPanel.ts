@@ -146,7 +146,7 @@ export class InventoryDetailsPanel {
 
   /** Owner-only: whether the sample can be requested by other users. */
   requestableSwitch(): Locator {
-    return this.section("Overview").getByRole("checkbox", { name: "Requestable", exact: true });
+    return this.section("Overview").getByRole("switch", { name: "Requestable", exact: true });
   }
 
   /** Non-owners only: the "Request this sample" box. */

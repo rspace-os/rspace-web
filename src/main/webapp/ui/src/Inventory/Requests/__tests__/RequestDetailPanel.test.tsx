@@ -1,7 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import materialTheme from "@/theme";
 import RequestDetailPanel from "../RequestDetailPanel";
 import type { ApiSampleRequestListItem } from "../RequestsList";
@@ -82,14 +83,18 @@ vi.mock("../../components/Inputs/PeopleField", () => ({
   __esModule: true,
   default: ({
     recipient,
+    restrictToUser,
     onSelection,
   }: {
     recipient: { username: string } | null;
+    restrictToUser?: { username: string };
     onSelection: (p: unknown) => void;
   }) => (
     <div>
       <span data-testid="recipient-value">{recipient ? recipient.username : "none"}</span>
+      <span data-testid="restrict-to-user-value">{restrictToUser ? restrictToUser.username : "none"}</span>
       <button type="button" aria-label="mock-pick-recipient" onClick={() => onSelection({ username: "manual-pick" })} />
+      <button type="button" aria-label="mock-clear-recipient" onClick={() => onSelection(null)} />
     </div>
   ),
 }));
@@ -168,10 +173,27 @@ describe("RequestDetailPanel", () => {
 
     expect(screen.getByText("inventory:requestsManagement.detail.title")).toBeInTheDocument();
     expect(screen.getByText("Rita Requester")).toBeInTheDocument();
-    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("inventory:requestsManagement.status.pending").length).toBeGreaterThan(0);
     // The owner-only Actions and Sample Locations sections should both be present.
     expect(screen.getByRole("button", { name: "inventory:requestsManagement.detail.approveButton" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "inventory:requestsManagement.detail.rejectButton" })).toBeEnabled();
+  });
+
+  it("marks a collapsible section header's toggle button with aria-expanded, reflecting its live state", async () => {
+    const user = userEvent.setup();
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    // All four section headers (Details, Approval Result, Sample Locations, Request History)
+    // share the same markup, so this one stands in for the rest.
+    const detailsHeading = screen.getByText("inventory:requestsManagement.detail.sections.details");
+    const detailsHeader = detailsHeading.closest("div");
+    if (!detailsHeader) throw new Error("Could not find the Details section's header container");
+    const toggleButton = within(detailsHeader).getByRole("button");
+    expect(toggleButton).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(toggleButton);
+    expect(toggleButton).toHaveAttribute("aria-expanded", "false");
   });
 
   it("hides owner-only actions and shows a Cancel option for a non-owner viewing a pending request", async () => {
@@ -204,9 +226,35 @@ describe("RequestDetailPanel", () => {
     await waitFor(() =>
       expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "CANCELLED" }),
     );
-    await waitFor(() => expect(screen.getAllByText("Cancelled").length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText("inventory:requestsManagement.status.cancelled").length).toBeGreaterThan(0),
+    );
     expect(onStatusChanged).toHaveBeenCalled();
     window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+  });
+
+  it("shows an error alert and leaves the status unchanged when cancelling fails", async () => {
+    const restoreConsole = silenceConsole(["error"], ["Failed to cancel sample request"]);
+    const user = userEvent.setup();
+    currentUser.value = REQUESTER;
+    apiUpdate.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") return Promise.reject(new Error("Backend unavailable"));
+      return Promise.reject(new Error("unexpected"));
+    });
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    await user.click(
+      screen.getByRole("button", { name: "inventory:sample.requestMaterialSection.cancelRequestButton" }),
+    );
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    expect(addAlert.mock.calls[0][0]).toMatchObject({
+      variant: "error",
+      message: "inventory:errors.genericActionError",
+    });
+    expect(screen.queryAllByText("inventory:requestsManagement.status.cancelled")).toHaveLength(0);
+    restoreConsole();
   });
 
   it("approves a pending request and notifies listeners", async () => {
@@ -223,9 +271,63 @@ describe("RequestDetailPanel", () => {
     await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.approveButton" }));
 
     await waitFor(() => expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "APPROVED" }));
-    await waitFor(() => expect(screen.getAllByText("Approved").length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText("inventory:requestsManagement.status.approved").length).toBeGreaterThan(0),
+    );
     expect(onStatusChanged).toHaveBeenCalled();
     window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+  });
+
+  it("shows an error alert, leaves the status unchanged, and re-enables the button when approving fails", async () => {
+    const restoreConsole = silenceConsole(["error"], ["Failed to approve sample request"]);
+    const user = userEvent.setup();
+    apiUpdate.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") return Promise.reject(new Error("Backend unavailable"));
+      return Promise.reject(new Error("unexpected"));
+    });
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    const approveButton = screen.getByRole("button", { name: "inventory:requestsManagement.detail.approveButton" });
+    await user.click(approveButton);
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    expect(addAlert.mock.calls[0][0]).toMatchObject({
+      variant: "error",
+      message: "inventory:errors.genericActionError",
+    });
+    expect(screen.queryAllByText("inventory:requestsManagement.status.approved")).toHaveLength(0);
+    await waitFor(() => expect(approveButton).toBeEnabled());
+    restoreConsole();
+  });
+
+  it("disables the Approve button while a request is in flight, preventing a duplicate call", async () => {
+    const user = userEvent.setup();
+    let resolveUpdate: ((value: { data: { status: string } }) => void) | undefined;
+    apiUpdate.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") {
+        return new Promise((resolve) => {
+          resolveUpdate = resolve;
+        });
+      }
+      return Promise.reject(new Error("unexpected"));
+    });
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    const approveButton = screen.getByRole("button", { name: "inventory:requestsManagement.detail.approveButton" });
+    await user.click(approveButton);
+    await waitFor(() => expect(approveButton).toBeDisabled());
+    // A disabled button is a no-op click as far as a real user is concerned; userEvent enforces
+    // that by refusing the interaction outright, so a raw DOM event stands in for "clicked again
+    // while disabled" here.
+    fireEvent.click(approveButton);
+
+    expect(apiUpdate).toHaveBeenCalledTimes(1);
+    resolveUpdate?.({ data: { status: "APPROVED" } });
+    await waitFor(() =>
+      expect(screen.getAllByText("inventory:requestsManagement.status.approved").length).toBeGreaterThan(0),
+    );
   });
 
   it("requires a reason before rejecting, then rejects and notifies listeners", async () => {
@@ -257,9 +359,59 @@ describe("RequestDetailPanel", () => {
       }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(screen.getAllByText("Rejected").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("inventory:requestsManagement.status.rejected").length).toBeGreaterThan(0);
     expect(onStatusChanged).toHaveBeenCalled();
     window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+  });
+
+  it("labels the reject reason textbox so it has an accessible name", async () => {
+    const user = userEvent.setup();
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.rejectButton" }));
+    const dialog = screen.getByRole("dialog", { name: "inventory:requestsManagement.detail.rejectDialog.title" });
+
+    // Getting this by its accessible name (rather than the bare role used elsewhere in this
+    // suite) is the point of the test: it only succeeds if the label text is actually linked to
+    // the textbox, rather than being unassociated text that merely sits above it.
+    expect(
+      within(dialog).getByRole("textbox", {
+        name: "inventory:requestsManagement.detail.rejectDialog.reasonLabel",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows an error alert and keeps the dialog open with the typed reason when rejecting fails", async () => {
+    const restoreConsole = silenceConsole(["error"], ["Failed to reject sample request"]);
+    const user = userEvent.setup();
+    apiUpdate.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") return Promise.reject(new Error("Backend unavailable"));
+      return Promise.reject(new Error("unexpected"));
+    });
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.rejectButton" }));
+    const dialog = screen.getByRole("dialog", { name: "inventory:requestsManagement.detail.rejectDialog.title" });
+    await user.type(within(dialog).getByRole("textbox"), "Sample no longer available");
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.rejectDialog.rejectRequestButton",
+      }),
+    );
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    expect(addAlert.mock.calls[0][0]).toMatchObject({
+      variant: "error",
+      message: "inventory:errors.genericActionError",
+    });
+    // The reason the owner already typed is kept so a retry doesn't need retyping it, and
+    // the dialog stays open rather than silently discarding the rejection attempt.
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox")).toHaveValue("Sample no longer available");
+    expect(screen.queryAllByText("inventory:requestsManagement.status.rejected")).toHaveLength(0);
+    restoreConsole();
   });
 
   it("marks an approved request as fulfilled without transferring anything, and notifies listeners", async () => {
@@ -283,9 +435,46 @@ describe("RequestDetailPanel", () => {
       expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "FULFILLED" }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(screen.getAllByText("Fulfilled").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("inventory:requestsManagement.status.fulfilled").length).toBeGreaterThan(0);
     expect(onStatusChanged).toHaveBeenCalled();
     window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+  });
+
+  it("keeps the Mark as Fulfilled dialog open, and does not notify listeners, when the fulfil call is rejected", async () => {
+    const restoreConsole = silenceConsole(["error"], ["Failed to fulfil sample request"]);
+    const user = userEvent.setup();
+    const onStatusChanged = vi.fn();
+    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+    // A 409 here is exactly the scenario the fix guards against: someone else already rejected
+    // or cancelled the request before this fulfil call reached the backend.
+    apiUpdate.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") return Promise.reject(new Error("409 Conflict"));
+      return Promise.reject(new Error("unexpected"));
+    });
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.markAsFulfilledButton" }));
+    const dialog = screen.getByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("button", { name: "inventory:requestsManagement.detail.fulfilDialog.fulfilButton" }),
+    );
+
+    await waitFor(() =>
+      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "FULFILLED" }),
+    );
+    // The bug this guards against closed the dialog (and left the status chip reading Fulfilled)
+    // as if the call had succeeded, even though it was rejected.
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.queryAllByText("inventory:requestsManagement.status.fulfilled")).toHaveLength(0);
+    expect(onStatusChanged).not.toHaveBeenCalled();
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    expect(addAlert.mock.calls[0][0]).toMatchObject({
+      variant: "error",
+      message: "inventory:errors.genericActionError",
+    });
+    window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+    restoreConsole();
   });
 
   it("prepares an approved request via the Choose Sample to Prepare dialog and transfers it directly", async () => {
@@ -350,6 +539,91 @@ describe("RequestDetailPanel", () => {
     // which the first notification fired too early to reflect.
     await waitFor(() => expect(onStatusChanged).toHaveBeenCalledTimes(2));
     window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+  });
+
+  it("does not transfer ownership, closes the dialog, and shows an error when the fulfil call is rejected", async () => {
+    const restoreConsole = silenceConsole(["error"], ["Failed to transfer sample ownership"]);
+    const user = userEvent.setup();
+    const onStatusChanged = vi.fn();
+    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+    // Neither property gates this route toward skipping the dialog.
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
+    deploymentProperties["inventory.operations.available"] = "ALLOWED";
+    // A 409 here is exactly the scenario the fix guards against: someone else already rejected
+    // or cancelled the request before this fulfil call reached the backend. changeOwner must
+    // never run off the back of it.
+    apiUpdate.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") return Promise.reject(new Error("409 Conflict"));
+      return Promise.reject(new Error("unexpected"));
+    });
+    // The request is CANCELLED by the time the failure's own refetch runs - the panel should
+    // pick that up rather than carry on showing the stale APPROVED status this attempt started
+    // from.
+    apiGet.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") {
+        return Promise.resolve({
+          data: {
+            status: "CANCELLED",
+            statusChanges: [],
+            sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
+          },
+        });
+      }
+      if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }] } });
+      return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
+    });
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.transferOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+
+    const transferDialog = await screen.findByRole("dialog", {
+      name: "inventory:requestsManagement.detail.transferDialog.heading",
+    });
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
+    await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
+
+    await waitFor(() =>
+      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "FULFILLED" }),
+    );
+    expect(apiUpdate).not.toHaveBeenCalledWith("samples", "55/actions/changeOwner", expect.anything());
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "inventory:requestsManagement.detail.transferDialog.heading" }),
+      ).toBeNull(),
+    );
+    expect(addAlert).not.toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
+    expect(addAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variant: "error",
+        message: "inventory:requestsManagement.detail.transferCancelledErrorMessage",
+      }),
+    );
+    // Refreshed from the backend rather than left showing the stale APPROVED status this attempt
+    // started from.
+    await waitFor(() =>
+      expect(screen.getAllByText("inventory:requestsManagement.status.cancelled").length).toBeGreaterThan(0),
+    );
+    // The left-hand Requests list only refetches in response to this event, so it must still
+    // fire here - otherwise it would keep showing this request under its stale APPROVED status.
+    expect(onStatusChanged).toHaveBeenCalled();
+    window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+    restoreConsole();
   });
 
   it("shows the placeholder Operations Wizard step when 'Create a new sample' is chosen", async () => {
@@ -465,6 +739,31 @@ describe("RequestDetailPanel", () => {
       expect(
         within(dialog).queryByText("inventory:requestsManagement.detail.transferDialog.bullets.otherRequestsRejected"),
       ).toBeNull();
+    });
+
+    it("keeps the Recipient field restricted to the requester even after it is cleared", async () => {
+      const user = userEvent.setup();
+      apiGet.mockImplementation((resource: string) => {
+        if (resource === "sampleRequests") {
+          return Promise.resolve({
+            data: { statusChanges: [], sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } } },
+          });
+        }
+        if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }] } });
+        return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
+      });
+      const dialog = await openTransferDialog(user);
+
+      await waitFor(() =>
+        expect(within(dialog).getByTestId("restrict-to-user-value")).toHaveTextContent(REQUESTER.username),
+      );
+
+      await user.click(within(dialog).getByRole("button", { name: "mock-clear-recipient" }));
+
+      expect(within(dialog).getByTestId("recipient-value")).toHaveTextContent("none");
+      // The bug this guards against: clearing the field also lifted restrictToUser, showing
+      // every user in the instance again instead of just the requester.
+      expect(within(dialog).getByTestId("restrict-to-user-value")).toHaveTextContent(REQUESTER.username);
     });
 
     it("adds the multiple-subsamples bullet when the sample has more than one subsample", async () => {

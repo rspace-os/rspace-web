@@ -256,13 +256,12 @@
       },
       "locationsImage": {
         "alt": "The marked locations of {name}",
-        "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
         "editLocations": "Edit Locations",
         "explanation": "See the documentation for information on <helpDocs docLink=\"editLocationsInVisualContainers\">choosing an image and marking locations</helpDocs>.",
+        "instructions": "Tap on the image to add a location marker.<br />Tap and hold on a marker, and then drag to adjust the marked location.",
         "label": "Locations Image",
         "noMarkers": "No marked locations yet; click on the image to add a location marker.",
         "setPreviewImage": "Set preview image too?",
-        "tapInstruction": "Tap on the image to add a location marker.",
         "warningNoImage": "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
         "warningNoMarkers": "Click on 'Edit Locations' to add locations and start using the visual container."
       },
@@ -433,6 +432,7 @@
   },
   "errors": {
     "expandForMoreDetails": "Expand for more details.",
+    "genericActionError": "An error occurred whilst attempting to process this request: {error}",
     "unknownReason": "Unknown reason."
   },
   "export": {
@@ -2172,6 +2172,7 @@
         "rejected": "Closed. Your reason for rejecting is shown in the history."
       },
       "title": "Request {id}: {sampleName}",
+      "transferCancelledErrorMessage": "Sample {sampleName} could not be transferred as the request has already been cancelled.",
       "transferDialog": {
         "bullets": {
           "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
@@ -2205,7 +2206,15 @@
     "landmark": "Requests",
     "noResults": "No requests found.",
     "noSelection": "Select a request to see its details.",
-    "pageTitle": "Requests"
+    "pageTitle": "Requests",
+    "rowLabel": "Request for {sampleGlobalId} from {requester}, {status}",
+    "status": {
+      "approved": "Approved",
+      "cancelled": "Cancelled",
+      "fulfilled": "Fulfilled",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    }
   },
   "sample": {
     "alerts": {
