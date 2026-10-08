@@ -8506,7 +8506,7 @@ export default interface Resources {
       "title": "Password verification"
     },
     "signup": {
-      "accountCreatedLoginBusy": "Your account has been created, but the server is busy and could not sign you in automatically. Please log in with your new username and password.",
+      "accountCreatedLoginBusy": "Your account has been created, but the server is busy and could not sign you in automatically. Please sign in now using the same method you just used to sign up.",
       "browserWarning": {
         "chrome": "Chrome",
         "firefox": "Firefox",
