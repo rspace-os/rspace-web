@@ -67,7 +67,7 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
     }
     try {
       return verifier.runExclusive(
-          userMgr.loginLockKey(getUsername(request)),
+          wholeLoginKey(userMgr.loginLockKey(getUsername(request))),
           () -> checkLockoutThenContinue(request, response));
     } catch (LoginVerificationBusyException e) {
       SECURITY_LOG.warn(
@@ -81,6 +81,11 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
       setFailureAttribute(request, e);
       return true;
     }
+  }
+
+  /** NUL cannot appear in a username, so this lock never shares an entry with an inner lock. */
+  static String wholeLoginKey(String usernameWeight) {
+    return "\0login:" + usernameWeight;
   }
 
   private boolean checkLockoutThenContinue(ServletRequest request, ServletResponse response)
