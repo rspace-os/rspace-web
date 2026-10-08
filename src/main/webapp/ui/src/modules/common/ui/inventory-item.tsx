@@ -117,7 +117,7 @@ function InventoryItem({
       {/* ponytail: one icon for every record type. Key it off the item type
           (container / sample / subsample / template) when those land. */}
       <ItemMedia variant="icon">
-        <MicroscopeIcon aria-hidden="true" />
+        <MicroscopeIcon aria-hidden="true" className="text-[oklch(0.712_0.179_53.545)]" />
       </ItemMedia>
       <ItemContent>
         <ItemTitle>

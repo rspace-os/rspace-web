@@ -33,17 +33,21 @@
     "storybook:build": "cd src/main/webapp/ui && storybook build",
     "storybook:test": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts",
     "feature-flags:generate": "node scripts/generate-feature-flags.mjs",
-    "feature-flags:check": "node scripts/generate-feature-flags.mjs --check"
+    "feature-flags:check": "node scripts/generate-feature-flags.mjs --check",
+    "build-storybook": "cd src/main/webapp/ui && storybook build",
+    "test-storybook": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "10.6.0",
+    "@storybook/addon-vitest": "10.6.0",
+    "@storybook/tanstack-react": "10.6.0",
+    "storybook": "10.6.0",
     "@biomejs/biome": "2.5.9",
     "@hono/node-server": "2.1.1",
     "@mswjs/http-middleware": "0.10.3",
     "@playwright/test": "1.63.0",
     "@sa11y/vitest": "8.0.28",
-    "@storybook/addon-a11y": "10.6.0",
     "@storybook/addon-docs": "10.6.0",
-    "@storybook/addon-vitest": "10.6.0",
     "@storybook/react-vite": "10.6.0",
     "@suspensive/react": "3.21.3",
     "@tailwindcss/vite": "4.3.3",
@@ -80,7 +84,6 @@
     "msw": "2.15.0",
     "playwright-core": "1.63.0",
     "rollup-plugin-visualizer": "7.1.1",
-    "storybook": "10.6.0",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "url": "0.11.4",
@@ -174,12 +177,18 @@
     "react-to-print": "3.3.0",
     "react-window": "2.3.0",
     "react-zoom-pan-pinch": "4.0.4",
+    "rsql-builder": "1.4.1",
     "sockjs-client": "1.6.1",
     "tailwind-merge": "3.6.0",
     "tinymce": "8.8.2",
     "valibot": "1.4.2",
     "zustand": "5.0.14",
-    "@tanstack/react-devtools": "0.10.7"
+    "@tanstack/react-devtools": "0.10.7",
+    "@dnd-kit/modifiers": "9.0.0",
+    "@dnd-kit/sortable": "10.0.0",
+    "@dnd-kit/utilities": "3.2.2",
+    "@rsql/parser": "1.6.0",
+    "@tanstack/react-table": "9.0.0"
   },
   "intent": {
     "skills": [
