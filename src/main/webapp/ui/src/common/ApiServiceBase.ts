@@ -1,4 +1,3 @@
-import { delay } from "es-toolkit";
 import { when } from "mobx";
 import axios, {
   type AxiosError,
@@ -47,31 +46,29 @@ class ApiServiceBase {
     );
   }
 
-  async on401Retry(error: AxiosError): Promise<unknown> {
+  async on401Retry(
+    error: AxiosError & {
+      config?: NonNullable<AxiosError["config"]> & { authRetried?: boolean };
+    },
+  ): Promise<unknown> {
     if (
       error.config &&
       error.response &&
       error.response.status === 401 &&
-      !(error.config.data && !error.config.data.__isRetryRequest)
+      !error.config.authRetried &&
+      !error.config.data
     ) {
-      if (/\/userform\/ajax\/inventoryOauthToken/.test(error.request.responseURL)) {
-        /*
-         * Prevent the immediate infinite loop caused by a 401 on
-         * /inventoryOauthToken resulting in another call to authenticate(),
-         * which calls /inventoryOauthToken. We keep trying in case the user
-         * logs-in in another window but only once every 10 seconds so as not
-         * to cause too much overhead on both client and server.
-         */
+      const requestUrl = error.request?.responseURL ?? error.config.url ?? "";
+      if (/\/(?:userform\/ajax\/inventoryOauthToken|api\/v2\/oauth\/tokens)(?:[/?#]|$)/.test(requestUrl)) {
+        // Token minting is already the authentication attempt; retrying it would recurse.
         getRootStore().uiStore.removeAlert(getAuthWarningToast());
         getRootStore().uiStore.addAlert(getAuthWarningToast());
-        await delay(10 * 1000);
+        throw error;
       }
       await getRootStore().authStore.authenticate();
       getRootStore().uiStore.removeAlert(getAuthWarningToast());
-      // Axios constructs url as baseURL + url(resource) and leaves the baseURL in config,
-      // which then results in baseURL + baseURL + url(resource) as the url for axios request below.
-      error.config.baseURL = "";
-      error.config.data = { __isRetryRequest: true };
+      error.config.baseURL ??= "";
+      error.config.authRetried = true;
 
       error.config.headers.Authorization = `Bearer ${JwtService.getToken() ?? ""}`;
 
