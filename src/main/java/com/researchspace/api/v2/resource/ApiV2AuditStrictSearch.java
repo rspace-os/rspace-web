@@ -110,7 +110,7 @@ public final class ApiV2AuditStrictSearch {
    * Returns at most {@code ceiling + 1} authorized events from one consistent file-manifest
    * attempt. A second inconsistent attempt fails without returning accumulated results.
    */
-  public synchronized List<AuditTrailSearchResult> search(Request request) {
+  public List<AuditTrailSearchResult> search(Request request) {
     Objects.requireNonNull(request, "Audit search request");
     AuditTrailSearchElement restricted =
         request.bypassActorDirectory()
