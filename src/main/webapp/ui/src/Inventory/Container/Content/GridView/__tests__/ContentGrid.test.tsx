@@ -122,6 +122,22 @@ describe("ContentGrid", () => {
         expect(cells()[1]).toHaveAttribute("aria-selected", "true");
         expect(selectedCount()).toBe(1);
       });
+
+      it("does not select a focused empty location once the selection limit is reached", async () => {
+        const user = userEvent.setup();
+        const box = makeMockContainer({
+          cType: "GRID",
+          gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+          locationsCount: 4,
+          contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
+        });
+        prepareContainer(box, 1);
+        box.locations?.[3].toggleSelected(true);
+        renderGrid(box);
+        await user.tab();
+        expect(cells()[0]).toHaveAttribute("aria-selected", "false");
+        expect(selectedCount()).toBe(1);
+      });
     });
 
     describe("in the Move dialog", () => {
