@@ -36,11 +36,13 @@ function Destination({ title }: { title: string }) {
 export function BookingDashboardPageStory({
   history = createMemoryHistory({ initialEntries: [bookingDashboardStoryUrl] }),
   preferences = inheritedBrowserBookingPreferences,
+  queryClient: providedQueryClient,
 }: {
   history?: RouterHistory;
   preferences?: BookingDisplayPreferencesDocument;
+  queryClient?: QueryClient;
 } = {}) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = providedQueryClient ?? new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
   queryClient.setQueryData(currentUserQueryKeys.me(), currentUser);

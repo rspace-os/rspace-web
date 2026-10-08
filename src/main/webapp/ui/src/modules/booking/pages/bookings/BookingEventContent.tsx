@@ -182,7 +182,7 @@ export function BookingEventContent() {
       </section>
 
       {editing && bookingItem.data ? (
-        <div className="@2xl:hidden">
+        <div className="@4xl:hidden">
           <BookingItemInformationCard as="section" item={bookingItem.data} displayTimezone={preferences.timeZone} />
         </div>
       ) : null}
@@ -199,15 +199,16 @@ export function BookingEventContent() {
           refreshBooking,
         }}
       >
-        <div className={editing ? "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_24rem]" : eventColumnsClassName}>
-          <Outlet />
+        <div className={editing ? "grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_30rem]" : eventColumnsClassName}>
           {editing && bookingItem.data ? (
-            <div className="hidden @2xl:block">
+            <div className="hidden @4xl:col-start-2 @4xl:row-start-1 @4xl:block">
               <BookingItemInformationCard item={bookingItem.data} displayTimezone={preferences.timeZone} />
             </div>
-          ) : (
+          ) : null}
+          <Outlet />
+          {!editing || !bookingItem.data ? (
             <BookingMetadataAside booking={document} displayTimeZone={preferences.timeZone} />
-          )}
+          ) : null}
         </div>
       </BookingEventContext.Provider>
 
