@@ -475,9 +475,18 @@ const requiresTraining = [
 
 const definitions = [...hazardClass, ...requiresTraining];
 
+/** An unconfigured instrument the story user could set up, so Administration offers Add. */
+export const eligibleBookingTargetFixture = {
+  id: 950,
+  globalId: "IN950",
+  name: "Unconfigured spectrometer",
+  deleted: false,
+};
+
 export function bookableItemsHandlers(onCollectionRequest: (request: Request) => void): RequestHandler[] {
   return [
     http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
+    http.get("/api/v2/booking-configuration-targets", () => HttpResponse.json([eligibleBookingTargetFixture])),
     http.get("/api/v2/booking-configurations", ({ request }) => {
       onCollectionRequest(request);
       const where = decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "");
@@ -548,6 +557,10 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
         facets: { types: ["INSTRUMENT"] },
       });
     }),
+    // Pages with events of their own classify items; these fixtures have none to count.
+    http.get("/api/v2/booking-catalogue/availability-counts", () =>
+      HttpResponse.json({ availableNow: 0, freeLaterToday: 0 }),
+    ),
     http.get("/api/v2/booking-catalogue/locations", ({ request }) => {
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") ?? "1");

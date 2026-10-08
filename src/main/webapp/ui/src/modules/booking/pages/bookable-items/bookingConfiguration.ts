@@ -177,6 +177,13 @@ const bookingConfigurationReadParameters = {
   "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
 };
 
+/** The booking configuration API answered with an error status. */
+export class BookingConfigurationRequestError extends Error {
+  constructor(readonly status: number) {
+    super(`Booking configuration request failed with status ${status}`);
+  }
+}
+
 async function withLocation(
   configuration: BookingConfiguration,
   token: string,

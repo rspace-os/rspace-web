@@ -16,20 +16,26 @@ import org.springframework.stereotype.Service;
 /** Applies Calendar scope before event pagination without changing availability queries. */
 @Service
 public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchManager {
+  /** The event's target reference in the bookings collection query. */
+  private static final String EVENT_TARGET = "booking.bookingConfiguration.target";
+
   private final TimeSlotBookingManager bookings;
   private final BookingCalendarQuery query;
   private final BookingItemQuery itemQuery;
   private final FeatureFlagManager flags;
+  private final BookingLocationFilterManager locations;
 
   public BookingCalendarSearchManagerImpl(
       TimeSlotBookingManager bookings,
       BookingCalendarQuery query,
       BookingItemQuery itemQuery,
-      FeatureFlagManager flags) {
+      FeatureFlagManager flags,
+      BookingLocationFilterManager locations) {
     this.bookings = bookings;
     this.query = query;
     this.itemQuery = itemQuery;
     this.flags = flags;
+    this.locations = locations;
   }
 
   /** Returns one visible event page under the complete item, event, interval and search scope. */
@@ -42,6 +48,9 @@ public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchMa
       boolean ownedByCaller,
       User caller) {
     if (!flags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)) throw new NotFoundException();
+    // Item filters reused as event filters may name a location, which only Inventory can resolve.
+    BookingLocationFilterManager.Resolved scoped =
+        locations.resolveLocations(request, caller, EVENT_TARGET);
     ResourceRequest unfiltered =
         new ResourceRequest(
             null,
@@ -55,9 +64,8 @@ public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchMa
         unfiltered.restrict(BookingCalendarQuery.interval(start, end)),
         caller,
         BookingItemQuery.and(
-            query.eventFilter(request, text, caller),
-            ownedByCaller
-                ? itemQuery.ownedBy(caller, "booking.bookingConfiguration.target")
-                : null));
+            BookingItemQuery.and(
+                query.eventFilter(scoped.request(), text, caller), scoped.restriction()),
+            ownedByCaller ? itemQuery.ownedBy(caller, EVENT_TARGET) : null));
   }
 }

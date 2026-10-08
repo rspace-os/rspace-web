@@ -22,6 +22,7 @@ import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
+import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationCapabilities;
@@ -131,11 +132,14 @@ class ApiV2OpenApiGeneratorTest {
     ApiV2RelationshipTargetSpec<Instrument, Long> bookingInstruments =
         new ApiV2RelationshipTargetSpec<>(
             ApiV2BookingInstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
+    ApiV2RelationshipTargetSpec<ApiV2BookingLocationResource.Location, Long> bookingLocations =
+        new ApiV2RelationshipTargetSpec<>(
+            ApiV2BookingLocationResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
     generator =
         new ApiV2OpenApiGenerator(
             new ApiV2ResourceCatalog(
                 List.of(maintenance, users, bookingConfigurations, timeSlotBookings),
-                List.of(instruments, bookingInstruments)),
+                List.of(instruments, bookingInstruments, bookingLocations)),
             "Test API",
             "2.0.0");
   }
@@ -568,6 +572,41 @@ class ApiV2OpenApiGeneratorTest {
     assertFalse(objectMap(selectors.get("target")).containsKey("picker"));
     assertTrue(selectors.containsKey("target.value"));
     assertTrue(selectors.containsKey("target.relationTo"));
+  }
+
+  @Test
+  void publishesTheLocationFilterWithAPickerAndNoRequesterRelationship() {
+    Map<String, Object> bookings = whereParameter(document(), "/api/v2/bookings");
+    Map<String, Object> bookingSelectors =
+        objectMap(objectMap(bookings.get("x-rspace-filter")).get("selectors"));
+
+    // People are filtered by the scalar requester ID and the Calendar "Booked by" text facet only.
+    assertTrue(bookingSelectors.containsKey("requesterId"));
+    assertFalse(bookingSelectors.containsKey("requester"));
+    assertFalse(bookingSelectors.containsKey("location"));
+
+    Map<String, Object> configurations =
+        whereParameter(document(), "/api/v2/booking-configurations");
+    Map<String, Object> configurationSelectors =
+        objectMap(objectMap(configurations.get("x-rspace-filter")).get("selectors"));
+    Map<String, Object> locationFields =
+        objectMap(configurations.get("x-rspace-relationship-fields"));
+
+    assertEquals(
+        Map.of("resource", "booking-locations", "identity", "globalId", "globalIdPrefix", "IC"),
+        objectMap(configurationSelectors.get("location")).get("picker"));
+    // Location is resolved through Inventory read access only, so no target field is filterable.
+    assertEquals(List.of(), objectMap(locationFields.get("location.name")).get("operators"));
+    assertFalse(configurationSelectors.containsKey("location.name"));
+  }
+
+  private static Map<String, Object> whereParameter(Map<String, Object> document, String path) {
+    Map<String, Object> list =
+        objectMap(objectMap(objectMap(document.get("paths")).get(path)).get("get"));
+    return objectMapList(list.get("parameters")).stream()
+        .filter(parameter -> parameter.get("name").equals("where"))
+        .findFirst()
+        .orElseThrow();
   }
 
   @Test

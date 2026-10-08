@@ -101,6 +101,29 @@ function capabilitiesForSelector<TDocument>(
   };
 }
 
+/**
+ * Returns a catalog label, or undefined when the translator does not know the key.
+ *
+ * Keys carry their namespace so a page-scoped translator, such as `useTranslation("booking")`,
+ * still resolves these shared table labels. A missing key comes back as the key itself, with or
+ * without its namespace, depending on the translator.
+ */
+function catalogLabel(translate: (key: string) => string, key: string): string | undefined {
+  const value = translate(key);
+  const withoutNamespace = key.slice(key.indexOf(":") + 1);
+  return value === key || value === withoutNamespace || value.trim() === "" ? undefined : value;
+}
+
+/** Relationship owners without a configured field, such as the shared audit relationships. */
+function ownerLabel(ownerName: string, viaTitle: string | undefined, translate: (key: string) => string): string {
+  return catalogLabel(translate, `common:tableList.fields.${ownerName}`) ?? (viaTitle?.trim() ? viaTitle : ownerName);
+}
+
+/** A server title wins; otherwise the shared catalog names common target fields such as `firstName`. */
+function targetFieldLabel(targetField: string, title: string | undefined, translate: (key: string) => string): string {
+  return title ?? catalogLabel(translate, `common:tableList.targetFields.${targetField}`) ?? targetField;
+}
+
 function relationshipLabels<TDocument>(
   sourceConfig: CollectionConfig<TDocument>,
   translate: (key: string) => string,
@@ -142,7 +165,7 @@ function derivedIdentityFields<TDocument>(
     const base: FieldConfig<TDocument> = {
       name,
       labelKey: selector,
-      label: published.title ?? translate(selector),
+      label: published.title ?? ownerLabel(selector, undefined, translate),
       type: "relationship",
       relationTo: picker.resource,
       hasMany: false,
@@ -176,17 +199,11 @@ function derivedTargetFields<TDocument>(
     const owner = (relationship?.name ?? ownerName) as FieldName<TDocument>;
     const viaLabel = relationship
       ? fieldLabel(relationship, translate)
-      : ownerName === "createdBy"
-        ? translate("tableList.fields.createdBy")
-        : ownerName === "updatedBy"
-          ? translate("tableList.fields.updatedBy")
-          : published.viaTitle?.trim()
-            ? published.viaTitle
-            : ownerName;
+      : ownerLabel(ownerName, published.viaTitle, translate);
     const common = {
       name,
       labelKey: selector,
-      label: hierarchicalFieldLabel(viaLabel, published.title ?? targetField),
+      label: hierarchicalFieldLabel(viaLabel, targetFieldLabel(targetField, published.title, translate)),
       origin: {
         kind: "relationshipTarget" as const,
         groupLabelKey: "tableList.fieldGroups.relationshipFields",
