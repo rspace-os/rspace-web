@@ -215,6 +215,10 @@ That table must change in the same commit as any limit, default, message or rout
   path, whose failures would surface as SSO customers unable to sign or witness documents.
 - Under a login flood, legitimate users see slow or failed logins for the duration. That is the
   intended failure mode, replacing an out-of-memory JVM.
+- Login holds the account's lock for the whole attempt, including the directory check for LDAP
+  users, so a burst of attempts against one LDAP user with a slow directory makes that user's own
+  login wait up to `waitSeconds` and then see the busy refusal. The effect stays on the targeted
+  account, which four wrong passwords can already lock.
 - The reauthentication path and sysadmin operate-as share the `BoundedPasswordVerifier` and so
   share the permit pool with login. Both are authenticated and low volume.
 - Reauthentication has no per-account rate limit beyond one check in flight at a time. The
