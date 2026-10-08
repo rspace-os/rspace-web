@@ -82,7 +82,9 @@ request volume. A request that cannot get its turn before the wait elapses fails
 generic failure the user sees for a wrong password, but through a distinct exception type,
 `LoginVerificationBusyException`. The login filter (`StandaloneShiroFormAuthFilterExt`) and
 `ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
-users out. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
+users out. A check waiting for a permit holds its request thread for up to `waitSeconds`, so under
+a flood the thread pool, not the heap, is the next limit, and a refused check costs the attacker
+nothing; lowering `waitSeconds` trades honest users' waits for thread capacity. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
 that reach it (sign-up, Google sign-up on Community, LDAP first-login auto-signup, and the login
 and verification password-reset replies) take a permit from one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
 through the hash and the save and refused immediately when none is free, with a reset token left
