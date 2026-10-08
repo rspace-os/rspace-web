@@ -3,8 +3,6 @@ import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import {
   fetchOauthToken,
-  getStoredToken,
-  isExpiringSoon,
   saveStoredToken,
   secondsToExpiry,
   TOKEN_EXPIRY_BUFFER_SECONDS,
@@ -32,7 +30,10 @@ const LegacyOauthTokenSchema = v.object({ data: v.string() });
 const RestApiV2OauthTokenSchema = v.object({ accessToken: v.string() });
 
 export async function fetchToken(useRestApiV2 = false): Promise<string> {
-  const response = await fetch(useRestApiV2 ? "/api/v2/oauth/tokens" : "/userform/ajax/inventoryOauthToken", {
+  const legacyUrl = document.getElementById("public_document_view")
+    ? "/public/publicView/userform/ajax/inventoryOauthToken"
+    : "/userform/ajax/inventoryOauthToken";
+  const response = await fetch(useRestApiV2 ? "/api/v2/oauth/tokens" : legacyUrl, {
     method: useRestApiV2 ? "POST" : "GET",
     headers: {
       "X-Requested-With": "XMLHttpRequest",
@@ -47,8 +48,7 @@ export async function fetchToken(useRestApiV2 = false): Promise<string> {
   const newToken = useRestApiV2
     ? parseOrThrow(RestApiV2OauthTokenSchema, data).accessToken
     : parseOrThrow(LegacyOauthTokenSchema, data).data;
-  // Session-bound v2 tokens belong to one browser/run-as context and must not replace the legacy
-  // bearer token that older API clients read from shared session storage.
+  // Keep this query's session-bound tokens in memory; public tokens retain legacy storage.
   if (!useRestApiV2) saveStoredToken(newToken);
   return newToken;
 }
@@ -60,7 +60,7 @@ export async function fetchToken(useRestApiV2 = false): Promise<string> {
  * The hook automatically:
  * - Caches the token and reuses it across components.
  * - Refetches the token before it expires.
- * - Persists legacy tokens to session storage.
+ * - Persists legacy tokens to session storage for existing API clients.
  * - Keeps session-bound API v2 tokens in query memory.
  * - Integrates with React Suspense for loading states.
  * - Manages token lifetime with the TanStack Query `staleTime` option.
@@ -85,7 +85,8 @@ export async function fetchToken(useRestApiV2 = false): Promise<string> {
  * The token is automatically refetched before expiry, so you can safely use
  * the token value from the query result without worrying about staleness.
  */
-export function useOauthTokenQuery({ useRestApiV2 = false }: { useRestApiV2?: boolean } = {}) {
+export function useOauthTokenQuery(options: { useRestApiV2?: boolean } = {}) {
+  const useRestApiV2 = options.useRestApiV2 ?? document.getElementById("public_document_view") === null;
   return useSuspenseQuery({
     queryKey: queryKeys.oauthToken(useRestApiV2),
     queryFn: async () => {
@@ -95,12 +96,7 @@ export function useOauthTokenQuery({ useRestApiV2 = false }: { useRestApiV2?: bo
       if (useRestApiV2) {
         return fetchToken(true);
       }
-      // First, check if we have a valid token in session storage
-      const savedToken = getStoredToken();
-      if (savedToken && !isExpiringSoon(savedToken)) {
-        return savedToken;
-      }
-      // If no valid token exists, fetch a new one
+      // The shared storage key may hold a session-bound v2 token from another page context.
       return fetchOauthToken(fetchToken);
     },
     // Calculate stale time based on token expiry
@@ -111,7 +107,7 @@ export function useOauthTokenQuery({ useRestApiV2 = false }: { useRestApiV2?: bo
       const secondsUntilExpiry = secondsToExpiry(token);
       // Subtract the buffer time (5 minutes) to ensure we refresh before expiry
       const staleTimeSeconds = Math.max(0, secondsUntilExpiry - TOKEN_EXPIRY_BUFFER_SECONDS);
-      return Number.isFinite(staleTimeSeconds) ? Math.min(2_147_483_647, staleTimeSeconds * 1000) : Infinity;
+      return Number.isFinite(staleTimeSeconds) ? Math.min(2_147_483_646, staleTimeSeconds * 1000) : Infinity;
     },
     // Keep the token in cache indefinitely while the app is open
     gcTime: Infinity,
