@@ -504,7 +504,7 @@ These optional settings configure  behaviour of the RSpace application.
 
 #### Login password checks
 * **login.passwordVerification.maxConcurrent** The maximum number of login and reauthentication password checks that run at once. Each check holds about 19 MiB of heap, so this bounds the memory a burst of login attempts can use. Default is 8.
-* **login.passwordVerification.waitSeconds** How long, in seconds, a password check waits for a free slot before it is refused. A refused check shows the usual wrong-password message but does not count toward account lockout. Default is 5.
+* **login.passwordVerification.waitSeconds** How long, in seconds, a password check waits for a free slot before it is refused. A refused check shows the usual wrong-password message but does not count toward account lockout. While it waits the check holds a request thread, so on a busy instance a lower value frees threads sooner at the cost of more refused logins. Default is 5.
 
 #### Archiving and export
 * **archive.folder.location** (default = $TOMCAT_HOME/archive) Path to a directory where exports will be assembled and stored. Must be readable and writable by Tomcat.
