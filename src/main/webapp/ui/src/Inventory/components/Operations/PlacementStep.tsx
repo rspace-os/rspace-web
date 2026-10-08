@@ -37,27 +37,33 @@ function PlacementStep({
   const descriptionId = React.useId();
   const onChangeRef = React.useRef(onChange);
   onChangeRef.current = onChange;
-  // A pick resolves only after the container loads, by which time the user may have left container mode.
-  const modeRef = React.useRef(value.mode);
-  modeRef.current = value.mode;
+  const mounted = React.useRef(true);
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   // Step-local, not the global moveStore: ContainerModel's move checks read moveStore's selection.
-  const [search] = React.useState(
-    () =>
-      new Search({
-        fetcherParams: { resultType: "CONTAINER" },
-        treeArgs: { filteredTypes: ["container"] },
-        uiConfig: { allowedTypeFilters: new Set(["CONTAINER"]), selectionMode: "SINGLE" },
-        factory: new MemoisedFactory(),
-        callbacks: {
-          setActiveResult: (record) => {
-            if (!(record instanceof ContainerModel) || modeRef.current !== "container") return;
-            record.refreshAssociatedSearch();
-            onChangeRef.current({ mode: "container", container: record });
-          },
+  const [search] = React.useState(() => {
+    const s: Search = new Search({
+      fetcherParams: { resultType: "CONTAINER" },
+      treeArgs: { filteredTypes: ["container"] },
+      uiConfig: { allowedTypeFilters: new Set(["CONTAINER"]), selectionMode: "SINGLE" },
+      factory: new MemoisedFactory(),
+      callbacks: {
+        // A pick resolves only after the container loads, by which time the user may have picked
+        // another, switched to the workbench (which clears activeResult) or left the step.
+        setActiveResult: (record) => {
+          if (!(record instanceof ContainerModel) || !mounted.current || record !== s.activeResult) return;
+          record.refreshAssociatedSearch();
+          onChangeRef.current({ mode: "container", container: record });
         },
-      }),
-  );
+      },
+    });
+    return s;
+  });
   const choosingContainer = value.mode === "container";
   React.useEffect(() => {
     if (choosingContainer && search.searchView !== "TREE") void search.setSearchView("TREE");

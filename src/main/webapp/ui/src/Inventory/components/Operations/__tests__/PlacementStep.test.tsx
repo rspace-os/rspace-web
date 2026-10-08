@@ -168,6 +168,50 @@ describe("PlacementStep", () => {
     });
   });
 
+  describe("a container that finishes loading after it stopped being the user's pick", () => {
+    const deferredPick = (name: string) => {
+      let finishLoading = () => {};
+      const loaded = new Promise<void>((resolve) => {
+        finishLoading = resolve;
+      });
+      return { container: makeMockContainer({ name }), loaded, finishLoading };
+    };
+    const pick = async (user: ReturnType<typeof userEvent.setup>, p: ReturnType<typeof deferredPick>) => {
+      picked.container = p.container;
+      picked.loaded = p.loaded;
+      await user.click(screen.getByTestId("picker-pick"));
+    };
+
+    it("is ignored when the user has since picked another container", async () => {
+      const user = userEvent.setup();
+      const onChange = renderStep({ mode: "container", container: null });
+      const a = deferredPick("A");
+      const b = deferredPick("B");
+      await pick(user, a);
+      await pick(user, b);
+      await act(async () => b.finishLoading());
+      await act(async () => a.finishLoading());
+      expect(onChange).toHaveBeenLastCalledWith({ mode: "container", container: b.container });
+    });
+
+    it("is ignored once the step has been closed", async () => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      const { unmount } = render(
+        <ThemeProvider theme={materialTheme}>
+          <InEnglish>
+            <PlacementStep value={{ mode: "container", container: null }} onChange={onChange} count={1} />
+          </InEnglish>
+        </ThemeProvider>,
+      );
+      const a = deferredPick("A");
+      await pick(user, a);
+      unmount();
+      await act(async () => a.finishLoading());
+      expect(onChange).not.toHaveBeenCalled();
+    });
+  });
+
   it("tells the user how many locations are free when the container is too full", () => {
     renderStep({ mode: "container", container: gridBox(3) }, 2);
     expect(screen.getByRole("alert")).toHaveTextContent("Only 1 of the 2 locations needed are free.");
