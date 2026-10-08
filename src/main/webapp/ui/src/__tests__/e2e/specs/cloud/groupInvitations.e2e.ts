@@ -114,9 +114,7 @@ test.describe("Community group invitations", () => {
       await creator.workspace.open();
       await creator.notifications.open();
       await expect(
-        creator.notifications.notification(
-          `${nominatedPi.fullName} updated request status, altered from NEW to REJECTED`,
-        ),
+        creator.notifications.row(`${nominatedPi.fullName} updated request status, altered from NEW to REJECTED`),
       ).toBeVisible();
       await creator.notifications.close();
     });

@@ -37,10 +37,22 @@ export class GalleryPickerComponent {
     await fileChooser.setFiles(filePath);
 
     await this.root.getByText(expectedName, { exact: true }).first().waitFor({ state: "visible" });
+    await this.sidebar.waitUntilDismissed();
   }
 
   async selectItem(name: string): Promise<void> {
     await this.root.getByText(name, { exact: true }).last().click();
+  }
+
+  async selectItems(names: [string, ...string[]]): Promise<void> {
+    const [first, ...rest] = names;
+    await this.selectItem(first);
+    for (const name of rest) {
+      await this.root
+        .getByText(name, { exact: true })
+        .last()
+        .click({ modifiers: ["ControlOrMeta"] });
+    }
   }
 
   async openFolder(name: string): Promise<void> {

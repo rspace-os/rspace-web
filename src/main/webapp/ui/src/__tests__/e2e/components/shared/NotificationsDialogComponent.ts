@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import { type Download, expect, type Locator, type Page } from "@playwright/test";
 import { ToastsComponent } from "./ToastsComponent";
 
 export class NotificationsDialogComponent {
@@ -43,17 +43,43 @@ export class NotificationsDialogComponent {
     await this.root.locator("tr.notificationRow").first().waitFor({ state: "visible" });
   }
 
-  notification(text: string): Locator {
-    return this.root.locator("tr.notificationRow").filter({ hasText: text });
+  /** Notification rows containing every given text fragment. */
+  row(...texts: string[]): Locator {
+    return texts.reduce((rows, text) => rows.filter({ hasText: text }), this.root.locator("tr.notificationRow"));
   }
 
   async getNotificationTexts(): Promise<Array<string>> {
     return this.root.locator("tr.notificationRow").allInnerTexts();
   }
 
+  /** Polls the notification UI for this export, then follows its real download link. */
+  async downloadExport(fileName: string): Promise<Download> {
+    const notification = this.row(fileName);
+    await expect(async () => {
+      await this.bellButton.click();
+      await this.root.waitFor({ state: "visible" });
+      await this.root.getByRole("heading", { name: "My Notifications" }).waitFor({ state: "visible" });
+      // Rows render by AJAX after the heading; give them time before reopening to re-fetch.
+      const arrived = await notification
+        .waitFor({ state: "visible", timeout: 5_000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!arrived) {
+        await this.close();
+        throw new Error(`The export notification for ${fileName} has not arrived.`);
+      }
+    }).toPass({ timeout: 60_000 });
+    const downloadPrefix = new URL("/export/ajax/downloadArchive/", this.page.url()).href;
+    const [download] = await Promise.all([
+      this.page.waitForEvent("download"),
+      notification.locator(`a[href^="${downloadPrefix}"], a[href^="/export/ajax/downloadArchive/"]`).click(),
+    ]);
+    return download;
+  }
+
   // The archive-export notification's own link text is the download URL
   async getExportDownloadHref(rowText: string): Promise<string> {
-    const link = this.notification(rowText).locator("a[href*='/export/ajax/downloadArchive/']");
+    const link = this.row(rowText).locator("a[href*='/export/ajax/downloadArchive/']");
     const href = await link.getAttribute("href");
     if (!href) {
       throw new Error(`getExportDownloadHref: no download link found in a notification matching "${rowText}"`);
