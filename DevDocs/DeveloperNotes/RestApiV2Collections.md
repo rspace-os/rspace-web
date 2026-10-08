@@ -11,6 +11,7 @@ pagination and counting. Do not filter results in the controller after paginatio
 | Route | Access |
 | --- | --- |
 | `GET /api/v2/config` | Public deployment information. |
+| `GET /api/v2/openapi.json` | Public generated OpenAPI 3.1 document. |
 | `POST /api/v2/oauth/tokens` | Authenticated browser session; issues a session-bound UI token. |
 | `GET /api/v2/users/me` | Authenticated current-user information. |
 | `GET /api/v2/users/me/profile-image` | Authenticated current-user profile image. |
