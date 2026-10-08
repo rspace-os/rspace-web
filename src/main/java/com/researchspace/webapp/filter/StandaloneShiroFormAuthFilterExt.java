@@ -2,6 +2,7 @@ package com.researchspace.webapp.filter;
 
 import com.researchspace.auth.IncorrectSignupSourceException;
 import com.researchspace.auth.SidVerificationException;
+import com.researchspace.auth.password.BoundedPasswordVerifier;
 import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.SignupSource;
@@ -15,8 +16,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.Subject;
@@ -33,6 +36,8 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
   @Autowired private RemoteUserRetrievalPolicy remoteUserPolicy;
 
   @Autowired private MessageSourceUtils messages;
+
+  @Autowired private BoundedPasswordVerifier verifier;
 
   /**
    * Overrides standard method, to return an error response directly, if the request was an Ajax
@@ -60,6 +65,32 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
       return false;
     }
 
+    if (!isLoginSubmission(request, response)) {
+      return checkLockoutThenContinue(request, response);
+    }
+    try {
+      return verifier.runExclusive(
+          loginLockKey(getUsername(request)), () -> checkLockoutThenContinue(request, response));
+    } catch (LoginVerificationBusyException e) {
+      SECURITY_LOG.warn(
+          "Login by [{}] from {} refused: {}",
+          getUsername(request),
+          RequestUtil.remoteAddr(WebUtils.toHttp(request)),
+          e.getMessage());
+      setFailureAttribute(request, e);
+      return true;
+    }
+  }
+
+  /** Case, whitespace and alias variants of one account share a key. */
+  private String loginLockKey(String submittedUsername) {
+    String found = userMgr.findUsernameByUsernameOrAlias(submittedUsername);
+    String key = found != null ? found : StringUtils.defaultString(submittedUsername);
+    return key.trim().toLowerCase(Locale.ROOT);
+  }
+
+  private boolean checkLockoutThenContinue(ServletRequest request, ServletResponse response)
+      throws Exception {
     // check if account isn't temporarily locked due to wrong password attempts (RSPAC-2265)
     try {
       String username = getUsername(request);
@@ -184,5 +215,9 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
 
   public void setMessages(MessageSourceUtils messageSourceUtils) {
     this.messages = messageSourceUtils;
+  }
+
+  protected void setVerifier(BoundedPasswordVerifier verifier) {
+    this.verifier = verifier;
   }
 }
