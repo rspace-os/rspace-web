@@ -305,7 +305,8 @@ enforced there too (Perform is blocked with the reason shown).
    limit apply, and a polite live region says why when Space selects nothing: the location
    is occupied or the limit is reached), Shift+Arrow adds the range from the anchor to the
    locations picked before it (they count towards the limit), and Escape clears the
-   selection. A list container needs no locations. `placementBlocker` (`placement.ts`) gates
+   selection without closing the wizard (close it with Cancel, or Escape after tabbing out
+   of the grid). A list container needs no locations. `placementBlocker` (`placement.ts`) gates
    Next and shows why: loading, trashed, no edit permission, an image container (not
    supported yet), the workbench itself, a container that cannot hold subsamples, fewer
    free locations than new subsamples (with the free count), grid locations still to

@@ -277,7 +277,11 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             if (e.key === "Escape") {
               container.toggleAllLocations(false);
               e.preventDefault();
-              if (selectionOnly) return;
+              if (selectionOnly) {
+                // Grids used only to choose locations sit in dialogs, which would otherwise close on Escape.
+                e.stopPropagation();
+                return;
+              }
               const focused = container.findLocation(focusCoord.x, focusCoord.y);
               if (focused) focused.toggleSelected(true);
             }
