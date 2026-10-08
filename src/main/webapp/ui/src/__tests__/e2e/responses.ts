@@ -15,8 +15,7 @@ export async function responseTo(
   const responsePromise = page.waitForResponse(
     (response) => response.request().method() === method && matchesUrl(new URL(response.url())),
   );
-  await trigger();
-  const response = await responsePromise;
+  const [response] = await Promise.all([responsePromise, Promise.resolve().then(trigger)]);
   await assertOk(response, method);
   return response;
 }
