@@ -285,6 +285,8 @@ function OperationWizard({
     setPlacement(next);
   };
 
+  // Not React Query: the result is a MobX model the step mutates in place, which a shared query
+  // cache would hand to the next caller with that state still on it.
   React.useEffect(() => {
     if (!pendingPlacement) return;
     const checkId = ++placementCheckId.current;
