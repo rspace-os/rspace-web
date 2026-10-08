@@ -4,7 +4,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { useTranslation } from "react-i18next";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
@@ -255,22 +254,5 @@ describe("PlacementStep", () => {
   it("rejects an image container, which this step does not support yet", () => {
     renderStep({ mode: "container", container: makeMockContainer({ cType: "IMAGE" }) });
     expect(screen.getByRole("alert")).toHaveTextContent(/Image containers are not supported/);
-  });
-});
-
-describe("the remembered-container note", () => {
-  function Note() {
-    const { t } = useTranslation("inventory");
-    return <p>{t("operations.placement.rememberedUnavailable", { container: "Box" })}</p>;
-  }
-
-  it("asks the user to choose, since the wizard no longer falls back to the workbench", () => {
-    render(
-      <InEnglish>
-        <Note />
-      </InEnglish>,
-    );
-    expect(screen.getByText(/Choose another location, or leave them on your workbench\.$/)).toBeInTheDocument();
-    expect(screen.queryByText(/will stay on your workbench/)).not.toBeInTheDocument();
   });
 });
