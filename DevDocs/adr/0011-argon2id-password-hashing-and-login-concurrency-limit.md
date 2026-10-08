@@ -230,3 +230,10 @@ That table must change in the same commit as any limit, default, message or rout
   internal user's early exit the same way; parity with a directory bind is best effort. All
   padded checks share one per-username lock, so they hold at most one permit. Other public routes
   that still confirm a username are RSDEV-1558.
+- Deferred to follow-on tickets:
+  - RSDEV-1558: username existence still leaks from the sign-up form, the reset and reminder
+    timing, the disabled-account redirect and the API token route's account-state messages; this
+    change closes only the login page.
+  - RSDEV-1559: `User.salt` is write-only after the wrap and is dropped in a later release.
+  - RSDEV-1560: `RequestUtil.remoteAddr` trusts `X-Forwarded-For`, so address-based throttling of
+    busy refusals (and of the API token route, see RSDEV-1557) waits on a trusted-proxy list.
