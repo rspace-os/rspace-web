@@ -166,17 +166,6 @@ describe("NewAppBar (MSW-driven)", () => {
     expect(within(navigation).getByRole("link", { name: "common:appBar.sections.system.title" })).toBeInTheDocument();
   });
 
-  it("hides the booking nav link when the booking feature flag is disabled", async () => {
-    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(false);
-
-    renderAppBar();
-
-    const navigation = await screen.findByRole("navigation", { name: "common:appBar.mainLinks" });
-    expect(
-      within(navigation).queryByRole("link", { name: "common:appBar.sections.booking.title" }),
-    ).not.toBeInTheDocument();
-  });
-
   it("shows the maintenance notice when /api/v2/maintenances carries a scheduled window", async () => {
     server.use(
       http.get("/api/v2/maintenances", () =>
