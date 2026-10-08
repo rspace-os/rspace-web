@@ -108,7 +108,7 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
 
   private void padUnknownUser(UsernamePasswordToken token) {
     if (token.getPassword() != null) {
-      sentinelCheck.pad(token.getUsername(), new String(token.getPassword()));
+      sentinelCheck.pad(userMgr.loginLockKey(token.getUsername()), new String(token.getPassword()));
     }
   }
 }

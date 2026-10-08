@@ -256,6 +256,13 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     return null;
   }
 
+  @Override
+  public String loginLockKey(String submittedUsername) {
+    String trimmed = StringUtils.trimToEmpty(submittedUsername);
+    String found = findUsernameByUsernameOrAlias(trimmed);
+    return userDao.usernameLockKey(found != null ? found : trimmed);
+  }
+
   public List<User> getUserByEmail(String userEmail) {
     return userDao.getUserByEmail(userEmail);
   }

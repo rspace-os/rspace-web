@@ -13,8 +13,10 @@ import static org.mockito.Mockito.when;
 import com.researchspace.auth.password.BoundedPasswordVerifier;
 import com.researchspace.model.User;
 import com.researchspace.service.UserManager;
+import java.text.Normalizer;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,7 +42,7 @@ class StandaloneShiroFormAuthFilterExtLockTest {
 
   @BeforeEach
   void setUp() {
-    when(userMgr.findUsernameByUsernameOrAlias(any())).thenAnswer(inv -> inv.getArgument(0));
+    when(userMgr.loginLockKey(any())).thenAnswer(inv -> fold(inv.getArgument(0)));
     when(userMgr.getUserByUsernameOrAlias(any())).thenReturn(user);
     filter = new StandaloneShiroFormAuthFilterExt();
     filter.setUserMgr(userMgr);
@@ -59,6 +61,30 @@ class StandaloneShiroFormAuthFilterExtLockTest {
     Future<Object> inFlight = holdLoginFor("user1a");
 
     MockHttpServletRequest request = loginSubmission("USER1A");
+    assertTrue(filter.onAccessDenied(request, new MockHttpServletResponse()));
+
+    assertNotNull(request.getAttribute("shiroLoginFailure"));
+    verify(lockoutPolicy, never()).handleLockoutOnFailure(any());
+    release.countDown();
+    inFlight.get(5, TimeUnit.SECONDS);
+  }
+
+  @Test
+  void loginWithAnAccentedSpellingOfAHeldUsernameIsRefusedAsBusyWithoutCounting() throws Exception {
+    assertRefusedAsBusyWhileHeld("user1a", "úser1a");
+  }
+
+  @Test
+  void loginWithAnAccentedSpellingOfAHeldAbsentNameIsRefusedAsBusyWithoutCounting()
+      throws Exception {
+    assertRefusedAsBusyWhileHeld("ghost", "ghóst");
+  }
+
+  private void assertRefusedAsBusyWhileHeld(String heldKey, String submitted) throws Exception {
+    useVerifierWaiting(Duration.ofMillis(100));
+    Future<Object> inFlight = holdLoginFor(heldKey);
+
+    MockHttpServletRequest request = loginSubmission(submitted);
     assertTrue(filter.onAccessDenied(request, new MockHttpServletResponse()));
 
     assertNotNull(request.getAttribute("shiroLoginFailure"));
@@ -124,6 +150,13 @@ class StandaloneShiroFormAuthFilterExtLockTest {
                     }));
     assertTrue(held.await(5, TimeUnit.SECONDS));
     return inFlight;
+  }
+
+  /** Stands in for the database collation weight. */
+  private static String fold(String name) {
+    return Normalizer.normalize(name.trim(), Normalizer.Form.NFD)
+        .replaceAll("\\p{M}", "")
+        .toLowerCase(Locale.ROOT);
   }
 
   private static MockHttpServletRequest loginSubmission(String username) {
