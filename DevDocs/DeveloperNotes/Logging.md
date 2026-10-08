@@ -26,16 +26,45 @@ Logs for authentication/authorisation errors are in `SecurityEvents.txt`.
 
 ### Booking audit events
 
-Booking audit events unwrap Hibernate proxies before leaving the transaction so
-archive-triggered changes retain the entity's annotated audit fields.
-
 Booking changes use the shared audit trail and appear under Bookings in My
 RSpace. Audit resource IDs are `bookings:<id>`,
 `booking-configurations:<id>`, and `booking-settings:<id>`. The audit readers
 also classify historical `UNKNOWN` events with those exact top-level IDs as
 booking events. Cancellation, archive, and permanent deletion keep their stored
 audit actions; the audit page and CSV export show more specific labels from the
-recorded state and permanent-deletion marker.
+recorded state and permanent-deletion marker. The other booking actions are
+labelled too: `CREATE` as Created, `WRITE` as Changed and `RESTORE` as
+Restored (`legacyjs.audit.*` on the page, `export.audit.csv.bookingAction*` in
+the CSV). Any other action, such as a plain `DELETE`, stays the raw code.
+
+Cancellation snapshots include `cancellationReason`. The item history, My RSpace audit
+and CSV export show a non-null reason as free text, preserving line breaks and leaving
+date-looking text unchanged. Null reasons are omitted. Repeated cancellation with the
+current version and the same normalized reason writes no new audit event.
+
+Booking audit events unwrap Hibernate proxies before leaving the transaction so
+archive-triggered cancellations retain the entity's annotated audit fields.
+
+The Description column of a booking event starts with the recorded snapshot as
+`Label: value` pairs, using the item audit history's labels (open days as
+weekday names, a closing midnight as `00:00`, instants such as booking start
+and end or `deletedAt` in UTC to the second), followed by any logged
+description such as `subject=<username>`. `BookingAuditDetails` formats it on
+the server: the page receives it as `event.details` in the request locale, and
+the CSV always uses en-US. The logged `description` itself is not changed, so
+the permanent-deletion marker is still matched against the original text.
+
+Booking snapshots have no `name`, so the Name column shows a name derived from
+the snapshot without changing its format: the recorded `targetName`
+(permanent-deletion snapshots), else the target's global ID such as `IN5`, else
+a booking's `bookingConfigurationId`. Booking snapshots record their item as
+`target` at the time of the change, so later target changes do not rewrite
+history; snapshots written before that field existed fall back to the
+configuration ID. Booking-settings events stay blank (`n/a`
+in the CSV). The page receives it as `event.displayName`; the CSV writes the
+same value. The Resource column links a configuration event to its bookable
+item's page, except after a permanent deletion, when that page no longer
+exists and the ID is shown as plain text.
 
 ### Incoming requests
 

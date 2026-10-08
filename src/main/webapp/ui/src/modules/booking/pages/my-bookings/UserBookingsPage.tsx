@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClockIcon, CalendarX2Icon, HistoryIcon, RefreshCwIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
@@ -18,12 +18,7 @@ import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
-import {
-  type BookingRow,
-  BookingRowActions,
-  type CancelledBookingRow,
-  visibleBookingRowActions,
-} from "./BookingRowActions";
+import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { bookingListConfig } from "./bookingList";
 import type { MyBookingsPeriod } from "./routes";
 
@@ -128,44 +123,6 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
     queryKey: ["api-v2", "bookings", "count", "upcoming", requesterId, asOfDate.toISOString()],
     queryFn: ({ signal }) => fetchUpcomingBookingCount(requesterId, asOfDate, token, signal),
   });
-  const rows = table.tableProps.rows;
-  const periodControlsRef = useRef<HTMLDivElement>(null);
-  // A page-level live region: the cancelled row, and the dialog's own status message, unmount on refetch.
-  const [cancelAnnouncement, setCancelAnnouncement] = useState("");
-  const [pendingFocus, setPendingFocus] = useState<CancelledBookingRow | null>(null);
-  useEffect(() => {
-    // Waits until the refetched rows no longer include the cancelled booking, so focus never lands on it.
-    if (pendingFocus === null || rows.some(({ id }) => id === pendingFocus.bookingId)) return;
-    setPendingFocus(null);
-    const { position } = pendingFocus;
-    const remaining = position?.list.isConnected ? visibleBookingRowActions(position.list) : [];
-    const neighbourId = position
-      ? remaining[Math.min(position.index, remaining.length - 1)]?.dataset.bookingRowActions
-      : undefined;
-    const focusTarget = () => {
-      const neighbour =
-        neighbourId && position?.list.isConnected
-          ? visibleBookingRowActions(position.list).find((actions) => actions.dataset.bookingRowActions === neighbourId)
-          : undefined;
-      return (
-        neighbour?.querySelector<HTMLElement>("a, button:not(:disabled)") ??
-        periodControlsRef.current?.querySelector<HTMLElement>('[aria-pressed="true"]')
-      );
-    };
-    const target = focusTarget();
-    target?.focus();
-    // The card view can render a row's actions once more after the refetch commits, replacing the focused
-    // control. Removal does not blur in every engine, so watch the list briefly and follow the booking.
-    if (target && position?.list.isConnected) {
-      const observer = new MutationObserver(() => {
-        if (target.isConnected) return;
-        observer.disconnect();
-        if (document.activeElement === null || document.activeElement === document.body) focusTarget()?.focus();
-      });
-      observer.observe(position.list, { childList: true, subtree: true });
-      window.setTimeout(() => observer.disconnect(), 1000);
-    }
-  }, [pendingFocus, rows]);
   const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
       id: "actions",
@@ -179,13 +136,6 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
           token={token}
           timeZone={preferences.timeZone}
           timeFormat={preferences.timeFormat}
-          onCancelled={(cancelled) => {
-            // The dialog has already refetched the bookings; another refetch would re-mount the rows and drop focus.
-            setCancelAnnouncement(
-              t("myBookings.cancelled.announcement", { itemName: cancelled.itemName, period: cancelled.period }),
-            );
-            setPendingFocus(cancelled);
-          }}
         />
       ),
       renderInteraction: () => null,
@@ -195,7 +145,6 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
 
   const selectPeriod = (nextPeriod: MyBookingsPeriod) => {
     if (nextPeriod === period) return;
-    setPendingFocus(null);
     table.setPage({ ...table.state.page, pageIndex: 0 });
     onPeriodChange(nextPeriod);
   };
@@ -213,7 +162,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
             {t("myBookings.timezone", { timezone: preferences.timeZone })}
           </p>
         </header>
-        <div ref={periodControlsRef} className="space-y-2">
+        <div className="space-y-2">
           <ButtonGroup aria-label={t("myBookings.period.legend")}>
             <Button
               type="button"
@@ -298,9 +247,6 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
           rowActions={rowActions}
           hideHeader
         />
-        <p role="status" aria-live="polite" className="sr-only">
-          {cancelAnnouncement}
-        </p>
       </main>
     </TooltipProvider>
   );

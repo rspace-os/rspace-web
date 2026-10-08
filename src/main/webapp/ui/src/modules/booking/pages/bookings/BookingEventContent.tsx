@@ -185,9 +185,8 @@ export function BookingEventContent() {
               )}
               token={token}
               eventKind={document.kind}
-              onDeleted={() => {
-                requestAnimationFrame(() => stateBadgeRef.current?.focus());
-              }}
+              finalFocus={stateBadgeRef}
+              onDeleted={() => undefined}
             />
           ) : null}
         </div>

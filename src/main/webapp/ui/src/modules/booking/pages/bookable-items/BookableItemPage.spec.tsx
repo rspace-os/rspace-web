@@ -193,6 +193,7 @@ describe("BookableItemPage", () => {
       state: "CONFIRMED" as const,
       privacy: "full" as const,
       purpose: "Future calibration",
+      cancellationReason: null,
       bookedBy: "Ada Lovelace (ada)",
       canEdit: true,
       canCancel: false,

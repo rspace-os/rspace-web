@@ -28,6 +28,12 @@ public class HistoricData {
   @Setter private String details;
 
   /**
+   * Readable name of the audited resource for display when the recorded data has no {@code name};
+   * not part of the logged event.
+   */
+  @Setter private String displayName;
+
+  /**
    * @param domain A non-null {@link AuditDomain}
    * @param action A non-null AuditAction
    * @param fullName user's full Name

@@ -10,18 +10,27 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Readable "Label: value" details of a booking audit snapshot for the My RSpace audit table and its
- * CSV export. Labels and value formatting match the bookable item's audit history.
+ * Readable "Label: value" details and a display name of a booking audit snapshot for the My RSpace
+ * audit table and its CSV export. Labels and value formatting match the bookable item's audit
+ * history; instants are shown to the second.
  */
+@Slf4j
 final class BookingAuditDetails {
+
+  private static final Pattern ISO_INSTANT =
+      Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z");
 
   private static final String LABEL_PREFIX = "booking:bookableItemDetails.audit.values.";
 
@@ -33,6 +42,7 @@ final class BookingAuditDetails {
           entry("kind", "kind"),
           entry("purpose", "purpose"),
           entry("state", "state"),
+          entry("cancellationReason", "cancellationReason"),
           entry("target", "target"),
           entry("targetName", "targetName"),
           entry("bookingConfigurationId", "configuration"),
@@ -66,15 +76,38 @@ final class BookingAuditDetails {
         AuditDomain.normalizeLegacyBookingDomain(event.getDomain(), data.get("id")));
   }
 
-  /** Sets {@link HistoricData#getDetails()} on every booking event in the results. */
+  /**
+   * Sets {@link HistoricData#getDetails()} and {@link HistoricData#getDisplayName()} on every
+   * booking event in the results.
+   */
   static void addTo(
       List<AuditTrailSearchResult> results, MessageSourceUtils messages, Locale locale) {
     for (AuditTrailSearchResult result : results) {
       Map<String, Object> data = payload(result.getEvent());
       if (isBookingEvent(result.getEvent(), data)) {
         result.getEvent().setDetails(format(data, messages, locale));
+        result.getEvent().setDisplayName(displayName(data));
       }
     }
+  }
+
+  /**
+   * What the Name column shows for a booking snapshot, which has no {@code name}: the recorded
+   * {@code targetName} (permanent-deletion snapshots), else the target's global ID such as {@code
+   * IN5}, else a booking's configuration ID; {@code null} when the snapshot has none of these.
+   */
+  static String displayName(Map<String, Object> data) {
+    if (data.get("targetName") instanceof String name && StringUtils.isNotBlank(name)) {
+      return name;
+    }
+    String target = targetGlobalId(data.get("target"));
+    if (target != null) {
+      return target;
+    }
+    return data.get("bookingConfigurationId") instanceof String configuration
+            && StringUtils.isNotBlank(configuration)
+        ? configuration
+        : null;
   }
 
   static Map<String, Object> payload(HistoricData event) {
@@ -87,7 +120,11 @@ final class BookingAuditDetails {
   static String format(Map<String, Object> data, MessageSourceUtils messages, Locale locale) {
     Stream<String> known =
         LABELS.stream()
-            .filter(label -> data.containsKey(label.getKey()))
+            .filter(
+                label ->
+                    data.containsKey(label.getKey())
+                        && (!"cancellationReason".equals(label.getKey())
+                            || data.get(label.getKey()) != null))
             .map(
                 label ->
                     messages.getMessageForLocale(LABEL_PREFIX + label.getValue(), locale)
@@ -114,13 +151,19 @@ final class BookingAuditDetails {
       return "—";
     }
     if (("start".equals(key) || "end".equals(key)) && value instanceof Number epochMillis) {
-      return Instant.ofEpochMilli(epochMillis.longValue()).toString();
+      return Instant.ofEpochMilli(epochMillis.longValue())
+          .truncatedTo(ChronoUnit.SECONDS)
+          .toString();
     }
-    if ("target".equals(key)
-        && value instanceof Map<?, ?> target
-        && "INSTRUMENT".equals(target.get("type"))
-        && target.get("id") instanceof Number id) {
-      return "IN" + id;
+    if (!"purpose".equals(key)
+        && !"cancellationReason".equals(key)
+        && value instanceof String text
+        && ISO_INSTANT.matcher(text).matches()) {
+      return toSeconds(text);
+    }
+    String targetGlobalId = "target".equals(key) ? targetGlobalId(value) : null;
+    if (targetGlobalId != null) {
+      return targetGlobalId;
     }
     if ("openingEnd".equals(key) && value instanceof String end) {
       return displayEnd(end);
@@ -149,6 +192,25 @@ final class BookingAuditDetails {
     return value instanceof Map || value instanceof List
         ? JacksonUtil.toJson(value)
         : value.toString();
+  }
+
+  private static String targetGlobalId(Object value) {
+    return value instanceof Map<?, ?> target
+            && "INSTRUMENT".equals(target.get("type"))
+            && target.get("id") instanceof Number id
+        ? "IN" + id
+        : null;
+  }
+
+  // Snapshots record Instant.toString(), which keeps every fraction down to nanoseconds.
+  private static String toSeconds(String instant) {
+    try {
+      return Instant.parse(instant).truncatedTo(ChronoUnit.SECONDS).toString();
+    } catch (DateTimeParseException ex) {
+      log.warn(
+          "Audit value {} looks like an instant but does not parse; shown as recorded", instant);
+      return instant;
+    }
   }
 
   // Read-outs print a closing midnight as 00:00.

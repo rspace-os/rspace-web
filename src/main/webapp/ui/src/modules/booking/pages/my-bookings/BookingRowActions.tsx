@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   CalendarArrowDownIcon,
@@ -10,10 +11,12 @@ import {
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingCalendarFileDownload } from "@/modules/booking/components/BookingCalendarFileButton";
-import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { bookingProblemMessage } from "@/modules/booking/creation/useCreateBooking";
+import { type BookingListDocument, restoreBooking } from "@/modules/booking/domain/booking";
 import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import { formatAgendaPeriod, formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import type { CollectionRow } from "@/modules/common/collection/collectionConfig";
+import { useTableListAlerts } from "@/modules/common/table-list/TableList";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/modules/common/ui/menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
@@ -21,23 +24,6 @@ import { cn } from "@/modules/common/utils/cn";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 
 export type BookingRow = CollectionRow<BookingListDocument, "id" | "target" | "canViewConfiguration" | "state">;
-
-/** Where a row's actions sat among the visible rows, so focus can move to its neighbour once it is removed. */
-export type BookingRowPosition = { list: Element; index: number };
-
-export type CancelledBookingRow = {
-  bookingId: number;
-  itemName: string;
-  period: string;
-  position?: BookingRowPosition;
-};
-
-/** Row action groups currently shown; the table and card presentations both render, one hidden by CSS. */
-export function visibleBookingRowActions(list: Element): HTMLElement[] {
-  return [...list.querySelectorAll<HTMLElement>("[data-booking-row-actions]")].filter(
-    (element) => element.getClientRects().length > 0,
-  );
-}
 
 const iconButtonClassName = cn(buttonVariants({ size: "icon-lg", variant: "outline" }));
 
@@ -50,18 +36,17 @@ export function BookingRowActions({
   token,
   timeZone,
   timeFormat = "AUTOMATIC",
-  onCancelled,
 }: {
   row: BookingRow;
   token: string;
   timeZone: string;
   timeFormat?: BookingTimeFormat;
-  onCancelled: (cancelled: CancelledBookingRow) => void | Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
+  const { t: bookingT } = useTranslation("booking");
+  const alerts = useTableListAlerts();
+  const queryClient = useQueryClient();
   const moreActionsRef = useRef<HTMLButtonElement>(null);
-  const actionsRef = useRef<HTMLDivElement>(null);
-  const positionRef = useRef<BookingRowPosition>(undefined);
   const [cancelOpen, setCancelOpen] = useState(false);
   const itemName = row.target?.value.name ?? t("common:values.unknownItem");
   const period = formatAgendaPeriod(row.start ?? "", row.end ?? "", timeZone, undefined, timeFormat);
@@ -76,7 +61,7 @@ export function BookingRowActions({
   const moreActionsLabel = t("myBookings.actions.more");
 
   return (
-    <div ref={actionsRef} className="flex flex-wrap gap-1" data-booking-row-actions={row.id}>
+    <div className="flex flex-wrap gap-1">
       {row.canViewConfiguration && row.target ? (
         <Tooltip>
           <TooltipTrigger
@@ -156,17 +141,7 @@ export function BookingRowActions({
               </MenuItem>
             ) : null}
             {row.canCancel ? (
-              <MenuItem
-                className="text-destructive"
-                onClick={() => {
-                  // Recorded now: a successful cancel removes this row, and the dialog, before focus can return.
-                  const list = actionsRef.current?.closest("[data-table-list]");
-                  const index =
-                    list && actionsRef.current ? visibleBookingRowActions(list).indexOf(actionsRef.current) : -1;
-                  positionRef.current = list && index >= 0 ? { list, index } : undefined;
-                  setCancelOpen(true);
-                }}
-              >
+              <MenuItem className="text-destructive" onClick={() => setCancelOpen(true)}>
                 <CalendarX2Icon aria-hidden="true" />
                 {t("bookings.actions.cancel")}
               </MenuItem>
@@ -185,8 +160,23 @@ export function BookingRowActions({
           itemName={itemName}
           period={datedPeriod}
           token={token}
-          onDeleted={() =>
-            onCancelled({ bookingId: row.id, itemName, period: datedPeriod, position: positionRef.current })
+          onDeleted={(cancelled) =>
+            // The row leaves this list once the bookings refetch; the TableList alert outlives it.
+            alerts.push({
+              id: `booking-cancelled-${row.id}`,
+              tone: "warning",
+              icon: <CalendarX2Icon aria-hidden="true" />,
+              message: t("myBookings.cancelled.alert", { itemName, period: datedPeriod }),
+              undo: {
+                run: async () => {
+                  await restoreBooking(row.id, cancelled.version ?? 0, token);
+                  await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+                },
+                focusRowId: String(row.id),
+                describeError: (error) =>
+                  t("myBookings.cancelled.undoFailed", { reason: bookingProblemMessage(error, bookingT) }),
+              },
+            })
           }
         />
       ) : null}

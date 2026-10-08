@@ -21,10 +21,12 @@ export function BookingActions({
   event,
   timezone,
   timelineDate,
+  timelineEventElement,
 }: {
   event: BookingListDocument;
   timezone: string;
   timelineDate?: string;
+  timelineEventElement?: HTMLElement | null;
 }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
@@ -38,6 +40,7 @@ export function BookingActions({
         event={event}
         timezone={timezone}
         timelineDate={timelineDate}
+        timelineEventElement={timelineEventElement}
         token={token}
         onClose={() => setEditing(false)}
       />

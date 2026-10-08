@@ -152,6 +152,7 @@ export function BookingEventsCalendar({
   myItemsOnly?: boolean;
   onMyItemsChange?: (myItemsOnly: boolean) => void;
   creationDisabled?: boolean;
+  /** Starts a booking for a range chosen on a Resources row or on the single-item Time grid day view. */
   onResourceRangeSelect?: (
     resource: BookableItemOption,
     range: { startMinute: number; endMinute: number },
@@ -184,8 +185,9 @@ export function BookingEventsCalendar({
     myItemsOnly ||
     (eventFiltering !== false &&
       (eventFiltering.value.search.trim() !== "" || eventFiltering.value.expression !== null));
-  // The Time grid shades closures only for one bookable item in scope: the route target, or the only
-  // resource row the item filter (or the dataset) leaves. A single row on a later page is not in scope.
+  // The Time grid shades closures, and offers click/drag creation, only for one bookable item in scope: the route
+  // target, or the only resource row the item filter (or the dataset) leaves. A single row on a later page is not
+  // in scope.
   const resourceRowCount =
     resourceTableProps?.features.pagination === false || resourceTableProps === undefined
       ? resourceConfigurations?.length
@@ -301,6 +303,8 @@ export function BookingEventsCalendar({
                   onViewChange("day");
                 }}
                 schedule={timeGridSchedule}
+                creationDisabled={creationDisabled}
+                onRangeSelect={onResourceRangeSelect}
                 isLoading={isLoading}
               />
             )}

@@ -181,7 +181,7 @@ export async function loadBookingAdminSettings(token: string, signal?: AbortSign
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
     signal,
   });
-  if (!response.ok) throw new Error(`Booking admin settings request failed with status ${response.status}`);
+  if (!response.ok) throw await parseApiV2Problem(response);
   return parseOrThrow(BookingAdminSettingsSchema, await response.json());
 }
 
