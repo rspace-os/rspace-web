@@ -118,9 +118,10 @@ public class LdapRealmTest {
   public void existingInternalUserIsPaddedInsteadOfAskingTheDirectory() throws Exception {
     when(userManager.userExists(testUsername)).thenReturn(true);
     when(userManager.getUserByUsername(testUsername)).thenReturn(createAnyUser(testUsername));
+    when(userManager.loginLockKey(testUsername)).thenReturn("test-key");
 
     assertNull(ldapRealm.doGetAuthenticationInfo(token));
-    verify(sentinelCheck).pad(testUsername, "anypass");
+    verify(sentinelCheck).pad("test-key", "anypass");
     verifyNoInteractions(userLdapRepo);
   }
 
