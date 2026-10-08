@@ -7,8 +7,8 @@ echo 'Building rspace-web'
 /*
  This is the main build script for Jenkins to run tests.
  In Jenkins, it is called from 'rspace-web' project as a multi branch build
- For feature branches, it runs 'quick' JUnit tests
- For master/dev branches, it runs full Java tests (i.e. with IT tests).
+ For the main branch, it runs 'quick' JUnit tests
+ When FULL_JAVA_TESTS is set, it runs full Java tests (i.e. with IT tests) instead.
  The script takes several parameters; there are other Jenkins jobs to run nightly test-suites using JDK 11 and also
  with 'nightly' tests which are more long running tests.
 */
@@ -78,10 +78,11 @@ pipeline {
                     }
                 }
                 changeset '**/*.java'
+                branch 'main'
             }
 
             steps {
-                echo 'This is a feature branch, running fast, non Spring tests only'
+                echo 'This is the main branch, running fast, non Spring tests only'
                 sh "./mvnw clean  test -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
                    -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                    -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR}"
