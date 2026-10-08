@@ -76,3 +76,6 @@ Inventory's Booking links perform a full page navigation, which creates a new
 Booking query cache. Returning to an already open Booking tab uses normal
 React Query refetching on focus. Changes made in another session are not pushed
 to the UI; server authorization remains authoritative on every request.
+Within a calendar event popover, inline editing replaces the read-only details
+with the form, moves focus to its Notes or Purpose field, and returns focus to
+Edit or View details when editing ends, including after permission revocation.

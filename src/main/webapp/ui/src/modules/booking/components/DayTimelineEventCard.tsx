@@ -15,7 +15,9 @@ import {
   formatMinuteWithDayOffset,
   period,
 } from "./DayTimelineEvent";
-import { ExpandedEventCard } from "./ExpandedEventCard";
+import { ExpandedEventCard, type ExpandedEventEditController } from "./ExpandedEventCard";
+
+export type DayTimelineEventCardCollisionBoundary = React.ComponentProps<typeof PopoverContent>["collisionBoundary"];
 
 function EventIcon({ event }: { event: DayTimelineEvent }) {
   if (event.kind === "blockout") return <Wrench className="size-3.5 shrink-0" aria-hidden="true" />;
@@ -55,18 +57,20 @@ export function DayTimelineEventCard({
   variant?: "timeline" | "flow";
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
-  collisionBoundary?: HTMLElement | null;
+  collisionBoundary?: DayTimelineEventCardCollisionBoundary | null;
   expandedCardClassName?: string;
   portalContainer?: HTMLElement | null;
   renderEventActions?: (
     event: Extract<DayTimelineEvent, { kind: "booking" }>,
     period: string,
     timelineEventElement?: HTMLElement | null,
+    editController?: ExpandedEventEditController,
   ) => React.ReactNode;
   renderBlockoutActions?: (
     event: Extract<DayTimelineEvent, { kind: "blockout" }>,
     period: string,
     timelineEventElement?: HTMLElement | null,
+    editController?: ExpandedEventEditController,
   ) => React.ReactNode;
 }) {
   const { t } = useTranslation("booking");

@@ -844,6 +844,105 @@ describe("CalendarPage", () => {
     expect(screen.queryByRole("link", { name: "View details" })).not.toBeInTheDocument();
   });
 
+  it.each([
+    {
+      kind: "booking",
+      event: ownBooking,
+      actorLabel: "Booked by",
+      fieldLabel: "Purpose",
+      originalValue: "Cell imaging",
+      updatedValue: "Updated imaging purpose",
+    },
+    {
+      kind: "maintenance",
+      event: { ...ownBooking, kind: "MAINTENANCE" as const, createdBy: "Ada Lovelace", purpose: "Equipment service" },
+      actorLabel: "Created by",
+      fieldLabel: "Notes",
+      originalValue: "Equipment service",
+      updatedValue: "Updated maintenance notes",
+    },
+  ])(
+    "hides read-only details while editing $kind events and restores them after cancel or save",
+    async ({ event, actorLabel, fieldLabel, originalValue, updatedValue }) => {
+      let serverBooking: BookingListDocument = event;
+      server.use(
+        oauthTokenHandler(true),
+        http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+        http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([serverBooking]))),
+        http.patch("/api/v2/bookings/41", async ({ request }) => {
+          const patch = (await request.json()) as Partial<BookingListDocument>;
+          serverBooking = { ...serverBooking, ...patch };
+          return HttpResponse.json(serverBooking);
+        }),
+      );
+      const user = userEvent.setup();
+      await renderCalendar();
+
+      await user.click(await screen.findByRole("button", { name: /^Show details for/ }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText(actorLabel)).toBeVisible();
+      expect(within(dialog).getByText(fieldLabel)).toBeVisible();
+
+      await user.click(within(dialog).getByRole("button", { name: "Edit" }));
+      const field = await within(dialog).findByRole("textbox", { name: fieldLabel });
+      expect(field).toHaveValue(originalValue);
+      expect(field).toHaveFocus();
+      expect(within(dialog).queryByText(actorLabel)).not.toBeInTheDocument();
+      expect(within(dialog).getAllByText(fieldLabel)).toHaveLength(1);
+      expect(within(dialog).getByRole("heading")).toBeVisible();
+      expect(within(dialog).getByRole("button", { name: /^Hide details for/ })).toBeVisible();
+      await user.click(field);
+      expect(field).toHaveFocus();
+
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      expect(within(dialog).getByRole("button", { name: "Edit" })).toHaveFocus();
+      expect(within(dialog).getByText(actorLabel)).toBeVisible();
+      expect(within(dialog).getByText(fieldLabel)).toBeVisible();
+      expect(within(dialog).getByText(originalValue)).toBeVisible();
+
+      await user.click(within(dialog).getByRole("button", { name: "Edit" }));
+      const editedField = await within(dialog).findByRole("textbox", { name: fieldLabel });
+      await user.clear(editedField);
+      await user.type(editedField, updatedValue);
+      expect(within(dialog).queryByText(actorLabel)).not.toBeInTheDocument();
+      expect(within(dialog).getAllByText(fieldLabel)).toHaveLength(1);
+      await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
+
+      await waitFor(() => expect(within(dialog).queryByRole("textbox", { name: fieldLabel })).not.toBeInTheDocument());
+      expect(within(dialog).getByRole("button", { name: "Edit" })).toHaveFocus();
+      expect(within(dialog).getByText(actorLabel)).toBeVisible();
+      expect(within(dialog).getByText(fieldLabel)).toBeVisible();
+      expect(within(dialog).getByText(updatedValue)).toBeVisible();
+    },
+  );
+
+  it("restores read-only details when edit permission is revoked during an inline edit", async () => {
+    let serverBooking: BookingListDocument = ownBooking;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([serverBooking]))),
+    );
+    const user = userEvent.setup();
+    const { queryClient } = await renderCalendar();
+
+    await user.click((await screen.findAllByRole("button", { name: /^Show details for Confocal microscope/ }))[0]);
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Edit" }));
+    expect(await within(dialog).findByRole("textbox", { name: "Purpose" })).toBeVisible();
+
+    serverBooking = { ...serverBooking, canEdit: false };
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "calendar-events"] });
+    });
+
+    await waitFor(() => expect(within(dialog).queryByRole("textbox", { name: "Purpose" })).not.toBeInTheDocument());
+    expect(within(dialog).getByText("Booked by")).toBeVisible();
+    expect(within(dialog).getByText("Purpose")).toBeVisible();
+    expect(within(dialog).queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: "View details" })).toHaveFocus();
+  });
+
   it("explains a server buffer rejection in the inline calendar editor and lists the named booking", async () => {
     server.use(
       oauthTokenHandler(true),

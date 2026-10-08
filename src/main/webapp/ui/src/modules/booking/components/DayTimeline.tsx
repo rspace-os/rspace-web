@@ -13,6 +13,7 @@ import {
   formatMinuteWithDayOffset,
 } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
+import type { ExpandedEventEditController } from "./ExpandedEventCard";
 import type { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 
 export type { DayTimelineEvent, DayTimelineItem, DayTimelineRange, DayTimelineViewState } from "./DayTimelineEvent";
@@ -33,6 +34,8 @@ type PositionedEvent = {
   visualEndMinute: number;
   lane: number;
 };
+
+type CollisionBoundaryRect = Pick<DOMRectReadOnly, "x" | "y" | "width" | "height">;
 
 function positionEvents(events: ReadonlyArray<DayTimelineEvent>, dayMinutes: number): Array<PositionedEvent> {
   const laneEnds: Array<number> = [];
@@ -150,11 +153,13 @@ export function DayTimeline({
     event: Extract<DayTimelineEvent, { kind: "booking" }>,
     period: string,
     timelineEventElement?: HTMLElement | null,
+    editController?: ExpandedEventEditController,
   ) => React.ReactNode;
   renderBlockoutActions?: (
     event: Extract<DayTimelineEvent, { kind: "blockout" }>,
     period: string,
     timelineEventElement?: HTMLElement | null,
+    editController?: ExpandedEventEditController,
   ) => React.ReactNode;
   snapIncrementMinutes?: number;
   creationDisabled?: boolean;
@@ -172,7 +177,8 @@ export function DayTimeline({
   const { t, i18n } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   const scrollerRef = React.useRef<HTMLElement>(null);
-  const [collisionBoundary, setCollisionBoundary] = React.useState<HTMLElement | null>(null);
+  const [collisionBoundary, setCollisionBoundary] = React.useState<CollisionBoundaryRect | null>(null);
+  const collisionBoundaryRef = React.useRef<CollisionBoundaryRect | null>(null);
   const [dragRange, setDragRange] = React.useState<{ from: number; to: number; pointerId: number } | null>(null);
   const [expandedEventId, setExpandedEventId] = React.useState<string | null>(null);
   const instanceId = React.useId();
@@ -200,6 +206,44 @@ export function DayTimeline({
   const visibleMinutes = Math.max(snapIncrementMinutes, endWindow - startWindow);
   const nowEdge =
     nowMinute === undefined ? null : nowMinute < startWindow ? "before" : nowMinute > endWindow ? "after" : "inside";
+
+  const updateCollisionBoundary = React.useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const bounds = scroller.getBoundingClientRect();
+    const next = { x: bounds.left, y: 0, width: bounds.width, height: window.innerHeight };
+    const current = collisionBoundaryRef.current;
+    if (
+      current &&
+      current.x === next.x &&
+      current.y === next.y &&
+      current.width === next.width &&
+      current.height === next.height
+    ) {
+      return;
+    }
+    collisionBoundaryRef.current = next;
+    setCollisionBoundary(next);
+  }, []);
+
+  React.useLayoutEffect(() => {
+    if (!expandedEventId) return;
+    const update = () => updateCollisionBoundary();
+    const scroller = scrollerRef.current;
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    if (scroller) resizeObserver?.observe(scroller);
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+    };
+  }, [expandedEventId, updateCollisionBoundary]);
 
   React.useLayoutEffect(() => {
     const scroller = scrollerRef.current;
@@ -251,7 +295,6 @@ export function DayTimeline({
   const eventAreaTop = tableRow ? 32 : 64;
   const setScrollerRef = React.useCallback((node: HTMLElement | null) => {
     scrollerRef.current = node;
-    setCollisionBoundary(node);
   }, []);
   const snapMinute = (minute: number) =>
     Math.min(dayMinutes, Math.max(0, Math.round(minute / snapIncrementMinutes) * snapIncrementMinutes));
@@ -419,9 +462,10 @@ export function DayTimeline({
                       compactCards={compactCards}
                       variant="timeline"
                       expanded={expandedEventId === event.id}
-                      onExpandedChange={(expanded) =>
-                        setExpandedEventId((current) => (expanded ? event.id : current === event.id ? null : current))
-                      }
+                      onExpandedChange={(expanded) => {
+                        if (expanded) updateCollisionBoundary();
+                        setExpandedEventId((current) => (expanded ? event.id : current === event.id ? null : current));
+                      }}
                       collisionBoundary={collisionBoundary}
                       expandedCardClassName={
                         typeof expandedCardClassName === "function"

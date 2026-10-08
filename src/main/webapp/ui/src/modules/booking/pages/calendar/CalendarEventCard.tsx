@@ -24,8 +24,24 @@ export function CalendarEventCard({
       timezone={timezone}
       compactCards={compact}
       variant={overlay ? "timeline" : "flow"}
-      renderEventActions={() => <BookingActions event={event} timezone={timezone} />}
-      renderBlockoutActions={() => <BookingActions event={event} timezone={timezone} />}
+      renderEventActions={(_event, _period, timelineEventElement, editController) => (
+        <BookingActions
+          event={event}
+          timezone={timezone}
+          timelineDate={date}
+          timelineEventElement={timelineEventElement}
+          editController={editController}
+        />
+      )}
+      renderBlockoutActions={(_event, _period, timelineEventElement, editController) => (
+        <BookingActions
+          event={event}
+          timezone={timezone}
+          timelineDate={date}
+          timelineEventElement={timelineEventElement}
+          editController={editController}
+        />
+      )}
     />
   );
   return (

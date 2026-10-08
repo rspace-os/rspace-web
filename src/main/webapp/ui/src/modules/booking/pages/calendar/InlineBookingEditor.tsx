@@ -74,6 +74,9 @@ export function InlineBookingEditor({
   const staleAlertRef = React.useRef<HTMLDivElement>(null);
   const [formState, setFormState] = React.useState<BookingFormState | null>(null);
   const [windowAdjustment, setWindowAdjustment] = React.useState<BookingFormState["draft"]>();
+  React.useEffect(() => {
+    editorRef.current?.querySelector<HTMLTextAreaElement>("textarea")?.focus();
+  }, [configuration.isPending]);
   const mutation = useMutation({
     mutationFn: async ({ submission, version }: { submission: BookingFormSubmission; version: number }) => {
       // Only the fields changed from where the draft started, so saving over a newer version keeps that version's

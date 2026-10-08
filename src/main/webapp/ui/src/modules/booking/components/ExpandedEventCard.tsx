@@ -1,5 +1,5 @@
 import { Wrench, X } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
@@ -20,6 +20,11 @@ type DetailedDayTimelineEvent =
   | Extract<DayTimelineEvent, { kind: "blockout" }>
   | Extract<DayTimelineEvent, { kind: "booking"; privacy: "full" }>;
 
+export type ExpandedEventEditController = {
+  editing: boolean;
+  onEditingChange: (editing: boolean) => void;
+};
+
 export function ExpandedEventCard({
   date,
   timezone,
@@ -38,15 +43,18 @@ export function ExpandedEventCard({
     event: Extract<DayTimelineEvent, { kind: "booking" }>,
     period: string,
     timelineEventElement?: HTMLElement | null,
+    editController?: ExpandedEventEditController,
   ) => React.ReactNode;
   renderBlockoutActions?: (
     event: Extract<DayTimelineEvent, { kind: "blockout" }>,
     period: string,
     timelineEventElement?: HTMLElement | null,
+    editController?: ExpandedEventEditController,
   ) => React.ReactNode;
 }) {
   const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
+  const [editing, setEditing] = React.useState(false);
   const isBlockout = event.kind === "blockout";
   const startDate = dateForMinute(date, timezone, event.startMinute);
   const endDate = dateForMinute(date, timezone, event.endMinute);
@@ -68,8 +76,8 @@ export function ExpandedEventCard({
     );
   const actions =
     event.kind === "booking"
-      ? renderEventActions?.(event, exactPeriod, eventAnchor)
-      : renderBlockoutActions?.(event, exactPeriod, eventAnchor);
+      ? renderEventActions?.(event, exactPeriod, eventAnchor, { editing, onEditingChange: setEditing })
+      : renderBlockoutActions?.(event, exactPeriod, eventAnchor, { editing, onEditingChange: setEditing });
 
   return (
     <>
@@ -144,50 +152,52 @@ export function ExpandedEventCard({
         </PopoverClose>
       </div>
 
-      <dl className="divide-y divide-border text-sm">
-        <div className="px-4 py-2">
-          <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
-          <dd>
-            {event.item.globalId ? (
-              <InventoryItem
-                name={event.item.name}
-                globalId={event.item.globalId}
-                href={`/globalId/${event.item.globalId}`}
-                idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: event.item.globalId })}
-                idPlacement="title"
-                className="p-0"
-              >
-                {event.item.location ? (
-                  <InventoryLocationLink name={event.item.location.name} globalId={event.item.location.globalId} />
-                ) : null}
-              </InventoryItem>
-            ) : (
-              <UnknownItem size="xs" />
-            )}
-          </dd>
-        </div>
-        {event.kind === "booking" ? (
-          <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
-            <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.bookedBy")}</dt>
-            <dd className="min-w-0">
-              <UserBadge name={event.bookedBy} />
+      {editing ? null : (
+        <dl className="divide-y divide-border text-sm">
+          <div className="px-4 py-2">
+            <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
+            <dd>
+              {event.item.globalId ? (
+                <InventoryItem
+                  name={event.item.name}
+                  globalId={event.item.globalId}
+                  href={`/globalId/${event.item.globalId}`}
+                  idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: event.item.globalId })}
+                  idPlacement="title"
+                  className="p-0"
+                >
+                  {event.item.location ? (
+                    <InventoryLocationLink name={event.item.location.name} globalId={event.item.location.globalId} />
+                  ) : null}
+                </InventoryItem>
+              ) : (
+                <UnknownItem size="xs" />
+              )}
             </dd>
           </div>
-        ) : event.createdBy ? (
+          {event.kind === "booking" ? (
+            <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
+              <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.bookedBy")}</dt>
+              <dd className="min-w-0">
+                <UserBadge name={event.bookedBy} />
+              </dd>
+            </div>
+          ) : event.createdBy ? (
+            <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
+              <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.createdBy")}</dt>
+              <dd className="min-w-0">
+                <UserBadge name={event.createdBy} />
+              </dd>
+            </div>
+          ) : null}
           <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
-            <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.createdBy")}</dt>
-            <dd className="min-w-0">
-              <UserBadge name={event.createdBy} />
-            </dd>
+            <dt className="text-muted-foreground text-xs">
+              {t(isBlockout ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
+            </dt>
+            <dd className="text-xs leading-4">{event.notes}</dd>
           </div>
-        ) : null}
-        <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
-          <dt className="text-muted-foreground text-xs">
-            {t(isBlockout ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
-          </dt>
-          <dd className="text-xs leading-4">{event.notes}</dd>
-        </div>
-      </dl>
+        </dl>
+      )}
 
       {actions}
     </>

@@ -214,8 +214,24 @@ export function CalendarWeekTimeGrid({
                         onExpandedChange={(open) =>
                           setExpandedEventKey((current) => (open ? key : current === key ? null : current))
                         }
-                        renderEventActions={() => <BookingActions event={item.booking} timezone={timezone} />}
-                        renderBlockoutActions={() => <BookingActions event={item.booking} timezone={timezone} />}
+                        renderEventActions={(_event, _period, timelineEventElement, editController) => (
+                          <BookingActions
+                            event={item.booking}
+                            timezone={timezone}
+                            timelineDate={day}
+                            timelineEventElement={timelineEventElement}
+                            editController={editController}
+                          />
+                        )}
+                        renderBlockoutActions={(_event, _period, timelineEventElement, editController) => (
+                          <BookingActions
+                            event={item.booking}
+                            timezone={timezone}
+                            timelineDate={day}
+                            timelineEventElement={timelineEventElement}
+                            editController={editController}
+                          />
+                        )}
                       />
                       {item.continuesBefore ? (
                         <span

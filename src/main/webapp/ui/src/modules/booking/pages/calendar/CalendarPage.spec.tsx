@@ -616,41 +616,78 @@ describe("Calendar page", () => {
     await expect.element(calendar.viewItemDetails).toBeVisible();
   });
 
-  test("edits an editable booking inside its expanded calendar card", async () => {
-    let updatedPayload: Record<string, unknown> | undefined;
-    let ifMatch: string | null = null;
-    worker.use(
-      http.patch("/api/v2/bookings/41", async ({ request }) => {
-        updatedPayload = (await request.json()) as Record<string, unknown>;
-        ifMatch = request.headers.get("If-Match");
-        return HttpResponse.json({ ...ownBooking, ...updatedPayload, version: ownBooking.version + 1 });
-      }),
-    );
-    render(<CalendarPageStory history={history} />);
+  test.each([
+    { layout: "By Item", view: "Day", width: 1100 },
+    { layout: "By Item", view: "Day", width: 392 },
+    { layout: "Time grid", view: "Day", width: 1100 },
+    { layout: "Time grid", view: "Week", width: 1100 },
+    { layout: "Agenda", view: "Day", width: 1100 },
+  ] as const)(
+    "edits an editable booking inside its expanded calendar card in $layout $view at $width px",
+    async ({ layout, view, width }) => {
+      const originalViewport = { width: window.innerWidth, height: window.innerHeight };
+      try {
+        await page.viewport(width, 741);
+        let updatedPayload: Record<string, unknown> | undefined;
+        let ifMatch: string | null = null;
+        worker.use(
+          http.patch("/api/v2/bookings/41", async ({ request }) => {
+            updatedPayload = (await request.json()) as Record<string, unknown>;
+            ifMatch = request.headers.get("If-Match");
+            return HttpResponse.json({ ...ownBooking, ...updatedPayload, version: ownBooking.version + 1 });
+          }),
+        );
+        render(<CalendarPageStory history={history} />);
 
-    await calendar.showEventDetails("Confocal microscope").click();
-    const card = page.getByRole("dialog").filter({ hasText: "Confocal microscope" });
-    await calendar.editBooking.click();
+        await calendar.chooseView(layout);
+        await calendar.chooseView(view);
 
-    await expect.poll(() => history.location.pathname).toBe("/booking/calendar");
-    const purpose = card.getByRole("textbox", { name: "Purpose" });
-    await expect.element(purpose).toBeVisible();
-    expect(card.element().querySelectorAll('input[type="date"]')).toHaveLength(1);
-    const editDate = card.getByLabelText("Date");
-    const editStartTime = card.getByLabelText("Start time");
-    const editEndTime = card.getByLabelText("End time");
-    expect(editDate.element().getBoundingClientRect().top).toBeLessThan(
-      editStartTime.element().getBoundingClientRect().top,
-    );
-    expect(editStartTime.element().getBoundingClientRect().top).toBe(editEndTime.element().getBoundingClientRect().top);
-    await purpose.fill("Updated cell imaging");
-    await card.getByRole("button", { name: "Save changes" }).click();
+        await calendar.showEventDetails("Confocal microscope").click();
+        const card = page.getByRole("dialog");
+        const bookedBy = card.getByText("Booked by", { exact: true });
+        await expect.element(bookedBy).toBeVisible();
+        await calendar.editBooking.click();
 
-    await expect.poll(() => updatedPayload).toEqual({ purpose: "Updated cell imaging" });
-    expect(ifMatch).toBe('"0"');
-    await expect.element(purpose).not.toBeInTheDocument();
-    await expect.poll(() => history.location.pathname).toBe("/booking/calendar");
-  });
+        await expect.element(bookedBy).not.toBeInTheDocument();
+        await expect.element(card.getByRole("textbox", { name: "Purpose" })).toHaveFocus();
+        await expect
+          .poll(() => {
+            const bounds = card.element().getBoundingClientRect();
+            return bounds.top >= -1 && bounds.bottom <= window.innerHeight + 1;
+          })
+          .toBe(true);
+        await card.getByRole("button", { name: "Cancel", exact: true }).click();
+        await expect.element(bookedBy).toBeVisible();
+        await expect.element(calendar.editBooking).toHaveFocus();
+        await calendar.editBooking.click();
+
+        await expect.poll(() => history.location.pathname).toBe("/booking/calendar");
+        const purpose = card.getByRole("textbox", { name: "Purpose" });
+        await expect.element(purpose).toBeVisible();
+        expect(card.element().querySelectorAll('input[type="date"]')).toHaveLength(1);
+        const editDate = card.getByLabelText("Date");
+        const editStartTime = card.getByLabelText("Start time");
+        const editEndTime = card.getByLabelText("End time");
+        expect(editDate.element().getBoundingClientRect().top).toBeLessThan(
+          editStartTime.element().getBoundingClientRect().top,
+        );
+        expect(editStartTime.element().getBoundingClientRect().top).toBe(
+          editEndTime.element().getBoundingClientRect().top,
+        );
+        await purpose.fill("Updated cell imaging");
+        await card.getByRole("button", { name: "Save changes" }).click();
+
+        await expect.poll(() => updatedPayload).toEqual({ purpose: "Updated cell imaging" });
+        expect(ifMatch).toBe('"0"');
+        await expect.element(purpose).not.toBeInTheDocument();
+        await expect.element(bookedBy).toBeVisible();
+        await expect.element(calendar.editBooking).toHaveFocus();
+        await expect.poll(() => history.location.pathname).toBe("/booking/calendar");
+      } finally {
+        await page.viewport(originalViewport.width, originalViewport.height);
+      }
+    },
+  );
 
   test("discards a stale compact edit, keeps the card open and loads the latest version", async () => {
     let serverBooking: typeof ownBooking = ownBooking;
@@ -671,7 +708,7 @@ describe("Calendar page", () => {
     render(<CalendarPageStory history={history} />);
 
     await calendar.showEventDetails("Confocal microscope").click();
-    const card = page.getByRole("dialog").filter({ hasText: "Confocal microscope" });
+    const card = page.getByRole("dialog");
     await calendar.editBooking.click();
     const purpose = card.getByRole("textbox", { name: "Purpose" });
     await purpose.fill("Updated cell imaging");
@@ -706,7 +743,7 @@ describe("Calendar page", () => {
     render(<CalendarPageStory history={history} />);
 
     await calendar.showEventDetails("Confocal microscope").click();
-    const card = page.getByRole("dialog").filter({ hasText: "Confocal microscope" });
+    const card = page.getByRole("dialog");
     await calendar.editBooking.click();
     const save = card.getByRole("button", { name: "Save changes" });
 
@@ -730,7 +767,7 @@ describe("Calendar page", () => {
     render(<CalendarPageStory history={history} />);
 
     await calendar.showEventDetails("Confocal microscope").click();
-    const card = page.getByRole("dialog").filter({ hasText: "Confocal microscope" });
+    const card = page.getByRole("dialog");
     await calendar.editBooking.click();
     const move = page.getByRole("button", { name: "Move booking time" });
     await expect.element(move).toBeVisible();

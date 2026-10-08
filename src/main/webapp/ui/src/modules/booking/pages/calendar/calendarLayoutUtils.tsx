@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { DayTimelineEvent } from "@/modules/booking/components/DayTimeline";
+import type { ExpandedEventEditController } from "@/modules/booking/components/ExpandedEventCard";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import {
   addCalendarDays,
@@ -132,6 +133,7 @@ export function actionsFor(events: readonly BookingListDocument[], timezone: str
     timelineEvent: Extract<DayTimelineEvent, { kind: "booking" }>,
     _period: string,
     timelineEventElement?: HTMLElement | null,
+    editController?: ExpandedEventEditController,
   ) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
     return event ? (
@@ -140,6 +142,7 @@ export function actionsFor(events: readonly BookingListDocument[], timezone: str
         timezone={timezone}
         timelineDate={timelineDate}
         timelineEventElement={timelineEventElement}
+        editController={editController}
       />
     ) : null;
   };
@@ -150,6 +153,7 @@ export function blockoutActionsFor(events: readonly BookingListDocument[], timez
     timelineEvent: Extract<DayTimelineEvent, { kind: "blockout" }>,
     _period: string,
     timelineEventElement?: HTMLElement | null,
+    editController?: ExpandedEventEditController,
   ) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
     return event ? (
@@ -158,6 +162,7 @@ export function blockoutActionsFor(events: readonly BookingListDocument[], timez
         timezone={timezone}
         timelineDate={timelineDate}
         timelineEventElement={timelineEventElement}
+        editController={editController}
       />
     ) : null;
   };

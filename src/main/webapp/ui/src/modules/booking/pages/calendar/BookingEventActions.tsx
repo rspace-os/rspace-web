@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
+import type { ExpandedEventEditController } from "@/modules/booking/components/ExpandedEventCard";
 import type { EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -22,18 +23,34 @@ export function BookingActions({
   timezone,
   timelineDate,
   timelineEventElement,
+  editController,
 }: {
   event: BookingListDocument;
   timezone: string;
   timelineDate?: string;
   timelineEventElement?: HTMLElement | null;
+  editController?: ExpandedEventEditController;
 }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const timeFormat = useBookingTimeFormat();
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const [editing, setEditing] = React.useState(false);
+  const [localEditing, setLocalEditing] = React.useState(false);
+  const editing = editController?.editing ?? localEditing;
+  const setEditing = editController?.onEditingChange ?? setLocalEditing;
   const editable = isEditableBooking(event);
+  const editButtonRef = React.useRef<HTMLButtonElement>(null);
+  const viewDetailsRef = React.useRef<HTMLAnchorElement>(null);
+  const previousEditing = React.useRef(editing);
+  React.useLayoutEffect(() => {
+    if (previousEditing.current && !editing) {
+      (editable ? editButtonRef.current : viewDetailsRef.current)?.focus();
+    }
+    previousEditing.current = editing;
+  }, [editable, editing]);
+  React.useEffect(() => {
+    if (!editable && editing) setEditing(false);
+  }, [editable, editing, setEditing]);
   if (editing && editable) {
     return (
       <InlineBookingEditor
@@ -61,6 +78,7 @@ export function BookingActions({
     >
       {canViewDetails ? (
         <Link
+          ref={viewDetailsRef}
           className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
           to="/booking/calendar/bookings/$id"
           params={{ id: String(event.id) }}
@@ -70,6 +88,7 @@ export function BookingActions({
       ) : null}
       {editable ? (
         <button
+          ref={editButtonRef}
           type="button"
           className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
           onClick={() => setEditing(true)}
