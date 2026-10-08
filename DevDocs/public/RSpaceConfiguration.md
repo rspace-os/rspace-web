@@ -614,7 +614,7 @@ Settings to rate-limit the number of API calls made to the server.
 * **oauth.passwordGrant.maxFailures** Wrong passwords allowed per username on the OAuth password grant (`/oauth/token`, `grant_type=password`) inside the window. After that the username gets the ordinary invalid-credentials response on this route, at the cost of one password check, until the window passes with no further counted failure. Minimum 1. Default=5
 * **oauth.passwordGrant.failureWindowSeconds** Length of that window in seconds. Minimum 1. Default=600
 
-The public Inventory client that every install ships is accepted on this route by design, so the client check is not a guessing control; these two settings are. The count is held in memory and resets on restart. A blocked username gets the same response as a wrong password, so an administrator sees a block only in the security log. The web login page lockout and API keys are unaffected.
+The public Inventory client that every install ships is accepted on this route by design, so the client check is not a guessing control; these two settings are. The count is held in memory and resets on restart. A blocked username gets the same response as a wrong password, so an administrator sees a block only in the security log. Anyone who knows a username can keep it blocked on this route by sending wrong passwords; raising `maxFailures` makes that harder at the cost of more allowed guesses. The web login page lockout and API keys are unaffected.
 
 ### Monitoring
 
