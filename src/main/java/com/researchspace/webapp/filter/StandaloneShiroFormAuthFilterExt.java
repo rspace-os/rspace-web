@@ -17,7 +17,6 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authc.AuthenticationException;
@@ -77,6 +76,9 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
           getUsername(request),
           RequestUtil.remoteAddr(WebUtils.toHttp(request)),
           e.getMessage());
+      if (isAdminLogin(request)) {
+        return redirectAdminLogin(request, response, e.getClass().getSimpleName());
+      }
       setFailureAttribute(request, e);
       return true;
     }
@@ -188,20 +190,28 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
     }
 
     if (isAdminLogin(request)) {
-      try {
-        boolean isSignupSourceEx =
-            (e != null) && (e.getCause() instanceof IncorrectSignupSourceException);
-        String loginException =
-            isSignupSourceEx ? "IncorrectSignupSourceException" : e.getClass().getSimpleName();
-        Map<String, String> failureReason =
-            Collections.singletonMap("loginException", loginException);
-        WebUtils.issueRedirect(request, response, ADMIN_LOGIN_URL, failureReason);
-      } catch (IOException ioe) {
-        log.warn("Exception on attempt to redirect to admin login", ioe);
-      }
+      boolean isSignupSourceEx =
+          (e != null) && (e.getCause() instanceof IncorrectSignupSourceException);
+      String loginException =
+          isSignupSourceEx ? "IncorrectSignupSourceException" : e.getClass().getSimpleName();
+      redirectAdminLogin(request, response, loginException);
     }
 
     return super.onLoginFailure(token, e, request, response);
+  }
+
+  private boolean redirectAdminLogin(
+      ServletRequest request, ServletResponse response, String loginException) {
+    try {
+      WebUtils.issueRedirect(
+          request,
+          response,
+          ADMIN_LOGIN_URL,
+          Collections.singletonMap("loginException", loginException));
+    } catch (IOException ioe) {
+      log.warn("Exception on attempt to redirect to admin login", ioe);
+    }
+    return false;
   }
 
   /*

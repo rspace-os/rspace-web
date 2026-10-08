@@ -10,7 +10,7 @@ PR #1204) that changes a limit, a message, a default or a route must update the 
 same commit. A row that no longer matches the code is a bug in this page. When PR #1210
 (RSDEV-1546) merges, update the API token row.
 
-Last reconciled with: `RSDEV-894` losing reset submit commit (exploratory F2), `RSDEV-894-stack-2` eae7c934e.
+Last reconciled with: `RSDEV-894` busy emergency admin login commit (round 6 Issue2), `RSDEV-894-stack-2` eae7c934e.
 
 ## Settings this page refers to
 
@@ -30,7 +30,7 @@ column is empty, nothing the user sees has changed.
 
 | Scenario | What this change does | Old message | New message | Notes for support |
 |---|---|---|---|---|
-| Normal login on the web form | The password check takes one of 8 slots and waits up to 5 s for one. One login attempt per account runs at a time, from the lockout check to the failure count, so four wrong passwords lock the account even when sent all at once. | "Invalid username or password, please try again." after a wrong password. Four wrong in 10 minutes locks the account. | Same wording when the server is too busy to check in time. A busy refusal does **not** count toward the lockout. | Security log says `refused` with the username when it was a busy refusal, not a wrong password. An unknown username now costs the same check as a wrong password, so timing does not reveal whether a username exists (best effort on LDAP installs). Other public pages that still do are RSDEV-1558. |
+| Normal login on the web form | The password check takes one of 8 slots and waits up to 5 s for one. One login attempt per account runs at a time, from the lockout check to the failure count, so four wrong passwords lock the account even when sent all at once. | "Invalid username or password, please try again." after a wrong password. Four wrong in 10 minutes locks the account. | Same wording when the server is too busy to check in time. A busy refusal does **not** count toward the lockout. | Security log says `refused` with the username when it was a busy refusal, not a wrong password. An unknown username now costs the same check as a wrong password, so timing does not reveal whether a username exists (best effort on LDAP installs). Other public pages that still do are RSDEV-1558. On SSO installs the emergency admin login returns to its own page with the usual wrong-credentials text when the server is busy; nothing is counted. |
 | Signing, witnessing, operate-as, API key and OAuth app management, changing your own password (anything that asks for your password again) | Same 8 slots as login. | Whatever the dialog shows for a wrong password. | Same wording when busy. Never locks the account. | `ReauthenticatorImpl` logs the busy reason. |
 | Getting an API token with username and password (`POST /oauth/token`, password grant) | Same 8 slots as login. No guess counting on this branch. | "Invalid user credentials." | No change on this branch. PR #1210 adds a per-account guess limit and the message "Too many failed attempts for this account. Please try again later."; update this row when it merges. | The public Inventory client credentials are accepted on this route by design. |
 | Existing LDAP user logs in | Unchanged. The directory checks the password, not RSpace. | | | Not affected by the server-wide limit; one login attempt per account runs at a time, as for every login. |

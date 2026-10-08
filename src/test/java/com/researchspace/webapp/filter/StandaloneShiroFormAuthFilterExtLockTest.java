@@ -1,5 +1,6 @@
 package com.researchspace.webapp.filter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,6 +62,24 @@ class StandaloneShiroFormAuthFilterExtLockTest {
     assertTrue(filter.onAccessDenied(request, new MockHttpServletResponse()));
 
     assertNotNull(request.getAttribute("shiroLoginFailure"));
+    verify(lockoutPolicy, never()).handleLockoutOnFailure(any());
+    release.countDown();
+    inFlight.get(5, TimeUnit.SECONDS);
+  }
+
+  @Test
+  void busyAdminLoginIsRedirectedBackToTheAdminPageWithoutCounting() throws Exception {
+    useVerifierWaiting(Duration.ofMillis(100));
+    Future<Object> inFlight = holdLoginFor("user1a");
+
+    MockHttpServletRequest request = loginSubmission("user1a");
+    request.setParameter("adminLogin", "");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    assertFalse(filter.onAccessDenied(request, response));
+
+    assertThat(response.getRedirectedUrl())
+        .startsWith("/adminLogin")
+        .contains("loginException=LoginVerificationBusyException");
     verify(lockoutPolicy, never()).handleLockoutOnFailure(any());
     release.countDown();
     inFlight.get(5, TimeUnit.SECONDS);
