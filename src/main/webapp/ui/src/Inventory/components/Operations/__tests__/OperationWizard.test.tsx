@@ -16,6 +16,7 @@ import {
   makeMockSubSample,
   makeMockSubSampleWithParentContainer,
 } from "@/stores/models/__tests__/SubSampleModel/mocking";
+import type ContainerModel from "@/stores/models/ContainerModel";
 import OperationWizard from "../OperationWizard";
 
 let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
@@ -76,6 +77,8 @@ const fetcher: { permalink: null | { type: string; id: number }; performInitialS
   permalink: null,
   performInitialSearch,
 };
+/** The record shown in the main page's right-hand panel. */
+const onScreen: { activeResult: unknown } = { activeResult: null };
 const getTemplate = vi.fn();
 const template = (o: Record<string, unknown> = {}) => ({
   id: 9,
@@ -91,7 +94,13 @@ vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
     moveStore: { isMoving: false },
-    searchStore: { search: { performSearch, fetcher }, getTemplate },
+    searchStore: {
+      search: { performSearch, fetcher },
+      getTemplate,
+      get activeResult() {
+        return onScreen.activeResult;
+      },
+    },
     uiStore: { addAlert },
     unitStore: {
       getUnit: (id: number) => ({
@@ -287,6 +296,7 @@ beforeEach(() => {
   performSearch.mockClear();
   performInitialSearch.mockClear();
   fetcher.permalink = null;
+  onScreen.activeResult = null;
   addAlert.mockClear();
   // Reset, not merely cleared: mockClear leaves a queued mockResolvedValueOnce/mockRejectedValueOnce
   // for the next test, and one test here asserts getTemplate is never called.
@@ -1470,8 +1480,14 @@ function createTwoAndRecordBulk(reply: Record<string, unknown> = { errorCount: 0
   return bulkBodies;
 }
 
-async function performIntoShelf(user: ReturnType<typeof userEvent.setup>, onClose: () => void, onPerformed = vi.fn()) {
-  const shelf = makeMockContainer({ id: 5, globalId: "IC5", name: "Shelf", cType: "LIST" });
+const makeShelf = () => makeMockContainer({ id: 5, globalId: "IC5", name: "Shelf", cType: "LIST" });
+
+async function performIntoShelf(
+  user: ReturnType<typeof userEvent.setup>,
+  onClose: () => void,
+  onPerformed = vi.fn(),
+  shelf = makeShelf(),
+) {
   placementTarget.container = shelf;
   render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} onPerformed={onPerformed} />);
   await reachPlacement(user, "dna");
@@ -1528,6 +1544,61 @@ describe("OperationWizard placement after Perform", () => {
     const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
     expect(alerts).toEqual([expect.objectContaining({ variant: "warning", message: "Container is full" })]);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  describe("reloading the destination when it is the record on screen", () => {
+    const watch = (container: ContainerModel) => ({
+      fetch: vi.spyOn(container, "fetchAdditionalInfo").mockResolvedValue(undefined),
+      refresh: vi.spyOn(container, "refreshAssociatedSearch").mockImplementation(() => {}),
+    });
+
+    it("reloads it and its contents", async () => {
+      createTwoAndRecordBulk();
+      const shelf = makeShelf();
+      const { fetch, refresh } = watch(shelf);
+      onScreen.activeResult = shelf;
+      const onClose = vi.fn();
+      await performIntoShelf(userEvent.setup(), onClose, vi.fn(), shelf);
+      await waitFor(() => expect(refresh).toHaveBeenCalled());
+      expect(fetch).toHaveBeenCalled();
+    });
+
+    it("leaves it alone while it is being edited", async () => {
+      createTwoAndRecordBulk();
+      const shelf = makeShelf();
+      const { fetch, refresh } = watch(shelf);
+      runInAction(() => {
+        shelf.editing = true;
+      });
+      onScreen.activeResult = shelf;
+      const onClose = vi.fn();
+      await performIntoShelf(userEvent.setup(), onClose, vi.fn(), shelf);
+      await waitFor(() => expect(onClose).toHaveBeenCalled());
+      expect(fetch).not.toHaveBeenCalled();
+      expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it("leaves a different container on screen alone", async () => {
+      createTwoAndRecordBulk();
+      const other = makeMockContainer({ id: 6, globalId: "IC6", name: "Other", cType: "LIST" });
+      const { fetch } = watch(other);
+      onScreen.activeResult = other;
+      const onClose = vi.fn();
+      await performIntoShelf(userEvent.setup(), onClose);
+      await waitFor(() => expect(onClose).toHaveBeenCalled());
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("does not reload it when the move was refused", async () => {
+      createTwoAndRecordBulk({ errorCount: 2, successCount: 0, results: [{ error: { errors: ["Full"] } }] });
+      const shelf = makeShelf();
+      const { fetch } = watch(shelf);
+      onScreen.activeResult = shelf;
+      const onClose = vi.fn();
+      await performIntoShelf(userEvent.setup(), onClose, vi.fn(), shelf);
+      await waitFor(() => expect(onClose).toHaveBeenCalled());
+      expect(fetch).not.toHaveBeenCalled();
+    });
   });
 });
 
