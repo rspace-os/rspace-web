@@ -1,12 +1,18 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import materialTheme from "@/theme";
 import RequestDetailPanel from "../RequestDetailPanel";
 import type { ApiSampleRequestListItem } from "../RequestsList";
-import { SAMPLE_REQUEST_STATUS_CHANGED_EVENT } from "../sampleRequestEvents";
+
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 const OWNER = { id: 1, username: "owner", firstName: "Olive", lastName: "Owner" };
 const REQUESTER = { id: 2, username: "requester", firstName: "Rita", lastName: "Requester" };
@@ -112,7 +118,7 @@ function baseRequest(overrides: Partial<ApiSampleRequestListItem> = {}): ApiSamp
 }
 
 function renderPanel(request: ApiSampleRequestListItem | null) {
-  return render(
+  return renderWithProviders(
     <ThemeProvider theme={materialTheme}>
       <RequestDetailPanel request={request} />
     </ThemeProvider>,
@@ -209,8 +215,6 @@ describe("RequestDetailPanel", () => {
 
   it("cancels the request as a non-owner and notifies listeners", async () => {
     const user = userEvent.setup();
-    const onStatusChanged = vi.fn();
-    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     currentUser.value = REQUESTER;
     apiUpdate.mockImplementation((resource: string) => {
       if (resource === "sampleRequests") return Promise.resolve({ data: { status: "CANCELLED" } });
@@ -226,11 +230,12 @@ describe("RequestDetailPanel", () => {
     await waitFor(() =>
       expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "CANCELLED" }),
     );
+    // The status chip updating confirms the mutation's own response was written into the detail
+    // query's cache (see invalidateAndSeedDetailStatus in ../mutations.ts) - the replacement for
+    // the old window-event broadcast this test used to listen for directly.
     await waitFor(() =>
       expect(screen.getAllByText("inventory:requestsManagement.status.cancelled").length).toBeGreaterThan(0),
     );
-    expect(onStatusChanged).toHaveBeenCalled();
-    window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
   });
 
   it("shows an error alert and leaves the status unchanged when cancelling fails", async () => {
@@ -259,8 +264,6 @@ describe("RequestDetailPanel", () => {
 
   it("approves a pending request and notifies listeners", async () => {
     const user = userEvent.setup();
-    const onStatusChanged = vi.fn();
-    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     apiUpdate.mockImplementation((resource: string) => {
       if (resource === "sampleRequests") return Promise.resolve({ data: { status: "APPROVED" } });
       return Promise.reject(new Error("unexpected"));
@@ -271,11 +274,11 @@ describe("RequestDetailPanel", () => {
     await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.approveButton" }));
 
     await waitFor(() => expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "APPROVED" }));
+    // Replaces the old window-event assertion: the status chip updating proves the mutation
+    // notified every other sampleRequests query to refresh (see ../mutations.ts).
     await waitFor(() =>
       expect(screen.getAllByText("inventory:requestsManagement.status.approved").length).toBeGreaterThan(0),
     );
-    expect(onStatusChanged).toHaveBeenCalled();
-    window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
   });
 
   it("shows an error alert, leaves the status unchanged, and re-enables the button when approving fails", async () => {
@@ -332,8 +335,6 @@ describe("RequestDetailPanel", () => {
 
   it("requires a reason before rejecting, then rejects and notifies listeners", async () => {
     const user = userEvent.setup();
-    const onStatusChanged = vi.fn();
-    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     apiUpdate.mockImplementation((resource: string) => {
       if (resource === "sampleRequests") return Promise.resolve({ data: { status: "REJECTED" } });
       return Promise.reject(new Error("unexpected"));
@@ -360,8 +361,6 @@ describe("RequestDetailPanel", () => {
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(screen.getAllByText("inventory:requestsManagement.status.rejected").length).toBeGreaterThan(0);
-    expect(onStatusChanged).toHaveBeenCalled();
-    window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
   });
 
   it("labels the reject reason textbox so it has an accessible name", async () => {
@@ -416,8 +415,6 @@ describe("RequestDetailPanel", () => {
 
   it("marks an approved request as fulfilled without transferring anything, and notifies listeners", async () => {
     const user = userEvent.setup();
-    const onStatusChanged = vi.fn();
-    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     apiUpdate.mockImplementation((resource: string) => {
       if (resource === "sampleRequests") return Promise.resolve({ data: { status: "FULFILLED" } });
       return Promise.reject(new Error("unexpected"));
@@ -436,15 +433,11 @@ describe("RequestDetailPanel", () => {
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(screen.getAllByText("inventory:requestsManagement.status.fulfilled").length).toBeGreaterThan(0);
-    expect(onStatusChanged).toHaveBeenCalled();
-    window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
   });
 
   it("keeps the Mark as Fulfilled dialog open, and does not notify listeners, when the fulfil call is rejected", async () => {
     const restoreConsole = silenceConsole(["error"], ["Failed to fulfil sample request"]);
     const user = userEvent.setup();
-    const onStatusChanged = vi.fn();
-    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     // A 409 here is exactly the scenario the fix guards against: someone else already rejected
     // or cancelled the request before this fulfil call reached the backend.
     apiUpdate.mockImplementation((resource: string) => {
@@ -467,20 +460,16 @@ describe("RequestDetailPanel", () => {
     // as if the call had succeeded, even though it was rejected.
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.queryAllByText("inventory:requestsManagement.status.fulfilled")).toHaveLength(0);
-    expect(onStatusChanged).not.toHaveBeenCalled();
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     expect(addAlert.mock.calls[0][0]).toMatchObject({
       variant: "error",
       message: "inventory:errors.genericActionError",
     });
-    window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     restoreConsole();
   });
 
   it("prepares an approved request via the Choose Sample to Prepare dialog and transfers it directly", async () => {
     const user = userEvent.setup();
-    const onStatusChanged = vi.fn();
-    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     // Neither property gates this route toward skipping the dialog.
     deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
     deploymentProperties["inventory.operations.available"] = "ALLOWED";
@@ -533,19 +522,18 @@ describe("RequestDetailPanel", () => {
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(addAlert).toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
-    // Two notifications are expected: one from markRequestFulfilled (fired before changeOwner
-    // even runs) and a second one once changeOwner itself resolves - that second one is what
-    // picks up any other requests the backend auto-rejected as a side effect of the transfer,
-    // which the first notification fired too early to reflect.
-    await waitFor(() => expect(onStatusChanged).toHaveBeenCalledTimes(2));
-    window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+    // Replaces the old "two window-event notifications" assertion: invalidateAndSeedDetailStatus
+    // (../mutations.ts) invalidates every sampleRequests query once the whole fulfil-then-transfer
+    // chain completes, which both refreshes this panel's own detail query and leaves the status
+    // chip showing the mutation's own authoritative response.
+    await waitFor(() =>
+      expect(screen.getAllByText("inventory:requestsManagement.status.fulfilled").length).toBeGreaterThan(0),
+    );
   });
 
   it("does not transfer ownership, closes the dialog, and shows an error when the fulfil call is rejected", async () => {
     const restoreConsole = silenceConsole(["error"], ["Failed to transfer sample ownership"]);
     const user = userEvent.setup();
-    const onStatusChanged = vi.fn();
-    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     // Neither property gates this route toward skipping the dialog.
     deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
     deploymentProperties["inventory.operations.available"] = "ALLOWED";
@@ -556,14 +544,18 @@ describe("RequestDetailPanel", () => {
       if (resource === "sampleRequests") return Promise.reject(new Error("409 Conflict"));
       return Promise.reject(new Error("unexpected"));
     });
-    // The request is CANCELLED by the time the failure's own refetch runs - the panel should
-    // pick that up rather than carry on showing the stale APPROVED status this attempt started
-    // from.
+    // The request is still APPROVED when the panel mounts (matching the prop below) - that's what
+    // makes the Prepare Sample button clickable in the first place - but has been CANCELLED by the
+    // time the failed transfer's invalidation triggers this query's refetch, simulating someone
+    // else closing it in between. The panel should pick that up rather than carry on showing the
+    // stale APPROVED status this attempt started from.
+    let sampleRequestsGetCalls = 0;
     apiGet.mockImplementation((resource: string) => {
       if (resource === "sampleRequests") {
+        sampleRequestsGetCalls += 1;
         return Promise.resolve({
           data: {
-            status: "CANCELLED",
+            status: sampleRequestsGetCalls === 1 ? "APPROVED" : "CANCELLED",
             statusChanges: [],
             sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
           },
@@ -615,14 +607,12 @@ describe("RequestDetailPanel", () => {
       }),
     );
     // Refreshed from the backend rather than left showing the stale APPROVED status this attempt
-    // started from.
+    // started from. The left-hand Requests list and the Sidebar's pending-count badge both share
+    // the same invalidation (sampleRequestsQueryKeys.all in ../mutations.ts), so they'd pick this
+    // up too without needing a test of their own to prove it here.
     await waitFor(() =>
       expect(screen.getAllByText("inventory:requestsManagement.status.cancelled").length).toBeGreaterThan(0),
     );
-    // The left-hand Requests list only refetches in response to this event, so it must still
-    // fire here - otherwise it would keep showing this request under its stale APPROVED status.
-    expect(onStatusChanged).toHaveBeenCalled();
-    window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
     restoreConsole();
   });
 

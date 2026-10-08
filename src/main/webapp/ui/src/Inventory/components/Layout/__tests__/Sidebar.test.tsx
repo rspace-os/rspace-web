@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import type React from "react";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
 import NavigateContext from "../../../../stores/contexts/Navigate";
@@ -11,6 +13,11 @@ import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore
 import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
 import Sidebar from "../Sidebar";
+
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 vi.mock("../../../../hooks/api/integrationHelpers", () => ({
   useIntegrationIsAllowedAndEnabled: () => ({
@@ -50,7 +57,7 @@ describe("Sidebar", () => {
         },
       },
     });
-    const { container } = render(
+    const { container } = renderWithProviders(
       <ThemeProvider theme={materialTheme}>
         <LandmarksProvider>
           <storesContext.Provider value={rootStore}>
@@ -89,7 +96,7 @@ describe("Sidebar", () => {
         },
       },
     });
-    render(
+    renderWithProviders(
       <ThemeProvider theme={materialTheme}>
         <LandmarksProvider>
           <storesContext.Provider value={rootStore}>
@@ -126,7 +133,7 @@ describe("Sidebar", () => {
       uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
       searchStore: { search: { benchSearch: true } },
     });
-    return render(
+    return renderWithProviders(
       <ThemeProvider theme={materialTheme}>
         <LandmarksProvider>
           <storesContext.Provider value={rootStore}>

@@ -11,10 +11,9 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useContext, useEffect, useId, useState } from "react";
+import { useContext, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PadlockIcon from "../../assets/graphics/PadlockIcon";
-import ApiService from "../../common/InvApiService";
 import { Heading } from "../../components/DynamicHeadingLevel";
 import FieldLabel from "../../components/Inputs/FieldLabel";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
@@ -42,6 +41,8 @@ import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
 import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
+import { useCancelSampleRequestMutation, useSendSampleRequestMutation } from "../Requests/mutations";
+import { useExistingSampleRequestQuery } from "../Requests/queries";
 import RequestsStatusChip from "../Requests/RequestsStatusChip";
 import SubsampleDetails from "./Content/SubsampleDetails";
 import SubsampleListing from "./Content/SubsampleListing";
@@ -187,23 +188,9 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   const requestTextFieldId = useId();
   const [requestText, setRequestText] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [checkingForExistingRequest, setCheckingForExistingRequest] = useState(true);
-  const [existingRequest, setExistingRequest] = useState<{
-    id: number;
-    status: string;
-    created: string;
-  } | null>(null);
-  // Guards sendRequest/cancelRequest below against double-clicks; the two are never both
-  // available at once (the Cancel button only shows once a request already exists), so one
-  // shared flag is enough.
-  const [isProcessingAction, setIsProcessingAction] = useState(false);
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();
-  const viewRequest = () => {
-    if (!existingRequest) return;
-    navigate(`/inventory/requests?requestId=${existingRequest.id}`);
-  };
   const sampleRequestsAvailable = FetchingData.getSuccessValue(
     useDeploymentProperty("inventory.sampleRequests.available"),
   )
@@ -218,39 +205,22 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   // Gated on sampleRequestsAvailable too, not just below in the render: this whole component
   // renders nothing once the property is DENIED (see the early return below), so without this
   // guard the fetch would still fire on every mount for no UI benefit at all.
-  useEffect(() => {
-    if (!sampleRequestsAvailable || !activeResult.requestable || activeResult.id == null) {
-      setCheckingForExistingRequest(false);
-      setExistingRequest(null);
-      return;
-    }
-    let cancelled = false;
-    setCheckingForExistingRequest(true);
-    ApiService.query<{ requests: Array<{ id: number; status: string; created: string }> }>(
-      "sampleRequests",
-      new URLSearchParams({ sampleId: String(activeResult.id) }),
-    )
-      .then(({ data }) => {
-        if (cancelled) return;
-        const mostRecent = data.requests.reduce<{ id: number; status: string; created: string } | null>(
-          (latest, request) =>
-            !latest || new Date(request.created).getTime() > new Date(latest.created).getTime() ? request : latest,
-          null,
-        );
-        setExistingRequest(mostRecent);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        console.error("Failed to check for an existing sample request", error);
-        setExistingRequest(null);
-      })
-      .finally(() => {
-        if (!cancelled) setCheckingForExistingRequest(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeResult.id, activeResult.requestable, sampleRequestsAvailable]);
+  const existingRequestQuery = useExistingSampleRequestQuery(
+    activeResult.id,
+    sampleRequestsAvailable && activeResult.requestable && activeResult.id != null,
+  );
+  const existingRequest = existingRequestQuery.data ?? null;
+  const checkingForExistingRequest = existingRequestQuery.isLoading;
+  // Guards sendRequest/cancelRequest below against double-clicks; the two are never both
+  // available at once (the Cancel button only shows once a request already exists), so one
+  // shared flag is enough.
+  const sendRequestMutation = useSendSampleRequestMutation();
+  const cancelRequestMutation = useCancelSampleRequestMutation();
+  const isProcessingAction = sendRequestMutation.isPending || cancelRequestMutation.isPending;
+  const viewRequest = () => {
+    if (!existingRequest) return;
+    navigate(`/inventory/requests?requestId=${existingRequest.id}`);
+  };
 
   if (!sampleRequestsAvailable || activeResult.currentUserIsOwner) return null;
 
@@ -268,38 +238,24 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   // dialog closes.
   const sendRequest = () => {
     if (!activeResult.globalId || isProcessingAction) return;
-    setIsProcessingAction(true);
-    void ApiService.post<{ id: number; status: string; created: string }>("sampleRequests", {
-      sampleGlobalId: activeResult.globalId,
-      note: requestText,
-    })
-      .then(({ data }) => {
-        setExistingRequest(data);
-        setDialogOpen(false);
-        setRequestText("");
-      })
-      .catch((error: unknown) => {
-        showActionError("Failed to send sample request", error);
-      })
-      .finally(() => setIsProcessingAction(false));
+    sendRequestMutation.mutate(
+      { sampleGlobalId: activeResult.globalId, note: requestText },
+      {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setRequestText("");
+        },
+        onError: (error) => showActionError("Failed to send sample request", error),
+      },
+    );
   };
 
   // Cancelling is only legal for the requester, and only while the request is PENDING.
   const cancelRequest = () => {
     if (!existingRequest || isProcessingAction) return;
-    setIsProcessingAction(true);
-    void ApiService.update<{ id: number; status: string; created: string }>(
-      "sampleRequests",
-      `${existingRequest.id}/status`,
-      { status: "CANCELLED" },
-    )
-      .then(({ data }) => {
-        setExistingRequest(data);
-      })
-      .catch((error: unknown) => {
-        showActionError("Failed to cancel sample request", error);
-      })
-      .finally(() => setIsProcessingAction(false));
+    cancelRequestMutation.mutate(existingRequest.id, {
+      onError: (error) => showActionError("Failed to cancel sample request", error),
+    });
   };
 
   return (

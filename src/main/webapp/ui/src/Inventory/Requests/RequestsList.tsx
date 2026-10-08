@@ -21,15 +21,14 @@ import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import { paginationOptions } from "@/util/table";
 import { isoToLocale } from "@/util/Util";
-import ApiService from "../../common/InvApiService";
 import DropdownButton from "../../components/DropdownButton";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import StyledMenu from "../../components/StyledMenu";
+import { useSampleRequestsListQuery } from "./queries";
 import RequestsParameterChips from "./RequestsParameterChips";
 import RequestsSearchbar from "./RequestsSearchbar";
 import RequestsStatusChip, { requestStatusLabel } from "./RequestsStatusChip";
 import RequestsTableHead, { type ColumnKey, type SortDirection } from "./RequestsTableHead";
-import { SAMPLE_REQUEST_STATUS_CHANGED_EVENT } from "./sampleRequestEvents";
 
 export type ApiSampleRequestListItem = {
   id: number;
@@ -43,23 +42,12 @@ export type ApiSampleRequestListItem = {
 export type RequestsFilter = "all" | "sent" | "received";
 export type StatusFilter = "all" | "active" | "past";
 
-const ACTIVE_STATUSES = "PENDING,APPROVED";
-const PAST_STATUSES = "REJECTED,FULFILLED,CANCELLED";
-
 // Smaller than the main Inventory search's (5, 10, 25, 100): this list is rarely as long.
 const REQUEST_PAGE_SIZES = [10, 25, 50];
 const DEFAULT_REQUEST_PAGE_SIZE = 25;
 // Decoupled from REQUEST_PAGE_SIZES' own max (50): without this, "All" would disappear for any
 // count over 50, even though fetching and rendering a few hundred requests at once is still fine.
 const REQUEST_ALL_THRESHOLD = 200;
-
-// ApiPaginationCriteria.MAX_PAGE_SIZE on the backend - the most this endpoint will ever return
-// from a single call; requesting more is rejected outright, so "fetch everything" means walking
-// through it a page at a time instead.
-const BACKEND_MAX_PAGE_SIZE = 100;
-// Safety bound on how many pages that walk will take, in case a filter combination genuinely
-// matches thousands of requests; ordinary use comes nowhere near this.
-const MAX_FETCH_PAGES = 50;
 
 function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): number | string {
   switch (column) {
@@ -129,74 +117,17 @@ export default function RequestsList({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [fromDropdown, setFromDropdown] = useState<HTMLElement | null>(null);
   const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(null);
-  const [requests, setRequests] = useState<Array<ApiSampleRequestListItem>>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<ColumnKey>("submitted");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [adjustableColumn, setAdjustableColumn] = useState<ColumnKey>("status");
-  const [refreshToken, setRefreshToken] = useState(0);
   const [pageNumber, setPageNumber] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_REQUEST_PAGE_SIZE);
 
-  // Refetch whenever a request's status changes elsewhere (e.g. approved/rejected
-  // from the detail pane), since the active filters may mean it should appear,
-  // disappear, or just show a different status.
-  useEffect(() => {
-    const onStatusChanged = () => setRefreshToken((token) => token + 1);
-    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
-    return () => {
-      window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-
-    const fetchAllRequests = async (): Promise<Array<ApiSampleRequestListItem>> => {
-      const filterParams: Record<string, string> = {};
-      if (requestsFilter === "sent") filterParams.role = "REQUESTER";
-      if (requestsFilter === "received") filterParams.role = "OWNER";
-      // "all" omits the role filter entirely, so the API returns both sent and received requests.
-      if (statusFilter === "active") filterParams.status = ACTIVE_STATUSES;
-      if (statusFilter === "past") filterParams.status = PAST_STATUSES;
-
-      const allRequests: Array<ApiSampleRequestListItem> = [];
-      for (let pageNum = 0; pageNum < MAX_FETCH_PAGES; pageNum++) {
-        const params = new URLSearchParams({
-          ...filterParams,
-          pageSize: String(BACKEND_MAX_PAGE_SIZE),
-          pageNumber: String(pageNum),
-        });
-        const { data } = await ApiService.query<{
-          requests: Array<ApiSampleRequestListItem>;
-          totalHits: number | null;
-        }>("sampleRequests", params);
-        allRequests.push(...data.requests);
-        const gotFullPage = data.requests.length === BACKEND_MAX_PAGE_SIZE;
-        const moreToFetch = typeof data.totalHits === "number" ? allRequests.length < data.totalHits : gotFullPage;
-        if (!gotFullPage || !moreToFetch) break;
-      }
-      return allRequests;
-    };
-
-    fetchAllRequests()
-      .then((allRequests) => {
-        if (!cancelled) setRequests(allRequests);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        console.error("Failed to fetch sample requests", error);
-        setRequests([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [requestsFilter, statusFilter, refreshToken]);
+  // Refetches on its own whenever a mutation elsewhere invalidates sampleRequestsQueryKeys (e.g.
+  // approved/rejected from the detail pane), since the active filters may mean it should appear,
+  // disappear, or just show a different status - no manual refresh-counter/event wiring needed.
+  const { data: requests = [], isLoading: loading } = useSampleRequestsListQuery(requestsFilter, statusFilter);
 
   // A page number left over from a longer list would otherwise point past the end of a shorter
   // one once the filters, search, sort, or page size change what "the list" even is.

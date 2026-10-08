@@ -17,7 +17,7 @@ import { darken, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomTooltip from "@/components/CustomTooltip";
 import { Heading, HeadingContext } from "@/components/DynamicHeadingLevel";
@@ -36,13 +36,23 @@ import { getErrorMessage } from "@/util/error";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
 import { isoToLocale } from "@/util/Util";
-import ApiService from "../../common/InvApiService";
 import PeopleField from "../components/Inputs/PeopleField";
+import {
+  useApproveSampleRequestMutation,
+  useCancelSampleRequestMutation,
+  useFulfilSampleRequestMutation,
+  useRejectSampleRequestMutation,
+  useTransferSampleOwnershipMutation,
+} from "./mutations";
+import {
+  useOtherActiveSampleRequestsQuery,
+  useSampleRequestDetailQuery,
+  useSampleSubSampleCountQuery,
+} from "./queries";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
 import type { ApiSampleRequestListItem } from "./RequestsList";
 import RequestsStatusChip, { STATUS_BACKGROUND } from "./RequestsStatusChip";
-import { notifySampleRequestStatusChanged } from "./sampleRequestEvents";
 
 const STATUS_HELP_KEY = {
   FULFILLED: "requestsManagement.detail.statusHelp.fulfilled",
@@ -93,11 +103,6 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const [approvalResultExpanded, setApprovalResultExpanded] = useState(true);
   const [requestHistoryExpanded, setRequestHistoryExpanded] = useState(true);
   const [sampleLocationsExpanded, setSampleLocationsExpanded] = useState(true);
-  const [status, setStatus] = useState(request?.status);
-  // Guards every top-level action below (approve/reject/cancel/fulfil) against double-clicks
-  // and cross-action races - at most one is ever genuinely legitimate at a time, since each
-  // needs the previous one's resulting status change to even become clickable again.
-  const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [fulfilDialogOpen, setFulfilDialogOpen] = useState(false);
@@ -113,12 +118,6 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // hand the sample to the requester specifically, so the field's choices should stay restricted
   // to them regardless. Fetched once and never cleared, unlike transferRecipient.
   const [transferRequesterPerson, setTransferRequesterPerson] = useState<PersonModel | null>(null);
-  const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
-  const [sampleOwnerName, setSampleOwnerName] = useState<string | null>(null);
-  const [subSampleCount, setSubSampleCount] = useState<number | null>(null);
-  const [otherActiveRequests, setOtherActiveRequests] = useState<Array<{ id: number; requesterName: string }> | null>(
-    null,
-  );
   const currentUser = useWhoAmI();
   const { peopleStore, uiStore } = useStores();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
@@ -139,94 +138,46 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // sensibly end in a direct transfer; skip straight to it instead of making the owner pick.
   const skipChooseMethodDialog = sampleRequestsAvailable && !operationsAvailable;
 
-  // Shared by the mount/refresh effect below and by any action whose own response can't be
-  // trusted to reflect the request's current status (e.g. submitTransfer's catch, where the
-  // failure itself means someone else changed it from under us) - both need the same underlying
-  // fetch; only the latter also applies its `status` (see submitTransfer for why the effect itself
-  // doesn't: it's keyed on `status`, so folding a second writer of that same field in here would
-  // make its own re-fetches indistinguishable from genuinely new ones).
-  const fetchRequestDetails = (requestId: number) =>
-    ApiService.get<{
-      status: string;
-      statusChanges: Array<ApiSampleRequestStatusChangeItem>;
-      sample: { owner: { firstName: string; lastName: string } };
-    }>("sampleRequests", requestId);
+  const requestId = request?.id ?? null;
+  const sampleId = request?.sample.id ?? null;
 
-  useEffect(() => {
-    if (!request) return;
-    let cancelled = false;
-    fetchRequestDetails(request.id)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setStatusChanges(data.statusChanges);
-        setSampleOwnerName(`${data.sample.owner.firstName} ${data.sample.owner.lastName}`);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        console.error("Failed to fetch sample request status changes", error);
-        setStatusChanges([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [request, status]);
+  // status/statusChanges/sampleOwnerName all come from this one query rather than local state:
+  // every action mutation below invalidates it on success (see ./mutations.ts), so a status change
+  // made here or in any other mounted component sharing this request shows up automatically,
+  // without each action handler needing to set it from its own response.
+  const detailQuery = useSampleRequestDetailQuery(requestId);
+  const status = detailQuery.data?.status ?? request?.status;
+  const statusChanges = detailQuery.data?.statusChanges ?? [];
+  const sampleOwnerName = detailQuery.data
+    ? `${detailQuery.data.sample.owner.firstName} ${detailQuery.data.sample.owner.lastName}`
+    : null;
 
-  // Only needed to size the "transferring will move all subsamples too" warning in the
-  // Choose Sample to Prepare dialog, so a plain count suffices; `subSamples` comes back
-  // null for a restricted (non-owner) viewer, same as in RequestSampleLocations.
-  useEffect(() => {
-    if (!request) return;
-    let cancelled = false;
-    ApiService.get<{ subSamples: Array<{ id: number }> | null }>("samples", request.sample.id)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setSubSampleCount(data.subSamples?.length ?? null);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        console.error("Failed to fetch sample subsample count", error);
-        setSubSampleCount(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [request]);
+  // Only needed to size the "transferring will move all subsamples too" warning in the Choose
+  // Sample to Prepare dialog, so a plain count suffices; `subSamples` comes back null for a
+  // restricted (non-owner) viewer, same as in RequestSampleLocations.
+  const subSampleCountQuery = useSampleSubSampleCountQuery(sampleId);
+  const subSampleCount = subSampleCountQuery.data ?? null;
 
   // Backs both the "other requests will be closed automatically" warning in the Choose Sample to
   // Prepare dialog and the Transfer Ownership dialog's "will be automatically rejected" bullet,
-  // which also needs each other request's requester name. Refetched whenever this request's own
-  // status changes, since that can move it into or out of the "active" set counted here.
-  useEffect(() => {
-    if (!request) return;
-    let cancelled = false;
-    const params = new URLSearchParams({
-      sampleId: String(request.sample.id),
-      status: "PENDING,APPROVED",
-      pageSize: "100",
-    });
-    ApiService.query<{ requests: Array<{ id: number; requester: { firstName: string; lastName: string } }> }>(
-      "sampleRequests",
-      params,
-    )
-      .then(({ data }) => {
-        if (cancelled) return;
-        setOtherActiveRequests(
-          data.requests
-            .filter((r) => r.id !== request.id)
-            .map((r) => ({ id: r.id, requesterName: `${r.requester.firstName} ${r.requester.lastName}` })),
-        );
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        console.error("Failed to fetch other active sample requests", error);
-        setOtherActiveRequests(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [request, status]);
+  // which also needs each other request's requester name. Invalidated (and so refetched)
+  // alongside the detail query above whenever this request's own status changes, since that can
+  // move it into or out of the "active" set counted here.
+  const otherActiveRequestsQuery = useOtherActiveSampleRequestsQuery(sampleId, requestId ?? -1);
+  const otherActiveRequests = otherActiveRequestsQuery.data ?? null;
 
   const otherActiveRequestsCount = otherActiveRequests?.length ?? null;
+
+  // Guards every top-level action below (approve/reject/cancel/fulfil) against double-clicks and
+  // cross-action races - at most one is ever genuinely legitimate at a time, since each needs the
+  // previous one's resulting status change to even become clickable again.
+  const approveMutation = useApproveSampleRequestMutation();
+  const rejectMutation = useRejectSampleRequestMutation();
+  const fulfilMutation = useFulfilSampleRequestMutation();
+  const cancelMutation = useCancelSampleRequestMutation();
+  const transferMutation = useTransferSampleOwnershipMutation();
+  const isProcessingAction =
+    approveMutation.isPending || rejectMutation.isPending || fulfilMutation.isPending || cancelMutation.isPending;
 
   const comment = statusChanges
     .filter((change) => change.status === status)
@@ -280,62 +231,31 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
 
   const approveRequest = () => {
     if (isProcessingAction) return;
-    setIsProcessingAction(true);
-    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
-      status: "APPROVED",
-    })
-      .then(({ data }) => {
-        setStatus(data.status);
-        notifySampleRequestStatusChanged();
-      })
-      .catch((error: unknown) => {
-        showActionError("Failed to approve sample request", error);
-      })
-      .finally(() => setIsProcessingAction(false));
+    approveMutation.mutate(request.id, {
+      onError: (error) => showActionError("Failed to approve sample request", error),
+    });
   };
 
   const rejectRequest = () => {
     if (isProcessingAction) return;
-    setIsProcessingAction(true);
-    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
-      status: "REJECTED",
-      reason: rejectReason,
-    })
-      .then(({ data }) => {
-        setStatus(data.status);
-        setRejectDialogOpen(false);
-        setRejectReason("");
-        notifySampleRequestStatusChanged();
-      })
-      .catch((error: unknown) => {
-        showActionError("Failed to reject sample request", error);
-      })
-      .finally(() => setIsProcessingAction(false));
-  };
-
-  // Deliberately left for each caller to catch, rather than swallowed here: fulfilRequest and
-  // submitTransfer both chain further steps (closing a dialog, changing a sample's owner) off
-  // this call's success, and a caught-and-swallowed rejection here would let those steps run as
-  // if it had succeeded - e.g. transferring ownership despite the request having just been
-  // rejected or cancelled by someone else (a 409) rather than actually fulfilled.
-  const markRequestFulfilled = () => {
-    return ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
-      status: "FULFILLED",
-    }).then(({ data }) => {
-      setStatus(data.status);
-      notifySampleRequestStatusChanged();
-    });
+    rejectMutation.mutate(
+      { requestId: request.id, reason: rejectReason },
+      {
+        onSuccess: () => {
+          setRejectDialogOpen(false);
+          setRejectReason("");
+        },
+        onError: (error) => showActionError("Failed to reject sample request", error),
+      },
+    );
   };
 
   const fulfilRequest = () => {
     if (isProcessingAction) return;
-    setIsProcessingAction(true);
-    void markRequestFulfilled()
-      .then(() => setFulfilDialogOpen(false))
-      .catch((error: unknown) => {
-        showActionError("Failed to fulfil sample request", error);
-      })
-      .finally(() => setIsProcessingAction(false));
+    fulfilMutation.mutate(request.id, {
+      onSuccess: () => setFulfilDialogOpen(false),
+      onError: (error) => showActionError("Failed to fulfil sample request", error),
+    });
   };
 
   // The requester was pre-fetched as a PersonModel via peopleStore.getUser when the
@@ -374,80 +294,52 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // the request (reported back as 404, to avoid disclosing the request's existence).
   const submitTransfer = () => {
     if (!transferRecipient) return;
-    void markRequestFulfilled()
-      .then(() =>
-        ApiService.update<{ id: number }>("samples", `${request.sample.id}/actions/changeOwner`, {
-          owner: { username: transferRecipient.username },
-        }),
-      )
-      .then(() => {
-        setTransferDialogOpen(false);
-        // The transfer just took effect, which server-side may have auto-rejected other
-        // requests against the same sample (see SampleApiManagerImpl.changeApiSampleOwner);
-        // notify again, now that's actually happened, so the list picks up their new status
-        // too. The earlier notification from markRequestFulfilled fires before this transfer
-        // call even runs, so it can't have reflected that on its own.
-        notifySampleRequestStatusChanged();
-        uiStore.addAlert(
-          mkAlert({
-            variant: "success",
-            message: t("requestsManagement.detail.transferSuccessMessage", {
-              id: request.id,
-              sampleName: request.sample.name,
-              requester: `${request.requester.firstName} ${request.requester.lastName}`,
+    transferMutation.mutate(
+      { requestId: request.id, sampleId: request.sample.id, newOwnerUsername: transferRecipient.username },
+      {
+        onSuccess: () => {
+          setTransferDialogOpen(false);
+          uiStore.addAlert(
+            mkAlert({
+              variant: "success",
+              message: t("requestsManagement.detail.transferSuccessMessage", {
+                id: request.id,
+                sampleName: request.sample.name,
+                requester: `${request.requester.firstName} ${request.requester.lastName}`,
+              }),
             }),
-          }),
-        );
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to transfer sample ownership", error);
-        // The most likely cause reaching here: markRequestFulfilled's own request rejected with
-        // a 409 because the requester cancelled (or the request was otherwise closed) between
-        // this dialog opening and Transfer being pressed. Closing the dialog rather than leaving
-        // it open avoids a retry that can only fail the same way again, and refetching brings the
-        // status chip, history, and action buttons back in sync with whatever it actually is now,
-        // rather than continuing to show the stale APPROVED state this attempt started from.
-        setTransferDialogOpen(false);
-        uiStore.addAlert(
-          mkAlert({
-            variant: "error",
-            message: t("requestsManagement.detail.transferCancelledErrorMessage", {
-              sampleName: request.sample.name,
+          );
+        },
+        onError: (error) => {
+          console.error("Failed to transfer sample ownership", error);
+          // The most likely cause reaching here: the fulfil step rejected with a 409 because the
+          // requester cancelled (or the request was otherwise closed) between this dialog opening
+          // and Transfer being pressed. Closing the dialog rather than leaving it open avoids a
+          // retry that can only fail the same way again; the mutation's own onSettled (see
+          // ./mutations.ts) has already invalidated every query above, so the status chip,
+          // history, and action buttons pick up whatever the request's real state now is on
+          // their own, without a bespoke refetch-and-resync here.
+          setTransferDialogOpen(false);
+          uiStore.addAlert(
+            mkAlert({
+              variant: "error",
+              message: t("requestsManagement.detail.transferCancelledErrorMessage", {
+                sampleName: request.sample.name,
+              }),
             }),
-          }),
-        );
-        // The request's status moved on without this attempt (that's exactly why it failed), so
-        // the left-hand list - which only refreshes itself in response to this event - needs
-        // telling too, or it would keep showing this request under its stale APPROVED status.
-        notifySampleRequestStatusChanged();
-        void fetchRequestDetails(request.id)
-          .then(({ data }) => {
-            setStatus(data.status);
-            setStatusChanges(data.statusChanges);
-            setSampleOwnerName(`${data.sample.owner.firstName} ${data.sample.owner.lastName}`);
-          })
-          .catch((refreshError: unknown) => {
-            console.error("Failed to refresh sample request after a failed transfer", refreshError);
-          });
-      });
+          );
+        },
+      },
+    );
   };
 
   // Matches the "Cancel" button behaviour in the Sample form's "Request this sample" box:
   // cancelling is only legal for the requester, and only while the request is PENDING.
   const cancelRequest = () => {
     if (isProcessingAction) return;
-    setIsProcessingAction(true);
-    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
-      status: "CANCELLED",
-    })
-      .then(({ data }) => {
-        setStatus(data.status);
-        notifySampleRequestStatusChanged();
-      })
-      .catch((error: unknown) => {
-        showActionError("Failed to cancel sample request", error);
-      })
-      .finally(() => setIsProcessingAction(false));
+    cancelMutation.mutate(request.id, {
+      onError: (error) => showActionError("Failed to cancel sample request", error),
+    });
   };
 
   const requesterFullName = `${request.requester.firstName} ${request.requester.lastName}`;

@@ -1,9 +1,16 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import materialTheme from "@/theme";
 import RequestsList, { type ApiSampleRequestListItem } from "../RequestsList";
+
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 const apiQuery = vi.fn();
 vi.mock("@/common/InvApiService", () => ({
@@ -37,7 +44,7 @@ function renderList(
   onSelect: (request: ApiSampleRequestListItem) => void = () => {},
 ) {
   apiQuery.mockImplementation(() => Promise.resolve({ data: { requests, totalHits: requests.length } }));
-  return render(
+  return renderWithProviders(
     <ThemeProvider theme={materialTheme}>
       <RequestsList selectedRequestId={null} onSelect={onSelect} />
     </ThemeProvider>,
@@ -59,7 +66,7 @@ function renderPagedList(allRequests: Array<ApiSampleRequestListItem>) {
       data: { requests: allRequests.slice(start, start + pageSize), totalHits: allRequests.length },
     });
   });
-  return render(
+  return renderWithProviders(
     <ThemeProvider theme={materialTheme}>
       <RequestsList selectedRequestId={null} onSelect={() => {}} />
     </ThemeProvider>,
