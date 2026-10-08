@@ -112,7 +112,7 @@ public class BookingNotificationRecipientReader {
       var display = displayPreferences.resolveForNotificationSnapshot(recipient);
       ZoneId displayZone =
           BookingNotificationMessageFormatter.zoneFor(display, null, institutionClock.getZone());
-      selected.add(new BookingNotificationRecipient(recipient, displayZone));
+      selected.add(new BookingNotificationRecipient(recipient, displayZone, display.timeFormat()));
     }
     return List.copyOf(selected);
   }

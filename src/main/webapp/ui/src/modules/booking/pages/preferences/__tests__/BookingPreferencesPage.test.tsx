@@ -107,6 +107,7 @@ describe("BookingPreferencesPage", () => {
       availabilityWindowEnd: "18:00",
       timezoneMode: "INSTITUTION",
       customTimezone: null,
+      timeFormat: "AUTOMATIC",
     });
     await waitFor(() =>
       expect(queryClient.getQueryData(bookingDisplayPreferencesQueryKey)).toMatchObject({
@@ -116,6 +117,44 @@ describe("BookingPreferencesPage", () => {
       }),
     );
     await expectAccessible(container);
+  });
+
+  it("saves an explicit time format, keeping the other preferences", async () => {
+    let body: unknown;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(customNewYorkBookingPreferences)),
+      http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ ...customNewYorkBookingPreferences, ...(body as object), overridden: true });
+      }),
+    );
+    const user = userEvent.setup();
+    const { queryClient } = renderPage();
+
+    // A document without timeFormat, as older servers and saved overrides return, reads as Automatic.
+    const automatic = await screen.findByRole("radio", { name: "booking:preferences.timeFormat.automatic" });
+    expect(automatic).toBeChecked();
+    expect(screen.getByRole("group", { name: "booking:preferences.timeFormat.legend" })).toHaveAccessibleDescription(
+      "booking:preferences.timeFormat.description",
+    );
+    const twentyFourHour = screen.getByRole("radio", { name: "booking:preferences.timeFormat.twentyFourHour" });
+    await user.click(twentyFourHour);
+    expect(twentyFourHour).toBeChecked();
+    expect(automatic).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+
+    await waitFor(() =>
+      expect(queryClient.getQueryData(bookingDisplayPreferencesQueryKey)).toMatchObject({ timeFormat: "H24" }),
+    );
+    expect(body).toEqual({
+      availabilityWindowStart: "09:00",
+      availabilityWindowEnd: "17:00",
+      timezoneMode: "CUSTOM",
+      customTimezone: "America/New_York",
+      timeFormat: "H24",
+    });
+    expect(screen.getByRole("radio", { name: "booking:preferences.timeFormat.twentyFourHour" })).toBeChecked();
   });
 
   it("uses 00:00 for end of day while storing 24:00", async () => {
@@ -180,7 +219,10 @@ describe("BookingPreferencesPage", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.resetComplete");
     expect(deletes).toBe(1);
     expect(reads).toBe(2);
-    expect(queryClient.getQueryData(bookingDisplayPreferencesQueryKey)).toEqual(inheritedBrowserBookingPreferences);
+    expect(queryClient.getQueryData(bookingDisplayPreferencesQueryKey)).toEqual({
+      ...inheritedBrowserBookingPreferences,
+      timeFormat: "AUTOMATIC",
+    });
     expect(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" })).toBeChecked();
   });
 

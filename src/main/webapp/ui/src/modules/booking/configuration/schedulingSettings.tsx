@@ -7,6 +7,7 @@ import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import {
   type BookingDisplayPreferencesInput,
   BookingDisplayPreferencesInputSchema,
+  BookingTimeFormatSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   ALL_ISO_WEEKDAYS,
@@ -81,6 +82,7 @@ export const BookingSettingsSchema = v.pipe(
     availabilityWindowEnd: v.string(),
     timezoneMode: v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]),
     customTimezone: v.nullable(v.string()),
+    timeFormat: v.optional(BookingTimeFormatSchema, "AUTOMATIC"),
     institutionTimezone: v.string(),
   }),
   v.forward(
@@ -106,6 +108,7 @@ export const BookingAdminSettingsSchema = v.pipe(
     availabilityWindowEnd: v.string(),
     timezoneMode: v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]),
     customTimezone: v.nullable(v.string()),
+    timeFormat: v.optional(BookingTimeFormatSchema, "AUTOMATIC"),
     institutionTimezone: v.string(),
     defaultSharedWith: v.picklist(["ALL_USERS", "SELECTED", "ONLY_ME"]),
     selectedAccessGrantees: v.array(
@@ -193,6 +196,7 @@ export async function saveBookingSettings(
     availabilityWindowEnd: input.availabilityWindowEnd,
     timezoneMode: input.timezoneMode,
     customTimezone: input.customTimezone,
+    timeFormat: input.timeFormat,
   });
   const response = await fetch("/api/v2/booking-settings/admin", {
     method: "PATCH",

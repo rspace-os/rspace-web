@@ -9,6 +9,13 @@ Booking keeps presentation choices separate from scheduling rules:
 - Booking owner notifications use the recipient's display timezone in the dashboard. Browser mode
   uses the timezone captured for the current session and falls back to the institution zone if it is
   missing; email notifications use the institution zone for Browser mode.
+- The **time format** chooses the 12- or 24-hour clock: Automatic (the default), 12-hour or
+  24-hour. Automatic keeps the existing behaviour: booking pages follow the browser region, in-app
+  notifications follow the region named by the request's `Accept-Language`, and emails, which have
+  no browser, use the usual clock of the message language. An explicit 12- or 24-hour choice
+  replaces all three. `BookingNotificationMessageFormatter` receives it as a `BookingTimeFormat`
+  (from `DashboardController` and from the `BookingNotificationRecipient` snapshot for email) and
+  turns it into the ICU `hc` keyword (`h12`, or `h23` so midnight is 00:00).
 - The **scheduling timezone** remains on each `BookingConfiguration`. It controls opening-hour and
   slot-policy calculations and the timezone metadata in calendar feeds. Existing values are not
   rewritten.
@@ -88,15 +95,34 @@ Booking date and time displays retain the user's selected display timezone. When
 instrument timezone differs from either that display timezone or the browser timezone, hovering
 or focusing its timing shows the instrument-local date and time, UTC offset, and IANA timezone.
 The booking read document supplies that timezone; a null or hidden timezone produces no tooltip.
+The item information card's opening hours reuse the same `BookingInstrumentTimeTooltip`, passing
+the hours already formatted in the item's timezone through its `time` prop.
+
+Numeric dates follow the browser's regional format, because native date and time inputs always
+use it; words such as month names and durations follow the app language. The 12- or 24-hour clock
+follows the browser region too unless the viewer chose an explicit time format.
+`bookingDateTimeLocale(format)` and `bookingHourCycle(format)` in `domain/bookingTime.ts` supply these, so pass
+the resolved `preferences.timeFormat` explicitly to new `Intl.DateTimeFormat` calls and formatter helpers that show a
+time. The helpers default to `AUTOMATIC` for standalone callers and are pure: display preferences are not stored in
+module-level mutable state, and rendering one page cannot change another page's formatting. `bookingDateTimeLocaleFor(format)`
+gives the locale for a particular choice, as the preference examples use. Browsers do not let a page change a native
+`type="time"` input's clock, so those inputs keep the browser region's format; with an explicit
+choice that differs from the region, text beside an input, such as the snapped-time note, can show
+14:00 while the input shows 2:00 PM. The availability bar keeps a 24-hour clock for its compact axis. Time inputs still snap to the
+item's time increment on blur, and the form announces the adjusted value instead of changing it
+silently.
+
 The Time grid week view lays seven day columns on one wall-clock hour axis. An overlap group shows
 at most two lanes (`WEEK_GRID_MAX_LANES`); the rest collapse into a “+N more” slot that opens that
 day in the Time grid day view. Duration-sized cards in the week grid and the booking form's day
 schedule drop the booker badge, then the second title line, so the item name and time stay visible.
 
 Global display defaults are stored on the audited `BookingConfigurationDefaults` singleton. The
-initial values are `08:00`–`18:00`, Browser mode, and no custom timezone. A user override is one
+initial values are `08:00`–`18:00`, Browser mode, no custom timezone, and the Automatic time
+format (`timeFormat` column, added by `changeLog-booking-time-format.xml`). A user override is one
 versioned JSON document stored under `BOOKING_DISPLAY_PREFERENCES` in the existing
-`UserPreference` system. `BookingDisplayPreferencesManager` owns serialization, versioning,
+`UserPreference` system. `timeFormat` was added to version 1 of that document; a stored document
+without it reads as Automatic, the behaviour it was saved under. `BookingDisplayPreferencesManager` owns serialization, versioning,
 validation, fallback, and preference access. Blank, corrupt, or unsupported stored documents fall
 back to the current global values.
 
@@ -108,8 +134,16 @@ PUT    /api/v2/users/me/booking-preferences
 DELETE /api/v2/users/me/booking-preferences
 ```
 
-PUT is a complete replacement, not a patch. DELETE removes the logical override. During run-as,
+PUT is a complete replacement, not a patch; an omitted `timeFormat` means `AUTOMATIC`. The
+`timeFormat` field on this API and on `/api/v2/booking-settings` accepts exactly `AUTOMATIC`,
+`H12` or `H24`: other strings, differently cased names and JSON numbers (which Jackson would
+otherwise read as enum ordinals) receive `400 Bad Request` with `errors.api.v2.invalidRequest`.
+DELETE removes the logical override. During run-as,
 the subject owns the preference and the actor remains available for audit context.
+
+Booking preferences and the sysadmin Settings page edit these values, including the Time format
+radios (each labelled with an example time in that format), with the same
+`BookingDisplaySettingsFields`.
 
 ## Loading layouts
 

@@ -9,6 +9,7 @@ import {
   verticalTimelineRangeToDraft,
 } from "@/modules/booking/creation/verticalTimelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { type OpeningSchedule, openingIntervals } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
@@ -69,8 +70,13 @@ function resolveRange(draft: BookingWindowDraft | undefined, timezone: string): 
   return resolveBookingWindow(draft, timezone).window;
 }
 
-function timeRange(range: IsoRange, date: string, timezone: string): string {
-  return `${formatMinuteWithDayOffset(date, timezone, instantToDayMinute(range.start, date, timezone))}–${formatMinuteWithDayOffset(date, timezone, instantToDayMinute(range.end, date, timezone))}`;
+function timeRange(
+  range: IsoRange,
+  date: string,
+  timezone: string,
+  timeFormat: import("@/modules/booking/domain/bookingTime").BookingTimeFormat = "AUTOMATIC",
+): string {
+  return `${formatMinuteWithDayOffset(date, timezone, instantToDayMinute(range.start, date, timezone), timeFormat)}–${formatMinuteWithDayOffset(date, timezone, instantToDayMinute(range.end, date, timezone), timeFormat)}`;
 }
 
 function rangesEqual(left: IsoRange, right: IsoRange): boolean {
@@ -113,6 +119,7 @@ export function VerticalDayTimeline({
   scheduleWindow,
 }: VerticalDayTimelineProps) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const instanceId = React.useId();
   const instructionsId = `${instanceId}-keyboard-instructions`;
   const dateHeadingId = `${instanceId}-date-heading`;
@@ -231,7 +238,7 @@ export function VerticalDayTimeline({
       editing.onChange(verticalTimelineRangeToDraft(next, timezone));
       setAnnouncement(
         t("dayTimeline.vertical.intervalChanged", {
-          period: timeRange(next, date, timezone),
+          period: timeRange(next, date, timezone, timeFormat),
         }),
       );
     },
@@ -580,7 +587,7 @@ export function VerticalDayTimeline({
                       className="absolute left-0 -translate-y-1/2 bg-card px-1 text-[11px] leading-none text-muted-foreground tabular-nums"
                       style={{ top: hour * PIXELS_PER_HOUR }}
                     >
-                      {formatMinuteWithDayOffset(date, timezone, hour * 60)}
+                      {formatMinuteWithDayOffset(date, timezone, hour * 60, timeFormat)}
                     </span>
                   ))}
                 </div>
@@ -693,7 +700,7 @@ export function VerticalDayTimeline({
                       >
                         <span className="block">{t("dayTimeline.vertical.draftLabel")}</span>
                         <span className="block whitespace-nowrap tabular-nums">
-                          {timeRange(activeRange, date, timezone)}
+                          {timeRange(activeRange, date, timezone, timeFormat)}
                         </span>
                       </span>
                       {canvasMoveVisible ? (
@@ -702,7 +709,7 @@ export function VerticalDayTimeline({
                             type="button"
                             aria-describedby={instructionsId}
                             aria-label={t("dayTimeline.vertical.moveDraft", {
-                              period: timeRange(activeRange, date, timezone),
+                              period: timeRange(activeRange, date, timezone, timeFormat),
                             })}
                             className="pointer-events-auto absolute inset-x-0 z-10 cursor-grab touch-none bg-transparent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring"
                             style={canvasResizeVisible ? { top: HANDLE_HEIGHT, bottom: HANDLE_HEIGHT } : { inset: 0 }}
@@ -722,10 +729,10 @@ export function VerticalDayTimeline({
                                   aria-label={
                                     edge === "start"
                                       ? t("dayTimeline.vertical.resizeStart", {
-                                          period: timeRange(activeRange, date, timezone),
+                                          period: timeRange(activeRange, date, timezone, timeFormat),
                                         })
                                       : t("dayTimeline.vertical.resizeEnd", {
-                                          period: timeRange(activeRange, date, timezone),
+                                          period: timeRange(activeRange, date, timezone, timeFormat),
                                         })
                                   }
                                   className={cn(
@@ -776,7 +783,7 @@ export function VerticalDayTimeline({
           {editing && !draftVisible && editingRange ? (
             <p className="text-xs text-muted-foreground">
               {t("dayTimeline.vertical.draftOutsideDay", {
-                period: timeRange(editingRange, date, timezone),
+                period: timeRange(editingRange, date, timezone, timeFormat),
               })}
             </p>
           ) : null}

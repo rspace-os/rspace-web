@@ -1,5 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { type BookingTimeFormat, bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { BookingListDocument } from "./booking";
 import { resolveWallClock } from "./bookingTime";
 
@@ -63,14 +63,20 @@ function needsOffset(start: string, end: string, timeZone: string): boolean {
   );
 }
 
-export function formatBookingAgendaTimeRange(start: string, end: string, timeZone: string, locale: string): string {
+export function formatBookingAgendaTimeRange(
+  start: string,
+  end: string,
+  timeZone: string,
+  locale: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+): string {
   const startDate = new Date(start);
   const endDate = new Date(end);
   const formatter = new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "numeric",
     minute: "2-digit",
-    hourCycle: bookingHourCycle(),
+    hourCycle: bookingHourCycle(timeFormat),
     ...(needsOffset(start, end, timeZone) ? { timeZoneName: "shortOffset" } : {}),
   });
   const range = `${formatter.format(startDate)}–${formatter.format(endDate)}`;
@@ -96,13 +102,14 @@ export function formatBookingAgendaDateTime(
   end: string,
   timeZone: string,
   locale: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
   const date = new Date(value);
   if (!needsOffset(start, end, timeZone)) {
     return new Intl.DateTimeFormat(locale, {
       dateStyle: "medium",
       timeStyle: "short",
-      hourCycle: bookingHourCycle(),
+      hourCycle: bookingHourCycle(timeFormat),
       timeZone,
     }).format(date);
   }
@@ -113,7 +120,7 @@ export function formatBookingAgendaDateTime(
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    hourCycle: bookingHourCycle(),
+    hourCycle: bookingHourCycle(timeFormat),
     timeZoneName: "shortOffset",
   }).format(date);
 }
