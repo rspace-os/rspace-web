@@ -159,7 +159,7 @@ public class ExternalOAuthControllerTest {
 
     assertNotNull(rc.getError());
     assertEquals(
-        signupCtrller.messages.getMessage("externalAuth.errors.busy"),
+        signupCtrller.messages.getMessage("errors.signup.rateLimited"),
         rc.getError().getErrorMessages().get(0));
     verifyNoInteractions(policy);
     verify(signup, never()).postUserCreate(any(), any(), any());
