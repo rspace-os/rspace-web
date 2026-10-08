@@ -2,7 +2,8 @@
 
 This file records the resources in the first REST API v2 release.
 
-Use `DevDocs/DeveloperNotes/RestApiV2Collections.md` for the current implementation rules.
+Use `DevDocs/DeveloperNotes/RestApiV2Collections.md` for the current implementation rules. The
+OpenAPI document at `/api/v2/openapi.json` is the public HTTP contract.
 
 ## Users
 
@@ -26,6 +27,14 @@ The `/api/v2/config` route returns a public allowlist of deployment properties. 
 does not reflect over all properties. It does not expose credentials or secret paths.
 
 This route is not a registered collection. Its controller supplies its OpenAPI documentation.
+
+## OpenAPI
+
+The public `/api/v2/openapi.json` route returns the generated OpenAPI 3.1 document. The document
+contains registered collections, relationship targets, and annotated concrete routes.
+
+Production caches the document privately for one hour. Production also supports conditional
+requests through `ETag` and `If-None-Match`.
 
 ## Common request behavior
 
