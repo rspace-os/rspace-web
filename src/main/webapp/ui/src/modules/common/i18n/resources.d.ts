@@ -2432,7 +2432,8 @@ export default interface Resources {
       "openOptions": "Show matching records",
       "openRecord": "Open record {globalId}",
       "remove": "Remove {item}",
-      "search": "Search by name or global ID"
+      "search": "Search by name or global ID",
+      "unavailable": "{value} (unavailable)"
     },
     "resourceAccess": {
       "actions": "Actions",
@@ -2448,6 +2449,8 @@ export default interface Resources {
       "conflictRefreshError": "The latest access could not be loaded. Try again before reviewing your draft.",
       "conflictTitle": "Access changed",
       "directRole": "Direct role",
+      "inherited": "Permissions are inherited from the Inventory item",
+      "inheritedOpenInventory": "Open Inventory permissions",
       "keepMine": "Keep mine",
       "kind": {
         "group": "Group",
@@ -2814,8 +2817,7 @@ export default interface Resources {
           "customPlaceholder": "Type a value and press Enter",
           "empty": "No matching values found",
           "enterValue": "Enter a value",
-          "remove": "Remove {value}",
-          "selectPlaceholder": "Select values"
+          "remove": "Remove {value}"
         },
         "noneApplied": "Filters, none applied",
         "openRecord": "Open {globalId}",
@@ -2844,6 +2846,7 @@ export default interface Resources {
           "value": "Enter a value"
         },
         "present": "is present",
+        "savedGroup": "Saved filter group",
         "suggestions": {
           "loading": "Searching…",
           "minimumLength": "Type {count} characters to search",
@@ -2867,6 +2870,12 @@ export default interface Resources {
       "results": "{first}–{last} of {total} records",
       "rows": "Rows",
       "rowsPerPage": "Rows per page",
+      "savedView": {
+        "invalid": "The saved view contains an invalid or unavailable field. Reset the view to continue.",
+        "loadFailed": "The saved view could not be loaded. Retry to keep its filters.",
+        "reset": "Reset saved view",
+        "retry": "Retry"
+      },
       "search": {
         "clear": "Clear search",
         "label": "Search {collection}",
