@@ -8,6 +8,7 @@ import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreat
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { dayMinuteToZonedTime, wallClockDraftFromInstants, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, SearchSelector } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
@@ -271,7 +272,6 @@ export function CalendarContent() {
       runtimeFields: eventRuntimeFields.runtimeFields,
       localFields: [
         "id",
-        "target",
         "requesterId",
         "purpose",
         "bookedBy",
@@ -288,21 +288,17 @@ export function CalendarContent() {
     });
     return resolveCollectionConfig({
       ...enriched,
-      // Event target identity and properties belong to the Bookable items group. Search still
-      // handles target.name/globalId through the source relationship.
       fields: enriched.fields
         .filter((field) => {
           const name = String(field.name);
           if (name === "id") return true;
-          if (name === "target" || name.startsWith("target.")) return false;
-          if (field.origin?.kind === "runtimeField") return false;
           if (name === "requesterId") return false;
           return field.capabilities.filterOperators.length > 0;
         })
         .map((field) =>
           field.name === "id" ? { ...field, capabilities: { ...field.capabilities, filterOperators: [] } } : field,
         ),
-      runtimeSources: [],
+      relationshipSources: bookingRelationshipSources,
       listSearchableFields: ["purpose"],
     } as CollectionConfig<BookingListDocument>);
   }, [eventRuntimeFields.metadata, eventRuntimeFields.runtimeFields, t]);

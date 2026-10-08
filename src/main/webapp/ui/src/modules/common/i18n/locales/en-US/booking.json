@@ -1011,6 +1011,8 @@
     "fields": {
       "allowDoubleBooking": "Allow concurrent bookings",
       "buffer": "Buffer before and after bookings (minutes)",
+      "bufferAfter": "Buffer after booking (minutes)",
+      "bufferBefore": "Buffer before booking (minutes)",
       "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
       "granularity": "Time increment",
       "granularityOption": "{count, plural, one {# minute} other {# minutes}}",

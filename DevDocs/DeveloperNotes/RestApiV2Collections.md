@@ -1352,3 +1352,60 @@ target payload.
 
 `RsqlCollectionQuery.Subquery` carries nested subqueries so the executor can bind registered
 membership/access constraints through Blaze's subquery builders at every depth.
+
+### Relationship filter picker metadata
+
+A single-target relationship with a declared global-ID prefix publishes an optional
+`picker` on its root selector in `x-rspace-filter`. For example:
+
+```json
+{
+  "target": {
+    "schema": { "type": "string" },
+    "operators": ["==", "!=", "=in=", "=out=", "=exists="],
+    "wildcards": false,
+    "picker": {
+      "resource": "booking-instruments",
+      "identity": "globalId",
+      "globalIdPrefix": "IN"
+    }
+  }
+}
+```
+
+For example, a new `calibrations` resource can declare a single-target `instrument`
+relationship to `instruments` with the existing `IN` prefix. Its generated
+`instrument` selector then has `picker: {resource: "instruments", identity:
+"globalId", globalIdPrefix: "IN"}`, and public target fields such as
+`instrument.name` appear in `x-rspace-relationship-fields`. The shared instruments
+source supplies its picker without importing any booking code.
+
+The client uses `resource` to select an application-owned source. Metadata never
+supplies a search URL. A new collection opts in through its declared relationship
+and existing target prefix; it needs no booking-specific query compiler. Register
+its source in the client registry if users need search and selection controls.
+Unprefixed and multi-target relationships omit the picker descriptor and retain
+their existing typed identity and compatible target-property selectors.
+`target.value`, `target.relationTo`, and the exact `createdBy.value==me` spelling
+remain compatible. Older clients can ignore `picker`.
+
+Target-property and runtime traversal remain one hop. Runtime traversal requires
+one target; existing multi-target identity and common scalar queries remain valid.
+A missing or inaccessible identity matches `exists=false` but never a negative
+identity comparison. A runtime predicate through a relationship always requires a
+readable target, including `exists=false`; that operator then means the readable
+target has no nonempty value. Page and count queries share these predicates.
+Request copies made during access checks or projection narrowing must preserve
+`ResourceRequest.runtime()`, which contains the resolved runtime selectors needed
+by the query compiler.
+
+Runtime catalogs retain `/api/v2/{resource}/fields/{namespace}` routes. The browser
+allows only registered resource/namespace pairs and refuses redirects before sending
+authenticated catalog requests. A target-only alias may delegate to a different
+catalog resource, such as `booking-instruments` to `instruments`. Do not infer the
+catalog resource from `viaResource`. Adding a runtime provider also requires adding
+its approved route to the client catalog allowlist.
+
+The existing 50-comparison budget covers direct, relationship, and runtime
+predicates together. Argument, nesting, LIKE, catalog-ID, page-size, and projection
+limits continue to apply independently; adding picker metadata does not raise them.

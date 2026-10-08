@@ -31,6 +31,11 @@ cp src/main/webapp/ui/.env.example src/main/webapp/ui/.env
 All three sysadmin variables default to the devtest seed values. Override them
 when targeting an environment where the sysadmin credentials differ.
 
+Booking specs need the `bookingEnabled` feature flag, which defaults to off.
+CI forces it with `.github/e2e-feature-flags.properties` and the Docker dev
+stack with `docker/dev/feature-flags.properties`; enable it on any other
+target instance before running them.
+
 Real-mode credentials for the `@apps` specs (`FIELDMARK_API_KEY`,
 `ZENODO_API_KEY`, `GALAXY_EU_APIKEY`) are documented in
 `docs/e2e-mocking.md`, alongside the mock/real mode switch they pair with.

@@ -127,6 +127,8 @@ const openApi = {
                   wildcards: false,
                 },
                 enabled: { operators: ["==", "!=", "=out="], wildcards: false },
+                bufferBeforeMinutes: { operators: ["==", "=gt=", "=lt="], wildcards: false },
+                bufferAfterMinutes: { operators: ["==", "=gt=", "=lt="], wildcards: false },
                 timezone: { operators: ["==", "!=", "=contains="], wildcards: true },
                 updatedAt: { operators: ["==", "=gt=", "=lt="], wildcards: false },
                 "target.id": {
@@ -409,6 +411,23 @@ describe("BookableItemsPage", () => {
 
     await waitFor(() => expect(new URLSearchParams(history.location.search).get("bookable-items.q")).toBe("confocal"));
     await waitFor(() => expect(searchRequests).toEqual(["target.name=contains=confocal"]));
+  });
+
+  it("distinguishes before and after buffers in the filter field list", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionResponse([bookingConfiguration]))),
+    );
+    renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+
+    await user.click(await screen.findByRole("button", { name: "Filters, none applied" }));
+    await user.click(screen.getByRole("button", { name: "Add filter" }));
+    await user.click(screen.getByRole("combobox", { name: "Field for filter 1" }));
+
+    expect(await screen.findByRole("option", { name: "Buffer before booking (minutes)" })).toBeVisible();
+    expect(screen.getByRole("option", { name: "Buffer after booking (minutes)" })).toBeVisible();
   });
 
   it("hides a column locally when the table uses a fixed projection", async () => {
