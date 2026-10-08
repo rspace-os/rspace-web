@@ -3,6 +3,7 @@ import { cdp, server } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import i18n from "@/modules/common/i18n";
+import "@/modules/common/styles/index.css";
 
 /*
  * Unlike the jsdom unit-test config (setup.ts), which deliberately runs in
