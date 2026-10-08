@@ -5322,11 +5322,19 @@ export default interface Resources {
     },
     "instrument": {
       "booking": {
+        "archived": {
+          "description": "This instrument's booking configuration is archived, so it cannot be booked. Open Booking to view it.",
+          "title": "Booking archived"
+        },
         "configured": {
           "book": "Book",
           "description": "Open Booking to view this instrument's calendar and booking configuration.",
           "open": "Open booking page",
           "title": "Booking configured"
+        },
+        "disabled": {
+          "description": "Booking is turned off for this instrument, so it cannot be booked. Open Booking to view its configuration.",
+          "title": "Booking disabled"
         },
         "notConfigured": {
           "action": "Set up booking",
