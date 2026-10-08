@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
@@ -17,12 +19,14 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import jakarta.ws.rs.NotFoundException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +35,6 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.orm.ObjectRetrievalFailureException;
 
 @ExtendWith(MockitoExtension.class)
 class LinkTargetResolverImplTest {
@@ -66,14 +69,13 @@ class LinkTargetResolverImplTest {
     // authorisation; resolution must apply that pending refresh first, or the
     // viewer keeps the stale read grant (and a working Open with no pill)
     // until the server restarts
-    when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
-        .thenReturn(Collections.emptyList());
+    givenElnRecord("SD42", true);
 
     resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD42"), user);
 
-    InOrder inOrder = inOrder(permissionUtils, baseRecordManager);
+    InOrder inOrder = inOrder(permissionUtils);
     inOrder.verify(permissionUtils).refreshCacheIfNotified();
-    inOrder.verify(baseRecordManager).getByGlobalIdsAndReadPermission(any(), eq(user));
+    inOrder.verify(permissionUtils).filter(anyList(), eq(PermissionType.READ), eq(user));
   }
 
   @Test
@@ -151,57 +153,100 @@ class LinkTargetResolverImplTest {
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA9999"), user));
   }
 
+  /** Stubs the ELN loader to return a record with this Global ID, readable by the user or not. */
+  private BaseRecord givenElnRecord(String globalId, boolean readable) {
+    GlobalIdentifier gid = new GlobalIdentifier(globalId);
+    BaseRecord record = mock(BaseRecord.class);
+    when(record.getOid()).thenReturn(gid);
+    when(baseRecordManager.getSafeNull(gid.getDbId())).thenReturn(Optional.of(record));
+    // lenient: the prefix and trash checks come first and can short-circuit past it
+    lenient()
+        .when(
+            permissionUtils.filter(
+                argThat((List<BaseRecord> records) -> records != null && records.contains(record)),
+                eq(PermissionType.READ),
+                eq(user)))
+        .thenAnswer(invocation -> readable ? invocation.getArgument(0) : new ArrayList<>());
+    return record;
+  }
+
+  /**
+   * isPermitted lets any user READ a published record; linking to one never counted that, so the
+   * READ check is the filter without that shortcut, as the lookup this replaced applied it.
+   */
+  @Test
+  void aPublishedRecordNotSharedWithTheUserIsNotALinkTarget() {
+    givenElnRecord("SD123", false);
+
+    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD123"), user));
+    verify(permissionUtils, never()).isPermitted(any(), any(), any());
+  }
+
   @Test
   void elnDocumentTargetReadableResolvesTrue() {
-    BaseRecord document = mock(BaseRecord.class);
-    when(document.getOid()).thenReturn(new GlobalIdentifier("SD123"));
-    when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
-        .thenReturn(List.of(document));
+    givenElnRecord("SD123", true);
 
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD123"), user));
   }
 
   @Test
   void elnTargetNotReadableResolvesFalse() {
-    when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
-        .thenReturn(Collections.emptyList());
+    givenElnRecord("SD123", false);
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD123"), user));
   }
 
   @Test
   void elnTargetNotFoundResolvesFalse() {
-    when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
-        .thenThrow(new ObjectRetrievalFailureException("BaseRecord", 123L));
+    when(baseRecordManager.getSafeNull(123L)).thenReturn(Optional.empty());
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD123"), user));
   }
 
   @Test
   void notebookAndGalleryTargetsResolveViaBaseRecordManager() {
-    BaseRecord notebook = mock(BaseRecord.class);
-    when(notebook.getOid()).thenReturn(new GlobalIdentifier("NB7"));
-    BaseRecord galleryFile = mock(BaseRecord.class);
-    when(galleryFile.getOid()).thenReturn(new GlobalIdentifier("GL55"));
-    when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
-        .thenReturn(List.of(notebook), List.of(galleryFile));
+    when(givenElnRecord("NB7", true).isFolder()).thenReturn(true);
+    givenElnRecord("GL55", true);
 
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NB7"), user));
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("GL55"), user));
   }
 
   @Test
-  void versionSuffixIsStrippedBeforeResolving() {
-    ArgumentCaptor<List<GlobalIdentifier>> captor = ArgumentCaptor.forClass(List.class);
-    when(baseRecordManager.getByGlobalIdsAndReadPermission(captor.capture(), eq(user)))
-        .thenReturn(List.of(mock(BaseRecord.class)));
+  void aTrashedNotebookIsNotALinkTarget() {
+    BaseRecord notebook = givenElnRecord("NB7", true);
+    when(notebook.isFolder()).thenReturn(true);
+    when(notebook.isDeleted()).thenReturn(true);
 
-    resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD123v5"), user);
+    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NB7"), user));
+  }
 
-    GlobalIdentifier resolved = captor.getValue().get(0);
-    assertFalse(resolved.hasVersionId(), "version suffix should be stripped before resolving");
-    assertEquals(Long.valueOf(123), resolved.getDbId());
-    assertEquals(GlobalIdPrefix.SD, resolved.getPrefix());
+  /** The other two ways FolderManager.getFolder counts a folder as trashed. */
+  @Test
+  void aNotebookTrashedForItsOwnerOrForTheUserIsNotALinkTarget() {
+    User owner = new User("owner");
+    BaseRecord trashedByOwner = givenElnRecord("NB7", true);
+    when(trashedByOwner.isFolder()).thenReturn(true);
+    when(trashedByOwner.getOwner()).thenReturn(owner);
+    when(trashedByOwner.isDeletedForUser(owner)).thenReturn(true);
+    BaseRecord trashedByUser = givenElnRecord("NB8", true);
+    when(trashedByUser.isFolder()).thenReturn(true);
+    when(trashedByUser.getOwner()).thenReturn(owner);
+    when(trashedByUser.isDeletedForUser(owner)).thenReturn(false);
+    when(trashedByUser.isDeletedForUser(user)).thenReturn(true);
+
+    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NB7"), user));
+    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NB8"), user));
+  }
+
+  /** Only a folder or notebook in the trash stops being a target; a trashed document does not. */
+  @Test
+  void aTrashedDocumentTheUserCanReadIsStillALinkTargetButNotALiveOne() {
+    BaseRecord document = givenElnRecord("SD123", true);
+    when(document.isDeleted()).thenReturn(true);
+
+    assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD123"), user));
+    assertFalse(resolver.targetIsLiveAndReadable(new GlobalIdentifier("SD123"), user));
   }
 
   @Test
@@ -209,10 +254,7 @@ class LinkTargetResolverImplTest {
     // the workspace loader resolves by numeric id alone, so "GL150" loads
     // whatever record has id 150 (e.g. folder FL150); only a record whose own
     // oid prefix matches the requested one may count as the link target
-    BaseRecord folder = mock(BaseRecord.class);
-    when(folder.getOid()).thenReturn(new GlobalIdentifier("FL150"));
-    when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
-        .thenReturn(List.of(folder));
+    givenElnRecord("FL150", true);
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("GL150"), user));
   }
@@ -230,7 +272,7 @@ class LinkTargetResolverImplTest {
     // the uniform not-found error, disclosing folder readability via a
     // side-channel
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("FL3"), user));
-    verify(baseRecordManager, never()).getByGlobalIdsAndReadPermission(any(), eq(user));
+    verify(baseRecordManager, never()).getSafeNull(any());
   }
 
   @Test
@@ -321,10 +363,8 @@ class LinkTargetResolverImplTest {
 
   @Test
   void viewableInventoryTargetIsEmptyForElnPrefix() {
-    // ELN resolution runs through transactional *Manager proxies that throw for a missing or
-    // deleted record and would mark the caller's transaction rollback-only
     assertFalse(resolver.viewableInventoryTarget(new GlobalIdentifier("NB7"), user).isPresent());
-    verify(baseRecordManager, never()).getByGlobalIdsAndReadPermission(any(), eq(user));
+    verify(baseRecordManager, never()).getSafeNull(any());
   }
 
   @Test

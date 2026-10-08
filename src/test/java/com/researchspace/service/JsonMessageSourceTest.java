@@ -65,6 +65,16 @@ class JsonMessageSourceTest {
   }
 
   @Test
+  void passesBigDecimalArgumentsThroughWithoutLocaleFormatting() {
+    assertEquals(
+        "1000.5",
+        SOURCE.getMessage(
+            "errors.inventory.field.validation",
+            new Object[] {new java.math.BigDecimal("1000.5")},
+            Locale.GERMAN));
+  }
+
+  @Test
   void appliesIcuSelectFormatting() {
     assertMessage("Administrator", "test.role", "admin");
     assertMessage("Regular user", "test.role", "pi");

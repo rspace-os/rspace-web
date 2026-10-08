@@ -1,6 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, onTestFinished, test } from "vitest";
+import { page } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
 import { clickWhenInViewport, moveToastStackIntoViewport } from "@/__tests__/pageObjects/viewport";
 import { PidinstImportDialogStory } from "./PidinstImportDialog.story";
@@ -8,8 +9,9 @@ import { PidinstImportDialogPage } from "./pageObjects/PidinstImportDialogPage";
 
 /*
  * Only what needs real layout: the toast stack sits off-viewport until moved, the success link
- * hides behind a sub-message toggle, and the invalid-Import reason is a Popover anchored to the
- * button. Everything else is in PidinstImportDialog.test.tsx.
+ * hides behind a sub-message toggle, the invalid-Import reason is a Popover anchored to the
+ * button, and the grid's pager is absent from the jsdom DataGrid stub. Everything else is in
+ * PidinstImportDialog.test.tsx.
  */
 
 const SEARCH_URL = "/api/inventory/v1/pidinst/search";
@@ -31,6 +33,8 @@ const HITS = [
     measuredVariables: ["Fluorescence intensity"],
     commissioned: "2021-03-01",
     landingPage: "https://example.org/lsm980",
+    measurementTechniques: ["https://other.researchspace.com/globalId/IC65536"],
+    calibrations: ["10.1000/calibration-certificate"],
     alreadyLinked: false,
   },
   {
@@ -43,6 +47,8 @@ const HITS = [
     manufacturers: ["Bruker"],
     instrumentTypes: [],
     measuredVariables: [],
+    measurementTechniques: [],
+    calibrations: [],
     alreadyLinked: true,
     linkedInstrumentGlobalId: "IN52",
   },
@@ -55,8 +61,21 @@ const CREATED_INSTRUMENT = {
   identifiers: [],
 };
 
-const searchHandler = () =>
-  http.get(SEARCH_URL, () => HttpResponse.json({ provider: "PIDINST_B2INST", total: 2, hits: HITS }));
+const SEARCH_RESULT = {
+  providers: ["PIDINST_DATACITE", "PIDINST_B2INST"],
+  pageNumber: 0,
+  totalHits: 2,
+  totalsByProvider: { PIDINST_B2INST: 2, PIDINST_DATACITE: 0 },
+  hits: HITS,
+};
+
+const searchRequests: Array<URLSearchParams> = [];
+
+const searchHandler = (overrides: Partial<typeof SEARCH_RESULT> = {}) =>
+  http.get(SEARCH_URL, ({ request }) => {
+    searchRequests.push(new URL(request.url).searchParams);
+    return HttpResponse.json({ ...SEARCH_RESULT, ...overrides });
+  });
 
 const importSuccessHandler = () => http.post(IMPORT_URL, () => HttpResponse.json(CREATED_INSTRUMENT, { status: 201 }));
 
@@ -92,6 +111,7 @@ async function openAndSearch(): Promise<void> {
 }
 
 beforeEach(() => {
+  searchRequests.length = 0;
   worker.use(searchHandler(), importSuccessHandler());
 });
 
@@ -140,5 +160,61 @@ describe("PidinstImportDialog", () => {
 
     await expect.element(dialog.validationAlert("This PID is already linked to instrument IN52.")).toBeVisible();
     await expect.element(dialog.successAlert()).not.toBeInTheDocument();
+  });
+
+  test("requests the next page from the grid's pager and keeps the query", async () => {
+    worker.use(searchHandler({ totalHits: 120 }));
+    await openAndSearch();
+
+    await dialog.goToNextPage();
+
+    await expect.poll(() => searchRequests.at(-1)?.get("pageNumber")).toBe("1");
+    expect(Object.fromEntries(searchRequests.at(-1) ?? [])).toEqual({
+      query: "microscope",
+      providers: "PIDINST_DATACITE,PIDINST_B2INST",
+      pageNumber: "1",
+    });
+  });
+
+  test("leaves the picked record out of the grid footer, which holds only the pager", async () => {
+    await openAndSearch();
+
+    await dialog.selectRecord("Confocal Microscope");
+
+    await expect.element(dialog.recordRadio("Confocal Microscope")).toBeChecked();
+    await expect.element(page.getByText(/row selected/)).not.toBeInTheDocument();
+  });
+
+  test("disables the pager while the search box or the registries differ from the search on screen", async () => {
+    worker.use(searchHandler({ totalHits: 120 }));
+    await openAndSearch();
+    await expect.element(dialog.nextPageButton).toBeEnabled();
+
+    await dialog.searchField.fill("spectrometer");
+    await expect.element(dialog.nextPageButton).toBeDisabled();
+
+    await dialog.searchField.fill("microscope");
+    await expect.element(dialog.nextPageButton).toBeEnabled();
+
+    await dialog.registryCheckbox("DataCite").click();
+    await expect.element(dialog.nextPageButton).toBeDisabled();
+  });
+
+  test("stops the pager at the last page the server serves, keeping the real total", async () => {
+    worker.use(searchHandler({ pageNumber: 199, totalHits: 10001 }));
+    await openAndSearch();
+
+    await expect.element(page.getByText(/^Showing 9951 to 9952 of 10,001 records/)).toBeVisible();
+    await expect.element(dialog.nextPageButton).toBeDisabled();
+  });
+
+  test("keeps the pager in view on a short screen", async () => {
+    // the viewport belongs to the shared browser, so it would leak into the next spec file
+    const { innerWidth, innerHeight } = window;
+    onTestFinished(() => page.viewport(innerWidth, innerHeight));
+    await page.viewport(1280, 880);
+    await openAndSearch();
+
+    await expect.element(dialog.nextPageButton).toBeInViewport({ ratio: 1 });
   });
 });

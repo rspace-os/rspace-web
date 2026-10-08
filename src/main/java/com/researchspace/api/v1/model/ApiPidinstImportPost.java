@@ -15,6 +15,13 @@ public class ApiPidinstImportPost {
   @JsonProperty("pid")
   private String pid;
 
+  /**
+   * The registry the PID belongs to: {@code PIDINST_DATACITE} or {@code PIDINST_B2INST} (ADR 0011).
+   */
+  @NotBlank(message = "{errors.inventory.identifier.pidinstImportProviderRequired}")
+  @JsonProperty("provider")
+  private String provider;
+
   /** Where to store the new instrument; the user's workbench when absent. */
   @JsonProperty("newTargetLocation")
   private ApiTargetLocation newTargetLocation;

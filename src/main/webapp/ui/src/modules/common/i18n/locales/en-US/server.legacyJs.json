@@ -189,7 +189,10 @@
         "importAction": "Importing Word Documents",
         "importTitle": "Import",
         "importing": "Importing files...",
-        "notConverted": "<br>These documents were not converted: {0}"
+        "notConverted": "<br>These documents were not converted: {0}",
+        "selectOneTarget": "Select exactly one target document, or open a notebook entry, to update from Word.",
+        "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
+        "oneFileRequired": "Choose exactly one file to update a document."
       }
     },
     "egnyte": {

@@ -1,20 +1,39 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+
+/** /tagRecord rejects with 200 + errorMsg, so ok() alone proves nothing. */
+async function expectTagSaved(response: Response, action: string): Promise<void> {
+  if (!response.ok()) {
+    throw new Error(`${action} failed: ${response.status()} ${response.statusText()}`);
+  }
+  const body = (await response.json()) as { data?: boolean | null; errorMsg?: unknown };
+  if (body.errorMsg || body.data !== true) {
+    throw new Error(`${action} was rejected: ${JSON.stringify(body.errorMsg ?? body)}`);
+  }
+}
 
 export class DocumentHeader {
   readonly name: Locator;
-  readonly editNameButton: Locator;
   readonly tags: Locator;
   readonly editTagsButton: Locator;
+  readonly tagInput: Locator;
+  readonly tagInfoDialogText: Locator;
+  /** The tag editor's BioPortal availability note, rendered by coreEditor.js when the editor opens. */
+  readonly tagEditorNotice: Locator;
   readonly uniqueIdLink: Locator;
   readonly recordInfoLink: Locator;
   readonly showLastModifiedCheckbox: Locator;
 
   constructor(private readonly page: Page) {
     this.name = page.locator("#recordNameInHeader");
-    this.editNameButton = page.locator("#renameRecordEdit");
+    // Legacy jQuery tagit widget: same #notebookTags element for both display and editing.
     this.tags = page.locator("#notebookTags");
-    this.editTagsButton = page.locator("#editTags");
+    this.editTagsButton = page.getByRole("button", { name: "✏", description: "Edit tags" });
+    this.tagInput = page
+      .getByRole("textbox", { name: "Separate tags by comma..." })
+      .or(page.getByRole("textbox", { name: "Ontologies enforced..." }));
+    this.tagInfoDialogText = page.locator("#tag-info-dialog-content");
+    this.tagEditorNotice = this.tags.locator(".smallText");
     this.uniqueIdLink = page.locator("a[href*='/globalId/']").first();
     this.recordInfoLink = page.getByRole("link", { name: "Record Info" });
     this.showLastModifiedCheckbox = page.getByRole("checkbox", { name: "Show last modified date" });
@@ -24,19 +43,123 @@ export class DocumentHeader {
     return this.name.innerText();
   }
 
-  async rename(newName: string): Promise<void> {
-    await this.editNameButton.click();
-    await this.page.getByRole("textbox", { name: "Name:" }).fill(newName);
-    await this.page.keyboard.press("Enter");
-    await this.name.filter({ hasText: newName }).waitFor({ state: "visible" });
-  }
-
   async getUniqueId(): Promise<string> {
     return this.uniqueIdLink.innerText();
   }
 
+  /** View-mode pills: plain and ontology tags use different classes but share the `tagpill{n}` id. */
   async getTags(): Promise<string[]> {
-    return this.tags.locator("li").allInnerTexts();
+    return this.tags.locator("[id^='tagpill']").allInnerTexts();
+  }
+
+  /** Chips in the open tag-it editor; empty when the editor is closed. */
+  get editModeTagChips(): Locator {
+    return this.tags.locator("li.tagit-choice");
+  }
+
+  private async openTagEditor(): Promise<void> {
+    await expect(async () => {
+      if (!(await this.tagInput.isVisible().catch(() => false))) {
+        await this.editTagsButton.click();
+        await this.tagInput.waitFor({ state: "visible", timeout: 3_000 });
+      }
+    }).toPass({ timeout: 15_000 });
+  }
+
+  async addTag(tag: string): Promise<void> {
+    await this.openTagEditor();
+    await this.tagInput.fill(tag);
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/tagRecord")),
+      this.tagInput.press("Enter"),
+    ]);
+    await expectTagSaved(response, `Adding tag '${tag}'`);
+    await this.tagChip(tag).waitFor({ state: "visible" });
+  }
+
+  /** Submits a tag expected to be rejected for containing a forbidden character. */
+  async addForbiddenTag(tag: string): Promise<void> {
+    await this.openTagEditor();
+    await this.tagInput.fill(tag);
+    await this.tagInput.press("Enter");
+    await this.tagInfoDialogText.waitFor({ state: "visible" });
+  }
+
+  tagChip(tag: string): Locator {
+    return this.tags.getByRole("listitem").filter({ has: this.page.getByText(tag, { exact: true }) });
+  }
+
+  async removeTag(tag: string): Promise<void> {
+    await this.openTagEditor();
+    const chip = this.tagChip(tag);
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/tagRecord")),
+      chip.getByText("×", { exact: true }).click(),
+    ]);
+    await expectTagSaved(response, `Removing tag '${tag}'`);
+    await chip.waitFor({ state: "hidden" });
+  }
+
+  async getSuggestedTags(): Promise<string[]> {
+    await this.openTagEditor();
+    // An open autocomplete menu reuses its results for the same input instead of fetching again.
+    await this.tagInput.press("Escape");
+    const [response] = await Promise.all([
+      this.page.waitForResponse(
+        (res) => new URL(res.url()).pathname === "/workspace/editor/structuredDocument/userTagsAndOntologies",
+      ),
+      this.tagInput.click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Loading suggested tags failed: ${response.status()} ${response.statusText()}`);
+    }
+    // The legacy widget hides this only after applying the response, including an empty result.
+    await this.page.locator("#ajaxTagsLoadingImg").waitFor({ state: "hidden" });
+    // Empty responses close the menu but leave its previous items in the DOM.
+    const items = this.page.locator(".ui-autocomplete li.ui-menu-item").filter({ visible: true });
+    const texts = await items.allInnerTexts();
+    return texts.map((text) => text.trim()).filter((text) => text.length > 0 && text !== "&nbsp;");
+  }
+
+  /**
+   * Types a search term and returns the suggestions shown for it. The dropdown formats ontology terms as
+   * "<term> - ontology: <name>, version: <version>, uri:<uri>". The same term twice reuses cached results.
+   */
+  async searchTagSuggestions(term: string): Promise<string[]> {
+    await this.openTagEditor();
+    await this.tagInput.press("Escape");
+    await this.tagInput.fill("");
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => {
+        const url = new URL(res.url());
+        return (
+          url.pathname === "/workspace/editor/structuredDocument/userTagsAndOntologies" &&
+          url.searchParams.get("tagFilter") === term
+        );
+      }),
+      this.tagInput.pressSequentially(term, { delay: 100 }),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Searching tag suggestions for '${term}' failed: ${response.status()} ${response.statusText()}`);
+    }
+    await this.page.locator("#ajaxTagsLoadingImg").waitFor({ state: "hidden" });
+    const items = this.page.locator(".ui-autocomplete li.ui-menu-item").filter({ visible: true });
+    return (await items.allInnerTexts()).map((text) => text.trim()).filter((text) => text.length > 0);
+  }
+
+  /** Adds a tag by clicking it from the suggestions dropdown, rather than typing it as free text. */
+  async selectSuggestedTag(tag: string): Promise<void> {
+    await this.openTagEditor();
+    await this.tagInput.click();
+    const option = this.page
+      .locator(".ui-autocomplete li.ui-menu-item")
+      .filter({ has: this.page.getByText(tag, { exact: true }) });
+    await option.first().waitFor({ state: "visible" });
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/tagRecord")),
+      option.first().click(),
+    ]);
+    await expectTagSaved(response, `Selecting suggested tag '${tag}'`);
   }
 
   async openRecordInfo(): Promise<RecordInfoDialog> {
@@ -44,5 +167,26 @@ export class DocumentHeader {
     const dialog = new RecordInfoDialog(this.page);
     await dialog.waitUntilVisible();
     return dialog;
+  }
+
+  async rename(newName: string): Promise<void> {
+    await this.name.click();
+    const input = this.page.locator("#recordNameInHeaderEditor");
+    await input.waitFor({ state: "visible" });
+    await input.fill(newName);
+    // Enter submits the rename form from the focused input; clicking the save icon can miss it
+    // while TinyMCE is still reflowing the page (seen on WebKit).
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/ajax/rename")),
+      input.press("Enter"),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Renaming to '${newName}' failed: ${response.status()} ${response.statusText()}`);
+    }
+    const body = await response.json().catch(() => null);
+    if (body?.errorMsg) {
+      throw new Error(`Renaming to '${newName}' failed: ${JSON.stringify(body.errorMsg)}`);
+    }
+    await this.name.filter({ hasText: newName }).waitFor({ state: "visible" });
   }
 }

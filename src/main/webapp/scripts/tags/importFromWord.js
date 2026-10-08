@@ -1,6 +1,9 @@
 function initWordChooserDlg() {
 
     var isNotebook = _isNotebook();
+    $(".wordDocImportSelect").off("change.wordImport").on("change.wordImport", _toggleWordFolderChooser);
+    $("#wordDocImportEntrySelect").toggle(isNotebook);
+    $("#wordDocImportRecordSelect").toggle(!isNotebook);
     if (!isNotebook) {
         initFolderChooser('-wordimport');
     }
@@ -35,8 +38,13 @@ function initWordChooserDlg() {
 
 }
 
-function openWordChooserDlg(config) {
+var wordImportSelection = null;
+
+function openWordChooserDlg(selectionGetter, config) {
+    wordImportSelection = selectionGetter();
     config = config || {};
+    $("#wordImportForm")[0].reset();
+    $(".wordDocImportSelect").val("NEW");
     $('#wordDocChooserDlg').dialog({title:config.title}).data("config",config).dialog('open');
 }
 
@@ -48,12 +56,30 @@ function _toggleWordFolderChooser() {
     if (_isNotebook()) {
         return;
     }
-    $('#folderChooser-wordimport').show();
+    $('#folderChooser-wordimport').toggle(!_isWordReplace());
 
     setFolderChooserPrompt('-wordimport', "legacyjs.core.word.folderChooserPrompt");
 }
 
+function _isWordReplace() {
+    return $(_isNotebook() ? "#wordDocImportEntrySelect" : "#wordDocImportRecordSelect").val() === "REPLACE";
+}
+
 function _isFormValid(fileType) {
+    if (_isWordReplace()) {
+        if (!wordImportSelection || wordImportSelection.ids.length !== 1) {
+            apprise(RS.msg("legacyjs.core.word.selectOneTarget"));
+            return false;
+        }
+        if (!wordImportSelection.types[0] || wordImportSelection.types[0].indexOf("NORMAL") < 0) {
+            apprise(RS.msg("legacyjs.core.word.basicDocumentRequired"));
+            return false;
+        }
+        if ($('#wordImportFormFileInput')[0].files.length > 1) {
+            apprise(RS.msg("legacyjs.core.word.oneFileRequired"));
+            return false;
+        }
+    }
     if ($('#wordImportFormFileInput').get(0).files.length === 0) {
         apprise(RS.msg("legacyjs.core.word.chooseFiles", fileType));
         return false;
@@ -71,10 +97,13 @@ function _submitWordImportForm(fileType) {
     var $form = $("form#wordImportForm");
     var targetFolderId = $form.data("parentid");
     var val = $('#folderChooser-id-wordimport').val();
-    if (val && val.length > 0) {
+    if (!_isWordReplace() && val && val.length > 0) {
         targetFolderId = val.trim();
     }
     var formData = new FormData($form[0]);
+    if (_isWordReplace()) {
+        formData.append("recordToReplaceId", wordImportSelection.ids[0]);
+    }
     formData.append("grandParentId", getGrandParentFolderId());
     var jqxhr = $.ajax({
        url: '/workspace/editor/structuredDocument/ajax/createFromWord/' + targetFolderId,

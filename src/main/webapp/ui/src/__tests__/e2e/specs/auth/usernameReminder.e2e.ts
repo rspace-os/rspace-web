@@ -34,21 +34,7 @@ test.describe("Username reminder", () => {
     });
 
     await test.step("read the username from the email", async () => {
-      await expect
-        .poll(
-          async () => {
-            const messages = await clientMailpit.listMessages(`to:${email}`);
-            return messages.some((m) => m.Subject === REMINDER_EMAIL_SUBJECT);
-          },
-          { timeout: 15_000 },
-        )
-        .toBe(true);
-      const messages = await clientMailpit.listMessages(`to:${email}`);
-      const summary = messages.find((m) => m.Subject === REMINDER_EMAIL_SUBJECT);
-      if (!summary) {
-        throw new Error(`no "${REMINDER_EMAIL_SUBJECT}" email found for ${email}`);
-      }
-      const message = await clientMailpit.getMessage(summary.ID);
+      const message = await clientMailpit.waitForMessage(email, REMINDER_EMAIL_SUBJECT);
       const bodyText = clientMailpit.extractText(message.HTML);
       const [, afterMarker] = bodyText.split("Your username is ");
       if (afterMarker === undefined) {

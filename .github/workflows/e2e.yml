@@ -62,21 +62,40 @@ jobs:
           retention-days: 1
 
   e2e:
+    name: e2e (${{ matrix.java-version }}, ${{ matrix.project }}, ${{ matrix.shard }}${{ matrix.cloud && ', cloud' || '' }})
     needs: build
     runs-on: ubuntu-latest
+    env:
+      E2E_CLOUD: ${{ matrix.cloud && 'true' || 'false' }}
 
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         java-version: [17]
         project: [chromium, firefox, webkit, mobile]
         shard: [1, 2]
-        # API specs are a single file; run them once, unsharded.
+        cloud: [false]
+        # API and community specs run once per job, unsharded, in both integration modes.
+        # cloud: [false] above makes these cloud entries new jobs instead of merging them
+        # into the standard chromium/firefox/webkit shard-1 jobs.
         include:
           - java-version: 17
             project: api
             shard: 1
+            cloud: false
+          - java-version: 17
+            project: chromium
+            shard: 1
+            cloud: true
+          - java-version: 17
+            project: firefox
+            shard: 1
+            cloud: true
+          - java-version: 17
+            project: webkit
+            shard: 1
+            cloud: true
     services:
       db:
         image: mariadb:12.3
@@ -130,11 +149,17 @@ jobs:
 
       - name: Resolve project matrix
         run: |
-          case "${{ matrix.project }}" in
-            mobile) echo "E2E_PW_BROWSER=chromium" >> "$GITHUB_ENV"; echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV" ;;
-            api)    echo "E2E_PW_BROWSER=" >> "$GITHUB_ENV";          echo "E2E_SHARD_OF=1" >> "$GITHUB_ENV" ;;
-            *)      echo "E2E_PW_BROWSER=${{ matrix.project }}" >> "$GITHUB_ENV"; echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV" ;;
+          project="${{ matrix.project }}"
+          case "$project" in
+            mobile) echo "E2E_PW_BROWSER=chromium" >> "$GITHUB_ENV" ;;
+            api)    echo "E2E_PW_BROWSER=" >> "$GITHUB_ENV" ;;
+            *)      echo "E2E_PW_BROWSER=$project" >> "$GITHUB_ENV" ;;
           esac
+          if [ "$E2E_CLOUD" = "true" ] || [ "$project" = "api" ]; then
+            echo "E2E_SHARD_OF=1" >> "$GITHUB_ENV"
+          else
+            echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV"
+          fi
 
       - name: Download prebuilt WAR
         uses: actions/download-artifact@v8.0.1
@@ -174,6 +199,7 @@ jobs:
           PROTOCOLIO_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_CLIENT_SECRET || '' }}
           ORCID_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_ID || '' }}
           ORCID_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_SECRET || '' }}
+          BIOPORTAL_API_KEY: ${{ inputs.mode == 'real' && secrets.BIOPORTAL_API_KEY || '' }}
         run: |
           set -euo pipefail
           if [ "${{ inputs.mode }}" = "mock" ]; then
@@ -246,6 +272,7 @@ jobs:
               "-Dprotocolsio.secret=$PROTOCOLIO_CLIENT_SECRET"
               "-Dorcid.client.id=$ORCID_CLIENT_ID"
               "-Dorcid.secret=$ORCID_CLIENT_SECRET"
+              "-Dbioportal.api.key=$BIOPORTAL_API_KEY"
             )
           fi
           nohup ./mvnw jetty:run-war \
@@ -269,6 +296,7 @@ jobs:
             -DRS_FILE_BASE="$RS_FILE_BASE" \
             -DRS.devlogLevel=INFO \
             "${INTEGRATION_ARGS[@]}" \
+            "-Ddeployment.cloud=$E2E_CLOUD" \
             > /tmp/jetty.log 2>&1 &
 
       - run: pnpm install --frozen-lockfile
@@ -302,6 +330,7 @@ jobs:
           E2E_BROWSER: ${{ matrix.project }}
           FIELDMARK_API_KEY: ${{ inputs.mode == 'real' && secrets.FIELDMARK_API_KEY || '' }}
           ZENODO_API_KEY: ${{ inputs.mode == 'real' && secrets.ZENODO_API_KEY || '' }}
+          BIOPORTAL_API_KEY: ${{ inputs.mode == 'real' && secrets.BIOPORTAL_API_KEY || '' }}
           GALAXY_EU_APIKEY: ${{ inputs.mode == 'real' && secrets.GALAXY_EU_APIKEY || '' }}
           DATAVERSE_API_TOKEN: ${{ inputs.mode == 'real' && secrets.DATAVERSE_API_TOKEN || '' }}
           DATAVERSE_SERVER_URL: ${{ inputs.mode == 'real' && secrets.DATAVERSE_SERVER_URL || '' }}
@@ -338,7 +367,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: jetty-log-${{ inputs.mode }}-${{ matrix.project }}-${{ matrix.shard }}
+          name: jetty-log-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             /tmp/jetty.log
             httpRequests.log
@@ -348,7 +377,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: e2e-report-${{ inputs.mode }}-${{ matrix.project }}-${{ matrix.shard }}
+          name: e2e-report-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             src/main/webapp/ui/playwright-report
             src/main/webapp/ui/test-results
