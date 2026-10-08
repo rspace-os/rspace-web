@@ -1,10 +1,11 @@
 import "@/stores/stores/RootStore";
 import "@/__tests__/__mocks__/resizeObserver";
+import Dialog from "@mui/material/Dialog";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import SearchContext from "@/stores/contexts/Search";
@@ -16,18 +17,27 @@ import materialTheme from "@/theme";
 import ContentGrid from "../ContentGrid";
 import { boxWithA1Taken, emptyBox } from "./gridFixtures";
 
-function renderGrid(box: ContainerModel) {
+function renderGrid(box: ContainerModel, { inDialogClosedBy }: { inDialogClosedBy?: () => void } = {}) {
+  const grid = (
+    <SearchContext.Provider
+      value={{
+        search: box.contentSearch,
+        scopedResult: box,
+        differentSearchForSettingActiveResult: box.contentSearch,
+      }}
+    >
+      <ContentGrid />
+    </SearchContext.Provider>
+  );
   render(
     <ThemeProvider theme={materialTheme}>
-      <SearchContext.Provider
-        value={{
-          search: box.contentSearch,
-          scopedResult: box,
-          differentSearchForSettingActiveResult: box.contentSearch,
-        }}
-      >
-        <ContentGrid />
-      </SearchContext.Provider>
+      {inDialogClosedBy ? (
+        <Dialog open onClose={inDialogClosedBy}>
+          {grid}
+        </Dialog>
+      ) : (
+        grid
+      )}
     </ThemeProvider>,
   );
 }
@@ -283,6 +293,18 @@ describe("ContentGrid", () => {
         expect(selectedCount()).toBe(2);
         await user.keyboard("{Escape}");
         expect(selectedCount()).toBe(0);
+      });
+
+      it("clears the selection with Escape without closing the dialog it is in", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 2);
+        const onClose = vi.fn();
+        renderGrid(box, { inDialogClosedBy: onClose });
+        await user.tab();
+        await user.keyboard(" {Escape}");
+        expect(selectedCount()).toBe(0);
+        expect(onClose).not.toHaveBeenCalled();
       });
     });
   });
