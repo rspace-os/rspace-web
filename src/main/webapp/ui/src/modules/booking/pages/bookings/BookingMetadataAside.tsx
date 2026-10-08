@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { BookingDetails } from "@/modules/booking/domain/booking";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatBookingEventDateTime, Panel } from "./BookingEventContext";
 
 export function BookingMetadataAside({
@@ -10,6 +11,7 @@ export function BookingMetadataAside({
   displayTimeZone: string;
 }) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   return (
     <Panel
       as="aside"
@@ -27,7 +29,7 @@ export function BookingMetadataAside({
           <dt className="text-muted-foreground">{t("bookings.details.created")}</dt>
           <dd>
             <time dateTime={booking.createdAt}>
-              {formatBookingEventDateTime(booking.createdAt, displayTimeZone, i18n.language)}
+              {formatBookingEventDateTime(booking.createdAt, displayTimeZone, i18n.language, timeFormat)}
             </time>
           </dd>
         </div>
@@ -35,7 +37,7 @@ export function BookingMetadataAside({
           <dt className="text-muted-foreground">{t("bookings.details.lastUpdated")}</dt>
           <dd>
             <time dateTime={booking.updatedAt}>
-              {formatBookingEventDateTime(booking.updatedAt, displayTimeZone, i18n.language)}
+              {formatBookingEventDateTime(booking.updatedAt, displayTimeZone, i18n.language, timeFormat)}
             </time>
           </dd>
         </div>

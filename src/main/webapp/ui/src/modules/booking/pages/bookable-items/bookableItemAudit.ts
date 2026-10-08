@@ -7,7 +7,7 @@ import {
   OpeningHoursEntrySchema,
   OpeningHoursSchema,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { type BookingTimeFormat, bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
@@ -257,11 +257,12 @@ export function recordedValues(
   payload: AuditEvent["payload"],
   locale: string,
   words?: RecordedValueWords,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): Array<[string, string]> {
   const dateFormat = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "long",
-    hourCycle: bookingHourCycle(),
+    hourCycle: bookingHourCycle(timeFormat),
     timeZone: "UTC",
   });
   return Object.entries(payload).map(([key, value]) => {
