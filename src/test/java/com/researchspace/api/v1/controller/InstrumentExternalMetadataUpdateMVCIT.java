@@ -263,9 +263,9 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
 
   /**
    * An owner transfer pushes, because it changes what the provider holds: {@code
-   * RspaceToExternalProviderAdapterImpl.ownerOf} maps {@code ownerContact} from the record owner's
-   * email unconditionally, and {@code ownerName} from the same owner unless the Owner field
-   * overrides it. Unpushed, the registered record kept naming the previous owner - one of the three
+   * RspaceToExternalProviderAdapterImpl.ownerOf} maps {@code ownerName} from the record owner's
+   * full name unless the Owner field overrides it, and sends no {@code ownerContact} at all since
+   * RSDEV-1540. Unpushed, the registered record kept naming the previous owner - one of the three
    * drifts RSDEV-1251 exists to stop.
    *
    * <p>This case is also why the push takes its candidates from the record rather than from the
@@ -311,10 +311,11 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
         transferred.path("owner").path("username").asText(),
         "precondition: the transfer itself must have happened");
 
-    // the new owner's contact address reached the provider
+    // the new owner's name reached the provider, and no contact address did (RSDEV-1540)
     B2instDoi pushed = b2instDummy.getDoiUpdateSentToB2inst();
     assertNotNull(pushed, "an owner transfer must reach the provider");
-    assertEquals(newOwner.getEmail(), pushed.getMetadata().getOwner().get(0).getOwnerContact());
+    assertEquals(newOwner.getFullName(), pushed.getMetadata().getOwner().get(0).getOwnerName());
+    assertNull(pushed.getMetadata().getOwner().get(0).getOwnerContact());
 
     // the identifier was never lost, it simply left the departing owner's view
     assertEquals(
