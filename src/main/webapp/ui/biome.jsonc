@@ -21,6 +21,9 @@
     }
   },
   "css": {
+    "parser": {
+      "tailwindDirectives": true
+    },
     "formatter": {
       "indentStyle": "space",
       "lineWidth": 120
