@@ -3,6 +3,7 @@ package com.researchspace.auth;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,6 +20,7 @@ import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.UserSignupException;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -124,5 +126,18 @@ public class LdapRealmTest {
     when(properties.isUserSignup()).thenReturn(true);
     AuthenticationInfo authenticationInfo = ldapRealm.doGetAuthenticationInfo(token);
     assertEquals("user1", authenticationInfo.getPrincipals().toString());
+  }
+
+  @Test
+  public void autoSignupFailureSurfacesAsAuthenticationExceptionWithItsMessage() throws Exception {
+    when(userManager.userExists(any())).thenReturn(false);
+    when(properties.isUserSignup()).thenReturn(true);
+    UserSignupException busy = new UserSignupException("busy");
+    when(userLdapRepo.signupLdapUser(eq(user1sid2))).thenThrow(busy);
+
+    AuthenticationException e =
+        assertThrows(AuthenticationException.class, () -> ldapRealm.doGetAuthenticationInfo(token));
+    assertEquals("busy", e.getMessage());
+    assertInstanceOf(UserSignupException.class, e.getCause());
   }
 }
