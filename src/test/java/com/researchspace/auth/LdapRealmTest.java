@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
@@ -36,6 +37,7 @@ public class LdapRealmTest {
   @Mock private UserManager userManager;
   @Mock private UserLdapRepo userLdapRepo;
   @Mock private IPropertyHolder properties;
+  @Mock private SentinelPasswordCheck sentinelCheck;
 
   @InjectMocks private LdapRealm ldapRealm;
   private String testUsername;
@@ -109,6 +111,16 @@ public class LdapRealmTest {
         ldapRealm.doGetAuthenticationInfo(new UsernamePasswordToken(testUsername, "   "));
     assertNotNull(authenticationInfo);
     verify(userLdapRepo).authenticate(testUsername, "   ");
+  }
+
+  @Test
+  public void existingInternalUserIsPaddedInsteadOfAskingTheDirectory() throws Exception {
+    when(userManager.userExists(testUsername)).thenReturn(true);
+    when(userManager.getUserByUsername(testUsername)).thenReturn(createAnyUser(testUsername));
+
+    assertNull(ldapRealm.doGetAuthenticationInfo(token));
+    verify(sentinelCheck).pad("anypass");
+    verifyNoInteractions(userLdapRepo);
   }
 
   @Test
