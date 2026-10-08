@@ -18,6 +18,7 @@ import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataAccessException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
@@ -36,6 +38,10 @@ import org.springframework.web.servlet.ModelAndView;
 /** Base class for password/verification-password reset by email */
 public abstract class PasswordResetByEmailHandlerBase {
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
+
+  /** "Record has changed since last read", raised under MariaDB's innodb_snapshot_isolation. */
+  private static final int MARIADB_SNAPSHOT_CONFLICT = 1020;
+
   @Autowired UserManager userManager;
   @Autowired IPropertyHolder properties;
 
@@ -152,6 +158,17 @@ public abstract class PasswordResetByEmailHandlerBase {
     TokenBasedVerification upc;
     try {
       upc = applyPasswordChange(cmd);
+    } catch (DataAccessException e) {
+      if (!isSnapshotConflict(e) && !isResetCompletedNow(cmd.getToken())) {
+        throw e;
+      }
+      SECURITY_LOG.warn(
+          "Reset of {} for [{}] from {} not applied: a concurrent change conflicted (another"
+              + " reset submit or an update to the account)",
+          getPasswordType(),
+          username,
+          RequestUtil.remoteAddr(request));
+      return new ModelAndView("passwordReset/resetPasswordFail");
     } finally {
       encodeGate.release();
     }
@@ -170,6 +187,20 @@ public abstract class PasswordResetByEmailHandlerBase {
         upc.getEmail(),
         upc.getIpAddressOfRequestor());
     return new ModelAndView("passwordReset/resetPasswordComplete");
+  }
+
+  private static boolean isSnapshotConflict(DataAccessException e) {
+    for (Throwable t = e; t != null; t = t.getCause()) {
+      if (t instanceof SQLException sql && sql.getErrorCode() == MARIADB_SNAPSHOT_CONFLICT) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isResetCompletedNow(String token) {
+    TokenBasedVerification reread = userManager.getUserVerificationToken(token);
+    return reread != null && reread.isResetCompleted();
   }
 
   private boolean isUsableResetToken(TokenBasedVerification change, String token) {

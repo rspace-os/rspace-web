@@ -10,7 +10,7 @@ PR #1204) that changes a limit, a message, a default or a route must update the 
 same commit. A row that no longer matches the code is a bug in this page. When PR #1210
 (RSDEV-1546) merges, update the API token row.
 
-Last reconciled with: `RSDEV-894` whole-login lock commit (exploratory F1), `RSDEV-894-stack-2` eae7c934e.
+Last reconciled with: `RSDEV-894` losing reset submit commit (exploratory F2), `RSDEV-894-stack-2` eae7c934e.
 
 ## Settings this page refers to
 
