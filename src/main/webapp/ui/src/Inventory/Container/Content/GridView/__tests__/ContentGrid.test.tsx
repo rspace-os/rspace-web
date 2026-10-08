@@ -5,6 +5,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
 import { afterEach, describe, expect, it } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import SearchContext from "@/stores/contexts/Search";
 import { containerAttrs, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
@@ -93,6 +94,13 @@ describe("ContentGrid", () => {
     });
 
     describe("when choosing empty locations for new records", () => {
+      it("is accessible", async () => {
+        const box = boxWithA1Taken();
+        prepareContainer(box, 1);
+        renderGrid(box);
+        await expectAccessible(document.body);
+      });
+
       it("does not select an occupied location on focus or Escape", async () => {
         const user = userEvent.setup();
         const box = boxWithA1Taken();
