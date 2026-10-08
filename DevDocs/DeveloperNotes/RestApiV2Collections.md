@@ -46,3 +46,9 @@ methods are not a promise that a collection implements writes: consult OpenAPI f
 Errors use localized RFC 9457 problem responses. Query validation rejects unsupported fields,
 operators, values and excessive complexity before querying the database. Spring's JSON reader
 also bounds document size, string size, token count and nesting depth.
+
+Inventory API v1 requests may use a REST API v2 UI token only when the matching authenticated
+browser session is present. The v1 OAuth authenticator delegates these tokens to the v2 validator,
+which checks the live subject, run-as actor, and session context; it does not create a second
+stateless Shiro login. The legacy Inventory token endpoint remains available to public document
+views.
