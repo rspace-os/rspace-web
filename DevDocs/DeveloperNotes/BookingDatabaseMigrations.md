@@ -17,3 +17,8 @@ installation of the full stack uses the original complete migration order.
 The migrations already present on `origin/main` remain unchanged. Follow
 `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md` for subsequent schema
 changes: add new changesets rather than editing an applied changeset.
+
+Permanent user deletion removes live booking rows through
+`UserDeletionDaoHibernate.table2UserIdColumn`, keyed by `TimeSlotBooking.requester_id`.
+Keep that cleanup mapping aligned if the requester column or table changes; booking audit history
+is retained.
