@@ -33,7 +33,7 @@ class ShiroRealmTest {
     when(userMgr.findUsernameByUsernameOrAlias("nobody")).thenReturn(null);
 
     assertNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("nobody", "guess")));
-    verify(sentinelCheck).pad("guess");
+    verify(sentinelCheck).pad("nobody", "guess");
   }
 
   @Test
@@ -42,7 +42,7 @@ class ShiroRealmTest {
     ldapUser.setSignupSource(SignupSource.LDAP);
 
     assertNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("ldapuser", "guess")));
-    verify(sentinelCheck).pad("guess");
+    verify(sentinelCheck).pad("ldapuser", "guess");
   }
 
   @Test
@@ -52,7 +52,7 @@ class ShiroRealmTest {
     when(properties.isLdapAuthenticationEnabled()).thenReturn(true);
 
     assertNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("ldapuser", "guess")));
-    verify(sentinelCheck, never()).pad(any());
+    verify(sentinelCheck, never()).pad(any(), any());
   }
 
   @Test
@@ -60,7 +60,7 @@ class ShiroRealmTest {
     knownUser("internal");
 
     assertNotNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("internal", "guess")));
-    verify(sentinelCheck, never()).pad(any());
+    verify(sentinelCheck, never()).pad(any(), any());
   }
 
   private User knownUser(String username) {
