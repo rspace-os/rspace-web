@@ -68,6 +68,7 @@ class BookingDisplayPreferencesControllerMVCIT {
         .andExpect(jsonPath("$.availabilityWindowStart").isString())
         .andExpect(jsonPath("$.availabilityWindowEnd").isString())
         .andExpect(jsonPath("$.timezoneMode").isString())
+        .andExpect(jsonPath("$.timeFormat").isString())
         .andExpect(jsonPath("$.institutionTimezone").isString())
         .andExpect(jsonPath("$.overridden").value(false));
   }
@@ -85,6 +86,7 @@ class BookingDisplayPreferencesControllerMVCIT {
         .andExpect(jsonPath("$.availabilityWindowEnd").value("17:00"))
         .andExpect(jsonPath("$.timezoneMode").value("CUSTOM"))
         .andExpect(jsonPath("$.customTimezone").value("America/New_York"))
+        .andExpect(jsonPath("$.timeFormat").value("AUTOMATIC"))
         .andExpect(jsonPath("$.institutionTimezone").isString())
         .andExpect(jsonPath("$.overridden").value(true));
 
@@ -131,6 +133,37 @@ class BookingDisplayPreferencesControllerMVCIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validBody().replace("}", ",\"unknown\":true}")))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void storesAnExplicitTimeFormatAndRejectsUnknownOnes() throws Exception {
+    mockMvc
+        .perform(
+            put(PATH)
+                .header("apiKey", fixture.userKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validBody().replace("}", ",\"timeFormat\":\"H24\"}")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.timeFormat").value("H24"));
+    mockMvc
+        .perform(get(PATH).header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.timeFormat").value("H24"));
+
+    for (String invalid : new String[] {"\"NOPE\"", "\"h24\"", "1", "true"}) {
+      mockMvc
+          .perform(
+              put(PATH)
+                  .header("apiKey", fixture.userKey())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(validBody().replace("}", ",\"timeFormat\":" + invalid + "}")))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    }
+    mockMvc
+        .perform(get(PATH).header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.timeFormat").value("H24"));
   }
 
   @Test

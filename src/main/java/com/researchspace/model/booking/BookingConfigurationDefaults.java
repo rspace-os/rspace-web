@@ -127,6 +127,15 @@ public class BookingConfigurationDefaults implements Serializable {
   @Setter
   private String customTimezone;
 
+  @Getter(
+      onMethod_ = {
+        @Enumerated(EnumType.STRING),
+        @Column(nullable = false, length = 32),
+        @AuditTrailProperty(name = "timeFormat")
+      })
+  @Setter
+  private BookingTimeFormat timeFormat = BookingTimeFormat.AUTOMATIC;
+
   @Getter(onMethod_ = {@Version, @Column(nullable = false)})
   @Setter
   private long configurationVersion;

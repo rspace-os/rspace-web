@@ -1,6 +1,7 @@
 import { Minus, Plus } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { dayMinuteToZonedTime, wallClockToDayMinute, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
@@ -161,6 +162,7 @@ export function DayTimeline({
     [date, timezone, wallEndWindow],
   );
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const scrollerRef = React.useRef<HTMLElement>(null);
   const [collisionBoundary, setCollisionBoundary] = React.useState<HTMLElement | null>(null);
   const [dragRange, setDragRange] = React.useState<{ from: number; to: number } | null>(null);
@@ -178,9 +180,9 @@ export function DayTimeline({
   const hourLabels = React.useMemo(
     () =>
       Array.from({ length: Math.ceil(dayMinutes / 60) }, (_, hour) =>
-        formatMinuteWithDayOffset(date, timezone, hour * 60),
+        formatMinuteWithDayOffset(date, timezone, hour * 60, timeFormat),
       ),
-    [date, timezone, dayMinutes],
+    [date, timeFormat, timezone, dayMinutes],
   );
   const positionedEvents = positionEvents(events, dayMinutes);
   const laneCount = Math.max(1, ...positionedEvents.map(({ lane }) => lane + 1));
@@ -231,10 +233,12 @@ export function DayTimeline({
     nowMinute === undefined || nowEdge === null
       ? null
       : nowEdge === "before"
-        ? t("dayTimeline.now.current", { time: formatMinuteWithDayOffset(date, timezone, nowMinute) })
+        ? t("dayTimeline.now.current", { time: formatMinuteWithDayOffset(date, timezone, nowMinute, timeFormat) })
         : nowEdge === "after"
-          ? t("dayTimeline.now.afterWindow", { time: formatMinuteWithDayOffset(date, timezone, nowMinute) })
-          : t("dayTimeline.now.current", { time: formatMinuteWithDayOffset(date, timezone, nowMinute) });
+          ? t("dayTimeline.now.afterWindow", {
+              time: formatMinuteWithDayOffset(date, timezone, nowMinute, timeFormat),
+            })
+          : t("dayTimeline.now.current", { time: formatMinuteWithDayOffset(date, timezone, nowMinute, timeFormat) });
   const tableRow = variant === "table-row";
   const eventAreaTop = tableRow ? 32 : 64;
   const setScrollerRef = React.useCallback((node: HTMLElement | null) => {
@@ -424,7 +428,7 @@ export function DayTimeline({
                 }}
               >
                 <span className="absolute top-1 left-1 rounded-sm bg-primary px-1 text-[10px] font-semibold whitespace-nowrap text-primary-foreground">
-                  {`${formatMinuteWithDayOffset(date, timezone, Math.min(dragRange.from, dragRange.to))}–${formatMinuteWithDayOffset(date, timezone, Math.max(dragRange.from, dragRange.to))}`}
+                  {`${formatMinuteWithDayOffset(date, timezone, Math.min(dragRange.from, dragRange.to), timeFormat)}–${formatMinuteWithDayOffset(date, timezone, Math.max(dragRange.from, dragRange.to), timeFormat)}`}
                 </span>
               </div>
             ) : null}

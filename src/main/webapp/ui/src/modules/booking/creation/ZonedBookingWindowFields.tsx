@@ -4,7 +4,7 @@ import { type ChangeEvent, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { maximumDurationMessage } from "@/modules/booking/creation/useCreateBooking";
-import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingTimeZoneOptions, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   coversInterval,
   MAX_BOOKING_DURATION_MINUTES,
@@ -13,6 +13,7 @@ import {
 } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
+  bookingDateTimeLocale,
   formatPlainDate,
   formatWallClockTime,
   isBookingInstantAlignedToGranularity,
@@ -193,6 +194,7 @@ export function ZonedBookingWindowFields({
   onTimezoneChange?: (name: "start" | "end", timezone: string) => void;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const fieldId = `booking-window-${useId()}`;
   const windowErrorId = `${fieldId}-errors`;
   const resolvedDisplayTimezone = displayTimezone ?? timezone ?? "UTC";
@@ -272,7 +274,7 @@ export function ZonedBookingWindowFields({
         {snappedTime !== undefined && snappedTime === value[`${name}Time`] ? (
           <p role="status" id={`${fieldId}-${name}-snap`} className="text-sm text-muted-foreground">
             {t("bookings.form.timeSnapped", {
-              time: formatWallClockTime(snappedTime),
+              time: formatWallClockTime(snappedTime, bookingDateTimeLocale(timeFormat)),
               increment: slotGranularityMinutes,
             })}
           </p>
@@ -435,7 +437,10 @@ export function ZonedBookingWindowFields({
   // tells the repeated hour's two occurrences apart.
   const instrumentTime = (instant: string, enteredDate: string) => {
     const local = Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone);
-    let time = formatWallClockTime(local.toPlainTime().toString({ smallestUnit: "minute" }));
+    let time = formatWallClockTime(
+      local.toPlainTime().toString({ smallestUnit: "minute" }),
+      bookingDateTimeLocale(timeFormat),
+    );
     if (local.hoursInDay !== 24) time += ` (UTC${local.offset})`;
     const date = local.toPlainDate().toString();
     return date === enteredDate ? time : `${formatPlainDate(date)} ${time}`;

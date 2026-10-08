@@ -9,6 +9,7 @@ import {
   getBookingAgendaTodayDate,
   groupBookingsByStartDate,
 } from "@/modules/booking/domain/bookingAgenda";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { BookingSummaryCard } from "./BookingSummaryCard";
 
 type ControlledExpansion = {
@@ -30,6 +31,7 @@ export type BookingAgendaProps = {
 export function BookingAgenda(props: BookingAgendaProps) {
   const { t, i18n } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
+  const timeFormat = useBookingTimeFormat();
   const agendaId = useId();
   const [localExpandedIds, setLocalExpandedIds] = useState<ReadonlySet<number>>(() => new Set());
   const expandedIds = props.expandedIds ?? localExpandedIds;
@@ -79,7 +81,13 @@ export function BookingAgenda(props: BookingAgendaProps) {
                 const itemName = booking.target?.value.name ?? commonT("values.unknownItem");
                 const purpose = booking.privacy === "full" ? booking.purpose : null;
                 const isExpanded = expandedIds.has(booking.id);
-                const period = formatBookingAgendaTimeRange(booking.start, booking.end, props.timeZone, locale);
+                const period = formatBookingAgendaTimeRange(
+                  booking.start,
+                  booking.end,
+                  props.timeZone,
+                  locale,
+                  timeFormat,
+                );
 
                 return (
                   <li key={booking.id} className="min-w-0">
