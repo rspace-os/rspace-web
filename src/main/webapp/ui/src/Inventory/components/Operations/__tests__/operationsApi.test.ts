@@ -4,9 +4,16 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
+import { containerAttrs } from "@/stores/models/__tests__/ContainerModel/mocking";
 import type { InventoryOperation } from "../operations";
 import { operations } from "../operations";
-import { performOperation, placeSubSamples, sampleNameAvailable, useDescribeOperationError } from "../operationsApi";
+import {
+  fetchContainer,
+  performOperation,
+  placeSubSamples,
+  sampleNameAvailable,
+  useDescribeOperationError,
+} from "../operationsApi";
 
 function operationNamed(key: string): InventoryOperation {
   const operation = operations.find((o) => o.key === key);
@@ -172,5 +179,16 @@ describe("placeSubSamples", () => {
       },
     });
     await expect(placeSubSamples(records)).rejects.toMatchObject({ reasons: ["Location is already taken"] });
+  });
+});
+
+describe("fetchContainer", () => {
+  it("loads the container with its contents, which the grid needs to show free locations", async () => {
+    query.mockResolvedValueOnce({ data: containerAttrs({ id: 5, globalId: "IC5", name: "Shelf" }) } as never);
+    const container = await fetchContainer(5);
+    const [resource, params] = query.mock.lastCall as [string, URLSearchParams];
+    expect(resource).toBe("containers/5");
+    expect(params.get("includeContent")).toBe("true");
+    expect(container.globalId).toBe("IC5");
   });
 });
