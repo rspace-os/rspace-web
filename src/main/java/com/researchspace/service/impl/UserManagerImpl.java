@@ -405,9 +405,12 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   private TokenBasedVerification applyPasswordChange(
       String newPassword, String token, boolean isVerificationPassword) {
     TokenBasedVerification upwChange = userDao.getByToken(token);
-    if (upwChange == null) {
+    if (upwChange == null
+        || !upwChange.isValidLink(token, TokenBasedVerificationType.PASSWORD_CHANGE)
+        || userDao.claimTokenBasedVerification(token) == 0) {
       return null;
     }
+    upwChange.setResetCompleted(true);
     List<User> users = userDao.getUserByEmail(upwChange.getEmail());
     if (users == null || users.isEmpty()) {
       return null;
@@ -421,8 +424,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       changePassword(newPassword, toChange);
     }
     userDao.save(toChange);
-    setTokenCompleted(upwChange);
-
     return upwChange;
   }
 
