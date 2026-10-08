@@ -6,9 +6,26 @@ export class ContentGridPage {
     return page.getByRole("grid");
   }
 
-  /** The nth (0-based, row-major) location cell. */
+  /** What the grid's live region last said about a refused Space press. */
+  get announcement(): Locator {
+    return page.getByText("Selection limit reached", { exact: false });
+  }
+
+  /** The painted width of the live region holding the announcement; it is visually hidden. */
+  announcementWidth(): number {
+    const region = (this.announcement.element() as HTMLElement).closest('[role="status"]');
+    return region ? region.getBoundingClientRect().width : Number.NaN;
+  }
+
+  /** The keyboard tips Snackbar's opacity as it fades in. MUI exposes no accessible handle for the transition, so this reads its class. */
+  tipsOpacity(): string {
+    const tips = document.querySelector(".MuiSnackbarContent-root");
+    return tips ? getComputedStyle(tips).opacity : "0";
+  }
+
+  /** The nth (0-based, row-major) location cell, skipping the header row's empty corner cell. */
   cell(n: number): Locator {
-    return page.getByRole("gridcell").nth(n);
+    return page.getByRole("gridcell").nth(n + 1);
   }
 
   /** The nth cell's painted focus ring, "none" when it has none. */

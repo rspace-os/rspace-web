@@ -3,23 +3,12 @@ import { ThemeProvider } from "@mui/material/styles";
 import type React from "react";
 import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import SearchContext from "@/stores/contexts/Search";
-import { makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import type ContainerModel from "@/stores/models/ContainerModel";
 import materialTheme from "@/theme";
+import { emptyBox } from "./__tests__/gridFixtures";
 import ContentGrid from "./ContentGrid";
 
-/** An empty 2x2 grid used only to choose two locations, as in the Move dialog or the operation wizard. */
-export function SelectionOnlyGrid(): React.ReactNode {
-  const box = makeMockContainer({
-    id: 2,
-    globalId: "IC2",
-    name: "Empty box",
-    cType: "GRID",
-    gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
-    locationsCount: 4,
-    contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
-    locations: [],
-  });
-  prepareContainer(box, 2);
+function Grid({ box }: { box: ContainerModel }): React.ReactNode {
   return (
     <ThemeProvider theme={materialTheme}>
       <SearchContext.Provider
@@ -33,4 +22,16 @@ export function SelectionOnlyGrid(): React.ReactNode {
       </SearchContext.Provider>
     </ThemeProvider>
   );
+}
+
+/** An empty 2x2 grid used only to choose two locations, as in the Move dialog or the operation wizard. */
+export function SelectionOnlyGrid(): React.ReactNode {
+  const box = emptyBox();
+  prepareContainer(box, 2);
+  return <Grid box={box} />;
+}
+
+/** An empty 2x2 grid as shown on the container's own page, with drag-and-drop on. */
+export function ContainerPageGrid(): React.ReactNode {
+  return <Grid box={emptyBox()} />;
 }

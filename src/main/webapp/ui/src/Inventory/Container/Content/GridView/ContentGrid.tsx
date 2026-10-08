@@ -11,6 +11,7 @@ import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { type KeyboardEvent, type MouseEvent, useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { visuallyHidden } from "@/util/visuallyHidden";
 import SearchContext from "../../../../stores/contexts/Search";
 import type { Location } from "../../../../stores/definitions/Container";
 import ContainerModel from "../../../../stores/models/ContainerModel";
@@ -86,15 +87,6 @@ const tableSx = {
   },
 } as const;
 
-const visuallyHidden = {
-  position: "absolute",
-  width: 1,
-  height: 1,
-  overflow: "hidden",
-  clip: "rect(0 0 0 0)",
-  whiteSpace: "nowrap",
-} as const;
-
 interface LoadedContentProps {
   container: ContainerModel;
 }
@@ -164,7 +156,13 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
    */
   const [inKeyboardDragAndDropMode, setInKeyboardDragAndDropMode] = useState(false);
 
-  const [limitMessage, setLimitMessage] = useState("");
+  /*
+   * Why Space did not select the focused location. Each refusal gets a new id
+   * so that a repeated message replaces the live region's content and is
+   * announced again.
+   */
+  const [announcement, setAnnouncement] = useState<{ id: number; text: string } | null>(null);
+  const announce = (text: string) => setAnnouncement((prev) => ({ id: (prev?.id ?? 0) + 1, text }));
 
   const findLocation = (col: { value: number }, row: { value: number }): Location => {
     const loc = container.findLocation(col.value, row.value);
@@ -257,18 +255,23 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
               e.preventDefault();
               const focused = container.findLocation(focusCoord.x, focusCoord.y);
               if (!focused) return;
-              const selectedCount = container.selectedLocations?.length ?? 0;
-              const atLimit = emptyOnly && !focused.selected && selectedCount >= selectionLimit;
-              setLimitMessage(atLimit ? t("container.content.keyboard.limitReached", { count: selectedCount }) : "");
+              const wasSelected = focused.selected;
               container.onSelect(focused, search);
+              if (wasSelected || focused.selected) setAnnouncement(null);
+              else if (!focused.isSelectable(search)) announce(t("container.content.keyboard.occupied"));
+              else
+                announce(
+                  t("container.content.keyboard.limitReached", { count: container.selectedLocations?.length ?? 0 }),
+                );
               return;
             }
+            setAnnouncement(null);
             if (e.key === "Escape") {
               container.toggleAllLocations(false);
               e.preventDefault();
               if (selectionOnly) return;
               const focused = container.findLocation(focusCoord.x, focusCoord.y);
-              if (focused && (!emptyOnly || focused.isSelectable(search))) focused.toggleSelected(true);
+              if (focused) focused.toggleSelected(true);
             }
 
             const newCoord: {
@@ -330,7 +333,12 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
         >
           <TableHead>
             <TableRow>
-              <TableCell align="center" ref={topLeftCellRef} onMouseDown={preventEventBubbling()}></TableCell>
+              <TableCell
+                component="td"
+                align="center"
+                ref={topLeftCellRef}
+                onMouseDown={preventEventBubbling()}
+              ></TableCell>
               {container.columns.map((column, columnIndex) => (
                 <TableCell
                   key={column.label}
@@ -383,7 +391,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
         <Dragger container={container} parentRef={tableRef} />
       </TableContainer>
       <Box role="status" sx={visuallyHidden}>
-        {limitMessage}
+        {announcement && <span key={announcement.id}>{announcement.text}</span>}
       </Box>
       <Snackbar
         open={keyboardTips}

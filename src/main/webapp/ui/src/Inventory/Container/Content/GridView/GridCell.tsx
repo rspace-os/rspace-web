@@ -88,11 +88,7 @@ function GridCell({
         e.preventDefault();
       }}
       onFocus={() => {
-        if (location.selected) return;
-        const { uiConfig } = search;
-        if (uiConfig.dragAndDropDisabled) return;
-        const full = (location.parentContainer.selectedLocations?.length ?? 0) >= uiConfig.selectionLimit;
-        if (uiConfig.onlyAllowSelectingEmptyLocations && (full || !location.isSelectable(search))) return;
+        if (location.selected || search.uiConfig.dragAndDropDisabled) return;
         location.toggleSelected(true);
       }}
       onMouseEnter={() => {

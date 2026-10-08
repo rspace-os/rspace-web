@@ -189,7 +189,7 @@ describe("CreateDialog", () => {
       await user.click(
         await screen.findByRole("radio", { name: "inventory:container.createOptions.newContainer.label" }),
       );
-      const [occupied] = await screen.findAllByRole("cell");
+      const [occupied] = (await screen.findAllByRole("cell")).filter((c) => c.hasAttribute("aria-selected"));
       expect(within(occupied).getByRole("button")).toHaveAttribute("aria-disabled", "true");
     });
     /*

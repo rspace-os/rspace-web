@@ -302,8 +302,9 @@ enforced there too (Perform is blocked with the reason shown).
    (`uiConfig.dragAndDropDisabled`, also set by the Move dialog destination panel and the
    Create dialog location picker). Its keys follow the WAI-ARIA grid multi-select model:
    arrows move focus only, Space toggles the focused location (empty-only and the selection
-   limit apply, and a polite live region says when the limit is reached), Shift+Arrow
-   selects a range, and Escape clears the selection. A list container needs no locations. `placementBlocker` (`placement.ts`) gates
+   limit apply, and a polite live region says why when Space selects nothing: the location
+   is occupied or the limit is reached), Shift+Arrow replaces the selection with the range
+   from the anchor, and Escape clears the selection. A list container needs no locations. `placementBlocker` (`placement.ts`) gates
    Next and shows why: loading, trashed, no edit permission, an image container (not
    supported yet), the workbench itself, a container that cannot hold subsamples, fewer
    free locations than new subsamples (with the free count), grid locations still to
