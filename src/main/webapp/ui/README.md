@@ -107,6 +107,9 @@ set `dev.storybook.preview.enabled=true` in the local/dev instance's
 `deployment.properties` to expose it on a local/dev instance. Leave it disabled
 on deployed production instances because the route is unauthenticated.
 
+Shared design-system stories live beside their components in `src/modules/common/ui`
+as `*.stories.tsx`. The booking surface uses the same design system.
+
 ## Testing Strategy
 
 ### Testing Frameworks
