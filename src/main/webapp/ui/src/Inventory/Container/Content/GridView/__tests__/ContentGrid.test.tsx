@@ -3,11 +3,15 @@ import "@/__tests__/__mocks__/resizeObserver";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { runInAction } from "mobx";
+import { afterEach, describe, expect, it } from "vitest";
 import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import SearchContext from "@/stores/contexts/Search";
 import { containerAttrs, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import type ContainerModel from "@/stores/models/ContainerModel";
+import type Search from "@/stores/models/Search";
+import getRootStore from "@/stores/stores/getRootStore";
 import materialTheme from "@/theme";
 import ContentGrid from "../ContentGrid";
 
@@ -109,6 +113,48 @@ describe("ContentGrid", () => {
         await user.keyboard("{ArrowRight}{Shift>}{ArrowDown}{/Shift}");
         expect(cells()[1]).toHaveAttribute("aria-selected", "true");
         expect(selectedCount()).toBe(1);
+      });
+    });
+
+    describe("in the Move dialog", () => {
+      afterEach(() => {
+        runInAction(() => {
+          getRootStore().moveStore.isMoving = false;
+          getRootStore().moveStore.selectedResults = [];
+        });
+      });
+
+      it("keeps the first location's staged item when Shift+Arrow extends the selection", async () => {
+        const user = userEvent.setup();
+        const box = makeMockContainer({
+          id: 2,
+          globalId: "IC2",
+          name: "Empty box",
+          cType: "GRID",
+          gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+          locationsCount: 4,
+          locations: [],
+        });
+        const moving = [
+          makeMockSubSample({ id: 101, globalId: "SS101" }),
+          makeMockSubSample({ id: 102, globalId: "SS102" }),
+        ];
+        const { moveStore } = getRootStore();
+        runInAction(() => {
+          moveStore.isMoving = true;
+          moveStore.search = { activeResult: box } as unknown as Search;
+          moveStore.selectedResults = moving;
+          box.contentSearch.uiConfig.onlyAllowSelectingEmptyLocations = true;
+          box.contentSearch.uiConfig.selectionLimit = 2;
+        });
+        box.findLocation(1, 1)?.toggleSelected(true);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard("{Shift>}{ArrowRight}{/Shift}");
+        expect(cells()[0]).toHaveAttribute("aria-selected", "true");
+        expect(cells()[1]).toHaveAttribute("aria-selected", "true");
+        const staged = (box.selectedLocations ?? []).map((l) => l.content?.globalId).sort();
+        expect(staged).toEqual(["SS101", "SS102"]);
       });
     });
   });
