@@ -34,6 +34,10 @@ export class GroupDetailsPage extends BasePage {
     return this.page.locator("#grpDetails").getByRole("row").filter({ hasText: username });
   }
 
+  memberRole(username: string): Locator {
+    return this.page.locator("#grpDetails").locator(`[data-test-id="roleInGroup_${username}"]`);
+  }
+
   activityRow(fullName: string): Locator {
     return this.page.locator("#groupActivity").getByRole("row").filter({ hasText: fullName });
   }

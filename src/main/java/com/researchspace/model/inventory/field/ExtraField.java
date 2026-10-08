@@ -28,7 +28,6 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
-/** Sample field is used to hold field data for Samples. */
 @Entity
 @Getter
 @Setter
@@ -44,6 +43,15 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
   private Long id;
   private EditInfo editInfo;
   protected boolean deleted;
+
+  /**
+   * The operation-definition key that generated this field, or null if none did.
+   *
+   * <p>This is the field's stable identity across runs, unlike its name: a generated name is a
+   * localized label, so matching on it instead of this key would miss a previous run's field after
+   * a locale or wording change and reset a computed counter rather than continue it.
+   */
+  private String operationFieldKey;
 
   public ExtraField() {
     editInfo = new EditInfo();
@@ -132,9 +140,6 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
     getEditInfo().setModifiedBy(modifiedBy);
   }
 
-  /**
-   * @return type of the field
-   */
   @Transient
   public abstract FieldType getType();
 
@@ -156,5 +161,6 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
     copy.setEditInfo(getEditInfo().shallowCopy());
     copy.setData(getData());
     copy.setDeleted(isDeleted());
+    copy.setOperationFieldKey(getOperationFieldKey());
   }
 }

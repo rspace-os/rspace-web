@@ -93,6 +93,7 @@
         <div id="self_service_labgroups.description"><spring:message code="system.property.description.selfServiceLabgroups" /></div>
         <div id="publicLastLogin.available.description"><spring:message code="system.property.description.publicLastLoginAvailable" /></div>
         <div id="inventory.available.description"><spring:message code="system.property.description.inventoryAvailable" /></div>
+        <div id="inventory.operations.available.description"><spring:message code="system.property.description.inventoryOperationsAvailable" /></div>
         <div id="public_sharing.description"><spring:message code="system.property.description.publicSharing" /></div>
         <div id="publicdocs_allow_seo.description"><spring:message code="system.property.description.publicdocsAllowSeo" /></div>
         <div id="allow_project_groups.description"><spring:message code="system.property.description.allowProjectGroups" /></div>

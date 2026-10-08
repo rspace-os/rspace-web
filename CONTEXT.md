@@ -203,7 +203,7 @@ resolved during design. This file is a glossary only — no implementation detai
   identifier.
   _Avoid_: RSpace identifier, own identifier, minted identifier (as a noun)
 - **Linked identifier** — an identifier that records a PID minted by another party, found
-  in a public PID registry and attached to an Instrument on import. It carries the same
+  in a public registry and attached to an Instrument on import. It carries the same
   provider type as a registered identifier and mirrors the state the provider holds, but
   RSpace owns nothing on the provider side: it never pushes metadata to it, never
   refreshes, publishes, retracts or deletes it at the provider, and never serves a public
@@ -222,19 +222,35 @@ resolved during design. This file is a glossary only — no implementation detai
   Instrument does not undo it.
   _Avoid_: detaching, disconnecting, deleting the PID (nothing is deleted at the provider)
 
-- **PID lookup** — searching a PID registry for instrument records, by free text or by a
-  PID, in order to import one. A lookup always goes to the deployment's enabled PIDINST
-  provider, with that provider's configured server and credentials; while no PIDINST
-  provider is enabled there is no lookup, and there is never a choice of registry. A lookup needs
-  at least four characters, so a query shorter than that is refused rather than answered with most
-  of the registry. How free text matches depends on the provider: a B2INST lookup matches a
-  *substring*, so part of a name finds the record that carries it, while a DataCite lookup matches
-  whole indexed words, exactly as a search in DataCite's own portal does. Only
-  *public* records are found: a PID whose registration is still in progress, or has been
-  declined, is not a lookup result and cannot be imported, because it has no resolvable
-  landing page to link to.
-  _Avoid_: federated search (there is one registry per deployment), PIDINST search, DOI
-  search
+- **Public registry** — a PID registry's public search service, reached anonymously and
+  read-only at the address the deployment properties give for it: DataCite's REST API
+  (api.datacite.org) and B2INST's records API (b2inst.gwdg.de). A PID lookup goes to public
+  registries and nowhere else; they exist for every deployment, minting configured or not, and
+  a PIDINST provider pointing at a test server does not move the lookup there (ADR 0011).
+  _Avoid_: lookup server, search endpoint, provider (that is the minting side), registry host
+
+- **PIDINST provider** — the registry, DataCite or B2INST, that a deployment has configured in
+  the Inventory settings with a server, credentials and a prefix or community, to mint and manage
+  registered identifiers. At most one is enabled at a time, and *Enabled* governs minting only:
+  it does not decide whether a PID lookup or an instrument import is offered (ADR 0011).
+  _Avoid_: enabled registry, lookup provider, integration (the settings card's word, too broad)
+
+- **PID lookup** — searching the public registries for instrument records, by free text or by a
+  PID, in order to import one. A lookup is anonymous and independent of any PIDINST provider: it
+  is offered whether or not one is configured, and goes to the public registry of each registry
+  the user has ticked, DataCite, B2INST or both. Hits from both form one list ordered by the
+  registry's update time, newest first, fifty to a page, each hit naming its registry; hits
+  updated at the same moment keep the registry's own order. A lookup needs at least four
+  characters, so a query shorter than that is refused rather than answered with most of a
+  registry. How free text matches depends on the registry: a
+  B2INST lookup matches a *substring*, so part of a name finds the record that carries it, while a
+  DataCite lookup matches whole indexed words, exactly as a search in DataCite's own portal does.
+  Only *public* records are found: a PID whose registration is still in progress, or has been
+  declined, is not a lookup result and cannot be imported, because it has no resolvable landing
+  page to link to. A pasted PID is a direct lookup at the registry its shape names, a DOI at
+  DataCite and a Handle at B2INST, and yields nothing from the other.
+  _Avoid_: PIDINST search, DOI search, federated search (the registries are asked side by side,
+  not through a middle service), provider search
 
 - **Already-linked marker** — the note on a PID lookup hit saying that an Instrument in this
   RSpace already links its PID. Every user sees it, so refusing to import the hit always has
@@ -248,10 +264,10 @@ resolved during design. This file is a glossary only — no implementation detai
   principle, recorded for this case as an amendment to ADR 0009).
   _Avoid_: linked-to chip (the chip is only one of the marker's two forms), duplicate warning
 
-- **Instrument import** — creating an Instrument from a PID record found in a public PID
-  registry: RSpace fetches the record itself, fills the default PIDINST template's fields
-  from it by the inverse of the PIDINST mapping, and attaches a linked identifier for the
-  PID, all in one step. The imported values are ordinary field values afterwards: the user
+- **Instrument import** — creating an Instrument from a PID record found in a public
+  registry, which the import names: RSpace fetches the record itself from that registry, fills
+  the default PIDINST template's fields from it by the inverse of the PIDINST mapping, and
+  attaches a linked identifier for the PID, all in one step. The imported values are ordinary field values afterwards: the user
   edits them like any other, and only the identifier stays tied to the registry.
   The record's two related identifiers that RSpace itself writes at registration, labelled
   Measurement Technique and Calibration, are read back into the matching link fields, but
@@ -379,3 +395,92 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Effective locale** — the locale actually served: the user's stored choice
   if it is in the allowed set, otherwise the instance default. A stored choice
   outside the allowed set is kept (not erased) and springs back if re-allowed.
+
+## Inventory operations wizard
+
+- **Operation** — a user-initiated Inventory action that consumes one or more
+  origin subsamples and usually produces one new Sample parenting N new subsamples
+  (a Terminal operation produces none), recording a typed relation link from any new
+  records back to the origin(s), and optionally changing an origin's quantity or adding
+  a field to it. Named instances: Derive, Cryopreserve, Aliquot, Pool, Revive, Passage,
+  Destroy.
+- **Terminal operation** — an Operation that creates no new Sample and only acts on its
+  Origin(s): it empties the Origin and records the outcome on the Origin itself. Destroy
+  is the only instance (it sets the Origin's volume to zero and stamps a disposal date on
+  it). _Avoid_: no-output operation, in-place operation.
+- **Origin** — the existing subsample(s) selected as input to an Operation. Only
+  subsamples are eligible; never a Sample, Container, or Instrument. An Operation
+  may decrement or leave unchanged an Origin's quantity (never increase it;
+  DevDocs/adr/0011), and may add a field to the Origin (an Origin field).
+- **Origin field** — a custom field an Operation adds to an Origin subsample itself
+  (as distinct from a field on the Derived Sample), e.g. Destroy's disposal date.
+  _Avoid_: origin annotation, in-place field.
+- **Derived Sample** — the single new Sample an Operation creates, and the parent
+  of every subsample that Operation creates. Distinct from the Origin's own parent
+  Sample.
+- **Operation field key** — the definition identity a wizard-generated extra field
+  carries on the wire (the config's nameKey/fieldNameKey), letting the backend match
+  payload fields to the Operation's definition regardless of the user's locale.
+  Display names stay free text. _Avoid_: field name matching, label key (that is the
+  wizard-input term).
+- **Process name** — a label for the kind of process an Operation run represents
+  (e.g. "dna extraction"). Every Operation has one: free-text and user-selectable for
+  Operations that expose it (Derive), or a fixed value for those that do not
+  (Cryopreserve's Process name is "cryopreserve"). It scopes Remembered process
+  values and seeds the Derived Sample's name.
+- **Template choice** — the user's per-run decision about the Derived Sample's
+  template: the Origin's parent Sample's own template (available only when it has
+  one), an existing template, or none (ad-hoc). The wizard never creates a template;
+  a template-less parent must have one made in a separate step first.
+- **Created subsample** — a new subsample produced by an Operation, parented by the
+  Derived Sample.
+- **Created amount** — the quantity assigned to each Created subsample. Independent
+  of the Origin's quantity change (material may be added or removed during the
+  operation). Expressed in the chosen template's measurement category when a template
+  is selected, otherwise the Origin's.
+- **Amount taken** — the quantity removed from an Origin by the Operation (a
+  **non-negative** decrement), expressed in the Origin's own measurement category. Zero
+  means the Origin is acted on (linked, permission-checked) but not reduced (Passage); a
+  Terminal operation (Destroy) takes the Origin's full current quantity, emptying it. It
+  must not exceed the Origin's current quantity: over-removal is rejected rather than
+  silently clamped. Independent of the Created total (material may be added during the
+  operation). For a multi-Origin Operation the value across its Origins is governed by the
+  run's **Amount mode** (below).
+- **Amount mode** — for a multi-Origin Operation, how the Amount taken is decided across
+  its Origins: **Same amount** (one shared value removed from every Origin, the default;
+  every Origin must share one measurement category and the value must not exceed the
+  smallest), **Take all** (every Origin emptied to zero, independent of the Created amount),
+  or **Per subsample** (a separate Amount taken chosen for each Origin, each validated
+  against its own quantity). Offered only for Operations that can take multiple Origins;
+  single-Origin Operations always use one Amount taken. _Avoid_: pooling mode, split mode.
+- **Relation link** — a typed link (a DataCite relation such as IsDerivedFrom,
+  IsPartOf, HasPart) held on the Derived Sample and pointing back to the Origin(s).
+  Links are one-directional: only the newly created records link to the Origin; the
+  Origin's back-references are shown by the existing "items that link to" panel, not
+  by a reciprocal link.
+- **Operation definition** — the declarative description of one Operation: its
+  applicability, wizard inputs, and effects. Authored as data; effects that the
+  declarative vocabulary cannot express are supplied by an Operation function
+  (below), keeping the definition itself data. Authoritative on both sides of the
+  API: the wizard renders and gates from it, and the backend rejects an operation
+  request that does not conform to the definition its operation key names.
+- **Computed value** — a value an Operation produces at submit by applying an
+  Operation function to configured arguments, written into a named input slot that
+  the Operation's effect wiring then consumes. Declared in the Operation definition.
+  _Avoid_: derived value, custom field.
+- **Operation function** — a named pure function held in code (the operation function
+  registry), selected by a Computed value and handed resolved argument values; it
+  returns a single value. A new computation is a new registry function referenced from
+  config, not a new config primitive. _Avoid_: custom function, derived function.
+- **Documentation link** — an optional typed link (relation IsDocumentedBy) from
+  the Derived Sample to an ELN document, typically a standard operating procedure,
+  captured during an Operation's documentation step.
+- **Remembered process values** — a per-user, per-Process-name bundle of the values
+  a user opted to keep (Template choice, Documentation link, the amounts, and — for a
+  multi-Origin Operation — the Amount mode and any per-Origin amounts keyed by Origin
+  Global ID). Saved only when the user opts in for that run, and re-applied when that
+  Process name is next used; the most-recently-remembered Process name is also pre-filled
+  on the next run. When a re-run's remembered values already form a complete, valid
+  Operation, the wizard offers to perform it immediately from step one. Replaces the older
+  per-item remembered defaults.
+

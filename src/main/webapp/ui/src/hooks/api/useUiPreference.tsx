@@ -30,7 +30,7 @@ const DEFAULT_UI_PREFERENCES_CONTEXT: UiPreferencesContextType = {
 const UiPreferencesContext: React.Context<UiPreferencesContextType> =
   React.createContext(DEFAULT_UI_PREFERENCES_CONTEXT);
 
-async function fetchPreferences(): Promise<UiPreferencesContextType["uiPreferences"] | ""> {
+export async function fetchPreferences(): Promise<UiPreferencesContextType["uiPreferences"] | ""> {
   const { data } = await axios.get<UiPreferencesContextType["uiPreferences"] | "">(
     "/userform/ajax/preference?preference=UI_JSON_SETTINGS",
   );

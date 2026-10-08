@@ -17,6 +17,25 @@ info:
 security:
   - ApiKeySecurity: []
   - OAuthJWT: []
+tags:
+  - name: Operations
+    description: >
+      Configured Inventory operations. Every endpoint under `/operations` answers `404` with
+      `internalCode` 50301 and a message saying the Inventory operations API is not enabled while
+      the system property `inventory.operations.available` is `DENIED`, which is how it is seeded;
+      a sysadmin turns it on at System > Configuration. An unknown or unreadable origin also
+      answers `404` with `internalCode` 50301, so tell the two apart by the message. A request
+      whose body cannot be read (malformed JSON, or a
+      content type other than JSON) is rejected with `400` or `415` before that check, so those
+      answers can come back while the property is `DENIED`.
+      The server builds the new sample from the inputs an operation declares; a property the
+      operation does not declare is ignored, as on every other endpoint.
+
+      In a validation `400`, each entry in `errors` is `"<request path>: <message>"`, for
+      example `origin.globalId: ...`, and `data.validationErrors` carries the same per field as
+      `field`, `rejectedValue`, `objectName` and `message`. A body that cannot be parsed gets a
+      `400` with `internalCode` 40009, a single plain `errors` entry and `data: null`.
+
 paths:
   /workbenches:
     get:
@@ -124,10 +143,10 @@ paths:
           $ref: "#/components/responses/LicenseProblem"
   /instruments/importPidinst:
     post:
-      summary: Create an Instrument by importing a PID from the enabled PIDINST registry
+      summary: Create an Instrument by importing a PID from a public registry
       description: >
-        Fetches the record for `pid` from the PIDINST provider enabled on this deployment, creates
-        an Instrument from the locked default "Instrument (PIDINST 1.0)" template filled from that
+        Fetches the record for `pid` from the public registry named by `provider`, creates an
+        Instrument from the locked default "Instrument (PIDINST 1.0)" template filled from that
         record, and attaches a *linked identifier* for the PID.
 
 
@@ -147,12 +166,13 @@ paths:
 
 
         `pid` may be a bare DOI or Handle, or a `doi.org` / `hdl.handle.net` address. It must be
-        PUBLIC at the provider - B2INST `accepted`, DataCite `findable` - because RSpace links only
-        publicly resolvable PIDs. A PID of the registry that is *not* enabled on this deployment
-        also yields `404`; there is no cross-registry lookup.
+        PUBLIC at the registry - B2INST `accepted`, DataCite `findable` - because RSpace links only
+        publicly resolvable PIDs. A PID looked up at the wrong registry (a Handle at DataCite, a DOI
+        at B2INST) yields `404`, and a `provider` other than `PIDINST_DATACITE` or `PIDINST_B2INST`
+        is refused with a `422`.
 
 
-        Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
+        Needs Inventory only; the PIDINST minting settings do not apply.
       tags:
         - Instruments
       requestBody:
@@ -169,11 +189,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Instrument"
+        "400":
+          description: The body lacks `pid` or `provider`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: >
-            The enabled provider holds no PUBLIC instrument record for this PID, or no PIDINST
-            provider is enabled on this deployment. A PID that exists but is not published is
-            reported the same way as one that does not exist.
+            The public registry holds no PUBLIC instrument record for this PID. A PID that exists
+            but is not published is reported the same way as one that does not exist.
           content:
             application/json:
               schema:
@@ -2516,6 +2541,348 @@ paths:
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
+  /operations/aliquot:
+    post:
+      summary: Aliquot material from a SubSample into a new Sample
+      description: >
+        Takes an amount from one subsample and creates a new sample holding it, linked back to
+        the origin with an `IsPartOf` field.
+
+
+        The operation is atomic: the origin's quantity is decremented and the new sample created
+        in one transaction, so a failure leaves the origin exactly as it was.
+
+
+        `count` subsamples are created, each holding `eachAmount`. `amountTaken` and `eachAmount`
+        are independent: material is not conserved, so 1 ml taken may become a 1.2 ml aliquot
+        after a medium is added.
+      tags:
+        - Operations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AliquotOperation"
+        description: The origin to take from, and the sample to create
+        required: true
+      responses:
+        "201":
+          $ref: "#/components/responses/OperationCreated"
+        "400":
+          description: >
+            Rejected, leaving the origin unchanged. `sampleName`, `eachAmount` or the origin's
+            `amountTaken` is missing; `count` is below 1 or above 100; the amount taken is not
+            positive, does not use a unit of the origin's measurement category, or is more than
+            the origin currently holds; the origin is empty; or `templateId` names a template
+            the created sample does not conform to. Each error names the field that was sent.
+            A template conformance failure, such as an empty mandatory template field, is
+            reported under `templateId`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
+        "422":
+          $ref: "#/components/responses/OperationRejectedByCore"
+  /operations/passage:
+    post:
+      summary: Passage a SubSample into a new Sample
+      description: >
+        Creates a new sample from one origin, linked to it with an `IsDerivedFrom` field, and
+        carries the passage number forward: the server reads the origin's sample's passage-number
+        field and stores the next number on the new sample. It starts at 1 when that field is
+        absent or blank, and refuses a value it cannot read as a whole number from 0 to 9999.
+
+
+        This operation takes nothing from its origin. Do not send `amountTaken`; the origin's
+        quantity is unchanged by the operation.
+      tags:
+        - Operations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PassageOperation"
+        description: The origin to passage, and the sample to create
+        required: true
+      responses:
+        "201":
+          description: Success. The created sample, and the origin, whose quantity is unchanged.
+          headers:
+            Location:
+              description: URL of the created sample.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationResult"
+        "400":
+          description: >
+            Rejected, leaving the origin unchanged. `sampleName` or `eachAmount` is missing;
+            `count` is below 1, above 100 or not a whole number; an `amountTaken` was sent, which
+            this operation does not accept; the origin is empty; `templateId` names a template
+            the created sample does not conform to; or the parent sample is already at passage
+            9999, the highest supported, or its passage number is not a whole number from 0 to
+            9999, for example `5.5` or `abc` (both on `origin.globalId`). Each error names the
+            field that was sent.
+            A template conformance failure, such as an empty mandatory template field, is
+            reported under `templateId`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
+        "422":
+          $ref: "#/components/responses/OperationRejectedByCore"
+  /operations/pool:
+    post:
+      summary: Pool material from several SubSamples into a new Sample
+      description: >
+        Takes an amount from each of two or more origins and creates one new sample holding the
+        pooled material, with a `HasPart` field linking it to every origin.
+
+
+        Each origin carries its own `amountTaken`, so a pool may take 5 ml from one and 8 ml from
+        another. Send `takeAll` instead to pour every origin out completely, which takes whatever
+        each holds when the operation runs. All origins must hold the same measurement category:
+        5 ml cannot be pooled with 5 g. A subsample may appear at most once in the list.
+
+
+        `takeAll` only decides how much is removed from the origins. The created sample holds
+        `count` subsamples of `eachAmount` each, so `eachAmount` stays required, and no equality
+        between the total taken and the total created is enforced: pooled material may have been
+        diluted, concentrated or partly lost. Every operation that creates a sample works this way.
+
+
+        The operation is atomic across every origin: if one is rejected, none is decremented.
+      tags:
+        - Operations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PoolOperation"
+        description: The origins to pool, and the sample to create
+        required: true
+      responses:
+        "201":
+          description: >
+            Success. The created sample, and each origin's remaining quantity, in the order the
+            origins were sent.
+          headers:
+            Location:
+              description: URL of the created sample.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationResult"
+        "400":
+          description: >
+            Rejected, leaving every origin unchanged. Fewer than two origins were sent, or the
+            same subsample twice; `sampleName`, `eachAmount` or an origin's `amountTaken` is
+            missing; an `amountTaken` was sent alongside `takeAll`; `count` is below 1, above 100
+            or not a whole number; an amount taken is not positive, does not use a unit of that
+            origin's measurement category, or is more than the origin holds; the origins do not
+            share one measurement category; or an origin is empty. Each error names the field
+            that was sent, with the index of the origin it concerns.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
+        "422":
+          $ref: "#/components/responses/OperationRejectedByCore"
+  /operations/derive:
+    post:
+      summary: Derive a new Sample from a SubSample by a named process
+      description: >
+        Takes an amount from one subsample and creates a new sample linked to it with an
+        `IsDerivedFrom` field that names the process: `processName` of "PCR" produces the field
+        name "Is Derived From using process: PCR", so the provenance of the new material records
+        how it was made.
+      tags:
+        - Operations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeriveOperation"
+        description: The origin to derive from, the process, and the sample to create
+        required: true
+      responses:
+        "201":
+          $ref: "#/components/responses/OperationCreated"
+        "400":
+          description: >
+            Rejected, leaving the origin unchanged. `processName`, `sampleName`, `eachAmount` or
+            the origin's `amountTaken` is missing; `count` is below 1 or above 100; the amount
+            taken is not positive, does not use a unit of the origin's measurement category, or
+            is more than the origin currently holds; the origin is empty; or `templateId` names a
+            template the created sample does not conform to. Each error names the field that was
+            sent.
+            A template conformance failure, such as an empty mandatory template field, is
+            reported under `templateId`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
+        "422":
+          $ref: "#/components/responses/OperationRejectedByCore"
+  /operations/cryopreserve:
+    post:
+      summary: Cryopreserve material from a SubSample
+      description: >
+        Takes an amount from one subsample and creates a new sample held at a storage
+        temperature, linked to the origin with an `IsDerivedFrom` field.
+
+
+        `storageTemp` is required and must be at or below -18 degrees Celsius, to at most three
+        decimal places. It is stored as both the storage temperature bounds of the new sample.
+        Send it in any temperature unit; the limit is compared on the temperature it denotes,
+        not on its number.
+
+
+        `cryomedium` is optional and is stored as a Cryomedium field on the new sample. Omitting
+        it, or sending it blank, creates no such field.
+      tags:
+        - Operations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CryopreserveOperation"
+        description: The origin to take from, the storage conditions, and the sample to create
+        required: true
+      responses:
+        "201":
+          $ref: "#/components/responses/OperationCreated"
+        "400":
+          description: >
+            Rejected, leaving the origin unchanged. `sampleName`, `eachAmount`, `storageTemp` or
+            the origin's `amountTaken` is missing; `storageTemp` is above -18 degrees Celsius, has
+            more than three decimal places or does not use a temperature unit; `count` is below 1 or above 100;
+            the amount taken is
+            not positive, does not use a unit of the origin's measurement category, or is more
+            than the origin currently holds; the origin is empty; or `templateId` names a
+            template the created sample does not conform to. Each error names the field that was
+            sent.
+            A template conformance failure, such as an empty mandatory template field, is
+            reported under `templateId`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
+        "422":
+          $ref: "#/components/responses/OperationRejectedByCore"
+  /operations/revive:
+    post:
+      summary: Revive cryopreserved material from a SubSample
+      description: >
+        Takes an amount from one cryopreserved subsample and creates a new sample at a working
+        temperature, linked to the origin with an `IsDerivedFrom` field.
+
+
+        `storageTemp` is optional: omit it or send null and the new sample is stored at 4 degrees
+        Celsius.
+        When sent, it must be between 4 and 120 degrees Celsius, to at most three decimal places.
+      tags:
+        - Operations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviveOperation"
+        description: The origin to revive from, and the sample to create
+        required: true
+      responses:
+        "201":
+          $ref: "#/components/responses/OperationCreated"
+        "400":
+          description: >
+            Rejected, leaving the origin unchanged. `sampleName`, `eachAmount` or the origin's
+            `amountTaken` is missing; `storageTemp` is outside 4 to 120 degrees Celsius, has
+            more than three decimal places or does not use a temperature unit; `count` is below 1 or above 100;
+            the amount taken is not
+            positive, does not use a unit of the origin's measurement category, or is more than
+            the origin currently holds; the origin is empty; or `templateId` names a template the
+            created sample does not conform to. Each error names the field that was sent.
+            A template conformance failure, such as an empty mandatory template field, is
+            reported under `templateId`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
+        "422":
+          $ref: "#/components/responses/OperationRejectedByCore"
+  /operations/destroy:
+    post:
+      summary: Destroy the remaining contents of a SubSample
+      description: >
+        Empties one subsample: its quantity becomes zero, and the date is recorded in a Disposed
+        field on the subsample itself. The subsample is not deleted, and its history is kept.
+
+
+        This operation creates nothing, so it answers 200 rather than 201, there is no `Location`
+        header, and `sample` in the response is null. Do not send `amountTaken`: the server takes
+        whatever the origin holds when the operation runs, and an amount sent anyway is rejected.
+      tags:
+        - Operations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DestroyOperation"
+        description: The subsample to empty
+        required: true
+      responses:
+        "200":
+          description: Success. `sample` is null, and the origin is reported holding nothing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationResult"
+        "400":
+          description: >
+            Rejected, leaving the origin unchanged. The origin is missing, is not identified by a
+            subsample global id, or is already empty; an `amountTaken` was sent, which this
+            operation does not accept: it always takes whatever the origin holds when it runs; or
+            the origin already has a field of another type with the Disposed field's name, which
+            would be overwritten (on `origin.globalId`, naming that field). Each error names the
+            field that was sent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
+        "422":
+          $ref: "#/components/responses/OperationRejectedByCore"
   /import/parseFile:
     post:
       summary: Parse the incoming CSV file for import UI
@@ -3017,16 +3384,20 @@ paths:
           description: Details of connected attachment (ApiInventoryFile object).
   /pidinst/search:
     get:
-      summary: Search the enabled PIDINST registry for instrument records
+      summary: Search the public DataCite and B2INST registries for instrument records
       description: >
-        Searches the PIDINST provider enabled on this deployment, using that provider's configured
-        server and credentials. There is one registry per deployment and no provider filter.
+        Searches the public registries named in `providers`, anonymously, whatever the PIDINST
+        minting settings hold. The hosts are deployment properties (`pidinst.lookup.datacite.url`,
+        `pidinst.lookup.b2inst.url`).
 
 
-        A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address, is a direct lookup;
-        anything else is one full-text query. A PID belonging to the registry that is not enabled
-        here yields no hit. At most 50 hits are returned in one page, sorted by name, alongside the
-        provider's own `total`, which may be larger. Provider results are cached for 10 minutes.
+        A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address, is a direct lookup at
+        the registry its shape names and yields nothing at the other; anything else is one
+        full-text query per registry. Hits from the registries asked for form ONE list ordered by
+        the registry's update time, newest first, 50 to a page; equal update times keep each
+        registry's own order, the registries in the order `providers` names them;
+        `totalHits` is the sum of the registries' own totals and `totalsByProvider` gives each.
+        Registry pages are cached for 10 minutes.
 
 
         Only PUBLIC records are offered, because only a publicly resolvable PID may be linked to
@@ -3038,10 +3409,8 @@ paths:
         Each hit carries `alreadyLinked`, true when an Instrument in this deployment already links
         that PID, so a client can refuse importing it before the `409`; and
         `linkedInstrumentGlobalId` only when the caller may read that Instrument (read or limited
-        read). An Instrument the caller may not read is never named.
-
-
-        Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
+        read). An Instrument the caller may not read is never named. A failure at either registry
+        fails the whole search.
       tags:
         - External Identifiers
       parameters:
@@ -3051,25 +3420,51 @@ paths:
           description: >
             Free text, or a DOI or Handle for a direct lookup. At least 4 characters after
             trimming; shorter, blank or whitespace-only queries are refused with a 422 and never
-            reach the registry.
+            reach a registry.
           schema:
             type: string
             minLength: 4
+        - in: query
+          name: providers
+          required: true
+          description: >
+            The registries to search, comma-separated or repeated: `PIDINST_DATACITE`,
+            `PIDINST_B2INST` or both. Missing, empty or any other value is refused with a 422.
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [PIDINST_DATACITE, PIDINST_B2INST]
+          style: form
+          explode: false
+        - in: query
+          name: pageNumber
+          required: false
+          description: >
+            0-based page of 50 merged hits; defaults to 0. Pages past 199 (the first 10,000
+            hits) are refused with a 422.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 199
+            default: 0
       responses:
         "200":
-          description: One page of hits from the enabled provider.
+          description: One merged page of hits.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PidinstSearchResult"
         "404":
-          description: No PIDINST provider is enabled on this deployment.
+          description: Inventory is not available to this user.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "422":
-          description: The query is shorter than 4 characters after trimming.
+          description: >
+            The query is shorter than 4 characters after trimming, or `providers` names no usable
+            registry.
           content:
             application/json:
               schema:
@@ -3859,6 +4254,35 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    OperationCreated:
+      description: Success. The created sample, and the origin's remaining quantity.
+      headers:
+        Location:
+          description: URL of the created sample.
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperationResult"
+    OperationRejectedByCore:
+      description: >
+        The new sample or the origin update was refused by the core Inventory rules (for example a
+        duplicate field name). Nothing was changed. Rare: the operation checks most of these first.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    OperationOriginBusy:
+      description: >
+        The operation did not start, and every origin is unchanged. Either another request is
+        already acting on one of the origins, or another user's edit session holds an origin or
+        one of its parent samples. The message names the blocked record. Retry once that request or
+        edit session has finished.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     NotFound:
       description: Resource could not be found - either does not exist, or client is
         not authorised.
@@ -4351,13 +4775,19 @@ components:
       description: Body of the instrument import; the PID is re-fetched server-side.
       required:
         - pid
+        - provider
       properties:
         pid:
           type: string
           description: >
-            A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address. Must belong to the
-            registry enabled on this deployment.
+            A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address, belonging to the
+            registry named by `provider`.
           example: https://hdl.handle.net/21.T11975/smzcd-1x840
+        provider:
+          type: string
+          enum: [PIDINST_DATACITE, PIDINST_B2INST]
+          description: The registry the PID belongs to; the search's hit carries it as `provider`.
+          example: PIDINST_B2INST
         newTargetLocation:
           description: Where to store the new Instrument. Absent means the user's own workbench.
           properties:
@@ -4527,24 +4957,31 @@ components:
             shown is never named.
           example: IN2
     PidinstSearchResult:
-      description: One page of PID lookup hits from the enabled provider.
+      description: One merged page of PID lookup hits from the registries asked for.
       properties:
-        provider:
-          type: string
-          description: The provider the search went to.
-          enum:
-            - PIDINST_B2INST
-            - PIDINST_DATACITE
-        total:
+        providers:
+          type: array
+          description: The registries searched, as asked.
+          items:
+            type: string
+            enum: [PIDINST_DATACITE, PIDINST_B2INST]
+        pageNumber:
           type: integer
-          description: >
-            The provider's total for the query, which may exceed the number of hits returned. Both
-            providers apply the public-only filter themselves, so the total describes the same set
-            as the page.
-          example: 2
+          description: 0-based.
+          example: 0
+        totalHits:
+          type: integer
+          description: The sum of the registries' own totals for the query.
+          example: 238
+        totalsByProvider:
+          type: object
+          description: Each registry's own total, keyed as in `providers`.
+          additionalProperties:
+            type: integer
+          example: { "PIDINST_DATACITE": 235, "PIDINST_B2INST": 3 }
         hits:
           type: array
-          description: At most 50 records, sorted by name.
+          description: This page, newest update first; equal update times keep each registry's own order.
           items:
             $ref: "#/components/schemas/PidinstRecord"
     ContainerInfo:
@@ -4824,6 +5261,13 @@ components:
         parentGlobalId:
           type: string
           description: A unique identifier amongst all RSpace data types.
+        operationFieldKey:
+          type: string
+          readOnly: true
+          description: >
+            Set when an Inventory operation generated this field, naming the part of the
+            operation definition that produced it. Read-only: a value sent in a request body is
+            ignored, on every endpoint, so only an operation can have set it.
       required:
         - parentGlobalId
       example:
@@ -5032,6 +5476,492 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/GroupShareInfo"
+    OperationAmount:
+      type: object
+      description: |
+        An amount an operation takes from an origin or gives each subsample it creates. Both
+        properties are required and the amount must be greater than zero. Quantities are stored
+        to three decimal places, so an amount with more decimal places is rejected rather than
+        rounded. The unit must be a count, volume or mass unit; any other unit is rejected. The
+        field that uses this schema says which of those categories the unit must belong to.
+
+        Units of one category are interchangeable: the server converts between them. The units
+        amounts accept, by id, as `GET /api/v1/units` lists them:
+
+        | Category | Units (id) |
+        |---|---|
+        | Count | items (1) |
+        | Volume | pl (18), nl (19), µl (2), ml (3), l (4), mm³ (23), cm³ (24), dm³ (25), m³ (26) |
+        | Mass | pg (20), ng (21), µg (5), mg (6), g (7), kg (22) |
+      properties:
+        numericValue:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          multipleOf: 0.001
+          description: |
+            The amount, greater than zero, to at most three decimal places. The server checks the
+            number of decimal places exactly. A validator that computes `multipleOf` in binary
+            floating point needs its precision option (ajv: `multipleOfPrecision`), or it rejects
+            valid amounts such as 1.001.
+          example: 5
+        unitId:
+          type: integer
+          minimum: 1
+          description: Id of the unit the amount is in, as listed by `GET /api/v1/units`.
+          example: 3
+      required:
+        - numericValue
+        - unitId
+    CryoStorageTemperature:
+      type: object
+      description: |
+        Cryopreserve's storage temperature: at or below -18 degrees Celsius and not below absolute
+        zero, to at most three decimal places. Kelvin and Fahrenheit are converted to Celsius
+        before the bounds are checked, so the bounds are given per unit.
+      properties:
+        numericValue:
+          type: number
+          multipleOf: 0.001
+          description: |
+            Degrees to at most three decimal places, in the unit `unitId` names. See
+            `OperationAmount.numericValue` for the `multipleOf` precision note.
+        unitId:
+          type: integer
+          description: Celsius (8), Kelvin (9) or Fahrenheit (10).
+      required:
+        - numericValue
+        - unitId
+      oneOf:
+        - title: Celsius
+          description: Celsius, from -273.15 to -18.
+          properties:
+            unitId:
+              enum:
+                - 8
+            numericValue:
+              minimum: -273.15
+              maximum: -18
+        - title: Kelvin
+          description: Kelvin, from 0 to 255.15.
+          properties:
+            unitId:
+              enum:
+                - 9
+            numericValue:
+              minimum: 0
+              maximum: 255.15
+        - title: Fahrenheit
+          description: Fahrenheit, from -459.669 to -0.4.
+          properties:
+            unitId:
+              enum:
+                - 10
+            numericValue:
+              minimum: -459.669
+              maximum: -0.4
+      example:
+        numericValue: -80
+        unitId: 8
+    ReviveStorageTemperature:
+      type: object
+      description: |
+        Revive's storage temperature: from 4 to 120 degrees Celsius, to at most three decimal
+        places. Kelvin and Fahrenheit are converted to Celsius before the bounds are checked, so the
+        bounds are given per unit.
+      properties:
+        numericValue:
+          type: number
+          multipleOf: 0.001
+          description: |
+            Degrees to at most three decimal places, in the unit `unitId` names. See
+            `OperationAmount.numericValue` for the `multipleOf` precision note.
+        unitId:
+          type: integer
+          description: Celsius (8), Kelvin (9) or Fahrenheit (10).
+      required:
+        - numericValue
+        - unitId
+      oneOf:
+        - title: Celsius
+          description: Celsius, from 4 to 120.
+          properties:
+            unitId:
+              enum:
+                - 8
+            numericValue:
+              minimum: 4
+              maximum: 120
+        - title: Kelvin
+          description: Kelvin, from 277.15 to 393.15.
+          properties:
+            unitId:
+              enum:
+                - 9
+            numericValue:
+              minimum: 277.15
+              maximum: 393.15
+        - title: Fahrenheit
+          description: Fahrenheit, from 39.2 to 248.
+          properties:
+            unitId:
+              enum:
+                - 10
+            numericValue:
+              minimum: 39.2
+              maximum: 248
+      example:
+        numericValue: 4
+        unitId: 8
+    OperationOrigin:
+      type: object
+      description: |
+        A subsample an operation consumes, identified by its global id (`SS` prefix). A sample or
+        container id is rejected.
+
+        The operation decides what it takes from this origin, so no amount is sent. The server
+        reads the origin's live quantity at the moment the operation runs. It holds the Inventory
+        edit lock on every origin and its parent sample for the duration, but there is no
+        optimistic-concurrency token on these endpoints: a quantity read before the call may
+        already be stale by the time it returns.
+      properties:
+        globalId:
+          type: string
+          description: Global id of the origin subsample.
+          example: SS1234
+      required:
+        - globalId
+    OperationOriginWithAmount:
+      type: object
+      description: |
+        An origin of an operation that takes an amount from it.
+
+        `amountTaken` is required. It must be greater than zero, must use a unit of the origin's
+        own measurement category (volume, mass or count, not necessarily the same unit), and must
+        not be more than the origin currently holds. Quantities are stored to three decimal
+        places, so an amount that cannot be subtracted exactly at that precision is rejected
+        rather than rounded.
+      allOf:
+        - $ref: "#/components/schemas/OperationOrigin"
+        - properties:
+            amountTaken:
+              $ref: "#/components/schemas/OperationAmount"
+          required:
+            - amountTaken
+    CreatingOperationFields:
+      type: object
+      description: |
+        The fields shared by every operation that creates a sample: the sample's name, how many
+        subsamples to create and how much each holds, and the optional template and documentation
+        link.
+      properties:
+        sampleName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '\S'
+          description: Name of the sample the operation creates. Not blank.
+        count:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 1
+          description: >
+            Number of subsamples to create, sent as a whole number. Defaults to 1. A numeric
+            string such as "2" is also accepted, and an empty string is treated as absent. A
+            decimal point is rejected, even `1.0`.
+        eachAmount:
+          $ref: "#/components/schemas/OperationAmount"
+        templateId:
+          type: integer
+          format: int64
+          description: >
+            Optional sample template to create the new sample from. The created sample's fields
+            must conform to the template, and `eachAmount` must use a unit of the template's
+            measurement category (volume, mass or count), not necessarily the same unit.
+        documentedByGlobalId:
+          type: string
+          description: >
+            Optional ELN document, notebook or Gallery file (`SD`, `NB` or `GL`) to link the new
+            sample to with an `IsDocumentedBy` field.
+      required:
+        - sampleName
+        - eachAmount
+    AliquotOperation:
+      type: object
+      description: |
+        Aliquot request. `count` is optional and defaults to 1; it may not exceed 100.
+        `templateId` and `documentedByGlobalId` are optional.
+
+        The new sample carries only what the operation produces. Tags, description, sharing mode,
+        barcodes, source and expiry are set afterwards with `PUT /samples/{sampleId}`.
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOriginWithAmount"
+          required:
+            - origin
+      example:
+        origin:
+          globalId: SS1234
+          amountTaken:
+            numericValue: 6
+            unitId: 3
+        sampleName: Aliquots
+        count: 2
+        eachAmount:
+          numericValue: 3
+          unitId: 3
+        templateId: 42
+        documentedByGlobalId: SD99
+    PassageOperation:
+      type: object
+      description: |
+        Passage request. The origin takes no `amountTaken`: this operation does not decrement it.
+        `count` is optional and defaults to 1; it may not exceed 100.
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOrigin"
+          required:
+            - origin
+      example:
+        origin:
+          globalId: SS1234
+        sampleName: HeLa p3
+        count: 1
+        eachAmount:
+          numericValue: 5
+          unitId: 3
+    PoolOperation:
+      type: object
+      description: |
+        Pool request. Two or more origins, all holding the same measurement category. `count` is
+        optional and defaults to 1; it may not exceed 100.
+
+        A request has one of two shapes: `PoolByAmounts`, where every origin carries its own
+        `amountTaken`, or `PoolTakeAll`, where `takeAll` is true and no origin carries one.
+      oneOf:
+        - $ref: "#/components/schemas/PoolByAmounts"
+        - $ref: "#/components/schemas/PoolTakeAll"
+    PoolByAmounts:
+      type: object
+      description: A Pool that takes a chosen amount from each origin. `takeAll` is absent, null or false.
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origins:
+              type: array
+              minItems: 2
+              maxItems: 100
+              items:
+                $ref: "#/components/schemas/OperationOriginWithAmount"
+            takeAll:
+              type: boolean
+              nullable: true
+              enum:
+                - false
+                - null
+          required:
+            - origins
+      example:
+        origins:
+          - globalId: SS1234
+            amountTaken:
+              numericValue: 5
+              unitId: 3
+          - globalId: SS5678
+            amountTaken:
+              numericValue: 8
+              unitId: 3
+        sampleName: Pooled lysate
+        count: 1
+        eachAmount:
+          numericValue: 13
+          unitId: 3
+    PoolTakeAll:
+      type: object
+      description: |
+        A Pool that takes every origin's whole remaining quantity, read when the operation runs,
+        leaving each of them empty. No origin may carry an `amountTaken`.
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origins:
+              type: array
+              minItems: 2
+              maxItems: 100
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/OperationOrigin"
+                properties:
+                  amountTaken:
+                    type: object
+                    nullable: true
+                    enum:
+                      - null
+                    description: Must be absent or null. `takeAll` takes each origin's whole quantity.
+            takeAll:
+              type: boolean
+              enum:
+                - true
+          required:
+            - origins
+            - takeAll
+      example:
+        origins:
+          - globalId: SS1234
+          - globalId: SS5678
+        takeAll: true
+        sampleName: Pooled lysate
+        count: 1
+        eachAmount:
+          numericValue: 13
+          unitId: 3
+    DeriveOperation:
+      type: object
+      description: |
+        Derive request. `processName` names the process that produced the new material and
+        appears in the generated provenance field. `count` is optional and defaults to 1; it may
+        not exceed 100.
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOriginWithAmount"
+            processName:
+              type: string
+              minLength: 1
+              maxLength: 255
+              pattern: '\S'
+              description: The process the new material was produced by, e.g. "PCR". Not blank.
+          required:
+            - origin
+            - processName
+      example:
+        origin:
+          globalId: SS1234
+          amountTaken:
+            numericValue: 1
+            unitId: 3
+        processName: PCR
+        sampleName: Derived DNA
+        count: 1
+        eachAmount:
+          numericValue: 1
+          unitId: 3
+    CryopreserveOperation:
+      type: object
+      description: |
+        Cryopreserve request. `storageTemp` is required and must be at or below -18 degrees
+        Celsius. `cryomedium` is optional. `count` is optional and defaults to 1; it may not
+        exceed 100.
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOriginWithAmount"
+            cryomedium:
+              type: string
+              maxLength: 250
+              description: >
+                The cryoprotectant the material is frozen in, stored as a Cryomedium field on the
+                new sample.
+            storageTemp:
+              $ref: "#/components/schemas/CryoStorageTemperature"
+          required:
+            - origin
+            - storageTemp
+      example:
+        origin:
+          globalId: SS1234
+          amountTaken:
+            numericValue: 1
+            unitId: 3
+        sampleName: Frozen
+        count: 1
+        eachAmount:
+          numericValue: 1
+          unitId: 3
+        cryomedium: DMSO 10%
+        storageTemp:
+          numericValue: -80
+          unitId: 8
+    ReviveOperation:
+      type: object
+      description: |
+        Revive request. `storageTemp` is optional (absent or null), defaults to 4 degrees
+        Celsius, and must be between 4 and 120 degrees Celsius. `count` is optional and defaults
+        to 1; it may not exceed 100.
+      allOf:
+        - $ref: "#/components/schemas/CreatingOperationFields"
+        - properties:
+            origin:
+              $ref: "#/components/schemas/OperationOriginWithAmount"
+            storageTemp:
+              anyOf:
+                - $ref: "#/components/schemas/ReviveStorageTemperature"
+                - type: object
+                  nullable: true
+                  enum:
+                    - null
+                  description: Absent or null; the default of 4 degrees Celsius is used.
+          required:
+            - origin
+      example:
+        origin:
+          globalId: SS1234
+          amountTaken:
+            numericValue: 1
+            unitId: 3
+        sampleName: Revived
+        count: 1
+        eachAmount:
+          numericValue: 1
+          unitId: 3
+        storageTemp:
+          numericValue: 4
+          unitId: 8
+    DestroyOperation:
+      type: object
+      description: |
+        Destroy request. The origin only: this operation creates no sample, so it takes no name,
+        template or documentation target.
+      properties:
+        origin:
+          $ref: "#/components/schemas/OperationOrigin"
+      required:
+        - origin
+      example:
+        origin:
+          globalId: SS1234
+    OperationResult:
+      description: |
+        What an operation produced and what its origins hold afterwards. An operation is a
+        transfer, so the origins' remaining quantities come back with the new sample rather than
+        needing a further GET for each one. Origins are in the order they were sent.
+
+        `sample` is null for an operation that creates nothing (destroy).
+
+        The names of the fields an operation generates ("Is Part Of ...", "Disposed") are
+        resolved when the operation runs, from the request's `Accept-Language` header, and stored
+        in that language. Only `en-US` names ship today.
+      type: object
+      properties:
+        sample:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Sample"
+        origins:
+          type: array
+          description: Each origin subsample as it stands after the operation.
+          items:
+            $ref: "#/components/schemas/SubSample"
+      required:
+        - sample
+        - origins
     Error:
       description: Error object
       properties:
@@ -5052,6 +5982,25 @@ components:
           type: array
           items:
             type: string
+        data:
+          type: object
+          nullable: true
+          description: Structured detail for a validation failure, when there is one.
+          properties:
+            validationErrors:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    description: The request field the error concerns.
+                  rejectedValue:
+                    description: The value that was rejected, of any JSON type.
+                  objectName:
+                    type: string
+                  message:
+                    type: string
       example:
         httpCode: 422
         internalCode: 42201

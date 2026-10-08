@@ -11,6 +11,14 @@ function optional(name: string, fallback: string): string {
   return value === undefined || value === "" ? fallback : value;
 }
 
+function booleanFlag(name: string, fallback: boolean): boolean {
+  const value = optional(name, String(fallback));
+  if (value !== "true" && value !== "false") {
+    throw new Error(`${name} must be "true" or "false", got "${value}".`);
+  }
+  return value === "true";
+}
+
 function isLocalTarget(url: string): boolean {
   try {
     return ["localhost", "127.0.0.1", "::1"].includes(new URL(url).hostname);
@@ -25,6 +33,7 @@ export const env = {
   ci: process.env.CI === "true",
   integrationMode: optional("E2E_INTEGRATION_MODE", "mock") === "real" ? ("real" as const) : ("mock" as const),
   browser: optional("E2E_BROWSER", ""),
+  cloud: booleanFlag("E2E_CLOUD", false),
   mockPort: optional("E2E_MOCK_PORT", "9099"),
   playwrightLog: optional("PW_LOG", "off") as "trace" | "info" | "off",
 

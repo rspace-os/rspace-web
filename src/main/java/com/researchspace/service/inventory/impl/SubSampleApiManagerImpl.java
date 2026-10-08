@@ -31,7 +31,6 @@ import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -271,13 +270,12 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
     try {
-      dbSubSample = getIfExists(dbSubSample.getId());
-
       QuantityInfo orgQuantity = dbSubSample.getQuantity();
-      QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));
+
+      QuantityInfo newQuantity = qUtils.subtract(orgQuantity, usedQuantity);
 
       // if usage is larger than remaining quantity set remaining to zero, in the stored unit
-      // (qUtils.sum may return a different unit, and "0 g" must not relabel itself to "0 mg")
+      // (qUtils.subtract may return a different unit, and "0 g" must not relabel itself to "0 mg")
       if (newQuantity.getNumericValue().compareTo(BigDecimal.ZERO) < 0) {
         newQuantity = new QuantityInfo(BigDecimal.ZERO, orgQuantity.getUnitId());
       }
@@ -347,7 +345,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
                 origSubSample.getName(), i + 2);
         copy = origSubSample.copy(ss -> newName, newQ, user);
       } else {
-        copy = origSubSample.copy(user); // prt-238
+        copy = origSubSample.copy(user);
       }
       setWorkbenchAsParentForNewInventoryRecord(workbench, copy);
       setNewCreatorForCopiedInventoryRecord(copy, user);
@@ -425,7 +423,6 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
         publisher.publishEvent(new InventoryRestoreEvent(dbSubSample, user));
 
         if (!partOfSampleRestore) {
-          // refresh parent sample
           parentSample.refreshActiveSubSamples();
           parentSample.recalculateTotalQuantity();
         }

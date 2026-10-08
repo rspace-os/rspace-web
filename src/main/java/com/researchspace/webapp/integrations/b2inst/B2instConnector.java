@@ -61,37 +61,38 @@ public interface B2instConnector {
   /** The record's draft by its RID, or empty when B2INST answers 404 (no draft exists). */
   Optional<B2instDraftRecord> getDraftRecord(String rid);
 
-  /**
-   * Published records whose metadata matches a free-text query, at most {@code size} of them plus
-   * the provider's total. The data is anonymous-readable, but the call carries the configured token
-   * like every other one, and goes to the configured server (RSDEV-1326).
-   */
-  B2instSearchResult searchRecords(String query, int size);
-
   /** The shape a record id or Handle suffix must have before it is put in a URL. */
   Pattern RECORD_ID_SHAPE = Pattern.compile("[A-Za-z0-9_-]{1,64}");
 
   /**
-   * The PUBLISHED record a Handle resolves to, or empty when B2INST has none. B2INST accepts the
-   * suffix of a PID it minted as an alias of the record id (verified against b2inst.gwdg.de, where
-   * the suffix is the b2rec uuid, and b2inst-test.gwdg.de, where it equals the record id; September
-   * 2026), so this is {@link #getPublishedRecord(String)} on that suffix. Accepts the bare Handle
-   * or an hdl.handle.net address. A suffix that is not a record id shape is answered empty locally.
-   *
-   * <p>Published only, deliberately. Only a public PID may be linked to an instrument (RSDEV-1326),
-   * and {@code /api/records/{rid}} serves exactly that: a record still in draft, submitted for
-   * community review, or declined answers 404 there, which is the answer the import wants. Its
-   * draft is NOT looked for.
+   * Published records of the PUBLIC registry (deployment property {@code
+   * pidinst.lookup.b2inst.url}) matching the query: page {@code pageNumber} (0-based) of {@code
+   * pageSize}, newest update first, plus the registry's total. Anonymous, whatever the
+   * pidinst.b2inst.* settings hold (ADR 0011).
    */
-  default Optional<B2instDraftRecord> getRecordByHandle(String handle) {
+  B2instSearchResult searchPublicRecords(String query, int pageNumber, int pageSize);
+
+  /**
+   * The PUBLISHED record of the public registry a Handle resolves to, or empty when it answers 404.
+   * B2INST accepts the suffix of a PID it minted as an alias of the record id (verified against
+   * b2inst.gwdg.de, where the suffix is the b2rec uuid, and b2inst-test.gwdg.de, where it equals
+   * the record id; September 2026), so this reads {@code /api/records/<suffix>}.
+   *
+   * <p>Published only, deliberately: only a public PID may be linked to an instrument (RSDEV-1326),
+   * and a record still in draft, submitted for community review, or declined answers 404 there.
+   */
+  Optional<B2instDraftRecord> getPublicRecordByHandle(String handle);
+
+  /**
+   * The record-id-shaped suffix of a bare Handle or hdl.handle.net address; empty otherwise, so a
+   * suffix that could change the request path is answered locally.
+   */
+  static Optional<String> handleSuffix(String handle) {
     if (handle == null || !handle.contains("/")) {
       return Optional.empty();
     }
     String suffix = handle.substring(handle.lastIndexOf('/') + 1).trim();
-    if (!RECORD_ID_SHAPE.matcher(suffix).matches()) {
-      return Optional.empty();
-    }
-    return getPublishedRecord(suffix);
+    return RECORD_ID_SHAPE.matcher(suffix).matches() ? Optional.of(suffix) : Optional.empty();
   }
 
   /** Re-read the {@code pidinst.b2inst.*} system properties and rebuild the HTTP client. */
