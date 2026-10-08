@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -61,7 +62,7 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
    * deployment-wide (decision 7), so a shared constant would make every method after the first
    * fail with 409 against this shared dev database - and again on the next run of the suite. The
    * record id must equal the Handle suffix, because that is how B2INST resolves a Handle to its
-   * record (B2instConnector.getRecordByHandle).
+   * record (B2instConnector.getPublicRecordByHandle).
    */
   private static final String HANDLE_PREFIX = "21.T11975/";
 
@@ -92,6 +93,14 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Autowired private InstrumentTemplateDao instrumentTemplateDao;
   @Autowired private IPropertyHolder properties;
 
+  // @Value, not Environment: deployment properties load through a property placeholder, which does
+  // not register them in the Environment
+  @Value("${pidinst.lookup.datacite.url}")
+  private String dataCiteLookupUrl;
+
+  @Value("${pidinst.lookup.b2inst.url}")
+  private String b2instLookupUrl;
+
   private final B2instConnectorDummy b2instDummy = new B2instConnectorDummy();
   private final BindingResult mockBindingResult = mock(BindingResult.class);
   private Object realIdentifierConnector;
@@ -117,7 +126,6 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
         captureIdentifierSettings(settingsController, IdentifierType.PIDINST_B2INST);
     originalPidinstDataCiteSettings =
         captureIdentifierSettings(settingsController, IdentifierType.PIDINST_DATACITE);
-    setB2instEnabled("true");
   }
 
   @AfterEach
@@ -174,8 +182,9 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   /*
-   * The availability gate consults the REAL B2instConnectorImpl bean, whose isConfiguredAndEnabled()
-   * needs enabled + server URL + token; the fake URL is safe because the dummies intercept every call.
+   * The identifier endpoints' availability gate (the lookup no longer has one) consults the REAL
+   * B2instConnectorImpl bean, whose isConfiguredAndEnabled() needs enabled + server URL + token; the
+   * fake URL is safe because the dummies intercept every call.
    */
   private void setB2instEnabled(String enabled) throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
@@ -196,6 +205,7 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
       throws Exception {
     ApiPidinstImportPost post = new ApiPidinstImportPost();
     post.setPid(pid);
+    post.setProvider("PIDINST_B2INST");
     return mockMvc
         .perform(
             createBuilderForInventoryPostWithJSONBody(
@@ -205,10 +215,18 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   private MvcResult search(User user, String apiKey, String query) throws Exception {
+    return search(user, apiKey, query, 0);
+  }
+
+  /** B2INST only: the DataCite lookup client is real and would call api.datacite.org. */
+  private MvcResult search(User user, String apiKey, String query, int pageNumber)
+      throws Exception {
     return mockMvc
         .perform(
             createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/pidinst/search", user)
-                .param("query", query))
+                .param("query", query)
+                .param("providers", "PIDINST_B2INST")
+                .param("pageNumber", String.valueOf(pageNumber)))
         .andExpect(status().isOk())
         .andReturn();
   }
@@ -237,8 +255,10 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     MvcResult searchResult = search(anyUser, apiKey, "microscope");
     ApiPidinstSearchResult search =
         mvcUtils.getFromJsonResponseBody(searchResult, ApiPidinstSearchResult.class);
-    assertEquals("PIDINST_B2INST", search.getProvider());
-    assertEquals(1, search.getTotal());
+    assertEquals(List.of("PIDINST_B2INST"), search.getProviders());
+    assertEquals(1, search.getTotalHits());
+    assertEquals(1, search.getTotalsByProvider().get("PIDINST_B2INST"));
+    assertEquals(0, search.getPageNumber());
     assertEquals(handle, search.getHits().get(0).getPid());
     assertEquals("Test microscope", search.getHits().get(0).getName());
     assertNull(search.getHits().get(0).getLinkedInstrumentGlobalId());
@@ -301,7 +321,8 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     mockMvc
         .perform(
             createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/pidinst/search", anyUser)
-                .param("query", tooShort))
+                .param("query", tooShort)
+                .param("providers", "PIDINST_B2INST"))
         .andExpect(status().isUnprocessableEntity());
   }
 
@@ -527,6 +548,8 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   @Test
   public void aLinkedIdentifierCannotBePublishedButCanBeDeletedInAnyState() throws Exception {
+    // the identifier endpoints, unlike the lookup, still need a PIDINST provider (ADR 0011)
+    setB2instEnabled("true");
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
     MvcResult imported = importPid(anyUser, apiKey, handle, 201);
@@ -551,16 +574,68 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
-  public void bothEndpointsAreRefusedWhenNoPidinstProviderIsEnabled() throws Exception {
+  public void bothEndpointsWorkWhenNoPidinstProviderIsEnabled() throws Exception {
     setB2instEnabled("false");
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    ApiPidinstSearchResult search =
+        mvcUtils.getFromJsonResponseBody(
+            search(anyUser, apiKey, "microscope"), ApiPidinstSearchResult.class);
+    assertEquals(handle, search.getHits().get(0).getPid());
+
+    importPid(anyUser, apiKey, handle, 201);
+  }
+
+  @Test
+  public void aSecondPageOfAOneHitSearchIsEmptyButKeepsTheTotals() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    ApiPidinstSearchResult page1 =
+        mvcUtils.getFromJsonResponseBody(
+            search(anyUser, apiKey, "microscope", 1), ApiPidinstSearchResult.class);
+
+    assertTrue(page1.getHits().isEmpty());
+    assertEquals(1, page1.getTotalHits());
+    assertEquals(1, page1.getPageNumber());
+  }
+
+  @Test
+  public void aSearchWithoutARegistryOrWithAnUnknownOneIs422() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
     mockMvc
         .perform(
-            createBuilderForInventoryGet(
-                API_VERSION.ONE, apiKey, "/pidinst/search?query=microscope", anyUser))
-        .andExpect(status().isNotFound());
-    importPid(anyUser, apiKey, handle, 404);
+            createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/pidinst/search", anyUser)
+                .param("query", "microscope"))
+        .andExpect(status().isUnprocessableEntity());
+    mockMvc
+        .perform(
+            createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/pidinst/search", anyUser)
+                .param("query", "microscope")
+                .param("providers", "IGSN_DATACITE"))
+        .andExpect(status().isUnprocessableEntity());
+  }
+
+  @Test
+  public void anImportWithoutAProviderIs400() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiPidinstImportPost post = new ApiPidinstImportPost();
+    post.setPid(handle);
+
+    mockMvc
+        .perform(
+            createBuilderForInventoryPostWithJSONBody(
+                apiKey, "/instruments/importPidinst", anyUser, post))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void theLookupRegistriesDefaultToTheProductionHosts() {
+    assertEquals("https://api.datacite.org", dataCiteLookupUrl);
+    assertEquals("https://b2inst.gwdg.de", b2instLookupUrl);
   }
 }
