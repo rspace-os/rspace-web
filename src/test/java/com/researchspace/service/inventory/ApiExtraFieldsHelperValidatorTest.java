@@ -32,7 +32,9 @@ public class ApiExtraFieldsHelperValidatorTest {
     assertEquals(1, e.getErrorCount());
     assertEquals("errors.inventory.field.validation", e.getFieldError().getCode());
     assertEquals(
-        "'this is not a number' cannot be parsed into number", e.getFieldError().getArguments()[0]);
+        "'this is not a number' is not a valid number or exceeds the supported precision and"
+            + " range.",
+        e.getFieldError().getArguments()[0]);
     assertEquals("content", e.getFieldError().getField());
   }
 }
