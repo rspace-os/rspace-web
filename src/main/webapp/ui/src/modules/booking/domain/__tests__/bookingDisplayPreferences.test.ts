@@ -63,6 +63,21 @@ describe("Booking display preferences", () => {
     await expect(fetchBookingDisplayPreferences("token")).rejects.toThrow();
   });
 
+  it("reads a missing time format as Automatic and rejects unknown ones", async () => {
+    let document: object = inherited;
+    server.use(http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(document)));
+
+    const withoutTimeFormat = await fetchBookingDisplayPreferences("token");
+    expect(withoutTimeFormat.timeFormat).toBe("AUTOMATIC");
+    expect(resolveBookingDisplayPreferences(withoutTimeFormat).timeFormat).toBe("AUTOMATIC");
+
+    document = { ...inherited, timeFormat: "H24" };
+    expect(resolveBookingDisplayPreferences(await fetchBookingDisplayPreferences("token")).timeFormat).toBe("H24");
+
+    document = { ...inherited, timeFormat: "SOMETIMES" };
+    await expect(fetchBookingDisplayPreferences("token")).rejects.toThrow();
+  });
+
   it("sends only the strict replacement document", async () => {
     let body: unknown;
     server.use(

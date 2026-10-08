@@ -1,6 +1,7 @@
 import * as v from "valibot";
 import {
   type BookingDisplayPreferencesInput,
+  BookingTimeFormatSchema,
   BookingTimezoneModeSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
@@ -31,6 +32,7 @@ const bookingDisplayPreferencesEntries = {
   availabilityWindowEnd: v.string(),
   timezoneMode: BookingTimezoneModeSchema,
   customTimezone: v.nullable(v.string()),
+  timeFormat: v.optional(BookingTimeFormatSchema, "AUTOMATIC"),
   institutionTimezone: v.string(),
 };
 
