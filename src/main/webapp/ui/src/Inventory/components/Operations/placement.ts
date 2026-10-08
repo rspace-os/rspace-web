@@ -10,9 +10,9 @@ export type PlacementSelection = { mode: "workbench" } | { mode: "container"; co
 export const WORKBENCH: PlacementSelection = { mode: "workbench" };
 
 /**
- * The step configures `container.contentSearch`, which is the same observable instance the
- * container's own page renders, so its defaults are restored and its slot selection cleared once
- * the wizard is done with it.
+ * Undoes `prepareContainer` once the wizard is done with the container. The step's picker memoises
+ * its records, so picking the same container again returns this instance, which must not keep the
+ * empty-only rule or the old slot selection.
  */
 export function releaseContainer(container: ContainerModel): void {
   runInAction(() => {
