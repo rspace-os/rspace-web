@@ -20,9 +20,9 @@ public class B2instOwner {
   private String ownerName;
 
   /**
-   * Contact (for example an email address) for the owner. Bound when a registry record is read, but
-   * never set on what RSpace sends, so that no account's email reaches the permanent public record
-   * (ADR 0008, decision 4).
+   * Contact (for example an email address) for the owner. Bound when a registry record is read;
+   * ownerOf leaves it unset. It must never come from an account attribute such as the owner's
+   * email, which would sit on a permanent public record (ADR 0008, decision 4).
    */
   @JsonProperty("ownerContact")
   private String ownerContact;
