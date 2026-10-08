@@ -195,8 +195,7 @@ That table must change in the same commit as any limit, default, message or rout
 - Rows the migration cannot parse are left as they were and logged at ERROR by username. Those
   users cannot log in until an administrator resets their password.
 - Two encoder ids exist in the `password` column permanently: a legacy row stays wrapped until
-  its owner changes their password. `PasswordEncoder.upgradeEncoding` is implemented but nothing
-  calls it. The legacy verify path, including Shiro's exact byte ordering for the salted hash, was
+  its owner changes their password. The legacy verify path, including Shiro's exact byte ordering for the salted hash, was
   pinned by tests against fixtures generated with the old Shiro code and then hard-coded, before
   that code was removed. The salted `CryptoUtils.hashWithSha256inHex` helper is gone.
 - `Argon2PasswordEncoder` requires BouncyCastle. Two `bcprov` lines are already on the compile

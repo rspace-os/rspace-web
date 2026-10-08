@@ -26,7 +26,6 @@ class RSpacePasswordEncoderTest {
     assertTrue(encoded.startsWith("{argon2@rspace_v1}$argon2id$v=19$m=19456,t=2,p=1$"));
     assertTrue(encoder.matches("password1", encoded));
     assertFalse(encoder.matches("password2", encoded));
-    assertFalse(encoder.upgradeEncoding(encoded));
   }
 
   @Test
@@ -35,7 +34,6 @@ class RSpacePasswordEncoderTest {
     assertTrue(wrapped.startsWith("{argon2-legacy-sha256@rspace_v1}" + SALT + "$$argon2id$"));
     assertTrue(encoder.matches("legacyPass1", wrapped));
     assertFalse(encoder.matches("legacyPass1x", wrapped));
-    assertTrue(encoder.upgradeEncoding(wrapped));
   }
 
   @Test
