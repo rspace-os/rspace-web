@@ -32,10 +32,9 @@ await i18n.loadNamespaces([
 ]);
 
 /*
- * A single MSW worker shared by every browser-mode test. Tests register their
- * request handlers per-suite via `worker.use(...)`; handlers are reset after
- * each test so suites stay isolated (the MSW equivalent of Playwright's
- * per-test `router.route`).
+ * Each test file has its own JavaScript handler state. The browser service
+ * worker registration is shared at the origin. Tests add handlers with
+ * worker.use(); resetHandlers() restores the defaults after each test.
  */
 export const worker = setupWorker(...appShellHandlers(), oauthTokenHandler(), ...galleryAppShellHandlers());
 
@@ -82,22 +81,14 @@ export function suppressFireAndForget404(matchers: ReadonlyArray<RegExp | string
 }
 
 /*
- * Vitest browser mode runs each test file in its own isolated module graph, so
- * this `worker` and its `beforeAll` hook are recreated per file. The service
- * worker itself, however, is registered once at the browser origin and persists
- * across files. We deliberately DO NOT stop the worker between files: stopping
- * the shared, origin-global worker in one file's teardown deactivates request
- * interception for subsequently-running files, opening a window where their
- * requests fall through to the real server and 404 (observed as cross-file
- * flakiness in the gallery suites). The worker is torn down for free when the
- * browser context closes at the end of the run, so an explicit stop is
- * unnecessary as well as harmful.
+ * browserWorkerRegistration.ts clears Firefox's previous registration before
+ * this module runs. Every file must still await start() to activate its client.
+ * Do not stop the worker in test teardown; the incoming file owns registration
+ * renewal and the browser context owns final cleanup.
  *
- * Because the worker is already active, every file after the first calls
- * `worker.start()` redundantly; MSW logs that as a "no effect" warning. There
- * is no JS state shared across the per-file contexts to coordinate this and the
- * call is harmless, so we silence just that one message to keep the test output
- * clean without masking other MSW diagnostics.
+ * MSW shares its network source between setupWorker instances in one iframe.
+ * Repeated starts can warn when this setup module is also imported by a spec.
+ * Silence only that warning, not failures from the awaited start().
  */
 const REDUNDANT_MSW_CALL = /\[MSW\] Found a redundant "worker\.start\(\)" call/;
 const originalWarn = console.warn.bind(console);
