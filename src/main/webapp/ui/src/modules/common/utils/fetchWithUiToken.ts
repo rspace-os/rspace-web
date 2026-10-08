@@ -49,7 +49,9 @@ async function recoverSession(authorization: string, identityRejected: boolean):
     return;
   }
 
-  const tokenResponse = await fetch("/userform/ajax/inventoryOauthToken", {
+  // Mint a session-bound API v2 token: the legacy Inventory token route refuses Operate As.
+  const tokenResponse = await fetch("/api/v2/oauth/tokens", {
+    method: "POST",
     headers: { "X-Requested-With": "XMLHttpRequest" },
   });
   if (tokenResponse.status === 401 || tokenResponse.status === 403) {
@@ -64,7 +66,7 @@ async function recoverSession(authorization: string, identityRejected: boolean):
     globalThis.location.assign("/login");
     return;
   }
-  const { data: token } = (await tokenResponse.json()) as { data?: unknown };
+  const { accessToken: token } = (await tokenResponse.json()) as { accessToken?: unknown };
   if (typeof token !== "string" || !token) {
     clearStoredToken();
     globalThis.location.assign("/login");

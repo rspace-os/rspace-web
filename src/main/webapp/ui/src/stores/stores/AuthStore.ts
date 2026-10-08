@@ -20,7 +20,7 @@ import {
 } from "./systemSettingsMapping";
 
 /* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
-const publicView = document.getElementById("public_document_view") !== null;
+const isPublicDocumentView = () => document.getElementById("public_document_view") !== null;
 
 export type {
   B2InstSettings,
@@ -61,13 +61,14 @@ export default class AuthStore {
       clearTimeout(this.timeoutId);
     }
     this.isAuthenticated = false;
-    const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
-    return axios
-      .get<{ data: string }>(oAuthUrl)
+    const tokenRequest = isPublicDocumentView()
+      ? axios
+          .get<{ data: string }>("/public/publicView/userform/ajax/inventoryOauthToken")
+          .then((response) => response.data.data)
+      : axios.post<{ accessToken: string }>("/api/v2/oauth/tokens").then((response) => response.data.accessToken);
+    return tokenRequest
       .then(
-        action((response) => {
-          const token = response.data.data;
-
+        action((token) => {
           if (typeof token === "undefined") {
             // Usually this means that backend returned login.html in response.data
             window.location.href = "/login";
@@ -105,19 +106,6 @@ export default class AuthStore {
       clearTimeout(this.timeoutId);
     }
     this.isSynchronizing = true;
-    const token = JwtService.getToken();
-
-    if (token && !JwtService.isExpiringSoon(token)) {
-      this.isAuthenticated = true;
-      InvApiService.setAuthorizationHeader();
-      ElnApiService.setAuthorizationHeader();
-      this.isSynchronizing = false;
-
-      // Reauthenticate few minutes before token expiry
-      this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
-      return Promise.resolve();
-    }
-
     return this.authenticate();
   }
 

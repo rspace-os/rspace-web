@@ -1,5 +1,8 @@
 package com.researchspace.api.v1.auth;
 
+import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
+import com.researchspace.api.v2.auth.ApiV2Authenticator;
+import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.oauth.OAuthTokenType;
@@ -17,12 +20,30 @@ import org.springframework.stereotype.Service;
 public class OAuthTokenAuthenticator extends AbstractApiAuthenticator {
 
   @Autowired private OAuthTokenManager tokenManager;
+  @Autowired private ApiV2Authenticator apiV2Authenticator;
+
+  @Override
+  public User authenticate(HttpServletRequest request) {
+    String accessToken = retrieveTokenFromHeader(request);
+    if (tokenManager.getUiTokenContext(accessToken).isPresent()) {
+      if (StringUtils.isNotEmpty(request.getHeader("apiKey"))) {
+        throw new ApiAuthenticationException("api.errors.authentication.oauthTokenInvalid");
+      }
+      try {
+        // UI tokens bind their subject, actor, and browser context together. Reuse API v2's live
+        // session validation instead of turning that credential into a stateless v1 login.
+        return apiV2Authenticator.authenticate(request).subject();
+      } catch (ApiV2AuthenticationException ex) {
+        throw new ApiAuthenticationException("api.errors.authentication.oauthTokenInvalid");
+      }
+    }
+    return super.authenticate(request, accessToken);
+  }
 
   Function<String, Optional<AuthenticationResult>> findUserForToken() {
     return accessToken -> {
-      // Session-bound UI tokens are credentials for API v2 only. API v1 has no browser-session
-      // context with which to verify their subject and delegation claims, so accepting one here
-      // would reduce it to an ordinary bearer token.
+      // Keep rejecting signed session-bound tokens in the legacy path in case another caller
+      // reaches this resolver without going through the API v2 validator above.
       if (tokenManager.getUiTokenContext(accessToken).isPresent()) {
         return Optional.empty();
       }
