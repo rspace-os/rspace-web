@@ -2,6 +2,7 @@ package com.researchspace.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -53,6 +54,24 @@ public class PasswordGrantGuessLimiterTest {
     for (int i = 0; i < times; i++) {
       assertTrue(limiter.tryAcquire(username));
     }
+  }
+
+  @Test
+  public void rejectsMaxFailuresBelowOne() {
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new PasswordGrantGuessLimiter(0, WINDOW, 3, ticker, matcher));
+    assertEquals("oauth.passwordGrant.maxFailures must be at least 1", e.getMessage());
+  }
+
+  @Test
+  public void rejectsWindowShorterThanOneSecond() {
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new PasswordGrantGuessLimiter(5, Duration.ZERO, 3, ticker, matcher));
+    assertEquals("oauth.passwordGrant.failureWindowSeconds must be at least 1", e.getMessage());
   }
 
   @Test

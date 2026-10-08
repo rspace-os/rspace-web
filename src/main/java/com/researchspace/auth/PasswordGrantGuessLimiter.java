@@ -41,6 +41,13 @@ public class PasswordGrantGuessLimiter {
       long maxTrackedAccounts,
       Ticker ticker,
       UsernamePasswordCredentialsMatcher credentialsMatcher) {
+    if (maxFailures < 1) {
+      throw new IllegalArgumentException("oauth.passwordGrant.maxFailures must be at least 1");
+    }
+    if (window.compareTo(Duration.ofSeconds(1)) < 0) {
+      throw new IllegalArgumentException(
+          "oauth.passwordGrant.failureWindowSeconds must be at least 1");
+    }
     this.maxFailures = maxFailures;
     this.credentialsMatcher = credentialsMatcher;
     this.sentinel = createSentinel();
