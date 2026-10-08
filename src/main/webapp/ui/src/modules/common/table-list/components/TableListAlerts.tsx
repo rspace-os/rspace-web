@@ -249,7 +249,7 @@ export function TableListAlertStack({
     // A plain polite live region: announces added alerts without claiming the page's single "status" role.
     <div aria-live="polite" aria-relevant="additions text">
       {alerts.length > 0 ? (
-        <ul aria-label={t("tableList.alerts.label")} className="mb-3 space-y-2 pt-3">
+        <ul aria-label={t("tableList.alerts.label")} className="mb-3 space-y-2">
           {alerts.map((alert) => (
             <TableListAlertItem key={alert.renderKey} alert={alert} onUndo={onUndo} onDismiss={onDismiss} />
           ))}
@@ -282,7 +282,7 @@ export function TableListAlertItem({ alert, onUndo, onDismiss }: TableListAlertI
       )}
     >
       {alert.icon ? <span className="flex shrink-0 [&_svg]:size-4">{alert.icon}</span> : null}
-      <p id={messageId} className="min-w-0 flex-1">
+      <p id={messageId} className="min-w-0 flex-1 basis-48">
         {failed ? (alert.failure ?? t("tableList.alerts.undoFailed")) : alert.message}
       </p>
       {alert.actions ? <div className="flex flex-wrap items-center gap-2">{alert.actions}</div> : null}

@@ -352,7 +352,7 @@ Keep `uiColumns` for display-only custom columns. Do not mount a stateful dialog
 ## Report action results with alerts
 
 Any control rendered inside a `TableList` (row actions, selection actions, toolbar controls, and
-`renderInteraction`) can report a result as a one-line alert above the table with
+`renderInteraction`) can report a result as a one-line alert above the table, outside its border, with
 `useTableListAlerts()`. `push` accepts several alerts at once; pushing an existing `id` replaces
 that alert, and the stack shows the newest first. Each alert has a Dismiss control and an optional
 Undo. Use `actions` for links or buttons that apply to the result. The controls wrap with the alert

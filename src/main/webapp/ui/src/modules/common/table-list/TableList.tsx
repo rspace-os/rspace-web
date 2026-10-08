@@ -122,8 +122,8 @@ function TableListContent<TDocument extends Record<string, unknown>>({
               {headerContent ? <div className="mt-5">{headerContent}</div> : null}
             </div>
           )}
+          <TableListAlertStack alerts={alerts.alerts} onUndo={alerts.undo} onDismiss={alerts.api.dismiss} />
           <div className={cn(variant === "card" && "rounded-sm border bg-card px-3")}>
-            <TableListAlertStack alerts={alerts.alerts} onUndo={alerts.undo} onDismiss={alerts.api.dismiss} />
             {clientSide === false && !online ? (
               <p role="status" className="py-3 text-sm text-muted-foreground">
                 {t("tableList.offline")}
