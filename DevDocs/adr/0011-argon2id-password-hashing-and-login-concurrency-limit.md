@@ -227,8 +227,11 @@ That table must change in the same commit as any limit, default, message or rout
   page answer an existing username measurably slower than an unknown one, so `ShiroRealm` runs
   an unknown name (and, when LDAP is off, an LDAP-source user) through `SentinelPasswordCheck`, an
   Argon2 check against a random hash made at startup. On LDAP installs `LdapRealm` pads an
-  internal user's early exit the same way; parity with a directory bind is best effort. All
-  padded checks share one per-username lock, so they hold at most one permit. Other public routes
+  internal user's early exit the same way; parity with a directory bind is best effort. Each
+  padded check queues on its own lock and takes one permit, exactly like a real username, so
+  admission timing is the same for both; the permit pool, not the lock, bounds a flood of made-up
+  names, as it already does for a flood of real ones. A per-address cap on checks in flight needs
+  the trusted client address from RSDEV-1560 first and follows it. Other public routes
   that still confirm a username are RSDEV-1558.
 - Deferred to follow-on tickets:
   - RSDEV-1558: username existence still leaks from the sign-up form, the reset and reminder
