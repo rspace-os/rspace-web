@@ -70,7 +70,7 @@ export function BookingDisplaySettingsFields({
               }
             />
             <p id={endTimeDescriptionId} className="text-sm text-muted-foreground">
-              {t("preferences.availabilityWindow.endOfDay")}
+              {t("preferences.availabilityWindow.endOfDay", { midnight: "00:00" })}
             </p>
           </div>
         </div>

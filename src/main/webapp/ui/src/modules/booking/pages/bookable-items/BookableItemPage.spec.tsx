@@ -462,7 +462,15 @@ describe("BookableItemPage", () => {
       .all()
       .find((candidate) => candidate.element().getClientRects().length > 0);
     expect(visibleActor?.element().closest('[data-slot="user-badge"]')).not.toBeNull();
-    await expect.element(page.getByText("Results through Aug 25, 2026", { exact: true }).first()).toBeVisible();
+    await expect
+      .element(
+        page
+          .getByText("Updated daily. Showing events through Aug 25, 2026 (UTC); today's changes appear tomorrow.", {
+            exact: true,
+          })
+          .first(),
+      )
+      .toBeVisible();
     await expect.poll(() => auditRequests).toBe(1);
     await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123/audit");
 

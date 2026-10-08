@@ -7,7 +7,23 @@ import java.util.List;
 /** Manages personal booking-notification preferences and instrument subscriptions. */
 public interface BookingNotificationSubscriptionManager {
 
-  record Preferences(boolean autoSubscribeOwnedItems) {}
+  /**
+   * The caller's booking-notification choices.
+   *
+   * @param autoSubscribeOwnedItems whether newly owned bookable instruments start subscribed
+   * @param notifyOnCreated the My Profile "booking created" notification preference
+   * @param notifyOnCancelled the My Profile "booking cancelled" notification preference
+   * @param emailDelivery the effective My Profile preference for emailing notifications; read-only
+   */
+  record Preferences(
+      boolean autoSubscribeOwnedItems,
+      boolean notifyOnCreated,
+      boolean notifyOnCancelled,
+      boolean emailDelivery) {}
+
+  /** The editable subset of {@link Preferences}. */
+  record PreferenceChanges(
+      boolean autoSubscribeOwnedItems, boolean notifyOnCreated, boolean notifyOnCancelled) {}
 
   record Status(
       long configurationId,
@@ -17,11 +33,17 @@ public interface BookingNotificationSubscriptionManager {
       boolean cancelledEnabled,
       boolean emailEnabled) {}
 
-  /** Returns the current subject's default for future owned instruments. */
+  /**
+   * Returns the current subject's default for future owned instruments, the booking event
+   * preferences shared with My Profile, and the effective email delivery preference.
+   */
   Preferences getPreferences(User subject, User actor);
 
-  /** Replaces only the current subject's future default. */
-  Preferences replacePreferences(boolean autoSubscribeOwnedItems, User subject, User actor);
+  /**
+   * Replaces the subject's future default and both booking event preferences. Existing
+   * subscriptions and the email delivery preference are unchanged.
+   */
+  Preferences replacePreferences(PreferenceChanges changes, User subject, User actor);
 
   /** Reads one visible configuration's personal subscription and effective event delivery. */
   Status get(long configurationId, User subject, User actor);
