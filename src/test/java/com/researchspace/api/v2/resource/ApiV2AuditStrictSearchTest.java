@@ -29,6 +29,9 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,6 +64,43 @@ class ApiV2AuditStrictSearchTest {
 
     assertEquals(2, results.size());
     assertEquals(results.get(0), results.get(1));
+  }
+
+  @Test
+  void searchesOnTheSameInstanceCanReadConcurrently() throws Exception {
+    write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    CountDownLatch entered = new CountDownLatch(2);
+    CountDownLatch release = new CountDownLatch(1);
+    ApiV2AuditStrictSearch search =
+        search(
+            new ReadObserver() {
+              @Override
+              public void afterManifest(int attempt, List<FileManifest> manifest) {
+                entered.countDown();
+                try {
+                  if (!release.await(10, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Concurrent search was not released");
+                  }
+                } catch (InterruptedException error) {
+                  Thread.currentThread().interrupt();
+                  throw new IllegalStateException(error);
+                }
+              }
+            },
+            10);
+    var executor = Executors.newFixedThreadPool(2);
+    try {
+      var first = executor.submit(() -> search.search(request(10)));
+      var second = executor.submit(() -> search.search(request(10)));
+      assertTrue(entered.await(5, TimeUnit.SECONDS), "Both searches should enter independently");
+      release.countDown();
+      assertEquals(1, first.get(5, TimeUnit.SECONDS).size());
+      assertEquals(1, second.get(5, TimeUnit.SECONDS).size());
+    } finally {
+      release.countDown();
+      executor.shutdownNow();
+    }
+    assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));
   }
 
   @Test
