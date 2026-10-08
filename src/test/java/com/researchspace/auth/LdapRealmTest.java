@@ -120,7 +120,7 @@ public class LdapRealmTest {
     when(userManager.getUserByUsername(testUsername)).thenReturn(createAnyUser(testUsername));
 
     assertNull(ldapRealm.doGetAuthenticationInfo(token));
-    verify(sentinelCheck).pad("anypass");
+    verify(sentinelCheck).pad(testUsername, "anypass");
     verifyNoInteractions(userLdapRepo);
   }
 
