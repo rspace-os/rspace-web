@@ -123,6 +123,13 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
   const [shiftOrigin, setShiftOrigin] = useState<Coord | null>(null);
 
   /*
+   * In a selection-only grid, the locations the current Shift+Arrow range
+   * added. Locations picked before the range began are kept as it grows or
+   * shrinks.
+   */
+  const shiftRange = useRef<Set<Location>>(new Set());
+
+  /*
    * When the user taps anywhere inside the table, initially we want to do
    * nothing but record where they tapped. If after 500ms they have neither
    * moved the cursor nor releases the click then drag-and-drop should be
@@ -257,6 +264,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
               if (!focused) return;
               const wasSelected = focused.selected;
               container.onSelect(focused, search);
+              setShiftOrigin(null);
               if (wasSelected || focused.selected) setAnnouncement(null);
               else if (!focused.isSelectable(search)) announce(t("container.content.keyboard.occupied"));
               else
@@ -304,18 +312,26 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             const top = Math.min(y, origin.y);
             const bottom = Math.max(y, origin.y);
 
-            const toSelect = new Set(
-              (container.locations ?? [])
-                .filter(
-                  (l) =>
-                    l.coordX >= left &&
-                    l.coordX <= right &&
-                    l.coordY >= top &&
-                    l.coordY <= bottom &&
-                    (!emptyOnly || l.selected || l.isSelectable(search)),
-                )
-                .slice(0, emptyOnly ? selectionLimit : Infinity),
+            const inRectangle = (container.locations ?? []).filter(
+              (l) =>
+                l.coordX >= left &&
+                l.coordX <= right &&
+                l.coordY >= top &&
+                l.coordY <= bottom &&
+                (!emptyOnly || l.selected || l.isSelectable(search)),
             );
+            let toSelect = new Set(inRectangle.slice(0, emptyOnly ? selectionLimit : Infinity));
+            if (selectionOnly && e.shiftKey) {
+              const previousRange = shiftOrigin ? shiftRange.current : new Set<Location>();
+              const earlierPicks = new Set((container.selectedLocations ?? []).filter((l) => !previousRange.has(l)));
+              const room = Math.max(selectionLimit - earlierPicks.size, 0);
+              const candidates = inRectangle.filter((l) => !earlierPicks.has(l));
+              const range = candidates.slice(0, room);
+              if (candidates.length > room)
+                announce(t("container.content.keyboard.limitReached", { count: earlierPicks.size + range.length }));
+              shiftRange.current = new Set(range);
+              toSelect = new Set([...earlierPicks, ...range]);
+            }
             if (!selectionOnly || e.shiftKey) {
               // Cells already in the right state are left alone, so the Move dialog's staged previews survive.
               container.locations?.forEach((l) => {

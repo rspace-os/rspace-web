@@ -181,14 +181,38 @@ describe("ContentGrid", () => {
         expect(selectedCount()).toBe(0);
       });
 
-      it("replaces the selection with the range when Shift+Arrow is used", async () => {
+      it("keeps locations picked earlier when Shift+Arrow selects a range", async () => {
         const user = userEvent.setup();
         const box = emptyBox();
         prepareContainer(box, 4);
         renderGrid(box);
         await user.tab();
         await user.keyboard(" {ArrowDown}{ArrowRight}{Shift>}{ArrowUp}{/Shift}");
-        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "true"]);
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "true", "false", "true"]);
+      });
+
+      it("deselects only the range's own locations when Shift+Arrow shrinks it", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 4);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard("{ArrowDown} {ArrowUp}{Shift>}{ArrowRight}{ArrowLeft}{/Shift}");
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "true", "false"]);
+      });
+
+      it("counts locations picked earlier towards the limit when Shift+Arrow selects a range, and says so", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 2);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard(" {ArrowDown}{Shift>}{ArrowRight}{/Shift}");
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "true", "false"]);
+        expect(screen.getByText("inventory:container.content.keyboard.limitReached").parentElement).toHaveAttribute(
+          "role",
+          "status",
+        );
       });
 
       it("does not let Shift+Arrow select more locations than the limit", async () => {
