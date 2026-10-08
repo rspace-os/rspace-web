@@ -8,46 +8,13 @@ import { afterEach, describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import SearchContext from "@/stores/contexts/Search";
-import { containerAttrs, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import type ContainerModel from "@/stores/models/ContainerModel";
 import type Search from "@/stores/models/Search";
 import getRootStore from "@/stores/stores/getRootStore";
 import materialTheme from "@/theme";
 import ContentGrid from "../ContentGrid";
-
-/** A 2x2 grid box with A1 holding a rack. */
-const boxWithA1Taken = () =>
-  makeMockContainer({
-    id: 1,
-    globalId: "IC1",
-    name: "Box",
-    cType: "GRID",
-    gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
-    locationsCount: 4,
-    contentSummary: { totalCount: 1, subSampleCount: 0, containerCount: 1, instrumentCount: 0 },
-    locations: [
-      {
-        id: 11,
-        coordX: 1,
-        coordY: 1,
-        content: containerAttrs({ id: 9, globalId: "IC9", name: "Rack" }),
-      },
-    ],
-  });
-
-/** An empty 2x2 grid box. */
-const emptyBox = () =>
-  makeMockContainer({
-    id: 2,
-    globalId: "IC2",
-    name: "Empty box",
-    cType: "GRID",
-    gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
-    locationsCount: 4,
-    contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
-    locations: [],
-  });
+import { boxWithA1Taken, emptyBox } from "./gridFixtures";
 
 function renderGrid(box: ContainerModel) {
   render(
@@ -67,34 +34,26 @@ function renderGrid(box: ContainerModel) {
 
 const draggableIn = (cell: HTMLElement) => within(cell).getByRole("button");
 
+/** The location cells, row by row; the header row's corner cell is not one. */
+const cells = () => screen.getAllByRole("cell").filter((c) => c.hasAttribute("aria-selected"));
+
 describe("ContentGrid", () => {
   describe("drag-and-drop", () => {
     it("lets the user drag an item to another location in the container's own grid", () => {
       const box = boxWithA1Taken();
       renderGrid(box);
-      expect(draggableIn(screen.getAllByRole("cell")[0])).toHaveAttribute("aria-disabled", "false");
+      expect(draggableIn(cells()[0])).toHaveAttribute("aria-disabled", "false");
     });
 
     it("is off in a grid used only to choose locations for new records", () => {
       const box = boxWithA1Taken();
       prepareContainer(box, 1);
       renderGrid(box);
-      expect(draggableIn(screen.getAllByRole("cell")[0])).toHaveAttribute("aria-disabled", "true");
-    });
-
-    it("cannot be started from the keyboard in such a grid, so the arrow keys keep moving focus", async () => {
-      const user = userEvent.setup();
-      const box = boxWithA1Taken();
-      prepareContainer(box, 1);
-      renderGrid(box);
-      await user.tab();
-      await user.keyboard(" {ArrowRight} ");
-      expect(screen.getAllByRole("cell")[1]).toHaveAttribute("aria-selected", "true");
+      expect(draggableIn(cells()[0])).toHaveAttribute("aria-disabled", "true");
     });
   });
 
   describe("keyboard selection", () => {
-    const cells = () => screen.getAllByRole("cell");
     const selectedCount = () => cells().filter((c) => c.getAttribute("aria-selected") === "true").length;
 
     it("selects the focused location and Shift+Arrow selects a rectangle, filled or empty", async () => {
@@ -126,36 +85,9 @@ describe("ContentGrid", () => {
         await expectAccessible(document.body);
       });
 
-      it("does not select an occupied location on focus or Escape", async () => {
-        const user = userEvent.setup();
-        const box = boxWithA1Taken();
-        prepareContainer(box, 1);
-        renderGrid(box);
-        await user.tab();
-        expect(cells()[0]).toHaveAttribute("aria-selected", "false");
-        await user.keyboard("{Escape}");
-        expect(cells()[0]).toHaveAttribute("aria-selected", "false");
-      });
-
-      it("selects no more locations than the selection limit", async () => {
-        const user = userEvent.setup();
-        const box = boxWithA1Taken();
-        prepareContainer(box, 1);
-        renderGrid(box);
-        await user.tab();
-        await user.keyboard("{ArrowRight}{Shift>}{ArrowDown}{/Shift}");
-        expect(cells()[1]).toHaveAttribute("aria-selected", "true");
-        expect(selectedCount()).toBe(1);
-      });
-
       it("does not select a focused empty location once the selection limit is reached", async () => {
         const user = userEvent.setup();
-        const box = makeMockContainer({
-          cType: "GRID",
-          gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
-          locationsCount: 4,
-          contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
-        });
+        const box = emptyBox();
         prepareContainer(box, 1);
         box.locations?.[3].toggleSelected(true);
         renderGrid(box);
@@ -166,36 +98,38 @@ describe("ContentGrid", () => {
     });
 
     describe("in the Move dialog", () => {
+      /** Configures the grid as MoveStore.setIsMoving does for its destination panel. */
+      function startMoving(box: ContainerModel, items: ReadonlyArray<ReturnType<typeof makeMockSubSample>>) {
+        const { moveStore } = getRootStore();
+        runInAction(() => {
+          moveStore.isMoving = true;
+          moveStore.search = { activeResult: box } as unknown as Search;
+          moveStore.selectedResults = [...items];
+          Object.assign(box.contentSearch.uiConfig, {
+            selectionMode: "MULTIPLE",
+            selectionLimit: items.length,
+            onlyAllowSelectingEmptyLocations: true,
+            dragAndDropDisabled: true,
+          });
+        });
+      }
+
       afterEach(() => {
         runInAction(() => {
-          getRootStore().moveStore.isMoving = false;
-          getRootStore().moveStore.selectedResults = [];
+          const { moveStore } = getRootStore();
+          moveStore.isMoving = false;
+          moveStore.search = null;
+          moveStore.selectedResults = [];
         });
       });
 
       it("keeps the first location's staged item when Shift+Arrow extends the selection", async () => {
         const user = userEvent.setup();
-        const box = makeMockContainer({
-          id: 2,
-          globalId: "IC2",
-          name: "Empty box",
-          cType: "GRID",
-          gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
-          locationsCount: 4,
-          locations: [],
-        });
-        const moving = [
+        const box = emptyBox();
+        startMoving(box, [
           makeMockSubSample({ id: 101, globalId: "SS101" }),
           makeMockSubSample({ id: 102, globalId: "SS102" }),
-        ];
-        const { moveStore } = getRootStore();
-        runInAction(() => {
-          moveStore.isMoving = true;
-          moveStore.search = { activeResult: box } as unknown as Search;
-          moveStore.selectedResults = moving;
-          box.contentSearch.uiConfig.onlyAllowSelectingEmptyLocations = true;
-          box.contentSearch.uiConfig.selectionLimit = 2;
-        });
+        ]);
         box.findLocation(1, 1)?.toggleSelected(true);
         renderGrid(box);
         await user.tab();
@@ -204,6 +138,22 @@ describe("ContentGrid", () => {
         expect(cells()[1]).toHaveAttribute("aria-selected", "true");
         const staged = (box.selectedLocations ?? []).map((l) => l.content?.globalId).sort();
         expect(staged).toEqual(["SS101", "SS102"]);
+      });
+
+      it("places each item being moved where Space selects", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        startMoving(box, [
+          makeMockSubSample({ id: 1, globalId: "SS1" }),
+          makeMockSubSample({ id: 2, globalId: "SS2" }),
+        ]);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard(" {ArrowRight}{ArrowDown} ");
+        expect(box.selectedLocations?.map((l) => [l.coordX, l.coordY, l.content?.globalId])).toEqual([
+          [1, 1, "SS1"],
+          [2, 2, "SS2"],
+        ]);
       });
     });
 
@@ -219,6 +169,39 @@ describe("ContentGrid", () => {
         expect(screen.getByText("inventory:container.content.keyboard.selectionTips")).toBeVisible();
       });
 
+      it("lets Space deselect a location", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 2);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard(" ");
+        expect(selectedCount()).toBe(1);
+        await user.keyboard(" ");
+        expect(selectedCount()).toBe(0);
+      });
+
+      it("replaces the selection with the range when Shift+Arrow is used", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 4);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard(" {ArrowDown}{ArrowRight}{Shift>}{ArrowUp}{/Shift}");
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "true"]);
+      });
+
+      it("does not let Shift+Arrow select more locations than the limit", async () => {
+        const user = userEvent.setup();
+        const box = boxWithA1Taken();
+        prepareContainer(box, 1);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard("{ArrowRight}{Shift>}{ArrowDown}{/Shift}");
+        expect(cells()[1]).toHaveAttribute("aria-selected", "true");
+        expect(selectedCount()).toBe(1);
+      });
+
       it("does not let Space select more locations than the limit, and says why", async () => {
         const user = userEvent.setup();
         const box = emptyBox();
@@ -227,7 +210,41 @@ describe("ContentGrid", () => {
         await user.tab();
         await user.keyboard(" {ArrowRight}{ArrowDown} ");
         expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "false", "false"]);
-        expect(screen.getByText("inventory:container.content.keyboard.limitReached")).toHaveAttribute("role", "status");
+        expect(screen.getByText("inventory:container.content.keyboard.limitReached").parentElement).toHaveAttribute(
+          "role",
+          "status",
+        );
+      });
+
+      it("clears the explanation once the user moves on, and repeats it on the next refused Space", async () => {
+        const user = userEvent.setup();
+        const box = boxWithA1Taken();
+        prepareContainer(box, 2);
+        renderGrid(box);
+        const explanation = () => screen.queryByText("inventory:container.content.keyboard.occupied");
+        await user.tab();
+        await user.keyboard(" ");
+        const first = explanation();
+        await user.keyboard(" ");
+        expect(explanation()).not.toBeNull();
+        expect(explanation()).not.toBe(first);
+        await user.keyboard("{ArrowRight}");
+        expect(explanation()).toBeNull();
+        await user.keyboard("{ArrowLeft} {Escape}");
+        expect(explanation()).toBeNull();
+      });
+
+      it("says why Space does not select an occupied location", async () => {
+        const user = userEvent.setup();
+        const box = boxWithA1Taken();
+        prepareContainer(box, 2);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard(" ");
+        expect(screen.getByText("inventory:container.content.keyboard.occupied").parentElement).toHaveAttribute(
+          "role",
+          "status",
+        );
       });
 
       it("does not select on focus or with the arrow keys, ignores occupied locations, and Escape clears everything", async () => {
@@ -242,39 +259,6 @@ describe("ContentGrid", () => {
         expect(selectedCount()).toBe(2);
         await user.keyboard("{Escape}");
         expect(selectedCount()).toBe(0);
-      });
-
-      it("in the Move dialog, places each item being moved where Space selects", async () => {
-        const user = userEvent.setup();
-        const box = emptyBox();
-        const items = [makeMockSubSample({ id: 1, globalId: "SS1" }), makeMockSubSample({ id: 2, globalId: "SS2" })];
-        const { moveStore } = getRootStore();
-        runInAction(() => {
-          moveStore.isMoving = true;
-          moveStore.search = { activeResult: box } as unknown as Search;
-          moveStore.selectedResults = items;
-          Object.assign(box.contentSearch.uiConfig, {
-            selectionMode: "MULTIPLE",
-            selectionLimit: items.length,
-            onlyAllowSelectingEmptyLocations: true,
-            dragAndDropDisabled: true,
-          });
-        });
-        try {
-          renderGrid(box);
-          await user.tab();
-          await user.keyboard(" {ArrowRight}{ArrowDown} ");
-          expect(box.selectedLocations?.map((l) => [l.coordX, l.coordY, l.content?.globalId])).toEqual([
-            [1, 1, "SS1"],
-            [2, 2, "SS2"],
-          ]);
-        } finally {
-          runInAction(() => {
-            moveStore.isMoving = false;
-            moveStore.search = null;
-            moveStore.selectedResults = [];
-          });
-        }
       });
     });
   });

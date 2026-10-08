@@ -1,10 +1,10 @@
 import "@/stores/stores/RootStore";
 import { describe, expect, test, vi } from "vitest";
-import { makeMockContainer } from "../../../models/__tests__/ContainerModel/mocking";
-import MoveStore from "../../MoveStore";
-import type { RootStore } from "../../RootStore";
+import { makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import MoveStore from "@/stores/stores/MoveStore";
+import type { RootStore } from "@/stores/stores/RootStore";
 
-vi.mock("../../../../common/InvApiService", () => ({
+vi.mock("@/common/InvApiService", () => ({
   default: {
     query: vi.fn(() => Promise.resolve({ data: { containers: [], totalHits: 0 } })),
   },

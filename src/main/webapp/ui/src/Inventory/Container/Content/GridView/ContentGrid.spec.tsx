@@ -1,11 +1,12 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
-import { SelectionOnlyGrid } from "./ContentGrid.story";
+import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
+import { ContainerPageGrid, SelectionOnlyGrid } from "./ContentGrid.story";
 import { ContentGridPage } from "./pageObjects/ContentGridPage";
 
 /*
  * Browser mode: jsdom does not model focus moving between the grid's roving
- * tab stops, which this keyboard flow depends on.
+ * tab stops, which these keyboard flows depend on.
  */
 describe("ContentGrid", () => {
   afterEach(cleanup);
@@ -26,5 +27,28 @@ describe("ContentGrid", () => {
     await grid.press(" ");
     await expect.element(grid.cell(3)).toHaveAttribute("aria-selected", "true");
     await expect.element(grid.cell(2)).toHaveAttribute("aria-selected", "false");
+
+    await grid.press("{ArrowLeft} ");
+    await expect.element(grid.announcement).toBeInTheDocument();
+    expect(grid.announcementWidth()).toBeLessThanOrEqual(1);
+    // axe measures the tips' contrast mid-fade otherwise.
+    await expect.poll(() => grid.tipsOpacity()).toBe("1");
+    await expectNoAxeViolations();
+  });
+
+  test("on the container page, the arrows still move the selection and Shift+Arrow selects a range", async () => {
+    render(<ContainerPageGrid />);
+    const grid = new ContentGridPage();
+    await expect.element(grid.grid).toBeInTheDocument();
+
+    await grid.tabIntoGrid();
+    await grid.press("{Shift>}{ArrowRight}{/Shift}");
+    await expect.element(grid.cell(0)).toHaveAttribute("aria-selected", "true");
+    await expect.element(grid.cell(1)).toHaveAttribute("aria-selected", "true");
+
+    await grid.press("{ArrowDown}");
+    await expect.element(grid.cell(3)).toHaveAttribute("aria-selected", "true");
+    await expect.element(grid.cell(0)).toHaveAttribute("aria-selected", "false");
+    await expect.element(grid.cell(1)).toHaveAttribute("aria-selected", "false");
   });
 });

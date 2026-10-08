@@ -2432,7 +2432,8 @@ export default interface Resources {
         "gridViewLabel": "Container contents grid",
         "keyboard": {
           "dragTips": "Press Enter to drop items. Press Escape to cancel.",
-          "limitReached": "You have already selected {count, plural, one {# location} other {# locations}}.",
+          "limitReached": "Selection limit reached: {count, plural, one {# location} other {# locations}} already selected.",
+          "occupied": "This location is not empty.",
           "selectionTips": "Use the arrow keys to move. Press Space to select or deselect a location. Hold Shift to select a range. Press Escape to clear selection.",
           "tips": "Expand selection by holding Shift. Press Space to enter drag-and-drop mode. Press Escape to clear selection."
         },

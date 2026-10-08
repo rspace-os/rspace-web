@@ -20,6 +20,7 @@ import { useConfirm } from "@/components/ConfirmProvider";
 import useOauthToken from "@/hooks/auth/useOauthToken";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { getErrorMessage } from "@/util/error";
+import { visuallyHidden } from "@/util/visuallyHidden";
 import createAccentedTheme, { type AccentColor } from "../../accentedTheme";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
@@ -262,20 +263,6 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
     </Box>
   );
 }
-
-/**
- * Taken from https://www.a11yproject.com/posts/how-to-hide-content/, as in VisuallyHiddenHeading.
- * 1px rather than 0px because VoiceOver will not announce an element with no dimensions.
- */
-const visuallyHidden = {
-  position: "absolute",
-  height: "1px",
-  width: "1px",
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  clip: "rect(1px, 1px, 1px, 1px)",
-  clipPath: "inset(50%)",
-} as const;
 
 type PidinstImportDialogArgs = {
   open: boolean;
