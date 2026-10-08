@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 
@@ -58,6 +59,7 @@ export function BookingSummaryList({
   showActor?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const accordionName = useId();
   const bookingSignature = bookings.map((booking) => `${booking.id}:${booking.start}:${booking.end}`).join("|");
   const [requestedPage, setRequestedPage] = useState(0);
@@ -77,7 +79,7 @@ export function BookingSummaryList({
       <ul className="space-y-1">
         {visibleBookings.map((booking) => {
           const itemName = booking.target?.value.name ?? t("calendar.feed.unknownItem");
-          const period = formatAgendaPeriod(booking.start, booking.end, timeZone);
+          const period = formatAgendaPeriod(booking.start, booking.end, timeZone, undefined, timeFormat);
           const periodTooltip = {
             start: booking.start,
             end: booking.end,

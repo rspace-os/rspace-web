@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { type BookingTimeFormat, formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import i18n from "@/modules/common/i18n";
 import { Badge } from "@/modules/common/ui/badge";
@@ -10,17 +10,16 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import type { BookingListDocument } from "../../domain/booking";
 
-function dateTime(value: BookingListDocument["start"], timeZone: string, instrumentTimeZone: string | null): ReactNode {
+function dateTime(
+  value: BookingListDocument["start"],
+  timeZone: string,
+  instrumentTimeZone: string | null,
+  timeFormat: BookingTimeFormat,
+): ReactNode {
   return (
     <BookingInstrumentTimeTooltip start={value} displayTimeZone={timeZone} instrumentTimeZone={instrumentTimeZone}>
-      <time dateTime={value}>
-        {new Intl.DateTimeFormat(i18n.language, {
-          dateStyle: "medium",
-          timeStyle: "short",
-          hourCycle: bookingHourCycle(),
-          timeZone,
-        }).format(new Date(value))}
-      </time>
+      {/* On a clock-change day the offset tells the two occurrences of a repeated hour apart. */}
+      <time dateTime={value}>{formatBookingDateTime(value, timeZone, i18n.language, timeFormat)}</time>
     </BookingInstrumentTimeTooltip>
   );
 }
@@ -36,7 +35,10 @@ function BookingStateBadge({ state }: { state: BookingListDocument["state"] }) {
   );
 }
 
-export function bookingListConfig(timeZone: string): CollectionConfig<BookingListDocument> {
+export function bookingListConfig(
+  timeZone: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+): CollectionConfig<BookingListDocument> {
   return {
     slug: "my-bookings",
     relationshipSources: bookingRelationshipSources,
@@ -105,14 +107,22 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
         type: "dateTime",
         labelKey: "booking:myBookings.fields.start",
         // Fits a medium date with a 12-hour time ("Sep 30, 2026, 10:00 AM"); the defaults total 1100px so the table fits the 1120px content column at 1440px.
-        list: { width: 185, minWidth: 180, renderCell: ({ row }) => dateTime(row.start, timeZone, row.timezone) },
+        list: {
+          width: 185,
+          minWidth: 180,
+          renderCell: ({ row }) => dateTime(row.start, timeZone, row.timezone, timeFormat),
+        },
       },
       {
         name: "end",
         type: "dateTime",
         labelKey: "booking:myBookings.fields.end",
         // Fits a medium date with a 12-hour time ("Sep 30, 2026, 10:00 AM"); the defaults total 1100px so the table fits the 1120px content column at 1440px.
-        list: { width: 185, minWidth: 180, renderCell: ({ row }) => dateTime(row.end, timeZone, row.timezone) },
+        list: {
+          width: 185,
+          minWidth: 180,
+          renderCell: ({ row }) => dateTime(row.end, timeZone, row.timezone, timeFormat),
+        },
       },
       {
         name: "purpose",
