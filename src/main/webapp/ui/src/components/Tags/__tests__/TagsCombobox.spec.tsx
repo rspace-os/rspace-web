@@ -1,6 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import AddTag from "../AddTag";
 import { makeTags, ontologyTagsHandler } from "./mocks/tagsComboboxMocks";
 import { TagsComboboxPage } from "./pageObjects/TagsComboboxPage";
