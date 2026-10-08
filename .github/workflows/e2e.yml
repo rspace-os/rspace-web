@@ -62,7 +62,7 @@ jobs:
           retention-days: 1
 
   e2e:
-    name: ${{ inputs.mode }} / ${{ matrix.cloud && 'cloud' || 'standard' }} / ${{ matrix.project }} / shard ${{ matrix.shard }}
+    name: e2e (${{ matrix.java-version }}, ${{ matrix.project }}, ${{ matrix.shard }}${{ matrix.cloud && ', cloud' || '' }})
     needs: build
     runs-on: ubuntu-latest
     env:
