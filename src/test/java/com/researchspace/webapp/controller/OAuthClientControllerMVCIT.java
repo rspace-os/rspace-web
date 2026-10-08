@@ -322,6 +322,8 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
                 .param("password", "wrong-password"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.message").value(CLIENT_ERROR));
+
+    verify(reauthenticator, never()).reauthenticate(any(), any());
   }
 
   @Test
