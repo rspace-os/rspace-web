@@ -137,6 +137,13 @@ describe("Calendar page", () => {
       )
       .toBe(true);
     expect(new URLSearchParams(history.location.search).get("target")).toBe("IN124");
+
+    await expect.element(page.getByText("Bookable item: Electron microscope (IN124)", { exact: true })).toBeVisible();
+    await calendar.removeTargetFilter.click();
+    await expect.poll(() => new URLSearchParams(history.location.search).has("target")).toBe(false);
+    expect(new URLSearchParams(history.location.search).get("date")).toBe("2026-08-17");
+    await expect.element(calendar.removeTargetFilter).not.toBeInTheDocument();
+    await expect.element(calendar.resourceSchedule.getByText("IN123", { exact: true })).toBeVisible();
   });
 
   test("hides cached events and blocks requests for an unavailable saved item field", async () => {
@@ -368,6 +375,11 @@ describe("Calendar page", () => {
       await calendar.resources.click();
       await expect.element(calendar.week).toHaveAttribute("aria-pressed", "true");
       await expect.element(calendar.month).toBeDisabled();
+      await expect
+        .element(calendar.month)
+        .toHaveAccessibleDescription(
+          "Month isn't available in Resources. Use Time grid or Agenda for a month overview.",
+        );
       await userEvent.keyboard("{Tab}{Enter}");
       await expect.element(calendar.agenda).toHaveAttribute("aria-pressed", "true");
       // Month fades from disabled to enabled when leaving Resources.
@@ -551,6 +563,8 @@ describe("Calendar page", () => {
 
     const event = calendar.event("Confocal microscope");
     await expect.element(event).toBeVisible();
+    // The week grid opens on the availability window; bring the event into view before measuring.
+    event.element().scrollIntoView({ block: "center" });
     const indicator = event.element().querySelector<HTMLElement>("[data-event-expand-indicator]");
     expect(indicator).not.toBeNull();
     const collapsedPosition = indicator?.getBoundingClientRect();
@@ -577,6 +591,41 @@ describe("Calendar page", () => {
 
     await calendar.showEventDetails("Busy").click();
     await expect.element(calendar.viewItemDetails).not.toBeInTheDocument();
+  });
+
+  test("lays the week time grid out on one hour axis", async () => {
+    const overlapping = { ...ownBooking, id: 46, start: "2026-08-17T09:00:00Z", end: "2026-08-17T11:00:00Z" };
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", () =>
+        HttpResponse.json(collectionResponse([ownBooking, overlapping])),
+      ),
+    );
+    render(<CalendarPageStory history={history} preferences={customNewYorkBookingPreferences} />);
+    await calendar.timeGridLayout.click();
+    await calendar.week.click();
+
+    const monday = calendar.timeGrid.getByRole("region", { name: "Monday, August 17, 2026" });
+    const cards = monday.getByRole("button", { name: /^Show details for Confocal microscope/ });
+    await expect.poll(() => cards.all().length).toBe(2);
+    // 09:00 New York, at 56px per hour, less the clearance for its label under the sticky header.
+    // Firefox reports a sub-pixel scroll offset.
+    expect(Math.round(calendar.weekGrid.element().scrollTop)).toBe(9 * 56 - 12);
+    const column = monday.element().getBoundingClientRect();
+    const [first, second] = cards.all().map((card) => {
+      const slot = card.element().closest("li");
+      if (!slot) throw new Error("Week events must render inside the day column list");
+      return slot.getBoundingClientRect();
+    });
+    // 04:00-06:00 and 05:00-07:00 New York overlap, so they share the hour axis side by side.
+    expect(Math.round(first.top - column.top)).toBe(4 * 56);
+    expect(Math.round(second.top - column.top)).toBe(5 * 56);
+    expect(Math.round(first.height)).toBe(2 * 56);
+    expect(Math.round(first.width)).toBe(Math.round(second.width));
+    expect(second.left).toBeGreaterThanOrEqual(first.right - 1);
+    await expectNoAxeViolations();
+
+    await cards.first().click();
+    await expect.element(calendar.viewItemDetails).toBeVisible();
   });
 
   test("edits an editable booking inside its expanded calendar card", async () => {
@@ -1012,7 +1061,8 @@ describe("Calendar page", () => {
   test("opens the full booking form from compact More options", async () => {
     render(<CalendarPageStory history={history} preferences={customNewYorkBookingPreferences} />);
     const dialog = await calendar.openTargetlessBookingDialog();
-    await expect.element(dialog.getByText("Open: 08:00 - 17:00 (Europe/Berlin)")).toBeVisible();
+    // A Berlin item seen from New York: the viewer's own hours for the date, with no timezone named.
+    await expect.element(dialog.getByText(/^Open on this date: \d{2}:\d{2} [AP]M - \d{2}:\d{2} [AP]M$/)).toBeVisible();
     expect(dialog.element().querySelectorAll('input[type="date"]')).toHaveLength(1);
     const compactDate = dialog.getByLabelText("Date");
     const compactStartTime = dialog.getByLabelText("Start time");
@@ -1039,7 +1089,19 @@ describe("Calendar page", () => {
       const itemInformation = page.getByRole("region", { name: "Item information" });
       const start = page.getByRole("group", { name: "Start" });
       await expect.element(itemInformation).toBeVisible();
-      await expect.element(itemInformation.getByText("Opening hours")).toBeVisible();
+      await expect.element(itemInformation.getByText("Open", { exact: true })).toBeVisible();
+      // Hours are in the viewer's timezone; the item's own are behind the globe button.
+      await expect
+        .element(itemInformation.getByText(/^Every day: \d{2}:\d{2} [AP]M - \d{2}:\d{2} [AP]M$/))
+        .toBeVisible();
+      // The item's own hours are in the shared instrument-time tooltip, which the time's button also names.
+      await itemInformation
+        .getByRole("button", { name: /^Every day: .*, Instrument time: .+ \(Europe\/Berlin\)$/ })
+        .hover();
+      await expect
+        .element(page.getByRole("tooltip"))
+        .toHaveTextContent(/^Instrument time: \d{2}:\d{2}\s[AP]M\s-\s\d{2}:\d{2}\s[AP]M \(Europe\/Berlin\)$/);
+      await userEvent.keyboard("{Escape}");
       await expect.element(page.getByRole("button", { name: "Item information" })).not.toBeInTheDocument();
       expect(itemInformation.element().getBoundingClientRect().top).toBeGreaterThanOrEqual(
         item.element().getBoundingClientRect().bottom,
@@ -1053,9 +1115,9 @@ describe("Calendar page", () => {
     const fullStart = page.getByRole("group", { name: "Start" });
     const fullEnd = page.getByRole("group", { name: "End" });
     await expect.element(fullStart.getByLabelText("Date")).toHaveValue("2026-08-18");
-    await expect.element(fullStart.getByLabelText("Time")).toHaveValue("09:15");
+    await expect.element(fullStart.getByLabelText("Start time", { exact: true })).toHaveValue("09:15");
     await expect.element(fullEnd.getByLabelText("Date")).toHaveValue("2026-08-18");
-    await expect.element(fullEnd.getByLabelText("Time")).toHaveValue("10:45");
+    await expect.element(fullEnd.getByLabelText("End time", { exact: true })).toHaveValue("10:45");
     await expect
       .element(page.getByRole("textbox", { name: "Purpose" }))
       .toHaveValue("Carry this draft into the full form");

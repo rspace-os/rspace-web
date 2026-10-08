@@ -1,10 +1,14 @@
+import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { DayTimeline } from "@/modules/booking/components/DayTimeline";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
 import { CalendarEventCard } from "./CalendarEventCard";
+import { CalendarWeekTimeGrid } from "./CalendarWeekTimeGrid";
+import { closedDayRanges } from "./calendarAvailability";
 import {
   actionsFor,
   blockoutActionsFor,
@@ -25,6 +29,8 @@ export function CalendarTimeGrid({
   today,
   availabilityStartMinute,
   availabilityEndMinute,
+  onShowDay,
+  schedule,
   isLoading = false,
 }: {
   date: string;
@@ -34,12 +40,19 @@ export function CalendarTimeGrid({
   today: string;
   availabilityStartMinute: number;
   availabilityEndMinute: number;
+  onShowDay: (day: string) => void;
+  /** The one item in scope; the day view shades its closures. Several items have no single schedule. */
+  schedule?: OpeningSchedule & { globalId: string; timezone: string };
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
   const dates = calendarDates(date, view);
   const month = firstOfMonth(date).slice(0, 7);
   const calendarRef = useScrollToToday(date, view, today);
+  const closedPeriods = React.useMemo(
+    () => (schedule && view === "day" ? closedDayRanges(schedule, date, timezone) : undefined),
+    [schedule, date, timezone, view],
+  );
   return (
     <section aria-label={t("calendar.layout.time-grid")} className="py-3" aria-busy={isLoading}>
       {view === "day" ? (
@@ -49,6 +62,7 @@ export function CalendarTimeGrid({
               date={date}
               timezone={timezone}
               events={eventsOn(events, date, timezone).map((event) => toTimelineEvent(event, date, timezone))}
+              closedPeriods={closedPeriods}
               startWindow={availabilityStartMinute}
               endWindow={availabilityEndMinute}
               showZoomControls={false}
@@ -58,6 +72,17 @@ export function CalendarTimeGrid({
           </div>
           {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
         </div>
+      ) : view === "week" ? (
+        <CalendarWeekTimeGrid
+          onShowDay={onShowDay}
+          dates={dates}
+          events={events}
+          timezone={timezone}
+          today={today}
+          availabilityStartMinute={availabilityStartMinute}
+          availabilityEndMinute={availabilityEndMinute}
+          isLoading={isLoading}
+        />
       ) : (
         <section
           ref={calendarRef}

@@ -162,6 +162,17 @@ export const pastBooking = {
   updatedAt: "2020-08-01T09:00:00Z",
 };
 
+/** A future booking the requester cancelled; it belongs to the cancelled period, not upcoming or past. */
+export const cancelledBooking = {
+  ...upcomingBooking,
+  id: 44,
+  target: target(125, "Light sheet microscope"),
+  state: "CANCELLED",
+  purpose: "Cancelled session",
+  canEdit: false,
+  canCancel: false,
+};
+
 export const roleLostBooking = {
   ...upcomingBooking,
   id: 43,
@@ -197,6 +208,13 @@ function matchesEndFilter(document: unknown, where: string | null): boolean {
   return filter[1] === "gt" ? end > boundary : end <= boundary;
 }
 
+function matchesStateFilter(document: unknown, where: string | null): boolean {
+  const filter = where?.match(/state==(CONFIRMED|CANCELLED)/);
+  if (!filter) return true;
+  if (typeof document !== "object" || document === null || !("state" in document)) return false;
+  return document.state === filter[1];
+}
+
 export function bookingHandlers(
   onListRequest: (url: URL) => void = () => undefined,
   onCountRequest: (url: URL) => void = () => undefined,
@@ -207,9 +225,10 @@ export function bookingHandlers(
     http.get("/api/v2/bookings", ({ request }) => {
       const url = new URL(request.url);
       onListRequest(url);
-      const source = docs ?? [upcomingBooking, pastBooking];
+      const source = docs ?? [upcomingBooking, pastBooking, cancelledBooking];
+      const where = url.searchParams.get("where");
       return HttpResponse.json(
-        page(source.filter((document) => matchesEndFilter(document, url.searchParams.get("where")))),
+        page(source.filter((document) => matchesEndFilter(document, where) && matchesStateFilter(document, where))),
       );
     }),
     http.get("/api/v2/bookings/count", ({ request }) => {

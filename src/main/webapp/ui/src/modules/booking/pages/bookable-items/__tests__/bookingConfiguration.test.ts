@@ -1,7 +1,9 @@
 import { HttpResponse, http } from "msw";
+import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import {
+  BookingConfigurationUpdateInputSchema,
   fetchBookingConfiguration,
   fetchBookingConfigurationByTarget,
   fetchBookingConfigurationDetailsByTarget,
@@ -28,6 +30,8 @@ const configuration = {
   slotGranularityMinutes: 5,
   openingStart: "00:00",
   openingEnd: "24:00",
+  openDays: [1, 2, 3, 4, 5, 6, 7],
+  openingExceptions: [],
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -194,5 +198,46 @@ describe("booking configuration reads", () => {
 
     server.use(http.get("/api/v2/booking-configurations", () => new HttpResponse(null, { status: 500 })));
     await expect(fetchBookingConfigurationByTarget("IN123", "token")).rejects.toThrow("status 500");
+  });
+
+  it("selects the opening policy and rejects a response without it", async () => {
+    let request: Request | undefined;
+    server.use(
+      http.get("/api/v2/booking-configurations/7", ({ request: received }) => {
+        request = received;
+        return HttpResponse.json(configuration);
+      }),
+    );
+    await fetchBookingConfiguration(7, "token");
+    const fields = new URL(request?.url ?? "http://localhost").searchParams.get("fields[booking-configurations]");
+    expect(fields?.split(",")).toEqual(expect.arrayContaining(["openDays", "openingExceptions"]));
+
+    const { openDays: _openDays, ...withoutOpenDays } = configuration;
+    server.use(http.get("/api/v2/booking-configurations/7", () => HttpResponse.json(withoutOpenDays)));
+    await expect(fetchBookingConfiguration(7, "token")).rejects.toThrow();
+  });
+});
+
+describe("booking configuration update input", () => {
+  const update = {
+    enabled: true,
+    slotGranularityMinutes: 5,
+    openingStart: "09:00",
+    openingEnd: "17:00",
+    openDays: [1, 2, 3, 4, 5],
+    openingExceptions: [{ dayOfWeek: 2, start: "10:00", end: "16:00" }],
+    bufferBeforeMinutes: 0,
+    bufferAfterMinutes: 0,
+    maxBookingDurationMinutes: 0,
+    allowDoubleBooking: false,
+  };
+
+  it("accepts an exception on an open day", () => {
+    expect(v.safeParse(BookingConfigurationUpdateInputSchema, update).success).toBe(true);
+  });
+
+  it("drops an exception on a closed day from the submitted output", () => {
+    const output = v.parse(BookingConfigurationUpdateInputSchema, { ...update, openDays: [1, 3, 4, 5] });
+    expect(output.openingExceptions).toEqual([]);
   });
 });

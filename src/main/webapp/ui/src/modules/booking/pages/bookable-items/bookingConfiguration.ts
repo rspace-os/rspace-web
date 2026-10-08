@@ -1,13 +1,16 @@
 import { createElement } from "react";
 import * as v from "valibot";
 import {
+  finalizeOpeningExceptions,
   schedulingSettingsEntries,
   validMaximumBookingDuration,
+  validOpeningExceptions,
   validOpeningHours,
 } from "@/modules/booking/configuration/schedulingSettings";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
 import { bookingTimeZoneOptions, isValidTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import i18n from "@/modules/common/i18n";
@@ -91,6 +94,10 @@ export const BookingConfigurationSchema = v.pipe(
     ["openingEnd"],
   ),
   v.forward(
+    v.check((configuration) => validOpeningExceptions(configuration)),
+    ["openingExceptions"],
+  ),
+  v.forward(
     v.check((configuration) =>
       validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
     ),
@@ -119,6 +126,13 @@ export const BookingConfigurationInputSchema = v.pipe(
     v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
     ["openingEnd"],
   ),
+  // The form keeps a day's exception while the day is unchecked, so re-checking it restores the exception even
+  // after a failed save; the submitted output drops it.
+  v.transform(finalizeOpeningExceptions),
+  v.forward(
+    v.check((configuration) => validOpeningExceptions(configuration)),
+    ["openingExceptions"],
+  ),
   v.forward(
     v.check((configuration) =>
       validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
@@ -138,6 +152,13 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
     v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
     ["openingEnd"],
   ),
+  // The form keeps a day's exception while the day is unchecked, so re-checking it restores the exception even
+  // after a failed save; the submitted output drops it.
+  v.transform(finalizeOpeningExceptions),
+  v.forward(
+    v.check((configuration) => validOpeningExceptions(configuration)),
+    ["openingExceptions"],
+  ),
   v.forward(
     v.check((configuration) =>
       validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
@@ -149,7 +170,7 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
 export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
-  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingStart,openingEnd,openDays,openingExceptions,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 const bookingConfigurationReadParameters = {
   depth: "1",
@@ -308,7 +329,7 @@ export const bookingConfigurationConfig = {
     pluralKey: "booking:bookableItems.plural",
   },
   useAsTitle: "target",
-  defaultColumns: ["target", "state", "enabled", "updatedAt"],
+  defaultColumns: ["target", "state", "updatedAt"],
   listSearchableFields: ["target.name", "target.globalId"],
   fields: [
     { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
@@ -338,10 +359,8 @@ export const bookingConfigurationConfig = {
       name: "enabled",
       type: "boolean",
       labelKey: "booking:bookableItems.fields.enabled",
-      list: {
-        renderCell: ({ row }) =>
-          i18n.t(row.enabled ? "booking:bookableItemDetails.enabled" : "booking:bookableItemDetails.disabled"),
-      },
+      // Shown through the combined Status column; still filterable on its own.
+      list: false,
     },
     {
       name: "state",
@@ -350,10 +369,13 @@ export const bookingConfigurationConfig = {
       labelKey: "booking:bookableItems.fields.state",
       form: false,
       list: {
+        dependencies: ["enabled"],
+        // One status column: an archived item is Archived; an active one is Enabled or Disabled.
+        renderHeader: () => i18n.t("booking:bookableItems.fields.status"),
         renderCell: ({ row }) =>
-          row.state === "ACTIVE"
-            ? i18n.t("booking:bookableItems.states.active")
-            : i18n.t("booking:bookableItemDetails.archived"),
+          row.state === "ARCHIVED"
+            ? i18n.t("booking:bookableItemDetails.archived")
+            : i18n.t(row.enabled ? "booking:bookableItemDetails.enabled" : "booking:bookableItemDetails.disabled"),
       },
     },
     {
@@ -374,9 +396,11 @@ export const bookingConfigurationConfig = {
       list: {
         renderCell: ({ row }) =>
           row.updatedAt
-            ? new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(
-                new Date(row.updatedAt),
-              )
+            ? new Intl.DateTimeFormat(i18n.language, {
+                dateStyle: "medium",
+                timeStyle: "short",
+                hourCycle: bookingHourCycle(),
+              }).format(new Date(row.updatedAt))
             : i18n.t("booking:bookableItemDetails.notAvailable"),
       },
     },

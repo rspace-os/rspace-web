@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { UserBadge } from "@/modules/common/ui/user-badge";
@@ -56,6 +57,7 @@ export function BookableItemFactsAside({
                     {new Intl.DateTimeFormat(i18n.language, {
                       dateStyle: "medium",
                       timeStyle: "short",
+                      hourCycle: bookingHourCycle(),
                       timeZone: displayTimeZone,
                     }).format(new Date(configuration.createdAt))}
                   </time>

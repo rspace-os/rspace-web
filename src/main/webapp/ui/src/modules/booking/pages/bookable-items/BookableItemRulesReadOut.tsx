@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { openingHoursFacts } from "@/modules/booking/configuration/openingHoursFacts";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -11,7 +12,7 @@ export function BookableItemRulesReadOut({ configuration }: { configuration: Boo
   const { t } = useTranslation("booking");
   const facts: Array<[string, ReactNode]> = [
     [t("bookableItemDetails.fields.timezone"), configuration.timezone],
-    [t("bookableItemDetails.fields.openingHours"), `${configuration.openingStart}–${configuration.openingEnd}`],
+    ...openingHoursFacts(configuration, t),
     [
       t("bookableItemDetails.fields.granularity"),
       t("bookableItemDetails.minutes", { count: configuration.slotGranularityMinutes }),

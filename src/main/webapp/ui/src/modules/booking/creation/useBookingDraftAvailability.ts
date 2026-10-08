@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import type { BookingFormState } from "@/modules/booking/creation/BookingForm";
 import { bookingConflicts } from "@/modules/booking/domain/availability";
 import type { BookingEventKind } from "@/modules/booking/domain/booking";
+import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   calendarAvailabilityRow,
   useCalendarAvailability,
@@ -32,7 +33,8 @@ export function useBookingDraftAvailability({
   excludedBookingId?: number;
 }) {
   const target = formState?.target;
-  const window = formState?.window;
+  // Checked as soon as both endpoints are entered, before the item's rules are met.
+  const window = formState?.enteredWindow;
   const intervalChanged = Boolean(
     window &&
       (!originalWindow ||
@@ -44,13 +46,13 @@ export function useBookingDraftAvailability({
       target
         ? calendarAvailabilityRow({
             ...target,
-            openingStart: eventKind === "MAINTENANCE" ? "00:00" : target.openingStart,
-            openingEnd: eventKind === "MAINTENANCE" ? "24:00" : target.openingEnd,
+            // Opening hours are the form's own check, so closed time must not read as an overlap here.
+            ...ALWAYS_OPEN,
             // Fetch overlaps even when the target permits double booking so the form can explain them.
             allowDoubleBooking: false,
           })
         : undefined,
-    [eventKind, target],
+    [target],
   );
   const interval = window
     ? {
