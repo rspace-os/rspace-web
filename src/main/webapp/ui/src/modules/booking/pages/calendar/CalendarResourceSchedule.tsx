@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import { EyeIcon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/components/DayTimeline";
@@ -132,13 +132,13 @@ export function CalendarResourceSchedule({
     () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
     [resourceConfigurations],
   );
-  const editConfigurationLink = (
+  const viewConfigurationLink = (
     resource: BookingCalendarResource,
     configuration?: BookableItemOption,
     size: "icon-xs" | "icon-sm" = "icon-xs",
   ) => {
     if (configuration?.capabilities?.canEditConfiguration !== true) return null;
-    const label = t("bookableItemDetails.edit");
+    const label = t("bookableItemDetails.view");
     return (
       <Tooltip>
         <TooltipTrigger
@@ -149,11 +149,11 @@ export function CalendarResourceSchedule({
               data-slot="button"
               to="/booking/bookable-items/$globalId/{-$tab}"
               params={{ globalId: resource.globalId, tab: "details" }}
-              search={{ edit: true }}
+              search={{}}
             />
           }
         >
-          <PencilIcon aria-hidden="true" />
+          <EyeIcon aria-hidden="true" />
         </TooltipTrigger>
         <TooltipContent role="tooltip" side="left">
           {label}
@@ -248,7 +248,7 @@ export function CalendarResourceSchedule({
                     >
                       <PlusIcon aria-hidden="true" />
                     </Button>
-                    {editConfigurationLink(resource, configuration, "icon-sm")}
+                    {viewConfigurationLink(resource, configuration, "icon-sm")}
                   </div>
                 </section>
               );
@@ -273,7 +273,7 @@ export function CalendarResourceSchedule({
                         globalId={resource.value.parentContainerGlobalId}
                       />
                     </InventoryItem>
-                    {editConfigurationLink(resource, configurationByTarget.get(resource.globalId))}
+                    {viewConfigurationLink(resource, configurationByTarget.get(resource.globalId))}
                   </div>
                 </div>
                 {dates.map((day) => (

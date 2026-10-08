@@ -620,6 +620,23 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
     },
   });
   return [
+    http.get("/api/inventory/v1/instruments/123", () =>
+      HttpResponse.json({
+        sharingMode: "WHITELIST",
+        sharedWith: [
+          {
+            group: { id: 11, name: "Imaging lab" },
+            shared: true,
+            itemOwnerGroup: true,
+          },
+          {
+            group: { id: 12, name: "Microscopy collaborators" },
+            shared: false,
+            itemOwnerGroup: false,
+          },
+        ],
+      }),
+    ),
     http.get("/api/v2/booking-configurations", ({ request }) => {
       const where = new URL(request.url).searchParams.get("where") ?? "";
       const targetId = where.match(/^target==([^;]+)$/)?.[1].replaceAll('"', "");

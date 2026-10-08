@@ -77,6 +77,23 @@ describe("Calendar page", () => {
     await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
   });
 
+  test("focuses the resource list on the target from the route", async () => {
+    history.replace("/booking/calendar?date=2026-08-17&target=IN124");
+    render(<CalendarPageStory history={history} />);
+
+    await expect.element(calendar.resourceSchedule.getByText("Electron microscope", { exact: true })).toBeVisible();
+    await expect.element(calendar.resourceSchedule.getByText("IN124", { exact: true })).toBeVisible();
+    await expect.element(calendar.resourceSchedule.getByText("IN123", { exact: true })).not.toBeInTheDocument();
+    await expect
+      .poll(() =>
+        bookingPageRequests.collectionQueries.some(
+          (query) => new URLSearchParams(query).get("where") === "target==IN124",
+        ),
+      )
+      .toBe(true);
+    expect(new URLSearchParams(history.location.search).get("target")).toBe("IN124");
+  });
+
   test("hides cached events and blocks requests for an unavailable saved item field", async () => {
     render(<CalendarPageStory history={history} />);
     await calendar.agenda.click();
@@ -158,23 +175,23 @@ describe("Calendar page", () => {
     }
   });
 
-  test("places icon-only configuration editing below the day-row booking action", async () => {
+  test("places icon-only configuration viewing below the day-row booking action", async () => {
     render(<CalendarPageStory history={history} />);
 
-    const edit = calendar.resourceSchedule.getByRole("link", { name: "Edit configuration", exact: true }).first();
+    const view = calendar.resourceSchedule.getByRole("link", { name: "View configuration", exact: true }).first();
     const add = calendar.resourceSchedule.getByRole("button", {
       name: "Add booking for Confocal microscope",
       exact: true,
     });
-    await expect.element(edit).toBeVisible();
-    expect(edit.element().getAttribute("href")).toBe("/booking/bookable-items/IN123/details?edit=true");
-    expect(edit.element().textContent).toBe("");
-    const editBox = edit.element().getBoundingClientRect();
+    await expect.element(view).toBeVisible();
+    expect(view.element().getAttribute("href")).toBe("/booking/bookable-items/IN123/details");
+    expect(view.element().textContent).toBe("");
+    const viewBox = view.element().getBoundingClientRect();
     const addBox = add.element().getBoundingClientRect();
-    const editStyle = getComputedStyle(edit.element());
+    const viewStyle = getComputedStyle(view.element());
     const addStyle = getComputedStyle(add.element());
-    const actionContainer = edit.element().parentElement;
-    if (!actionContainer) throw new Error("Edit action must have a row action container");
+    const actionContainer = view.element().parentElement;
+    if (!actionContainer) throw new Error("View action must have a row action container");
     expect(getComputedStyle(actionContainer).position).toBe("sticky");
     expect(getComputedStyle(actionContainer).right).toBe("0px");
     const instrumentLink = calendar.resourceSchedule.getByRole("link", { name: /Open inventory record/ }).first();
@@ -182,32 +199,32 @@ describe("Calendar page", () => {
     if (!instrumentHeader) throw new Error("Instrument link must have a row header");
     expect(getComputedStyle(instrumentHeader).position).toBe("sticky");
     expect(getComputedStyle(instrumentHeader).left).toBe("0px");
-    expect(editBox.top).toBeGreaterThanOrEqual(addBox.bottom);
-    expect(Math.abs(editBox.x + editBox.width / 2 - (addBox.x + addBox.width / 2))).toBeLessThanOrEqual(1);
-    expect(editStyle.border).toBe(addStyle.border);
+    expect(viewBox.top).toBeGreaterThanOrEqual(addBox.bottom);
+    expect(Math.abs(viewBox.x + viewBox.width / 2 - (addBox.x + addBox.width / 2))).toBeLessThanOrEqual(1);
+    expect(viewStyle.border).toBe(addStyle.border);
     await calendar.heading.hover();
     await expect
-      .poll(() => getComputedStyle(edit.element()).backgroundColor === getComputedStyle(add.element()).backgroundColor)
+      .poll(() => getComputedStyle(view.element()).backgroundColor === getComputedStyle(add.element()).backgroundColor)
       .toBe(true);
 
-    await edit.hover();
-    await expect.element(page.getByRole("tooltip", { name: "Edit configuration" })).toBeVisible();
+    await view.hover();
+    await expect.element(page.getByRole("tooltip", { name: "View configuration" })).toBeVisible();
   });
 
-  test("keeps icon-only configuration editing available in the week resource card", async () => {
+  test("keeps icon-only configuration viewing available in the week resource card", async () => {
     render(<CalendarPageStory history={history} />);
     await calendar.week.click();
 
-    const edit = calendar.resourceSchedule.getByRole("link", { name: "Edit configuration", exact: true }).first();
-    await expect.element(edit).toBeVisible();
-    expect(edit.element().getAttribute("href")).toBe("/booking/bookable-items/IN123/details?edit=true");
-    expect(edit.element().textContent).toBe("");
+    const view = calendar.resourceSchedule.getByRole("link", { name: "View configuration", exact: true }).first();
+    await expect.element(view).toBeVisible();
+    expect(view.element().getAttribute("href")).toBe("/booking/bookable-items/IN123/details");
+    expect(view.element().textContent).toBe("");
     const card = calendar.resourceSchedule.element().querySelector<HTMLElement>("[data-inventory-item]");
     if (!card) throw new Error("Expected a resource inventory card");
-    expect(edit.element().getBoundingClientRect().top).toBeGreaterThanOrEqual(card.getBoundingClientRect().bottom);
+    expect(view.element().getBoundingClientRect().top).toBeGreaterThanOrEqual(card.getBoundingClientRect().bottom);
 
-    await edit.hover();
-    await expect.element(page.getByRole("tooltip", { name: "Edit configuration" })).toBeVisible();
+    await view.hover();
+    await expect.element(page.getByRole("tooltip", { name: "View configuration" })).toBeVisible();
   });
 
   test.each(["date", "layout", "period"])("resets an isolated %s change to Calendar defaults", async (control) => {
@@ -236,7 +253,7 @@ describe("Calendar page", () => {
       .toBeVisible();
   });
 
-  test("resets event filters, shared search and My calendar", async () => {
+  test("resets event filters, shared search and My Bookings", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-08-19T00:30:00Z"));
     history.replace("/booking/calendar?date=2026-08-17");
@@ -577,6 +594,7 @@ describe("Calendar page", () => {
     await card.getByLabelText("End time").fill("13:00");
 
     await expect.element(card.getByText("This period overlaps:")).toBeVisible();
+    await expect.element(card.getByText("Booking #42")).toBeVisible();
     await expect.element(save).toBeDisabled();
     expect(updatedPayload).toBeUndefined();
   });
@@ -1135,6 +1153,7 @@ describe("Calendar page", () => {
     await dialog.getByLabelText("End time").fill("13:00");
 
     await expect.element(dialog.getByText("This period overlaps:")).toBeVisible();
+    await expect.element(dialog.getByText("Booking #42")).toBeVisible();
     await expect.element(submit).toBeDisabled();
     expect(bookingPageRequests.createdPayloads).toHaveLength(0);
   });
