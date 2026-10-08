@@ -20,8 +20,9 @@ public class B2instOwner {
   private String ownerName;
 
   /**
-   * Contact (for example an email address) for the owner. Read from registry records on lookup;
-   * never set by RSpace since RSDEV-1540, so the record owner's email stays off the public record.
+   * Contact (for example an email address) for the owner. Bound from registry records on lookup but
+   * never used, and never set by RSpace since RSDEV-1540, so the record owner's email stays off the
+   * public record.
    */
   @JsonProperty("ownerContact")
   private String ownerContact;

@@ -241,7 +241,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     instrumentApiMgr.assertUserCanTransferInstrument(id, user);
 
     ApiInstrument updated = instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, user);
-    // A transfer really does change what the provider holds: RspaceToExternalProviderAdapterImpl
+    // A transfer can change what the provider holds: RspaceToExternalProviderAdapterImpl
     // maps ownerName from the record owner's full name unless the Owner field overrides it (and
     // sends no ownerContact since RSDEV-1540). Left unpushed, the registered record keeps naming
     // the previous owner, which is exactly the drift this ticket exists to stop.

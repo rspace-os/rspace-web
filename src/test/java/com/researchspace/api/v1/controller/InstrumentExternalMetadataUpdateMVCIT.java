@@ -290,6 +290,9 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
         identifierCountOf(ownerKey, owner, instrument.getId()),
         "precondition: the instrument starts with a registered identifier");
     User newOwner = createInitAndLoginAnyUser();
+    // test users all share one full name, which would let a push naming the old owner pass
+    newOwner.setLastName("Successor");
+    newOwner = userMgr.save(newOwner);
     String newOwnerKey = createNewApiKeyForUser(newOwner);
     logoutAndLoginAs(owner);
 
