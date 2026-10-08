@@ -1,6 +1,7 @@
 package com.researchspace.auth.password;
 
 import java.time.Duration;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -21,6 +22,7 @@ public class BoundedPasswordVerifier {
   private final int maxPermits;
   private final long waitNanos;
   private final ConcurrentHashMap<String, PrincipalLock> principalLocks = new ConcurrentHashMap<>();
+  private final ThreadLocal<Long> sharedDeadline = new ThreadLocal<>();
 
   public BoundedPasswordVerifier(PasswordEncoder encoder, int permits, Duration wait) {
     Validate.notNull(encoder);
@@ -33,6 +35,43 @@ public class BoundedPasswordVerifier {
   }
 
   /**
+   * Runs an action while holding the username's lock, the same lock {@link #verify} takes, so a
+   * whole login attempt for one account runs one at a time. Waits up to the configured wait for the
+   * lock, and a {@link #verify} on this thread inside the action shares that one wait.
+   *
+   * @return the action's result
+   * @throws LoginVerificationBusyException if the wait elapses first
+   */
+  public <T> T runExclusive(String username, Callable<T> action) throws Exception {
+    long deadline = System.nanoTime() + waitNanos;
+    PrincipalLock principalLock = acquireHolder(username);
+    try {
+      try {
+        if (!principalLock.lock.tryLock(remaining(deadline), TimeUnit.NANOSECONDS)) {
+          throw busy(username, "another login for this username is still running");
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw busy(username, "interrupted while waiting");
+      }
+      Long outerDeadline = sharedDeadline.get();
+      sharedDeadline.set(deadline);
+      try {
+        return action.call();
+      } finally {
+        if (outerDeadline == null) {
+          sharedDeadline.remove();
+        } else {
+          sharedDeadline.set(outerDeadline);
+        }
+        principalLock.lock.unlock();
+      }
+    } finally {
+      releaseHolder(username);
+    }
+  }
+
+  /**
    * Checks a password, waiting for the username's turn and then for a free permit, together bounded
    * by the configured wait.
    *
@@ -41,7 +80,8 @@ public class BoundedPasswordVerifier {
    * @throws IllegalArgumentException if the stored value has no recognised encoding
    */
   public boolean verify(String username, CharSequence rawPassword, String encodedPassword) {
-    long deadline = System.nanoTime() + waitNanos;
+    Long shared = sharedDeadline.get();
+    long deadline = shared != null ? shared : System.nanoTime() + waitNanos;
     PrincipalLock principalLock = acquireHolder(username);
     try {
       if (!principalLock.lock.tryLock(remaining(deadline), TimeUnit.NANOSECONDS)) {

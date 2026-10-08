@@ -167,12 +167,85 @@ class BoundedPasswordVerifierTest {
     assertEquals(0, verifier.trackedPrincipals());
   }
 
+  @Test
+  void runExclusiveReturnsTheActionsValue() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(1));
+    assertEquals("done", verifier.runExclusive("alice", () -> "done"));
+    assertEquals(0, verifier.trackedPrincipals());
+  }
+
+  @Test
+  void runExclusiveBusyWhileAnotherThreadHoldsTheUsername() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200));
+    CountDownLatch held = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    Future<Object> holder =
+        pool.submit(() -> verifier.runExclusive("alice", () -> awaitWhileHeld(held, release)));
+    held.await(5, TimeUnit.SECONDS);
+
+    assertThrows(
+        LoginVerificationBusyException.class, () -> verifier.runExclusive("alice", () -> "x"));
+
+    release.countDown();
+    holder.get(5, TimeUnit.SECONDS);
+    assertEquals(0, verifier.trackedPrincipals());
+  }
+
+  @Test
+  void verifyInsideRunExclusiveReentersTheUsernameLock() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200));
+    encoder.release.countDown();
+    assertTrue(verifier.runExclusive("alice", () -> verifier.verify("alice", "ok", "stored")));
+    assertEquals(0, verifier.trackedPrincipals());
+  }
+
+  @Test
+  void verifyInsideRunExclusiveSharesItsWait() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, 1, Duration.ofSeconds(1));
+    Future<Boolean> permitHolder = pool.submit(() -> verifier.verify("bob", "ok", "stored"));
+    awaitEntered(1);
+    CountDownLatch held = new CountDownLatch(1);
+    Future<Object> aliceHolder =
+        pool.submit(
+            () ->
+                verifier.runExclusive(
+                    "alice",
+                    () -> {
+                      held.countDown();
+                      Thread.sleep(700);
+                      return null;
+                    }));
+    held.await(5, TimeUnit.SECONDS);
+
+    long start = System.nanoTime();
+    assertThrows(
+        LoginVerificationBusyException.class,
+        () -> verifier.runExclusive("alice", () -> verifier.verify("alice", "ok", "stored")));
+    long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    assertTrue(elapsedMillis < 1400, "refused after " + elapsedMillis + " ms, expected about 1 s");
+
+    aliceHolder.get(5, TimeUnit.SECONDS);
+    encoder.release.countDown();
+    permitHolder.get(5, TimeUnit.SECONDS);
+  }
+
   private static void awaitState(Thread thread, Thread.State state) throws InterruptedException {
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
     while (thread.getState() != state && System.nanoTime() < deadline) {
       Thread.sleep(5);
     }
     assertEquals(state, thread.getState());
+  }
+
+  private static Object awaitWhileHeld(CountDownLatch held, CountDownLatch release)
+      throws InterruptedException {
+    held.countDown();
+    release.await(10, TimeUnit.SECONDS);
+    return null;
   }
 
   private void awaitEntered(int count) throws InterruptedException {
