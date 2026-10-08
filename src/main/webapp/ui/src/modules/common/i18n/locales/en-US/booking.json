@@ -644,6 +644,55 @@
       "start": "Change booking start time"
     }
   },
+  "dashboard": {
+    "calendar": {
+      "bookingCount": "{count, plural, one {# booking} other {# bookings}}",
+      "dayLabel": "{date}: {count, plural, one {# booking} other {# bookings}}",
+      "empty": "No confirmed bookings in this month.",
+      "error": {
+        "description": "RSpace could not load bookings for this month.",
+        "title": "Bookings unavailable"
+      },
+      "loading": "Loading bookings for {month}.",
+      "next": "Next bookings",
+      "nextMonth": "Go to next month",
+      "previous": "Previous bookings",
+      "previousMonth": "Go to previous month",
+      "range": "{start, number}–{end, number} of {total, number}",
+      "title": "At a glance",
+      "todayLabel": "Today, {date}",
+      "tooMany": {
+        "description": "This month has more than 1,000 bookings. Open My Bookings to see the full list.",
+        "title": "Too many bookings to display"
+      },
+      "viewAll": "View all bookings"
+    },
+    "quickActions": {
+      "allItems": {
+        "description": "Search bookable items",
+        "label": "Find an instrument"
+      },
+      "calendar": {
+        "description": "See bookings by day",
+        "label": "Calendar"
+      },
+      "myBookings": {
+        "description": "Review your reservations",
+        "label": "My Bookings"
+      },
+      "title": "Quick Actions"
+    },
+    "upcoming": {
+      "empty": "No upcoming bookings found.",
+      "error": {
+        "description": "RSpace could not load your upcoming bookings.",
+        "title": "Upcoming bookings unavailable"
+      },
+      "loading": "Loading upcoming bookings.",
+      "title": "Upcoming Bookings",
+      "viewAll": "View all"
+    }
+  },
   "dayTimeline": {
     "event": {
       "busy": "Busy",
