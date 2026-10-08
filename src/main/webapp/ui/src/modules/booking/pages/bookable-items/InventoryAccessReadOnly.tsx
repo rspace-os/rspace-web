@@ -114,7 +114,7 @@ function OwnerGroupsTable({ groups }: { groups: Array<InventoryGroup> }) {
 export function InventoryAccessReadOnly({ instrumentId }: { instrumentId: number }) {
   const { t } = useTranslation("inventory");
   const { t: commonT } = useTranslation("common");
-  const { data: token } = useOauthTokenQuery({ useRestApiV2: false });
+  const { data: token } = useOauthTokenQuery();
   const accessQuery = useQuery({
     queryKey: ["inventory", "instruments", instrumentId, "access"],
     queryFn: () => fetchInventoryAccess(instrumentId, token),
