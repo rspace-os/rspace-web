@@ -89,7 +89,8 @@ public class TestFactory {
   }
 
   private static final String OLD_NAME = "oldName";
-  private static final String TESTPASS_ENCODED = new RSpacePasswordEncoder().encode("testpass");
+  public static final String TESTPASS = "testpass";
+  private static final String TESTPASS_ENCODED = new RSpacePasswordEncoder().encode(TESTPASS);
 
   /**
    * Creates a structured document with a single text field.
@@ -298,8 +299,8 @@ public class TestFactory {
     User u = new User(uname);
     u.setFirstName("first");
     u.setLastName("last");
-    u.setPassword("testpass");
-    u.setConfirmPassword("testpass");
+    u.setPassword(TESTPASS);
+    u.setConfirmPassword(TESTPASS);
     u.setEmail(uname + "@b");
     return u;
   }
