@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { SendMessageDialogComponent } from "@/__tests__/e2e/components/shared/SendMessageDialogComponent";
+import { env } from "@/__tests__/e2e/env";
 import { BasePage } from "../BasePage";
 
 /** The Messaging page at /dashboard. */
@@ -47,6 +48,7 @@ export class DashboardPage extends BasePage {
       throw new Error(`No sent request id found for "${text}"`);
     }
     const res = await this.page.request.post("/dashboard/ajax/cancelRequest", {
+      headers: { Referer: env.baseURL },
       form: { messageOrRequestId, quiet: "true" },
     });
     if (!res.ok()) {
