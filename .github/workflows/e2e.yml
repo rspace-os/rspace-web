@@ -62,8 +62,11 @@ jobs:
           retention-days: 1
 
   e2e:
+    name: ${{ inputs.mode }} / ${{ matrix.cloud && 'cloud' || 'standard' }} / ${{ matrix.project }} / shard ${{ matrix.shard }}
     needs: build
     runs-on: ubuntu-latest
+    env:
+      E2E_CLOUD: ${{ matrix.cloud && 'true' || 'false' }}
 
     timeout-minutes: 45
     strategy:
@@ -72,11 +75,27 @@ jobs:
         java-version: [17]
         project: [chromium, firefox, webkit, mobile]
         shard: [1, 2]
-        # API specs are a single file; run them once, unsharded. Cloud specs need a
-        # community (deployment.cloud=true) server and no real integrations, so mock mode only.
-        include: ${{ fromJSON(inputs.mode == 'mock'
-          && '[{"java-version":17,"project":"api","shard":1},{"java-version":17,"project":"cloud","shard":1}]'
-          || '[{"java-version":17,"project":"api","shard":1}]') }}
+        cloud: [false]
+        # API and community specs run once per job, unsharded, in both integration modes.
+        # cloud: [false] above makes these cloud entries new jobs instead of merging them
+        # into the standard chromium/firefox/webkit shard-1 jobs.
+        include:
+          - java-version: 17
+            project: api
+            shard: 1
+            cloud: false
+          - java-version: 17
+            project: chromium
+            shard: 1
+            cloud: true
+          - java-version: 17
+            project: firefox
+            shard: 1
+            cloud: true
+          - java-version: 17
+            project: webkit
+            shard: 1
+            cloud: true
     services:
       db:
         image: mariadb:12.3
@@ -130,12 +149,17 @@ jobs:
 
       - name: Resolve project matrix
         run: |
-          case "${{ matrix.project }}" in
-            mobile) echo "E2E_PW_BROWSER=chromium" >> "$GITHUB_ENV"; echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV" ;;
-            api)    echo "E2E_PW_BROWSER=" >> "$GITHUB_ENV";          echo "E2E_SHARD_OF=1" >> "$GITHUB_ENV" ;;
-            cloud)  echo "E2E_PW_BROWSER=chromium" >> "$GITHUB_ENV";  echo "E2E_SHARD_OF=1" >> "$GITHUB_ENV" ;;
-            *)      echo "E2E_PW_BROWSER=${{ matrix.project }}" >> "$GITHUB_ENV"; echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV" ;;
+          project="${{ matrix.project }}"
+          case "$project" in
+            mobile) echo "E2E_PW_BROWSER=chromium" >> "$GITHUB_ENV" ;;
+            api)    echo "E2E_PW_BROWSER=" >> "$GITHUB_ENV" ;;
+            *)      echo "E2E_PW_BROWSER=$project" >> "$GITHUB_ENV" ;;
           esac
+          if [ "$E2E_CLOUD" = "true" ] || [ "$project" = "api" ]; then
+            echo "E2E_SHARD_OF=1" >> "$GITHUB_ENV"
+          else
+            echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV"
+          fi
 
       - name: Download prebuilt WAR
         uses: actions/download-artifact@v8.0.1
@@ -249,10 +273,6 @@ jobs:
               "-Dorcid.secret=$ORCID_CLIENT_SECRET"
             )
           fi
-          DEPLOYMENT_ARGS=()
-          if [ "${{ matrix.project }}" = "cloud" ]; then
-            DEPLOYMENT_ARGS=("-Ddeployment.cloud=true")
-          fi
           nohup ./mvnw jetty:run-war \
             -DskipTests=true -Dmaven.war.skip=true \
             -Dtimestamp=${{ github.run_id }} \
@@ -274,7 +294,7 @@ jobs:
             -DRS_FILE_BASE="$RS_FILE_BASE" \
             -DRS.devlogLevel=INFO \
             "${INTEGRATION_ARGS[@]}" \
-            "${DEPLOYMENT_ARGS[@]}" \
+            "-Ddeployment.cloud=$E2E_CLOUD" \
             > /tmp/jetty.log 2>&1 &
 
       - run: pnpm install --frozen-lockfile
@@ -344,7 +364,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: jetty-log-${{ inputs.mode }}-${{ matrix.project }}-${{ matrix.shard }}
+          name: jetty-log-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             /tmp/jetty.log
             httpRequests.log
@@ -354,7 +374,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: e2e-report-${{ inputs.mode }}-${{ matrix.project }}-${{ matrix.shard }}
+          name: e2e-report-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             src/main/webapp/ui/playwright-report
             src/main/webapp/ui/test-results
