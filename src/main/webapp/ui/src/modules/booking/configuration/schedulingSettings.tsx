@@ -98,11 +98,7 @@ export const BookingAdminSettingsSchema = v.pipe(
 export type SchedulingSettings = v.InferOutput<typeof SchedulingSettingsSchema>;
 export type BookingSettings = v.InferOutput<typeof BookingSettingsSchema>;
 export type BookingAdminSettings = v.InferOutput<typeof BookingAdminSettingsSchema>;
-export type BookingSettingsInput = SchedulingSettings &
-  BookingDisplayPreferencesInput & {
-    defaultSharedWith: "ALL_USERS" | "SELECTED" | "ONLY_ME";
-    selectedGranteeKeys: readonly string[];
-  };
+export type BookingSettingsInput = SchedulingSettings & BookingDisplayPreferencesInput;
 
 export const DEFAULT_SCHEDULING_SETTINGS: SchedulingSettings = {
   slotGranularityMinutes: 5,
@@ -158,8 +154,6 @@ export async function saveBookingSettings(
     body: JSON.stringify({
       ...scheduling,
       ...display,
-      defaultSharedWith: input.defaultSharedWith,
-      selectedGranteeKeys: input.defaultSharedWith === "SELECTED" ? input.selectedGranteeKeys : [],
       configurationVersion,
     }),
   });
