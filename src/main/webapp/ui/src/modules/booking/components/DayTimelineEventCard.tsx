@@ -1,6 +1,7 @@
 import { ChevronRight, LockKeyhole, Wrench } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
 import { UserBadge } from "@/modules/common/ui/user-badge";
@@ -61,6 +62,7 @@ export function DayTimelineEventCard({
   portalContainer?: HTMLElement | null;
 } & DayTimelineActionRenderers) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const detailsId = `${React.useId()}-details`;
   const [internalExpanded, setInternalExpanded] = React.useState(false);
   const compactCardRef = React.useRef<HTMLElement>(null);
@@ -75,7 +77,7 @@ export function DayTimelineEventCard({
   const labelledTitle = event.kind === "booking" && event.privacy === "full" ? `${title} · ${event.bookedBy}` : title;
   const isBusy = event.kind === "booking" && event.privacy === "busy";
   const notes = event.kind === "booking" && event.privacy === "busy" ? undefined : event.notes;
-  const exactPeriod = period(event, date, timezone);
+  const exactPeriod = period(event, date, timezone, "–", timeFormat);
   const accessibleLabel = notes
     ? t("dayTimeline.event.labelWithNotes", { title: labelledTitle, period: exactPeriod, notes })
     : t("dayTimeline.event.label", { title: labelledTitle, period: exactPeriod });
@@ -89,8 +91,10 @@ export function DayTimelineEventCard({
   const startDate = dateForMinute(date, timezone, event.startMinute);
   const endDate = dateForMinute(date, timezone, event.endMinute);
   const compactDate =
-    startDate === endDate ? formatDayDate(startDate) : `${formatDayDate(startDate)} - ${formatDayDate(endDate)}`;
-  const compactPeriod = period(event, date, timezone, " - ");
+    startDate === endDate
+      ? formatDayDate(startDate, timeFormat)
+      : `${formatDayDate(startDate, timeFormat)} - ${formatDayDate(endDate, timeFormat)}`;
+  const compactPeriod = period(event, date, timezone, " - ", timeFormat);
   const triggerClassName =
     "absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60";
   const toggleLabel = isExpanded
