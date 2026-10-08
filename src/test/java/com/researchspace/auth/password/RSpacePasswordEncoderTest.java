@@ -65,6 +65,13 @@ class RSpacePasswordEncoderTest {
   }
 
   @Test
+  void legacyHashWithoutSeparatorFailsClosed() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> encoder.matches("x", "{" + RSpacePasswordEncoder.LEGACY_SHA256_ID + "}nosep"));
+  }
+
+  @Test
   void nullsNeverMatch() {
     assertFalse(encoder.matches(null, null));
     assertFalse(encoder.matches("x", null));

@@ -115,7 +115,7 @@ public class SignupControllerTest {
 
     String view = signupCtrller.onSubmit(user, errors, mockRequest);
 
-    assertEquals("redirect:login?" + SignupController.ACCOUNT_CREATED_LOGIN_BUSY_PARAM, view);
+    assertEquals(SignupController.ACCOUNT_CREATED_LOGIN_BUSY_VIEW, view);
     verify(manualSignupPolicy).saveUser(eq(user), any());
     verify(postSignup, never()).getRedirect(user);
   }
