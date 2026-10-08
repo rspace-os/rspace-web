@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -288,10 +289,13 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
         1,
         identifierCountOf(ownerKey, owner, instrument.getId()),
         "precondition: the instrument starts with a registered identifier");
-    User newOwner = createInitAndLoginAnyUser();
-    // test users all share one full name, which would let a push naming the old owner pass
+    User newOwner = createAndSaveUser(getRandomName(10));
+    // test users all share one full name, which would let a push naming the old owner pass; the
+    // rename comes before initUser, whose own write to this row would make a later save stale
     newOwner.setLastName("Successor");
     newOwner = userMgr.save(newOwner);
+    initUser(newOwner);
+    logoutAndLoginAs(newOwner);
     String newOwnerKey = createNewApiKeyForUser(newOwner);
     logoutAndLoginAs(owner);
 
