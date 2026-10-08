@@ -206,7 +206,7 @@ event filters use `calendar-events.where`.
 The page coordinates date navigation and display-state reset, pausing event
 fetching until they settle to avoid requests for an intermediate date/period.
 
-Focus on calendar uses the event's saved start date in the display timezone and
+View on calendar uses the event's saved start date in the display timezone and
 its target item. It preserves the selected view and layout, clears calendar
 where/q filters and Mine/My items, then focuses the matching event occurrence
 identified by date and event ID. A week-grid event hidden in +N more falls back

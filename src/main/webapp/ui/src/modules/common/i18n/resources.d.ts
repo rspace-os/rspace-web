@@ -1340,7 +1340,7 @@ export default interface Resources {
       "feedback": {
         "eventAdded": "{itemName} event added.",
         "eventUpdated": "{itemName} event updated.",
-        "focusOnCalendar": "Focus on calendar",
+        "focusOnCalendar": "View on calendar",
         "maintenanceAdded": "Maintenance for {itemName} added.",
         "maintenanceUpdated": "Maintenance for {itemName} updated.",
         "viewDetails": "View details"
