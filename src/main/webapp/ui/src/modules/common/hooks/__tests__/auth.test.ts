@@ -9,6 +9,7 @@ import { getStoredToken, saveStoredToken } from "@/modules/common/utils/auth";
 
 beforeEach(() => {
   sessionStorage.clear();
+  document.getElementById("public_document_view")?.remove();
 });
 
 describe("fetchToken", () => {
@@ -79,6 +80,64 @@ describe("fetchToken", () => {
     expect(await screen.findByText("token-for-current-context")).toBeInTheDocument();
     expect(requestCount).toBe(1);
     expect(getStoredToken()).toBe("token-from-previous-run-as-context");
+  });
+
+  it("uses a session-bound token by default on authenticated pages", async () => {
+    let requestCount = 0;
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => {
+        requestCount += 1;
+        return HttpResponse.json({ accessToken: "authenticated-token" });
+      }),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    function Consumer() {
+      const { data } = useOauthTokenQuery();
+      return createElement("output", null, data);
+    }
+
+    const rendered = render(
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(Suspense, { fallback: null }, createElement(Consumer)),
+      ),
+    );
+
+    expect(await screen.findByText("authenticated-token")).toBeInTheDocument();
+    expect(requestCount).toBe(1);
+    rendered.unmount();
+    queryClient.clear();
+  });
+
+  it("retains the legacy token endpoint on public document pages by default", async () => {
+    document.body.appendChild(Object.assign(document.createElement("div"), { id: "public_document_view" }));
+    saveStoredToken("token-from-authenticated-session-context");
+    server.use(
+      http.get("/public/publicView/userform/ajax/inventoryOauthToken", () =>
+        HttpResponse.json({ data: "public-token" }),
+      ),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    function Consumer() {
+      const { data } = useOauthTokenQuery();
+      return createElement("output", null, data);
+    }
+
+    const rendered = render(
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(Suspense, { fallback: null }, createElement(Consumer)),
+      ),
+    );
+
+    expect(await screen.findByText("public-token")).toBeInTheDocument();
+    expect(getStoredToken()).toBe("public-token");
+    rendered.unmount();
+    queryClient.clear();
   });
 });
 
