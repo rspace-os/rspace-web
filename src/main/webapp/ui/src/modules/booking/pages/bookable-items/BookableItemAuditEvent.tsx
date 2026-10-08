@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
@@ -35,6 +36,7 @@ export function AuditActionBadge({ row }: { row: AuditRow }) {
 
 function RecordedValues({ row }: { row: AuditRow }) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const labels: Record<string, string> = {
     start: t("bookableItemDetails.audit.values.start"),
     end: t("bookableItemDetails.audit.values.end"),
@@ -66,7 +68,7 @@ function RecordedValues({ row }: { row: AuditRow }) {
   };
   return (
     <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
-      {recordedValues(row.payload, i18n.language, words).map(([label, value]) => (
+      {recordedValues(row.payload, i18n.language, words, timeFormat).map(([label, value]) => (
         <div className="contents" key={label}>
           <dt className="break-words text-muted-foreground">{labels[label] ?? label}</dt>
           <dd className="break-words">{value === "{}" ? t("bookableItemDetails.audit.values.empty") : value}</dd>
@@ -94,12 +96,13 @@ function AuditTarget({ target }: { target: AuditRow["target"] }) {
 
 function AuditTimestamp({ value }: { value: string }) {
   const { i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   return (
     <time dateTime={value}>
       {new Intl.DateTimeFormat(i18n.language, {
         dateStyle: "medium",
         timeStyle: "long",
-        hourCycle: bookingHourCycle(),
+        hourCycle: bookingHourCycle(timeFormat),
         timeZone: "UTC",
       }).format(new Date(value))}
     </time>

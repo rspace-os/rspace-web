@@ -2003,6 +2003,10 @@ export default interface Resources {
       "myBookings": "My Bookings",
       "preferences": "Preferences",
       "settings": "Settings"
+    },
+    "time": {
+      "dateAndRange": "{date}; {period}",
+      "openingRange": "{start} - {end}"
     }
   },
   "common": {

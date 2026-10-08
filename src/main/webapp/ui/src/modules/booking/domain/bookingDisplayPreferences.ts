@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { createContext, createElement, type ReactNode, useContext } from "react";
 import * as v from "valibot";
 import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -6,9 +7,13 @@ import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { parseApiV2Problem, requireSuccess } from "./booking";
 import { OpeningHoursEndSchema, OpeningHoursStartSchema } from "./bookingOpeningHours";
+import type { BookingTimeFormat } from "./bookingTime";
 
 export const BookingTimezoneModeSchema = v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]);
 export type BookingTimezoneMode = v.InferOutput<typeof BookingTimezoneModeSchema>;
+
+/** Automatic follows the browser region; H12 and H24 force a 12- or 24-hour clock. Omitted means Automatic. */
+export const BookingTimeFormatSchema = v.picklist(["AUTOMATIC", "H12", "H24"] satisfies BookingTimeFormat[]);
 
 const BookingDisplayPreferencesEntries = {
   availabilityWindowStart: OpeningHoursStartSchema,
@@ -22,6 +27,7 @@ type BookingDisplayPreferenceValues = {
   availabilityWindowEnd: string;
   timezoneMode: BookingTimezoneMode;
   customTimezone: string | null;
+  timeFormat?: BookingTimeFormat;
 };
 
 const hasValidAvailabilityWindow = ({
@@ -35,6 +41,7 @@ const hasValidCustomTimezone = ({ timezoneMode, customTimezone }: BookingDisplay
 export const BookingDisplayPreferencesDocumentSchema = v.pipe(
   v.strictObject({
     ...BookingDisplayPreferencesEntries,
+    timeFormat: v.optional(BookingTimeFormatSchema, "AUTOMATIC"),
     institutionTimezone: v.string(),
     overridden: v.boolean(),
   }),
@@ -44,12 +51,15 @@ export const BookingDisplayPreferencesDocumentSchema = v.pipe(
 );
 
 export const BookingDisplayPreferencesInputSchema = v.pipe(
-  v.strictObject({ ...BookingDisplayPreferencesEntries }),
+  v.strictObject({
+    ...BookingDisplayPreferencesEntries,
+    timeFormat: v.optional(BookingTimeFormatSchema),
+  }),
   v.forward(v.check(hasValidAvailabilityWindow), ["availabilityWindowEnd"]),
   v.forward(v.check(hasValidCustomTimezone), ["customTimezone"]),
 );
 
-export type BookingDisplayPreferencesDocument = v.InferOutput<typeof BookingDisplayPreferencesDocumentSchema>;
+export type BookingDisplayPreferencesDocument = v.InferInput<typeof BookingDisplayPreferencesDocumentSchema>;
 export type BookingDisplayPreferencesInput = v.InferOutput<typeof BookingDisplayPreferencesInputSchema>;
 
 export type ResolvedBookingDisplayPreferences = {
@@ -61,9 +71,27 @@ export type ResolvedBookingDisplayPreferences = {
   };
   timeZone: string;
   timezoneMode: BookingTimezoneMode;
+  timeFormat: BookingTimeFormat;
   institutionTimezone: string;
   overridden: boolean;
 };
+
+const BookingTimeFormatContext = createContext<BookingTimeFormat>("AUTOMATIC");
+
+/** The current route's display choice; standalone components use Automatic when no provider is present. */
+export function useBookingTimeFormat(): BookingTimeFormat {
+  return useContext(BookingTimeFormatContext);
+}
+
+export function BookingTimeFormatProvider({
+  timeFormat,
+  children,
+}: {
+  timeFormat: BookingTimeFormat;
+  children: ReactNode;
+}) {
+  return createElement(BookingTimeFormatContext.Provider, { value: timeFormat }, children);
+}
 
 export const bookingDisplayPreferencesQueryKey = ["api-v2", "users", "me", "booking-preferences"] as const;
 const path = "/api/v2/users/me/booking-preferences";
@@ -138,6 +166,7 @@ export function resolveBookingDisplayPreferences(
     },
     timeZone,
     timezoneMode: document.timezoneMode,
+    timeFormat: document.timeFormat ?? "AUTOMATIC",
     institutionTimezone: document.institutionTimezone,
     overridden: document.overridden,
   };

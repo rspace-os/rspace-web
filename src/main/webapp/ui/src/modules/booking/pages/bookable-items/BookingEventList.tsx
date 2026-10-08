@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import type { Booking } from "@/modules/booking/domain/booking";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
@@ -28,6 +29,7 @@ export function BookingEventList(props: BookingEventListProps) {
 
 function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventListProps) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const formatter = useMemo(
@@ -35,10 +37,10 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       new Intl.DateTimeFormat(i18n.language, {
         dateStyle: "medium",
         timeStyle: "short",
-        hourCycle: bookingHourCycle(),
+        hourCycle: bookingHourCycle(timeFormat),
         timeZone: timezone,
       }),
-    [i18n.language, timezone],
+    [i18n.language, timezone, timeFormat],
   );
   const config = useMemo(
     () =>
@@ -90,7 +92,6 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             name: "kind",
             type: "text",
             labelKey: "booking:bookableItemDetails.events.kind" satisfies CollectionTranslationKey,
-            label: t("bookableItemDetails.events.kind"),
             list: {
               width: 180,
               renderCell: ({ row }) =>
