@@ -9,15 +9,15 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import Searchbar from "@/Inventory/Search/components/Searchbar";
+import ToggleView from "@/Inventory/Search/components/ToggleView";
+import SearchView from "@/Inventory/Search/SearchView";
 import SearchContext from "@/stores/contexts/Search";
 import type { SearchView as SearchViewType } from "@/stores/definitions/Search";
 import ContainerModel from "@/stores/models/ContainerModel";
 import MemoisedFactory from "@/stores/models/Factory/MemoisedFactory";
 import Search from "@/stores/models/Search";
 import { menuIDs } from "@/util/menuIDs";
-import Searchbar from "../../Search/components/Searchbar";
-import ToggleView from "../../Search/components/ToggleView";
-import SearchView from "../../Search/SearchView";
 import InnerSearchNavigationContext from "../InnerSearchNavigationContext";
 import { type PlacementBlocker, type PlacementSelection, placementBlocker } from "./placement";
 
