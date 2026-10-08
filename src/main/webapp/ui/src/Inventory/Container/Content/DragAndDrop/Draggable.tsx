@@ -1,7 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import Badge from "@mui/material/Badge";
 import React, { type ReactNode } from "react";
-import SearchContext from "../../../../stores/contexts/Search";
+import SearchContext from "@/stores/contexts/Search";
 import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
 import type { Container, Location } from "../../../../stores/definitions/Container";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
