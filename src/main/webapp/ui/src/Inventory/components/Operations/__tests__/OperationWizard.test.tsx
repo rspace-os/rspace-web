@@ -23,9 +23,14 @@ beforeAll(async () => {
   InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
 });
 
+// The provider goes in as a wrapper so that `rerender` keeps the same wizard instance: a provider
+// nested in the rendered element would make a bare rerender swap the root and remount the wizard.
 function render(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  const Providers = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+  return renderWithoutQueryClient(ui, { wrapper: Providers });
 }
 
 const prefs = vi.hoisted(() => ({ store: {} as Record<string, unknown> }));
