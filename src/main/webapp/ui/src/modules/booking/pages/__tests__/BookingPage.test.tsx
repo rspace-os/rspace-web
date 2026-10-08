@@ -17,10 +17,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
-import BookingPage, { BookingDashboard } from "@/modules/booking/pages/BookingPage";
+import BookingPage from "@/modules/booking/pages/BookingPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { ownerBookingAccess } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import BookingDashboardPage from "@/modules/booking/pages/dashboard/BookingDashboardPage";
 import { collectionResponse } from "@/modules/booking/pages/mocks/bookingCalendarFixtures";
 import { currentUser as currentUserFixture } from "@/modules/booking/pages/mocks/currentUserFixture";
 import { bookingsOpenApi } from "@/modules/booking/pages/my-bookings/mocks/bookingMocks";
@@ -87,7 +88,7 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
   const router = createRouter({
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
-        createRoute({ getParentRoute: () => bookingRoute, path: "/", component: BookingDashboard }),
+        createRoute({ getParentRoute: () => bookingRoute, path: "/", component: BookingDashboardPage }),
         createRoute({
           getParentRoute: () => bookingRoute,
           path: "/calendar/",
