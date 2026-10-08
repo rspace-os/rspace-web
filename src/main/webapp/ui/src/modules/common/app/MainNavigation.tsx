@@ -13,7 +13,6 @@ export default function MainNavigation({ currentPage, navItems }: { currentPage:
             key={item.id}
             to={item.routerTo ?? item.href}
             reloadDocument={!item.routerTo}
-            viewTransition={Boolean(item.routerTo)}
             aria-current={currentPage === item.id ? "page" : undefined}
             className="rounded-sm px-2 py-1 text-sm text-muted-foreground hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-foreground"
           >
