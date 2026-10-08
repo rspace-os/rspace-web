@@ -20,7 +20,7 @@ public class ExtraNumberField extends ExtraField {
 
   private static final long serialVersionUID = 616794358851234028L;
   private static final String DEFAULT_NAME = "Numeric data";
-  public static final String INVALID_NUMBER_MESSAGE = "errors.inventory.field.numberInvalid";
+  private static final String INVALID_NUMBER_MESSAGE = "errors.inventory.field.numberInvalid";
   private static final ResourceBundle VALIDATION_MESSAGES =
       ResourceBundle.getBundle("ValidationMessages", Locale.ENGLISH);
 
@@ -54,14 +54,10 @@ public class ExtraNumberField extends ExtraField {
       try {
         RuntimeFieldValueType.parseNumber(data);
       } catch (IllegalArgumentException nfe) {
-        return formatValidationMessage(INVALID_NUMBER_MESSAGE, data);
+        return MessageFormat.format(VALIDATION_MESSAGES.getString(INVALID_NUMBER_MESSAGE), data);
       }
     }
     return null;
-  }
-
-  private static String formatValidationMessage(String key, String value) {
-    return MessageFormat.format(VALIDATION_MESSAGES.getString(key), value);
   }
 
   @Override
