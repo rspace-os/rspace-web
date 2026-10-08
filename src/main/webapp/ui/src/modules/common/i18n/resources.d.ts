@@ -4058,7 +4058,7 @@ export default interface Resources {
           "image": "Image containers are not supported yet. Choose a grid or list container.",
           "loading": "Loading the container…",
           "noPermission": "You do not have permission to place items in this container. Choose another container.",
-          "notEnoughSpace": "Only {free} of the {count} locations needed are free. Choose another container.",
+          "notEnoughSpace": "{count, plural, one {This container has no free location.} other {Only {free} of the # locations needed are free.}} Choose another container.",
           "occupiedSlot": "A selected location is already occupied. Deselect it.",
           "ready": "The new subsamples will be placed in {container}.",
           "selectSlots": "{count, plural, one {Select # more location.} other {Select # more locations.}}",

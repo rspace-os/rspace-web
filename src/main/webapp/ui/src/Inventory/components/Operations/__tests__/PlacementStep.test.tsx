@@ -218,6 +218,11 @@ describe("PlacementStep", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Only 1 of the 2 locations needed are free.");
   });
 
+  it("says the container has no free location when one is needed and it is full", () => {
+    renderStep({ mode: "container", container: gridBox(4) }, 1);
+    expect(screen.getByRole("alert")).toHaveTextContent("This container has no free location.");
+  });
+
   it("asks for the remaining grid locations and shows the grid to pick them in", () => {
     const box = gridBox();
     prepareContainer(box, 2);
