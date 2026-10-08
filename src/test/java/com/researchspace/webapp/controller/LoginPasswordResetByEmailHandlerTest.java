@@ -107,6 +107,20 @@ public class LoginPasswordResetByEmailHandlerTest {
   }
 
   @Test
+  void tokenClaimedByAConcurrentSubmitReturnsTheFailViewWithoutAnEmail() throws Exception {
+    TokenBasedVerification token = freshToken();
+    cmd.setToken(token.getToken());
+    when(userManager.getUserVerificationToken(token.getToken())).thenReturn(token);
+    when(userManager.getUsernameByToken(token.getToken())).thenReturn(Optional.of("someone"));
+    when(userManager.applyLoginPasswordChange(cmd.getPassword(), token.getToken()))
+        .thenReturn(null);
+
+    assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
+    verify(emailer, never()).sendEmail(any(), any(), any());
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
   void resetWithNoFreeEncodePermitIsRefusedWithTheTokenUntouched() throws Exception {
     TokenBasedVerification token = freshToken();
     stubCompletableReset(cmd, token);
