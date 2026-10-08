@@ -52,6 +52,14 @@ public interface ResourceOperations<T, ID> {
   }
 
   /**
+   * Trusted top-level payload fields that link related audit events to this resource's audit ID.
+   * Values must be server-derived relationships, never user-controlled text.
+   */
+  default Set<String> relatedAuditIdentifierFields() {
+    return Set.of();
+  }
+
+  /**
    * Whether this already-authorised resource audit may include actors outside the user directory.
    */
   default boolean auditBypassesActorDirectory() {
