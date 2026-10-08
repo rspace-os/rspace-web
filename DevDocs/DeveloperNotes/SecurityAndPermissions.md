@@ -71,7 +71,9 @@ The design and its trade-offs are in
   `NewPasswordEncodeGate` (`password.anonymousEncode.maxConcurrent`,
   default 4) through the hash and save, and refuse at once when none is
   free, leaving a reset token usable. The reset reply also accepts only a
-  token that is unused and unexpired. Authenticated encodes (password change,
+  token that is unused and unexpired, and `UserManagerImpl` marks it used
+  with a conditional update in the same transaction as the password
+  change, so two simultaneous submits give one change. Authenticated encodes (password change,
   user creation, imports) are unbounded by choice (ADR 0011).
 - **Busy post-signup login.** Standalone signup logs the new user in
   through the same verifier. A `LoginVerificationBusyException` there does

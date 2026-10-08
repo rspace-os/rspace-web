@@ -107,7 +107,7 @@ public abstract class PasswordResetByEmailHandlerBase {
   /** Given a reset token, returns the correct view to set the password */
   protected ModelAndView getResetPage(@RequestParam("token") String token) {
     TokenBasedVerification change = userManager.getUserVerificationToken(token);
-    if (change != null && change.isValidLink(token, TokenBasedVerificationType.PASSWORD_CHANGE)) {
+    if (isUsableResetToken(change, token)) {
       ModelAndView mav = new ModelAndView("passwordReset/resetPassword");
       PasswordResetCommand command = new PasswordResetCommand();
       command.setToken(change.getToken());
@@ -119,11 +119,10 @@ public abstract class PasswordResetByEmailHandlerBase {
   }
 
   protected ModelAndView submitResetPage(
-      PasswordResetCommand cmd, BindingResult errors, HttpServletRequest request) throws Exception {
+      PasswordResetCommand cmd, BindingResult errors, HttpServletRequest request) {
 
     TokenBasedVerification change = userManager.getUserVerificationToken(cmd.getToken());
-    if (change == null
-        || !change.isValidLink(cmd.getToken(), TokenBasedVerificationType.PASSWORD_CHANGE)) {
+    if (!isUsableResetToken(change, cmd.getToken())) {
       SECURITY_LOG.warn(
           "Reset password attempt with a used, expired or unknown token, from {}",
           RequestUtil.remoteAddr(request));
@@ -156,16 +155,25 @@ public abstract class PasswordResetByEmailHandlerBase {
     } finally {
       encodeGate.release();
     }
-    if (upc != null) {
-      sendPasswordChangeCompleteEmail(upc);
-      SECURITY_LOG.info(
-          "Completed password reset for user with email [{}] from IP address [{}]",
-          upc.getEmail(),
-          upc.getIpAddressOfRequestor());
-      return new ModelAndView("passwordReset/resetPasswordComplete");
-    } else {
-      throw new Exception("Could not reset " + getPasswordType());
+    if (upc == null) {
+      SECURITY_LOG.warn(
+          "Reset of {} for [{}] from {} refused at the moment of change: token used, expired or"
+              + " claimed by a concurrent submit",
+          getPasswordType(),
+          username,
+          RequestUtil.remoteAddr(request));
+      return new ModelAndView("passwordReset/resetPasswordFail");
     }
+    sendPasswordChangeCompleteEmail(upc);
+    SECURITY_LOG.info(
+        "Completed password reset for user with email [{}] from IP address [{}]",
+        upc.getEmail(),
+        upc.getIpAddressOfRequestor());
+    return new ModelAndView("passwordReset/resetPasswordComplete");
+  }
+
+  private boolean isUsableResetToken(TokenBasedVerification change, String token) {
+    return change != null && change.isValidLink(token, TokenBasedVerificationType.PASSWORD_CHANGE);
   }
 
   protected void sendPasswordChangeCompleteEmail(TokenBasedVerification upc) {
