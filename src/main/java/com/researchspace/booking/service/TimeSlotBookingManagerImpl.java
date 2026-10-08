@@ -172,7 +172,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
 
   @Override
   public Optional<CalendarSource> getCalendarSource(
-      Long configurationId, User actor, Date refreshedAt, int maxEvents) {
+      Long configurationId, User actor, Date refreshedAt, int maxEvents)
+      throws CalendarSourceTooLargeException {
     requireAuthenticated(actor);
     Objects.requireNonNull(refreshedAt, "Calendar refresh time");
     if (maxEvents < 1) {
@@ -223,7 +224,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   }
 
   @Override
-  public CalendarSource getUserCalendarSource(User actor, Date refreshedAt, int maxEvents) {
+  public CalendarSource getUserCalendarSource(User actor, Date refreshedAt, int maxEvents)
+      throws CalendarSourceTooLargeException {
     requireAuthenticated(actor);
     Objects.requireNonNull(refreshedAt, "Calendar refresh time");
     if (maxEvents < 1) {
