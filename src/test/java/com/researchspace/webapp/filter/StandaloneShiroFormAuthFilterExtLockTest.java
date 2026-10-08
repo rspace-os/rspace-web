@@ -1,6 +1,7 @@
 package com.researchspace.webapp.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.apache.shiro.authc.AuthenticationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -94,6 +96,22 @@ class StandaloneShiroFormAuthFilterExtLockTest {
   }
 
   @Test
+  void wholeLoginKeyNeverSharesAnEntryWithARawUsername() throws Exception {
+    useVerifierWaiting(Duration.ofMillis(100));
+    when(userMgr.loginLockKey("ghost")).thenReturn("abcdef012345");
+    lockUser();
+    Future<Object> inFlight = holdLock("abcdef012345");
+
+    MockHttpServletRequest request = loginSubmission("ghost");
+    assertTrue(filter.onAccessDenied(request, new MockHttpServletResponse()));
+
+    assertEquals(
+        AuthenticationException.class.getName(), request.getAttribute("shiroLoginFailure"));
+    release.countDown();
+    inFlight.get(5, TimeUnit.SECONDS);
+  }
+
+  @Test
   void busyAdminLoginIsRedirectedBackToTheAdminPageWithoutCounting() throws Exception {
     useVerifierWaiting(Duration.ofMillis(100));
     Future<Object> inFlight = holdLoginFor("user1a");
@@ -123,8 +141,7 @@ class StandaloneShiroFormAuthFilterExtLockTest {
     Thread.sleep(100);
     assertFalse(queued.isDone(), "second attempt must wait for the first");
 
-    user.setAccountLocked(true);
-    user.setLoginFailure(new Date());
+    lockUser();
     release.countDown();
     inFlight.get(5, TimeUnit.SECONDS);
 
@@ -132,17 +149,27 @@ class StandaloneShiroFormAuthFilterExtLockTest {
     assertNotNull(request.getAttribute("shiroLoginFailure"));
   }
 
+  private void lockUser() {
+    when(lockoutPolicy.isAfterLockoutTime(user)).thenReturn(false);
+    user.setAccountLocked(true);
+    user.setLoginFailure(new Date());
+  }
+
   private void useVerifierWaiting(Duration wait) {
     verifier = new BoundedPasswordVerifier(mock(PasswordEncoder.class), 8, wait);
     filter.setVerifier(verifier);
   }
 
-  private Future<Object> holdLoginFor(String username) throws InterruptedException {
+  private Future<Object> holdLoginFor(String usernameWeight) throws InterruptedException {
+    return holdLock(StandaloneShiroFormAuthFilterExt.wholeLoginKey(usernameWeight));
+  }
+
+  private Future<Object> holdLock(String key) throws InterruptedException {
     Future<Object> inFlight =
         pool.submit(
             () ->
                 verifier.runExclusive(
-                    username,
+                    key,
                     () -> {
                       held.countDown();
                       release.await(10, TimeUnit.SECONDS);
