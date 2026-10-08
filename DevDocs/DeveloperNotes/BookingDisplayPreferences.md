@@ -62,7 +62,21 @@ the subject owns the preference and the actor remains available for audit contex
 
 ## Loading layouts
 
-The Booking index redirects to Calendar. Date picker buttons show the selected
+The Booking index shows the dashboard. Its upcoming list and monthly overview use
+independent queries for the authenticated requester. The monthly calendar shows six
+Monday-first weeks in the display timezone, including adjacent-month days. Booking
+ends are exclusive, so a reservation ending at midnight is not counted on the next day.
+Monthly reads follow at most ten API pages of 100 bookings; an interval exceeding
+1,000 bookings shows an explicit limit state instead of partial results. Offset
+pagination remains best effort during concurrent changes.
+
+Calendar badges show exact counts up to 99 and `99+` above that, while accessible
+labels and popups retain the exact total. Day popups page the loaded bookings five
+at a time, using previous/next controls without additional requests. Their hover
+delays are zero, and the paginated list reserves space for five collapsed rows so
+the controls remain stable on short final pages.
+
+Date picker buttons show the selected
 date, and successful creation returns to the submitted start date rather than
 the date originally supplied in the URL. Item headers label the display timezone;
 the Booking rules section retains the separate scheduling timezone.
@@ -92,6 +106,13 @@ reads retain the selected grid and known resource rows; detail fallbacks reserve
 the content and facts columns. Keep these placeholders aligned when changing a
 page layout. Availability-filter counts reserve space before their values arrive
 so they do not wrap the narrow-screen toolbar on completion.
+
+Before mounting the Booking shell or sidebar, AppShell waits for feature flags. Disabled or
+unavailable Booking flags redirect to `/workspace` without issuing Booking queries.
+When Booking is enabled, the Inventory sidebar links to `/booking`; the legacy global AppBar
+does not include a separate Booking link.
+Calendar, catalogue, and add-booking routes ignore malformed date parameters (including
+non-string values) and use their normal display-timezone defaults.
 
 The resource-week skeleton shares its date headers and column sizing with the
 loaded grid. It reserves four anonymous rows before the catalogue arrives, then

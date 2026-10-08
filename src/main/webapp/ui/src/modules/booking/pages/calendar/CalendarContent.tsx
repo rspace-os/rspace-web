@@ -1,0 +1,168 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { parseAsString, useQueryState } from "nuqs";
+import * as React from "react";
+import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
+import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
+import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
+import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { dayMinuteToZonedTime, wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { useTableList } from "@/modules/common/table-list/useTableList";
+import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
+import { BookingEventsCalendar, type CalendarLayout, type CalendarView, calendarDates } from "./BookingEventsCalendar";
+import { useCalendarEvents } from "./calendarEvents";
+
+const calendarResourceConfig = resolveCollectionConfig({
+  ...bookingConfigurationConfig,
+  slug: "calendar-resources",
+  defaultColumns: ["target"],
+  pagination: { defaultLimit: 20, limits: [10, 20, 30, 40, 50] },
+} as const);
+
+const calendarSearchParser = parseAsString.withDefault("").withOptions({ history: "replace", clearOnDefault: true });
+
+export function CalendarContent() {
+  const { date } = useSearch({ from: "/booking/calendar" });
+  const navigate = useNavigate({ from: "/booking/calendar" });
+  const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const { data: currentUser } = useCurrentUserQuery();
+  const [view, setView] = React.useState<CalendarView>("day");
+  const [layout, setLayout] = React.useState<CalendarLayout>("resources");
+  const [resettingControls, setResettingControls] = React.useState(false);
+  const [eventScopeIsFiltered, setEventScopeIsFiltered] = React.useState(() => calendarSearch.trim() !== "");
+  const preferences = useBookingDisplayPreferences();
+  const beginCreation = useBookingCreationStore((state) => state.beginCreation);
+  const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
+  const selectedDate = date ?? todayInTimeZone(preferences.timeZone);
+  const dates = calendarDates(selectedDate, view);
+  const resourceTable = useTableList<BookingConfiguration>({
+    config: calendarResourceConfig,
+    dataSource: {
+      type: "remote",
+      queryKey: (state) => ["api-v2", "booking-catalogue", "calendar", token, state],
+      keepPreviousData: true,
+      fetch: async (state, { signal }) => {
+        const result = await fetchBookingCatalogue(
+          {
+            q: state.filters.search,
+            page: state.page.pageIndex + 1,
+            pageSize: state.page.pageSize,
+          },
+          token,
+          signal,
+        );
+        return {
+          rows: result.items.map(catalogueItemAsConfiguration),
+          rowCount: result.total,
+        };
+      },
+    },
+    initialState: { filters: { search: calendarSearch, expression: null }, visibleFields: ["target"] },
+    features: { sorting: false, columns: false },
+    queryString: false,
+  });
+  React.useEffect(() => {
+    if (resourceTable.state.filters.search === calendarSearch) return;
+    resourceTable.setFilters({ ...resourceTable.state.filters, search: calendarSearch });
+  }, [calendarSearch, resourceTable.setFilters, resourceTable.state.filters]);
+  const resourceConfigurations = React.useMemo(
+    () =>
+      resourceTable.tableProps.rows.flatMap((row) => {
+        if (!row.capabilities.canCreateBooking && !row.capabilities.canEditConfiguration) return [];
+        const option = bookableItemOption(row);
+        return option ? [option] : [];
+      }),
+    [resourceTable.tableProps.rows],
+  );
+  const resourceTargetIds = React.useMemo(
+    () => resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target.globalId] : [])),
+    [resourceTable.tableProps.rows],
+  );
+  const events = useCalendarEvents(
+    dates[0],
+    dates.at(-1) ?? dates[0],
+    preferences.timeZone,
+    token,
+    layout === "resources" && !eventScopeIsFiltered ? resourceTargetIds : undefined,
+    !resettingControls &&
+      (layout !== "resources" ||
+        (resourceTable.tableProps.status !== "loading" && resourceTable.tableProps.status !== "refreshing")),
+  );
+  const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
+
+  return (
+    <BookingEventsCalendar
+      date={selectedDate}
+      view={view}
+      layout={layout}
+      timezone={preferences.timeZone}
+      availabilityStartMinute={preferences.availabilityWindow.startMinute}
+      availabilityEndMinute={preferences.availabilityWindow.endMinute}
+      events={events.data ?? []}
+      resources={resourceTargets}
+      resourceConfigurations={resourceConfigurations}
+      resourceTableProps={resourceTable.tableProps}
+      searchControl={{
+        value: calendarSearch,
+        onChange: (search) => void setCalendarSearch(search || null),
+      }}
+      onEventScopeChange={setEventScopeIsFiltered}
+      currentUserId={currentUser.id}
+      isLoading={events.isPending && resourceTable.tableProps.status !== "error"}
+      isError={events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")}
+      onRetry={() => {
+        if (layout === "resources" && resourceTable.tableProps.status === "error") {
+          void resourceTable.refetch();
+        } else {
+          void events.refetch();
+        }
+      }}
+      onDateChange={(nextDate) =>
+        void navigate({ search: (current) => ({ ...current, date: nextDate }), replace: true })
+      }
+      onControlsReset={async () => {
+        // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
+        setResettingControls(true);
+        try {
+          await navigate({ search: (current) => ({ ...current, date: undefined }), replace: true });
+          React.startTransition(() => {
+            setView("day");
+            setLayout("resources");
+          });
+        } finally {
+          React.startTransition(() => setResettingControls(false));
+        }
+      }}
+      onViewChange={setView}
+      onLayoutChange={setLayout}
+      creationAction={
+        <BookingCreationButtonGroup ownerId="calendar-toolbar" initialDate={selectedDate} size="default" />
+      }
+      creationDisabled={creationActive}
+      onResourceRangeSelect={(resource, range, trigger) => {
+        const window = wallClockDraftFromInstants(
+          dayMinuteToZonedTime(selectedDate, preferences.timeZone, range.startMinute).toInstant().toString(),
+          dayMinuteToZonedTime(selectedDate, preferences.timeZone, range.endMinute).toInstant().toString(),
+          preferences.timeZone,
+        );
+        const ownerId = `calendar-resource-${resource.configurationId}`;
+        const triggerId = `${ownerId}-${selectedDate}`;
+        trigger.id = triggerId;
+        beginCreation({
+          ownerId,
+          triggerId,
+          eventKind: "BOOKING",
+          target: resource,
+          initialDate: selectedDate,
+          window,
+          lockTarget: true,
+          timelineAdjustable: trigger.matches('[data-testid="day-timeline-scroller"]'),
+        });
+      }}
+    />
+  );
+}

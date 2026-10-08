@@ -2,6 +2,7 @@ import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
 import { faGear } from "@fortawesome/free-solid-svg-icons/faGear";
 import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Drawer, { drawerClasses } from "@mui/material/Drawer";
@@ -10,6 +11,8 @@ import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import { InvalidState } from "@/util/error";
 import { mapNullable } from "@/util/Util";
 import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/IgsnIcon";
@@ -521,10 +524,11 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
+  const showBooking = useIsFeatureFlagEnabled(FEATURE_FLAGS.bookingEnabled);
   const sidebarRef = useLandmark("Navigation");
 
   const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
-    max: isSysAdmin ? 9 : 8,
+    max: 8 + Number(isSysAdmin) + Number(showBooking),
   });
 
   // Must not set the visible panel: the create-new flow does that itself (createNewHelper).
@@ -557,8 +561,26 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
           </List>
           <Divider />
           <List component="ul" aria-label={t("layout.sidebar.otherActionsLabel")}>
-            <ExportNavItem index={8} tabIndex={getTabIndex(8)} getRef={getRef} />
-            {isSysAdmin && <SettingsNavItem index={9} tabIndex={getTabIndex(9)} getRef={getRef} />}
+            {showBooking && (
+              <DrawerTab
+                label={t("layout.sidebar.bookingSystem")}
+                selected={false}
+                icon={<CalendarMonthIcon />}
+                index={8}
+                tabIndex={getTabIndex(8)}
+                ref={getRef(8)}
+                drawerOpen={uiStore.sidebarOpen}
+                href="/booking"
+              />
+            )}
+            <ExportNavItem index={showBooking ? 9 : 8} tabIndex={getTabIndex(showBooking ? 9 : 8)} getRef={getRef} />
+            {isSysAdmin && (
+              <SettingsNavItem
+                index={showBooking ? 10 : 9}
+                tabIndex={getTabIndex(showBooking ? 10 : 9)}
+                getRef={getRef}
+              />
+            )}
           </List>
         </Box>
       </Box>

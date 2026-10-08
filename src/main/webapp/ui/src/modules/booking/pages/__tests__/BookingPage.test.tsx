@@ -20,6 +20,7 @@ import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/sch
 import { createBookingIndexRoute, createBookingRoute } from "@/modules/booking/pages/BookingPage";
 import { ownerBookingAccess } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import { createBookableItemRoute } from "@/modules/booking/pages/bookable-items/routes";
+import { bookingsOpenApi } from "@/modules/booking/pages/my-bookings/mocks/bookingMocks";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { getSidebarRenderer } from "@/modules/common/app/AppShell";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -82,6 +83,21 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
     http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUser, hasSysAdminRole })),
     http.get("/api/v2/instruments/123", () =>
       HttpResponse.json({ parentContainerName: null, parentContainerGlobalId: null }),
+    ),
+    http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingsOpenApi)),
+    http.get("/api/v2/bookings", () =>
+      HttpResponse.json({
+        docs: [],
+        totalDocs: 0,
+        limit: 100,
+        page: 1,
+        pagingCounter: 1,
+        totalPages: 0,
+        hasPrevPage: false,
+        hasNextPage: false,
+        prevPage: null,
+        nextPage: null,
+      }),
     ),
     http.get("/api/v2/users/me/booking-preferences", async () => {
       await preferencesReady;
@@ -152,8 +168,9 @@ describe("booking layout", () => {
     const preferences = Promise.withResolvers<void>();
     const { container } = renderAt("/booking", false, preferences.promise);
     try {
-      expect(await screen.findByRole("status")).toHaveTextContent("common:loading");
-      expect(screen.getByRole("status")).toHaveClass("sr-only");
+      const statuses = await screen.findAllByRole("status");
+      expect(statuses.some((status) => status.textContent === "common:loading")).toBe(true);
+      expect(statuses.every((status) => status.classList.contains("sr-only"))).toBe(true);
       expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
       await expectAccessible(container);
     } finally {
