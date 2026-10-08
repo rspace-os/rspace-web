@@ -59,7 +59,7 @@ public class LdapRealm extends RSpaceRealm {
       rspaceUser = userManager.getUserByUsername(username);
       if (!SignupSource.LDAP.equals(rspaceUser.getSignupSource())) {
         // costs about what an unknown name's directory round trip does
-        sentinelCheck.pad(username, new String(password));
+        sentinelCheck.pad(userManager.loginLockKey(username), new String(password));
         return null; // not LDAP user, don't try LDAP authentication
       }
     }
