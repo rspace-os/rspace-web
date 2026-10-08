@@ -43,14 +43,17 @@ export class NotificationsDialogComponent {
     await this.root.locator("tr.notificationRow").first().waitFor({ state: "visible" });
   }
 
+  notification(text: string): Locator {
+    return this.root.locator("tr.notificationRow").filter({ hasText: text });
+  }
+
   async getNotificationTexts(): Promise<Array<string>> {
     return this.root.locator("tr.notificationRow").allInnerTexts();
   }
 
   // The archive-export notification's own link text is the download URL
   async getExportDownloadHref(rowText: string): Promise<string> {
-    const row = this.root.locator("tr.notificationRow").filter({ hasText: rowText });
-    const link = row.locator("a[href*='/export/ajax/downloadArchive/']");
+    const link = this.notification(rowText).locator("a[href*='/export/ajax/downloadArchive/']");
     const href = await link.getAttribute("href");
     if (!href) {
       throw new Error(`getExportDownloadHref: no download link found in a notification matching "${rowText}"`);
