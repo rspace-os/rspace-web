@@ -7,6 +7,7 @@ import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
 import com.researchspace.auth.AccountEnabledAuthorizer;
 import com.researchspace.auth.LoginHelper;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.googleauth.ExternalAuthTokenVerifier;
@@ -88,7 +89,7 @@ public class ExternalAuthController extends BaseController {
             newUser.getEmail(),
             RequestUtil.remoteAddr(request));
         return new AjaxReturnObject<String>(
-            null, ErrorList.createErrListWithSingleMsg(getText("externalAuth.errors.busy")));
+            null, ErrorList.createErrListWithSingleMsg(getText("errors.signup.rateLimited")));
       }
       try {
         userEnablementUtils.checkLicenseForUserInRole(1, roleManager.getRole(newUser.getRole()));
@@ -96,7 +97,17 @@ public class ExternalAuthController extends BaseController {
       } finally {
         encodeGate.release();
       }
-      defaultPostSignUp.postUserCreate(newUser, request, SSO_DUMMY_PASSWORD);
+      try {
+        defaultPostSignUp.postUserCreate(newUser, request, SSO_DUMMY_PASSWORD);
+      } catch (LoginVerificationBusyException e) {
+        SECURITY_LOG.warn(
+            "Post-signup login for [{}] from {} refused: {}",
+            newUser.getUsername(),
+            RequestUtil.remoteAddr(request),
+            e.getMessage());
+        return new AjaxReturnObject<String>(
+            "/login?" + SignupController.ACCOUNT_CREATED_LOGIN_BUSY_PARAM, null);
+      }
       return new AjaxReturnObject<String>(
           defaultPostSignUp.getRedirect(newUser).replace("redirect:", "/"), null);
     } else {

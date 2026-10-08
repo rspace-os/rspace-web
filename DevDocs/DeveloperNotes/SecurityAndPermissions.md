@@ -80,15 +80,19 @@ The design and its trade-offs are in
   count toward lockout. Encoding new passwords and the migration are not
   bounded at the encoder. The anonymous routes into `encode()` are
   capped in front of it instead: `SignupController`,
-  `ExternalAuthController` (Google sign-up on Community) and
+  `ExternalAuthController` (Google sign-up on Community),
+  `UserLdapRepoImpl` (LDAP first-login auto-signup) and
   `PasswordResetByEmailHandlerBase` hold a permit from the shared
   `NewPasswordEncodeGate` (`password.anonymousEncode.maxConcurrent`,
   default 4) through the hash and save, and refuse at once when none is
   free, leaving a reset token usable. The reset reply also accepts only a
-  token that is unused and unexpired. Authenticated encodes (password change,
-  user creation, imports) are unbounded by choice (ADR 0011). The initial
-  verification-password set is serialised per user in memory, and a
-  duplicate submission returns success without hashing.
+  token that is unused and unexpired, and `UserManagerImpl` marks it used
+  with a conditional update in the same transaction as the password
+  change, so two simultaneous submits give one change. Authenticated
+  encodes (password change, user creation, imports) are unbounded by
+  choice (ADR 0011). The initial verification-password set is serialised
+  per user in memory, and a duplicate submission returns success without
+  hashing.
 - **Busy post-signup login.** Standalone signup logs the new user in
   through the same verifier. A `LoginVerificationBusyException` there does
   not abort signup: `DefaultPostUserCreate` finishes the PI promotion and

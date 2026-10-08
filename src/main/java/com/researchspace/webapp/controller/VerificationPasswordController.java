@@ -206,8 +206,7 @@ public class VerificationPasswordController extends BaseController {
   @PostMapping("/verificationPasswordResetReply")
   @IgnoreInLoggingInterceptor(ignoreRequestParams = {"pwd", "confirmPwd"})
   public ModelAndView submitPasswordResetPage(
-      @ModelAttribute PasswordResetCommand cmd, BindingResult errors, HttpServletRequest request)
-      throws Exception {
+      @ModelAttribute PasswordResetCommand cmd, BindingResult errors, HttpServletRequest request) {
     return passwordResetEmailHandler
         .submitResetPage(cmd, errors, request)
         .addObject("passwordType", PasswordType.VERIFICATION_PASSWORD);

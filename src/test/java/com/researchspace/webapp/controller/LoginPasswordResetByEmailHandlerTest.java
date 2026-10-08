@@ -97,6 +97,17 @@ public class LoginPasswordResetByEmailHandlerTest {
   }
 
   @Test
+  void validTokenWithNoMatchingUsernameReturnsTheFailView() throws Exception {
+    TokenBasedVerification token = freshToken();
+    cmd.setToken(token.getToken());
+    when(userManager.getUserVerificationToken(token.getToken())).thenReturn(token);
+    when(userManager.getUsernameByToken(token.getToken())).thenReturn(Optional.empty());
+
+    assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
+    verify(userManager, never()).applyLoginPasswordChange(anyString(), anyString());
+  }
+
+  @Test
   void validTokenStillCompletesTheReset() throws Exception {
     TokenBasedVerification token = freshToken();
     stubCompletableReset(cmd, token);
@@ -104,6 +115,20 @@ public class LoginPasswordResetByEmailHandlerTest {
     ModelAndView mav = handler.submitResetPage(cmd, errors, request);
 
     assertEquals(COMPLETE_VIEW, mav.getViewName());
+  }
+
+  @Test
+  void tokenClaimedByAConcurrentSubmitReturnsTheFailViewWithoutAnEmail() throws Exception {
+    TokenBasedVerification token = freshToken();
+    cmd.setToken(token.getToken());
+    when(userManager.getUserVerificationToken(token.getToken())).thenReturn(token);
+    when(userManager.getUsernameByToken(token.getToken())).thenReturn(Optional.of("someone"));
+    when(userManager.applyLoginPasswordChange(cmd.getPassword(), token.getToken()))
+        .thenReturn(null);
+
+    assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
+    verify(emailer, never()).sendEmail(any(), any(), any());
+    assertTrue(encodeGate.tryAcquire());
   }
 
   @Test

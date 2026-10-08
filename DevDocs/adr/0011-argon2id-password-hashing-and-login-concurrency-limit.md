@@ -31,9 +31,10 @@ roll back already restore a pre-upgrade database backup.
 
 A memory-hard hash creates a new problem that SHA-256 never had. Argon2 allocates its configured
 memory block on the Java heap for every verification and holds it for the duration, tens of
-milliseconds. The login form is unauthenticated, usernames are not secret (`sysadmin1` ships
-with every install, the directory lists usernames to any logged-in user, and the signup page
-confirms whether a username exists), and the account lockout in `DefaultLockoutPolicy` only
+milliseconds. The login form is unauthenticated, usernames used to leak from several public
+routes (`sysadmin1` ships with every install, the signup page confirms whether a username
+exists, and the login page answered unknown names faster than known ones; RSDEV-1558 closes the
+remaining routes), and the account lockout in `DefaultLockoutPolicy` only
 registers after a failed verification completes. A burst of concurrent login requests therefore
 forces concurrent allocations bounded only by the servlet thread pool, around 200 threads. At
 64 MiB per verification that is 12.8 GB of transient heap, enough to stall or kill the JVM for
@@ -93,9 +94,11 @@ request volume. A request that cannot get its turn before the wait elapses fails
 generic failure the user sees for a wrong password, but through a distinct exception type,
 `LoginVerificationBusyException`. The login filter (`StandaloneShiroFormAuthFilterExt`) and
 `ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
-users out. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
-that reach it (signup, Google sign-up on Community, and the login and verification password-reset
-replies) take a permit from one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
+users out. A check waiting for a permit holds its request thread for up to `waitSeconds`, so under
+a flood the thread pool, not the heap, is the next limit, and a refused check costs the attacker
+nothing; lowering `waitSeconds` trades honest users' waits for thread capacity. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
+that reach it (sign-up, Google sign-up on Community, LDAP first-login auto-signup, and the login
+and verification password-reset replies) take a permit from one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
 through the hash and the save and refused immediately when none is free, with a reset token left
 usable. The reset replies also accept only an unused, unexpired token. Anonymous Argon2
 allocation therefore cannot exceed 4 x 19 MiB, about 76 MiB, or about 228 MiB with the login
@@ -194,6 +197,10 @@ application are unaffected.
 
 ## Consequences
 
+The user-visible effect of every rule in this ADR, scenario by scenario with the exact messages,
+is tabulated in [PasswordHashingScenarios.md](../DeveloperNotes/PasswordHashingScenarios.md).
+That table must change in the same commit as any limit, default, message or route it describes.
+
 - The upgrade is irreversible. A release downgraded past this change cannot read
   `{argon2@rspace_v1}`, `{argon2-legacy-sha256@rspace_v1}` or `{bcrypt}` values, so nobody can
   log in and SSO and Community users cannot sign or witness. Downgrade requires restoring the
@@ -203,8 +210,7 @@ application are unaffected.
   username. Those users cannot log in until an administrator resets their password. Unusable
   verification passwords are cleared instead, and those users set a new one.
 - Three encoder ids exist permanently: two in `password` and `{bcrypt}` in `verificationPassword`.
-  A legacy row stays as it is until its owner changes that password.
-  `PasswordEncoder.upgradeEncoding` is implemented but nothing calls it. The legacy verify path,
+  A legacy row stays as it is until its owner changes that password. The legacy verify path,
   including Shiro's exact byte ordering for the salted hash, was pinned by tests against fixtures
   generated with the old Shiro code and then hard-coded, before that code was removed. The salted
   `CryptoUtils.hashWithSha256inHex` helper is gone.
@@ -233,6 +239,17 @@ application are unaffected.
   per-username lock, and can tell a right password from a wrong one by the error it gets. On
   `main` the same route hashed every guess with no limit. Validating the client before the
   password closes it and is a separate ticket against `main`.
-- Argon2's cost makes the response time for an existing username measurably longer than for an
-  unknown one, which never runs a hash. Accepted because usernames are not secret (see Context);
-  equalising the timing is out of scope for this ticket.
+- Usernames must not leak from unauthenticated endpoints. Argon2's cost would make the login
+  page answer an existing username measurably slower than an unknown one, so `ShiroRealm` runs
+  an unknown name (and, when LDAP is off, an LDAP-source user) through `SentinelPasswordCheck`, an
+  Argon2 check against a random hash made at startup. On LDAP installs `LdapRealm` pads an
+  internal user's early exit the same way; parity with a directory bind is best effort. All
+  padded checks share one per-username lock, so they hold at most one permit. Other public routes
+  that still confirm a username are RSDEV-1558.
+- Deferred to follow-on tickets:
+  - RSDEV-1558: username existence still leaks from the sign-up form, the reset and reminder
+    timing, the disabled-account redirect and the API token route's account-state messages; this
+    change closes only the login page.
+  - RSDEV-1559: `User.salt` is write-only after the wrap and is dropped in a later release.
+  - RSDEV-1560: `RequestUtil.remoteAddr` trusts `X-Forwarded-For`, so address-based throttling of
+    busy refusals (and of the API token route, see RSDEV-1557) waits on a trusted-proxy list.

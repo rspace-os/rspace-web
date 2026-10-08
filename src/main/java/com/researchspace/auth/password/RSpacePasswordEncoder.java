@@ -72,9 +72,4 @@ public class RSpacePasswordEncoder implements PasswordEncoder {
     }
     return delegate.matches(rawPassword, encodedPassword);
   }
-
-  @Override
-  public boolean upgradeEncoding(String encodedPassword) {
-    return delegate.upgradeEncoding(encodedPassword);
-  }
 }

@@ -259,7 +259,7 @@ These properties configure both the sign-up flow and some UI elements. Not all c
 
   This mechanism is activated if the property has  a non-blank value. E.g. `user.signup.signupCode=mydomain29876`
 * **user.signup.acceptedDomains**  restricts self sign-up to specific domains, for users in SSO environments using a federated IdP. A comma-separated list.
-* **password.anonymousEncode.maxConcurrent** The number of new passwords that sign-up, Google sign-up on Community, and password-reset replies (login and verification password) may hash at the same time, shared across all four. Each hash holds about 19 MiB of heap and one CPU core until the new password is saved. A submission that finds no free slot is refused immediately with a message asking the user to try again in a moment, and a reset link stays usable. Default is 4. The sign-up code and reCAPTCHA settings above remain the stronger controls against unwanted sign-ups where you can use them.
+* **password.anonymousEncode.maxConcurrent** The number of new passwords that sign-up, Google sign-up on Community, LDAP first-login auto-signup, and password-reset replies (login and verification password) may hash at the same time, shared across all five. Each hash holds about 19 MiB of heap and one CPU core until the new password is saved. A submission that finds no free slot is refused immediately with a message asking the user to try again in a moment, and a reset link stays usable. Default is 4. The sign-up code and reCAPTCHA settings above remain the stronger controls against unwanted sign-ups where you can use them.
 * **authorised.signup** If self-signup is allowed, do these requests need to be authorised by an admin? Default is `false`
 * **license.exceeded.custom.message** can be used to set custom contact details if the license number is exceeded. The message will be appended to the error message that is displayed.  This should be useful if users self-sign up, so they can be directed to a contact person to ask about getting additional licenses.
 * **example.import.files**. Custom content can now be provided when a user first logs into RSpace. An RSpace XML zip file can be put on the server,
@@ -504,7 +504,7 @@ These optional settings configure  behaviour of the RSpace application.
 
 #### Login password checks
 * **login.passwordVerification.maxConcurrent** The maximum number of login and reauthentication password checks that run at once. Each check holds about 19 MiB of heap, so this bounds the memory a burst of login attempts can use. Default is 8.
-* **login.passwordVerification.waitSeconds** How long, in seconds, a password check waits for a free slot before it is refused. A refused check shows the usual wrong-password message but does not count toward account lockout. Default is 5.
+* **login.passwordVerification.waitSeconds** How long, in seconds, a password check waits for a free slot before it is refused. A refused check shows the usual wrong-password message but does not count toward account lockout. While it waits the check holds a request thread, so on a busy instance a lower value frees threads sooner at the cost of more refused logins. Default is 5.
 
 #### Archiving and export
 * **archive.folder.location** (default = $TOMCAT_HOME/archive) Path to a directory where exports will be assembled and stored. Must be readable and writable by Tomcat.

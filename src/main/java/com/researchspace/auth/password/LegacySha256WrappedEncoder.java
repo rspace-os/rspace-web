@@ -55,11 +55,6 @@ public class LegacySha256WrappedEncoder implements PasswordEncoder {
     return argon2.matches(argon2Input(digest), wrapped);
   }
 
-  @Override
-  public boolean upgradeEncoding(String encodedPassword) {
-    return true;
-  }
-
   private static String argon2Input(byte[] sha256Digest) {
     return Base64.getEncoder().encodeToString(sha256Digest);
   }

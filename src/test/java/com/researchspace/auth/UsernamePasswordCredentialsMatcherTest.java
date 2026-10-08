@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.researchspace.auth.password.BoundedPasswordVerifier;
 import com.researchspace.auth.password.LoginVerificationBusyException;
@@ -57,6 +58,16 @@ class UsernamePasswordCredentialsMatcherTest {
     assertTrue(matcher.verify(user, "pw"));
     assertFalse(matcher.verify(user, "wrong"));
     assertEquals(current, user.getPassword());
+  }
+
+  @Test
+  void nullPasswordDoesNotMatchWithoutACheck() {
+    SimpleAuthenticationInfo info =
+        new SimpleAuthenticationInfo("legacy", LEGACY, ShiroRealm.DEFAULT_USER_PASSWD_REALM);
+
+    assertFalse(
+        matcher.doCredentialsMatch(new UsernamePasswordToken("legacy", (char[]) null), info));
+    verifyNoInteractions(verifier);
   }
 
   @Test

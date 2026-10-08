@@ -81,10 +81,10 @@
     <c:url value='/login' var="loginURL"></c:url>
     <form method="post" id="loginForm" action="${loginURL}" autocomplete="off" class="form-horizontal rs-sign-in-form__body">
       <c:if test="${fn:length(applicationScope['RS_DEPLOY_PROPS']['customLoginContent']) > 0}">
-      <p style="padding: 5px">
-      ${applicationScope['RS_DEPLOY_PROPS']['customLoginContent']}
-      <p/>
-    </c:if>
+        <p style="padding: 5px">
+        ${applicationScope['RS_DEPLOY_PROPS']['customLoginContent']}
+        <p/>
+      </c:if>
       <c:if test="${param.accountCreatedLoginBusy != null}">
         <p class="text-info" style="padding: 5px" role="status"><spring:message code="signup.accountCreatedLoginBusy"/></p>
       </c:if>
