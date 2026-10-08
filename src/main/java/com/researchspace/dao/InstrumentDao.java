@@ -77,7 +77,10 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
    */
   Map<Long, Instrument> getBookingRelationshipTargets(Set<Long> instrumentIds);
 
-  /** Searches active concrete Instruments eligible for a new Booking configuration. */
+  /**
+   * Lists active concrete Instruments eligible for a new Booking configuration, ordered by name. A
+   * {@code null} or blank query browses every eligible Instrument.
+   */
   List<Instrument> searchEligibleBookingTargets(String query, int limit, User subject);
 
   /**

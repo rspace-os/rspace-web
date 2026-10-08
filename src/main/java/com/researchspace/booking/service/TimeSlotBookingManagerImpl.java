@@ -60,7 +60,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   private final TimeSlotBookingDao bookingDao;
   private final BookingConfigurationDao configurationDao;
   private final BookingSchedulingPolicy schedulingPolicy;
-  private final BookingMaintenancePolicy maintenancePolicy;
   private final InstrumentDao instrumentDao;
   private final BookingNotificationService bookingNotificationService;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
@@ -75,7 +74,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       @Qualifier("timeSlotBookingDao") TimeSlotBookingDao bookingDao,
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
       BookingSchedulingPolicy schedulingPolicy,
-      BookingMaintenancePolicy maintenancePolicy,
       InstrumentDao instrumentDao,
       BookingNotificationService bookingNotificationService,
       ObjectProvider<ResourceRegistry> resourceRegistry,
@@ -93,7 +91,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     this.bookingDao = bookingDao;
     this.configurationDao = configurationDao;
     this.schedulingPolicy = schedulingPolicy;
-    this.maintenancePolicy = maintenancePolicy;
     this.instrumentDao = instrumentDao;
     this.bookingNotificationService = bookingNotificationService;
     this.resourceRegistry = resourceRegistry;
@@ -108,7 +105,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       TimeSlotBookingDao bookingDao,
       BookingConfigurationDao configurationDao,
       BookingSchedulingPolicy schedulingPolicy,
-      BookingMaintenancePolicy maintenancePolicy,
       InstrumentDao instrumentDao,
       BookingNotificationService bookingNotificationService,
       ObjectProvider<ResourceRegistry> resourceRegistry,
@@ -120,7 +116,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
         bookingDao,
         configurationDao,
         schedulingPolicy,
-        maintenancePolicy,
         instrumentDao,
         bookingNotificationService,
         resourceRegistry,
@@ -310,10 +305,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     }
     BookingSchedulingPolicy.ConflictInterval conflict =
         validateScheduling(configuration, create.kind(), create.start(), create.end());
-    requireNoOverlap(
-        configuration.getId(),
-        conflict.start(),
-        conflict.end(),
+    requireNoConflict(
+        configuration,
+        create.start(),
+        create.end(),
+        conflict,
         null,
         conflictingKinds(configuration, create.kind()));
 
@@ -400,10 +396,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                 }
                 BookingSchedulingPolicy.ConflictInterval conflict =
                     validateScheduling(configuration, booking.getKind(), start, end);
-                requireNoOverlap(
-                    configuration.getId(),
-                    conflict.start(),
-                    conflict.end(),
+                requireNoConflict(
+                    configuration,
+                    start,
+                    end,
+                    conflict,
                     booking.getId(),
                     conflictingKinds(configuration, booking.getKind()));
               }
@@ -505,15 +502,44 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     }
   }
 
-  private void requireNoOverlap(
-      Long configurationId,
+  /**
+   * Rejects the requested interval when it overlaps another event, and otherwise when its
+   * buffer-expanded conflict interval does. Checking the requested interval first tells the caller
+   * whether moving the booking slightly would be enough.
+   */
+  private void requireNoConflict(
+      BookingConfiguration configuration,
       Date start,
       Date end,
+      BookingSchedulingPolicy.ConflictInterval buffered,
       Long excludedId,
       Set<BookingEventKind> includedKinds) {
-    if (BookingCurrentReads.read(
-        () -> bookingDao.overlaps(configurationId, start, end, excludedId, includedKinds))) {
-      throw new BookingOverlapException();
+    Optional<TimeSlotBooking> overlap =
+        BookingCurrentReads.read(
+            () ->
+                bookingDao.findFirstOverlap(
+                    configuration.getId(), start, end, excludedId, includedKinds));
+    if (overlap.isPresent()) {
+      throw new BookingOverlapException(ConflictingEvent.of(overlap.get()));
+    }
+    if (buffered.start().getTime() == start.getTime()
+        && buffered.end().getTime() == end.getTime()) {
+      return;
+    }
+    Optional<TimeSlotBooking> bufferConflict =
+        BookingCurrentReads.read(
+            () ->
+                bookingDao.findFirstOverlap(
+                    configuration.getId(),
+                    buffered.start(),
+                    buffered.end(),
+                    excludedId,
+                    includedKinds));
+    if (bufferConflict.isPresent()) {
+      throw new BookingBufferConflictException(
+          ConflictingEvent.of(bufferConflict.get()),
+          configuration.getBufferBeforeMinutes(),
+          configuration.getBufferAfterMinutes());
     }
   }
 

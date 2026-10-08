@@ -7,6 +7,7 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2ResourceDefinition;
 import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.Field;
@@ -18,7 +19,9 @@ import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.collection.WriteOperation;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @ApiV2ResourceDefinition(
     name = "booking-configurations",
@@ -107,6 +110,60 @@ public record ApiV2BookingConfigurationResource(
                   List.of(),
                   false));
 
+  private static final String WALL_TIME_PATTERN = "^(?:[01]\\d|2[0-3]):[0-5]\\d$";
+  private static final String CLOSING_TIME_PATTERN = "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$";
+
+  private static final Map<String, Object> WEEKDAY_SCHEMA =
+      ordered("type", "integer", "minimum", 1, "maximum", 7);
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static final CollectionFieldType<List<Integer>> OPEN_DAYS_TYPE =
+      CollectionFieldTypes.structured(
+          (Class) List.class,
+          CollectionFieldType.InputKind.ARRAY,
+          ordered(
+              "items",
+              WEEKDAY_SCHEMA,
+              "minItems",
+              1,
+              "maxItems",
+              7,
+              "uniqueItems",
+              true,
+              "example",
+              List.of(1, 2, 3, 4, 5, 6)),
+          BookingOpeningHoursCodec::openDays,
+          days -> days);
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static final CollectionFieldType<List<BookingOpeningException>> OPENING_EXCEPTIONS_TYPE =
+      CollectionFieldTypes.structured(
+          (Class) List.class,
+          CollectionFieldType.InputKind.ARRAY,
+          ordered(
+              "items",
+              ordered(
+                  "type",
+                  "object",
+                  "additionalProperties",
+                  false,
+                  "required",
+                  List.of("dayOfWeek", "start", "end"),
+                  "properties",
+                  ordered(
+                      "dayOfWeek",
+                      WEEKDAY_SCHEMA,
+                      "start",
+                      ordered("type", "string", "pattern", WALL_TIME_PATTERN),
+                      "end",
+                      ordered("type", "string", "pattern", CLOSING_TIME_PATTERN))),
+              "maxItems",
+              7,
+              "example",
+              List.of(ordered("dayOfWeek", 6, "start", "10:00", "end", "16:00"))),
+          BookingOpeningHoursCodec::openingExceptions,
+          ApiV2BookingConfigurationResource::renderExceptions);
+
   /** Stable shape used by isolated metadata tests; production injects {@link #description}. */
   public static final CollectionDescription<BookingConfiguration> DESCRIPTION =
       description(AccessFunction.authenticated());
@@ -128,6 +185,45 @@ public record ApiV2BookingConfigurationResource(
             List.of(new Sort("id", true)),
             access);
     List<Field<BookingConfiguration, ?>> fields = new ArrayList<>(base.fields());
+    int afterOpeningEnd =
+        fields.indexOf(
+                fields.stream()
+                    .filter(field -> field.name().equals("openingEnd"))
+                    .findFirst()
+                    .orElseThrow())
+            + 1;
+    fields.add(
+        afterOpeningEnd,
+        Field.writable(
+                "openDays",
+                "openDays",
+                OPEN_DAYS_TYPE,
+                BookingConfiguration::getOpenDays,
+                BookingConfiguration::setOpenDays)
+            .documented(
+                OpenApiSchemaDocumentation.of(
+                    null,
+                    "ISO weekdays (1 = Monday to 7 = Sunday) on which the item opens, in ascending"
+                        + " order. Omitted weekdays are closed. Replaces the whole selection;"
+                        + " defaults to the institution defaults on create.",
+                    null))
+            .withQueryCapabilities(false, false));
+    fields.add(
+        afterOpeningEnd + 1,
+        Field.writable(
+                "openingExceptions",
+                "openingExceptions",
+                OPENING_EXCEPTIONS_TYPE,
+                BookingConfiguration::getOpeningExceptions,
+                BookingConfiguration::setOpeningExceptions)
+            .documented(
+                OpenApiSchemaDocumentation.of(
+                    null,
+                    "Open weekdays whose hours differ from openingStart/openingEnd, in ascending"
+                        + " weekday order. Each dayOfWeek must be in openDays. An empty array means"
+                        + " every open day uses the shared hours. Replaces the whole list.",
+                    null))
+            .withQueryCapabilities(false, false));
     fields.add(
         Field.readOnly(
                 "createdByName",
@@ -175,5 +271,27 @@ public record ApiV2BookingConfigurationResource(
         base.defaultSort(),
         access,
         List.of());
+  }
+
+  private static Object renderExceptions(List<BookingOpeningException> exceptions) {
+    return exceptions.stream()
+        .map(
+            exception ->
+                ordered(
+                    "dayOfWeek",
+                    exception.dayOfWeek(),
+                    "start",
+                    exception.start(),
+                    "end",
+                    exception.end()))
+        .toList();
+  }
+
+  private static Map<String, Object> ordered(Object... entries) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    for (int index = 0; index < entries.length; index += 2) {
+      result.put((String) entries[index], entries[index + 1]);
+    }
+    return result;
   }
 }
