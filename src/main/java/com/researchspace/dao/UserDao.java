@@ -90,6 +90,14 @@ public interface UserDao extends GenericDao<User, Long> {
   TokenBasedVerification getByToken(String token);
 
   /**
+   * Marks an unused token as used in a single conditional update, so that of two concurrent
+   * requests with the same token exactly one succeeds. Must run inside the caller's transaction.
+   *
+   * @return 1 for the request that claimed the token, 0 if it was already used
+   */
+  int claimTokenBasedVerification(String token);
+
+  /**
    * Gets a list of users with the given email
    *
    * @param email
