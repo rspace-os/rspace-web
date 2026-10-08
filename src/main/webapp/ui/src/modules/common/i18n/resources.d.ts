@@ -1415,7 +1415,6 @@ export default interface Resources {
       "detail": "Bookings for {itemName}",
       "detailLoading": "Loading bookings.",
       "detailUnavailable": "Bookings are unavailable.",
-      "displayControls": "Calendar display controls",
       "event": "Booking event",
       "feed": {
         "bookedBy": "Booked by: {0}",
@@ -1467,7 +1466,7 @@ export default interface Resources {
       "layout": {
         "agenda": "Agenda",
         "legend": "Layout",
-        "resources": "Resources",
+        "resources": "By Item",
         "time-grid": "Time grid"
       },
       "loading": "Loading booking events.",
@@ -1477,8 +1476,8 @@ export default interface Resources {
         "day": "Day",
         "legend": "Period",
         "month": "Month",
-        "monthUnavailableInResources": "Month isn't available in Resources. Use Time grid or Agenda for a month overview.",
-        "monthUnavailableShort": "Not available in Resources",
+        "monthUnavailableInResources": "Month isn't available in the By Item view. Use Time grid or Agenda for a month overview.",
+        "monthUnavailableShort": "Not available in the By Item view",
         "week": "Week"
       },
       "periodNavigation": "Calendar period navigation",
