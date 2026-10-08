@@ -82,8 +82,8 @@ generic failure the user sees for a wrong password, but through a distinct excep
 `LoginVerificationBusyException`. The login filter (`StandaloneShiroFormAuthFilterExt`) and
 `ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
 users out. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
-that reach it (signup, Google sign-up on Community, and the login and verification password-reset
-replies) take a permit from one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
+that reach it (sign-up, Google sign-up on Community, LDAP first-login auto-signup, and the login
+and verification password-reset replies) take a permit from one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
 through the hash and the save and refused immediately when none is free, with a reset token left
 usable. The reset replies also accept only an unused, unexpired token. Anonymous Argon2
 allocation therefore cannot exceed 4 x 19 MiB, about 76 MiB, or about 228 MiB with the login
@@ -180,6 +180,10 @@ application are unaffected.
   they require an account.
 
 ## Consequences
+
+The user-visible effect of every rule in this ADR, scenario by scenario with the exact messages,
+is tabulated in [PasswordHashingScenarios.md](../DeveloperNotes/PasswordHashingScenarios.md).
+That table must change in the same commit as any limit, default, message or route it describes.
 
 - The upgrade is irreversible. A release downgraded past this change cannot read
   `{argon2@rspace_v1}` or `{argon2-legacy-sha256@rspace_v1}` values and nobody can log in.
