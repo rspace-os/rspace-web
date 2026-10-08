@@ -2,12 +2,14 @@ package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +21,7 @@ import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +31,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -181,6 +186,55 @@ public class LoginPasswordResetByEmailHandlerTest {
     assertEquals(RESET_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
 
     assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
+  void snapshotConflictReturnsTheFailViewWithoutReReadingTheToken() {
+    TokenBasedVerification token = freshToken();
+    stubResetThatThrows(token, dbFailure(1020));
+
+    assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
+    verify(userManager, times(1)).getUserVerificationToken(token.getToken());
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
+  void otherDbFailureWithTheTokenNowUsedReturnsTheFailView() {
+    TokenBasedVerification token = freshToken();
+    TokenBasedVerification usedNow = freshToken();
+    usedNow.setResetCompleted(true);
+    stubResetThatThrows(token, dbFailure(1205));
+    when(userManager.getUserVerificationToken(token.getToken())).thenReturn(token, usedNow);
+
+    assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
+  void otherDbFailureWithTheTokenStillUnusedPropagates() {
+    TokenBasedVerification token = freshToken();
+    DataAccessException failure = dbFailure(1205);
+    stubResetThatThrows(token, failure);
+
+    assertSame(
+        failure,
+        assertThrows(
+            DataAccessException.class, () -> handler.submitResetPage(cmd, errors, request)));
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  private void stubResetThatThrows(TokenBasedVerification token, DataAccessException failure) {
+    cmd.setToken(token.getToken());
+    when(userManager.getUserVerificationToken(token.getToken())).thenReturn(token);
+    when(userManager.getUsernameByToken(token.getToken())).thenReturn(Optional.of("someone"));
+    when(userManager.applyLoginPasswordChange(cmd.getPassword(), token.getToken()))
+        .thenThrow(failure);
+  }
+
+  private static DataAccessException dbFailure(int errorCode) {
+    return new DataIntegrityViolationException(
+        "could not execute statement",
+        new SQLException("Record has changed since last read", "HY000", errorCode));
   }
 
   private void stubCompletableReset(PasswordResetCommand command, TokenBasedVerification token) {
