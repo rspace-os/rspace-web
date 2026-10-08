@@ -280,12 +280,16 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                     l.coordX <= right &&
                     l.coordY >= top &&
                     l.coordY <= bottom &&
-                    (!emptyOnly || l.isSelectable(search)),
+                    (!emptyOnly || l.selected || l.isSelectable(search)),
                 )
                 .slice(0, emptyOnly ? selectionLimit : Infinity),
             );
+            // Cells already in the right state are left alone, so the Move dialog's staged previews survive.
             container.locations?.forEach((l) => {
-              l.toggleSelected(toSelect.has(l));
+              if (l.selected && !toSelect.has(l)) l.toggleSelected(false);
+            });
+            container.locations?.forEach((l) => {
+              if (!l.selected && toSelect.has(l)) l.toggleSelected(true);
             });
 
             setShiftOrigin(e.shiftKey ? (shiftOrigin ?? focusCoord) : null);
