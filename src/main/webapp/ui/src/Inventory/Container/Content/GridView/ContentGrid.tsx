@@ -164,12 +164,13 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
   const [inKeyboardDragAndDropMode, setInKeyboardDragAndDropMode] = useState(false);
 
   /*
-   * Why Space did not select the focused location. Each refusal gets a new id
-   * so that a repeated message replaces the live region's content and is
-   * announced again.
+   * Why a key press did not select. Each refusal gets an id from a counter that
+   * never resets, so that a repeated message replaces the live region's content
+   * and is announced again.
    */
   const [announcement, setAnnouncement] = useState<{ id: number; text: string } | null>(null);
-  const announce = (text: string) => setAnnouncement((prev) => ({ id: (prev?.id ?? 0) + 1, text }));
+  const announcementId = useRef(0);
+  const announce = (text: string) => setAnnouncement({ id: ++announcementId.current, text });
 
   const findLocation = (col: { value: number }, row: { value: number }): Location => {
     const loc = container.findLocation(col.value, row.value);

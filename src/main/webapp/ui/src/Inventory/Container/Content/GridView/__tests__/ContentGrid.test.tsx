@@ -250,6 +250,20 @@ describe("ContentGrid", () => {
         );
       });
 
+      it("repeats the explanation on consecutive refused Shift+Arrow presses", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 1);
+        renderGrid(box);
+        const explanation = () => screen.getByText("inventory:container.content.keyboard.limitReached");
+        await user.tab();
+        await user.keyboard(" {ArrowRight}{Shift>}{ArrowDown}");
+        const first = explanation();
+        await user.keyboard("{ArrowLeft}{/Shift}");
+        expect(explanation()).not.toBe(first);
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "false", "false"]);
+      });
+
       it("clears the explanation once the user moves on, and repeats it on the next refused Space", async () => {
         const user = userEvent.setup();
         const box = boxWithA1Taken();
