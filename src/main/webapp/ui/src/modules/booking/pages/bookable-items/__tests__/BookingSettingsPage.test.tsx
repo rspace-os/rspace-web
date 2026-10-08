@@ -71,6 +71,31 @@ describe("BookingSettingsPage", () => {
     expect(validOpeningHours("08:00", "24:00")).toBe(false);
   });
 
+  it("shows full-day closing as 00:00 while preserving the 24:00 API value", async () => {
+    const user = userEvent.setup();
+    let submitted: Record<string, unknown> | undefined;
+    const fullDaySettings = { ...settings, openingStart: "00:00", openingEnd: "24:00" };
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(fullDaySettings)),
+      http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+        submitted = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(fullDaySettings);
+      }),
+    );
+    renderPage();
+
+    const openingEnd = await screen.findByLabelText("booking:settings.fields.openingEnd");
+    expect(openingEnd).toHaveValue("00:00");
+    expect(screen.queryByRole("checkbox", { name: "booking:settings.fields.fullDay" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
+    await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
+
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    expect(submitted).toMatchObject({ openingStart: "00:00", openingEnd: "24:00" });
+  });
+
   it("validates maximum duration against the selected increment", () => {
     expect(validMaximumBookingDuration(0, 5)).toBe(true);
     expect(validMaximumBookingDuration(60, 5)).toBe(true);
@@ -141,7 +166,10 @@ describe("BookingSettingsPage", () => {
     await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
+    const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
+    expect(savedButton).toBeDisabled();
+    expect(savedButton).toHaveClass("bg-emerald-600");
+    expect(screen.queryByText("booking:settings.saved")).not.toBeInTheDocument();
     expect(body).toEqual({
       slotGranularityMinutes: 5,
       openingStart: "08:00",
@@ -154,10 +182,14 @@ describe("BookingSettingsPage", () => {
       availabilityWindowEnd: "18:00",
       timezoneMode: "BROWSER",
       customTimezone: null,
-      defaultSharedWith: "ALL_USERS",
-      selectedGranteeKeys: [],
       configurationVersion: 0,
     });
+
+    await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
+    expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeEnabled();
+    expect(savedButton).not.toHaveClass("bg-emerald-600");
+    await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
+    expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeDisabled();
   });
 
   it("writes one entered buffer value to both stored directions", async () => {
@@ -179,9 +211,12 @@ describe("BookingSettingsPage", () => {
     await user.type(buffer, "12");
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
-    expect(await screen.findByRole("status")).toBeVisible();
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
     expect(body).toMatchObject({ bufferBeforeMinutes: 12, bufferAfterMinutes: 12 });
     expect(body).toMatchObject({ configurationVersion: 0 });
+
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
+    expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeEnabled();
   });
 
   it("keeps a stale form open and asks the admin to reload", async () => {

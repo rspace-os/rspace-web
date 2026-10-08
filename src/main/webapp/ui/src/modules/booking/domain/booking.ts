@@ -26,6 +26,8 @@ const BookingTargetSchema = v.object({
   globalId: v.string(),
 });
 
+const BookingReadTargetSchema = v.nullable(BookingTargetSchema);
+
 // Mutation responses are serialized directly from the saved entity. Unlike reads, they do not
 // expand relationships, even when the request includes depth=1.
 const MutationTargetSchema = v.object({
@@ -39,7 +41,7 @@ function bookingIdentity<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIs
     id: v.number(),
     version: v.number(),
     target,
-    timezone: v.string(),
+    timezone: v.nullable(v.string()),
     ...BookingTimestampEntries,
     state: v.picklist(["CONFIRMED", "CANCELLED"]),
     kind: v.optional(BookingEventKindSchema, "BOOKING"),
@@ -48,8 +50,8 @@ function bookingIdentity<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIs
 
 const BookingAvailabilityIdentitySchema = {
   id: v.number(),
-  target: BookingTargetSchema,
-  timezone: v.string(),
+  target: BookingReadTargetSchema,
+  timezone: v.nullable(v.string()),
   ...BookingTimestampEntries,
   state: v.picklist(["CONFIRMED", "CANCELLED"]),
   kind: v.optional(BookingEventKindSchema, "BOOKING"),
@@ -83,7 +85,7 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
   ]);
 }
 
-const BookingIdentitySchema = bookingIdentity(BookingTargetSchema);
+const BookingIdentitySchema = bookingIdentity(BookingReadTargetSchema);
 
 export const BookingSummarySchema = v.pipe(
   v.object(BookingAvailabilityIdentitySchema),

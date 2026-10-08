@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import i18n from "@/modules/common/i18n";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import type { BookingListDocument } from "../../domain/booking";
 
 function dateTime(value: BookingListDocument["start"], timeZone: string): ReactNode {
@@ -17,6 +19,7 @@ function dateTime(value: BookingListDocument["start"], timeZone: string): ReactN
 export function bookingListConfig(timeZone: string): CollectionConfig<BookingListDocument> {
   return {
     slug: "my-bookings",
+    relationshipSources: bookingRelationshipSources,
     idField: "id",
     useAsTitle: "target",
     labels: {
@@ -45,20 +48,23 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
         hasMany: false,
         labelKey: "booking:myBookings.fields.target",
         list: {
-          renderCell: ({ row }) => (
-            <InventoryItem
-              name={row.target.value.name}
-              globalId={row.target.globalId}
-              href={row.canViewConfiguration ? `/globalId/${row.target.globalId}` : undefined}
-              idLinkLabel={
-                row.canViewConfiguration
-                  ? i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })
-                  : undefined
-              }
-              compact
-              size="xs"
-            />
-          ),
+          renderCell: ({ row }) =>
+            row.target ? (
+              <InventoryItem
+                name={row.target.value.name}
+                globalId={row.target.globalId}
+                href={row.canViewConfiguration ? `/globalId/${row.target.globalId}` : undefined}
+                idLinkLabel={
+                  row.canViewConfiguration
+                    ? i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })
+                    : undefined
+                }
+                compact
+                size="xs"
+              />
+            ) : (
+              <UnknownItem size="xs" />
+            ),
         },
       },
       {

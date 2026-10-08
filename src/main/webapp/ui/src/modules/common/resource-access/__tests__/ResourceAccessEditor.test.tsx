@@ -54,11 +54,17 @@ const second = {
   role: "STEWARD",
 };
 
-function document(version = 3, assignments: unknown[] = [owner], callerKey: string | null = "user:11") {
+function document(
+  version = 3,
+  assignments: unknown[] = [owner],
+  callerKey: string | null = "user:11",
+  inherited = false,
+) {
   return {
     scheme: "test-collection",
     version,
     assignments,
+    inherited,
     caller: {
       effectiveRole: "STEWARD",
       roleSources: [],
@@ -143,6 +149,51 @@ describe("ResourceAccessEditor", () => {
     expect(screen.queryByRole("button", { name: "common:resourceAccess.saveChanges" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "common:resourceAccess.leaveSelf" })).not.toBeInTheDocument();
     expect(directoryRequests).toBe(0);
+    expect(mutationRequests).toBe(0);
+    await expectAccessible(baseElement);
+  });
+
+  it("renders inherited access as read-only and hides ACL and owner controls", async () => {
+    let mutationRequests = 0;
+    server.use(
+      http.get("/api/v2/test-collections/9/access", () =>
+        HttpResponse.json(document(3, [owner, second], "user:11", true)),
+      ),
+      http.get("/api/v2/test-collections/9/access/grantees", () => {
+        mutationRequests += 1;
+        return HttpResponse.json([]);
+      }),
+      http.put("/api/v2/test-collections/9/access", () => {
+        mutationRequests += 1;
+        return HttpResponse.json(document());
+      }),
+      http.delete("/api/v2/test-collections/9/access/me", () => {
+        mutationRequests += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const { baseElement } = render(
+      <ResourceAccessEditor
+        resource="test-collections"
+        resourceId={9}
+        token="token"
+        adapter={adapter}
+        inheritedResource={{ href: "/globalId/IN9", label: "common:resourceAccess.inheritedOpenInventory" }}
+      />,
+      { wrapper: wrapper() },
+    );
+
+    await screen.findByRole("table");
+    expect(screen.getByText("common:resourceAccess.inherited")).toBeVisible();
+    expect(screen.getByRole("link", { name: "common:resourceAccess.inheritedOpenInventory" })).toHaveAttribute(
+      "href",
+      "/globalId/IN9",
+    );
+    expect(screen.queryByLabelText("common:resourceAccess.addUserOrGroup")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "common:resourceAccess.saveChanges" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "common:resourceAccess.leaveSelf" })).not.toBeInTheDocument();
+    expect(screen.queryByText("common:resourceAccess.ownerInvariant")).not.toBeInTheDocument();
     expect(mutationRequests).toBe(0);
     await expectAccessible(baseElement);
   });

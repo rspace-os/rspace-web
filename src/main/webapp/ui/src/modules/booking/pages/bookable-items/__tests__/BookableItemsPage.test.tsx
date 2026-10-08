@@ -246,7 +246,7 @@ function realI18nWrapper() {
 }
 
 describe("BookableItemsPage", () => {
-  it("lists safe booking targets, owner health, and the Add action", async () => {
+  it("lists booking targets without obsolete owner-health controls", async () => {
     const user = userEvent.setup();
     const collectionRequests: Request[] = [];
     server.use(
@@ -271,7 +271,7 @@ describe("BookableItemsPage", () => {
       "text-2xl",
       "font-semibold",
     );
-    expect(screen.getByText("booking:bookableItems.ownerHealth.needsOwner")).toBeVisible();
+    expect(screen.queryByText("booking:bookableItems.ownerHealth.needsOwner")).not.toBeInTheDocument();
     expect(collectionRequests[0]?.headers.get("Authorization")).toBe("Bearer new-token");
     expect(new URL(collectionRequests[0]?.url ?? "http://localhost").searchParams.get("depth")).toBe("1");
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.add" })).toHaveAttribute(
@@ -294,14 +294,7 @@ describe("BookableItemsPage", () => {
     expect(screen.getByRole("menuitem", { name: "booking:bookableItems.actions.archive" })).toBeVisible();
     await user.keyboard("{Escape}");
 
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.ownerHealth.filter" }));
-    await waitFor(() =>
-      expect(
-        collectionRequests.some((request) =>
-          decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "").includes("id=in=(7)"),
-        ),
-      ).toBe(true),
-    );
+    expect(screen.queryByRole("button", { name: "booking:bookableItems.ownerHealth.filter" })).not.toBeInTheDocument();
     await expectAccessible(container);
   });
 
@@ -474,7 +467,7 @@ describe("BookableItemsPage", () => {
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
       expect(params.get("fields[booking-configurations]")).toBe(
-        "id,target,enabled,state,timezone,updatedAt,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities,ownerHealth",
+        "id,target,enabled,state,timezone,updatedAt,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities",
       );
       expect(params.get("depth")).toBe("1");
     });

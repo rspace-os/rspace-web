@@ -8,6 +8,7 @@ export function bookingProblemKey(
 ):
   | "bookings.errors.generic"
   | "bookings.errors.endAfterStart"
+  | "bookings.errors.startInPast"
   | "bookings.errors.duration"
   | "bookings.errors.maximumDuration"
   | "bookings.errors.overlap"
@@ -19,6 +20,7 @@ export function bookingProblemKey(
   | "bookings.errors.noLongerEditable" {
   if (!(error instanceof ApiV2ProblemError)) return "bookings.errors.generic";
   if (error.code === "errors.api.v2.booking.window") return "bookings.errors.endAfterStart";
+  if (error.code === "errors.api.v2.booking.startInPast") return "bookings.errors.startInPast";
   if (error.code === "errors.api.v2.booking.duration") return "bookings.errors.duration";
   if (error.code === "errors.api.v2.booking.maximumDuration") return "bookings.errors.maximumDuration";
   if (error.code === "errors.api.v2.booking.overlap") return "bookings.errors.overlap";
