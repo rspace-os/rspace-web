@@ -90,6 +90,7 @@ function GridCell({
       onFocus={() => {
         if (location.selected) return;
         const { uiConfig } = search;
+        if (uiConfig.dragAndDropDisabled) return;
         const full = (location.parentContainer.selectedLocations?.length ?? 0) >= uiConfig.selectionLimit;
         if (uiConfig.onlyAllowSelectingEmptyLocations && (full || !location.isSelectable(search))) return;
         location.toggleSelected(true);
@@ -108,6 +109,7 @@ function GridCell({
         color: "grey",
         borderBottom: "none",
         "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
+        "&:focus-within": { boxShadow: `inset 0 0 0 2px ${theme.palette.primary.main}` },
         padding: "3px !important",
         width,
         background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",
