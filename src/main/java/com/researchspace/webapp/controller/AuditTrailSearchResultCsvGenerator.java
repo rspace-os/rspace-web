@@ -7,6 +7,7 @@ import com.researchspace.core.util.DateUtil;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +38,8 @@ public class AuditTrailSearchResultCsvGenerator {
       "attachment; filename=\"rspace-audit-trail.csv\"";
   static final int MAX_RESULTS_PER_CSV = 10_000;
   private static final Locale CSV_LOCALE = Locale.US;
+  private static final Pattern PERMANENT_DELETE =
+      Pattern.compile("(?:^|;)\\s*permanent=true(?:;|$)");
 
   @Autowired private MessageSourceUtils messages;
 
@@ -87,10 +91,11 @@ public class AuditTrailSearchResultCsvGenerator {
         String id = "n/a";
         String name = "n/a";
         String desc = "n/a";
+        Map<String, Object> data = Map.of();
         if (auditEntry.getData() != null
             && auditEntry.getData().getData() != null
             && auditEntry.getData().getData().getData() != null) {
-          Map<String, Object> data = auditEntry.getData().getData().getData();
+          data = auditEntry.getData().getData().getData();
           id = data.getOrDefault("id", "n/a").toString();
           name = data.getOrDefault("name", "n/a").toString();
           String desc2 = auditEntry.getData().getDescription();
@@ -105,8 +110,8 @@ public class AuditTrailSearchResultCsvGenerator {
             new AuditTrailCSVConverterInput(
                 convertDateToISOFormat(auditEntry.getTimestamp(), TimeZone.getDefault()) + "",
                 auditEntry.getEvent().getSubject(),
-                auditEntry.getEvent().getAction().toString(),
-                auditEntry.getEvent().getDomain().toString(),
+                getDisplayAction(auditEntry, data),
+                getDisplayType(auditEntry, data),
                 id,
                 name,
                 desc);
@@ -116,6 +121,43 @@ public class AuditTrailSearchResultCsvGenerator {
       beanWriter.flush();
     }
     return createCsvEntityResponse(swStringWriter.toString());
+  }
+
+  private String getDisplayType(AuditTrailSearchResult auditEntry, Map<String, Object> data) {
+    if (isBookingEvent(auditEntry, data)) {
+      return messages.getMessageForLocale("export.audit.csv.bookingType", CSV_LOCALE);
+    }
+    return auditEntry.getEvent().getDomain().toString();
+  }
+
+  private String getDisplayAction(AuditTrailSearchResult auditEntry, Map<String, Object> data) {
+    AuditAction action = auditEntry.getEvent().getAction();
+    if (!isBookingEvent(auditEntry, data)) {
+      return action.toString();
+    }
+
+    String description = auditEntry.getEvent().getDescription();
+    if (AuditAction.DELETE.equals(action)
+        && description != null
+        && PERMANENT_DELETE.matcher(description).find()) {
+      return messages.getMessageForLocale(
+          "export.audit.csv.bookingActionPermanentlyDeleted", CSV_LOCALE);
+    }
+
+    Object state = data.get("state");
+    if (AuditAction.WRITE.equals(action) && state != null && "CANCELLED".equals(state.toString())) {
+      return messages.getMessageForLocale("export.audit.csv.bookingActionCancelled", CSV_LOCALE);
+    }
+    if (AuditAction.DELETE.equals(action) && state != null && "ARCHIVED".equals(state.toString())) {
+      return messages.getMessageForLocale("export.audit.csv.bookingActionArchived", CSV_LOCALE);
+    }
+    return action.toString();
+  }
+
+  private boolean isBookingEvent(AuditTrailSearchResult auditEntry, Map<String, Object> data) {
+    AuditDomain domain = auditEntry.getEvent().getDomain();
+    return AuditDomain.BOOKING.equals(
+        AuditDomain.normalizeLegacyBookingDomain(domain, data.get("id")));
   }
 
   private String generateDescription(AuditTrailSearchResult auditEntry, Map<String, Object> data) {
