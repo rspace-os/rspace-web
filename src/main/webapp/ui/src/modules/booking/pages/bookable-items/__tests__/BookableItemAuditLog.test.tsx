@@ -109,6 +109,94 @@ describe("BookableItemAuditLog", () => {
     await expectAccessible(container);
   });
 
+  it("keeps recorded values collapsed and places Changed by beside ID", async () => {
+    const user = userEvent.setup();
+    server.use(http.get("/api/v2/booking-configurations/7/audit", () => HttpResponse.json(auditPage())));
+    const { container } = renderAudit();
+
+    const item = await screen.findByRole("article", { name: "Updated booking configuration IN123" });
+    expect(within(item).getByText("booking:bookableItemDetails.audit.fields.actor")).toBeVisible();
+    expect(within(item).getByText("booking:bookableItems.fields.id")).toBeVisible();
+    expect(within(item).queryByText("booking:bookableItemDetails.audit.fields.values")).not.toBeInTheDocument();
+
+    const expand = within(item).getByRole("button", { name: "common:actions.expand" });
+    expect(expand).toHaveAttribute("aria-expanded", "false");
+    await user.click(expand);
+
+    expect(within(item).getByRole("button", { name: "common:actions.collapse" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(within(item).getByText("booking:bookableItemDetails.audit.fields.values")).toBeVisible();
+    expect(within(item).getByText("booking:bookableItemDetails.audit.values.enabled")).toBeVisible();
+    await expectAccessible(container);
+  });
+
+  it("sends free-text searches to the audit endpoint before paging", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json(auditPage());
+      }),
+    );
+    renderAudit();
+    await screen.findAllByText("Ada Lovelace (ada)");
+
+    const input = screen.getByRole("textbox", { name: "common:tableList.search.label" });
+    await user.type(input, "PayloadMarker");
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(requests).toHaveLength(2));
+
+    expect(requests[1].searchParams.get("search")).toBe("PayloadMarker");
+    expect(requests[1].searchParams.get("page")).toBe("1");
+    expect(requests[1].searchParams.has("snapshotFingerprint")).toBe(false);
+  });
+
+  it("combines the action facet with search and starts a fresh page set", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        const page = Number(url.searchParams.get("page"));
+        return HttpResponse.json(
+          auditPage([{ ...event, eventId: `${page}`.repeat(64) }], {
+            page,
+            totalPages: 2,
+          }),
+        );
+      }),
+    );
+    renderAudit();
+    await screen.findAllByText("Ada Lovelace (ada)");
+
+    expect(screen.queryByRole("button", { name: "common:tableList.toolbar.filters" })).not.toBeInTheDocument();
+    const search = screen.getByRole("textbox", { name: "common:tableList.search.label" });
+    await user.type(search, "PayloadMarker");
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(requests).toHaveLength(2));
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
+    await waitFor(() => expect(requests).toHaveLength(3));
+    expect(requests[2].searchParams.get("page")).toBe("2");
+    expect(requests[2].searchParams.has("snapshotFingerprint")).toBe(true);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "booking:bookableItemDetails.audit.fields.action" }),
+      "WRITE",
+    );
+    await waitFor(() => expect(requests).toHaveLength(4));
+    expect(Object.fromEntries(requests[3].searchParams)).toMatchObject({
+      page: "1",
+      search: "PayloadMarker",
+      actions: "WRITE",
+    });
+    expect(requests[3].searchParams.has("snapshotFingerprint")).toBe(false);
+  });
+
   it("applies inclusive presets as a new result set", async () => {
     const user = userEvent.setup();
     const requests: URL[] = [];

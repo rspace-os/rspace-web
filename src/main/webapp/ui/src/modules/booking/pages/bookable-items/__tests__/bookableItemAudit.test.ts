@@ -6,6 +6,7 @@ import {
   auditPresetRange,
   auditRangeToQuery,
   fetchBookingConfigurationAudit,
+  recordedValues,
   validateAuditDateRange,
 } from "../bookableItemAudit";
 
@@ -22,6 +23,37 @@ const event = {
   payload: { enabled: true, bookingConfigurationId: "booking-configurations:7" },
   target: "bookings:41",
 };
+
+describe("recorded audit values", () => {
+  it("formats booking instants in UTC while preserving unknown and invalid values", () => {
+    const instant = "2026-10-09T08:00:00Z";
+    const values = Object.fromEntries(
+      recordedValues(
+        {
+          start: Date.parse(instant),
+          end: instant,
+          futureField: { nested: [1, 2] },
+          maxBookingDurationMinutes: 90,
+        },
+        "en-US",
+      ),
+    );
+    expect(values.start).toBe(
+      new Intl.DateTimeFormat("en-US", {
+        dateStyle: "medium",
+        timeStyle: "long",
+        timeZone: "UTC",
+      }).format(new Date(instant)),
+    );
+    expect(values.end).toBe(values.start);
+    expect(values.futureField).toBe('{"nested":[1,2]}');
+    expect(values.maxBookingDurationMinutes).toBe("90");
+    expect(recordedValues({ start: "invalid", end: null }, "en-US")).toEqual([
+      ["start", "invalid"],
+      ["end", "—"],
+    ]);
+  });
+});
 
 function page(docs = [event]) {
   return {
@@ -55,6 +87,8 @@ describe("fetchBookingConfigurationAudit", () => {
       page: 1,
       dateFrom: "2026-08-01T00:00:00.000Z",
       dateTo: "2026-08-25T23:59:59.999Z",
+      search: " PurposeMarker ",
+      actions: ["WRITE"],
       snapshot: { snapshotDate: "2026-08-25", snapshotFingerprint: fingerprint },
       token: "secret",
     });
@@ -65,6 +99,8 @@ describe("fetchBookingConfigurationAudit", () => {
       limit: "20",
       dateFrom: "2026-08-01T00:00:00.000Z",
       dateTo: "2026-08-25T23:59:59.999Z",
+      search: "PurposeMarker",
+      actions: "WRITE",
       snapshotDate: "2026-08-25",
       snapshotFingerprint: fingerprint,
     });
