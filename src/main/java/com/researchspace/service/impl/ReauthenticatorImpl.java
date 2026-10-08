@@ -9,7 +9,6 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.UserManager;
-import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,12 +40,11 @@ public class ReauthenticatorImpl implements IReauthenticator {
     try {
       authenticated = checkPassword(subject, pwd);
     } catch (LoginVerificationBusyException e) {
-      SECURITY_LOG.warn("Reauthentication by {}: {}", callingAction(), e.getMessage());
+      SECURITY_LOG.warn("Reauthentication refused: {}", e.getMessage());
       return false;
     }
     if (!authenticated) {
-      SECURITY_LOG.warn(
-          "Failed reauthentication as [{}] by {}", subject.getUsername(), callingAction());
+      SECURITY_LOG.warn("Failed reauthentication as [{}]", subject.getUsername());
     }
     return authenticated;
   }
@@ -71,19 +69,5 @@ public class ReauthenticatorImpl implements IReauthenticator {
 
     // check provided password against default realm
     return credentialsMatcher.verify(subject, pwd);
-  }
-
-  private static String callingAction() {
-    // aspects such as ServiceLoggerAspct sit between this class and its caller
-    return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
-        .walk(
-            frames ->
-                frames
-                    .filter(f -> f.getDeclaringClass() != ReauthenticatorImpl.class)
-                    .filter(f -> !f.getDeclaringClass().isAnnotationPresent(Aspect.class))
-                    .filter(f -> f.getClassName().startsWith("com.researchspace"))
-                    .findFirst()
-                    .map(f -> f.getClassName() + "." + f.getMethodName())
-                    .orElse("unknown caller"));
   }
 }
