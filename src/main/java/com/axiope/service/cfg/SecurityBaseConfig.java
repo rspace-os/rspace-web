@@ -17,6 +17,7 @@ import com.researchspace.auth.SlackRealm;
 import com.researchspace.auth.password.BoundedPasswordVerifier;
 import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.auth.wopi.WopiRealm;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.service.SessionControl;
@@ -59,6 +60,11 @@ public abstract class SecurityBaseConfig {
         passwordEncoder(),
         maxConcurrentPasswordVerifications,
         Duration.ofSeconds(passwordVerificationWaitSeconds));
+  }
+
+  @Bean
+  public SentinelPasswordCheck sentinelPasswordCheck() {
+    return new SentinelPasswordCheck(passwordEncoder(), boundedPasswordVerifier());
   }
 
   @Bean
