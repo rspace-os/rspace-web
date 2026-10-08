@@ -125,7 +125,7 @@ public class OAuthClientController {
         guessLimiter.padWithSentinelCheck(password);
         SECURITY_LOG.warn(
             "OAuth password flow request for unknown username [{}], from {}",
-            username,
+            username.replaceAll("[\\r\\n]", " "),
             RequestUtil.remoteAddr(request));
         throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
       }
