@@ -3,6 +3,7 @@ import { CatchBoundary, HeadContent, Outlet, useMatches, useRouter, useRouterSta
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
 import { viewTransitionQueryFilters } from "@/modules/common/queries/viewTransition";
 import { UserSessionBootstrap } from "@/modules/common/stores/userSessionStore";
 import {
@@ -136,6 +137,7 @@ export default function AppShell() {
           </NuqsAdapter>
         </SidebarInset>
       </div>
+      <FeatureFlagDevtoolsMount />
     </SidebarProvider>
   );
 }
