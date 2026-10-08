@@ -5,6 +5,7 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.service.BookingDisplayPreferencesManager;
 import com.researchspace.booking.service.BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -46,7 +47,14 @@ public final class BookingDisplayPreferencesController {
                   "Required only when timezoneMode is CUSTOM; must be a valid IANA timezone.",
               example = "America/New_York",
               nullable = true)
-          String customTimezone) {
+          String customTimezone,
+      @Schema(
+              description =
+                  "AUTOMATIC (default when omitted) follows the browser region in the UI and the"
+                      + " language's usual clock in email; H12 and H24 force a 12- or 24-hour"
+                      + " clock.",
+              nullable = true)
+          BookingTimeFormat timeFormat) {
 
     @JsonAnySetter
     void rejectUnknownField(String fieldName, Object ignoredValue) {
@@ -55,7 +63,7 @@ public final class BookingDisplayPreferencesController {
 
     BookingDisplaySettings settings() {
       return new BookingDisplaySettings(
-          availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone);
+          availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone, timeFormat);
     }
   }
 
@@ -65,6 +73,7 @@ public final class BookingDisplayPreferencesController {
       String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
       String customTimezone,
+      BookingTimeFormat timeFormat,
       @Schema(
               description = "The running institution's JVM-default IANA timezone.",
               accessMode = Schema.AccessMode.READ_ONLY)
@@ -80,6 +89,7 @@ public final class BookingDisplayPreferencesController {
           preferences.availabilityWindowEnd(),
           preferences.timezoneMode(),
           preferences.customTimezone(),
+          preferences.timeFormat(),
           preferences.institutionTimezone(),
           preferences.overridden());
     }
@@ -113,7 +123,7 @@ public final class BookingDisplayPreferencesController {
       summary = "Replace Booking display preferences",
       description =
           "Stores one complete override. customTimezone is required only for CUSTOM and is"
-              + " discarded for BROWSER or INSTITUTION.",
+              + " discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.",
       responses = {
         @ApiResponse(responseCode = "200", description = "Stored Booking display preferences."),
         @ApiResponse(responseCode = "400", description = "The replacement document is invalid."),

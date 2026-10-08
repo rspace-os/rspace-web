@@ -4,12 +4,15 @@ import { resolveBookingWindow } from "../../creation/ZonedBookingWindowFields";
 import {
   addCalendarDays,
   bookingDateTimeLocale,
+  bookingDateTimeLocaleFor,
+  bookingHourCycle,
   bookingLocale,
   broadUtcEnvelope,
   currentWallClock,
   dayMinuteToZonedTime,
   displayInterval,
   formatAgendaPeriod,
+  formatBookingDateTime,
   formatBookingPeriod,
   formatDurationMinutes,
   formatPlainDate,
@@ -162,6 +165,52 @@ describe("bookingTime", () => {
     );
   });
 
+  describe("dated times on a clock-change day", () => {
+    // Europe/Berlin repeats 02:00-03:00 on 2026-10-25 and skips it on 2026-03-29.
+    const dateTime = (instant: string) =>
+      new Intl.DateTimeFormat("en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        hourCycle: bookingHourCycle("AUTOMATIC"),
+        timeZone: "Europe/Berlin",
+      }).format(new Date(instant));
+
+    test("tells the two occurrences of a repeated hour apart by their offsets", () => {
+      const earlier = formatBookingDateTime("2026-10-25T00:30:00Z", "Europe/Berlin", "en-US");
+      const later = formatBookingDateTime("2026-10-25T01:30:00Z", "Europe/Berlin", "en-US");
+
+      expect(earlier).toBe(`${dateTime("2026-10-25T00:30:00Z")} +02:00`);
+      expect(later).toBe(`${dateTime("2026-10-25T01:30:00Z")} +01:00`);
+      expect(dateTime("2026-10-25T00:30:00Z")).toBe(dateTime("2026-10-25T01:30:00Z"));
+      expect(formatBookingPeriod("2026-10-25T00:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
+        `${earlier} – ${dateTime("2026-10-25T02:30:00Z")} +01:00`,
+      );
+      expect(formatBookingPeriod("2026-10-25T01:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
+        `${later} – ${dateTime("2026-10-25T02:30:00Z")} +01:00`,
+      );
+    });
+
+    test("names the offsets either side of a skipped hour", () => {
+      expect(formatBookingPeriod("2026-03-29T00:30:00Z", "2026-03-29T01:30:00Z", "Europe/Berlin", "en-US")).toBe(
+        `${dateTime("2026-03-29T00:30:00Z")} +01:00 – ${dateTime("2026-03-29T01:30:00Z")} +02:00`,
+      );
+    });
+
+    test("leaves an ordinary day's times without offsets", () => {
+      expect(formatBookingDateTime("2026-10-08T04:00:00Z", "Europe/Berlin", "en-US")).toBe(
+        dateTime("2026-10-08T04:00:00Z"),
+      );
+      expect(formatBookingPeriod("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z", "Europe/Berlin", "en-US")).toBe(
+        new Intl.DateTimeFormat("en-US", {
+          dateStyle: "medium",
+          timeStyle: "short",
+          hourCycle: bookingHourCycle("AUTOMATIC"),
+          timeZone: "Europe/Berlin",
+        }).formatRange(new Date("2026-10-08T04:00:00Z"), new Date("2026-10-08T05:00:00Z")),
+      );
+    });
+  });
+
   test("formats wall-clock times and dates the way the locale's native inputs show them", () => {
     expect(formatWallClockTime("14:05", "en-US")).toBe("02:05 PM");
     expect(formatWallClockTime("00:00", "en-US")).toBe("12:00 AM");
@@ -194,6 +243,22 @@ describe("bookingTime", () => {
     expect(formatAgendaPeriod("2026-08-18T13:00:00Z", "2026-08-18T14:00:00Z", "UTC", "en-GB")).toMatch(
       /^13:00\s?–\s?14:00/,
     );
+  });
+
+  test("an explicit Time format replaces the browser region's clock but not its date order", () => {
+    const regional = bookingDateTimeLocaleFor("AUTOMATIC");
+    expect(bookingHourCycle("H24")).toBe("h23");
+    expect(formatWallClockTime("14:05", bookingDateTimeLocale("H24"))).toBe("14:05");
+    expect(formatWallClockTime("00:00", bookingDateTimeLocale("H24"))).toBe("00:00");
+    expect(formatBookingDateTime("2026-10-08T12:05:00Z", "UTC", "en-US", "H24")).toBe("Oct 8, 2026, 12:05");
+    expect(formatPlainDate("2026-08-17")).toBe(formatPlainDate("2026-08-17", regional));
+
+    expect(bookingHourCycle("H12")).toBe("h12");
+    expect(new Intl.Locale(bookingDateTimeLocale("H12")).hourCycle).toBe("h12");
+    expect(formatBookingDateTime("2026-10-08T12:05:00Z", "UTC", "en-US", "H12").replace(/\s/g, " ")).toBe(
+      "Oct 8, 2026, 12:05 PM",
+    );
+    expect(bookingDateTimeLocale()).toBe(regional);
   });
 
   test("drafts selected timeline ranges as a forward booking window", () => {

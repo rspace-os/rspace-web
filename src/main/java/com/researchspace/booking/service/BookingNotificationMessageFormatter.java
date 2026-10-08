@@ -5,6 +5,7 @@ import com.ibm.icu.text.DateTimePatternGenerator;
 import com.ibm.icu.util.TimeZone;
 import com.ibm.icu.util.ULocale;
 import com.researchspace.booking.service.BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.comms.data.BookingNotificationData;
 import java.net.URI;
@@ -125,7 +126,7 @@ public class BookingNotificationMessageFormatter {
    */
   public String format(
       NotificationType type, BookingNotificationData data, ZoneId zone, Locale locale) {
-    return format(type, data, zone, locale, null, "");
+    return render(type, data, zone, locale, null, "");
   }
 
   /**
@@ -140,7 +141,23 @@ public class BookingNotificationMessageFormatter {
       ZoneId zone,
       Locale locale,
       Locale regionalLocale) {
-    return format(type, data, zone, locale, regionalLocale, "");
+    return format(type, data, zone, locale, regionalLocale, BookingTimeFormat.AUTOMATIC);
+  }
+
+  /**
+   * Formats structured booking data as {@link #format(NotificationType, BookingNotificationData,
+   * ZoneId, Locale, Locale)} does, except that an explicit 12- or 24-hour {@code timeFormat}, the
+   * recipient's Booking preference, replaces the clock of {@code regionalLocale}. A null or {@link
+   * BookingTimeFormat#AUTOMATIC} {@code timeFormat} keeps it.
+   */
+  public String format(
+      NotificationType type,
+      BookingNotificationData data,
+      ZoneId zone,
+      Locale locale,
+      Locale regionalLocale,
+      BookingTimeFormat timeFormat) {
+    return render(type, data, zone, locale, hourCycleKeyword(timeFormat, regionalLocale), "");
   }
 
   /**
@@ -149,15 +166,43 @@ public class BookingNotificationMessageFormatter {
    */
   public String formatForEmail(
       NotificationType type, BookingNotificationData data, ZoneId zone, Locale locale) {
-    return format(type, data, zone, locale, null, absoluteLinkBase);
+    return formatForEmail(type, data, zone, locale, BookingTimeFormat.AUTOMATIC);
   }
 
-  private String format(
+  /**
+   * Formats structured booking data as {@link #formatForEmail(NotificationType,
+   * BookingNotificationData, ZoneId, Locale)} does, with the recipient's explicit 12- or 24-hour
+   * {@code timeFormat}. Email has no browser region, so a null or {@link
+   * BookingTimeFormat#AUTOMATIC} {@code timeFormat} keeps the usual clock of {@code locale}.
+   */
+  public String formatForEmail(
       NotificationType type,
       BookingNotificationData data,
       ZoneId zone,
       Locale locale,
-      Locale regionalLocale,
+      BookingTimeFormat timeFormat) {
+    return render(type, data, zone, locale, hourCycleKeyword(timeFormat, null), absoluteLinkBase);
+  }
+
+  /**
+   * The Unicode {@code hc} keyword for writing times: the explicit clock of {@code timeFormat} when
+   * there is one, otherwise the clock of {@code regionalLocale}, or null for the usual clock of the
+   * message language when both are absent.
+   */
+  static String hourCycleKeyword(BookingTimeFormat timeFormat, Locale regionalLocale) {
+    String explicit = timeFormat == null ? null : timeFormat.hourCycleKeyword();
+    if (explicit != null) {
+      return explicit;
+    }
+    return regionalLocale == null ? null : regionalHourCycleKeyword(regionalLocale);
+  }
+
+  private String render(
+      NotificationType type,
+      BookingNotificationData data,
+      ZoneId zone,
+      Locale locale,
+      String hourCycle,
       String linkBase) {
     if (!isBookingNotification(type)) {
       throw new IllegalArgumentException("Unsupported booking notification type: " + type);
@@ -168,8 +213,8 @@ public class BookingNotificationMessageFormatter {
           StringEscapeUtils.escapeHtml4(data.getBookingId()),
           StringEscapeUtils.escapeHtml4(data.getInstrumentName()),
           StringEscapeUtils.escapeHtml4(data.getInstrumentGlobalIdentifier()),
-          formatInstant(data.getStartTime(), zone, locale, regionalLocale),
-          formatInstant(data.getEndTime(), zone, locale, regionalLocale),
+          formatInstant(data.getStartTime(), zone, locale, hourCycle),
+          formatInstant(data.getEndTime(), zone, locale, hourCycle),
           href(linkBase, BOOKING_PATH, data.getBookingId()),
           href(linkBase, BOOKABLE_ITEM_PATH, data.getInstrumentGlobalIdentifier())
         },
@@ -204,6 +249,21 @@ public class BookingNotificationMessageFormatter {
    */
   public String formatLegacy(
       NotificationType type, String message, ZoneId zone, Locale locale, Locale regionalLocale) {
+    return formatLegacy(type, message, zone, locale, regionalLocale, BookingTimeFormat.AUTOMATIC);
+  }
+
+  /**
+   * Formats an older stored booking message as {@link #formatLegacy(NotificationType, String,
+   * ZoneId, Locale, Locale)} does, except that an explicit 12- or 24-hour {@code timeFormat}
+   * replaces the clock of {@code regionalLocale}.
+   */
+  public String formatLegacy(
+      NotificationType type,
+      String message,
+      ZoneId zone,
+      Locale locale,
+      Locale regionalLocale,
+      BookingTimeFormat timeFormat) {
     if (!isBookingNotification(type) || message == null) {
       return message;
     }
@@ -219,10 +279,11 @@ public class BookingNotificationMessageFormatter {
     if (!isCanonicalInstant(start) || !isCanonicalInstant(end)) {
       return message;
     }
+    String hourCycle = hourCycleKeyword(timeFormat, regionalLocale);
     return message.substring(0, startIndex)
-        + formatInstant(start, zone, locale, regionalLocale)
+        + formatInstant(start, zone, locale, hourCycle)
         + " to "
-        + formatInstant(end, zone, locale, regionalLocale)
+        + formatInstant(end, zone, locale, hourCycle)
         + message.substring(period);
   }
 
@@ -237,32 +298,32 @@ public class BookingNotificationMessageFormatter {
         : CANCELLED_MESSAGE_KEY;
   }
 
-  private static String formatInstant(
-      String value, ZoneId zone, Locale locale, Locale regionalLocale) {
+  /** Formats an instant with the {@code hc} keyword {@code hourCycle}, or the locale's if null. */
+  private static String formatInstant(String value, ZoneId zone, Locale locale, String hourCycle) {
     Instant instant = Instant.parse(value);
     String localDateTime =
-        regionalLocale == null
+        hourCycle == null
             ? DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
                 .withLocale(locale)
                 .withZone(zone)
                 .format(instant)
-            : formatWithHourCycleOf(LocalDateTime.ofInstant(instant, zone), locale, regionalLocale);
+            : formatWithHourCycle(LocalDateTime.ofInstant(instant, zone), locale, hourCycle);
     String offset = zone.getRules().getOffset(instant).getId();
     return localDateTime + " (" + zone.getId() + ", UTC" + ("Z".equals(offset) ? "" : offset) + ")";
   }
 
   /**
-   * Formats a wall-clock time in {@code locale}'s words and field order with {@code
-   * regionalLocale}'s 12- or 24-hour clock, as the booking pages do with the browser's regional
-   * format. java.time ignores the Unicode {@code hc} keyword, so this uses ICU, which also backs
-   * the browser's {@code Intl} API.
+   * Formats a wall-clock time in {@code locale}'s words and field order with the 12- or 24-hour
+   * clock named by the Unicode {@code hc} keyword {@code hourCycle}, as the booking pages do.
+   * java.time ignores that keyword, so this uses ICU, which also backs the browser's {@code Intl}
+   * API.
    */
-  private static String formatWithHourCycleOf(
-      LocalDateTime wallClock, Locale locale, Locale regionalLocale) {
+  private static String formatWithHourCycle(
+      LocalDateTime wallClock, Locale locale, String hourCycle) {
     ULocale withHourCycle =
         new ULocale.Builder()
             .setLocale(ULocale.forLocale(locale))
-            .setUnicodeLocaleKeyword("hc", hourCycleKeyword(regionalLocale))
+            .setUnicodeLocaleKeyword("hc", hourCycle)
             .build();
     // ICU formatters are not thread-safe, so each call builds its own. The wall clock is already
     // in the display zone, so ICU formats it in GMT and never maps the zone to its own tz data.
@@ -272,7 +333,7 @@ public class BookingNotificationMessageFormatter {
     return formatter.format(Date.from(wallClock.toInstant(ZoneOffset.UTC)));
   }
 
-  private static String hourCycleKeyword(Locale regionalLocale) {
+  private static String regionalHourCycleKeyword(Locale regionalLocale) {
     return switch (DateTimePatternGenerator.getInstance(ULocale.forLocale(regionalLocale))
         .getDefaultHourCycle()) {
       case HOUR_CYCLE_11 -> "h11";

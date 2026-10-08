@@ -6,10 +6,21 @@ import {
   BookingDisplayPreferencesInputSchema,
   type BookingTimezoneMode,
   bookingTimeZoneOptions,
+  useBookingTimeFormat,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import {
+  type BookingTimeFormat,
+  bookingDateTimeLocale,
+  bookingDateTimeLocaleFor,
+  formatWallClockTime,
+} from "@/modules/booking/domain/bookingTime";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
+
+/** An afternoon time written with `format`'s clock, so each Time format option shows what it looks like. */
+function timeFormatExample(format: BookingTimeFormat): string {
+  return formatWallClockTime("14:30", bookingDateTimeLocaleFor(format));
+}
 
 export function BookingDisplaySettingsFields({
   value,
@@ -25,9 +36,11 @@ export function BookingDisplaySettingsFields({
   disabled?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const id = useId();
   const timezoneListId = `${id}-timezones`;
   const endTimeDescriptionId = `${id}-end-description`;
+  const timeFormatDescriptionId = `${id}-time-format-description`;
   const errorId = `${id}-error`;
   const validation = v.safeParse(BookingDisplayPreferencesInputSchema, value);
   const errors = validation.success ? undefined : v.flatten(validation.issues).nested;
@@ -71,7 +84,9 @@ export function BookingDisplaySettingsFields({
               }
             />
             <p id={endTimeDescriptionId} className="text-sm text-muted-foreground">
-              {t("preferences.availabilityWindow.endOfDay", { midnight: formatWallClockTime("00:00") })}
+              {t("preferences.availabilityWindow.endOfDay", {
+                midnight: formatWallClockTime("00:00", bookingDateTimeLocale(timeFormat)),
+              })}
             </p>
           </div>
         </div>
@@ -121,6 +136,31 @@ export function BookingDisplaySettingsFields({
             ))}
           </datalist>
         </div>
+      </fieldset>
+
+      <fieldset className="space-y-3" disabled={disabled} aria-describedby={timeFormatDescriptionId}>
+        <legend className="font-medium">{t("preferences.timeFormat.legend")}</legend>
+        <p id={timeFormatDescriptionId} className="text-sm text-muted-foreground">
+          {t("preferences.timeFormat.description")}
+        </p>
+        {(
+          [
+            ["AUTOMATIC", t("preferences.timeFormat.automatic", { example: timeFormatExample("AUTOMATIC") })],
+            ["H12", t("preferences.timeFormat.twelveHour", { example: timeFormatExample("H12") })],
+            ["H24", t("preferences.timeFormat.twentyFourHour", { example: timeFormatExample("H24") })],
+          ] as const
+        ).map(([format, label]) => (
+          <Label key={format} className="flex items-start gap-3 font-normal">
+            <input
+              type="radio"
+              name={`${id}-time-format`}
+              value={format}
+              checked={(value.timeFormat ?? "AUTOMATIC") === format}
+              onChange={() => patch({ timeFormat: format })}
+            />
+            <span>{label}</span>
+          </Label>
+        ))}
       </fieldset>
       {!validation.success ? (
         <p id={errorId} role="alert" className="text-sm text-destructive">

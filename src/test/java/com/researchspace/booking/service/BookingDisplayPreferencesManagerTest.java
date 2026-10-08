@@ -15,6 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
@@ -58,8 +59,51 @@ class BookingDisplayPreferencesManagerTest {
     assertEquals("08:00", resolved.availabilityWindowStart());
     assertEquals("18:00", resolved.availabilityWindowEnd());
     assertEquals(BookingTimezoneMode.BROWSER, resolved.timezoneMode());
+    assertEquals(BookingTimeFormat.AUTOMATIC, resolved.timeFormat());
     assertEquals("Europe/Berlin", resolved.institutionTimezone());
     assertFalse(resolved.overridden());
+  }
+
+  @Test
+  void inheritsTheGlobalTimeFormat() {
+    BookingConfigurationDefaults defaults = defaults();
+    defaults.setTimeFormat(BookingTimeFormat.H12);
+    when(defaultsManager.getDefaults(subject)).thenReturn(defaults);
+    preference("");
+
+    assertEquals(BookingTimeFormat.H12, manager.get(subject, actor).timeFormat());
+  }
+
+  @Test
+  void storesAndReadsBackAnExplicitTimeFormat() throws Exception {
+    BookingDisplaySettings twentyFourHour =
+        new BookingDisplaySettings(
+            "08:00", "18:00", BookingTimezoneMode.BROWSER, null, BookingTimeFormat.H24);
+
+    var resolved = manager.replace(twentyFourHour, subject, actor);
+
+    org.mockito.ArgumentCaptor<String> stored = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(userManager)
+        .setPreference(eq(Preference.BOOKING_DISPLAY_PREFERENCES), stored.capture(), eq("subject"));
+    assertTrue(stored.getValue().contains("\"timeFormat\":\"H24\""), stored.getValue());
+    assertEquals(BookingTimeFormat.H24, resolved.timeFormat());
+    preference(stored.getValue());
+    assertEquals(BookingTimeFormat.H24, manager.get(subject, actor).timeFormat());
+  }
+
+  @Test
+  void aStoredDocumentFromBeforeTheTimeFormatReadsAsAutomatic() {
+    preference(
+        """
+        {"version":1,"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
+        "timezoneMode":"INSTITUTION","customTimezone":null}
+        """);
+
+    var resolved = manager.get(subject, actor);
+
+    assertTrue(resolved.overridden());
+    assertEquals("09:00", resolved.availabilityWindowStart());
+    assertEquals(BookingTimeFormat.AUTOMATIC, resolved.timeFormat());
   }
 
   @Test

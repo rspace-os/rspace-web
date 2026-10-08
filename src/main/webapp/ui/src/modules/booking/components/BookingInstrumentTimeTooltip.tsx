@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
@@ -24,6 +25,7 @@ export function BookingInstrumentTimeTooltip({
   children,
 }: BookingInstrumentTimeTooltipProps) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const showTooltip =
@@ -39,7 +41,7 @@ export function BookingInstrumentTimeTooltip({
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    hourCycle: bookingHourCycle(),
+    hourCycle: bookingHourCycle(timeFormat),
     timeZoneName: "shortOffset",
     timeZone: instrumentTimeZone ?? "UTC",
   });

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.booking.service.BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
@@ -198,6 +199,95 @@ class BookingNotificationMessageFormatterTest {
   }
 
   @Test
+  void emailMessagesUseTheRecipientsExplicitClockAndOtherwiseTheLanguagesUsualClock() {
+    BookingNotificationData data = data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z");
+    ZoneId berlin = ZoneId.of("Europe/Berlin");
+    NotificationType created = NotificationType.NOTIFICATION_BOOKING_CREATED;
+
+    String twentyFourHour =
+        formatter.formatForEmail(created, data, berlin, Locale.US, BookingTimeFormat.H24);
+    String twelveHour =
+        formatter.formatForEmail(created, data, berlin, Locale.UK, BookingTimeFormat.H12);
+
+    assertTrue(
+        twentyFourHour.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), twentyFourHour);
+    assertFalse(twentyFourHour.contains("AM"), twentyFourHour);
+    assertTrue(
+        twelveHour
+            .replace('\u202f', ' ')
+            .contains("8 Oct 2026, 6:00 am (Europe/Berlin, UTC+02:00)"),
+        twelveHour);
+    for (BookingTimeFormat automatic :
+        new BookingTimeFormat[] {BookingTimeFormat.AUTOMATIC, null}) {
+      assertEquals(
+          formatter.formatForEmail(created, data, berlin, Locale.US),
+          formatter.formatForEmail(created, data, berlin, Locale.US, automatic));
+    }
+    assertTrue(
+        formatter
+            .formatForEmail(created, data, berlin, Locale.US)
+            .replace('\u202f', ' ')
+            .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"));
+  }
+
+  @Test
+  void inAppMessagesPreferTheExplicitClockOverTheBrowserRegion() {
+    BookingNotificationData data = data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z");
+    ZoneId berlin = ZoneId.of("Europe/Berlin");
+    NotificationType created = NotificationType.NOTIFICATION_BOOKING_CREATED;
+    Locale british = Locale.forLanguageTag("en-GB");
+
+    String twentyFourHour =
+        formatter.format(created, data, berlin, Locale.US, Locale.US, BookingTimeFormat.H24);
+    String twelveHour =
+        formatter.format(created, data, berlin, Locale.US, british, BookingTimeFormat.H12);
+
+    assertTrue(
+        twentyFourHour.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), twentyFourHour);
+    assertTrue(
+        twelveHour
+            .replace('\u202f', ' ')
+            .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
+        twelveHour);
+    assertEquals(
+        formatter.format(created, data, berlin, Locale.US, british),
+        formatter.format(created, data, berlin, Locale.US, british, BookingTimeFormat.AUTOMATIC));
+    assertEquals(
+        formatter.format(created, data, berlin, Locale.US),
+        formatter.format(created, data, berlin, Locale.US, null, null));
+  }
+
+  @Test
+  void legacyIntervalsPreferTheExplicitClockOverTheBrowserRegion() {
+    String message =
+        formatter.formatLegacy(
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            "Booking 42 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.",
+            ZoneId.of("Europe/Berlin"),
+            Locale.US,
+            Locale.US,
+            BookingTimeFormat.H24);
+
+    assertEquals(
+        "Booking 42 from Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00) to"
+            + " Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00).",
+        message);
+  }
+
+  @Test
+  void midnightIsZeroHundredOnTheTwentyFourHourClock() {
+    String message =
+        formatter.formatForEmail(
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            data("2026-10-07T22:00:00Z", "2026-10-07T23:00:00Z"),
+            ZoneId.of("Europe/Berlin"),
+            Locale.US,
+            BookingTimeFormat.H24);
+
+    assertTrue(message.contains("Oct 8, 2026, 00:00 (Europe/Berlin"), message);
+  }
+
+  @Test
   void resolvesTheRegionalLocaleFromTheHighestWeightedAcceptLanguage() {
     assertEquals(
         Locale.forLanguageTag("en-GB"),
@@ -229,7 +319,13 @@ class BookingNotificationMessageFormatterTest {
   private static ResolvedBookingDisplayPreferences preferences(
       BookingTimezoneMode mode, String customTimezone, String institutionTimezone) {
     return new ResolvedBookingDisplayPreferences(
-        "08:00", "18:00", mode, customTimezone, institutionTimezone, true);
+        "08:00",
+        "18:00",
+        mode,
+        customTimezone,
+        BookingTimeFormat.AUTOMATIC,
+        institutionTimezone,
+        true);
   }
 
   private static BookingNotificationData data(String start, String end) {
