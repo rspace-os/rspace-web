@@ -3,6 +3,7 @@ import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -14,6 +15,7 @@ import { formatBookingEventDateTime, Panel, useBookingEvent } from "./BookingEve
 
 export function BookingDetailsView() {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const { booking, displayTimeZone, editButtonRef } = useBookingEvent();
   const durationMinutes = Math.max(0, Math.round((Date.parse(booking.end) - Date.parse(booking.start)) / 60000));
   const facts: Array<[string, ReactNode]> = [
@@ -28,11 +30,11 @@ export function BookingDetailsView() {
         >
           <span>
             <time dateTime={booking.start}>
-              {formatBookingEventDateTime(booking.start, displayTimeZone, i18n.language)}
+              {formatBookingEventDateTime(booking.start, displayTimeZone, i18n.language, timeFormat)}
             </time>
             {" – "}
             <time dateTime={booking.end}>
-              {formatBookingEventDateTime(booking.end, displayTimeZone, i18n.language)}
+              {formatBookingEventDateTime(booking.end, displayTimeZone, i18n.language, timeFormat)}
             </time>
           </span>
         </BookingInstrumentTimeTooltip>

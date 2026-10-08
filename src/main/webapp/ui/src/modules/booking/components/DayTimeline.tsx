@@ -2,6 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import { Minus, Plus } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { dayMinuteToZonedTime, wallClockToDayMinute, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
@@ -163,6 +164,7 @@ export function DayTimeline({
     [date, timezone, wallEndWindow],
   );
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const scrollerRef = React.useRef<HTMLElement>(null);
   const [collisionBoundary, setCollisionBoundary] = React.useState<HTMLElement | null>(null);
   const [dragRange, setDragRange] = React.useState<{ from: number; to: number } | null>(null);
@@ -180,9 +182,9 @@ export function DayTimeline({
   const hourLabels = React.useMemo(
     () =>
       Array.from({ length: Math.ceil(dayMinutes / 60) }, (_, hour) =>
-        formatMinuteWithDayOffset(date, timezone, hour * 60),
+        formatMinuteWithDayOffset(date, timezone, hour * 60, timeFormat),
       ),
-    [date, timezone, dayMinutes],
+    [date, timeFormat, timezone, dayMinutes],
   );
   const positionedEvents = positionEvents(events, dayMinutes);
   const laneCount = Math.max(1, ...positionedEvents.map(({ lane }) => lane + 1));
@@ -226,7 +228,9 @@ export function DayTimeline({
 
   const formattedDate = Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "full" });
   const nowTime =
-    nowMinute === undefined || nowEdge === null ? null : formatMinuteWithDayOffset(date, timezone, nowMinute);
+    nowMinute === undefined || nowEdge === null
+      ? null
+      : formatMinuteWithDayOffset(date, timezone, nowMinute, timeFormat);
   const nowLabel =
     nowTime === null || nowEdge === null
       ? null
@@ -429,6 +433,8 @@ export function DayTimeline({
                     },
                     date,
                     timezone,
+                    "–",
+                    timeFormat,
                   )}
                 </span>
               </div>

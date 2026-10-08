@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import { type OpeningSchedule, openingIntervals } from "@/modules/booking/domain/bookingOpeningHours";
+import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import {
+  bookingDateTimeLocale,
+  clockChangeOffsetLabel,
   dayMinuteToZonedTime,
   formatPlainDate,
   formatWallClockTime,
@@ -8,8 +11,6 @@ import {
   parsePlainDate,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
-
-const DAY_MINUTES = 24 * 60;
 
 /**
  * Closed hours in a day timeline: a solid muted base with a diagonal hatch, so they stand apart from the timelines'
@@ -76,8 +77,8 @@ export function dateForMinute(date: string, timezone: string, minute: number) {
   return dayMinuteToZonedTime(date, timezone, minute).toPlainDate().toString();
 }
 
-export function formatDayDate(date: string) {
-  return formatPlainDate(date);
+export function formatDayDate(date: string, timeFormat: BookingTimeFormat = "AUTOMATIC") {
+  return formatPlainDate(date, bookingDateTimeLocale(timeFormat));
 }
 
 /** ` (+1)` / ` (-1)` for a time on a later or earlier date than the one it is read against; empty on the same date. */
@@ -85,12 +86,17 @@ export function formatDayOffset(days: number) {
   return days === 0 ? "" : ` (${days > 0 ? "+" : ""}${days})`;
 }
 
-export function formatMinuteWithDayOffset(date: string, timezone: string, minute: number) {
+export function formatMinuteWithDayOffset(
+  date: string,
+  timezone: string,
+  minute: number,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+) {
   const time = dayMinuteToZonedTime(date, timezone, minute);
   const dayLabel = formatDayOffset(parsePlainDate(date).until(time.toPlainDate()).days);
   // Offsets distinguish both occurrences of the repeated hour on clock-change days.
-  const zoneLabel = zonedDayBounds(date, timezone).elapsedMinutes === DAY_MINUTES ? "" : ` ${time.offset}`;
-  return `${formatWallClockTime(time.toPlainTime().toString({ smallestUnit: "minute" }))}${zoneLabel}${dayLabel}`;
+  const zoneLabel = clockChangeOffsetLabel(time, date);
+  return `${formatWallClockTime(time.toPlainTime().toString({ smallestUnit: "minute" }), bookingDateTimeLocale(timeFormat))}${zoneLabel}${dayLabel}`;
 }
 
 export function period(
@@ -98,9 +104,10 @@ export function period(
   date: string,
   timezone: string,
   separator = "–",
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ) {
-  const start = formatMinuteWithDayOffset(date, timezone, eventOrRange.startMinute);
-  const end = formatMinuteWithDayOffset(date, timezone, eventOrRange.endMinute);
+  const start = formatMinuteWithDayOffset(date, timezone, eventOrRange.startMinute, timeFormat);
+  const end = formatMinuteWithDayOffset(date, timezone, eventOrRange.endMinute, timeFormat);
   return `${start}${separator}${end}`;
 }
 
@@ -112,10 +119,11 @@ export function openingWindowsOnDate(
   date: string,
   displayTimezone: string,
   schedule: OpeningSchedule & { timezone: string },
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): Array<{ start: string; end: string }> {
   return openingRangesOnDate(date, displayTimezone, schedule).map(({ startMinute, endMinute }) => ({
-    start: formatMinuteWithDayOffset(date, displayTimezone, startMinute),
-    end: formatMinuteWithDayOffset(date, displayTimezone, endMinute),
+    start: formatMinuteWithDayOffset(date, displayTimezone, startMinute, timeFormat),
+    end: formatMinuteWithDayOffset(date, displayTimezone, endMinute, timeFormat),
   }));
 }
 
@@ -139,6 +147,7 @@ export function openingHoursOnDate(
   date: string,
   displayTimezone: string,
   schedule: OpeningSchedule & { timezone: string },
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): { start: string; end: string } {
-  return openingWindowsOnDate(date, displayTimezone, schedule)[0] ?? { start: "", end: "" };
+  return openingWindowsOnDate(date, displayTimezone, schedule, timeFormat)[0] ?? { start: "", end: "" };
 }

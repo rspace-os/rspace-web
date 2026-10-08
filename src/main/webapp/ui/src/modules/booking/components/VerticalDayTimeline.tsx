@@ -9,9 +9,11 @@ import {
   verticalTimelineRangeToDraft,
 } from "@/modules/booking/creation/verticalTimelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
+  type BookingTimeFormat,
   type BookingWindowDraft,
   currentWallClock,
   dayMinuteToZonedTime,
@@ -87,7 +89,12 @@ function resolveRange(draft: BookingWindowDraft | undefined, timezone: string): 
   return resolveBookingWindow(draft, timezone).window;
 }
 
-function timeRange(range: IsoRange, date: string, timezone: string): string {
+function timeRange(
+  range: IsoRange,
+  date: string,
+  timezone: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+): string {
   return period(
     {
       startMinute: instantToDayMinute(range.start, date, timezone),
@@ -95,6 +102,8 @@ function timeRange(range: IsoRange, date: string, timezone: string): string {
     },
     date,
     timezone,
+    "–",
+    timeFormat,
   );
 }
 
@@ -144,6 +153,7 @@ export function VerticalDayTimeline({
   scheduleWindow,
 }: VerticalDayTimelineProps) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const instanceId = React.useId();
   const instructionsId = `${instanceId}-keyboard-instructions`;
   const dateHeadingId = `${instanceId}-date-heading`;
@@ -169,7 +179,7 @@ export function VerticalDayTimeline({
   const closedHours = React.useMemo(() => closedSegments(openSegments, dayMinutes), [dayMinutes, openSegments]);
   const editingRange = React.useMemo(() => resolveRange(editing?.draft, timezone), [editing?.draft, timezone]);
   const activeRange = preview ?? editingRange;
-  const activePeriod = activeRange ? timeRange(activeRange, date, timezone) : undefined;
+  const activePeriod = activeRange ? timeRange(activeRange, date, timezone, timeFormat) : undefined;
   const context = React.useMemo(
     () =>
       editing
@@ -256,7 +266,7 @@ export function VerticalDayTimeline({
       editing.onChange(verticalTimelineRangeToDraft(next, timezone));
       setAnnouncement(
         t("dayTimeline.vertical.intervalChanged", {
-          period: timeRange(next, date, timezone),
+          period: timeRange(next, date, timezone, timeFormat),
         }),
       );
     },
@@ -571,7 +581,7 @@ export function VerticalDayTimeline({
                       className="absolute left-0 -translate-y-1/2 bg-card px-1 text-[11px] leading-none text-muted-foreground tabular-nums"
                       style={{ top: hour * PIXELS_PER_HOUR }}
                     >
-                      {formatMinuteWithDayOffset(date, timezone, hour * 60)}
+                      {formatMinuteWithDayOffset(date, timezone, hour * 60, timeFormat)}
                     </span>
                   ))}
                 </div>
@@ -767,7 +777,7 @@ export function VerticalDayTimeline({
           {editing && !draftVisible && editingRange ? (
             <p className="text-xs text-muted-foreground">
               {t("dayTimeline.vertical.draftOutsideDay", {
-                period: timeRange(editingRange, date, timezone),
+                period: timeRange(editingRange, date, timezone, timeFormat),
               })}
             </p>
           ) : null}

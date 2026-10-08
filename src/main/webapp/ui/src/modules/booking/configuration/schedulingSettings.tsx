@@ -8,6 +8,7 @@ import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import {
   type BookingDisplayPreferencesInput,
   BookingDisplayPreferencesInputSchema,
+  BookingTimeFormatSchema,
   BookingTimezoneModeSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
@@ -47,6 +48,7 @@ const bookingDisplayPreferencesEntries = {
   availabilityWindowEnd: v.string(),
   timezoneMode: BookingTimezoneModeSchema,
   customTimezone: v.nullable(v.string()),
+  timeFormat: v.optional(BookingTimeFormatSchema, "AUTOMATIC"),
   institutionTimezone: v.string(),
 };
 
@@ -150,6 +152,7 @@ export async function saveBookingSettings(
     availabilityWindowEnd: input.availabilityWindowEnd,
     timezoneMode: input.timezoneMode,
     customTimezone: input.customTimezone,
+    timeFormat: input.timeFormat,
   });
   const response = await fetch("/api/v2/booking-settings/admin", {
     method: "PATCH",
