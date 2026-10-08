@@ -65,7 +65,8 @@ The design and its trade-offs are in
   count toward lockout. Encoding new passwords and the migration are not
   bounded at the encoder. The anonymous routes into `encode()` are
   capped in front of it instead: `SignupController`,
-  `ExternalAuthController` (Google sign-up on Community) and
+  `ExternalAuthController` (Google sign-up on Community),
+  `UserLdapRepoImpl` (LDAP first-login auto-signup) and
   `PasswordResetByEmailHandlerBase` hold a permit from the shared
   `NewPasswordEncodeGate` (`password.anonymousEncode.maxConcurrent`,
   default 4) through the hash and save, and refuse at once when none is

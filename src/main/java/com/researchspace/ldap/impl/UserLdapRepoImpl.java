@@ -4,6 +4,7 @@ import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMM
 import static org.springframework.ldap.query.LdapQueryBuilder.query;
 
 import com.researchspace.Constants;
+import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.licensews.LicenseExceededException;
 import com.researchspace.licensews.LicenseServerUnavailableException;
@@ -17,6 +18,7 @@ import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.LicenseRequestResult;
 import com.researchspace.service.LicenseService;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.UserSignupException;
@@ -47,6 +49,8 @@ public class UserLdapRepoImpl implements UserLdapRepo {
   private @Autowired LicenseService licenseService;
   private @Autowired UserManager userManager;
   private @Autowired UserValidator userValidator;
+  private @Autowired NewPasswordEncodeGate encodeGate;
+  private @Autowired MessageSourceUtils messages;
 
   @Value("${ldap.userSearchQuery.uidField}")
   private String ldapSearchQueryUidField;
@@ -230,11 +234,18 @@ public class UserLdapRepoImpl implements UserLdapRepo {
     user.setPassword(SSO_DUMMY_PASSWORD);
     user.setConfirmPassword(SSO_DUMMY_PASSWORD);
 
+    if (!encodeGate.tryAcquire()) {
+      SECURITY_LOG.warn(
+          "LDAP auto-signup for [{}] refused: no free new-password hashing slot", username);
+      throw new UserSignupException(messages.getMessage("errors.signup.rateLimited"));
+    }
     User signedUser;
     try {
       signedUser = manualSignupPolicy.saveUser(user, null);
     } catch (UserExistsException e) {
       throw new UserSignupException(e);
+    } finally {
+      encodeGate.release();
     }
 
     return signedUser;
