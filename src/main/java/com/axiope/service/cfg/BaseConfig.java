@@ -853,7 +853,8 @@ public abstract class BaseConfig {
       @Value("${oauth.passwordGrant.maxFailures:5}") int maxFailures,
       @Value("${oauth.passwordGrant.failureWindowSeconds:600}") long failureWindowSeconds,
       UsernamePasswordCredentialsMatcher credentialsMatcher) {
-    final long maxTrackedAccounts = 10_000;
+    // Only real accounts get an entry, so this is a memory backstop far above any user count.
+    final long maxTrackedAccounts = 1_000_000;
     return new PasswordGrantGuessLimiter(
         maxFailures,
         Duration.ofSeconds(failureWindowSeconds),

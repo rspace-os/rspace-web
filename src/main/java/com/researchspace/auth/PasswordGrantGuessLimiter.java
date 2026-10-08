@@ -14,6 +14,8 @@ import org.apache.shiro.lang.util.ByteSource;
  * Counts wrong password guesses per username on the OAuth password grant and refuses a username
  * once it reaches the limit. Held in memory per JVM and never persisted, so it resets on restart.
  * Only the OAuth password grant reads it; the web login form's lockout is separate and unchanged.
+ * Only usernames that resolve to a real account are counted (the controller calls tryAcquire after
+ * the user lookup), so the map holds at most one entry per account.
  *
  * <p>Each attempt is counted before its password check and a correct password clears the count.
  * Refused attempts are not counted, so a block ends {@code window} after the last admitted attempt.
