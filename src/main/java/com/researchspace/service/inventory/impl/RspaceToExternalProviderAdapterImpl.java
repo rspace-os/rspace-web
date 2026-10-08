@@ -195,13 +195,12 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
 
   /**
    * Exactly one Owner entry, carrying ownerName only: the "Owner" field when non-blank, else the
-   * record owner's full name. Owner is the only PIDINST-mandatory property given an unconditional
-   * fallback, hence the fallback here.
+   * record owner's full name.
    *
-   * <p>No ownerContact, deliberately (RSDEV-1540): it used to be the record owner's account email,
-   * which became part of a permanent public record once a curator accepted it. PIDINST 1.0 lists
-   * ownerContact as optional and B2INST publishes records without it. A future contact must be a
-   * value someone chose, never an account attribute (ADR 0008, decision 4).
+   * <p>No ownerContact, deliberately (RSDEV-1540): the record owner's account email would become
+   * part of a permanent public record once a curator accepts it. PIDINST 1.0 lists ownerContact as
+   * optional and B2INST publishes records without it. A future contact must be a value someone
+   * chose, never an account attribute (ADR 0008, decision 4).
    *
    * <p>PIDINST 1.0 marks six properties mandatory: Identifier, SchemaVersion, LandingPage, Name,
    * Owner and Manufacturer (see the RDA schema table). RSpace sets the first two itself, and the

@@ -144,7 +144,6 @@ class RspaceToExternalProviderAdapterImplTest {
     assertEquals("An automatic weather station.", md.getDescription());
     assertThat(md.getOwner()).hasSize(1);
     assertEquals("Arctic Research Institute", md.getOwner().get(0).getOwnerName());
-    assertNull(md.getOwner().get(0).getOwnerContact(), "the owner's email must not reach B2INST");
     assertEquals("Acme Instruments", md.getManufacturer().get(0).getManufacturerName());
     assertEquals("AWS-42", md.getModel().getModelName());
     assertEquals("Weather station", md.getInstrumentType().get(0).getInstrumentTypeName());

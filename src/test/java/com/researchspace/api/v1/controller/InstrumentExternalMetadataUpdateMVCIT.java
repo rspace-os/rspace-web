@@ -262,11 +262,10 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
   }
 
   /**
-   * An owner transfer pushes, because it changes what the provider holds: {@code
+   * An owner transfer pushes, because it can change what the provider holds: {@code
    * RspaceToExternalProviderAdapterImpl.ownerOf} maps {@code ownerName} from the record owner's
-   * full name unless the Owner field overrides it, and sends no {@code ownerContact} at all since
-   * RSDEV-1540. Unpushed, the registered record kept naming the previous owner - one of the three
-   * drifts RSDEV-1251 exists to stop.
+   * full name unless the Owner field overrides it. Unpushed, the registered record kept naming the
+   * previous owner - one of the three drifts RSDEV-1251 exists to stop.
    *
    * <p>This case is also why the push takes its candidates from the record rather than from the
    * response it decorates. A transfer leaves the departing owner with {@code LIMITED_READ}, and
