@@ -64,4 +64,3 @@ afterEach(async () => {
   localStorage.clear();
   sessionStorage.clear();
 });
-
