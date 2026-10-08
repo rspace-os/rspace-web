@@ -2,10 +2,12 @@ package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.auth.LoginHelper;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.auth.password.NewPasswordEncodeGate;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.googleauth.ExternalAuthTokenVerifier;
@@ -167,6 +170,29 @@ public class ExternalOAuthControllerTest {
         .thenReturn(TestFactory.createAnyUser("any"));
     assertNotNull(
         signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest()).getData());
+  }
+
+  @Test
+  public void busyPostSignupLoginKeepsTheAccountAndSendsTheUserToTheLoginPage() throws Exception {
+    when(verifier.verify(clientId, token)).thenReturn(Optional.of(createEXternalPRofile()));
+    User saved = TestFactory.createAnyUser("any");
+    when(policy.saveUser(any(User.class), any(MockHttpServletRequest.class))).thenReturn(saved);
+    doThrow(new LoginVerificationBusyException("busy"))
+        .when(signup)
+        .postUserCreate(any(), any(), any());
+
+    AjaxReturnObject<String> rc =
+        signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest());
+
+    assertEquals("/login?" + SignupController.ACCOUNT_CREATED_LOGIN_BUSY_PARAM, rc.getData());
+    assertNull(rc.getError());
+    verify(policy, times(1)).saveUser(any(User.class), any(MockHttpServletRequest.class));
+    verify(signup, never()).getRedirect(any());
+
+    doThrow(new IllegalStateException("other")).when(signup).postUserCreate(any(), any(), any());
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    assertThrows(
+        IllegalStateException.class, () -> signupCtrller.externalSignup(token, clientId, request));
   }
 
   @Test
