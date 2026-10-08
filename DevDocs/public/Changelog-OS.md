@@ -11,6 +11,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
 - RSDEV-894 login passwords are now hashed with Argon2id
   - On first startup after the upgrade a Liquibase change wraps every existing password hash in Argon2id, so no fast SHA-256 hash stays in the database. The wrapped hash stays as it is until the user next changes their password; new and changed passwords are stored as plain Argon2id.
   - **This change is irreversible.** Older RSpace versions cannot read the new hashes, so nobody could log in after a downgrade. Downgrading past this version requires restoring the database backup taken before the upgrade.
+  - Backups and binary logs taken before the upgrade still contain the previous SHA-256 hashes. Rotate or expire them under your normal retention policy.
   - First startup may take up to a minute longer on large instances, roughly 50 ms per user. The change logs the row count and the time it took.
   - Rows whose password is not a SHA-256 hex hash with a Base64 salt are left unchanged and logged at ERROR with the username. Those users cannot log in until an administrator resets their password.
   - New optional `deployment.properties` keys limit how many login and reauthentication password checks run at once, since each check holds about 19 MiB of heap:
