@@ -120,8 +120,8 @@ public class PasswordGrantGuessLimiterTest {
   }
 
   @Test
-  public void padUnknownUserRunsOneCheckAgainstTheSentinel() {
-    limiter.padUnknownUser("guess");
+  public void padWithSentinelCheckRunsOneCheckAgainstTheSentinel() {
+    limiter.padWithSentinelCheck("guess");
     verify(matcher, times(1))
         .test(argThat(u -> "oauth-sentinel".equals(u.getUsername())), eq("guess"));
   }

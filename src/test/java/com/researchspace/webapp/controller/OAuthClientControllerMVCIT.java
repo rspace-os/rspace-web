@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -37,8 +38,6 @@ import org.springframework.test.web.servlet.ResultActions;
 public class OAuthClientControllerMVCIT extends MVCTestBase {
   private static final String CLIENT_ERROR = "OAuth token could not be created.";
   private static final String INVALID_CREDENTIALS = "Invalid user credentials.";
-  private static final String TOO_MANY_ATTEMPTS =
-      "Too many failed attempts for this account. Please try again later.";
 
   @Autowired private OAuthAppManager oAuthAppManager;
   @MockitoSpyBean private IReauthenticator reauthenticator;
@@ -339,9 +338,11 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
     }
     passwordGrant(app, username, password)
         .andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.message").value(TOO_MANY_ATTEMPTS));
+        .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
 
     verify(reauthenticator, times(5)).reauthenticate(any(), any());
+    verify(credentialsMatcher, times(1))
+        .test(argThat(u -> "oauth-sentinel".equals(u.getUsername())), any());
   }
 
   @Test
@@ -376,7 +377,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
     }
     passwordGrant(app, alias, password)
         .andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.message").value(TOO_MANY_ATTEMPTS));
+        .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
   }
 
   @Test

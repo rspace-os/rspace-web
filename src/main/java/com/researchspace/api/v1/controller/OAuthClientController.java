@@ -121,7 +121,7 @@ public class OAuthClientController {
         response = passwordGrant(clientId, clientSecret, user, password, isJwt, request);
 
       } catch (DataAccessException e) {
-        guessLimiter.padUnknownUser(password);
+        guessLimiter.padWithSentinelCheck(password);
         SECURITY_LOG.warn(
             "OAuth password flow request for unknown username [{}], from {}",
             username,
@@ -182,7 +182,8 @@ public class OAuthClientController {
           "OAuth password flow request for [{}] refused: too many failed attempts, from {}",
           subject.getUsername(),
           RequestUtil.remoteAddr(request));
-      throw new ApiAuthenticationException("oauth.errors.tooManyAttempts");
+      guessLimiter.padWithSentinelCheck(password);
+      throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
     }
     boolean credentialsMatch = reauthenticator.reauthenticate(subject, password);
 

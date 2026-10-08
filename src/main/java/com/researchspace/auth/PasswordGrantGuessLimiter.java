@@ -83,9 +83,9 @@ public class PasswordGrantGuessLimiter {
 
   /**
    * Runs one password check against a never-persisted sentinel user, so a request for an unknown
-   * username costs the same as a wrong password for a real one.
+   * username, or a refused one, costs the same as a wrong password for a real one.
    */
-  public void padUnknownUser(String suppliedPassword) {
+  public void padWithSentinelCheck(String suppliedPassword) {
     credentialsMatcher.test(sentinel, suppliedPassword);
   }
 
