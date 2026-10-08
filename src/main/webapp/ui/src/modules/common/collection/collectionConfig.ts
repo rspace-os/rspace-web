@@ -123,7 +123,7 @@ export function selectOptionText(option: SelectOption): string {
   return "textValue" in option ? option.textValue : option.label;
 }
 
-export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "select" | "card"> & {
+export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "select" | "card" | "radio"> & {
   isOptionDisabled?: (option: SelectOption, data: Partial<TDocument>) => boolean;
 };
 
@@ -167,7 +167,7 @@ export type FieldConfig<TDocument> =
   | (BaseFieldConfig<TDocument, "dateTime"> & {
       type: "dateTime";
     })
-  | (BaseFieldConfig<TDocument, "select" | "card", SelectFieldFormConfig<TDocument>> & {
+  | (BaseFieldConfig<TDocument, "select" | "card" | "radio", SelectFieldFormConfig<TDocument>> & {
       type: "select";
       options: readonly SelectOption[];
     })
