@@ -99,6 +99,20 @@ public final class ApiV2ResourceRequestParser {
     return ResourceRequest.unpaged(filter, runtime.selection());
   }
 
+  /** Parses a filter and sparse fieldsets for a custom collection endpoint. */
+  public static ResourceRequest filtered(
+      String where,
+      ApiV2FieldsetQuery fieldsets,
+      CollectionDescription<?> description,
+      ResourceRegistry registry,
+      RuntimeFieldContext runtimeFields) {
+    RuntimeFieldResolution runtime = new RuntimeFieldResolution(runtimeFields);
+    FilterExpression filter = filter(where, description, registry, runtime);
+    ResourceFieldSelections selections = fields(fieldsets, description, registry, runtime);
+    return new ResourceRequest(
+        filter, List.of(), new Page(1, 1), selections, IncludeTree.empty(), runtime.selection());
+  }
+
   public static ResourceRequest bulk(
       String where, CollectionDescription<?> description, ResourceRegistry registry) {
     return bulk(where, description, registry, RuntimeFieldContext.empty());
