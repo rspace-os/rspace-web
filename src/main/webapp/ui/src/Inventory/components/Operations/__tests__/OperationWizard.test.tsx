@@ -735,6 +735,45 @@ describe("OperationWizard step flow", () => {
     expect(nextButton()).toBeEnabled();
   });
 
+  describe("releasing a picked grid container", () => {
+    const pickGridBox = async (user: ReturnType<typeof userEvent.setup>) => {
+      const box = makeMockContainer({
+        cType: "GRID",
+        gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+        locationsCount: 4,
+        contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
+      });
+      placementTarget.container = box;
+      await user.click(screen.getByTestId("place-container"));
+      box.locations?.[0].toggleSelected(true);
+      expect(box.contentSearch.uiConfig.onlyAllowSelectingEmptyLocations).toBe(true);
+      return box;
+    };
+    const expectReleased = (box: ContainerModel) => {
+      expect(box.contentSearch.uiConfig.onlyAllowSelectingEmptyLocations).toBe(false);
+      expect(box.selectedLocations).toEqual([]);
+    };
+
+    it("restores the container when the user switches to the workbench", async () => {
+      const user = userEvent.setup();
+      render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+      await reachPlacement(user, "dna");
+      const box = await pickGridBox(user);
+      await user.click(screen.getByTestId("place-workbench"));
+      expectReleased(box);
+    });
+
+    it("restores the container when the wizard closes", async () => {
+      const user = userEvent.setup();
+      const origins = [makeMockSubSample({})];
+      const { rerender } = render(<OperationWizard open onClose={vi.fn()} origins={origins} />);
+      await reachPlacement(user, "dna");
+      const box = await pickGridBox(user);
+      rerender(<OperationWizard open={false} onClose={vi.fn()} origins={origins} />);
+      expectReleased(box);
+    });
+  });
+
   it("enables Perform for a terminal operation (Destroy) on a non-empty origin", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
