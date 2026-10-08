@@ -89,7 +89,7 @@ public class ExternalAuthController extends BaseController {
             newUser.getEmail(),
             RequestUtil.remoteAddr(request));
         return new AjaxReturnObject<String>(
-            null, ErrorList.createErrListWithSingleMsg(getText("externalAuth.errors.busy")));
+            null, ErrorList.createErrListWithSingleMsg(getText("errors.signup.rateLimited")));
       }
       try {
         userEnablementUtils.checkLicenseForUserInRole(1, roleManager.getRole(newUser.getRole()));
