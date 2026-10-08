@@ -14,6 +14,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.booking.BookableItemNotificationSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.preference.Preference;
@@ -52,7 +53,13 @@ class BookingNotificationRecipientReaderTest {
     when(displayPreferences.resolveForNotificationSnapshot(any(User.class)))
         .thenReturn(
             new BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences(
-                "08:00", "18:00", BookingTimezoneMode.INSTITUTION, null, "UTC", false));
+                "08:00",
+                "18:00",
+                BookingTimezoneMode.INSTITUTION,
+                null,
+                BookingTimeFormat.AUTOMATIC,
+                "UTC",
+                false));
     when(featureFlags.isFeatureFlagEnabledInSnapshot(eq(BOOKING_ENABLED), any(User.class)))
         .thenReturn(true);
     reader =

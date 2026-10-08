@@ -9,6 +9,7 @@ import {
 } from "@/modules/booking/creation/verticalTimelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
 import {
+  type BookingTimeFormat,
   type BookingWindowDraft,
   dayMinuteToZonedTime,
   instantToDayMinute,
@@ -34,7 +35,12 @@ function resolveRange(draft: BookingWindowDraft | undefined, timezone: string): 
   return resolveBookingWindow(draft, timezone).window;
 }
 
-export function timeRange(range: IsoRange, date: string, timezone: string): string {
+export function timeRange(
+  range: IsoRange,
+  date: string,
+  timezone: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+): string {
   return period(
     {
       startMinute: instantToDayMinute(range.start, date, timezone),
@@ -42,6 +48,8 @@ export function timeRange(range: IsoRange, date: string, timezone: string): stri
     },
     date,
     timezone,
+    "–",
+    timeFormat,
   );
 }
 
@@ -53,6 +61,7 @@ export function useVerticalDayTimelineInteraction({
   date,
   timezone,
   dayMinutes,
+  timeFormat,
   editing,
   schedule,
   setExpandedEventId,
@@ -60,6 +69,7 @@ export function useVerticalDayTimelineInteraction({
   date: string;
   timezone: string;
   dayMinutes: number;
+  timeFormat: BookingTimeFormat;
   editing: VerticalDayTimelineEditing | undefined;
   schedule: Pick<VerticalDayTimelineSchedule, "status">;
   setExpandedEventId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -75,7 +85,7 @@ export function useVerticalDayTimelineInteraction({
   const interactionRef = React.useRef<TimelineInteraction | null>(null);
   const editingRange = React.useMemo(() => resolveRange(editing?.draft, timezone), [editing?.draft, timezone]);
   const activeRange = preview ?? editingRange;
-  const activePeriod = activeRange ? timeRange(activeRange, date, timezone) : undefined;
+  const activePeriod = activeRange ? timeRange(activeRange, date, timezone, timeFormat) : undefined;
   const context = React.useMemo(
     () =>
       editing
@@ -144,7 +154,7 @@ export function useVerticalDayTimelineInteraction({
       editing.onChange(verticalTimelineRangeToDraft(next, timezone));
       setAnnouncement(
         t("dayTimeline.vertical.intervalChanged", {
-          period: timeRange(next, date, timezone),
+          period: timeRange(next, date, timezone, timeFormat),
         }),
       );
     },

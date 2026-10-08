@@ -46,6 +46,7 @@ export async function saveBookingSettings(
     availabilityWindowEnd: input.availabilityWindowEnd,
     timezoneMode: input.timezoneMode,
     customTimezone: input.customTimezone,
+    timeFormat: input.timeFormat,
   });
   const response = await fetchWithUiToken("/api/v2/booking-settings/admin", {
     method: "PATCH",

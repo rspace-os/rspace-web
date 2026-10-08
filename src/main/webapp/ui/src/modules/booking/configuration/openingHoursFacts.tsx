@@ -12,7 +12,7 @@ import {
   type OpeningSchedule,
   resolveSchedulingBoundary,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import { bookingDateTimeLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 import i18n from "@/modules/common/i18n";
 
 export type WeekdayOpening = { dayOfWeek: number; hours: string | null };
@@ -26,6 +26,7 @@ export function weeklyOpeningHours(
   schedule: OpeningSchedule & { timezone: string },
   timezone: string,
   referenceDate: string,
+  locale = bookingDateTimeLocale(),
 ): WeekdayOpening[] {
   const reference = Temporal.PlainDate.from(referenceDate);
   const monday = reference.subtract({ days: reference.dayOfWeek - 1 });
@@ -37,13 +38,14 @@ export function weeklyOpeningHours(
     const hours = effectiveHours(schedule, dayOfWeek);
     if (!hours) return { dayOfWeek, hours: null };
     // Open around the clock reads the same in every timezone.
-    if (allDay) return { dayOfWeek, hours: `${formatWallClockTime("00:00")} - ${formatWallClockTime("00:00")}` };
+    if (allDay)
+      return { dayOfWeek, hours: `${formatWallClockTime("00:00", locale)} - ${formatWallClockTime("00:00", locale)}` };
     const date = monday.add({ days: dayOfWeek - 1 });
     const boundary = (time: string, end: boolean) => {
       const instant = resolveSchedulingBoundary(date.toString(), time, schedule.timezone);
       const zoned = instant.toZonedDateTimeISO(timezone);
       const day = (end ? instant.subtract({ nanoseconds: 1 }).toZonedDateTimeISO(timezone) : zoned).toPlainDate();
-      return `${formatWallClockTime(zoned.toPlainTime().toString({ smallestUnit: "minute" }))}${formatDayOffset(date.until(day).days)}`;
+      return `${formatWallClockTime(zoned.toPlainTime().toString({ smallestUnit: "minute" }), locale)}${formatDayOffset(date.until(day).days)}`;
     };
     return { dayOfWeek, hours: `${boundary(hours.start, false)} - ${boundary(hours.end, true)}` };
   });

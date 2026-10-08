@@ -1215,5 +1215,9 @@
   },
   "toolbar": {
     "jumpToDateAccessible": "{label}, {date}"
+  },
+  "time": {
+    "dateAndRange": "{date}; {period}",
+    "openingRange": "{start} - {end}"
   }
 }

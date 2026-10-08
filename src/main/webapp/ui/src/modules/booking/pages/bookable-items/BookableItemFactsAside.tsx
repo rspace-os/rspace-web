@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { UserBadge } from "@/modules/common/ui/user-badge";
@@ -14,6 +15,7 @@ export function BookableItemFactsAside({
   displayTimeZone: string;
 }) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const headingId = useId();
   const target = configuration.target;
   const facts = [
@@ -45,7 +47,7 @@ export function BookableItemFactsAside({
       label: t("bookableItemDetails.fields.createdAt"),
       value: configuration.createdAt ? (
         <time dateTime={configuration.createdAt}>
-          {formatBookingEventDateTime(configuration.createdAt, displayTimeZone, i18n.language)}
+          {formatBookingEventDateTime(configuration.createdAt, displayTimeZone, i18n.language, timeFormat)}
         </time>
       ) : (
         t("bookableItemDetails.notAvailable")

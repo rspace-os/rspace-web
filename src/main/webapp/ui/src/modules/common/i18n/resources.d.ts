@@ -1973,6 +1973,10 @@ export default interface Resources {
     },
     "toolbar": {
       "jumpToDateAccessible": "{label}, {date}"
+    },
+    "time": {
+      "dateAndRange": "{date}; {period}",
+      "openingRange": "{start} - {end}"
     }
   },
   "common": {

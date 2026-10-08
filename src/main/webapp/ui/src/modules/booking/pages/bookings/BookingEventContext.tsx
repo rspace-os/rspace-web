@@ -1,6 +1,6 @@
 import { createContext, type Dispatch, type ReactNode, type RefObject, type SetStateAction, useContext } from "react";
 import type { BookingDetails } from "@/modules/booking/domain/booking";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { type BookingTimeFormat, formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 
 export type BookingEventContextValue = {
   booking: BookingDetails;
@@ -49,11 +49,12 @@ export function Panel({
   );
 }
 
-export function formatBookingEventDateTime(value: string, timeZone: string, language: string): string {
-  return new Intl.DateTimeFormat(language, {
-    dateStyle: "medium",
-    timeStyle: "short",
-    hourCycle: bookingHourCycle(),
-    timeZone,
-  }).format(new Date(value));
+/** With the UTC offset on a clock-change day, so the two occurrences of a repeated hour read differently. */
+export function formatBookingEventDateTime(
+  value: string,
+  timeZone: string,
+  language: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+): string {
+  return formatBookingDateTime(value, timeZone, language, timeFormat);
 }
