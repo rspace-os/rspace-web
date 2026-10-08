@@ -224,6 +224,15 @@ clears that result, refreshes the events, and requests focus again; date, layout
 and filter changes clear the old result. Failed reads retain the calendar's
 existing Retry control. Resources and week-overflow fallbacks announce the
 view change, and consecutive focus requests remove the previous highlight.
+After a single booking is created on the selected calendar date, the compact
+dialog and full Add page request an automatic scroll to that event. The request
+keeps the selected date, target, filters, view, and layout, and waits for the
+event query or its active refresh. It centers the event card on both axes
+without moving keyboard focus. Missing or hidden events and date changes end
+the request silently without changing the view or layout.
+Explicit View on calendar requests animate a two-wave ring around the event for
+1.7 seconds. Automatic scroll requests skip it, and reduced-motion settings
+disable the animation.
 On booking details, refreshed item permissions control the notice's calendar
 action. Losing access or the target removes the action and retains the saved
 success message.

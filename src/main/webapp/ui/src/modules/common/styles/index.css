@@ -29,6 +29,35 @@
 }
 
 @layer utilities {
+  @keyframes calendar-event-focus-ripple {
+    from {
+      opacity: 0.55;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.06);
+    }
+  }
+
+  [data-calendar-event-focus][data-calendar-event-focus-highlight="true"]::after {
+    position: absolute;
+    inset: -3px;
+    border: 2px solid var(--ring);
+    border-radius: inherit;
+    opacity: 0;
+    content: "";
+    pointer-events: none;
+    animation: calendar-event-focus-ripple 850ms ease-out 2;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-calendar-event-focus][data-calendar-event-focus-highlight="true"]::after {
+      content: none;
+      animation: none;
+    }
+  }
+
   /* Windows High Contrast Mode suppresses box shadows and rings, so keyboard
      focus needs a system-colour outline that survives forced colour mapping. */
   @media (forced-colors: active) {

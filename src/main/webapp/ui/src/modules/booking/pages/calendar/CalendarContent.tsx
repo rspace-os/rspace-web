@@ -204,7 +204,8 @@ function calendarEventFocusRequest(searchStr: string) {
   const request = params.get("focusRequest");
   if (!request || !rawId || !/^\d+$/.test(rawId)) return undefined;
   const id = Number(rawId);
-  return Number.isSafeInteger(id) && id > 0 ? { id, request } : undefined;
+  const mode = params.get("focusMode") === "created" ? ("created" as const) : ("explicit" as const);
+  return Number.isSafeInteger(id) && id > 0 ? { id, request, mode } : undefined;
 }
 
 function andFilters<TDocument>(
@@ -261,6 +262,8 @@ export function CalendarContent() {
   const navigate = useNavigate({ from: "/booking/calendar" });
   const location = useLocation();
   const focusRequest = React.useMemo(() => calendarEventFocusRequest(location.searchStr), [location.searchStr]);
+  const preferences = useBookingDisplayPreferences();
+  const selectedDate = date ?? todayInTimeZone(preferences.timeZone);
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
@@ -276,7 +279,12 @@ export function CalendarContent() {
   const [focusUnavailableRequest, setFocusUnavailableRequest] =
     React.useState<ReturnType<typeof calendarEventFocusRequest>>(undefined);
   const [focusFallback, setFocusFallback] = React.useState<"resources" | "overflow" | null>(null);
-  const focusLifecycleRef = React.useRef<{ request: string; settled: boolean } | null>(null);
+  const focusLifecycleRef = React.useRef<{
+    request: string;
+    settled: boolean;
+    mode: "created" | "explicit";
+    date: string;
+  } | null>(null);
   const focusHighlightRef = React.useRef<{ element: HTMLElement; timer: number } | null>(null);
   const clearFocusRequest = React.useCallback(
     (request: string) => {
@@ -284,6 +292,7 @@ export function CalendarContent() {
       if (search.get("focusRequest") !== request) return;
       search.delete("focus");
       search.delete("focusRequest");
+      search.delete("focusMode");
       const query = search.toString();
       void navigate({
         to: query ? `${window.location.pathname}?${query}` : window.location.pathname,
@@ -310,10 +319,16 @@ export function CalendarContent() {
       return;
     }
 
-    const lifecycle = { request, settled: false };
+    const previous = focusLifecycleRef.current;
+    const lifecycle =
+      previous?.request === request && previous.mode === focusRequest.mode
+        ? previous
+        : { request, settled: false, mode: focusRequest.mode, date: selectedDate };
     focusLifecycleRef.current = lifecycle;
-    setFocusUnavailableRequest(undefined);
-    setFocusFallback(null);
+    if (lifecycle !== previous) {
+      setFocusUnavailableRequest(undefined);
+      setFocusFallback(null);
+    }
     const cancel = (event: Event) => {
       if (event.target instanceof Element && event.target.closest("[data-calendar-focus-keep-pending]")) return;
       if (lifecycle.settled) return;
@@ -326,7 +341,7 @@ export function CalendarContent() {
       document.removeEventListener("pointerdown", cancel, true);
       document.removeEventListener("keydown", cancel, true);
     };
-  }, [focusRequest?.request, clearFocusRequest]);
+  }, [focusRequest?.request, focusRequest?.mode, clearFocusRequest, selectedDate]);
   React.useEffect(
     () => () => {
       const highlight = focusHighlightRef.current;
@@ -337,10 +352,8 @@ export function CalendarContent() {
     },
     [],
   );
-  const preferences = useBookingDisplayPreferences();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
-  const selectedDate = date ?? todayInTimeZone(preferences.timeZone);
   const dates = calendarDates(selectedDate, view);
   const calendarStart = zonedDayBounds(dates[0], preferences.timeZone).start;
   const calendarEnd = zonedDayBounds(dates.at(-1) ?? dates[0], preferences.timeZone).end;
@@ -612,26 +625,35 @@ export function CalendarContent() {
   const displayReady = !filtersBlocked && resourceScopeReady && !resettingControls;
   React.useEffect(() => {
     const request = focusRequest?.request;
+    const automatic = focusRequest?.mode === "created";
+    const lifecycle = request ? focusLifecycleRef.current : null;
     const resourceStatus = resourceTable.tableProps.status;
+    if (request && automatic && lifecycle?.request === request && lifecycle.date !== selectedDate) {
+      settleFocusRequest(request, false);
+      return;
+    }
     if (
       !request ||
       !displayReady ||
       events.isPending ||
       events.isFetching ||
       events.isError ||
-      (layout === "resources" &&
+      (!automatic &&
+        layout === "resources" &&
         (resourceStatus === "loading" || resourceStatus === "refreshing" || resourceStatus === "error"))
     )
       return;
-    const timeout = window.setTimeout(() => settleFocusRequest(request, true), CALENDAR_FOCUS_TIMEOUT_MS);
+    const timeout = window.setTimeout(() => settleFocusRequest(request, !automatic), CALENDAR_FOCUS_TIMEOUT_MS);
     return () => window.clearTimeout(timeout);
   }, [
     focusRequest?.request,
+    focusRequest?.mode,
     displayReady,
     events.isPending,
     events.isFetching,
     events.isError,
     layout,
+    selectedDate,
     resourceTable.tableProps.status,
     settleFocusRequest,
   ]);
@@ -643,11 +665,20 @@ export function CalendarContent() {
     const request = focusRequest;
     const lifecycle = request && focusLifecycleRef.current;
     if (!request || lifecycle?.request !== request.request || lifecycle.settled) return;
-    if (!displayReady || !target) return;
+    const automatic = request.mode === "created";
+    if (automatic && lifecycle.date !== selectedDate) {
+      settleFocusRequest(request.request, false);
+      return;
+    }
+    if (!displayReady || (!automatic && !target)) return;
     if (layout === "resources") {
       const resourceStatus = resourceTable.tableProps.status;
-      if (resourceStatus === "loading" || resourceStatus === "refreshing" || resourceStatus === "error") return;
-      if (!resourceTargetIds.includes(target)) {
+      if (resourceStatus === "loading" || resourceStatus === "refreshing") return;
+      if (resourceStatus === "error") {
+        if (automatic) settleFocusRequest(request.request, false);
+        return;
+      }
+      if (!automatic && target && !resourceTargetIds.includes(target)) {
         setFocusFallback("resources");
         void setView("day");
         void setLayout("time-grid");
@@ -657,18 +688,26 @@ export function CalendarContent() {
     if (events.isError || events.isPending || events.isFetching) return;
 
     const event = events.data?.find((candidate) => candidate.id === request.id);
-    if (!event || event.target?.globalId !== target || event.state === "CANCELLED") {
-      settleFocusRequest(request.request, true);
+    if (!event || (!automatic && event.target?.globalId !== target) || event.state === "CANCELLED") {
+      settleFocusRequest(request.request, !automatic);
       return;
     }
 
     const date = currentWallClock(event.start, preferences.timeZone).date;
+    if (automatic && date !== lifecycle.date) {
+      settleFocusRequest(request.request, false);
+      return;
+    }
     const identity = `${date}:${event.id}`;
     const focusTask = window.setTimeout(() => {
       const pending = focusLifecycleRef.current;
       if (pending?.request !== request.request || pending.settled) return;
       const eventElement = document.querySelector<HTMLElement>(`[data-calendar-event-focus="${identity}"]`);
       if (!eventElement) {
+        if (automatic) {
+          settleFocusRequest(request.request, false);
+          return;
+        }
         if (layout === "time-grid" && view === "week") {
           setFocusFallback("overflow");
           void setView("day");
@@ -682,20 +721,25 @@ export function CalendarContent() {
         eventElement.querySelector<HTMLElement>("button, a[href], [tabindex]:not([tabindex='-1'])") ?? eventElement;
       if (!trigger.isConnected) return;
       const previousHighlight = focusHighlightRef.current;
+      const restartingSameHighlight = !automatic && previousHighlight?.element === eventElement;
       if (previousHighlight) {
         window.clearTimeout(previousHighlight.timer);
         previousHighlight.element.removeAttribute("data-calendar-event-focus-highlight");
+        focusHighlightRef.current = null;
       }
-      eventElement.dataset.calendarEventFocusHighlight = "true";
-      trigger.scrollIntoView({ block: "center" });
-      trigger.focus({ preventScroll: true });
-      focusHighlightRef.current = {
-        element: eventElement,
-        timer: window.setTimeout(() => {
-          eventElement.removeAttribute("data-calendar-event-focus-highlight");
-          focusHighlightRef.current = null;
-        }, CALENDAR_FOCUS_HIGHLIGHT_MS),
-      };
+      if (restartingSameHighlight) void eventElement.offsetWidth;
+      eventElement.scrollIntoView({ block: "center", inline: "center" });
+      if (!automatic) {
+        eventElement.dataset.calendarEventFocusHighlight = "true";
+        trigger.focus({ preventScroll: true });
+        focusHighlightRef.current = {
+          element: eventElement,
+          timer: window.setTimeout(() => {
+            eventElement.removeAttribute("data-calendar-event-focus-highlight");
+            focusHighlightRef.current = null;
+          }, CALENDAR_FOCUS_HIGHLIGHT_MS),
+        };
+      }
       settleFocusRequest(request.request, false);
     }, 0);
     return () => window.clearTimeout(focusTask);
@@ -710,6 +754,7 @@ export function CalendarContent() {
     preferences.timeZone,
     resourceTable.tableProps.status,
     resourceTargetIds,
+    selectedDate,
     setLayout,
     setView,
     settleFocusRequest,

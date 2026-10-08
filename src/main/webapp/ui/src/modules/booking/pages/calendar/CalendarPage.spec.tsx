@@ -2,9 +2,9 @@ import { createBrowserHistory, createMemoryHistory, type RouterHistory } from "@
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { page, server, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
-import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
+import { emulateReducedMotion, expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import {
   bookingPageRequests,
@@ -49,6 +49,149 @@ afterEach(() => {
 });
 
 describe("Calendar page", () => {
+  test.each(["resources", "time-grid"] as const)(
+    "centers a newly created same-day event in %s without changing the calendar scope",
+    async (layout) => {
+      const originalViewport = { width: window.innerWidth, height: window.innerHeight };
+      const originalUrl = window.location.href;
+      window.history.replaceState(
+        {},
+        "",
+        `/booking/calendar?date=2026-08-17&layout=${layout}&calendar-resources.where=target%3D%3DIN123`,
+      );
+      const browserHistory = createBrowserHistory();
+      let rendered: ReturnType<typeof render> | undefined;
+      try {
+        await page.viewport(1100, 800);
+        const saved = { ...ownBooking, id: 901, start: "2026-08-17T06:00:00Z", end: "2026-08-17T07:00:00Z" };
+        let created = false;
+        worker.use(
+          http.post("/api/v2/bookings", () => {
+            created = true;
+            return HttpResponse.json(saved, { status: 201 });
+          }),
+          http.get("/api/v2/booking-calendar/events", () =>
+            HttpResponse.json(collectionResponse(created ? [ownBooking, saved] : [ownBooking])),
+          ),
+          http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([]))),
+        );
+        rendered = render(<CalendarPageStory history={browserHistory} preferences={institutionBookingPreferences} />);
+        const dialog = await calendar.openTargetlessBookingDialog();
+        await dialog.getByLabelText("Start time").fill("06:00");
+        await dialog.getByLabelText("End time").fill("07:00");
+        await dialog.getByRole("button", { name: "Book", exact: true }).click();
+        await expect.element(dialog).not.toBeInTheDocument();
+        await expect.element(page.getByText("Confocal microscope event added.", { exact: true })).toBeVisible();
+        await expect.poll(() => browserHistory.location.search.includes("focusRequest=")).toBe(false);
+        const event = page.getByRole("button", { name: /Show details for Confocal microscope.*06:00 AM–07:00 AM/ });
+        await expect.element(event).toBeInTheDocument();
+        const scroller = page.getByTestId("day-timeline-scroller").first();
+        await expect
+          .poll(() => {
+            const container = scroller.element();
+            const bounds = container.getBoundingClientRect();
+            const eventCard = event.element().closest<HTMLElement>("[data-calendar-event-focus]");
+            if (!eventCard) throw new Error("The saved event must expose its calendar occurrence");
+            const eventBounds = eventCard.getBoundingClientRect();
+            const desiredLeft = Math.min(
+              container.scrollWidth - container.clientWidth,
+              Math.max(
+                0,
+                container.scrollLeft +
+                  eventBounds.left +
+                  eventBounds.width / 2 -
+                  bounds.left -
+                  container.clientWidth / 2,
+              ),
+            );
+            return Math.abs(container.scrollLeft - desiredLeft);
+          })
+          .toBeLessThan(4);
+        expect(scroller.element().scrollLeft).toBeGreaterThan(0);
+        expect(document.activeElement).toBe(calendar.newBooking.element());
+        const params = new URLSearchParams(browserHistory.location.search);
+        expect(params.get("date")).toBe("2026-08-17");
+        expect(params.get("layout")).toBe(layout);
+        expect(params.get("calendar-resources.where")).toBe("target==IN123");
+        expect(params.has("target")).toBe(false);
+
+        const eventCard = () => {
+          const card = event.element().closest<HTMLElement>("[data-calendar-event-focus]");
+          if (!card) throw new Error("The saved event must expose its calendar occurrence");
+          return card;
+        };
+        const ripple = () =>
+          eventCard()
+            .getAnimations({ subtree: true })
+            .find(
+              (animation) =>
+                animation instanceof CSSAnimation && animation.animationName === "calendar-event-focus-ripple",
+            );
+        expect(eventCard()).not.toHaveAttribute("data-calendar-event-focus-highlight");
+        expect(ripple()).toBeUndefined();
+
+        const viewOnCalendar = page.getByRole("link", { name: "View on calendar", exact: true });
+        await viewOnCalendar.click();
+        await expect.poll(() => ripple()?.playState).toBe("running");
+        const firstRipple = ripple();
+        await expect.poll(() => browserHistory.location.search.includes("focusRequest=")).toBe(false);
+        expect(eventCard()).toHaveAttribute("data-calendar-event-focus-highlight", "true");
+        expect(eventCard().contains(document.activeElement)).toBe(true);
+
+        await viewOnCalendar.click();
+        await expect.poll(() => ripple() !== undefined && ripple() !== firstRipple).toBe(true);
+        expect(ripple()?.playState).toBe("running");
+
+        if (server.browser === "chromium") {
+          await emulateReducedMotion();
+          await viewOnCalendar.click();
+          await expect.poll(() => browserHistory.location.search.includes("focusRequest=")).toBe(false);
+          expect(eventCard()).toHaveAttribute("data-calendar-event-focus-highlight", "true");
+          expect(getComputedStyle(eventCard(), "::after").animationName).toBe("none");
+          expect(ripple()).toBeUndefined();
+        }
+      } finally {
+        rendered?.unmount();
+        browserHistory.destroy();
+        window.history.replaceState({}, "", originalUrl);
+        await page.viewport(originalViewport.width, originalViewport.height);
+      }
+    },
+  );
+
+  test("ripples the focused event in the week Time grid", async () => {
+    const originalUrl = window.location.href;
+    window.history.replaceState(
+      {},
+      "",
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=time-grid&view=week&focus=41&focusRequest=week-ripple",
+    );
+    const browserHistory = createBrowserHistory();
+    const rendered = render(<CalendarPageStory history={browserHistory} preferences={institutionBookingPreferences} />);
+    try {
+      const event = calendar.showEventDetails("Confocal microscope");
+      await expect.element(event).toBeInTheDocument();
+      await expect
+        .poll(() => {
+          const card = event.element().closest<HTMLElement>("[data-calendar-event-focus]");
+          return card
+            ?.getAnimations({ subtree: true })
+            .some(
+              (animation) =>
+                animation instanceof CSSAnimation &&
+                animation.animationName === "calendar-event-focus-ripple" &&
+                animation.playState === "running",
+            );
+        })
+        .toBe(true);
+      expect(event.element().closest("[data-calendar-event-focus]")?.tagName).toBe("LI");
+    } finally {
+      rendered.unmount();
+      browserHistory.destroy();
+      window.history.replaceState({}, "", originalUrl);
+    }
+  });
+
   test("preserves item and event scopes across Calendar layouts", async () => {
     const params = new URLSearchParams({
       date: "2026-08-17",

@@ -1,4 +1,4 @@
-import { useBlocker, useLocation, useNavigate } from "@tanstack/react-router";
+import { useBlocker, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
 import { XIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -21,6 +21,7 @@ import {
   calendarAvailabilityRow,
   useCalendarAvailability,
 } from "@/modules/booking/pages/calendar/calendarAvailability";
+import { calendarCreatedEventFocusHref } from "@/modules/booking/pages/calendar/calendarEventFocus";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import {
   AlertDialog,
@@ -40,6 +41,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const navigate = useNavigate();
+  const router = useRouter();
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
   const pathname = useLocation({ select: (location) => location.pathname });
@@ -73,7 +75,8 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   }, [creation, endCreation]);
 
   const finish = React.useCallback(() => {
-    if (closeCreation()) window.setTimeout(() => document.getElementById(creation.triggerId)?.focus(), 0);
+    if (closeCreation())
+      window.setTimeout(() => document.getElementById(creation.triggerId)?.focus({ preventScroll: true }), 0);
   }, [closeCreation, creation.triggerId]);
 
   React.useEffect(() => {
@@ -309,6 +312,15 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
                 }),
               );
               finish();
+              const { pathname: currentPath, searchStr: currentSearch } = router.state.location;
+              if (currentPath !== "/booking/calendar") return;
+              const focusHref = calendarCreatedEventFocusHref({
+                id: created.id,
+                start: created.start,
+                timeZone: preferences.timeZone,
+                searchStr: currentSearch,
+              });
+              if (focusHref) await navigate({ to: focusHref, replace: true, resetScroll: false });
             }}
           />
         </PopoverContent>

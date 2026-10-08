@@ -216,7 +216,10 @@ describe("AddBookingPage", () => {
       http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
       http.post("/api/v2/bookings", async ({ request }) => {
         body = await request.json();
-        return HttpResponse.json(createdBooking, { status: 201 });
+        return HttpResponse.json(
+          { ...createdBooking, start: "2026-08-18T07:00:00Z", end: "2026-08-18T08:00:00Z" },
+          { status: 201 },
+        );
       }),
     );
     const { queryClient, router } = renderPage();
@@ -257,6 +260,7 @@ describe("AddBookingPage", () => {
       kind: "BOOKING",
     });
     expect(router.state.location.search).toMatchObject({ date: "2026-08-18", target: "IN123" });
+    expect(router.state.location.searchStr).toContain("focusMode=created");
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
   });
 

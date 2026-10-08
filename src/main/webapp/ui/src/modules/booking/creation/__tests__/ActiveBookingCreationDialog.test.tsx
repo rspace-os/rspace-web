@@ -1,6 +1,13 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -15,7 +22,7 @@ import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/pref
 import type { TableListAlert } from "@/modules/common/table-list/TableList";
 import { ActiveBookingCreationDialog } from "../ActiveBookingCreationDialog";
 import type { BookingCreationContext } from "../bookingCreationStore";
-import { BookingCreationStoreProvider } from "../bookingCreationStore";
+import { BookingCreationStoreProvider, createBookingCreationStore } from "../bookingCreationStore";
 
 // Delegates to the real request unless a test rejects with a problem carrying its parsed body.
 vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
@@ -89,7 +96,11 @@ function existingBooking({ id, start, end }: { id: number; start: string; end: s
   };
 }
 
-function renderDialog(dialogCreation: BookingCreationContext = creation, bookings: readonly unknown[] = []) {
+function renderDialog(
+  dialogCreation: BookingCreationContext = creation,
+  bookings: readonly unknown[] = [],
+  initialPath = "/",
+) {
   server.use(
     http.get("/api/v2/bookings", () =>
       HttpResponse.json({
@@ -109,20 +120,28 @@ function renderDialog(dialogCreation: BookingCreationContext = creation, booking
     customTimezone: "UTC",
     overridden: true,
   });
+  const creationStore = createBookingCreationStore();
+  creationStore.getState().beginCreation(dialogCreation);
   const root = createRootRoute({
     component: () => (
       <BookingNoticesProvider>
-        <BookingCreationStoreProvider>
-          <button type="button" id={creation.triggerId}>
+        <BookingCreationStoreProvider store={creationStore}>
+          <button type="button" id={dialogCreation.triggerId}>
             {"Create"}
           </button>
           <ActiveBookingCreationDialog creation={dialogCreation} />
           <CalendarNoticeHost />
+          <Outlet />
         </BookingCreationStoreProvider>
       </BookingNoticesProvider>
     ),
   });
-  const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/"] }) });
+  const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
+  const calendar = createRoute({ getParentRoute: () => booking, path: "/calendar", component: () => null });
+  const router = createRouter({
+    routeTree: root.addChildren([booking.addChildren([calendar])]),
+    history: createMemoryHistory({ initialEntries: [initialPath] }),
+  });
   render(
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={null}>
@@ -130,6 +149,7 @@ function renderDialog(dialogCreation: BookingCreationContext = creation, booking
       </Suspense>
     </QueryClientProvider>,
   );
+  return { router };
 }
 
 describe("ActiveBookingCreationDialog", () => {
@@ -160,7 +180,7 @@ describe("ActiveBookingCreationDialog", () => {
         ),
       ),
     );
-    renderDialog({ ...creation, originHost: "calendar" });
+    const { router } = renderDialog({ ...creation, originHost: "calendar" });
 
     const dialog = await screen.findByTestId("compact-booking-dialog");
     const submit = within(dialog).getByRole("button", { name: "booking:bookings.form.submit" });
@@ -168,6 +188,58 @@ describe("ActiveBookingCreationDialog", () => {
     await user.click(submit);
 
     expect(await screen.findByText("booking:bookings.feedback.eventAdded")).toBeVisible();
+    expect(router.state.location.pathname).toBe("/");
+  });
+
+  it("requests a same-day scroll on the live calendar location and restores trigger focus", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/bookings", () =>
+        HttpResponse.json(
+          {
+            id: 84,
+            version: 1,
+            target: { relationTo: "booking-instruments", value: 123, globalId: "IN123" },
+            timezone: "UTC",
+            start: "2026-09-28T10:00:00Z",
+            end: "2026-09-28T11:00:00Z",
+            state: "CONFIRMED",
+            kind: "BOOKING",
+            privacy: "full",
+            purpose: null,
+            cancellationReason: null,
+            bookedBy: "Ada Lovelace",
+            canEdit: true,
+            canCancel: true,
+            createdAt: "2026-09-01T09:00:00Z",
+            updatedAt: "2026-09-01T09:00:00Z",
+          },
+          { status: 201 },
+        ),
+      ),
+    );
+    const { router } = renderDialog(
+      { ...creation, originHost: "calendar" },
+      [],
+      "/booking/calendar?date=2026-09-28&layout=agenda&view=week&mineOnly=true&keep=yes",
+    );
+    const trigger = await screen.findByRole("button", { name: "Create" });
+    const focusTrigger = vi.spyOn(trigger, "focus");
+
+    const dialog = await screen.findByTestId("compact-booking-dialog");
+    const submit = within(dialog).getByRole("button", { name: "booking:bookings.form.submit" });
+    await vi.waitFor(() => expect(submit).toBeEnabled());
+    await user.click(submit);
+
+    await vi.waitFor(() => expect(router.state.location.searchStr).toContain("focusMode=created"));
+    expect(router.state.location.pathname).toBe("/booking/calendar");
+    expect(router.state.location.searchStr).toContain("date=2026-09-28");
+    expect(router.state.location.searchStr).toContain("layout=agenda");
+    expect(router.state.location.searchStr).toContain("view=week");
+    expect(router.state.location.searchStr).toContain("mineOnly=true");
+    expect(router.state.location.searchStr).toContain("keep=yes");
+    await vi.waitFor(() => expect(trigger).toHaveFocus());
+    expect(focusTrigger).toHaveBeenCalledWith({ preventScroll: true });
   });
 
   it("prevents dismissal while a creation request is pending", async () => {

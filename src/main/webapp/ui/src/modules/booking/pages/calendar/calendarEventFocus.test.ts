@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calendarEventFocusHref } from "./calendarEventFocus";
+import { calendarCreatedEventFocusHref, calendarEventFocusHref } from "./calendarEventFocus";
 
 describe("calendarEventFocusHref", () => {
   it("uses the saved start date in the display timezone and clears calendar filters", () => {
@@ -45,5 +45,42 @@ describe("calendarEventFocusHref", () => {
     const second = new URL(calendarEventFocusHref(args), "https://example.test");
 
     expect(first.searchParams.get("focusRequest")).not.toBe(second.searchParams.get("focusRequest"));
+  });
+});
+
+describe("calendarCreatedEventFocusHref", () => {
+  it("keeps the destination query and requests scroll-only focus for the saved display day", () => {
+    const href = calendarCreatedEventFocusHref({
+      id: 41,
+      start: "2026-08-17T22:30:00Z",
+      timeZone: "Europe/Berlin",
+      searchStr:
+        "?date=2026-08-18&target=IN124&layout=agenda&view=week&calendar-resources.q=confocal&calendar-events.where=state%3D%3DCONFIRMED&mineOnly=true&keep=yes",
+    });
+    const url = new URL(href ?? "", "https://example.test");
+
+    expect(url.pathname).toBe("/booking/calendar");
+    expect(url.searchParams.get("date")).toBe("2026-08-18");
+    expect(url.searchParams.get("target")).toBe("IN124");
+    expect(url.searchParams.get("layout")).toBe("agenda");
+    expect(url.searchParams.get("view")).toBe("week");
+    expect(url.searchParams.get("calendar-resources.q")).toBe("confocal");
+    expect(url.searchParams.get("calendar-events.where")).toBe("state==CONFIRMED");
+    expect(url.searchParams.get("mineOnly")).toBe("true");
+    expect(url.searchParams.get("keep")).toBe("yes");
+    expect(url.searchParams.get("focus")).toBe("41");
+    expect(url.searchParams.get("focusRequest")).toBeTruthy();
+    expect(url.searchParams.get("focusMode")).toBe("created");
+  });
+
+  it("does not request scrolling when the saved start is on another display day", () => {
+    expect(
+      calendarCreatedEventFocusHref({
+        id: 41,
+        start: "2026-08-17T22:30:00Z",
+        timeZone: "Europe/Berlin",
+        searchStr: "date=2026-08-17&target=IN124",
+      }),
+    ).toBeUndefined();
   });
 });

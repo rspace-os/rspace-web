@@ -17,6 +17,7 @@ import {
 } from "@/modules/booking/creation/useCreateBooking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
+import { calendarCreatedEventFocusHref } from "@/modules/booking/pages/calendar/calendarEventFocus";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { Heading } from "@/modules/common/ui/typography";
 
@@ -80,10 +81,21 @@ export function AddBookingContent() {
         searchStr,
       }),
     );
-    await navigate({
-      to: "/booking/calendar",
-      search: { date: submission.returnDate, target: submission.target.globalId },
+    const destinationSearch = { date: submission.returnDate, target: submission.target.globalId };
+    const focusHref = calendarCreatedEventFocusHref({
+      id: created.id,
+      start: created.start,
+      timeZone: preferences.timeZone,
+      searchStr: new URLSearchParams(destinationSearch).toString(),
     });
+    await navigate(
+      focusHref
+        ? { to: focusHref }
+        : {
+            to: "/booking/calendar",
+            search: destinationSearch,
+          },
+    );
   };
   return (
     <main className="space-y-6 p-4 sm:p-8">

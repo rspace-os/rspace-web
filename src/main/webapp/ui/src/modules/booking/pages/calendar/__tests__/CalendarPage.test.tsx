@@ -17,7 +17,10 @@ import { busyBooking, collectionResponse, currentUser, ownBooking, renderCalenda
 
 const scrollToDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollTo");
 const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
-const scrollIntoView = vi.fn();
+let lastScrollTarget: HTMLElement | undefined;
+const scrollIntoView = vi.fn(function (this: HTMLElement) {
+  lastScrollTarget = this;
+});
 
 // 2026-08-17 is a Monday.
 const closedOnMonday = { openDays: [2, 3, 4, 5, 6, 7], openingExceptions: [] };
@@ -73,6 +76,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   scrollIntoView.mockClear();
+  lastScrollTarget = undefined;
   server.use(...bookingPagesHandlers());
 });
 
@@ -165,7 +169,7 @@ describe("CalendarPage", () => {
     await waitFor(() => expect(trigger).toHaveFocus());
     expect(eventElement).toHaveAttribute("data-calendar-event-focus", "2026-08-17:41");
     expect(eventElement).toHaveAttribute("data-calendar-event-focus-highlight", "true");
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "center", inline: "center" });
     await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
     expect(router.state.location.searchStr).toContain("layout=agenda");
     expect(router.state.location.searchStr).toContain("view=week");
@@ -236,6 +240,97 @@ describe("CalendarPage", () => {
     await waitFor(() => expect(article.querySelector("button")).toHaveFocus());
     await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
     expect(requestNumber).toBe(2);
+  });
+
+  it("scrolls a created event after its refetch without a target or moving keyboard focus", async () => {
+    let requestNumber = 0;
+    let refetchStarted = () => {};
+    let releaseRefetch = () => {};
+    const refetchHasStarted = new Promise<void>((resolve) => {
+      refetchStarted = resolve;
+    });
+    const refetchMayFinish = new Promise<void>((resolve) => {
+      releaseRefetch = resolve;
+    });
+    onTestFinished(releaseRefetch);
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", async () => {
+        requestNumber += 1;
+        if (requestNumber === 1) return HttpResponse.json(collectionResponse([]));
+        refetchStarted();
+        await refetchMayFinish;
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+
+    const { queryClient, router } = await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&layout=agenda&view=week&mineOnly=true&keep=yes",
+    );
+    const viewButton = await screen.findByRole("button", { name: "View: Agenda · Week" });
+    await waitFor(() => {
+      const eventQueries = queryClient.getQueryCache().findAll({
+        queryKey: ["api-v2", "bookings", "calendar-events"],
+      });
+      expect(eventQueries.some((query) => query.state.data !== undefined && query.state.fetchStatus === "idle")).toBe(
+        true,
+      );
+    });
+
+    viewButton.focus();
+    act(() => {
+      void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+    });
+    await refetchHasStarted;
+    const createdUrl =
+      "/booking/calendar?date=2026-08-17&layout=agenda&view=week&mineOnly=true&keep=yes&focus=41&focusRequest=created-refetch&focusMode=created";
+    await act(async () => {
+      window.history.replaceState(null, "", createdUrl);
+      router.history.push(createdUrl);
+    });
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    releaseRefetch();
+    const article = await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+    const eventElement = article.closest<HTMLElement>("[data-calendar-event-focus]");
+    if (!eventElement) throw new Error("The event card must expose its date and event ID");
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ block: "center", inline: "center" }));
+    expect(lastScrollTarget).toBe(eventElement);
+    expect(viewButton).toHaveFocus();
+    expect(eventElement).not.toHaveAttribute("data-calendar-event-focus-highlight");
+    await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
+    expect(router.state.location.searchStr).toContain("date=2026-08-17");
+    expect(router.state.location.searchStr).toContain("layout=agenda");
+    expect(router.state.location.searchStr).toContain("view=week");
+    expect(router.state.location.searchStr).toContain("mineOnly=true");
+    expect(router.state.location.searchStr).toContain("keep=yes");
+    expect(router.state.location.searchStr).not.toContain("target=");
+    expect(router.state.location.searchStr).not.toContain("focusMode=");
+    expect(requestNumber).toBe(2);
+  });
+
+  it("silently skips a created event hidden in week overflow", async () => {
+    const overlappingBookings = [61, 62, 63].map((id) => ({
+      ...ownBooking,
+      id,
+      start: "2026-08-17T08:00:00Z",
+      end: "2026-08-17T09:00:00Z",
+    }));
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse(overlappingBookings))),
+    );
+    const { router } = await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&layout=time-grid&view=week&focus=63&focusRequest=created-overflow&focusMode=created",
+    );
+
+    expect(await screen.findByRole("button", { name: "View: Time grid · Week" })).toBeVisible();
+    await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
+    expect(screen.getByRole("button", { name: "View: Time grid · Week" })).toBeVisible();
+    expect(screen.queryByText("This event is no longer available in the calendar.")).not.toBeInTheDocument();
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
   it("falls back from the Resources layout when its disabled target has no resource row", async () => {
