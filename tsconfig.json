@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/main/webapp/ui/src/*"]
+    }
+  },
+  "include": []
+}
