@@ -36,6 +36,19 @@ const boxWithA1Taken = () =>
     ],
   });
 
+/** An empty 2x2 grid box. */
+const emptyBox = () =>
+  makeMockContainer({
+    id: 2,
+    globalId: "IC2",
+    name: "Empty box",
+    cType: "GRID",
+    gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+    locationsCount: 4,
+    contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
+    locations: [],
+  });
+
 function renderGrid(box: ContainerModel) {
   render(
     <ThemeProvider theme={materialTheme}>
@@ -69,13 +82,13 @@ describe("ContentGrid", () => {
       expect(draggableIn(screen.getAllByRole("cell")[0])).toHaveAttribute("aria-disabled", "true");
     });
 
-    it("cannot be started from the keyboard in such a grid, so the arrow keys keep moving the selection", async () => {
+    it("cannot be started from the keyboard in such a grid, so the arrow keys keep moving focus", async () => {
       const user = userEvent.setup();
       const box = boxWithA1Taken();
       prepareContainer(box, 1);
       renderGrid(box);
       await user.tab();
-      await user.keyboard(" {ArrowRight}");
+      await user.keyboard(" {ArrowRight} ");
       expect(screen.getAllByRole("cell")[1]).toHaveAttribute("aria-selected", "true");
     });
   });
@@ -91,6 +104,18 @@ describe("ContentGrid", () => {
       expect(cells()[0]).toHaveAttribute("aria-selected", "true");
       await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
       expect(selectedCount()).toBe(2);
+    });
+
+    it("on the container page, moves the selection with the arrow keys and enters drag-and-drop with Space", async () => {
+      const user = userEvent.setup();
+      renderGrid(boxWithA1Taken());
+      await user.tab();
+      await user.keyboard("{ArrowRight}");
+      expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "false"]);
+      expect(screen.getByText("inventory:container.content.keyboard.tips")).toBeVisible();
+      await user.keyboard(" {ArrowDown}");
+      expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "false"]);
+      expect(screen.getByText("inventory:container.content.keyboard.dragTips")).toBeVisible();
     });
 
     describe("when choosing empty locations for new records", () => {
@@ -179,6 +204,77 @@ describe("ContentGrid", () => {
         expect(cells()[1]).toHaveAttribute("aria-selected", "true");
         const staged = (box.selectedLocations ?? []).map((l) => l.content?.globalId).sort();
         expect(staged).toEqual(["SS101", "SS102"]);
+      });
+    });
+
+    describe("in a grid used only to choose locations", () => {
+      it("lets Space toggle locations that are not next to each other", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 2);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard(" {ArrowRight}{ArrowDown} ");
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "false", "true"]);
+        expect(screen.getByText("inventory:container.content.keyboard.selectionTips")).toBeVisible();
+      });
+
+      it("does not let Space select more locations than the limit, and says why", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 1);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard(" {ArrowRight}{ArrowDown} ");
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "false", "false"]);
+        expect(screen.getByText("inventory:container.content.keyboard.limitReached")).toHaveAttribute("role", "status");
+      });
+
+      it("does not select on focus or with the arrow keys, ignores occupied locations, and Escape clears everything", async () => {
+        const user = userEvent.setup();
+        const box = boxWithA1Taken();
+        prepareContainer(box, 2);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard(" {ArrowRight}");
+        expect(selectedCount()).toBe(0);
+        await user.keyboard(" {ArrowDown} ");
+        expect(selectedCount()).toBe(2);
+        await user.keyboard("{Escape}");
+        expect(selectedCount()).toBe(0);
+      });
+
+      it("in the Move dialog, places each item being moved where Space selects", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        const items = [makeMockSubSample({ id: 1, globalId: "SS1" }), makeMockSubSample({ id: 2, globalId: "SS2" })];
+        const { moveStore } = getRootStore();
+        runInAction(() => {
+          moveStore.isMoving = true;
+          moveStore.search = { activeResult: box } as unknown as Search;
+          moveStore.selectedResults = items;
+          Object.assign(box.contentSearch.uiConfig, {
+            selectionMode: "MULTIPLE",
+            selectionLimit: items.length,
+            onlyAllowSelectingEmptyLocations: true,
+            dragAndDropDisabled: true,
+          });
+        });
+        try {
+          renderGrid(box);
+          await user.tab();
+          await user.keyboard(" {ArrowRight}{ArrowDown} ");
+          expect(box.selectedLocations?.map((l) => [l.coordX, l.coordY, l.content?.globalId])).toEqual([
+            [1, 1, "SS1"],
+            [2, 2, "SS2"],
+          ]);
+        } finally {
+          runInAction(() => {
+            moveStore.isMoving = false;
+            moveStore.search = null;
+            moveStore.selectedResults = [];
+          });
+        }
       });
     });
   });

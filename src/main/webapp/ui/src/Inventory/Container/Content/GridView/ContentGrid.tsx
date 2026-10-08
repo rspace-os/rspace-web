@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
 import Snackbar from "@mui/material/Snackbar";
 import Table from "@mui/material/Table";
@@ -85,6 +86,15 @@ const tableSx = {
   },
 } as const;
 
+const visuallyHidden = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap",
+} as const;
+
 interface LoadedContentProps {
   container: ContainerModel;
 }
@@ -153,6 +163,8 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
    * and when set all other keys are prevented from doing anything.
    */
   const [inKeyboardDragAndDropMode, setInKeyboardDragAndDropMode] = useState(false);
+
+  const [limitMessage, setLimitMessage] = useState("");
 
   const findLocation = (col: { value: number }, row: { value: number }): Location => {
     const loc = container.findLocation(col.value, row.value);
@@ -223,8 +235,14 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             }
           }}
           onKeyDown={(e: KeyboardEvent) => {
-            if (e.key === " ") {
-              if (!search.uiConfig.dragAndDropDisabled) setInKeyboardDragAndDropMode(true);
+            /*
+             * A grid without drag-and-drop is used only to choose locations, so
+             * it follows the WAI-ARIA grid multi-select model: arrows move focus,
+             * Space toggles the focused location, Escape clears the selection.
+             */
+            const selectionOnly = search.uiConfig.dragAndDropDisabled;
+            if (e.key === " " && !selectionOnly) {
+              setInKeyboardDragAndDropMode(true);
               return;
             }
             if (inKeyboardDragAndDropMode && (e.key === "Enter" || e.key === "Return" || e.key === "Escape")) {
@@ -235,11 +253,22 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
 
             if (!focusCoord) throw new Error("A cell must have focus for key events to be handled");
             const { onlyAllowSelectingEmptyLocations: emptyOnly, selectionLimit } = search.uiConfig;
+            if (e.key === " ") {
+              e.preventDefault();
+              const focused = container.findLocation(focusCoord.x, focusCoord.y);
+              if (!focused) return;
+              const selectedCount = container.selectedLocations?.length ?? 0;
+              const atLimit = emptyOnly && !focused.selected && selectedCount >= selectionLimit;
+              setLimitMessage(atLimit ? t("container.content.keyboard.limitReached", { count: selectedCount }) : "");
+              container.onSelect(focused, search);
+              return;
+            }
             if (e.key === "Escape") {
               container.toggleAllLocations(false);
+              e.preventDefault();
+              if (selectionOnly) return;
               const focused = container.findLocation(focusCoord.x, focusCoord.y);
               if (focused && (!emptyOnly || focused.isSelectable(search))) focused.toggleSelected(true);
-              e.preventDefault();
             }
 
             const newCoord: {
@@ -284,13 +313,15 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                 )
                 .slice(0, emptyOnly ? selectionLimit : Infinity),
             );
-            // Cells already in the right state are left alone, so the Move dialog's staged previews survive.
-            container.locations?.forEach((l) => {
-              if (l.selected && !toSelect.has(l)) l.toggleSelected(false);
-            });
-            container.locations?.forEach((l) => {
-              if (!l.selected && toSelect.has(l)) l.toggleSelected(true);
-            });
+            if (!selectionOnly || e.shiftKey) {
+              // Cells already in the right state are left alone, so the Move dialog's staged previews survive.
+              container.locations?.forEach((l) => {
+                if (l.selected && !toSelect.has(l)) l.toggleSelected(false);
+              });
+              container.locations?.forEach((l) => {
+                if (!l.selected && toSelect.has(l)) l.toggleSelected(true);
+              });
+            }
 
             setShiftOrigin(e.shiftKey ? (shiftOrigin ?? focusCoord) : null);
             setFocusCoord({ x, y });
@@ -351,12 +382,17 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
         </Table>
         <Dragger container={container} parentRef={tableRef} />
       </TableContainer>
+      <Box role="status" sx={visuallyHidden}>
+        {limitMessage}
+      </Box>
       <Snackbar
         open={keyboardTips}
         message={
           inKeyboardDragAndDropMode
-            ? "Press Enter to drop items. Press Escape to cancel."
-            : "Expand selection by holding Shift. Press Space to enter drag-and-drop mode. Press Escape to clear selection."
+            ? t("container.content.keyboard.dragTips")
+            : search.uiConfig.dragAndDropDisabled
+              ? t("container.content.keyboard.selectionTips")
+              : t("container.content.keyboard.tips")
         }
       />
     </>
