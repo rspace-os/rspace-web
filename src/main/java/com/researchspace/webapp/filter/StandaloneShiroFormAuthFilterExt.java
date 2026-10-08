@@ -16,9 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.Subject;
@@ -69,7 +67,8 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
     }
     try {
       return verifier.runExclusive(
-          loginLockKey(getUsername(request)), () -> checkLockoutThenContinue(request, response));
+          userMgr.loginLockKey(getUsername(request)),
+          () -> checkLockoutThenContinue(request, response));
     } catch (LoginVerificationBusyException e) {
       SECURITY_LOG.warn(
           "Login by [{}] from {} refused: {}",
@@ -82,13 +81,6 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
       setFailureAttribute(request, e);
       return true;
     }
-  }
-
-  /** Case, whitespace and alias variants of one account share a key. */
-  private String loginLockKey(String submittedUsername) {
-    String found = userMgr.findUsernameByUsernameOrAlias(submittedUsername);
-    String key = found != null ? found : StringUtils.defaultString(submittedUsername);
-    return key.trim().toLowerCase(Locale.ROOT);
   }
 
   private boolean checkLockoutThenContinue(ServletRequest request, ServletResponse response)

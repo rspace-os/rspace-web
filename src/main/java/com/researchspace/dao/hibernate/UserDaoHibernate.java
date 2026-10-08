@@ -54,6 +54,7 @@ import org.hibernate.Session;
 import org.hibernate.graph.GraphParser;
 import org.hibernate.graph.RootGraph;
 import org.hibernate.query.Query;
+import org.hibernate.type.StandardBasicTypes;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Repository;
 
@@ -81,6 +82,23 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   private static final String LAST_NAME = "lastName";
   private static final String LAST_LOGIN = "lastLogin";
   private static final String TAGS = "tagsJsonString";
+
+  @Override
+  public String usernameLockKey(String name) {
+    String trimmed = StringUtils.trimToEmpty(name);
+    if (trimmed.isEmpty()) {
+      return "";
+    }
+    // must match the collation of User.username, see UserDaoTest
+    return (String)
+        getSession()
+            .createNativeQuery(
+                "select hex(weight_string(convert(:name using utf8mb4) collate"
+                    + " utf8mb4_unicode_ci)) as lockKey")
+            .addScalar("lockKey", StandardBasicTypes.STRING)
+            .setParameter("name", trimmed)
+            .uniqueResult();
+  }
 
   /** Constructor that sets the entity to User.class. */
   public UserDaoHibernate() {
