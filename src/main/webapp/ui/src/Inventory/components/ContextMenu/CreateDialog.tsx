@@ -208,6 +208,7 @@ const LocationPicker = observer(({ id: _id, state }: { id: string; state: { cont
         hideContentsOfChip: true,
         selectionLimit: 1,
         onlyAllowSelectingEmptyLocations: true,
+        dragAndDropDisabled: true,
       },
       factory: new AlwaysNewFactory(),
     });
