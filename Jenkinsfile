@@ -69,7 +69,7 @@ pipeline {
             }
         }
 
-        stage('Fast JUnit tests') {
+        stage("Fast JUnit tests ('main' only)") {
             when {
                 not {
                     anyOf {
