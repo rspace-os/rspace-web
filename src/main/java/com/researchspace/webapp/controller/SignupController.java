@@ -356,8 +356,7 @@ public class SignupController extends BaseController {
   public ModelAndView submitPasswordResetPage(
       @ModelAttribute PasswordResetCommand passwordResetCommand,
       BindingResult errors,
-      HttpServletRequest request)
-      throws Exception {
+      HttpServletRequest request) {
     return passwordResetEmailHandler
         .submitResetPage(passwordResetCommand, errors, request)
         .addObject("passwordType", PasswordType.LOGIN_PASSWORD);

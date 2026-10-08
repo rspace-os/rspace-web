@@ -537,6 +537,16 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   }
 
   @Override
+  public int claimTokenBasedVerification(String token) {
+    return getSession()
+        .createMutationQuery(
+            "update TokenBasedVerification set resetCompleted = true"
+                + " where token = :token and resetCompleted = false")
+        .setParameter("token", token)
+        .executeUpdate();
+  }
+
+  @Override
   public Optional<String> getUsernameByToken(String token) {
     return getSession()
         .createQuery(

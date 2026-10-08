@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,6 +26,8 @@ import com.researchspace.dao.UserAccountEventDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Role;
+import com.researchspace.model.TokenBasedVerification;
+import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.properties.IPropertyHolder;
@@ -33,6 +37,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -230,6 +235,55 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     when(userDao.isUserInAdminsCommunity(any.getUsername(), comms.get(0).getId()))
         .thenReturn(false);
     assertFalse(userManager.isUserInAdminsCommunity(admin, any.getUsername()));
+  }
+
+  @Test
+  public void passwordResetIsRefusedWhenAConcurrentSubmitClaimedTheTokenFirst() {
+    TokenBasedVerification token = resetToken();
+    when(userDao.getByToken(token.getToken())).thenReturn(token);
+    when(userDao.claimTokenBasedVerification(token.getToken())).thenReturn(0);
+
+    assertNull(userManager.applyLoginPasswordChange("newPassword1", token.getToken()));
+    verify(userDao, never()).getUserByEmail(anyString());
+    verify(userDao, never()).save(any(User.class));
+  }
+
+  @Test
+  public void passwordResetWithAUsedOrExpiredTokenIsRefusedBeforeClaiming() {
+    TokenBasedVerification used = resetToken();
+    used.setResetCompleted(true);
+    when(userDao.getByToken(used.getToken())).thenReturn(used);
+    assertNull(userManager.applyLoginPasswordChange("newPassword1", used.getToken()));
+
+    TokenBasedVerification expired =
+        new TokenBasedVerification(
+            "a@b.com", new Date(0), TokenBasedVerificationType.PASSWORD_CHANGE);
+    when(userDao.getByToken(expired.getToken())).thenReturn(expired);
+    assertNull(userManager.applyVerificationPasswordChange("newPassword1", expired.getToken()));
+
+    verify(userDao, never()).claimTokenBasedVerification(anyString());
+    verify(userDao, never()).save(any(User.class));
+  }
+
+  @Test
+  public void passwordResetThatClaimsTheTokenAppliesTheChange() {
+    TokenBasedVerification token = resetToken();
+    User user = createAnyUser("any");
+    when(userDao.getByToken(token.getToken())).thenReturn(token);
+    when(userDao.claimTokenBasedVerification(token.getToken())).thenReturn(1);
+    when(userDao.getUserByEmail(token.getEmail())).thenReturn(List.of(user));
+
+    TokenBasedVerification applied =
+        userManager.applyLoginPasswordChange("newPassword1", token.getToken());
+
+    assertTrue(applied.isResetCompleted());
+    assertTrue(passwordEncoder.matches("newPassword1", user.getPassword()));
+    verify(userDao).save(user);
+    verify(userDao, never()).saveTokenBasedVerification(any());
+  }
+
+  private TokenBasedVerification resetToken() {
+    return new TokenBasedVerification("a@b.com", null, TokenBasedVerificationType.PASSWORD_CHANGE);
   }
 
   private User createAdminUser() {

@@ -314,6 +314,24 @@ public class UserDaoTest extends BaseDaoTestCase {
     assertNull(userDao.getByToken("anytoken"));
   }
 
+  /**
+   * Two concurrent claims cannot be shown in one test transaction; the conditional update itself is
+   * what lets exactly one of them match the row.
+   */
+  @Test
+  public void tokenCanBeClaimedOnlyOnce() {
+    TokenBasedVerification upc =
+        userDao.saveTokenBasedVerification(
+            new TokenBasedVerification(
+                "a@b.com", null, TokenBasedVerificationType.PASSWORD_CHANGE));
+    flushDatabaseState();
+
+    assertEquals(1, userDao.claimTokenBasedVerification(upc.getToken()));
+    assertEquals(0, userDao.claimTokenBasedVerification(upc.getToken()));
+    sessionFactory.getCurrentSession().clear();
+    assertTrue(userDao.getByToken(upc.getToken()).isResetCompleted());
+  }
+
   @Test
   public void testGetSaveProfile() throws IOException {
     User pi1 = TestFactory.createAnyUser("pi1");
