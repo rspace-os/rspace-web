@@ -98,7 +98,8 @@ function LocationContent({ location, container, tabIndex, hasFocus }: LocationCo
   const emptyGridLocationRef = React.useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {
     if (hasFocus) emptyGridLocationRef.current?.focus();
-  }, [hasFocus]);
+    // location.content: deselecting a Move dialog preview swaps the focused item for this empty box.
+  }, [hasFocus, location.content]);
 
   return (
     <Box

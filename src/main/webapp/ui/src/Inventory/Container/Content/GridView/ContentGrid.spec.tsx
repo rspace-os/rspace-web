@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import { ContainerPageGrid, SelectionOnlyGrid } from "./ContentGrid.story";
+import { ContainerPageGrid, MoveDestinationGrid, SelectionOnlyGrid } from "./ContentGrid.story";
 import { ContentGridPage } from "./pageObjects/ContentGridPage";
 
 /*
@@ -50,5 +50,17 @@ describe("ContentGrid", () => {
     await expect.element(grid.cell(3)).toHaveAttribute("aria-selected", "true");
     await expect.element(grid.cell(0)).toHaveAttribute("aria-selected", "false");
     await expect.element(grid.cell(1)).toHaveAttribute("aria-selected", "false");
+  });
+
+  test("in the Move dialog, deselecting a location with Space keeps the keyboard focus in the grid", async () => {
+    render(<MoveDestinationGrid />);
+    const grid = new ContentGridPage();
+    await expect.element(grid.grid).toBeInTheDocument();
+
+    await grid.tabIntoGrid();
+    await grid.press("  {ArrowRight} ");
+    await expect.element(grid.cell(0)).toHaveAttribute("aria-selected", "false");
+    await expect.element(grid.cell(1)).toHaveAttribute("aria-selected", "true");
+    await expect.poll(() => grid.cell(1).element().contains(document.activeElement)).toBe(true);
   });
 });
