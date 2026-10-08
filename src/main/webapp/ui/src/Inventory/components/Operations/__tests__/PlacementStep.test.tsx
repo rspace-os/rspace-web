@@ -5,6 +5,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
@@ -40,6 +41,7 @@ vi.mock("../../../Search/SearchView", async () => {
         <button
           type="button"
           data-testid="picker-pick"
+          aria-label="Pick"
           data-active={(search as Search).activeResult?.name ?? ""}
           onClick={() => void pick()}
         />
@@ -223,6 +225,13 @@ describe("PlacementStep", () => {
     renderStep({ mode: "container", container: box }, 2);
     expect(screen.getByRole("status")).toHaveTextContent("Select 1 more location.");
     expect(screen.getByTestId("container-content")).toBeInTheDocument();
+  });
+
+  it("is accessible while the user picks grid locations", async () => {
+    const box = gridBox();
+    prepareContainer(box, 2);
+    renderStep({ mode: "container", container: box }, 2);
+    await expectAccessible(document.body);
   });
 
   it("asks the user to deselect an occupied location", () => {
