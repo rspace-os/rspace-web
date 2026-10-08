@@ -31,9 +31,10 @@ roll back already restore a pre-upgrade database backup.
 
 A memory-hard hash creates a new problem that SHA-256 never had. Argon2 allocates its configured
 memory block on the Java heap for every verification and holds it for the duration, tens of
-milliseconds. The login form is unauthenticated, usernames are not secret (`sysadmin1` ships
-with every install, the directory lists usernames to any logged-in user, and the signup page
-confirms whether a username exists), and the account lockout in `DefaultLockoutPolicy` only
+milliseconds. The login form is unauthenticated, usernames used to leak from several public
+routes (`sysadmin1` ships with every install, the signup page confirms whether a username
+exists, and the login page answered unknown names faster than known ones; RSDEV-1558 closes the
+remaining routes), and the account lockout in `DefaultLockoutPolicy` only
 registers after a failed verification completes. A burst of concurrent login requests therefore
 forces concurrent allocations bounded only by the servlet thread pool, around 200 threads. At
 64 MiB per verification that is 12.8 GB of transient heap, enough to stall or kill the JVM for
@@ -221,6 +222,10 @@ That table must change in the same commit as any limit, default, message or rout
   one account, bounded only by Argon2 cost and the per-username lock, and can tell a right password
   from a wrong one by the error it gets. On `main` the same route hashed every guess with no limit.
   Validating the client before the password closes it and is a separate ticket against `main`.
-- Argon2's cost makes the response time for an existing username measurably longer than for an
-  unknown one, which never runs a hash. Accepted because usernames are not secret (see Context);
-  equalising the timing is out of scope for this ticket.
+- Usernames must not leak from unauthenticated endpoints. Argon2's cost would make the login
+  page answer an existing username measurably slower than an unknown one, so `ShiroRealm` runs
+  an unknown name (and, when LDAP is off, an LDAP-source user) through `SentinelPasswordCheck`, an
+  Argon2 check against a random hash made at startup. On LDAP installs `LdapRealm` pads an
+  internal user's early exit the same way; parity with a directory bind is best effort. All
+  padded checks share one per-username lock, so they hold at most one permit. Other public routes
+  that still confirm a username are RSDEV-1558.
