@@ -1,5 +1,6 @@
 package com.researchspace.auth;
 
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -26,6 +27,7 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
 
   private @Autowired IPropertyHolder properties;
   private @Autowired UsernamePasswordCredentialsMatcher credentialsMatcher;
+  private @Autowired SentinelPasswordCheck sentinelCheck;
 
   private boolean ignoreSession;
 
@@ -73,10 +75,14 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
     }
     if (user == null) {
       log.debug("User is null, returning");
+      padUnknownUser(token);
       return null; // not found in db or couldn't retrieve
     }
     if (SignupSource.LDAP.equals(user.getSignupSource())) {
       log.debug("Signup source is LDAP, returning null. LDAP user must use LdapRealm");
+      if (!properties.isLdapAuthenticationEnabled()) {
+        padUnknownUser(token);
+      }
       return null; // LDAP users must authenticate through LdapRealm
     }
 
@@ -98,5 +104,11 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
         new SimpleAuthenticationInfo(user.getUsername(), user.getPassword(), getName());
     log.trace("Returning SimpleAuthenticationInfo: {}", sif);
     return sif;
+  }
+
+  private void padUnknownUser(UsernamePasswordToken token) {
+    if (token.getPassword() != null) {
+      sentinelCheck.pad(new String(token.getPassword()));
+    }
   }
 }
