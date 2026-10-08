@@ -13,6 +13,12 @@ import java.util.Set;
 /** Persistence operations specific to booking configurations. */
 public interface BookingConfigurationDao extends CollectionDao<BookingConfiguration, Long> {
 
+  /** Applies the same Calendar event restriction to distinct resources and their total. */
+  com.researchspace.model.collection.ResourcePage<BookingConfiguration> getCalendarResources(
+      ResourceRequest request,
+      RelationshipReadAccess access,
+      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction);
+
   /** Finds the configuration assigned to the complete target identity. */
   Optional<BookingConfiguration> findByTarget(BookableTargetReference target);
 

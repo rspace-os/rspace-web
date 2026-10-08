@@ -1,7 +1,7 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
-import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.ResourceRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -62,10 +62,21 @@ public interface BookingCatalogueManager {
   Page search(
       String query,
       String targetGlobalId,
-      FilterExpression filter,
+      ResourceRequest request,
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      int page,
+      int limit,
+      User caller);
+
+  /** Calendar resources and distinct total under correlated visible-event filtering. */
+  Page searchCalendar(
+      String query,
+      ResourceRequest items,
+      ResourceRequest events,
+      java.time.Instant start,
+      java.time.Instant end,
       int page,
       int limit,
       User caller);

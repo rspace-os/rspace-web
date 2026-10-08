@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,7 +40,6 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -65,7 +65,7 @@ class TimeSlotBookingManagerTest {
   private final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicyImpl();
   private final BookingMaintenancePolicy maintenancePolicy = new BookingMaintenancePolicyImpl();
   private final User actor = mock(User.class);
-  private final ResourceAccessManager accessManager = mock(ResourceAccessManager.class);
+  private final BookingItemPermissions accessManager = mock(BookingItemPermissions.class);
   private final TimeSlotBookingManager manager =
       new TimeSlotBookingManagerImpl(
           bookingDao,
@@ -97,17 +97,18 @@ class TimeSlotBookingManagerTest {
                     ApiV2UserResource.DESCRIPTION)));
     when(bookingDao.saveAndFlush(any(TimeSlotBooking.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
-    when(accessManager.resolve(any(ResourceAccess.class), eq(actor))).thenReturn(ownerAccess());
-    when(accessManager.resolveForMutation(any(ResourceAccess.class), eq(actor)))
+    when(accessManager.resolveForMutation(any(BookingConfiguration.class), eq(actor)))
+        .thenReturn(ownerAccess());
+    when(accessManager.resolve(any(BookingConfiguration.class), eq(actor)))
         .thenReturn(ownerAccess());
     when(accessManager.resolveAll(any(), eq(actor)))
         .thenAnswer(
             invocation -> {
-              java.util.Collection<ResourceAccess> accesses = invocation.getArgument(0);
+              java.util.Collection<BookingConfiguration> accesses = invocation.getArgument(0);
               return accesses.stream()
                   .collect(
                       java.util.stream.Collectors.toMap(
-                          ResourceAccess::getId, ignored -> ownerAccess()));
+                          BookingConfiguration::getId, ignored -> ownerAccess()));
             });
   }
 
@@ -267,8 +268,7 @@ class TimeSlotBookingManagerTest {
     BookingConfiguration configuration = configuration(4L, 12L, true);
     when(configurationDao.lockActiveByTarget(target.reference()))
         .thenReturn(Optional.of(configuration));
-    when(accessManager.resolveForMutation(configuration.getResourceAccess(), actor))
-        .thenReturn(bookerAccess());
+    when(accessManager.resolveForMutation(configuration, actor)).thenReturn(bookerAccess());
     TimeSlotBookingManager.Create maintenance =
         new TimeSlotBookingManager.Create(
             target, start(), end(), null, BookingEventKind.MAINTENANCE);
@@ -482,8 +482,7 @@ class TimeSlotBookingManagerTest {
     when(bookingDao.getReadableResources(any(), any()))
         .thenReturn(new ResourcePage<>(List.of(requested), 1));
     when(accessManager.resolveAll(any(), eq(actor)))
-        .thenReturn(
-            Map.of(requested.getBookingConfiguration().getResourceAccess().getId(), noAccess()));
+        .thenReturn(Map.of(requested.getBookingConfiguration().getId(), noAccess()));
 
     TimeSlotBooking prepared =
         manager.getBookings(ResourceRequest.unpaged(null), actor).resources().get(0);
@@ -491,6 +490,47 @@ class TimeSlotBookingManagerTest {
     assertEquals(BookingPrivacy.FULL, prepared.getPrivacy());
     assertFalse(prepared.isCanEdit());
     assertFalse(prepared.isCanViewConfiguration());
+    assertNull(prepared.getVisibleTarget());
+    assertNull(prepared.getVisibleTimeZone());
+    assertEquals(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L),
+        prepared.getBookingConfiguration().getTarget());
+  }
+
+  @Test
+  void maintenanceRequesterWithBookerAccessDoesNotGetOwnBookingCapabilities() {
+    TimeSlotBooking maintenance = booking(1L, 12L, actor);
+    maintenance.setKind(BookingEventKind.MAINTENANCE);
+    maintenance.setCreatedBy(actor);
+    when(bookingDao.getReadableResources(any(), any()))
+        .thenReturn(new ResourcePage<>(List.of(maintenance), 1));
+    when(accessManager.resolveAll(any(), eq(actor)))
+        .thenReturn(Map.of(maintenance.getBookingConfiguration().getId(), bookerAccess()));
+
+    TimeSlotBooking prepared =
+        manager.getBookings(ResourceRequest.unpaged(null), actor).resources().get(0);
+
+    assertFalse(prepared.isCanEdit());
+    assertFalse(prepared.isCanCancel());
+  }
+
+  @Test
+  void personalCalendarOmitsTheHiddenItemNameAndReference() throws Exception {
+    TimeSlotBooking requested = booking(1L, 12L, actor);
+    when(bookingDao.findUserCalendarBookings(eq(actor.getId()), any(), eq(2)))
+        .thenReturn(List.of(requested));
+    when(accessManager.resolveAll(any(), eq(actor)))
+        .thenReturn(Map.of(requested.getBookingConfiguration().getId(), noAccess()));
+
+    TimeSlotBookingManager.CalendarSource source =
+        manager.getUserCalendarSource(actor, new Date(), 1);
+
+    assertEquals("booking:calendar.feed.myBookings", source.itemName());
+    assertTrue(source.translateName());
+    assertEquals(1, source.events().size());
+    assertNull(source.events().get(0).itemName());
+    assertFalse(requested.isCanViewConfiguration());
+    verify(instrumentDao).getNamesByIds(Set.of());
   }
 
   @Test
@@ -545,8 +585,7 @@ class TimeSlotBookingManagerTest {
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
     when(configurationDao.lockActiveById(4L))
         .thenReturn(Optional.of(existing.getBookingConfiguration()));
-    when(accessManager.resolveForMutation(
-            existing.getBookingConfiguration().getResourceAccess(), actor))
+    when(accessManager.resolveForMutation(existing.getBookingConfiguration(), actor))
         .thenReturn(viewerAccess());
 
     assertThrows(
@@ -598,8 +637,7 @@ class TimeSlotBookingManagerTest {
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(maintenance));
     when(configurationDao.lockActiveById(4L))
         .thenReturn(Optional.of(maintenance.getBookingConfiguration()));
-    when(accessManager.resolveForMutation(
-            maintenance.getBookingConfiguration().getResourceAccess(), actor))
+    when(accessManager.resolveForMutation(maintenance.getBookingConfiguration(), actor))
         .thenReturn(bookerAccess());
 
     assertThrows(
@@ -649,8 +687,7 @@ class TimeSlotBookingManagerTest {
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
     when(configurationDao.lockActiveById(4L))
         .thenReturn(Optional.of(existing.getBookingConfiguration()));
-    when(accessManager.resolveForMutation(
-            existing.getBookingConfiguration().getResourceAccess(), actor))
+    when(accessManager.resolveForMutation(existing.getBookingConfiguration(), actor))
         .thenReturn(noAccess());
 
     for (long version : new long[] {existing.getVersion(), existing.getVersion() + 1}) {
@@ -743,24 +780,5 @@ class TimeSlotBookingManagerTest {
 
   private static Date instant(String value) {
     return Date.from(Instant.parse(value));
-  }
-
-  @Test
-  void maintenanceRequesterWithBookerAccessDoesNotGetOwnBookingCapabilities() {
-    TimeSlotBooking maintenance = booking(1L, 12L, actor);
-    maintenance.setKind(BookingEventKind.MAINTENANCE);
-    maintenance.setCreatedBy(actor);
-    when(bookingDao.getReadableResources(any(), any()))
-        .thenReturn(new ResourcePage<>(List.of(maintenance), 1));
-    when(accessManager.resolveAll(any(), eq(actor)))
-        .thenReturn(
-            Map.of(
-                maintenance.getBookingConfiguration().getResourceAccess().getId(), bookerAccess()));
-
-    TimeSlotBooking prepared =
-        manager.getBookings(ResourceRequest.unpaged(null), actor).resources().get(0);
-
-    assertFalse(prepared.isCanEdit());
-    assertFalse(prepared.isCanCancel());
   }
 }
