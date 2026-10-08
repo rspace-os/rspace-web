@@ -75,7 +75,7 @@ describe("ContentGrid", () => {
       expect(selectedCount()).toBe(2);
     });
 
-    it("on the container page, moves the selection with the arrow keys and enters drag-and-drop with Space", async () => {
+    it("on the container page, the arrow keys move the selection, and Space enters the grid's keyboard drag mode, after which the arrows stop moving it", async () => {
       const user = userEvent.setup();
       renderGrid(boxWithA1Taken());
       await user.tab();
