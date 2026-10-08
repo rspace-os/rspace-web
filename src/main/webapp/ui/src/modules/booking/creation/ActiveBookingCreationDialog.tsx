@@ -234,7 +234,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           collisionPadding={8}
           sticky
           role="dialog"
-          className="flex max-h-[calc(100dvh-2rem)] w-[min(42rem,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden rounded-lg border border-primary p-0 ring-4 ring-ring/20"
+          className="flex max-h-[min(var(--available-height),calc(100dvh-2rem))] w-[min(42rem,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden rounded-lg border border-primary p-0 ring-4 ring-ring/20"
           data-testid="compact-booking-dialog"
         >
           <PopoverHeader className="shrink-0 border-border border-b px-4 py-3 pr-12">

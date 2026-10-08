@@ -1684,8 +1684,55 @@ describe("Calendar page", () => {
       await expect.element(dialog.getByRole("textbox", { name: "Purpose" })).toBeVisible();
       await expect.element(dialog.getByRole("button", { name: "Book", exact: true })).toBeVisible();
       await expect.element(dialog.getByRole("button", { name: "More actions" })).not.toBeInTheDocument();
+      await page.viewport(390, 400);
+      await expect
+        .poll(() => {
+          const bounds = dialog.getByRole("button", { name: "Book", exact: true }).element().getBoundingClientRect();
+          return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
+        })
+        .toBe(true);
       await dialog.getByRole("button", { name: "Cancel" }).click();
     } finally {
+      await page.viewport(originalViewport.width, originalViewport.height);
+    }
+  });
+
+  test("keeps compact booking actions inside a reduced visual viewport", async () => {
+    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
+    await page.viewport(390, 667);
+    if (!window.visualViewport) throw new Error("This test requires the Visual Viewport API");
+    // A software keyboard can reduce the visual viewport without changing 100dvh.
+    const visualHeight = vi.spyOn(window.visualViewport, "height", "get");
+    try {
+      render(<CalendarPageStory history={history} />);
+      const dialog = await calendar.openTargetlessBookingDialog();
+      await dialog.getByRole("textbox", { name: "Purpose" }).fill("Imaging session\n".repeat(40));
+      visualHeight.mockReturnValue(300);
+      window.visualViewport.dispatchEvent(new Event("resize"));
+
+      for (const name of ["Book", "Cancel"]) {
+        await expect
+          .poll(() => {
+            const bounds = dialog.getByRole("button", { name, exact: true }).element().getBoundingClientRect();
+            const viewport = window.visualViewport;
+            return Boolean(
+              viewport && bounds.top >= viewport.offsetTop && bounds.bottom <= viewport.offsetTop + viewport.height,
+            );
+          })
+          .toBe(true);
+      }
+      await expect
+        .poll(() => {
+          const body = dialog.element().querySelector("form")?.firstElementChild;
+          return Boolean(body && body.scrollHeight > body.clientHeight);
+        })
+        .toBe(true);
+      await dialog.getByRole("button", { name: "Cancel" }).click();
+      await page.getByRole("alertdialog").getByRole("button", { name: "Discard changes" }).click();
+      await expect.element(dialog).not.toBeInTheDocument();
+    } finally {
+      visualHeight.mockRestore();
+      window.visualViewport.dispatchEvent(new Event("resize"));
       await page.viewport(originalViewport.width, originalViewport.height);
     }
   });

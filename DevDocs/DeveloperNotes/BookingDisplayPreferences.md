@@ -170,6 +170,11 @@ date, and successful creation returns to the submitted start date rather than
 the date originally supplied in the URL. Item headers label the display timezone;
 the Booking rules section retains the separate scheduling timezone.
 
+The compact creation popover caps its height by the positioner's available space
+and the dynamic viewport. This keeps its action bar visible when zoom or a mobile
+keyboard reduces the visual viewport. The form fields scroll below the fixed header
+and above the action bar.
+
 All Bookable Items keeps `pageSize` in the URL for both normal and availability-filtered
 results. Changing it resets to page one. My Bookings uses TableList cards on narrow
 viewports and a table on wide viewports. Search inputs show their collection scope.
