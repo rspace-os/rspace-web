@@ -52,10 +52,14 @@ class WrapLegacyPasswordHashes_RSDEV894Test extends SpringTransactionalTest {
   void leavesNonHashValuesAlone() throws Exception {
     User odd = createAndSaveRandomUser();
     storeRaw(odd, "not-a-hash", null);
+    User badSalt = createAndSaveRandomUser();
+    storeRaw(badSalt, SALTED_HEX, "%%%");
 
-    runChange();
+    String message = runChange().getConfirmationMessage();
 
     assertEquals("not-a-hash", storedPassword(odd));
+    assertEquals(SALTED_HEX, storedPassword(badSalt));
+    assertTrue(message.contains("skipped 2"), message);
   }
 
   private WrapLegacyPasswordHashes_RSDEV894 runChange() {
