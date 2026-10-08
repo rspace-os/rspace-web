@@ -237,7 +237,8 @@ That table must change in the same commit as any limit, default, message or rout
   names, as it already does for a flood of real ones. The filter's whole-login lock and
   the sentinel lock are keyed on the username's collation weight from the database, so every
   spelling the lookup treats as the same account queues on one key whether or not the account
-  exists; the inner check locks on the stored username. A per-address cap on checks in flight needs
+  exists; the inner check locks on the stored username. The whole-login and sentinel keys
+  carry a NUL prefix so neither can share an entry with a stored username. A per-address cap on checks in flight needs
   the trusted client address from RSDEV-1560 first and follows it. Other public routes
   that still confirm a username are RSDEV-1558.
 - Deferred to follow-on tickets:
