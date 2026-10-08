@@ -19,6 +19,7 @@ import useUiPreference from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { CELSIUS, categoryOfUnit } from "@/stores/definitions/Units";
+import ContainerModel from "@/stores/models/ContainerModel";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
@@ -800,11 +801,13 @@ function OperationWizard({
     // From here the operation has committed (output created, origins decremented), so nothing below
     // may report it as failed or leave the wizard open for a retry that would charge the origins
     // again. Bookkeeping errors are warnings, and the wizard closes.
+    let placedIn: ContainerModel | null = null;
     if (created && placement.mode === "container" && placement.container) {
       const { container } = placement;
       const failed = t("operations.placement.failedAfterCreate", { container: container.name });
       try {
         await placeSubSamples(buildPlacementRecords(created.subSamples ?? [], container));
+        placedIn = container;
       } catch (error) {
         getRootStore().uiStore.addAlert(
           mkAlert({
@@ -865,6 +868,18 @@ function OperationWizard({
       // /inventory/search and, from a record page, drop the permalink and load the default listing.
       const { fetcher } = getRootStore().searchStore.search;
       if (!fetcher.permalink) void fetcher.performInitialSearch(null);
+      // The placement went through its own model, so the copy on screen still shows the old contents.
+      // Not while it is being edited, so as not to overwrite unsaved changes.
+      const onScreen = getRootStore().searchStore.activeResult;
+      if (
+        placedIn &&
+        onScreen instanceof ContainerModel &&
+        onScreen.id === placedIn.id &&
+        onScreen.state === "preview"
+      ) {
+        await onScreen.fetchAdditionalInfo();
+        onScreen.refreshAssociatedSearch();
+      }
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
