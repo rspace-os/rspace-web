@@ -10,7 +10,7 @@ PR #1204) that changes a limit, a message, a default or a route must update the 
 same commit. A row that no longer matches the code is a bug in this page. When PR #1210
 (RSDEV-1546) merges, update the API token row.
 
-Last reconciled with: `RSDEV-894` one-busy-message commit (round 4 Issue11), `RSDEV-894-stack-2` bae6cc253.
+Last reconciled with: `RSDEV-894` one-busy-message commit (round 4 Issue11), `RSDEV-894-stack-2` eae7c934e.
 
 ## Settings this page refers to
 
@@ -44,6 +44,7 @@ column is empty, nothing the user sees has changed.
 | User changes their own password | The old-password check takes a login slot (row 2). The new password is hashed with no limit. | | | |
 | First start after the upgrade | Every stored password is wrapped in Argon2 before the application serves requests. | | | Roughly 50 ms per user, logged with a row count and the time taken. Rows the migration cannot read are logged at ERROR with the username; those users need an administrator reset. **Irreversible**: a downgrade needs the pre-upgrade database backup. Backups and binary logs from before the upgrade still hold the old SHA-256 hashes; rotate them under the normal retention policy. |
 | First-ever login of an LDAP user when self sign-up is on | Takes a ticket (4 shared) while the new account is saved, after the directory has accepted the password. Refused at once if none is free; nothing is created. | None; a double click could show a sign-up error. | Login page shows "Too many sign-ups are being processed right now. Please try again in a moment." A refusal does not count toward the lockout. | Existing LDAP users are not affected (row 4). Needs a valid directory login first. |
+| Submitting a password longer than 128 characters at login or any password prompt - **PR #1204 only** | Refused at once as a wrong password; no hashing runs. Applies the same to every username. | None (the server hashed it). | The usual wrong-password message of that screen. | A genuine stored password over 128 characters can only come from a historic CSV import; reset it. |
 | Passwords longer than 100 characters - **PR #1204 only** | The maximum password length is 128 on every form, including the promote-to-PI confirm box. | Forms stopped at 50 (100 on the confirm box). | | Existing passwords are unaffected. |
 
 
