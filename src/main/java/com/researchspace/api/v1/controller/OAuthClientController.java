@@ -206,6 +206,9 @@ public class OAuthClientController {
           tokenManager.createNewToken(
               clientId, clientSecret, subject, OAuthTokenType.API_GENERATED_TOKEN);
     }
+    if (!response.isSucceeded()) {
+      throw new ApiAuthenticationException("oauth.errors.tokenCreationFailed");
+    }
 
     SECURITY_LOG.info(
         "User [{}] generated OAuth token for app [{}]", subject.getUsername(), clientId);
