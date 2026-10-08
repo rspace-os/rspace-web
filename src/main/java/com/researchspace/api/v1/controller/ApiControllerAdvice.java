@@ -9,6 +9,7 @@ import com.researchspace.apiutils.BindError;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.apiutils.RestControllerAdvice;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
+import com.researchspace.model.inventory.field.FieldValueInvalidForLatestTemplateException;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.MediaContentMismatchException;
@@ -188,6 +189,20 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
+  // 422
+  @ExceptionHandler({FieldValueInvalidForLatestTemplateException.class})
+  public ResponseEntity<Object> handleFieldValueInvalidForLatestTemplate(
+      final FieldValueInvalidForLatestTemplateException ex, final WebRequest request) {
+    log.warn("rejected update to latest template: {}", ex.getMessage());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            ex.getLocalizedMessage(),
+            ex.getLocalizedMessage());
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
   // 429
   @ExceptionHandler({TooManyRequestsException.class})
   public ResponseEntity<Object> handleUnsupported(
@@ -280,5 +295,17 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             errors,
             errorList);
     return apiError;
+  }
+
+  @Override
+  protected ResponseEntity<Object> handle500Error(
+      final Exception ex, ApiErrorCodes code, String msg) {
+    logException(ex);
+    log.error("error", ex);
+    String genericMessage = messages.getMessage("errors.page.genericServerError");
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.INTERNAL_SERVER_ERROR, code.getCode(), genericMessage, genericMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 }

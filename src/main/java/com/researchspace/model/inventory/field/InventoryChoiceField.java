@@ -95,13 +95,7 @@ public class InventoryChoiceField extends InventoryEntityField {
     if (currentChoiceDefId != null && !currentChoiceDefId.equals(templateChoiceDef.getId())) {
       ErrorList validationResult = templateChoiceDef.validate(getData());
       if (validationResult.hasErrorMessages()) {
-        throw new IllegalStateException(
-            "Field ["
-                + getName()
-                + "] value ["
-                + getData()
-                + "] "
-                + "is invalid according to latest template field definition");
+        throw new FieldValueInvalidForLatestTemplateException(getName(), getData());
       }
       // switch to latest radio def
       setChoiceDef(templateChoiceDef);

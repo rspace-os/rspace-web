@@ -432,6 +432,8 @@ paths:
                 $ref: "#/components/schemas/Instrument"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
   "/instruments/{instrumentId}/revisions":
     get:
       summary: Gets historical revisions of the Instrument
@@ -1145,6 +1147,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Sample"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
   "/samples/{sampleId}/revisions":
     get:
       summary: Gets historical revisions of the Sample

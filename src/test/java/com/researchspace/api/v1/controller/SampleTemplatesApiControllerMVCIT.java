@@ -654,7 +654,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
                     String.format(
                         "/samples/%d/actions/updateToLatestTemplateVersion", createdSample.getId()),
                     anyUser))
-            .andExpect(status().is5xxServerError())
+            .andExpect(status().isUnprocessableEntity())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
     assertEquals(
