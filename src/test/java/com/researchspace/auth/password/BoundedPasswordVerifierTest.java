@@ -1,6 +1,7 @@
 package com.researchspace.auth.password;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,7 +13,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -109,6 +112,36 @@ class BoundedPasswordVerifierTest {
   }
 
   @Test
+  void interruptedWaitIsBusyAndKeepsTheInterruptFlag() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(5));
+    Future<Boolean> first = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
+    awaitEntered(1);
+    AtomicReference<Throwable> thrown = new AtomicReference<>();
+    AtomicBoolean stillInterrupted = new AtomicBoolean();
+    Thread waiter =
+        new Thread(
+            () -> {
+              try {
+                verifier.verify("alice", "ok", "stored");
+              } catch (Throwable t) {
+                thrown.set(t);
+              }
+              stillInterrupted.set(Thread.currentThread().isInterrupted());
+            });
+    waiter.start();
+    awaitState(waiter, Thread.State.TIMED_WAITING);
+    waiter.interrupt();
+    waiter.join(1000);
+
+    assertInstanceOf(LoginVerificationBusyException.class, thrown.get());
+    assertTrue(stillInterrupted.get());
+    encoder.release.countDown();
+    first.get(5, TimeUnit.SECONDS);
+    assertEquals(0, verifier.trackedPrincipals());
+  }
+
+  @Test
   void rejectsConfigurationThatWouldRefuseEveryCheck() {
     assertThrows(
         IllegalArgumentException.class,
@@ -132,6 +165,14 @@ class BoundedPasswordVerifierTest {
     assertThrows(IllegalArgumentException.class, () -> verifier.verify("alice", "x", "stored"));
     assertEquals(PERMITS, verifier.availablePermits());
     assertEquals(0, verifier.trackedPrincipals());
+  }
+
+  private static void awaitState(Thread thread, Thread.State state) throws InterruptedException {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+    while (thread.getState() != state && System.nanoTime() < deadline) {
+      Thread.sleep(5);
+    }
+    assertEquals(state, thread.getState());
   }
 
   private void awaitEntered(int count) throws InterruptedException {
