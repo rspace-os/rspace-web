@@ -9,7 +9,7 @@ import {
   PlusIcon,
   SettingsIcon,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
 import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
@@ -21,6 +21,7 @@ import {
 } from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
+import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
@@ -28,6 +29,7 @@ import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/adapters/apiV2/apiV2FilterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/adapters/apiV2/useApiV2RuntimeFields";
+import type { TableListAlertsApi } from "@/modules/common/table-list/components/TableListAlerts";
 import {
   parseRsqlExpression,
   rsqlSelectors,
@@ -55,6 +57,11 @@ import {
 } from "../bookable-items/BookableItemsContent";
 import { BookingConfigurationActionsMenu } from "../bookable-items/BookingConfigurationActionsMenu";
 import { calendarSubscriptionQueryKey } from "../bookable-items/bookableItemCalendarSubscription";
+import {
+  bookableItemBulkNotice,
+  bookableItemLifecycleNotice,
+  useBookableItemNoticeIds,
+} from "../bookable-items/bookableItemFeedback";
 import type { BookableItemsBulkAction } from "../bookable-items/bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
@@ -250,6 +257,18 @@ function AllBookableItemsContentForUser({
   const navigate = useNavigate({ from: "/booking/all-items" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
+  const alertsRef = useRef<TableListAlertsApi | null>(null);
+  const [alertsReady, setAlertsReady] = useState(false);
+  const attachAlerts = useCallback((api: TableListAlertsApi | null) => {
+    alertsRef.current = api;
+    setAlertsReady(api !== null);
+  }, []);
+  const deliverNotice = useCallback((alert: Parameters<TableListAlertsApi["push"]>[0]) => {
+    if (!alertsRef.current) return false;
+    alertsRef.current.push(alert);
+    return true;
+  }, []);
+  useBookingNoticeHost("bookable-items", deliverNotice, alertsReady);
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [notificationFeedback, setNotificationFeedback] = useState<{ enabled: boolean; count: number }>();
   const runtimeSelectors = useMemo(() => (where ? rsqlSelectors(where) : []), [where]);
@@ -365,6 +384,7 @@ function AllBookableItemsContentForUser({
   });
   const catalogueItems = catalogue.data?.items ?? [];
   const rows = runtimeFilterBlocked ? [] : catalogueItems.map(catalogueItemAsConfiguration);
+  const itemNoticeIds = useBookableItemNoticeIds(rows);
   // An unfiltered empty catalogue means the user has no bookable items yet, not that a filter hid them.
   const hasNoBookableItems =
     catalogue.isSuccess &&
@@ -410,7 +430,15 @@ function AllBookableItemsContentForUser({
     mutationFn: ({ action, rowIds }: { action: BookableItemsBulkAction; rowIds: readonly string[] }) =>
       mutateBookableItems(action, rowIds, token),
     onMutate: () => setFailedBulkAction(null),
-    onSuccess: (_data, { rowIds }) => onLifecycleChanged(rowIds.map(Number)),
+    onSuccess: async (docs, { action, rowIds }) => {
+      if (action !== "enable") {
+        for (const id of docs?.map((doc) => doc.id) ?? rowIds.map(Number)) {
+          alertsRef.current?.dismiss(itemNoticeIds.get(id) ?? `bookable-item-${id}`);
+        }
+      }
+      alertsRef.current?.push(bookableItemBulkNotice(action, docs?.length ?? null, t));
+      await onLifecycleChanged(rowIds.map(Number));
+    },
     onError: (_error, { action }) => setFailedBulkAction(action),
   });
   const selectionPending = notificationSubscriptionMutation.isPending || bulkMutation.isPending;
@@ -566,7 +594,9 @@ function AllBookableItemsContentForUser({
                 activeAction={bulkMutation.isPending ? (bulkMutation.variables?.action ?? null) : null}
                 failedAction={failedBulkAction}
                 offerEnable={false}
-                onAction={(action, rowIds) => bulkMutation.mutateAsync({ action, rowIds: [...rowIds] })}
+                onAction={async (action, rowIds) => {
+                  await bulkMutation.mutateAsync({ action, rowIds: [...rowIds] });
+                }}
               />
             ) : null}
           </>
@@ -664,14 +694,20 @@ function AllBookableItemsContentForUser({
             configuration={row}
             close={close}
             onArchive={(id, version) => archiveBookingConfiguration(id, version, token)}
-            onArchived={(id) => onLifecycleChanged([id])}
+            onArchived={async (id) => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("archived", row, t));
+              await onLifecycleChanged([id]);
+            }}
           />
         ) : actionId === "permanent-delete" ? (
           <PermanentDeleteBookableItemDialog
             configuration={row}
             close={close}
             onDelete={(id, version) => permanentlyDeleteBookingConfiguration(id, version, token)}
-            onDeleted={() => onLifecycleChanged([row.id], true)}
+            onDeleted={async () => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("deleted", row, t));
+              await onLifecycleChanged([row.id], true);
+            }}
           />
         ) : null,
     }),
@@ -774,18 +810,19 @@ function AllBookableItemsContentForUser({
           </Button>
         </div>
       ) : null}
-      {notificationFeedback ? (
-        <p role="status" className="text-sm text-primary">
-          {t(
-            notificationFeedback.enabled
-              ? "notificationSubscriptions.bulk.subscribedCount"
-              : "notificationSubscriptions.bulk.unsubscribedCount",
-            { count: notificationFeedback.count },
-          )}
-        </p>
-      ) : null}
+      <p role="status" className="text-sm text-primary">
+        {notificationFeedback
+          ? t(
+              notificationFeedback.enabled
+                ? "notificationSubscriptions.bulk.subscribedCount"
+                : "notificationSubscriptions.bulk.unsubscribedCount",
+              { count: notificationFeedback.count },
+            )
+          : null}
+      </p>
       <TableList
         {...tableProps}
+        alertsRef={attachAlerts}
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
         rows={rows}

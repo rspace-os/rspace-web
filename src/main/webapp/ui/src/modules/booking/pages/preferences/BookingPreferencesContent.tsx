@@ -91,7 +91,9 @@ export function BookingPreferencesContent() {
             {t("preferences.errors.save")}
           </p>
         ) : null}
-        {reset.isSuccess && !dirty ? <p role="status">{t("preferences.resetComplete")}</p> : null}
+        <p role="status" className={reset.isSuccess && !dirty ? "text-sm text-muted-foreground" : "sr-only"}>
+          {reset.isSuccess && !dirty ? t("preferences.resetComplete") : saved ? t("preferences.actions.saved") : null}
+        </p>
         <div className="flex flex-wrap gap-3">
           <Button
             type="submit"

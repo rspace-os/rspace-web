@@ -1,7 +1,7 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellIcon, CheckIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
@@ -45,6 +45,10 @@ function ItemNotificationEditor({
     schema: BookingNotificationChoiceSchema,
     initialInput: bookingNotificationChoice(subscription.enabled),
   });
+  const dirty = isDirty(form);
+  useEffect(() => {
+    if (!dirty) reset(form, { initialInput: bookingNotificationChoice(subscription.enabled) });
+  }, [dirty, form, subscription.enabled]);
   const mutation = useMutation({
     mutationFn: ({ enabled, version }: { enabled: boolean; version: number }) =>
       replaceBookingNotificationSubscription(configurationId, enabled, version, token),
@@ -69,7 +73,6 @@ function ItemNotificationEditor({
       setFeedback("saveError");
     },
   });
-  const dirty = isDirty(form);
   const saved = feedback === "saved" && !dirty;
   const pending = mutation.isPending;
 
@@ -112,6 +115,7 @@ function ItemNotificationEditor({
               type="submit"
               size="sm"
               disabled={pending || !dirty}
+              focusableWhenDisabled={pending || saved}
               aria-busy={pending}
               className={
                 saved
@@ -184,46 +188,45 @@ function BookableItemNotificationSubscriptionForUser({
   });
 
   if (!canManageNotificationSubscription) return null;
-  if (subscription.isPending) {
-    return (
-      <Card size="sm" aria-busy="true">
-        <CardHeader>
-          <CardTitle>{t("notificationSubscriptions.item.title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-24 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-  if (subscription.isError) {
-    return (
-      <Card size="sm">
-        <CardHeader>
-          <CardTitle>{t("notificationSubscriptions.item.title")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p role="alert" className="text-sm text-destructive">
-            {t("notificationSubscriptions.item.loadError")}
-          </p>
-          <Button type="button" size="sm" variant="outline" onClick={() => void subscription.refetch()}>
-            {t("notificationSubscriptions.item.retry")}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <ItemNotificationEditor
-      key={`${subjectId}-${configurationId}-${subscription.data.version}-${subscription.data.enabled}`}
-      subjectId={subjectId}
-      configurationId={configurationId}
-      globalId={globalId}
-      token={token}
-      subscription={subscription.data}
-      feedback={feedback}
-      setFeedback={setFeedback}
-    />
+    <div>
+      <p role="status" className="sr-only">
+        {feedback === "saved" ? t("preferences.actions.saved") : null}
+      </p>
+      {subscription.isPending ? (
+        <Card size="sm" aria-busy="true">
+          <CardHeader>
+            <CardTitle>{t("notificationSubscriptions.item.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-24 w-full" />
+          </CardContent>
+        </Card>
+      ) : subscription.isError ? (
+        <Card size="sm">
+          <CardHeader>
+            <CardTitle>{t("notificationSubscriptions.item.title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p role="alert" className="text-sm text-destructive">
+              {t("notificationSubscriptions.item.loadError")}
+            </p>
+            <Button type="button" size="sm" variant="outline" onClick={() => void subscription.refetch()}>
+              {t("notificationSubscriptions.item.retry")}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <ItemNotificationEditor
+          subjectId={subjectId}
+          configurationId={configurationId}
+          globalId={globalId}
+          token={token}
+          subscription={subscription.data}
+          feedback={feedback}
+          setFeedback={setFeedback}
+        />
+      )}
+    </div>
   );
 }

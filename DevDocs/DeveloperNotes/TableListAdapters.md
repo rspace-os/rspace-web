@@ -355,7 +355,8 @@ Any control rendered inside a `TableList` (row actions, selection actions, toolb
 `renderInteraction`) can report a result as a one-line alert above the table with
 `useTableListAlerts()`. `push` accepts several alerts at once; pushing an existing `id` replaces
 that alert, and the stack shows the newest first. Each alert has a Dismiss control and an optional
-Undo.
+Undo. Use `actions` for links or buttons that apply to the result. The controls wrap with the alert
+on narrow screens.
 
 ```tsx
 const alerts = useTableListAlerts();
@@ -388,6 +389,29 @@ new alerts are announced. Focus rules:
 Row-action cells carry `data-table-list-row-actions` with the row ID for this lookup. `getRowId`
 from `useTableList` is stable, and TableList reads a caller's `getRowId` through a ref: a new
 identity would rebuild the columns and re-mount every row's cells, closing open menus and dialogs.
+
+An owner callback outside the `TableList` context can use its imperative alert ref:
+
+```tsx
+const alertsRef = useRef<TableListAlertsApi>(null);
+
+const mutation = useMutation({
+  onSuccess: (result) => alertsRef.current?.push(resultAlert(result)),
+});
+
+return <TableList {...table.tableProps} alertsRef={alertsRef} />;
+```
+
+Booking pages use `BookingNoticesProvider` for results that must cross a route change. The
+destination registers with `useBookingNoticeHost("calendar", deliver, ready)`. Its callback pushes
+through the table's `alertsRef` and returns `true` only after delivery. A callback ref updates
+`ready` when the table's alert API attaches, so registration retries a queued result without polling.
+Producers call `useBookingNotices().notify("calendar", alert)`. The provider holds one pending result
+until delivery succeeds and discards it when navigation moves to a different host.
+Use `useBookingLocalNotices` with `BookingLocalNotices` for a detail page without a table.
+Each push has a fresh announcement identity; its semantic `id` still controls replacement and dismissal.
+When dismissal removes the focused control, local notices focus a neighbouring notice or the
+detail page's main landmark. Programmatic removal preserves focus elsewhere.
 
 ## Add controlled row selection
 
@@ -677,6 +701,12 @@ const form = useForm({ schema: ExperimentInputSchema, initialInput });
 Set `form: false` for a field that the form must omit. A field form configuration can set its
 description, widget, width, or display condition. `RenderFields` also supports row and section
 layout entries.
+
+In WebKit only, the shared `Input` hides native time text for empty, controlled time fields
+while unfocused, so Safari's stand-in current time cannot look like a selected time. Other
+engines keep their `--:--` hint. Focus restores the native editor, and a half-typed time
+(`validity.badInput`) stays visible after blur. This also covers booking windows and opening
+hours; see the `DesignSystem/Input` time stories.
 
 A relationship field uses `relationshipSources` when its target has a registered remote source.
 Otherwise, pass static choices through `relationshipOptions`. Pass

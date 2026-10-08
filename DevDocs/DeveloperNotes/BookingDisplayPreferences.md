@@ -199,11 +199,34 @@ while filtered display results remain available.
 
 Calendar Reset clears the date URL parameter, restoring today in the display timezone,
 clears both filter groups and Search, and restores Day, Resources, and My calendar off.
-Layout and period remain local React state. Item filters and Search use
+View, layout, and the Mine/My items quick filters use nuqs-backed URL parameters.
+Item filters and Search use
 `calendar-resources.where` and `calendar-resources.q`;
 event filters use `calendar-events.where`.
 The page coordinates date navigation and display-state reset, pausing event
 fetching until they settle to avoid requests for an intermediate date/period.
+
+Focus on calendar uses the event's saved start date in the display timezone and
+its target item. It preserves the selected view and layout, clears calendar
+where/q filters and Mine/My items, then focuses the matching event occurrence
+identified by date and event ID. A week-grid event hidden in +N more falls back
+to the Time grid day view; Resources falls back there when the target has no
+enabled resource row. Multi-day events focus their start-date occurrence. The
+focus request waits for an active event refresh before using cached results.
+Focus is scheduled after the DOM commits and does not depend on animation
+frames, which embedded or background browsers can suspend.
+Its 15-second timeout runs only while the display and event reads are ready;
+loading, refreshes, and read errors pause it. Focus or an unavailable result
+removes the request. Further keyboard/pointer input cancels it, while browser
+history navigation preserves the destination entry and cleans up pending work.
+A missing or inaccessible event is reported in a mounted status region. Retry
+clears that result, refreshes the events, and requests focus again; date, layout,
+and filter changes clear the old result. Failed reads retain the calendar's
+existing Retry control. Resources and week-overflow fallbacks announce the
+view change, and consecutive focus requests remove the previous highlight.
+On booking details, refreshed item permissions control the notice's calendar
+action. Losing access or the target removes the action and retains the saved
+success message.
 
 Booking routes own their Suspense fallbacks so their preference and token reads
 stay inside Booking once the app shell has mounted. Calendar event

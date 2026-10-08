@@ -175,7 +175,10 @@ describe("BookableItemPage", () => {
     expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
     expect(save).toBeEnabled();
     await user.click(save);
-    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(attempts).toBe(2);
   });
 
@@ -459,7 +462,7 @@ describe("BookableItemPage", () => {
     await waitFor(() => expect(notificationSubscriptionRequest).toEqual({ enabled: true, version: 0 }));
     expect(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
     const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
-    expect(savedButton).toBeDisabled();
+    expect(savedButton).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByText("booking:notificationSubscriptions.item.rspaceOnly")).not.toBeInTheDocument();
     expect(screen.queryByText("booking:notificationSubscriptions.item.emailDisabled")).not.toBeInTheDocument();
     expect(screen.queryByText("booking:notificationSubscriptions.item.newBookings")).not.toBeInTheDocument();

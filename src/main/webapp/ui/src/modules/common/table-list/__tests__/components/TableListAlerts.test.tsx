@@ -1,8 +1,8 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { describe, expect, it } from "vitest";
-import { TableList, type TableListAlert, useTableListAlerts } from "../../TableList";
+import { TableList, type TableListAlert, type TableListAlertsApi, useTableListAlerts } from "../../TableList";
 import { config, emptyFilters, records, type TestRecord } from "../fixtures/tableListFixtures";
 
 function RowActions({
@@ -104,6 +104,35 @@ function Harness({ failUndo = false }: { failUndo?: boolean }) {
   );
 }
 
+function OwnerHarness() {
+  const alertsRef = useRef<TableListAlertsApi>(null);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          alertsRef.current?.push({
+            id: "owner-result",
+            message: "Saved outside TableList.",
+            actions: <a href="/details">{"View details"}</a>,
+          })
+        }
+      >
+        {"Report from owner"}
+      </button>
+      <TableList
+        alertsRef={alertsRef}
+        queryString={false}
+        config={config}
+        rows={records}
+        getRowId={(row) => row.id}
+        presentations={{ table: "all", cards: false }}
+        features={{ filtering: false, sorting: false, pagination: false, columns: false }}
+      />
+    </>
+  );
+}
+
 function alertList() {
   return screen.getByRole("list", { name: "common:tableList.alerts.label" });
 }
@@ -139,6 +168,16 @@ describe("TableList row actions", () => {
 });
 
 describe("TableList alerts", () => {
+  it("lets an owner report results outside TableList context with related actions", async () => {
+    const user = userEvent.setup();
+    render(<OwnerHarness />);
+
+    await user.click(screen.getByRole("button", { name: "Report from owner" }));
+
+    const alert = await screen.findByRole("listitem", { name: "Saved outside TableList." });
+    expect(within(alert).getByRole("link", { name: "View details" })).toHaveAttribute("href", "/details");
+  });
+
   it("shows several alerts from one action, newest first, without taking focus from a control that remains", async () => {
     const user = userEvent.setup();
     render(<Harness />);
@@ -159,8 +198,11 @@ describe("TableList alerts", () => {
     render(<Harness />);
 
     await user.click(screen.getByRole("button", { name: "Report two changes for Alpha" }));
+    const before = within(alertList()).getByRole("listitem", { name: /Second change/ });
     await user.click(screen.getByRole("button", { name: "Report two changes for Beta" }));
 
+    const after = within(alertList()).getByRole("listitem", { name: /Second change/ });
+    expect(after).not.toBe(before);
     expect(within(alertList()).getAllByRole("listitem")).toHaveLength(2);
   });
 

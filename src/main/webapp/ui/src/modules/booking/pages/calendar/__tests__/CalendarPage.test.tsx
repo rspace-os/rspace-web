@@ -1,6 +1,6 @@
 import { bookingsOpenApi } from "../../my-bookings/mocks/bookingMocks";
 import "@/__tests__/__mocks__/matchMedia";
-import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
@@ -16,6 +16,8 @@ import { bookingPagesHandlers } from "../../mocks/bookingPagesMocks";
 import { busyBooking, collectionResponse, currentUser, ownBooking, renderCalendar } from "./calendarTestHarness";
 
 const scrollToDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollTo");
+const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
+const scrollIntoView = vi.fn();
 
 // 2026-08-17 is a Monday.
 const closedOnMonday = { openDays: [2, 3, 4, 5, 6, 7], openingExceptions: [] };
@@ -66,17 +68,22 @@ async function renderCalendarAt(url: string) {
 
 beforeAll(() => {
   Object.defineProperty(HTMLElement.prototype, "scrollTo", { configurable: true, value: vi.fn() });
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });
 });
 
 beforeEach(() => {
   // The calendar keeps its search in the document URL, so a search typed in one test must not seed the next.
   window.history.replaceState(null, "", "/");
+  scrollIntoView.mockClear();
   server.use(...bookingPagesHandlers());
 });
 
 afterAll(() => {
   if (scrollToDescriptor) Object.defineProperty(HTMLElement.prototype, "scrollTo", scrollToDescriptor);
   else Reflect.deleteProperty(HTMLElement.prototype, "scrollTo");
+  if (scrollIntoViewDescriptor)
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", scrollIntoViewDescriptor);
+  else Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 
 describe("CalendarPage", () => {
@@ -106,6 +113,7 @@ describe("CalendarPage", () => {
     await waitFor(() => {
       expect(catalogueRequests.at(-1)?.searchParams.get("mine")).toBe("true");
       expect(eventRequests.some((request) => request.searchParams.get("mine") === "true")).toBe(true);
+      expect(new URLSearchParams(window.location.search).has("myItemsOnly")).toBe(true);
     });
   });
 
@@ -138,6 +146,340 @@ describe("CalendarPage", () => {
     await chooseView(user, "Agenda");
     await waitFor(() => expect(new URLSearchParams(window.location.search).get("layout")).toBe("agenda"));
     expect(new URLSearchParams(window.location.search).get("view")).toBe("week");
+  });
+
+  it("focuses the saved event occurrence in Agenda and removes the consumed request", async () => {
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
+    );
+    const { router } = await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&view=week&focus=41&focusRequest=agenda-focus",
+    );
+
+    const article = await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+    const eventElement = article.closest<HTMLElement>("[data-calendar-event-focus]");
+    if (!eventElement) throw new Error("The event card must expose its date and event ID");
+    const trigger = eventElement.querySelector<HTMLElement>("button");
+    if (!trigger) throw new Error("The event card must have a keyboard-focusable trigger");
+
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(eventElement).toHaveAttribute("data-calendar-event-focus", "2026-08-17:41");
+    expect(eventElement).toHaveAttribute("data-calendar-event-focus-highlight", "true");
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
+    await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
+    expect(router.state.location.searchStr).toContain("layout=agenda");
+    expect(router.state.location.searchStr).toContain("view=week");
+    expect(router.state.location.searchStr).toContain("target=IN123");
+  });
+
+  it("waits for an invalidation refetch before deciding a focused event is unavailable", async () => {
+    let requestNumber = 0;
+    let refetchStarted = () => {};
+    let releaseRefetch = () => {};
+    const refetchHasStarted = new Promise<void>((resolve) => {
+      refetchStarted = resolve;
+    });
+    const refetchMayFinish = new Promise<void>((resolve) => {
+      releaseRefetch = resolve;
+    });
+    onTestFinished(() => releaseRefetch());
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", async () => {
+        requestNumber += 1;
+        if (requestNumber === 1) return HttpResponse.json(collectionResponse([]));
+        refetchStarted();
+        await refetchMayFinish;
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+
+    const { queryClient, router } = await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda",
+    );
+    await waitFor(() => {
+      const eventQueries = queryClient.getQueryCache().findAll({
+        queryKey: ["api-v2", "bookings", "calendar-events"],
+      });
+      expect(eventQueries.some((query) => query.state.data !== undefined && query.state.fetchStatus === "idle")).toBe(
+        true,
+      );
+    });
+
+    act(() => {
+      void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+    });
+    await refetchHasStarted;
+    const cachedRefetch = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: ["api-v2", "bookings", "calendar-events"] })
+      .find((query) => query.state.data !== undefined && query.state.fetchStatus === "fetching");
+    expect(cachedRefetch?.state.data).toEqual([]);
+
+    await act(async () => {
+      window.history.replaceState(
+        null,
+        "",
+        "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=invalidation-refetch",
+      );
+      router.history.push(
+        "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=invalidation-refetch",
+      );
+    });
+
+    expect(screen.queryByText("This event is no longer available in the calendar.")).not.toBeInTheDocument();
+    expect(router.state.location.searchStr).toContain("focusRequest=invalidation-refetch");
+
+    releaseRefetch();
+    const article = await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+    await waitFor(() => expect(article.querySelector("button")).toHaveFocus());
+    await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
+    expect(requestNumber).toBe(2);
+  });
+
+  it("falls back from the Resources layout when its disabled target has no resource row", async () => {
+    const bookingTarget = ownBooking.target;
+    if (!bookingTarget) throw new Error("The calendar fixture must include a target");
+    const disabledBooking: BookingListDocument = {
+      ...ownBooking,
+      id: 55,
+      target: {
+        ...bookingTarget,
+        globalId: "IN999",
+        value: { ...bookingTarget.value, id: 999, name: "Disabled microscope" },
+      },
+    };
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-catalogue/calendar", () => HttpResponse.json(cataloguePage([]))),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([disabledBooking]))),
+    );
+    await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN999&layout=resources&view=week&focus=55&focusRequest=disabled-resource",
+    );
+
+    expect(await screen.findByRole("button", { name: "View: Time grid · Day" })).toBeVisible();
+    const article = await screen.findByRole("article", { name: /Disabled microscope/ });
+    const eventElement = article.closest<HTMLElement>("[data-calendar-event-focus]");
+    if (!eventElement) throw new Error("The fallback event must expose its date and event ID");
+    await waitFor(() => expect(eventElement.querySelector("button")).toHaveFocus());
+    expect(eventElement).toHaveAttribute("data-calendar-event-focus", "2026-08-17:55");
+  });
+
+  it("falls back to the day view when the requested week event is in +N more", async () => {
+    const overlappingBookings = [61, 62, 63].map((id) => ({
+      ...ownBooking,
+      id,
+      start: "2026-08-17T08:00:00Z",
+      end: "2026-08-17T09:00:00Z",
+    }));
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse(overlappingBookings))),
+    );
+    await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=time-grid&view=week&focus=63&focusRequest=week-overflow",
+    );
+
+    expect(await screen.findByRole("button", { name: "View: Time grid · Day" })).toBeVisible();
+    await waitFor(() => expect(document.querySelector('[data-calendar-event-focus="2026-08-17:63"]')).toBeVisible());
+    const focusTarget = document.querySelector<HTMLElement>('[data-calendar-event-focus="2026-08-17:63"]');
+    expect(focusTarget).toBeVisible();
+    await waitFor(() => expect(focusTarget?.querySelector("button")).toHaveFocus());
+  });
+
+  it("focuses a multi-day event at its start-date occurrence", async () => {
+    const multiDayBooking: BookingListDocument = {
+      ...ownBooking,
+      id: 72,
+      start: "2026-08-19T12:00:00Z",
+      end: "2026-08-21T12:00:00Z",
+    };
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([multiDayBooking]))),
+    );
+    await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=time-grid&view=week&focus=72&focusRequest=multi-day",
+    );
+
+    const dateParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date(multiDayBooking.start));
+    const part = (type: "year" | "month" | "day") => dateParts.find((datePart) => datePart.type === type)?.value;
+    const startDate = `${part("year")}-${part("month")}-${part("day")}`;
+    const eventTriggers = await screen.findAllByRole("button", { name: /^Show details for Confocal microscope/ });
+    let startOccurrence: HTMLElement | null = null;
+    await waitFor(() => {
+      const focusedTrigger = eventTriggers.find((trigger) => trigger === document.activeElement);
+      startOccurrence = focusedTrigger?.closest<HTMLElement>("[data-calendar-event-focus]") ?? null;
+      expect(startOccurrence).toHaveAttribute("data-calendar-event-focus", `${startDate}:72`);
+    });
+    expect(startOccurrence).toBeVisible();
+    const eventOccurrences = [...document.querySelectorAll<HTMLElement>("[data-calendar-event-focus]")].filter(
+      (element) => element.dataset.calendarEventFocus?.endsWith(":72"),
+    );
+    expect(eventOccurrences.length).toBeGreaterThan(1);
+    expect(eventOccurrences).toContain(startOccurrence);
+  });
+
+  it("retries a missing focused event and clears its unavailable status", async () => {
+    let available = false;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () =>
+        HttpResponse.json(collectionResponse(available ? [ownBooking] : [])),
+      ),
+    );
+    const { router } = await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=missing-event",
+    );
+
+    expect(await screen.findByText("This event is no longer available in the calendar.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+    await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
+    available = true;
+    // Keep the real URL aligned with the memory router for the focus cleanup guard.
+    window.history.replaceState(null, "", router.state.location.href);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Retry" }));
+    const article = await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+    await waitFor(() => expect(article.closest("[data-calendar-event-focus]")?.querySelector("button")).toHaveFocus());
+    expect(screen.queryByText("This event is no longer available in the calendar.")).not.toBeInTheDocument();
+  });
+
+  it("focuses an available event when animation frames are suspended", async () => {
+    const frames = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(0);
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
+    );
+    try {
+      const { router } = await renderCalendarAt(
+        "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=suspended-frames",
+      );
+      const article = await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+      await waitFor(() =>
+        expect(article.closest("[data-calendar-event-focus]")?.querySelector("button")).toHaveFocus(),
+      );
+      expect(screen.queryByText("This event is no longer available in the calendar.")).not.toBeInTheDocument();
+      await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
+    } finally {
+      frames.mockRestore();
+    }
+  });
+
+  it("removes the previous highlight when another event is focused", async () => {
+    const second = {
+      ...ownBooking,
+      id: 42,
+      bookedBy: "Grace Hopper",
+      purpose: "Second imaging",
+      start: "2026-08-17T11:00:00Z",
+      end: "2026-08-17T12:00:00Z",
+    };
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking, second]))),
+    );
+    const { router } = await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=first",
+    );
+    const first = await screen.findByRole("article", { name: /Ada Lovelace/ });
+    await waitFor(() =>
+      expect(first.closest("[data-calendar-event-focus]")).toHaveAttribute(
+        "data-calendar-event-focus-highlight",
+        "true",
+      ),
+    );
+    const nextUrl = "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=42&focusRequest=second";
+    window.history.replaceState(null, "", nextUrl);
+    await act(() => router.history.push(nextUrl));
+    const next = await screen.findByRole("article", { name: /Grace Hopper/ });
+    await waitFor(() =>
+      expect(next.closest("[data-calendar-event-focus]")).toHaveAttribute(
+        "data-calendar-event-focus-highlight",
+        "true",
+      ),
+    );
+    expect(first.closest("[data-calendar-event-focus]")).not.toHaveAttribute("data-calendar-event-focus-highlight");
+  });
+
+  it("does not expire a focus request while the event read is pending", async () => {
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    onTestFinished(release);
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", async () => {
+        await held;
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+    const { router } = await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=slow",
+    );
+    await screen.findByRole("heading", { name: "Calendar" });
+    vi.useFakeTimers();
+    try {
+      await act(() => vi.advanceTimersByTimeAsync(16_000));
+      expect(router.state.location.searchStr).toContain("focusRequest=slow");
+      expect(screen.queryByText("This event is no longer available in the calendar.")).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+      release();
+    }
+    const article = await screen.findByRole("article", { name: /Ada Lovelace/ });
+    await waitFor(() => expect(article.closest("[data-calendar-event-focus]")?.querySelector("button")).toHaveFocus());
+  });
+
+  it("cancels a pending focus after the user moves on", async () => {
+    let releaseResolve: () => void = () => {};
+    let requestStarted: () => void = () => {};
+    const releaseRequest = new Promise<void>((resolve) => {
+      releaseResolve = resolve;
+    });
+    const started = new Promise<void>((resolve) => {
+      requestStarted = resolve;
+    });
+    onTestFinished(() => releaseResolve());
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", async () => {
+        requestStarted();
+        await releaseRequest;
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+    const user = userEvent.setup();
+    const { router } = await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=pending-focus",
+    );
+    await started;
+
+    await user.keyboard("x");
+    await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
+    releaseResolve();
+    const article = await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+    const trigger = article.closest("[data-calendar-event-focus]")?.querySelector("button");
+
+    expect(trigger).not.toHaveFocus();
+    expect(article.closest("[data-calendar-event-focus]")).not.toHaveAttribute("data-calendar-event-focus-highlight");
   });
 
   it("opens the week when a link asks for Month in By Item", async () => {
@@ -178,6 +520,7 @@ describe("CalendarPage", () => {
 
     await toggleQuickFilter(user, "My Bookings");
     expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAttribute("aria-pressed", "true");
+    await waitFor(() => expect(new URLSearchParams(window.location.search).has("mineOnly")).toBe(true));
     expect(screen.getByRole("button", { name: "Filters, none applied" })).toBeVisible();
     const remove = screen.getByRole("button", { name: "Remove My Bookings filter" });
 
@@ -463,12 +806,17 @@ describe("CalendarPage", () => {
       }),
     );
     const user = userEvent.setup();
-    await renderCalendar();
+    const { router } = await renderCalendarAt(
+      "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=retry-focus",
+    );
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Booking events are unavailable.");
     expect(screen.queryByText("No records found")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
+    const article = await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+    expect(article).toBeVisible();
+    await waitFor(() => expect(article.querySelector("button")).toHaveFocus());
+    await waitFor(() => expect(router.state.location.searchStr).not.toContain("focusRequest="));
     expect(requests).toBe(2);
   });
 
@@ -704,6 +1052,7 @@ describe("CalendarPage", () => {
   });
 
   it("keeps resource pagination when a search matches more than one page", async () => {
+    const catalogueRequests: { query: string | null; page: number }[] = [];
     const catalogueItems = Array.from({ length: 21 }, (_, index) => {
       const fixture = bookableItemFixtures[index % bookableItemFixtures.length];
       return {
@@ -728,16 +1077,16 @@ describe("CalendarPage", () => {
         location: null,
       };
     });
-    const catalogueRequests: Array<{ q: string | null; page: number }> = [];
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
         const url = new URL(request.url);
+        const query = url.searchParams.get("q");
         const page = Number(url.searchParams.get("page") ?? "1");
-        catalogueRequests.push({ q: url.searchParams.get("q"), page });
         const pageSize = Number(url.searchParams.get("limit") ?? "20");
+        catalogueRequests.push({ query, page });
         const start = (page - 1) * pageSize;
         return HttpResponse.json({
           items: catalogueItems.slice(start, start + pageSize),
@@ -755,15 +1104,15 @@ describe("CalendarPage", () => {
     await user.type(search, "No-event");
     // The unfiltered first page lists the same resources; page only once the debounced search has been requested,
     // because applying a search returns to the first page.
-    await waitFor(() => expect(catalogueRequests).toContainEqual({ q: "No-event", page: 1 }));
-
+    await waitFor(() => expect(catalogueRequests).toContainEqual({ query: "No-event", page: 1 }));
     expect(await screen.findByText("No-event microscope 1")).toBeVisible();
     expect(screen.getByText("1–20 of 21 records")).toBeVisible();
     const nextPage = screen.getByRole("button", { name: "Next page" });
     expect(nextPage).toBeEnabled();
     await user.click(nextPage);
+    await waitFor(() => expect(catalogueRequests).toContainEqual({ query: "No-event", page: 2 }));
     await waitFor(() => expect(screen.getByText("No-event microscope 21")).toBeVisible());
-    expect(catalogueRequests.at(-1)).toEqual({ q: "No-event", page: 2 });
+    expect(catalogueRequests.at(-1)).toEqual({ query: "No-event", page: 2 });
   });
 
   it("shows an empty state when a calendar search has no matches", async () => {
