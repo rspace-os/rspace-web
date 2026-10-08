@@ -1,5 +1,6 @@
 package com.researchspace.auth.password;
 
+import com.researchspace.model.User;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -34,13 +35,17 @@ public class BoundedPasswordVerifier {
 
   /**
    * Checks a password, waiting for the username's turn and then for a free permit, together bounded
-   * by the configured wait.
+   * by the configured wait. A null password, or one longer than {@link User#MAX_PWD_LENGTH} (which
+   * no stored hash can have been made from), is refused at once without a lock, permit or hash.
    *
    * @return whether the password matched
    * @throws LoginVerificationBusyException if the wait elapses first
    * @throws IllegalArgumentException if the stored value has no recognised encoding
    */
   public boolean verify(String username, CharSequence rawPassword, String encodedPassword) {
+    if (rawPassword == null || rawPassword.length() > User.MAX_PWD_LENGTH) {
+      return false;
+    }
     long deadline = System.nanoTime() + waitNanos;
     PrincipalLock principalLock = acquireHolder(username);
     try {

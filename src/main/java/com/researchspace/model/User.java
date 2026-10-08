@@ -88,7 +88,10 @@ public class User extends AbstractUserOrGroupImpl
   public static final int MAX_UNAME_LENGTH = 50;
 
   public static final int MIN_PWD_LENGTH = 8;
-  /* Bounds the input hashed for both the login and the verification password. */
+  /*
+   * Bounds the input hashed for both the login and the verification password. Also the longest
+   * input the verifier will check; keep the two in step.
+   */
   public static final int MAX_PWD_LENGTH = 128;
 
   /** Core regex for dis-allowed username characters */

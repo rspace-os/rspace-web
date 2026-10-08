@@ -1,9 +1,11 @@
 package com.researchspace.auth.password;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.model.User;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -106,6 +108,31 @@ class BoundedPasswordVerifierTest {
     encoder.release.countDown();
     first.get(5, TimeUnit.SECONDS);
     assertEquals(0, verifier.trackedPrincipals());
+  }
+
+  @Test
+  void overCapPasswordIsRefusedWithoutLockPermitOrEncoder() throws Exception {
+    BoundedPasswordVerifier verifier = new BoundedPasswordVerifier(encoder, 1, Duration.ZERO);
+    Future<Boolean> holder = pool.submit(() -> verifier.verify("other", "ok", "stored"));
+    awaitEntered(1);
+
+    assertFalse(verifier.verify("alice", "x".repeat(User.MAX_PWD_LENGTH + 1), "stored"));
+    assertFalse(verifier.verify("alice", null, "stored"));
+    assertEquals(1, encoder.entered.get());
+
+    encoder.release.countDown();
+    assertTrue(holder.get(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void capLengthPasswordIsStillChecked() {
+    encoder.release.countDown();
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(1));
+
+    verifier.verify("alice", "x".repeat(User.MAX_PWD_LENGTH), "stored");
+
+    assertEquals(1, encoder.entered.get());
   }
 
   @Test

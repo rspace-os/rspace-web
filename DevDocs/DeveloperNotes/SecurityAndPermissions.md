@@ -71,7 +71,9 @@ The design and its trade-offs are in
   call the same verifier and share its permits. Only LDAP
   reauthentication, which checks against the directory, skips it. That verifier holds a fair semaphore
   (`login.passwordVerification.maxConcurrent`, default 8) and a
-  per-username lock, so one account holds at most one permit. A single
+  per-username lock, so one account holds at most one permit. An input
+  longer than `User.MAX_PWD_LENGTH` is refused as a wrong password before
+  the lock or a permit is taken. A single
   deadline (`login.passwordVerification.waitSeconds`, default 5) covers
   both waits. On timeout it throws `LoginVerificationBusyException`,
   which the login filter and `ReauthenticatorImpl` deliberately do not

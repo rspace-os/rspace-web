@@ -24,6 +24,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
 
 - RSDEV-894 the maximum length of login and verification passwords is raised from 50 to 128 characters
   - API: `POST /api/v1/users` (sysadmin user creation, `ApiUserPost`) now accepts passwords up to 128 characters
+  - Passwords longer than 128 characters are refused at login without being checked; the only way to hold one is a historic CSV import, and such a user needs an administrator password reset.
 
 # 2.27.0 2026-10-02
 

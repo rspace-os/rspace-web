@@ -85,7 +85,8 @@ INFO.
 at default-realm reauthentication (signing, witnessing, password change, API key and OAuth client
 management, the OAuth password grant, sysadmin actions and operate-as), goes through a
 `BoundedPasswordVerifier` bean that wraps the shared encoder bean with a fair
-`java.util.concurrent.Semaphore`. Permits and wait are deployment properties,
+`java.util.concurrent.Semaphore`. The verifier refuses an input longer than `User.MAX_PWD_LENGTH`
+as a wrong password before taking its lock or a permit. Permits and wait are deployment properties,
 `login.passwordVerification.maxConcurrent` (default 8) and `login.passwordVerification.waitSeconds`
 (default 5). At the default, peak Argon2 heap is 8 times 19 MiB, about 152 MiB, regardless of
 request volume. A request that cannot get its turn before the wait elapses fails with the same
