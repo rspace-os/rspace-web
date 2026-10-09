@@ -1,0 +1,447 @@
+import { ArrowDownUpIcon, Columns3Icon, ListFilterIcon, RotateCcwIcon, SearchIcon, XIcon } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import { Button } from "@/modules/common/ui/button";
+import { Input } from "@/modules/common/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
+import { Separator } from "@/modules/common/ui/separator";
+import { Switch } from "@/modules/common/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { cn } from "@/modules/common/utils/cn";
+import type { TableListFeatures, TableListFilterButtons } from "../tableListState";
+
+export type TableListControlPanel = "filters" | "sorting" | "columns";
+
+const remoteSearchDebounceMs = 300;
+
+function SearchRecordsInput({
+  value,
+  collectionLabel,
+  debounceMs,
+  resetSignal,
+  onCommit,
+}: {
+  value: string;
+  collectionLabel: string;
+  debounceMs: number;
+  resetSignal: number;
+  onCommit: (value: string) => void;
+}) {
+  const { t } = useTranslation("common");
+  const [draft, setDraft] = useState(value);
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentValue = useRef(value);
+  const commit = useRef(onCommit);
+  currentValue.current = value;
+  commit.current = onCommit;
+
+  const cancel = useCallback(() => {
+    if (timeout.current !== null) clearTimeout(timeout.current);
+    timeout.current = null;
+  }, []);
+
+  useEffect(() => cancel, [cancel]);
+  useEffect(() => {
+    cancel();
+    setDraft(value);
+  }, [cancel, resetSignal, value]);
+
+  const commitNow = (next: string) => {
+    cancel();
+    if (next !== currentValue.current) commit.current(next);
+  };
+
+  const change = (next: string) => {
+    setDraft(next);
+    cancel();
+    if (debounceMs === 0) {
+      if (next !== currentValue.current) commit.current(next);
+      return;
+    }
+    timeout.current = setTimeout(() => {
+      timeout.current = null;
+      if (next !== currentValue.current) commit.current(next);
+    }, debounceMs);
+  };
+
+  return (
+    <div className="relative min-w-56 flex-1">
+      <SearchIcon
+        aria-hidden="true"
+        className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground"
+      />
+      <Input
+        aria-label={t("tableList.search.label", { collection: collectionLabel })}
+        className="h-8 bg-background pr-9 pl-9"
+        placeholder={t("tableList.search.label", { collection: collectionLabel })}
+        value={draft}
+        onChange={(event) => change(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          commitNow(draft);
+        }}
+      />
+      {draft ? (
+        <button
+          type="button"
+          aria-label={t("tableList.search.clear")}
+          className="absolute top-1/2 right-3 -translate-y-1/2 rounded-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={() => {
+            setDraft("");
+            commitNow("");
+          }}
+        >
+          <XIcon aria-hidden="true" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+export function TableListToolbar<TDocument>({
+  config,
+  collectionLabel,
+  features,
+  clientSide,
+  activePanel,
+  filterCount,
+  filterButtons,
+  hideFilterPanel = false,
+  debounceSearch = false,
+  onPanelChange,
+  onReset,
+  resetView,
+}: {
+  config: ResolvedCollectionConfig<TDocument>;
+  collectionLabel: string;
+  features: TableListFeatures<TDocument>;
+  clientSide?: boolean;
+  activePanel: TableListControlPanel | null;
+  filterCount: number;
+  filterButtons?: TableListFilterButtons;
+  /** Hides the filter panel for a data source that only honours free-text search. */
+  hideFilterPanel?: boolean;
+  /** Debounce client-side search when its value also drives remote work. */
+  debounceSearch?: boolean;
+  onPanelChange: (panel: TableListControlPanel) => void;
+  onReset: () => void;
+  resetView?: () => void;
+}) {
+  const { t } = useTranslation("common");
+  const [searchResetSignal, setSearchResetSignal] = useState(0);
+  const resetLabel = t("tableList.actions.resetToDefaults");
+  const visibleColumns = features.columns === false ? config.defaultColumns : features.columns.value;
+  const columnsChanged =
+    visibleColumns.length !== config.defaultColumns.length ||
+    visibleColumns.some((field, index) => field !== config.defaultColumns[index]);
+  const defaultSorting = config.defaultSort ?? [];
+  const sorting = features.sorting === false ? defaultSorting : features.sorting.value;
+  const sortingCount = sorting.length;
+  const sortingChanged =
+    sorting.length !== defaultSorting.length ||
+    sorting.some(
+      (rule, index) =>
+        rule.field !== defaultSorting[index]?.field || rule.direction !== defaultSorting[index]?.direction,
+    );
+  const filtersChanged =
+    features.filtering !== false &&
+    (features.filtering.value.search !== "" || features.filtering.value.expression !== null);
+  const viewChanged =
+    filtersChanged ||
+    sortingChanged ||
+    columnsChanged ||
+    filterButtons?.hasChanges ||
+    filterButtons?.buttons.some(({ pressed }) => pressed);
+  const visibleColumnCount = visibleColumns.length;
+  const listableColumnCount = config.fields.filter((field) => field.list !== false).length;
+  const filterPanelAvailable = features.filtering !== false && !hideFilterPanel;
+  const quickFiltersInMenu = filterButtons?.presentation === "menu" && filterPanelAvailable;
+
+  if (features.filtering === false && features.sorting === false && features.columns === false && !filterButtons) {
+    return null;
+  }
+
+  return (
+    <div
+      role="toolbar"
+      aria-label={collectionLabel}
+      className={cn(
+        "flex flex-col flex-wrap gap-2 border-b py-2",
+        !filterButtons?.controlsOnSeparateRow && "lg:flex-row lg:items-center",
+      )}
+    >
+      {features.filtering !== false && (config.listSearchableFields?.length ?? 0) > 0 ? (
+        <SearchRecordsInput
+          value={features.filtering.value.search}
+          collectionLabel={collectionLabel}
+          debounceMs={clientSide && !debounceSearch ? 0 : remoteSearchDebounceMs}
+          resetSignal={searchResetSignal}
+          onCommit={(search) => {
+            if (features.filtering !== false) {
+              features.filtering.onChange({ ...features.filtering.value, search });
+            }
+            if (features.pagination !== false) {
+              features.pagination.onChange({ ...features.pagination.value, pageIndex: 0 });
+            }
+          }}
+        />
+      ) : (
+        <div className="flex-1" />
+      )}
+      <div className={cn("flex min-w-0 flex-wrap items-center gap-2", filterButtons?.align === "end" && "justify-end")}>
+        {filterButtons?.controls}
+        {filterButtons && !quickFiltersInMenu ? (
+          <fieldset
+            className={cn("flex min-w-0 flex-wrap items-center gap-2", filterButtons.align === "end" && "justify-end")}
+          >
+            <legend className="sr-only">{filterButtons.legend}</legend>
+            {filterButtons.buttons.map((button) => (
+              <FilterButton key={button.id} button={button} />
+            ))}
+          </fieldset>
+        ) : null}
+        {filterButtons && quickFiltersInMenu ? (
+          <FiltersMenu
+            filterButtons={filterButtons}
+            filterCount={filterCount}
+            panelOpen={activePanel === "filters"}
+            onOpenPanel={() => onPanelChange("filters")}
+          />
+        ) : null}
+        {filterPanelAvailable && !quickFiltersInMenu ? (
+          <Button
+            aria-label={
+              filterCount
+                ? t("tableList.filters.applied", { count: filterCount })
+                : t("tableList.filters.noneApplied", { count: filterCount })
+            }
+            aria-controls="table-list-control-panel"
+            aria-expanded={activePanel === "filters"}
+            // Lets rows that remove a filter (such as a filter chip) hand focus back to this control.
+            data-table-list-filters
+            variant={activePanel === "filters" || filterCount > 0 ? "secondary" : "outline"}
+            onClick={() => onPanelChange("filters")}
+          >
+            <ListFilterIcon aria-hidden="true" data-icon="inline-start" />
+            {t("tableList.toolbar.filters")}
+            {filterCount > 0 ? (
+              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">{filterCount}</span>
+            ) : null}
+          </Button>
+        ) : null}
+        {features.sorting !== false ? (
+          <Button
+            aria-label={
+              sortingCount > 0
+                ? t("tableList.sorting.applied", {
+                    count: sortingCount,
+                  })
+                : undefined
+            }
+            aria-controls="table-list-control-panel"
+            aria-expanded={activePanel === "sorting"}
+            variant={activePanel === "sorting" || sortingCount > 0 ? "secondary" : "outline"}
+            onClick={() => onPanelChange("sorting")}
+          >
+            <ArrowDownUpIcon aria-hidden="true" data-icon="inline-start" />
+            {t("tableList.toolbar.sorting")}
+            {sortingCount > 0 ? (
+              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">{sortingCount}</span>
+            ) : null}
+          </Button>
+        ) : null}
+        {features.columns !== false ? (
+          <Button
+            // Only named explicitly once the count matters; otherwise the button text is the name.
+            aria-label={
+              columnsChanged
+                ? t("tableList.columns.customised", { count: visibleColumnCount, total: listableColumnCount })
+                : undefined
+            }
+            aria-controls="table-list-control-panel"
+            aria-expanded={activePanel === "columns"}
+            variant={activePanel === "columns" || columnsChanged ? "secondary" : "outline"}
+            onClick={() => onPanelChange("columns")}
+          >
+            <Columns3Icon aria-hidden="true" data-icon="inline-start" />
+            {t("tableList.toolbar.columns")}
+            {columnsChanged ? (
+              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
+                {visibleColumnCount}
+              </span>
+            ) : null}
+          </Button>
+        ) : null}
+        {viewChanged ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  aria-label={resetLabel}
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => {
+                    if (resetView) {
+                      resetView();
+                    } else {
+                      if (features.filtering !== false) features.filtering.onChange({ search: "", expression: null });
+                      if (features.sorting !== false) features.sorting.onChange(defaultSorting);
+                      if (features.columns !== false) features.columns.onChange(config.defaultColumns);
+                      if (features.pagination !== false)
+                        features.pagination.onChange({ ...features.pagination.value, pageIndex: 0 });
+                      filterButtons?.onReset();
+                    }
+                    setSearchResetSignal((current) => current + 1);
+                    onReset();
+                  }}
+                />
+              }
+            >
+              <RotateCcwIcon aria-hidden="true" />
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="rounded-sm">
+              {resetLabel}
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** The Filters button of the `menu` presentation: quick filters as switches, and the way into the filter panel. */
+function FiltersMenu({
+  filterButtons,
+  filterCount,
+  panelOpen,
+  onOpenPanel,
+}: {
+  filterButtons: TableListFilterButtons;
+  filterCount: number;
+  panelOpen: boolean;
+  onOpenPanel: () => void;
+}) {
+  const { t } = useTranslation("common");
+  const [open, setOpen] = useState(false);
+  const appliedCount = filterButtons.buttons.filter(({ pressed }) => pressed).length + filterCount;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            aria-label={
+              appliedCount
+                ? t("tableList.filters.applied", { count: appliedCount })
+                : t("tableList.filters.noneApplied", { count: appliedCount })
+            }
+            // Lets rows that remove a filter (such as a filter chip) hand focus back to this control.
+            data-table-list-filters
+            variant={open || panelOpen || appliedCount > 0 ? "secondary" : "outline"}
+          />
+        }
+      >
+        <ListFilterIcon aria-hidden="true" data-icon="inline-start" />
+        {t("tableList.toolbar.filters")}
+        {appliedCount > 0 ? (
+          <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">{appliedCount}</span>
+        ) : null}
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 gap-3 p-3">
+        <fieldset className="flex flex-col gap-3">
+          <legend className="mb-3 text-xs font-medium text-muted-foreground">{filterButtons.legend}</legend>
+          {filterButtons.buttons.map((button) => (
+            <FilterSwitch key={button.id} button={button} />
+          ))}
+        </fieldset>
+        <Separator />
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs text-muted-foreground">
+            {t("tableList.filters.panelSummary", { count: filterCount })}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            aria-controls="table-list-control-panel"
+            aria-expanded={panelOpen}
+            onClick={() => {
+              setOpen(false);
+              onOpenPanel();
+            }}
+          >
+            {t("tableList.filters.editFilters")}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function FilterSwitch({ button }: { button: TableListFilterButtons["buttons"][number] }) {
+  const id = useId();
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0 text-sm">
+        {/* The popover renders outside the table's section, so size icons as its toolbar does. */}
+        <span id={`${id}-label`} className="flex items-center gap-1.5 font-medium [&_svg]:size-3.5">
+          {button.icon}
+          {button.label}
+          {button.count === undefined ? null : (
+            <span aria-hidden="true" className="rounded-sm bg-foreground px-1 text-[10px] text-background">
+              {button.count}
+            </span>
+          )}
+        </span>
+        {button.description ? (
+          <span id={`${id}-description`} className="block text-xs text-muted-foreground">
+            {button.description}
+          </span>
+        ) : null}
+      </div>
+      <Switch
+        checked={button.pressed}
+        disabled={button.disabled}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={button.description ? `${id}-description` : undefined}
+        onCheckedChange={button.onClick}
+      />
+    </div>
+  );
+}
+
+function FilterButton({ button }: { button: TableListFilterButtons["buttons"][number] }) {
+  const descriptionId = useId();
+  const props = {
+    type: "button",
+    "aria-pressed": button.pressed,
+    disabled: button.disabled,
+    variant: button.pressed ? "secondary" : "outline",
+    onClick: button.onClick,
+  } as const;
+  const content = (
+    <>
+      {button.icon}
+      {button.label}
+      {button.count === undefined ? null : (
+        <span aria-hidden="true" className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
+          {button.count}
+        </span>
+      )}
+    </>
+  );
+  if (!button.description) return <Button {...props}>{content}</Button>;
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<Button {...props} aria-describedby={descriptionId} />}>{content}</TooltipTrigger>
+      <TooltipContent side="bottom" className="rounded-sm">
+        {button.description}
+      </TooltipContent>
+      {/* Base UI tooltips are visual only, so screen readers get the description through aria-describedby. */}
+      <span id={descriptionId} className="sr-only">
+        {button.description}
+      </span>
+    </Tooltip>
+  );
+}

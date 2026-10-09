@@ -30,6 +30,8 @@
         <!--  <property name="hbm2ddl.auto">validate</property>   -->
         
         <mapping class="com.researchspace.model.User"/>
+        <mapping class="com.researchspace.featureflags.FeatureFlagBaseline"/>
+        <mapping class="com.researchspace.featureflags.FeatureFlagUserOverride"/>
         <mapping class="com.researchspace.model.Group"/>
         <mapping class="com.researchspace.model.UserGroup"/>
         <mapping class="com.researchspace.model.AbstractUserOrGroupImpl"/>
@@ -139,6 +141,15 @@
 
         <mapping class="com.researchspace.model.inventory.Instrument"/>
         <mapping class="com.researchspace.model.inventory.InstrumentTemplate"/>
+        <mapping class="com.researchspace.model.booking.BookableItemCalendarSubscription"/>
+        <mapping class="com.researchspace.model.booking.BookableItemNotificationSubscription"/>
+        <mapping class="com.researchspace.model.booking.UserBookingCalendarSubscription"/>
+        <mapping class="com.researchspace.model.booking.BookingDefaultAccessGrantee"/>
+        <mapping class="com.researchspace.model.booking.BookingConfiguration"/>
+        <mapping class="com.researchspace.model.booking.BookingConfigurationDefaults"/>
+        <mapping class="com.researchspace.model.booking.TimeSlotBooking"/>
+        <mapping class="com.researchspace.model.resourceaccess.ResourceAccess"/>
+        <mapping class="com.researchspace.model.resourceaccess.ResourceRoleAssignment"/>
     
         <mapping class="com.researchspace.model.inventory.Container"/>
         <mapping class="com.researchspace.model.inventory.ContainerLocation"/>

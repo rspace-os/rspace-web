@@ -1,0 +1,243 @@
+import { HttpResponse, http, type RequestHandler } from "msw";
+import { bookableItemsOpenApi } from "../../bookable-items/mocks/bookableItemsMocks";
+
+export const bookingsOpenApi = {
+  paths: {
+    "/api/v2/bookings": {
+      get: {
+        parameters: [
+          {
+            name: "sort",
+            "x-rspace-sort": {
+              fields: ["id", "start", "end", "state", "createdAt", "updatedAt"],
+              default: ["start", "id"],
+              maximumFields: 5,
+            },
+          },
+          {
+            name: "where",
+            schema: { type: "string", maxLength: 32768 },
+            "x-rspace-filter": {
+              maximumComparisons: 50,
+              maximumLikeComparisons: 10,
+              maximumNesting: 10,
+              maximumArguments: 1000,
+              selectors: {
+                target: {
+                  schema: { type: "string" },
+                  operators: ["==", "!=", "=in=", "=out=", "=exists="],
+                  wildcards: false,
+                },
+                purpose: {
+                  schema: { type: "string" },
+                  operators: ["==", "!=", "=contains=", "=like=", "=exists="],
+                  wildcards: true,
+                },
+                id: { schema: { type: "integer" }, operators: ["==", "!=", "=in="], wildcards: false },
+                requesterId: {
+                  schema: { type: "integer" },
+                  operators: ["==", "!=", "=gt=", "=ge=", "=lt=", "=le=", "=in=", "=out="],
+                  wildcards: false,
+                },
+                kind: {
+                  schema: { type: "string", enum: ["BOOKING", "MAINTENANCE"] },
+                  operators: ["==", "!=", "=in=", "=out="],
+                  wildcards: false,
+                },
+                state: {
+                  schema: { type: "string", enum: ["CONFIRMED", "CANCELLED"] },
+                  operators: ["==", "!=", "=in=", "=out="],
+                  wildcards: false,
+                },
+                start: {
+                  schema: { type: "string", format: "date-time" },
+                  operators: ["==", "!=", "=gt=", "=ge=", "=lt=", "=le="],
+                  wildcards: false,
+                },
+                end: {
+                  schema: { type: "string", format: "date-time" },
+                  operators: ["==", "!=", "=gt=", "=ge=", "=lt=", "=le="],
+                  wildcards: false,
+                },
+                "target.name": {
+                  schema: { type: "string" },
+                  operators: ["==", "=contains=", "=like="],
+                  wildcards: true,
+                  title: "Instrument name",
+                },
+              },
+            },
+            "x-rspace-runtime-fields": bookableItemsOpenApi.paths["/api/v2/booking-configurations"].get.parameters.find(
+              (parameter) => parameter.name === "where",
+            )?.["x-rspace-runtime-fields"],
+            "x-rspace-relationship-fields": {
+              "target.name": {
+                schema: { type: "string" },
+                operators: ["==", "=contains=", "=like="],
+                wildcards: true,
+                title: "Instrument name",
+              },
+              "target.globalId": {
+                schema: { type: "string" },
+                operators: [],
+                wildcards: false,
+                title: "Global ID",
+              },
+            },
+          },
+          { name: "limit", schema: { type: "integer", default: 20, maximum: 100 } },
+          {
+            name: "fields",
+            "x-rspace-allowed-fields": {
+              bookings: [
+                "id",
+                "version",
+                "requesterId",
+                "kind",
+                "target",
+                "canViewConfiguration",
+                "timezone",
+                "start",
+                "end",
+                "state",
+                "cancellationReason",
+                "purpose",
+                "bookedBy",
+                "privacy",
+                "canEdit",
+                "canCancel",
+                "createdAt",
+                "updatedAt",
+              ],
+            },
+          },
+        ],
+      },
+    },
+  },
+};
+
+const target = (id: number, name: string) => ({
+  relationTo: "booking-instruments" as const,
+  value: { id, name, deleted: false },
+  globalId: `IN${id}`,
+});
+
+export const upcomingBooking = {
+  id: 41,
+  version: 0,
+  requesterId: 84,
+  kind: "BOOKING",
+  target: target(123, "Confocal microscope"),
+  canViewConfiguration: true,
+  timezone: "Pacific/Auckland",
+  start: "2020-08-23T09:00:00Z",
+  end: "2030-08-23T10:00:00Z",
+  state: "CONFIRMED",
+  cancellationReason: null,
+  purpose: "Scope training",
+  bookedBy: "Test User (testuser)",
+  privacy: "full",
+  canEdit: true,
+  canCancel: true,
+  createdAt: "2020-08-01T09:00:00Z",
+  updatedAt: "2020-08-01T09:00:00Z",
+};
+
+export const pastBooking = {
+  id: 42,
+  version: 0,
+  requesterId: 84,
+  kind: "BOOKING",
+  target: target(124, "Electron microscope"),
+  canViewConfiguration: true,
+  timezone: "UTC",
+  start: "2020-08-23T09:00:00Z",
+  end: "2020-08-23T10:00:00Z",
+  state: "CONFIRMED",
+  cancellationReason: null,
+  purpose: "Completed run",
+  bookedBy: "Test User (testuser)",
+  privacy: "full",
+  canEdit: false,
+  canCancel: false,
+  createdAt: "2020-08-01T09:00:00Z",
+  updatedAt: "2020-08-01T09:00:00Z",
+};
+
+/** A future booking the requester cancelled; it belongs to the cancelled period, not upcoming or past. */
+export const cancelledBooking = {
+  ...upcomingBooking,
+  id: 44,
+  target: target(125, "Light sheet microscope"),
+  state: "CANCELLED",
+  cancellationReason: "The instrument needs recalibration.",
+  purpose: "Cancelled session",
+  canEdit: false,
+  canCancel: false,
+};
+
+export const roleLostBooking = {
+  ...upcomingBooking,
+  id: 43,
+  target: null,
+  timezone: null,
+  canViewConfiguration: false,
+  canEdit: false,
+  canCancel: false,
+  purpose: "Retained requester details",
+};
+
+function page(docs: readonly unknown[]) {
+  return {
+    docs,
+    totalDocs: docs.length,
+    limit: 20,
+    page: 1,
+    pagingCounter: 1,
+    totalPages: docs.length === 0 ? 0 : 1,
+    hasPrevPage: false,
+    hasNextPage: false,
+    prevPage: null,
+    nextPage: null,
+  };
+}
+
+function matchesEndFilter(document: unknown, where: string | null): boolean {
+  const filter = where?.match(/end=(gt|le)=([^;)]+)/);
+  if (!filter) return true;
+  if (typeof document !== "object" || document === null || !("end" in document)) return false;
+  const end = Date.parse(String(document.end));
+  const boundary = Date.parse(filter[2]);
+  return filter[1] === "gt" ? end > boundary : end <= boundary;
+}
+
+function matchesStateFilter(document: unknown, where: string | null): boolean {
+  const filter = where?.match(/state==(CONFIRMED|CANCELLED)/);
+  if (!filter) return true;
+  if (typeof document !== "object" || document === null || !("state" in document)) return false;
+  return document.state === filter[1];
+}
+
+export function bookingHandlers(
+  onListRequest: (url: URL) => void = () => undefined,
+  onCountRequest: (url: URL) => void = () => undefined,
+  docs?: readonly unknown[],
+): RequestHandler[] {
+  return [
+    http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingsOpenApi)),
+    http.get("/api/v2/bookings", ({ request }) => {
+      const url = new URL(request.url);
+      onListRequest(url);
+      const source = docs ?? [upcomingBooking, pastBooking, cancelledBooking];
+      const where = url.searchParams.get("where");
+      return HttpResponse.json(
+        page(source.filter((document) => matchesEndFilter(document, where) && matchesStateFilter(document, where))),
+      );
+    }),
+    http.get("/api/v2/bookings/count", ({ request }) => {
+      onCountRequest(new URL(request.url));
+      return HttpResponse.json({ totalDocs: 2 });
+    }),
+  ];
+}

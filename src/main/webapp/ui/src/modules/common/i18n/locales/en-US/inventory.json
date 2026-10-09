@@ -259,6 +259,7 @@
         "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
         "editLocations": "Edit Locations",
         "explanation": "See the documentation for information on <helpDocs docLink=\"editLocationsInVisualContainers\">choosing an image and marking locations</helpDocs>.",
+        "instructions": "Tap on the image to add a location marker.<br/>Tap and hold on a marker, and then drag to adjust the marked location.",
         "label": "Locations Image",
         "noMarkers": "No marked locations yet; click on the image to add a location marker.",
         "setPreviewImage": "Set preview image too?",
@@ -382,7 +383,8 @@
         "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item. <strong>This action can only be undone by the recipient or their PI.</strong>",
         "recipientLabel": "Recipient",
         "recipientSearchHint": "If the desired recipient cannot be found in this list, try searching for their name or username.",
-        "title": "Transfer Ownership"
+        "title": "Transfer Ownership",
+        "transferBookingConfigurationOwnership": "Also transfer Booking configuration ownership"
       },
       "disabled": {
         "noPermission": "{count, plural, one {You do not have permission to transfer this item.} other {You do not have permission to transfer these items.}}",
@@ -1438,6 +1440,27 @@
     "setAsTarget": "Set as Target"
   },
   "instrument": {
+    "booking": {
+      "archived": {
+        "description": "This instrument's booking configuration is archived, so it cannot be booked. Open Booking to view it.",
+        "title": "Booking archived"
+      },
+      "configured": {
+        "book": "Book",
+        "description": "Open Booking to view this instrument's calendar and booking configuration.",
+        "open": "Open booking page",
+        "title": "Booking configured"
+      },
+      "disabled": {
+        "description": "Booking is turned off for this instrument, so it cannot be booked. Open Booking to view its configuration.",
+        "title": "Booking disabled"
+      },
+      "notConfigured": {
+        "action": "Set up booking",
+        "description": "Set up booking to make this instrument available in Booking.",
+        "title": "Booking has not been set up"
+      }
+    },
     "createOptions": {
       "location": {
         "label": "Location",
@@ -1501,6 +1524,7 @@
     },
     "showRightPanel": "Show right panel",
     "sidebar": {
+      "bookingSystem": "Booking System",
       "exportData": "Export Data",
       "igsnIds": "IGSN IDs",
       "itemsListLabel": "List existing Inventory items",
@@ -1530,6 +1554,7 @@
         "alreadyOnBench": "All items are already on your bench.",
         "confirmOnBench": {
           "itemsLabel": "The items are:",
+          "message": "The items are: <itemList/> Do you want to move them to your bench?",
           "prompt": "Do you want to move them to your bench?",
           "title": "Some items are in containers that are already on your bench."
         },
@@ -1847,7 +1872,8 @@
   "peopleField": {
     "errors": {
       "couldNotGetGroupMembers": "Could not get group members."
-    }
+    },
+    "loading": "Loading people"
   },
   "permalink": {
     "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -1903,6 +1929,7 @@
       "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
       "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
       "alternateIdentifier": "Alternate identifier",
+      "calibration": "Calibration",
       "commissioned": "Commissioned",
       "decommissioned": "Decommissioned",
       "description": "Description",
@@ -1910,6 +1937,7 @@
       "landingPage": "Landing page",
       "manufacturers": "Manufacturers",
       "measuredVariables": "Measured variables",
+      "measurementTechnique": "Measurement technique",
       "model": "Model",
       "owners": "Owners",
       "pid": "PID",
@@ -1936,6 +1964,15 @@
     },
     "searchError": "Could not search the PID registry.",
     "selectRadioLabel": "Select record: {name}",
+    "skipped": {
+      "message": "{count, plural, one {# entry} other {# entries}} of the registry record could not be linked from the new instrument. Each is listed here with the reason.",
+      "reasons": {
+        "notAnAddressHere": "It is not the address of an item in this RSpace: <address/>",
+        "notAvailable": "The item it points at is not available to you: <address/>",
+        "otherServer": "It points at another server ({host}): <address/>"
+      },
+      "title": "Some registry entries were not imported"
+    },
     "title": "Import Instrument from PIDINST",
     "validation": {
       "alreadyLinked": "This PID is already linked to instrument {globalId}.",
@@ -2404,6 +2441,12 @@
       }
     },
     "controls": {
+      "bookable": {
+        "any": "Any",
+        "label": "Bookable",
+        "no": "Not bookable",
+        "yes": "Bookable"
+      },
       "nameDialog": {
         "duplicateName": "This name is already taken. Please modify it.",
         "helperText": "Please enter a unique name, no longer than 32 characters.",
@@ -2508,6 +2551,7 @@
     "parameterChips": {
       "basket": "Basket: {basket}",
       "benchOwner": "Bench Owner: {owner}",
+      "bookable": "Bookable: {value}",
       "contentsOf": "Contents of: {globalId}",
       "owner": "Owner: {owner}",
       "requestable": "Requestable only",

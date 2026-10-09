@@ -17,7 +17,9 @@ import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
@@ -49,10 +51,13 @@ public class SlackServiceTest {
 
     slackService.saveConversation(null, null, null, null, null, null, null, null);
 
+    HttpHeaders json = new HttpHeaders();
+    json.setContentType(MediaType.APPLICATION_JSON);
     HttpEntity<String> expectedMessage =
         new HttpEntity<>(
             "{\"text\":\"No messages found in a selected time period.\",\"channel\":null,"
-                + "\"type\":null,\"attachments\":[],\"ts\":null,\"user\":null}");
+                + "\"type\":null,\"attachments\":[],\"ts\":null,\"user\":null}",
+            json);
     verify(restTemplate).postForEntity(null, expectedMessage, String.class);
   }
 }

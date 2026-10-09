@@ -66,6 +66,7 @@
     "none": "None",
     "ok": "OK",
     "open": "Open",
+    "previous": "Previous",
     "publish": "Publish",
     "remove": "Remove",
     "republish": "Republish",
@@ -75,6 +76,7 @@
     "save": "Save",
     "search": "Search",
     "select": "Select",
+    "set": "Set",
     "share": "Share",
     "sign": "Sign",
     "submit": "Submit",
@@ -99,9 +101,11 @@
     "warningTitle": "Could not authenticate via API"
   },
   "apiDocs": {
+    "pageTitle": "RSpace API Documentation | ResearchSpace",
     "sources": {
       "eln": "RSpace ELN",
-      "inventory": "RSpace Inventory"
+      "inventory": "RSpace Inventory",
+      "v2": "RSpace v2 (beta)"
     }
   },
   "apiErrors": {
@@ -143,6 +147,7 @@
     "dialogHeader": "dialog header",
     "errorLoadingDetails": "Error loading your details",
     "goTo": "Go to...",
+    "logIn": "Log In",
     "logOut": "Log Out",
     "mainLinks": "main links",
     "mainNavigation": "Main Navigation",
@@ -157,6 +162,10 @@
     "published": "Published",
     "release": "Release",
     "sections": {
+      "booking": {
+        "subheader": "Reserve instruments and equipment",
+        "title": "Booking"
+      },
       "gallery": {
         "subheader": "Your files in RSpace and connected filestores",
         "title": "Gallery"
@@ -177,6 +186,38 @@
         "subheader": "Notebooks and documents",
         "title": "Workspace"
       }
+    },
+    "switchSection": "Switch section",
+    "userIdentity": "{fullName} ({username})"
+  },
+  "collectionForm": {
+    "actions": {
+      "clear": "Clear {field}",
+      "openOptions": "Show options for {field}"
+    },
+    "examples": {
+      "fields": {
+        "collaborators": "Collaborators",
+        "enabled": "Enabled",
+        "id": "ID",
+        "modified": "Modified",
+        "notes": "Notes",
+        "owner": "Owner",
+        "score": "Score",
+        "status": "Status",
+        "title": "Title",
+        "titleDescription": "The human-readable name of the record."
+      },
+      "inventoryItem": "Inventory item",
+      "record": "Research record",
+      "recordDetails": "Record details",
+      "records": "Research records",
+      "relationships": "Relationships"
+    },
+    "relationship": {
+      "empty": "No options found",
+      "remove": "Remove {item} from {field}",
+      "search": "Search {field}"
     }
   },
   "confirmationDialog": {
@@ -194,6 +235,33 @@
   },
   "errorBoundary": {
     "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
+  },
+  "featureFlags": {
+    "baseline": {
+      "controlLabel": "{flagName} baseline",
+      "description": "The instance-wide value used when a user has no override. The properties file can force it and make the flag read-only.",
+      "helpLabel": "What is the baseline value?",
+      "label": "Baseline"
+    },
+    "columns": {
+      "myValue": "My Value",
+      "name": "Name",
+      "source": "Source"
+    },
+    "errors": {
+      "requestFailed": "The feature flag request failed."
+    },
+    "overrideLabel": "{flagName} override",
+    "reload": {
+      "action": "Reload page to apply changes"
+    },
+    "tableLabel": "Feature flags",
+    "title": "Feature Flags",
+    "values": {
+      "off": "Off",
+      "on": "On"
+    },
+    "warning": "Baseline changes affect every user. Changes made without RSpace support are not covered by RSpace support agreements."
   },
   "folderSelectionDialog": {
     "selectedFolder": "Selected folder",
@@ -295,6 +363,7 @@
     "zenodo": "8i37k8kjqz-zenodo-integration"
   },
   "helpDocs": {
+    "brand": "Support",
     "chatWithUs": "Chat with us",
     "documentation": "RSpace Documentation",
     "openHelp": "Open Help",
@@ -370,6 +439,23 @@
     "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
   },
   "loading": "Loading",
+  "maintenanceMode": {
+    "description": "Scheduled maintenance is in progress now. Please try again later.",
+    "heading": "Maintenance mode",
+    "recheckNotice": "This page rechecks automatically every 30 seconds, or you can <internalLink to=\"/login\">check the status now</internalLink>."
+  },
+  "notFound": {
+    "message": "Page not found"
+  },
+  "pageTitles": {
+    "withProduct": "{pageTitle} | RSpace"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "morePages": "More pages",
+    "nextPage": "Go to next page",
+    "previousPage": "Go to previous page"
+  },
   "profile": {
     "accountActivity": {
       "action": "Action",
@@ -618,6 +704,88 @@
       "singular": "Record"
     }
   },
+  "relationshipPicker": {
+    "availabilityChecking": "Checking whether this item can be added.",
+    "availabilityFailed": "RSpace could not check this item. Search again.",
+    "clear": "Clear the selection",
+    "empty": "No matching records found",
+    "enterSearchTerm": "Enter a search term",
+    "failed": "Search is unavailable. Try again.",
+    "openOptions": "Show matching records",
+    "remove": "Remove {item}",
+    "restoreFailed": "Could not restore this saved selection. Try again.",
+    "search": "Search by name or global ID",
+    "searchTooShort": "Type at least {count, plural, one {# character} other {# characters}} to search.",
+    "unavailable": "{value} (unavailable)"
+  },
+  "resourceAccess": {
+    "actions": "Actions",
+    "addNamed": "Add {name}",
+    "addUserOrGroup": "Add user or group",
+    "assignmentCount": "{count, number} of {limit, number} named assignments",
+    "assignmentLimitError": "This resource already has the maximum of 100 named assignments.",
+    "assignments": "Access assignments",
+    "cancelled": "Unsaved access changes were cancelled.",
+    "conflict": "Access changed elsewhere. Your draft has been kept. Review the latest assignments before saving again.",
+    "conflictCount": "Access changed elsewhere. Resolve {count, plural, one {this conflict} other {these # conflicts}} before saving.",
+    "conflictMerged": "Independent access changes were merged into your draft. Review and save again.",
+    "conflictRefreshError": "The latest access could not be loaded. Try again before reviewing your draft.",
+    "conflictTitle": "Access changed",
+    "directRole": "Direct role",
+    "inherited": "Permissions are inherited from the Inventory item",
+    "inheritedOpenInventory": "Open Inventory permissions",
+    "keepMine": "Keep mine",
+    "kind": {
+      "group": "Group",
+      "user": "User"
+    },
+    "lastOwner": "Add another {role} first.",
+    "latestSaved": "Latest saved access",
+    "leaveConfirm": "You will lose access to this resource. Access you inherit through a group or audience is not affected.",
+    "leaveError": "Could not leave this resource.",
+    "leaveSelf": "Leave: remove your own access",
+    "loadError": "Access could not be loaded.",
+    "loading": "Loading access.",
+    "noGrantees": "No matching user or group.",
+    "ownerInvariant": "At least one {role} must remain.",
+    "ownerOnly": "Only an {role} can change this.",
+    "refreshingLatest": "Loading latest access…",
+    "remove": "Remove",
+    "removeNamed": "Remove {name}",
+    "restore": "Restore",
+    "restoreNamed": "Restore {name}",
+    "retryLatest": "Retry loading latest",
+    "reviewLatest": "Review latest",
+    "roleFor": "Direct role for {name}",
+    "saveChanges": "Save changes",
+    "saved": "Access changes saved.",
+    "saveError": "Access changes could not be saved.",
+    "saving": "Saving access changes.",
+    "search": "Search",
+    "searchAssigned": "Search assigned users and groups",
+    "searchError": "Users and groups could not be searched.",
+    "searchHint": "Type at least {count} characters.",
+    "searching": "Searching…",
+    "searchPlaceholder": "Search users and groups…",
+    "searchResults": "User and group search results",
+    "showGrantees": "Show matching users and groups",
+    "staged": {
+      "added": "Staged: added as {role}",
+      "changed": "Staged: {from} to {to}",
+      "removed": "Staged: removal"
+    },
+    "stagedAdd": "Added {name} to the access draft.",
+    "unavailable": "Unavailable",
+    "unavailableGroup": "Unavailable group",
+    "unavailableUser": "Unavailable user",
+    "unsaved": "Access changes are not yet saved.",
+    "unsavedChanges": "Unsaved changes",
+    "useLatest": "Use latest",
+    "userOrGroup": "User/Group",
+    "viewOnly": "View only.",
+    "you": "You",
+    "yourDraft": "Your draft"
+  },
   "search": {
     "clearTooltip": "Clear search",
     "placeholder": "Search..."
@@ -690,6 +858,11 @@
     "titleSingle": "Share <strong>{name}</strong>",
     "unknownFolder": "Unknown folder",
     "updatedSuccessfully": "Shares updated successfully."
+  },
+  "sidebar": {
+    "description": "Displays the mobile sidebar.",
+    "title": "Sidebar",
+    "toggle": "Toggle sidebar"
   },
   "stoichiometry": {
     "addReagent": {
@@ -834,6 +1007,213 @@
       "exportToCsv": "Export to CSV"
     }
   },
+  "tableList": {
+    "actions": {
+      "addFilter": "Add filter",
+      "applyFilters": "Apply filters",
+      "clearAll": "Clear all",
+      "closeColumns": "Close columns",
+      "closeFilters": "Close filters",
+      "closeSorting": "Close sorting",
+      "createNew": "Create new",
+      "hideColumn": "Hide {column} column",
+      "moveColumn": "Drag {column} column",
+      "moveFilter": "Drag filter {number}",
+      "moveSort": "Drag sort rule {number}",
+      "nextPage": "Next page",
+      "previousPage": "Previous page",
+      "removeFilter": "Remove filter {number}",
+      "removeSort": "Remove {column} from sorting",
+      "resetColumns": "Reset columns",
+      "resetToDefaults": "Reset filters, sorting, and columns to defaults",
+      "resizeColumn": "Resize column",
+      "sortBy": "Sort by {column}"
+    },
+    "alerts": {
+      "dismiss": "Dismiss",
+      "label": "Recent changes",
+      "undo": "Undo",
+      "undoFailed": "This change could not be undone.",
+      "undoing": "Undoing…"
+    },
+    "cardView": "{collection} cards",
+    "columns": {
+      "customised": "Columns, {count} of {total} shown",
+      "hidden": "Hidden",
+      "hiddenEmpty": "Drag a shown column here to hide it",
+      "shown": "Shown",
+      "shownEmpty": "Drop a hidden column here",
+      "title": "Arrange columns"
+    },
+    "empty": {
+      "description": "Try changing the search or filter criteria.",
+      "title": "No records found"
+    },
+    "error": {
+      "customFieldColumnLimit": "A table can show at most {{limit}} custom field columns.",
+      "description": "The records could not be loaded.",
+      "title": "Something went wrong"
+    },
+    "examples": {
+      "description": "Find notebooks, protocols, and datasets across your workspace.",
+      "fields": {
+        "collaborators": "Collaborators",
+        "draft": "Draft",
+        "enabled": "Enabled",
+        "id": "ID",
+        "modified": "Modified",
+        "notes": "Notes",
+        "owner": "Owner",
+        "published": "Published",
+        "score": "Score",
+        "status": "Status",
+        "targetName": "Bookable item name",
+        "title": "Title",
+        "titleDescription": "The human-readable name of the record."
+      },
+      "record": "Research record",
+      "records": "Research records"
+    },
+    "fieldGroups": {
+      "customFields": "Custom fields",
+      "extraFields": "Extra fields",
+      "relationshipFields": "Related record fields"
+    },
+    "fields": {
+      "createdBy": "Created by",
+      "location": "Location",
+      "updatedBy": "Updated by"
+    },
+    "filters": {
+      "alsoShowAsColumn": "Show as column",
+      "and": "And",
+      "applied": "Filters, {count} applied",
+      "customField": {
+        "attached": "This rule filters on the target's field, through the relationship.",
+        "noMatch": "No matching custom field.",
+        "onlySelectionAttaches": "Searching loads definitions. Only choosing one attaches it to this rule.",
+        "option": "Custom field…",
+        "optionVia": "Custom field on {via}…",
+        "prompt": "Choose a custom field below.",
+        "searchFailed": "Custom fields could not be searched.",
+        "searchLabel": "Search custom fields for filter {number}",
+        "searchLabelVia": "Search {via} custom fields for filter {number}",
+        "searchPlaceholder": "Search custom fields by name or ID"
+      },
+      "editFilters": "Edit filters",
+      "field": "Field for filter {number}",
+      "fieldSearch": {
+        "clear": "Clear the field search",
+        "noMatch": "No matching field.",
+        "placeholder": "Search fields",
+        "trigger": "Show fields"
+      },
+      "missing": "is missing",
+      "multiSelect": {
+        "customPlaceholder": "Type a value and press Enter",
+        "empty": "No matching values found",
+        "enterValue": "Enter a value",
+        "remove": "Remove {value}"
+      },
+      "noneApplied": "Filters, none applied",
+      "openRecord": "Open {globalId}",
+      "operator": "Operator for filter {number}",
+      "operators": {
+        "contains": "contains",
+        "equals": "equals",
+        "exists": "exists",
+        "greaterThan": "is greater than",
+        "greaterThanOrEqual": "is at least",
+        "in": "is one of",
+        "lessThan": "is less than",
+        "lessThanOrEqual": "is at most",
+        "matches": "matches pattern",
+        "notEquals": "does not equal",
+        "notIn": "is not one of"
+      },
+      "operatorSearch": {
+        "clear": "Clear the operator search",
+        "noMatch": "No matching operator.",
+        "placeholder": "Search operators",
+        "trigger": "Show operators"
+      },
+      "panelSummary": "{count, plural, =0 {No other filters} one {# other filter} other {# other filters}}",
+      "placeholders": {
+        "pattern": "Use * as a wildcard",
+        "value": "Enter a value"
+      },
+      "present": "is present",
+      "savedGroup": "Saved filter group",
+      "suggestions": {
+        "loading": "Searching…",
+        "minimumLength": "Type {count} characters to search",
+        "noMatch": "No matching value. Your text still filters.",
+        "truncated": "More values match than are shown. Keep typing to narrow.",
+        "unavailable": "Suggestions are unavailable. You can still type a value."
+      },
+      "title": "Filter records",
+      "value": "Value for filter {number}",
+      "valueSearch": {
+        "clear": "Clear the value",
+        "noMatch": "No matching value.",
+        "trigger": "Show values"
+      },
+      "where": "Where"
+    },
+    "loading": "Loading records",
+    "offline": "You are offline. Results may be out of date. Pending requests will resume when you reconnect.",
+    "page": "Page {page} of {pages}",
+    "refreshing": "Refreshing records",
+    "results": "{first}–{last} of {total} records",
+    "rows": "Rows",
+    "rowsPerPage": "Rows per page",
+    "savedView": {
+      "invalid": "The saved view contains an invalid or unavailable field. Reset the view to continue.",
+      "loadFailed": "The saved view could not be loaded. Retry to keep its filters.",
+      "reset": "Reset saved view",
+      "retry": "Retry"
+    },
+    "search": {
+      "clear": "Clear search",
+      "label": "Search {collection}",
+      "placeholder": "Search records"
+    },
+    "selection": {
+      "clear": "Clear selection",
+      "count": "{count, plural, one {# row selected} other {# rows selected}}",
+      "limit": "You can select up to {count, number} rows.",
+      "regionLabel": "Selected rows actions",
+      "selectAllPage": "Select all rows on this page",
+      "selectRow": "Select {row}"
+    },
+    "sorting": {
+      "applied": "Sort, {count} rules active",
+      "ascending": "Ascending",
+      "descending": "Descending",
+      "direction": "Direction for {column}",
+      "empty": "Select a column header to add a sort rule.",
+      "title": "Sort priority"
+    },
+    "targetFields": {
+      "createdAt": "Created at",
+      "deleted": "Deleted",
+      "email": "Email",
+      "firstName": "First name",
+      "globalId": "Global ID",
+      "id": "ID",
+      "lastName": "Last name",
+      "name": "Name",
+      "updatedAt": "Updated at",
+      "username": "Username"
+    },
+    "toolbar": {
+      "columns": "Columns",
+      "filters": "Filters",
+      "sorting": "Sort"
+    },
+    "tooltip": "About {column}",
+    "view": "{collection} table"
+  },
   "tags": {
     "addTag": "Add Tag",
     "checkOntologyFiles": "Please check that the ontology files are correctly configured.",
@@ -930,9 +1310,11 @@
     "sendMessage": "Send a message"
   },
   "values": {
+    "inventoryGlobalId": "Inventory global ID",
     "none": "None",
     "noValue": "No Value",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "unknownItem": "Unknown item"
   },
   "versionLockPicker": {
     "columns": {

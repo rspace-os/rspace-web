@@ -69,6 +69,28 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1341-remove-evernote.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1309.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1326.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-scheduledmaintenance-nullable-stopuserlogindate.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-configuration.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-time-slot-booking.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-time-slot-booking-kind.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-cancellation-reason.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-settings.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscriptions.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-user-booking-calendar-subscriptions.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-display-preferences.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-configuration-soft-delete.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-resource-access.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-configuration-state.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-notification-subscriptions.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1225.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-custom-field-index.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-extra-field-index.xml"/>
+
+    <include relativeToChangelogFile="true" file="changeLog-booking-inherited-access.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-booking-opening-weekdays.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-booking-time-format.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed-edge-cases.xml"/>
 
   <!-- These two run last: recurring-changeLog.xml (runAlways diagnostics / batch re-init) then
        customUpdates-changeLog.xml. customUpdates-changeLog.xml must ALWAYS be the final include

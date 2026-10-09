@@ -1,7 +1,7 @@
 import type { SysadminClient } from "@/__tests__/e2e/api/clients/SysadminClient";
 import { alphaNumericUnique, DYNAMIC_USER_PASSWORD } from "@/__tests__/e2e/testData";
 
-export type DynamicUser = { username: string; fullName: string; apiKey: string };
+export type DynamicUser = { id: number; username: string; fullName: string; apiKey: string };
 
 // Shared across specs and fixtures
 export async function createDynamicUser(
@@ -12,7 +12,7 @@ export async function createDynamicUser(
 ): Promise<DynamicUser> {
   const username = alphaNumericUnique(namePrefix);
   const apiKey = alphaNumericUnique("e2eApiKey");
-  await clientSysadmin.createUser({
+  const created = await clientSysadmin.createUser({
     username,
     password: DYNAMIC_USER_PASSWORD,
     email: `${username}@example.com`,
@@ -21,5 +21,5 @@ export async function createDynamicUser(
     role,
     apiKey,
   });
-  return { username, fullName: `E2E ${lastName}`, apiKey };
+  return { id: created.id, username, fullName: `E2E ${lastName}`, apiKey };
 }

@@ -51,6 +51,8 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
       message = "{errors.inventory.search.deletedItems.invalid}")
   private String deletedItems;
 
+  private Boolean bookable;
+
   /**
    * Limits Sample search results to samples with a matching {@code requestable} value. When {@code
    * true}, this is an instance-wide search across all requestable Samples, regardless of the
@@ -133,6 +135,9 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
     }
     if (requestable != null) {
       rc.add("requestable", requestable.toString());
+    }
+    if (bookable != null) {
+      rc.add("bookable", bookable.toString());
     }
     return rc;
   }

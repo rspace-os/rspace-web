@@ -1,0 +1,925 @@
+# Connect an endpoint to Table List
+
+This guide explains how to connect collection data to `TableList`.
+
+Use the REST API v2 hook for a REST API v2 collection. Use a custom fetcher for an endpoint with
+different wire rules.
+
+Read the [REST API v2 collection guide](./RestApiV2Collections.md) before you add a backend
+collection.
+
+If a page owns table filters, pagination, and extra controls in one route search state,
+pass `onReset` to `TableList`. That callback replaces the default per-feature resets,
+including `filterButtons.onReset`; it must reset the complete view in one update.
+For example, the booking catalogue clears its date, availability, target, search,
+type filters, and page together while retaining the selected page size. Independent state owners
+can omit the callback and keep the built-in reset behavior.
+
+Quick filters (`filterButtons.buttons`) render as toolbar toggles by default. Set
+`filterButtons.presentation: "menu"` to move them into the Filters button's popover as switches,
+next to an "Edit filters" action that opens the filter panel; the Filters badge then counts
+pressed quick filters as well as panel filters. The toolbar no longer shows which quick filters
+are on, so the page must, for example as removable chips (the booking Calendar does this). Give
+each button a `description`; the popover shows it under the switch. Without a filter panel
+(`filtering: false` or `hideFilterPanel`), quick filters stay as toolbar toggles.
+
+Booking catalogue text search matches instrument names, descriptions, readable immediate-parent
+location names, and exact `IN` global IDs. Creation pickers send the required `capability` so
+permission filtering happens before pagination and totals are calculated. Empty result sets
+have no type facets. The administration collection also accepts exact instrument IDs in its
+text search; invalid or out-of-range IDs remain ordinary name searches.
+
+## Design summary
+
+The module has one endpoint interface:
+
+```ts
+export type CollectionFetcher<TDocument> = (
+  state: CollectionQueryState<TDocument>,
+  context: { signal: AbortSignal },
+) => Promise<CollectionPage<TDocument>>;
+```
+
+A REST API v2 fetcher and a custom fetcher use this interface. The table does not know which
+fetcher it uses.
+
+The `useTableList` hook owns these values:
+
+- Filters.
+- Sort rules.
+- Page values.
+- Visible fields.
+- Remote query state.
+
+The hook returns `tableProps` for `TableList`. It also returns the state and update functions for other components.
+
+```text
+OpenAPI metadata ----> REST API v2 adapter ----> CollectionFetcher
+                                                 |
+Custom endpoint ----> custom CollectionFetcher --+
+                                                 |
+                                                 v
+                                          useTableList
+                                         /            \
+                               state and updates    tableProps
+                                      |                 |
+                                      v                 v
+                              page components       TableList
+```
+
+## REST API v2 setup
+
+Use this procedure for most new tables.
+
+### 1. Define the document schema
+
+Sparse REST API v2 responses omit fields that the request does not select. Make these fields
+optional in the schema.
+
+Keep the ID and title fields required when every table request selects them.
+
+```ts
+import * as v from "valibot";
+
+export const ExperimentSchema = v.object({
+  id: v.string(),
+  title: v.string(),
+  owner: v.optional(v.string()),
+  ownerId: v.optional(v.number()),
+  enabled: v.optional(v.boolean()),
+  modifiedAt: v.optional(v.string()),
+});
+
+export type Experiment = v.InferOutput<typeof ExperimentSchema>;
+```
+
+### 2. Define one collection configuration
+
+Put wire field types and display rules in one field entry.
+
+```tsx
+import type { CollectionConfig } from
+  "@/modules/common/collection/collectionConfig";
+
+export const experimentConfig = {
+  slug: "experiments",
+  idField: "id",
+  useAsTitle: "title",
+  defaultColumns: ["title", "owner", "enabled", "modifiedAt"],
+  listSearchableFields: ["title", "owner"],
+  pagination: {
+    defaultLimit: 25,
+    limits: [10, 25, 50, 100],
+  },
+  labels: {
+    singularKey: "experiments.labels.singular",
+    pluralKey: "experiments.labels.plural",
+    descriptionKey: "experiments.labels.description",
+  },
+  fields: [
+    {
+      name: "id",
+      type: "text",
+      labelKey: "experiments.fields.id",
+      readOnly: true,
+      list: false,
+    },
+    {
+      name: "title",
+      type: "text",
+      labelKey: "experiments.fields.title",
+      maximumLength: 255,
+    },
+    {
+      name: "owner",
+      type: "text",
+      labelKey: "experiments.fields.owner",
+    },
+    {
+      name: "ownerId",
+      type: "number",
+      labelKey: "experiments.fields.ownerId",
+      readOnly: true,
+      list: false,
+    },
+    {
+      name: "enabled",
+      type: "boolean",
+      labelKey: "experiments.fields.enabled",
+    },
+    {
+      name: "modifiedAt",
+      type: "dateTime",
+      labelKey: "experiments.fields.modifiedAt",
+      readOnly: true,
+    },
+  ],
+} satisfies CollectionConfig<Experiment>;
+```
+
+The adapter replaces field capabilities with the generated API rules. The table cannot offer an unsupported sort or filter.
+
+### Fields of a relationship target
+
+A collection config declares a relationship once. The adapter derives one optional field for each
+target field in `x-rspace-relationship-fields`. For example, it names `target.name` as
+"Bookable item → Name". You do not have to declare each target field separately. The adapter also
+exposes published relationship fields when their owner is absent from the collection config, such
+as `createdBy.username` and `updatedBy.username`. These fields remain filter-only and serialize the
+published selector without adding response fields. Their owner label uses the relationship's
+`viaTitle` metadata, falling back to the owner selector when no title is published.
+
+`createApiV2CollectionAdapter` makes each derived field an optional hidden column and sets
+`form: false`. A published field with operators is also a filter field. A field without operators
+is only a column. For example, a global ID derived from an ID has no operators and does not appear
+in the filter panel. The adapter excludes the relationship wire fields `value` and `relationTo`.
+
+Derived field values come from the expanded relationship. When a derived field is visible, the
+adapter requests `depth=1`. The page's document schema does not have to declare derived fields.
+Valibot drops undeclared keys, so the adapter restores the other target fields after parsing. The
+renderer reads each value through its owner relationship. Sparse field requests select the owner
+relationship instead of the dotted selector.
+
+The field label combines the translated relationship label and the target field title, such as
+"Bookable item → Name". When the server publishes no title, the adapter uses the shared
+`common:tableList.targetFields.<field>` label, such as "Created by → First name", and falls back
+to the field name only for a field that the catalog does not name. An owner without a configured
+field uses `common:tableList.fields.<owner>`, such as "Created by", then the published
+`viaTitle`, then the owner name. A metadata-derived identity field, such as `location`, takes its
+label from the same `common:tableList.fields.<selector>` key.
+
+These keys carry their `common:` namespace, so a translator bound to another namespace, such as
+`useTranslation("booking")`, still resolves them. Pass a translator that forwards interpolation
+values: `(key, values) => String(t(key as never, values as never))`.
+
+### Search fields
+
+Use `listSearchableFields` as an explicit search allowlist. A selector can name a direct field or
+one field of a relationship target.
+
+```ts
+listSearchableFields: ["title", "target.name"]
+```
+
+The REST API v2 adapter requires each selector in `x-rspace-filter.selectors`. Each selector must
+support `=contains=` and describe text. Only one relationship hop is supported.
+
+The Search records input combines the selectors with OR. It combines that search group and an
+advanced filter with AND. Remote tables commit search input after 300 ms. Enter and Clear commit
+immediately. Client-side tables search immediately.
+
+Do not add every published selector to the allowlist. Each added selector creates another pattern
+comparison. The adapter rejects an allowlist above the API comparison limits.
+
+You can split large configuration parts into files. Keep the final exported value as one `CollectionConfig`.
+
+```ts
+export const experimentFields = [
+  // Field entries.
+] satisfies CollectionConfig<Experiment>["fields"];
+
+export const experimentConfig = {
+  // Collection settings.
+  fields: experimentFields,
+} satisfies CollectionConfig<Experiment>;
+```
+
+### 3. Add custom renderers when required
+
+Keep a custom renderer on the field that owns it. List each extra sparse field in `dependencies`.
+
+```tsx
+{
+  name: "owner",
+  type: "text",
+  labelKey: "experiments.fields.owner",
+  list: {
+    dependencies: ["ownerId"],
+    renderCell: ({ row }) => (
+      <OwnerLink id={row.ownerId}>{row.owner}</OwnerLink>
+    ),
+  },
+}
+```
+
+The REST API v2 adapter includes `ownerId` in the sparse field request. The column can remain
+hidden.
+
+Move renderers to a separate UI file when the configuration becomes difficult to scan.
+
+### 4. Use the REST API v2 hook
+
+Get the REST API v2 token with the existing authentication hook. Pass the token to
+`useApiV2TableList`.
+
+```tsx
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { TableList } from "@/modules/common/table-list/TableList";
+import { useApiV2TableList } from
+  "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
+
+export function ExperimentTable() {
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const table = useApiV2TableList({
+    resourceName: "experiments",
+    config: experimentConfig,
+    documentSchema: ExperimentSchema,
+    request: { token },
+    query: { keepPreviousData: true },
+  });
+
+  return <TableList {...table.tableProps} />;
+}
+```
+
+The hook performs these actions:
+
+1. It loads `/api/v2/openapi.json` through the shared query cache.
+2. It reads the resource fields, filters, sort rules, and limits.
+3. It creates the REST API v2 query parameters.
+4. It sends the collection request with the token.
+5. It validates the REST API v2 list envelope.
+6. It returns normalized rows and a row count.
+
+OpenAPI metadata stays fresh for the application session. A deployment starts a new browser session with new assets and metadata.
+
+By default, a REST API v2 table requests its visible fields. Use a fixed projection for a small
+collection with lightweight fields. This option can avoid refetching after each column selection.
+
+```tsx
+request: {
+  token,
+  projection: { fixed: ["id", "title", "owner", "updatedAt"] },
+},
+```
+
+The field names are checked against the document type. The adapter still adds the configured ID,
+title, and renderer dependency fields. With a fixed projection, changing column visibility or order is
+a local presentation change. Filtering, sorting, and pagination still create new server requests.
+
+### 5. Change common query behavior
+
+Use the `query` object for common TanStack Query settings.
+
+```tsx
+const table = useApiV2TableList({
+  resourceName: "experiments",
+  config: experimentConfig,
+  documentSchema: ExperimentSchema,
+  request: { token },
+  query: {
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+    retry: 2,
+    refetchInterval: false,
+    keepPreviousData: true,
+  },
+});
+```
+
+The hook keys queries by the effective API request parameters. A filter, sort, or page change creates
+the correct cache entry. Presentation changes reuse the current query when they do not change the
+effective field projection.
+
+The hook passes an `AbortSignal` to the fetcher. TanStack Query can cancel an obsolete request.
+
+## Host row interactions once
+
+Use `rowActions` when a row control opens a dialog, drawer, form, or other stateful interaction.
+The table stores only the active action and row IDs, so the interaction is mounted once outside the
+rows. Links and immediate controls can remain inside `renderCell`. Call `activate` only when the
+list-level interaction is required.
+
+```tsx
+const rowActions = {
+  id: "actions",
+  label: "Actions",
+  renderCell: ({ row, activate }) => (
+    <button type="button" onClick={() => activate("delete")}>
+      Delete {row.title}
+    </button>
+  ),
+  renderInteraction: ({ actionId, row, close }) =>
+    actionId === "delete" ? <DeleteDialog row={row} onClose={close} /> : null,
+} satisfies TableListRowActions<Experiment>;
+
+<TableList {...table.tableProps} rowActions={rowActions} />;
+```
+
+Keep `uiColumns` for display-only custom columns. Do not mount a stateful dialog in every
+`uiColumns.renderCell` call.
+
+## Report action results with alerts
+
+Any control rendered inside a `TableList` (row actions, selection actions, toolbar controls, and
+`renderInteraction`) can report a result as a one-line alert above the table with
+`useTableListAlerts()`. `push` accepts several alerts at once; pushing an existing `id` replaces
+that alert, and the stack shows the newest first. Each alert has a Dismiss control and an optional
+Undo.
+
+```tsx
+const alerts = useTableListAlerts();
+
+alerts.push({
+  id: `booking-cancelled-${row.id}`,
+  tone: "warning",
+  icon: <CalendarX2Icon aria-hidden="true" />,
+  message: t("myBookings.cancelled.alert", { itemName, period }),
+  undo: {
+    run: () => restoreBooking(row.id, cancelled.version, token).then(invalidateBookings),
+    focusRowId: String(row.id),
+    describeError: (error) => t("myBookings.cancelled.undoFailed", { reason: bookingProblemMessage(error, t) }),
+  },
+});
+```
+
+The table owns the state, and `push` is stable, so an action may push from a callback that outlives
+its row (a dialog whose confirmation removes the row). The stack sits in a polite live region, so
+new alerts are announced. Focus rules:
+
+- A pushed alert takes focus only once the control that acted has gone, for example because its row
+  left after a refetch. A persistent button, such as a bulk action, keeps focus.
+- Dismiss focuses the next alert, or the table's Filters control (else its search) when none is left.
+- Undo disables the alert's buttons while it runs. On success the alert goes and focus moves to the
+  first control of `focusRowId`'s row once that row is shown again (after about five seconds, to
+  Filters). On failure the alert stays, shows `describeError`'s text (or a generic message) without
+  Undo, and takes focus.
+
+Row-action cells carry `data-table-list-row-actions` with the row ID for this lookup. `getRowId`
+from `useTableList` is stable, and TableList reads a caller's `getRowId` through a ref: a new
+identity would rebuild the columns and re-mount every row's cells, closing open menus and dialogs.
+
+## Add controlled row selection
+
+Pass `selection` when a page supplies bulk actions. The selected IDs stay in the page component,
+so selection can continue across remote pages.
+
+```tsx
+<TableList
+  {...table.tableProps}
+  selection={{
+    value: selectedRowIds,
+    onChange: setSelectedRowIds,
+    maximumCount: 1000,
+    getRowLabel: (row) => row.title,
+    renderActions: ({ selectedRowIds, clearSelection }) => (
+      <BulkActions ids={selectedRowIds} onComplete={clearSelection} />
+    ),
+  }}
+/>
+```
+
+`maximumCount` must be positive. The header checkbox changes only rows on the visible page.
+Previously selected IDs on other pages remain selected. Set `disabled` while a bulk request is in
+progress. The table keeps a selected row removable after the selection reaches its limit.
+
+## Access and update table state
+
+Remote tables (`clientSide={false}`) show an offline notice using React Query's online state.
+Cached rows remain visible; paused queries resume automatically when the connection returns.
+Do not add per-page browser connectivity listeners or force retries while offline.
+
+The table does not hide its state. The hook returns the complete state and focused update functions.
+
+```ts
+const {
+  state,
+  setState,
+  setFilters,
+  setSorting,
+  setPage,
+  setVisibleFields,
+  tableProps,
+  refetch,
+} = useApiV2TableList(options);
+```
+
+Any component in the same React owner can read these values. Pass only the required value and function to a child.
+
+```tsx
+function ExperimentPage() {
+  const table = useApiV2TableList(options);
+
+  return (
+    <>
+      <SelectionSummary
+        search={table.state.filters.search}
+        clearSearch={() =>
+          table.setFilters({
+            ...table.state.filters,
+            search: "",
+          })
+        }
+      />
+      <TableList {...table.tableProps} />
+    </>
+  );
+}
+```
+
+`setFilters` and `setSorting` return the table to page zero. This behavior prevents an empty later page after a query change.
+
+Use `setPage` to add an external page control.
+
+```tsx
+<button
+  type="button"
+  onClick={() => table.setPage({ ...table.state.page, pageIndex: 0 })}
+>
+  First page
+</button>
+```
+
+Use `setVisibleFields` to implement a saved column preset.
+
+```tsx
+<button
+  type="button"
+  onClick={() => table.setVisibleFields(["title", "owner"])}
+>
+  Use compact columns
+</button>
+```
+
+Use `setState` when one action must change several state parts atomically.
+
+```tsx
+function showEnabledExperiments() {
+  table.setState((current) => ({
+    ...current,
+    filters: {
+      search: "",
+      expression: {
+        kind: "comparison",
+        field: "enabled",
+        operator: "equals",
+        value: true,
+      },
+    },
+    page: { ...current.page, pageIndex: 0 },
+  }));
+}
+```
+
+Lift the hook to the nearest common owner when distant siblings need the same state.
+
+## Browser query and storage defaults
+
+`TableList` writes search text, RSQL filters, visible fields, and ordered sorting to the query string
+by default. Users can share the configured view.
+
+The default parameter prefix is the collection slug.
+
+```text
+?experiments.q=Ada
+&experiments.where=enabled==true;timezone=in=(Europe/Berlin,America/New_York)
+&experiments.columns=...
+&experiments.sort=title,-modifiedAt
+```
+
+The `q` parameter contains the search text. The `where` parameter contains the RSQL filter expression.
+The `sort` parameter lists sort priority. A leading minus sign selects descending order.
+
+`TableList` parses the `where` parameter into `FilterExpression` state. REST API v2 adapters and
+custom fetch functions receive the same state.
+
+`TableList` can read the old `filters` parameter. It writes `q` and `where` after the next filter change.
+
+The table also stores filters, sorting, and visible fields in
+`rspace.tableList.<tableId>.view`. The browser profile owns this storage. Pagination and column
+widths are not stored.
+
+A customised column selection also records the configured `defaultColumns` it was saved against.
+When a later release adds a default column, loading the view inserts it after the default that
+precedes it instead of hiding it behind the old selection. A default the user removed after seeing
+it stays hidden. Views saved before this record existed gain every missing default once.
+
+The collection slug is the default `tableId`. Set a stable, unique ID when independent views use
+the same collection configuration.
+
+```tsx
+const table = useApiV2TableList({
+  table: {
+    queryString: {
+      parameterPrefix: "active-experiments",
+      tableId: "experiments-active-view",
+    },
+  },
+});
+```
+
+An initial URL parameter overrides the complete stored view. Empty and invalid owned parameters
+also override storage. The table then writes the parsed canonical state. It removes malformed or
+unsupported storage. A stale stored member returns to its configured default without changing valid
+members.
+
+Set a unique prefix when one page contains multiple tables.
+
+```tsx
+const table = useApiV2TableList({
+  table: {
+    queryString: { parameterPrefix: "active-experiments" },
+  },
+});
+```
+
+Disable query updates for a temporary or sensitive view.
+
+```tsx
+const table = useApiV2TableList({
+  table: { queryString: false },
+});
+```
+
+This option also disables browser storage.
+
+## Reorder and resize the view
+
+The Filters, Sorting, and Columns panels use drag handles. The handles support a mouse, touch input,
+and a keyboard. Filters keep a draft order until the user applies them. Sorting changes immediately.
+
+The Columns panel separates shown and hidden fields. A user can reorder shown fields or move a
+field between sections. Hidden-field order is not stored because it does not affect the table.
+
+Each data-column header has a resize handle. A double-click restores the configured width. Widths
+remain local to the mounted table and are not written to the URL or browser storage.
+
+`variant="card"` adds a bordered container around the table. It does not render each record as a
+card. `variant="transparent"` removes that container treatment.
+
+## Runtime fields
+
+The REST API v2 adapter reads runtime-field namespaces from `x-rspace-runtime-fields`. Each namespace
+states whether its fields support filters, columns, or both.
+
+The Filters panel offers only namespaces with `filterable: true`. The Columns panel offers only
+namespaces with `columnSelectable: true`. Both panels search the published catalog URL. A selected
+definition becomes a normal resolved field in the table configuration.
+
+The catalog picker starts a request after two characters. It scopes each request to one namespace.
+It sends the REST API v2 bearer token and cancels obsolete requests through React Query.
+
+Free-text fields do not suggest stored values. This rule also applies to `in` and `notIn`. Those
+operators accept values that the user enters as chips. A select field uses only its published
+`options` values.
+
+Filter rows use one parent grid and CSS subgrid tracks. All rows therefore share the field, operator,
+value, optional-column, and remove-control widths.
+
+## Relationship filters
+
+A `relationship` field filters on the target global ID. When the target has a registered source,
+the filter panel shows a relationship picker. A user can search the target collection by name or
+global ID and select a record.
+
+API v2 identity selectors can publish an optional `picker` descriptor containing
+`resource`, `identity: "globalId"`, and `globalIdPrefix`. The adapter carries this
+into `filterPicker` on the resolved field. Metadata selects an application-owned
+source; it never supplies a fetch URL. Without picker metadata, existing relationship
+fields retain their `relationTo` lookup. An unregistered source retains typed input.
+
+Register sources in `src/modules/common/relationship-picker/relationshipSources.tsx`,
+or provide a collection's `relationshipSources` override keyed by resource name.
+Booking keeps its `booking-instruments` override so archived references resolve
+through booking configurations, using the same access policy as the booking list.
+Booking also registers `booking-locations` ("Location", `IC` values, searched through
+`/api/v2/booking-catalogue/locations`). A workbench location's filter value is `IC` plus its ID,
+while its option still shows its `BE` global ID.
+
+A source that answers an empty term with a useful first page sets `browsable: true`. The filter
+value picker then lists choices as soon as it opens, without typing. Both Booking sources
+browse. Leave the flag unset for a source that needs a term, such as a grantee directory.
+
+Each source owns these operations:
+
+- `search(term, token, signal)` returns display documents from its fixed route.
+- `normalizeValue(value)` returns a canonical wire value or `null` for invalid input.
+  Keep case-sensitive identities unchanged; the instrument adapter normalizes `IN` IDs.
+- `ownsValue(value)` identifies values belonging to this source.
+- `resolveMany(values, token, signal)` restores selected documents in bounded batches.
+  Unknown and inaccessible values produce the same missing result.
+- `toOption(document, context)` validates a document and supplies its stable value,
+  accessible label, and optional rendered content. The content renders inside the
+  listbox, so it must not contain links or other interactive elements: following one
+  would leave the page and lose the unsaved selection. Show a global ID as plain text.
+
+The source's batch limit must not exceed its endpoint's page or argument limits.
+Instrument restoration uses the collection's typed-ID `in` filter and sparse display
+fields. Deduplicate canonical values before chunking. Query keys include the source,
+caller scope, token, and selected values; never share cached options across callers.
+Keep the older optional `resolve` for callers that have not migrated to batch restore.
+
+A saved predicate remains present while restoration loads, fails, or cannot find its
+value. Restoring a label must never remove part of a filter. The `equals` and
+`notEquals` operators select one value; `in` and `notIn` select several.
+
+Runtime catalog routes are checked against the application allowlist both when
+metadata is parsed and immediately before fetch. The current approved routes are
+`/api/v2/instruments/fields/customFields` and
+`/api/v2/instruments/fields/extraFields`, including when a booking target delegates
+to them. New providers require an explicit allowlist entry. Queries are constructed
+locally and authenticated catalog requests refuse redirects.
+
+## Reuse collection fields in forms
+
+Use `RenderFields` when a create or edit page uses the same collection field configuration. Pass
+the resolved fields and a Formisch form store.
+
+```tsx
+const fields = resolveCollectionConfig(experimentConfig).fields;
+const form = useForm({ schema: ExperimentInputSchema, initialInput });
+
+<Form of={form} onSubmit={saveExperiment}>
+  <RenderFields fields={fields} form={form} />
+</Form>
+```
+
+Set `form: false` for a field that the form must omit. A field form configuration can set its
+description, widget, width, or display condition. `RenderFields` also supports row and section
+layout entries.
+
+A relationship field uses `relationshipSources` when its target has a registered remote source.
+Otherwise, pass static choices through `relationshipOptions`. Pass
+`relationshipOptionAvailability` when another record can make an option unavailable.
+
+## Complete client-side collections
+
+Use an explicit client data source when the browser has every row.
+
+```tsx
+const table = useTableList({
+  config,
+  dataSource: {
+    type: "client",
+    rows: allExperiments,
+  },
+});
+
+return <TableList {...table.tableProps} />;
+```
+
+TanStack Table filters, sorts, and pages these rows in the browser.
+
+Give client mode the complete collection. The table can process only the supplied rows.
+
+## Custom endpoint setup
+
+Use a custom fetcher when an endpoint has different parameters or response data.
+
+### 1. Resolve the collection configuration
+
+```ts
+import { resolveCollectionConfig } from
+  "@/modules/common/collection/resolveCollectionConfig";
+
+const config = resolveCollectionConfig<CustomExperiment>({
+  slug: "custom-experiments",
+  idField: "id",
+  useAsTitle: "name",
+  defaultColumns: ["name", "owner"],
+  listSearchableFields: ["name"],
+  pagination: { defaultLimit: 20, limits: [20, 50] },
+  labels: {
+    singularKey: "customExperiments.labels.singular",
+    pluralKey: "customExperiments.labels.plural",
+  },
+  fields: [
+    { name: "id", type: "number", labelKey: "customExperiments.fields.id" },
+    { name: "name", type: "text", labelKey: "customExperiments.fields.name" },
+    { name: "owner", type: "text", labelKey: "customExperiments.fields.owner" },
+  ],
+});
+```
+
+### 2. Implement the common fetch interface
+
+Keep parameter mapping and response validation in the endpoint module.
+
+```ts
+import type { CollectionFetcher } from
+  "@/modules/common/table-list/tableListState";
+
+export const fetchCustomExperiments:
+  CollectionFetcher<CustomExperiment> = async (state, { signal }) => {
+    const parameters = new URLSearchParams({
+      pageNumber: String(state.page.pageIndex),
+      pageSize: String(state.page.pageSize),
+      query: state.filters.search,
+      orderBy: state.sorting
+        .map((rule) => `${rule.field} ${rule.direction}`)
+        .join(","),
+    });
+    const response = await fetch(`/custom/experiments?${parameters}`, {
+      signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Experiment request failed with status ${response.status}`);
+    }
+    const input: unknown = await response.json();
+    const result = parseOrThrow(CustomExperimentPageSchema, input);
+    return {
+      rows: result.items,
+      rowCount: result.total,
+    };
+  };
+```
+
+### 3. Connect the custom fetcher
+
+```tsx
+const table = useTableList({
+  config,
+  dataSource: {
+    type: "remote",
+    queryKey: ["custom-experiments"],
+    fetch: fetchCustomExperiments,
+    staleTime: 30_000,
+    retry: 1,
+    keepPreviousData: true,
+  },
+});
+
+return <TableList {...table.tableProps} />;
+```
+
+Keep each custom mapping next to its endpoint.
+
+## Tests
+
+Test a REST API v2 table at these seams:
+
+1. Test the OpenAPI metadata reader with a small document fixture.
+2. Test table state conversion to REST API v2 parameters.
+3. Test response validation with the REST API v2 envelope.
+4. Test the HTTP fetcher with MSW.
+5. Test important custom renderers through the visible table.
+
+Test a custom fetcher with MSW. Assert its parameters, credentials, cancellation signal, and normalized result.
+
+Use semantic queries in component tests. Do not test private adapter functions.
+
+## Common errors
+
+### The table offers an unsupported control
+
+Check the generated OpenAPI metadata. Check the backend resource schema when the metadata is incorrect.
+
+### A custom cell has missing data
+
+Add the missing field to the renderer `dependencies`. Confirm that the document schema accepts the sparse response.
+
+### The request uses the wrong page
+
+Store a zero-based `pageIndex`. The REST API v2 adapter converts it to a one-based page.
+
+### A table processes only one server page
+
+Replace the client source with a remote source. Client mode requires the complete collection.
+
+### A page component cannot change table state
+
+Keep the result of the hook in the common React owner. Pass the required update function to the component.
+
+### Two tables overwrite the same URL parameters
+
+Give each table a unique `parameterPrefix`.
+
+## Source files
+
+- [Collection configuration](../../src/main/webapp/ui/src/modules/common/collection/collectionConfig.ts)
+- [Table state and fetch interface](../../src/main/webapp/ui/src/modules/common/table-list/tableListState.ts)
+- [Shared table hook](../../src/main/webapp/ui/src/modules/common/table-list/useTableList.ts)
+- [RSQL query codec](../../src/main/webapp/ui/src/modules/common/table-list/rsql/rsqlCodec.ts)
+- [Persisted view codec](../../src/main/webapp/ui/src/modules/common/table-list/tableViewState.ts)
+- [Browser view storage](../../src/main/webapp/ui/src/modules/common/table-list/tableViewStorage.ts)
+- [Collection form renderer](../../src/main/webapp/ui/src/modules/common/collection-form/RenderFields.tsx)
+- [Collection form types](../../src/main/webapp/ui/src/modules/common/collection-form/RenderFields.types.ts)
+- [REST API v2 metadata reader](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata.ts)
+- [REST API v2 adapter](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/createApiV2CollectionAdapter.ts)
+- [REST API v2 fetcher](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/createApiV2CollectionFetcher.ts)
+- [REST API v2 hook](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/useApiV2TableList.ts)
+- [RSQL serialization](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/rsql/serializeRsql.ts)
+- [REST API v2 Storybook example](../../src/main/webapp/ui/src/modules/common/table-list/TableListApiV2.stories.tsx)
+
+## Configure and test relationship-target filters
+
+For example, a booking-configuration table can filter by its instrument name. API metadata supplies
+the relationship's scalar filters even when the relationship is absent from the local config.
+Declare the relationship when the table also needs its column or a custom label:
+
+```ts
+{ name: "target", labelKey: "...", type: "relationship", relationTo: "instruments", hasMany: false },
+```
+
+Relationship identity filters use a record picker when a source is registered. Related scalar
+fields use their declared input type: text fields have a plain text input, numbers have a numeric
+input, and dates have a date input. Scalar fields do not fetch record-name suggestions.
+
+The filter picker groups target fields and their custom-field option under the relationship's
+label. Shared audit relationships use localized `Created by` and `Updated by` labels unless the
+config supplies its own label, and their untitled user fields use the localized target field
+labels described in [Fields of a relationship target](#fields-of-a-relationship-target). New relationship rules default to `equals` when supported;
+opening a saved rule preserves its operator.
+
+The server permits the `equals`, `in`, `contains`, and `matches` operators on a target field. It
+rejects all negative operators.
+
+Keep both `equals` and `matches`. Equality accepts `*` and anchors the complete value. `matches`
+finds words anywhere in the value. UI labels and placeholders must show this difference.
+
+Follow these rules in browser tests of the filter panel:
+
+- Pass `queryString: false`. Otherwise, nuqs retains one test's filter in the URL, and the next
+  mount starts with that filter.
+- Scope locators with `page.elementLocator(container)`. A page-wide query matches every mounted
+  copy of a story.
+
+## Reuse API v2 filters with a custom endpoint
+
+`useApiV2RuntimeFields` loads static resource metadata and hydrates the runtime selectors referenced
+by the current route. Pass the effective subject ID as `request.authScope`, alongside the OAuth
+`token`. Static metadata is shared; definitions and selected fields are scoped to the caller,
+resource, and catalogue URLs. A token callback requires an explicit `authScope`.
+
+Use `enrichApiV2FilterConfig({ config, metadata, runtimeFields, localFields })` when an endpoint
+returns its own DTO. It derives the same relationship and runtime filters as the collection adapter,
+but leaves derived fields out of column selection. `localFields` explicitly identifies filters the
+page resolves itself, such as booking availability. All other filter operators come from API
+metadata. Keep DTO parsing, pagination, and query composition in the endpoint's own fetcher.
+
+All bookable items uses this path with the booking catalogue. Availability is a local filter
+field that the server evaluates: the table requests its own page at its own page size, passing a
+top-level availability rule as the catalogue's `availability` parameter, and the quick-filter
+badges read `/api/v2/booking-catalogue/availability-counts`. No request pages through the
+catalogue. Contradictory availability rules match nothing, and an availability rule inside an OR
+group is reported as an unavailable restored filter. See "Booking catalogue availability quick
+filters" in `RestApiV2Collections.md`.
+
+A collection config can contribute `relationshipSources`, keyed by the field's `relationTo`.
+These override the default picker sources for that table. Sources own search and saved-ID resolution;
+booking uses catalogue discovery and visible configuration/booking references for historical IDs.
+An unavailable saved ID remains visible instead of being dropped from the filter.
+
+## Restore saved views without broadening requests
+
+`useApiV2TableList` mounts its persistence reader through `tableProps.stateSync`. Spread the complete
+`tableProps` onto `TableList`; the collection query waits for that reader when persistence is enabled.
+`queryString: false` needs no Nuqs provider. Persisted tables require the normal Nuqs adapter.
+
+Runtime definition loading blocks collection requests. A network failure offers Retry; malformed
+or unavailable fields preserve the encoded view and offer an explicit reset. Navigation into an
+unresolved rule cannot overwrite the saved view or issue an unfiltered request. Custom route-owned
+pages must apply the same gating using `pending`, `error`, and `missing` from the runtime hook and
+pass `restoredViewIssue` to the table. Pass `runtimeFieldAuthScope` with runtime definitions and the
+selection callback so picker searches use the same caller scope.
+
+Custom remote sources can use `dataSource.enabled`, including a state predicate, to defer a query
+until their route state is ready. `dataScope` prevents `keepPreviousData` from displaying the previous
+caller's rows when the effective subject changes.
+
+### Saved Boolean groups in the filter editor
+
+The row editor edits direct AND comparisons. Nested AND/OR groups restored from a URL remain
+visible as saved groups and survive Apply alongside edited comparisons. A group can be removed
+explicitly, or Clear all removes the entire expression. The row editor does not edit the inside
+of a nested group; callers must not flatten or discard it when opening the panel.

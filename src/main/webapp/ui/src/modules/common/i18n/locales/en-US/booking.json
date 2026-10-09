@@ -1,0 +1,1237 @@
+{
+  "access": {
+    "allUsers": "All users",
+    "editInventoryPermissions": "To edit the permissions, <inventoryLink>go to the inventory item's settings</inventoryLink>.",
+    "leave": "Leave configuration",
+    "roles": {
+      "booker": {
+        "description": "Can view the schedule, subscribe, create bookings, and manage their own bookings.",
+        "label": "Booker"
+      },
+      "manager": {
+        "description": "Can manage configuration, events, and non-owner access.",
+        "label": "Manager"
+      },
+      "noAccess": {
+        "description": "Does not grant public access. Direct user and group access still applies.",
+        "label": "No access"
+      },
+      "owner": {
+        "description": "Full control, including Owners and archiving.",
+        "label": "Owner"
+      },
+      "viewer": {
+        "description": "Can view the schedule and subscribe to the calendar.",
+        "label": "Viewer"
+      }
+    }
+  },
+  "allBookableItems": {
+    "actions": {
+      "access": "Access",
+      "book": "Book",
+      "nextDay": "Next day",
+      "previousDay": "Previous day",
+      "settings": "Settings",
+      "today": "Today",
+      "viewDetails": "View details"
+    },
+    "date": "Date",
+    "dateControls": "Availability date controls",
+    "dateNavigation": "Availability date navigation",
+    "fields": {
+      "actions": "Actions"
+    },
+    "filters": {
+      "location": "Location",
+      "locationOption": "{name} ({globalId})"
+    },
+    "jumpToDate": "Jump to date",
+    "location": {
+      "description": "Where this instrument is stored in Inventory.",
+      "workbenchDescription": "Where this instrument is stored in Inventory. WB = workbench."
+    },
+    "plural": "All Bookable Items",
+    "quickFilters": {
+      "availableNow": "Available now",
+      "availableNowDescription": "Free at this moment",
+      "error": "Could not find available items.",
+      "freeLaterToday": "Free later",
+      "freeLaterTodayDescription": "Busy now, free again later today",
+      "legend": "Quick filters",
+      "loading": "Finding bookable items…",
+      "myItems": "Owned Items",
+      "retry": "Retry",
+      "scope": "Availability uses the selected display date and time zone."
+    },
+    "singular": "Bookable item",
+    "title": "All Bookable Items",
+    "toolbar": "All Bookable Items controls"
+  },
+  "archived": {
+    "description": "This booking configuration is archived. New bookings, edits, access changes, and calendar links are unavailable until it is restored.",
+    "error": "This archived booking configuration is not available.",
+    "futureBookings": "Future bookings",
+    "loading": "Loading archived booking configuration.",
+    "noFutureBookings": "There are no future bookings to manage.",
+    "subscriptionInactive": "The item calendar subscription is inactive.",
+    "unarchive": "Unarchive",
+    "unarchiveError": "The configuration could not be unarchived. Refresh and try again.",
+    "unknownItem": "Archived booking configuration"
+  },
+  "availabilityBar": {
+    "current": {
+      "available": "Available",
+      "availableUntil": "Available until {time}",
+      "notAvailable": "Not available",
+      "notAvailableFrom": "Not available · Available from {time}"
+    },
+    "emptyWindow": "This display window contains no time on this date because the clocks change.",
+    "fullAvailable": "Available for the full period.",
+    "label": "{itemName} availability",
+    "now": "Current time: {time}.",
+    "nowAfterWindow": "Current time {time} is after the displayed window.",
+    "nowBeforeWindow": "Current time {time} is before the displayed window.",
+    "ranges": {
+      "available": "Available: {ranges}.",
+      "blockout": "Unavailable: {ranges}.",
+      "booking": "Booked: {ranges}.",
+      "overlap": "Booked and unavailable: {ranges}."
+    },
+    "slice": {
+      "bookedBy": "Booked by {user}",
+      "count": "{count, plural, one {# event} other {# events}}",
+      "details": "Details",
+      "sources": {
+        "booking": "Booking",
+        "openingHours": "Outside opening hours"
+      },
+      "states": {
+        "blockout": "Unavailable",
+        "booking": "Booked",
+        "overlap": "Booked and unavailable"
+      },
+      "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
+    },
+    "summary": "Availability period: {period}. {states}",
+    "timezone": "Time zone: {timezone}"
+  },
+  "bookableItemDetails": {
+    "about": "About this item",
+    "actions": {
+      "archive": "Archive bookable item",
+      "createBooking": "Create booking",
+      "leave": "Leave configuration"
+    },
+    "archived": "Archived",
+    "archiveDialog": {
+      "confirm": "Archive",
+      "description": "Archive {item}? Every future booking on it is cancelled automatically and cannot be restored. Bookings that have already started are kept.",
+      "error": "Could not archive this bookable item. Try again.",
+      "title": "Archive bookable item?"
+    },
+    "audit": {
+      "actions": {
+        "cancelled": "Cancelled",
+        "changed": "Changed",
+        "changedOrCancelled": "Changed or cancelled",
+        "created": "Created",
+        "deleted": "Deleted",
+        "restored": "Restored"
+      },
+      "allActions": "All actions",
+      "apply": "Load audit events",
+      "conflict": {
+        "description": "This snapshot can no longer be paged reliably. Restart from the first page to avoid missing or duplicate events.",
+        "title": "The audit results changed"
+      },
+      "empty": "No recorded changes in this period.",
+      "emptyStable": "The log updates daily, and this period starts after the latest update. Today's changes appear tomorrow.",
+      "emptyThroughSnapshot": "No recorded changes through {date} (UTC). The log updates daily, so today's changes appear tomorrow.",
+      "error": {
+        "description": "Try refreshing the audit log.",
+        "title": "Could not load audit events"
+      },
+      "fields": {
+        "action": "Action",
+        "actor": "Changed by",
+        "description": "Description",
+        "domain": "Domain",
+        "eventId": "Event ID",
+        "fullName": "Full name",
+        "rowId": "Row",
+        "timestamp": "Time",
+        "values": "Recorded values"
+      },
+      "from": "From date",
+      "fromError": "From: {message}",
+      "lastDays": "{count, plural, one {Last # day} other {Last # days}}",
+      "next": "Next",
+      "nextPage": "Next, page {page, number}",
+      "page": "Page {page, number} of {totalPages, number}",
+      "pagination": "Audit event pages",
+      "period": "Period",
+      "plural": "Audit events",
+      "previous": "Previous",
+      "previousPage": "Previous, page {page, number}",
+      "refresh": "Refresh",
+      "restart": "Restart from first page",
+      "resultsThrough": "Updated daily. Showing events through {date} (UTC); today's changes appear tomorrow.",
+      "singular": "Audit event",
+      "status": {
+        "loaded": "Page {page, number} of {totalPages, number}. {count, plural, one {# audit event} other {# audit events}}. Updated daily; showing events through {date} (UTC).",
+        "loading": "Loading audit events.",
+        "refreshing": "Updating audit events."
+      },
+      "to": "To date",
+      "toError": "To: {message}",
+      "tooMany": {
+        "description": "Choose a narrower date range and load the audit events again.",
+        "title": "Too many audit events"
+      },
+      "unavailable": {
+        "description": "The complete result set could not be read. No partial results are shown.",
+        "title": "Audit log unavailable"
+      },
+      "validation": {
+        "invalid": "Enter a real date in YYYY-MM-DD format.",
+        "inverted": "From must be on or before To.",
+        "required": "Choose a date.",
+        "tooWide": "Choose a period of no more than 183 days."
+      },
+      "values": {
+        "allowDoubleBooking": "Allow double booking",
+        "availabilityWindowEnd": "Availability window end",
+        "availabilityWindowStart": "Availability window start",
+        "bufferAfter": "Buffer after (minutes)",
+        "bufferBefore": "Buffer before (minutes)",
+        "cancellationReason": "Cancellation reason",
+        "configuration": "Booking configuration",
+        "configurationVersion": "Configuration version",
+        "customTimezone": "Custom time zone",
+        "defaultSharedWith": "Default sharing",
+        "deletedAt": "Deleted at (UTC)",
+        "empty": "No details recorded",
+        "enabled": "Enabled",
+        "end": "End (UTC)",
+        "increment": "Time increment (minutes)",
+        "kind": "Event type",
+        "maximumDuration": "Maximum duration (minutes)",
+        "openDays": "Open days",
+        "openingEnd": "Closing time",
+        "openingExceptions": "Different hours by day",
+        "openingStart": "Opening time",
+        "purpose": "Purpose / notes",
+        "removedAssignments": "Removed assignments",
+        "removedBookings": "Removed bookings",
+        "removedSubscriptions": "Removed subscriptions",
+        "start": "Start (UTC)",
+        "state": "Status",
+        "target": "Bookable item",
+        "targetName": "Bookable item name",
+        "timeFormat": "Time format",
+        "timezone": "Scheduling time zone",
+        "timezoneMode": "Time zone mode"
+      }
+    },
+    "calendarSubscription": {
+      "apple": "Apple",
+      "appPrompt": "Add to your calendar app:",
+      "archivedUnavailable": "New calendar links cannot be generated while this booking configuration is archived.",
+      "changeError": "The calendar link could not be changed. Try again.",
+      "close": "Close",
+      "copied": "Copied",
+      "copy": "Copy link",
+      "copyError": "The link could not be copied. Select and copy it manually.",
+      "copyPrompt": "Or copy the calendar link below:",
+      "description": "Subscribe to this bookable item's read-only calendar.",
+      "disconnect": "Disconnect",
+      "disconnectConfirm": "Disconnect",
+      "disconnected": "This item's calendar link is disconnected.",
+      "disconnectWarning": "Calendars using this link will stop updating, and it cannot be restored.",
+      "generateError": "The calendar link could not be generated. Try again.",
+      "generating": "Generating calendar link.",
+      "google": "Google Calendar",
+      "loading": "Loading calendar status.",
+      "other": "Other",
+      "replace": "Replace link",
+      "replaceConfirm": "Replace link",
+      "replaceConflict": "This link was changed elsewhere. The current link is shown above.",
+      "replaceWarning": "Calendars using the current link will stop updating.",
+      "retry": "Retry",
+      "statusError": "Calendar subscription status could not be loaded.",
+      "title": "Add to your calendar",
+      "trigger": "Add to calendar"
+    },
+    "cancelEdit": "Cancel",
+    "disabled": "Disabled",
+    "edit": "Edit configuration",
+    "enabled": "Enabled",
+    "error": {
+      "description": "RSpace could not load this bookable item's configuration.",
+      "title": "Bookable item unavailable"
+    },
+    "events": {
+      "actor": "Requester / creator",
+      "busy": "Busy",
+      "count": "{count, plural, one {# event} other {# events}}",
+      "edit": "Edit",
+      "empty": "No events",
+      "error": {
+        "description": "RSpace could not load these events.",
+        "title": "Events unavailable"
+      },
+      "kind": "Event type",
+      "loading": "Loading events.",
+      "page": "Page {page, number} of {totalPages, number}",
+      "pagination": "Event pages",
+      "purpose": "Purpose / notes",
+      "requester": "Requester"
+    },
+    "fields": {
+      "bufferAfter": "Buffer after",
+      "bufferBefore": "Buffer before",
+      "createdAt": "Created at",
+      "createdBy": "Created by",
+      "doubleBooking": "Allow double booking",
+      "granularity": "Time increment",
+      "location": "Location",
+      "maximumDuration": "Maximum duration",
+      "openingHours": "Opening hours",
+      "openOn": "Open on",
+      "timezone": "Time zone",
+      "updatedAt": "Last updated"
+    },
+    "leaveDialog": {
+      "description": "Your direct access will be removed. Access inherited through a group or All users is not affected.",
+      "error": "Could not leave this configuration.",
+      "title": "Leave this booking configuration?"
+    },
+    "lifecycleErrors": {
+      "restore": "The booking configuration could not be restored. Refresh and try again.",
+      "stale": "This booking configuration changed after you loaded it. Review the latest version and try again.",
+      "stateChanged": "This booking configuration is no longer in the required state. Review the latest version and try again."
+    },
+    "loading": "Loading bookable item.",
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "no": "No",
+    "notAvailable": "Not available",
+    "notFound": {
+      "description": "This item has no booking configuration, or you do not have access to it.",
+      "title": "Bookable item not found"
+    },
+    "openingHours": {
+      "closed": "Closed",
+      "everyDay": "Every day"
+    },
+    "past": "Past events",
+    "permanentDeleteDialog": {
+      "confirm": "Delete permanently",
+      "confirmationLabel": "Item name",
+      "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+      "error": "The configuration could not be permanently deleted. Refresh and try again.",
+      "title": "Permanently delete configuration?"
+    },
+    "rules": "Booking rules",
+    "tabs": {
+      "access": "Access",
+      "audit": "Audit log",
+      "bookings": "Bookings",
+      "details": "Details"
+    },
+    "title": "Bookable item details",
+    "unlimited": "Unlimited",
+    "upcoming": "Upcoming events",
+    "update": {
+      "archived": "Booking configuration archived.",
+      "pending": "Saving booking configuration.",
+      "restored": "Booking configuration restored.",
+      "saved": "Booking configuration saved."
+    },
+    "view": "View configuration",
+    "viewInventory": "View {name} in Inventory",
+    "yes": "Yes"
+  },
+  "bookableItems": {
+    "actions": {
+      "access": "Manage access for {item}",
+      "add": "Add",
+      "archive": "Archive",
+      "delete": "Delete {item}",
+      "deletePermanently": "Delete permanently",
+      "discardDraft": "Discard my changes and load the latest",
+      "edit": "Edit {item}",
+      "menu": "Actions for {item}",
+      "repairAccess": "Repair access for {item}",
+      "restore": "Restore",
+      "save": "Save changes",
+      "submit": "Submit",
+      "viewDetails": "View details for {item}",
+      "viewInventory": "View {globalId} in Inventory"
+    },
+    "addError": "Could not add the bookable item. Try again.",
+    "addTitle": "Add Bookable Item",
+    "archiveDialog": {
+      "description": "{item} will no longer accept new bookings, and every future booking on it is cancelled automatically and cannot be restored.",
+      "error": "{item} could not be archived. Refresh and try again.",
+      "title": "Archive booking configuration?"
+    },
+    "availability": {
+      "alreadyConfigured": "This inventory item already has a bookable item configuration.",
+      "checkFailed": "RSpace could not check whether this instrument can be added. Select it again or try another instrument.",
+      "checking": "Checking whether this instrument can be added.",
+      "editExisting": "Edit the existing configuration",
+      "instrumentRequired": "The selected inventory item is not an instrument and cannot be added as a bookable item.",
+      "viewExisting": "View existing"
+    },
+    "bulk": {
+      "actions": {
+        "archive": "Archive selected",
+        "delete": "Delete selected",
+        "disable": "Disable",
+        "enable": "Enable"
+      },
+      "archiveDialog": {
+        "description": "They will no longer accept new bookings, and every future booking on them is cancelled automatically and cannot be restored.",
+        "title": "Archive {count, plural, one {# booking configuration} other {# booking configurations}}?"
+      },
+      "deleteDialog": {
+        "description": "This action cannot be undone.",
+        "title": "Delete {count, plural, one {# bookable item} other {# bookable items}}?"
+      },
+      "errors": {
+        "archive": "The selected configurations could not be archived.",
+        "delete": "Could not delete the selected rows. No rows changed. Try again.",
+        "disable": "Could not disable the selected rows. No rows changed. Try again.",
+        "enable": "Could not enable the selected rows. No rows changed. Try again."
+      }
+    },
+    "deleteDialog": {
+      "description": "Delete {item}? This action cannot be undone.",
+      "error": "Could not delete {item}. Try again.",
+      "title": "Delete bookable item?"
+    },
+    "editError": "Could not update the bookable item. Try again.",
+    "editTitle": "Edit Bookable Item",
+    "fields": {
+      "actions": "Actions",
+      "enabled": "Enabled",
+      "id": "ID",
+      "state": "State",
+      "status": "Status",
+      "target": "Bookable item",
+      "targetName": "Bookable item name",
+      "timezone": "Time zone",
+      "timezoneDescription": "Opening hours and booking rules use this time zone. It cannot be changed after the item is added.",
+      "updatedAt": "Last updated"
+    },
+    "lifecycleErrors": {
+      "restore": "The booking configuration could not be restored. Refresh and try again.",
+      "stale": "This booking configuration changed after you loaded it. Review the latest version and try again.",
+      "stateChanged": "This booking configuration is no longer in the required state. Review the latest version and try again."
+    },
+    "ownerHealth": {
+      "error": "Could not find bookable items needing an owner.",
+      "filter": "Owner attention needed",
+      "filters": "Owner health filters",
+      "loading": "Finding bookable items needing an owner…",
+      "needsOwner": "Owner needed"
+    },
+    "permanentDeleteDialog": {
+      "confirmationLabel": "Item name",
+      "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+      "error": "The configuration could not be permanently deleted. Refresh and try again.",
+      "title": "Permanently delete configuration?"
+    },
+    "plural": "Bookable Items",
+    "primer": {
+      "description": "Instruments from Inventory become bookable once someone who manages them adds booking rules. Access follows the instrument's Inventory sharing."
+    },
+    "singular": "Bookable item",
+    "staleEdit": "Someone else changed this configuration while you were editing. Your changes are kept: save again to replace the latest version with them, or discard them to load the latest version.",
+    "states": {
+      "active": "Active"
+    },
+    "targetSearch": {
+      "error": "Eligible instruments could not be searched.",
+      "label": "Instrument",
+      "noEligible": "No unconfigured instruments you can manage. Create an instrument in Inventory first.",
+      "results": "Eligible instruments",
+      "search": "Search"
+    }
+  },
+  "bookings": {
+    "actions": {
+      "cancel": "Cancel booking",
+      "createEvent": "Create calendar event",
+      "delete": "Delete booking",
+      "edit": "Edit",
+      "moreCreationOptions": "More event creation options",
+      "newBooking": "New Booking",
+      "newMaintenance": "New Maintenance Event"
+    },
+    "addTitle": "Add Booking",
+    "cancelDialog": {
+      "description": "Cancel the {itemName} booking for {period}? The cancelled event remains in the audit history.",
+      "keep": "Keep booking",
+      "keepMaintenance": "Keep maintenance event",
+      "maintenanceReasonHint": "The reason is saved with this maintenance event.",
+      "reasonCount": "{count, number}/500 characters",
+      "reasonHint": "The booker and subscribers will see this reason.",
+      "reasonLabel": "Cancellation reason (optional)",
+      "title": "Cancel booking?"
+    },
+    "compact": {
+      "bookingTitle": "New Booking",
+      "discard": "Discard changes",
+      "discardDescription": "Your unsaved event changes will be lost.",
+      "discardTitle": "Discard this event?",
+      "keepEditing": "Keep editing",
+      "maintenanceDescription": "Choose a bookable item and time for the maintenance event.",
+      "maintenanceTitle": "New Maintenance Event"
+    },
+    "deleteDialog": {
+      "description": "Delete Booking removes the {itemName} event for {period} from the Calendar. This release cannot restore the event.",
+      "title": "Delete booking?"
+    },
+    "details": {
+      "aboutBooking": "About this booking",
+      "aboutMaintenance": "About this maintenance event",
+      "bookedBy": "Booked by",
+      "bookingCancelled": "Booking cancelled.",
+      "cancelDescription": "The reserved time is released for others to book.",
+      "cancellationReason": "Cancellation reason",
+      "cancelled": "Cancelled",
+      "cancelMaintenance": "Cancel maintenance event",
+      "cancelMaintenanceDescription": "The maintenance window is released and the slot becomes bookable again.",
+      "cancelMaintenanceTitle": "Cancel maintenance event?",
+      "confirmed": "Confirmed",
+      "created": "Created",
+      "createdBy": "Created by",
+      "edit": {
+        "conflict": "This event changed while you were editing. Copy any changes you want to keep, then refresh this page.",
+        "discard": "Discard",
+        "maintenanceTitle": "Edit maintenance event",
+        "saved": "Changes saved.",
+        "title": "Edit booking"
+      },
+      "lastUpdated": "Last updated",
+      "loadFailedDescription": "The booking could not be loaded.",
+      "loadFailedTitle": "Something went wrong",
+      "maintenanceCancelled": "Maintenance event cancelled.",
+      "maintenanceTitle": "Maintenance details",
+      "noneProvided": "None provided",
+      "returnToItemCalendar": "Return to item calendar",
+      "returnToMyBookings": "Return to My Bookings",
+      "timesShownIn": "Times shown in",
+      "title": "Booking details",
+      "unavailableDescription": "This booking does not exist or you do not have access to it.",
+      "unavailableTitle": "Booking unavailable",
+      "unknownItemDescription": "This item no longer exists, or you no longer have permission to view this item.",
+      "viewItem": "View bookable item {globalId}",
+      "when": "When"
+    },
+    "editTitle": "Edit Booking",
+    "errors": {
+      "buffer": "Too close to another booking. This item needs {before} before and {after} after each booking.",
+      "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
+      "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
+      "bufferSummary": "This period is within the buffer time of:",
+      "bufferUnknown": "Too close to another booking.",
+      "cancellationReasonLength": "The cancellation reason must be 500 characters or fewer.",
+      "cancellationReasonRequiresCancel": "A cancellation reason can only be provided when cancelling a booking.",
+      "checkExistingBookings": "Check My Bookings",
+      "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
+      "deleteForbidden": "You no longer have permission to cancel this booking.",
+      "deleteGeneric": "RSpace could not cancel the booking. Try again.",
+      "deleteStale": "This booking can no longer be cancelled.",
+      "duration": "Bookings may not exceed 366 days.",
+      "endAfterStart": "The end must be after the start.",
+      "forbidden": "You cannot edit this booking.",
+      "generic": "RSpace could not save the booking. Try again.",
+      "granularity": "Start and end times must use this bookable item's time increment.",
+      "itemLoad": "RSpace could not load bookable items.",
+      "itemRequired": "Select a bookable item.",
+      "load": "RSpace could not load this booking.",
+      "maximumDuration": "This booking exceeds the bookable item's maximum duration.",
+      "maximumDurationLimit": "This booking exceeds the bookable item's maximum duration of {duration}.",
+      "noLongerEditable": "This booking is no longer editable.",
+      "nonexistentTime": "This local time does not occur in the selected time zone.",
+      "notFound": "This booking was not found or is not visible.",
+      "occurrenceRequired": "Select which occurrence of this local time to use.",
+      "openingHours": "The booking must remain within this bookable item's opening hours and cannot include a day on which it is closed.",
+      "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
+      "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
+      "overlap": "This period overlaps another booking or a maintenance event.",
+      "overlapBooking": "Booking #{id}",
+      "overlapMaintenance": "Maintenance event #{id}",
+      "overlapReserved": "Reserved booking #{id}",
+      "overlapSummary": "This period overlaps:",
+      "startInPast": "The booking starts in the past and cannot be created.",
+      "targetUnavailable": "This bookable item is unavailable.",
+      "windowRequired": "Enter a valid start and end."
+    },
+    "form": {
+      "cancel": "Cancel",
+      "changeTimezone": "Change Time Zone",
+      "closedOnDate": "Closed on this date",
+      "date": "Date",
+      "earlierOccurrence": "Earlier occurrence ({offset})",
+      "end": "End",
+      "endDate": "End date",
+      "endTime": "End time",
+      "endTimezone": "End time zone",
+      "instrumentTimes": "Instrument time: {start} - {end} ({timezone})",
+      "item": "Bookable item",
+      "itemChoose": "Choose a bookable item",
+      "itemNone": "No bookable items found",
+      "itemOption": "{name} ({globalId}) — {timezone}",
+      "itemPage": "Page {page, number} of {total, number}",
+      "itemResults": "Bookable item results",
+      "itemSearch": "Search bookable items",
+      "laterOccurrence": "Later occurrence ({offset})",
+      "maximumDuration": "Maximum booking duration: {count, number} minutes",
+      "moreOptions": "More options",
+      "nextItems": "Next",
+      "notes": "Notes",
+      "notesCount": "{count, number}/1,000 characters",
+      "occurrence": "Repeated local time",
+      "openAllDay": "Open all day",
+      "openAllDayOnDate": "Open all day on this date",
+      "openingHours": "Open: {start} - {end}",
+      "openingHoursOnDate": "Open on this date: {hours}",
+      "openItem": "Open {globalId}",
+      "previousItems": "Previous",
+      "purpose": "Purpose",
+      "purposeCount": "{count, number}/1,000 characters",
+      "returnToCalendar": "Return to Calendar",
+      "returnToMyBookings": "Return to My Bookings",
+      "save": "Save changes",
+      "start": "Start",
+      "startDate": "Start date",
+      "startTime": "Start time",
+      "startTimezone": "Start time zone",
+      "submit": "Book",
+      "submitMaintenance": "Create maintenance event",
+      "time": "Time",
+      "timeSnapped": "Adjusted to {time} to match the {increment, number}-minute time increment.",
+      "type": "Booking type",
+      "typeBlockout": "Maintenance",
+      "typeBooking": "Booking"
+    },
+    "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
+    "itemInformation": {
+      "buffer": "Buffer",
+      "bufferAfter": "{count}m after",
+      "bufferBefore": "{count}m before",
+      "closedDay": "{day}: closed",
+      "day": "{day}:",
+      "doubleBookingAllowed": "Double booking allowed",
+      "everyDay": "Every day: {hours}",
+      "open": "Open",
+      "title": "Item information"
+    },
+    "loading": "Loading booking.",
+    "loadingConfiguration": "Loading bookable item settings.",
+    "maintenanceLabel": "Maintenance",
+    "warnings": {
+      "availabilityUnknown": "Availability could not be checked. The server will validate this booking when you submit.",
+      "past": "This booking starts in the past and cannot be created."
+    }
+  },
+  "breadcrumbs": {
+    "label": "Breadcrumbs"
+  },
+  "calendar": {
+    "actions": {
+      "addForItem": "Add booking for {item}",
+      "book": "Book",
+      "edit": "Edit",
+      "label": "Booking actions",
+      "viewDetails": "View details"
+    },
+    "additionalEventResources": "{count, plural, one {# additional resource with a matching event is shown.} other {# additional resources with matching events are shown.}} Pagination applies to catalogue items.",
+    "agenda": "Booking agenda",
+    "availability": "Availability",
+    "availabilityLoading": "Loading availability",
+    "availabilityUnavailable": "Availability unavailable",
+    "busy": "Busy",
+    "date": "Date",
+    "dateControls": "Calendar date controls",
+    "datesInRange": "Dates in range",
+    "description": "Browse booking events by day, week, or month.",
+    "detail": "Bookings for {itemName}",
+    "detailLoading": "Loading bookings.",
+    "detailUnavailable": "Bookings are unavailable.",
+    "event": "Booking event",
+    "feed": {
+      "bookedBy": "Booked by: {0}",
+      "booking": "Booking",
+      "busy": "Busy",
+      "createdBy": "Created by: {0}",
+      "itemSummary": "{0} - {1}",
+      "maintenance": "Maintenance",
+      "myBookings": "My RSpace bookings",
+      "purpose": "Purpose: {0}",
+      "unknownItem": "Unknown item"
+    },
+    "fields": {
+      "bookedBy": "Booked by",
+      "createdAt": "Created",
+      "editable": "Editable",
+      "end": "Ends",
+      "id": "ID",
+      "privacy": "Privacy",
+      "purpose": "Purpose",
+      "requester": "Requester",
+      "start": "Starts",
+      "state": "State",
+      "target": "Bookable item",
+      "timezone": "Time zone",
+      "updatedAt": "Updated"
+    },
+    "file": {
+      "accessibleLabel": ".ics file for {item}, {period}",
+      "downloaded": "Downloaded {filename}. No subscription was created or changed.",
+      "failed": "The calendar file for {item}, {period} could not be downloaded. Nothing was saved; try again.",
+      "label": ".ics file",
+      "preparing": "Preparing the calendar file for {item}, {period}."
+    },
+    "filterGroups": {
+      "applied": "{group}, {count} applied",
+      "events": "Booking events",
+      "items": "Bookable items",
+      "legend": "Calendar filters"
+    },
+    "grid": "Calendar grid",
+    "inlineEditor": {
+      "discardStaleEdit": "Discard my changes and load the latest",
+      "staleEdit": "Someone else changed this booking while you were editing. Your changes are kept: save again to apply them to the latest version, or discard them to load the latest version."
+    },
+    "item": "Bookable item",
+    "items": "Bookable items",
+    "jumpToDate": "Jump to date",
+    "layout": {
+      "agenda": "Agenda",
+      "legend": "Layout",
+      "resources": "By Item",
+      "time-grid": "Time grid"
+    },
+    "loading": "Loading booking events.",
+    "nextDay": "Next day",
+    "nextPeriod": "Next {period}",
+    "period": {
+      "day": "Day",
+      "legend": "Period",
+      "month": "Month",
+      "monthUnavailableInResources": "Month isn't available in the By Item view. Use Time grid or Agenda for a month overview.",
+      "monthUnavailableShort": "Not available in the By Item view",
+      "week": "Week"
+    },
+    "periodNavigation": "Calendar period navigation",
+    "previousDay": "Previous day",
+    "previousPeriod": "Previous {period}",
+    "quickFilters": {
+      "legend": "Booking event quick filters",
+      "mine": "My Bookings",
+      "mineDescription": "Bookings you made",
+      "myItems": "Owned Items",
+      "myItemsDescription": "Bookings on items you own",
+      "remove": "Remove {filter} filter"
+    },
+    "resourceSchedule": "Resource booking schedule",
+    "retry": "Retry",
+    "rowAvailabilityUnavailable": "Availability could not be checked. Retry before adding a booking from a resource row.",
+    "targetFilter": {
+      "label": "Bookable item: {name} ({globalId})",
+      "labelWithoutName": "Bookable item: {globalId}",
+      "remove": "Remove bookable item filter"
+    },
+    "title": "Calendar",
+    "today": "Today",
+    "toolbar": "Calendar controls",
+    "unavailable": "Booking events are unavailable.",
+    "view": {
+      "summary": "{layout} · {period}",
+      "trigger": "View: {summary}"
+    },
+    "weekGrid": {
+      "more": "+{count, number} more",
+      "moreCount": "{count, plural, one {# more booking} other {# more bookings}}",
+      "moreLabel": "{count, plural, one {Show # more booking} other {Show # more bookings}} on {date}",
+      "openDay": "Open day"
+    },
+    "windowEditor": {
+      "end": "Change booking end time",
+      "move": "Move booking time",
+      "start": "Change booking start time"
+    }
+  },
+  "dashboard": {
+    "agenda": {
+      "bookingDetails": "Booking details",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "viewDetailsFor": "View booking details for {name} (booking {id})"
+    },
+    "calendar": {
+      "bookingCount": "{count, plural, one {# booking} other {# bookings}}",
+      "dayLabel": "{date}: {count, plural, one {you have # confirmed booking} other {you have # confirmed bookings}}",
+      "empty": "You have no confirmed bookings this month.",
+      "error": {
+        "description": "RSpace could not load bookings for this month.",
+        "title": "Bookings unavailable"
+      },
+      "loading": "Loading your bookings for {month}.",
+      "next": "Next bookings",
+      "nextMonth": "Go to next month",
+      "previous": "Previous bookings",
+      "previousMonth": "Go to previous month",
+      "range": "{start, number}–{end, number} of {total, number}",
+      "title": "At a glance",
+      "todayLabel": "Today, {date}",
+      "tooMany": {
+        "description": "This month has more than 1,000 bookings. Open My Bookings to see the full list.",
+        "title": "Too many bookings to display"
+      },
+      "viewAll": "View all bookings"
+    },
+    "quickActions": {
+      "allItems": {
+        "description": "Search bookable items",
+        "label": "Find an instrument"
+      },
+      "calendar": {
+        "description": "See bookings by day",
+        "label": "Calendar"
+      },
+      "myBookings": {
+        "description": "Review your reservations",
+        "label": "My Bookings"
+      },
+      "title": "Quick Actions"
+    },
+    "upcoming": {
+      "empty": "No upcoming bookings found.",
+      "error": {
+        "description": "RSpace could not load your upcoming bookings.",
+        "title": "Upcoming bookings unavailable"
+      },
+      "loading": "Loading upcoming bookings.",
+      "title": "Upcoming Bookings",
+      "viewAll": "View all"
+    }
+  },
+  "dayTimeline": {
+    "event": {
+      "busy": "Busy",
+      "hideDetails": "Hide details for {title}, {period}",
+      "label": "{title}, {period}",
+      "labelWithNotes": "{title}, {period}. {notes}",
+      "showDetails": "Show details for {title}, {period}"
+    },
+    "expanded": {
+      "bookedBy": "Booked by",
+      "createdBy": "Created by",
+      "dateTime": "{date} · {time}",
+      "duration": "{hours, plural, =0 {} one {# hour } other {# hours }}{minutes, plural, =0 {} one {# minute} other {# minutes}}",
+      "item": "Item",
+      "notes": "Notes",
+      "openItem": "Open inventory record {globalId}",
+      "purpose": "Purpose"
+    },
+    "itemScrollLabel": "24-hour calendar for {itemName} on {date} in {timezone}",
+    "now": {
+      "afterWindow": "Now {time}, after visible window",
+      "current": "Now {time}"
+    },
+    "scrollLabel": "24-hour calendar for {date} in {timezone}",
+    "vertical": {
+      "adjusting": "Adjusting draft booking…",
+      "continuesAfter": "Continues into the next day",
+      "continuesBefore": "Continues from the previous day",
+      "dateNavigation": "Schedule date",
+      "draftLabel": "Draft",
+      "draftOutsideDay": "The draft booking is outside this displayed day: {period}",
+      "empty": "No bookings or maintenance on this day.",
+      "eventDetails": "Event details",
+      "intervalChanged": "Draft booking updated to {period}.",
+      "keyboardInstructions": "Press Up or Down on a draft handle to adjust by one slot. Use the date and time fields for short intervals.",
+      "loadError": "Could not load this day’s schedule.",
+      "loading": "Loading schedule…",
+      "moveDraft": "Move draft booking, {period}",
+      "nextDay": "Next day",
+      "noTarget": "Choose a bookable item to see its day schedule.",
+      "previousDay": "Previous day",
+      "resizeEnd": "Adjust draft end, {period}",
+      "resizeStart": "Adjust draft start, {period}",
+      "retry": "Retry",
+      "returnToDraftDay": "Draft day",
+      "saving": "The booking is being saved.",
+      "schedule": "Day schedule",
+      "title": "Day schedule"
+    },
+    "zoom": {
+      "in": "Zoom in",
+      "legend": "Timeline zoom",
+      "out": "Zoom out"
+    }
+  },
+  "detailPrototype": {
+    "acceptBookings": "Accept new bookings",
+    "acceptBookingsHint": "Turning this off keeps existing bookings and pauses new ones.",
+    "acceptingBookings": "Accepting bookings",
+    "accessHint": "Who can use and manage this bookable item.",
+    "accessSummary": "Imaging group can book · Grace Hopper owns this configuration",
+    "activity": "Activity",
+    "activityCount": "Showing {shown} of {total} activities",
+    "activityCreated": "Created",
+    "activityCreatedBy": "30 Aug 2026, 09:14 · Grace Hopper",
+    "activityDetail": "Sample change: scheduling details updated after a calibration review. Expand entries to read full actor names without truncation.",
+    "activityPage": "Page {page} of {total}",
+    "activitySummary": "Updated 31 Aug 2026 by Grace Hopper",
+    "activityUpdated": "Last updated",
+    "activityUpdatedBy": "31 Aug 2026, 16:40 · Grace Hopper",
+    "bufferAfterLabel": "Buffer after (minutes)",
+    "bufferBeforeLabel": "Buffer before (minutes)",
+    "compareLayouts": "Compare detail layouts",
+    "configurationBreadcrumb": "Booking / Configuration details",
+    "configurationInvalid": "Check opening hours, duration increments and non-negative buffer values.",
+    "dailyHours": "{start}–{end} daily",
+    "discard": "Discard changes",
+    "discarded": "Draft discarded. Saved details restored.",
+    "doubleBookingHint": "Allow reservations to overlap.",
+    "duration": "Duration",
+    "durationHint": "Use 0 for no limit.",
+    "editEvent": "Edit booking",
+    "editing": "Editing",
+    "eventBreadcrumb": "Booking / Event details",
+    "eventInvalid": "Choose a unique local time, with end after start, within the displayed booking rules.",
+    "eventPeriod": "{date} · {time}",
+    "eventTimeHint": "Times in {timezone}. Use 15-minute increments between 08:00 and 18:00, up to 4 hours.",
+    "footer": "Times shown in {timezone}. Full timestamps are under Activity.",
+    "invalidPeriod": "Choose a valid booking period",
+    "layouts": {
+      "ledger": "Ledger",
+      "overview": "Overview",
+      "reading": "Reading"
+    },
+    "nextActivities": "Next activities",
+    "nextLayout": "Next layout",
+    "noActivities": "No matching activities. Try another search.",
+    "noChanges": "No changes yet",
+    "notice": "Prototype · sample data · edits reset on reload",
+    "outlineHint": "Expand a section to see its details.",
+    "paused": "New bookings paused",
+    "peopleItem": "People & location",
+    "peopleSummary": "Ada Lovelace · Imaging suite",
+    "previousActivities": "Previous activities",
+    "previousLayout": "Previous layout",
+    "reservedTime": "Reserved time",
+    "rulesSummary": "{start}–{end} daily · {increment}-minute increments",
+    "saved": "Changes saved in this prototype.",
+    "scenario": "Stress scenario",
+    "scenarios": {
+      "combined": "Combined stress",
+      "dst": "DST transition",
+      "longNames": "Very long text",
+      "manyActivities": "240 activities / 40 access entries",
+      "overnight": "Overnight booking",
+      "standard": "Standard",
+      "veryLong": "Very long booking"
+    },
+    "scenarioState": "{nameLength}-character name · {activities} activities · {access} access entries",
+    "schedulePurpose": "Schedule & purpose",
+    "searchActivity": "Search activity by person, action or number",
+    "sections": "Detail sections",
+    "showMoreActivity": "Show more activities",
+    "timeSummary": "{duration} · {timezone}",
+    "unsaved": "Unsaved changes",
+    "whoCanBook": "Who can book",
+    "yourAccess": "You are an Owner. You can edit rules and manage access."
+  },
+  "myBookings": {
+    "actions": {
+      "downloadCalendarFile": "Download .ics file",
+      "edit": "Edit",
+      "itemCalendar": "View item calendar",
+      "label": "Actions",
+      "more": "More actions",
+      "viewDetails": "View details"
+    },
+    "cancelled": {
+      "alert": "Cancelled {itemName}, {period}.",
+      "undoFailed": "The booking could not be restored: {reason}"
+    },
+    "count": {
+      "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
+      "error": "The upcoming booking count could not be loaded.",
+      "loading": "Loading upcoming count"
+    },
+    "description": "View and manage bookings requested by this user.",
+    "empty": {
+      "cancelled": "No cancelled bookings found.",
+      "past": "No past bookings found.",
+      "upcoming": "No upcoming bookings found."
+    },
+    "fields": {
+      "end": "End",
+      "id": "ID",
+      "kind": "Event type",
+      "purpose": "Purpose",
+      "start": "Start",
+      "state": "Status",
+      "target": "Bookable item",
+      "timezone": "Time zone"
+    },
+    "period": {
+      "cancelled": "Cancelled",
+      "legend": "Booking period",
+      "past": "Past",
+      "upcoming": "Upcoming"
+    },
+    "plural": "Bookings",
+    "roleLoss": {
+      "readOnly": "Read-only: you no longer have access to this item."
+    },
+    "singular": "Booking",
+    "timezone": "Times are shown in {timezone}.",
+    "title": "My Bookings"
+  },
+  "notificationSubscriptions": {
+    "bulk": {
+      "error": "Notification subscriptions could not be updated. Try again.",
+      "subscribe": "Subscribe",
+      "subscribedCount": "Subscribed to {count, plural, one {# instrument} other {# instruments}}.",
+      "unsubscribe": "Unsubscribe",
+      "unsubscribedCount": "Unsubscribed from {count, plural, one {# instrument} other {# instruments}}."
+    },
+    "item": {
+      "bothEventsDisabled": "Both booking events are off in My Profile.",
+      "cancellations": "Booking cancellations",
+      "conflict": "This subscription changed elsewhere. The latest choice has been loaded; try again if needed.",
+      "description": "Receive notifications when someone else creates or cancels a booking on this instrument.",
+      "disabledInProfile": "Paused by My Profile",
+      "effective": {
+        "cancelled": "On. You'll be notified when bookings are cancelled.",
+        "created": "On. You'll be notified when bookings are created.",
+        "paused": "Paused: booking notifications are off in Booking preferences."
+      },
+      "emailDisabled": "Email is off. Notifications arrive in RSpace only.",
+      "label": "Receive booking notifications",
+      "loadError": "The notification subscription could not be loaded.",
+      "newBookings": "New bookings",
+      "offSummary": "Notifications are off for this instrument.",
+      "preferencesLink": "Manage booking notification preferences",
+      "retry": "Retry",
+      "rspaceAndEmail": "RSpace and email",
+      "rspaceOnly": "RSpace only",
+      "save": "Save",
+      "saved": "Notification subscription saved.",
+      "saveError": "The notification subscription could not be saved. Try again.",
+      "saving": "Saving…",
+      "someEventsDisabled": "One booking event is off in My Profile.",
+      "title": "Notifications"
+    },
+    "options": {
+      "off": "Off",
+      "on": "On"
+    },
+    "preferences": {
+      "autoSubscribe": {
+        "description": "This applies to new bookable instruments you own. It does not change existing subscriptions.",
+        "label": "Automatically subscribe to new instruments I own"
+      },
+      "emailDelivery": {
+        "change": "Change email delivery in My Profile",
+        "off": "Email delivery is off: booking notifications appear in RSpace only.",
+        "on": "Email delivery is on: booking notifications are also sent by email."
+      },
+      "events": {
+        "cancelled": "Notify me when bookings are cancelled",
+        "created": "Notify me when bookings are created",
+        "description": "For instruments you're subscribed to. These are the same settings as the booking notifications in My Profile."
+      },
+      "existingSubscriptions": {
+        "description": "Unsubscribe from every instrument. Your notification settings above stay as they are."
+      },
+      "save": "Save",
+      "saved": "Notification preference saved.",
+      "saveError": "Your notification preference could not be saved. Your changes have been kept. Please try again.",
+      "saving": "Saving…",
+      "title": "Booking notifications",
+      "unsubscribeAll": "Unsubscribe from all instruments",
+      "unsubscribed": "Unsubscribed from {count, plural, one {# instrument} other {# instruments}}. Your notification settings are unchanged.",
+      "unsubscribeError": "Subscriptions could not be removed. Try again."
+    }
+  },
+  "preferences": {
+    "actions": {
+      "reset": "Reset to global defaults",
+      "save": "Save",
+      "saved": "Saved"
+    },
+    "availabilityWindow": {
+      "description": "The times shown on each day's availability bars and timelines.",
+      "end": "End time",
+      "endOfDay": "{midnight} means midnight at the end of the day.",
+      "legend": "Default availability window",
+      "start": "Start time"
+    },
+    "calendarSubscription": {
+      "apple": "Apple",
+      "changeError": "The calendar subscription could not be changed. Try again.",
+      "copied": "Copied",
+      "copy": "Copy link",
+      "copyError": "The link could not be copied. Select and copy it manually.",
+      "copyPrompt": "Calendar subscription link",
+      "create": "Create calendar subscription",
+      "createError": "The calendar subscription could not be created. Try again.",
+      "description": "Subscribe to your confirmed RSpace bookings across all bookable items. The private link updates automatically in your calendar app.",
+      "google": "Google Calendar",
+      "loading": "Loading calendar subscription.",
+      "other": "Other",
+      "replace": "Replace private link",
+      "replaceConflict": "This link was changed elsewhere. The current link is shown above.",
+      "replaceDialog": {
+        "cancel": "Keep current link",
+        "confirm": "Replace link",
+        "description": "Calendars using the current link will stop updating. Add the new link to them to keep seeing your bookings.",
+        "title": "Replace your private link?"
+      },
+      "retry": "Retry",
+      "revoke": "Disconnect calendar",
+      "statusError": "The calendar subscription could not be loaded.",
+      "title": "My booking calendar"
+    },
+    "description": "Choose how Booking dates, times, forms, and availability are displayed. These settings do not change an item's opening hours.",
+    "errors": {
+      "invalid": "Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+      "save": "Booking preferences could not be saved."
+    },
+    "resetComplete": "Global Booking defaults restored.",
+    "saved": "Booking preferences saved.",
+    "timeFormat": {
+      "automatic": "Automatic ({example})",
+      "description": "Automatic follows the browser's regional format, and the app language's usual clock in emails. Time fields always use the browser's format.",
+      "legend": "Time format",
+      "twelveHour": "12-hour ({example})",
+      "twentyFourHour": "24-hour ({example})"
+    },
+    "timezone": {
+      "browser": "Use Browser Timezone ({timezone})",
+      "custom": "Use Custom Timezone",
+      "customLabel": "Custom timezone",
+      "institution": "Use Institution Timezone ({timezone})",
+      "legend": "Default timezone"
+    },
+    "title": "Booking preferences"
+  },
+  "sample": {
+    "check": "Sample check {number}.",
+    "maintenance": {
+      "notes": "Laser alignment and safety inspection.",
+      "title": "Scheduled maintenance"
+    }
+  },
+  "settings": {
+    "actions": {
+      "reload": "Discard changes and reload",
+      "save": "Save settings"
+    },
+    "defaultSharing": {
+      "addNamed": "Add {name}",
+      "addUserOrGroup": "Add user or group",
+      "description": "New bookable items grant the Booker role using this choice. Existing items are unchanged.",
+      "error": "Users and groups could not be searched.",
+      "loading": "Searching users and groups…",
+      "noResults": "No matching users or groups.",
+      "options": {
+        "ALL_USERS": {
+          "description": "Everyone, including future users, can create bookings.",
+          "label": "All users"
+        },
+        "ONLY_ME": {
+          "description": "Only the creator receives access as Owner.",
+          "label": "Only me"
+        },
+        "SELECTED": {
+          "description": "Exactly the users and groups selected below receive Booker access.",
+          "label": "Selected users and groups"
+        }
+      },
+      "removeNamed": "Remove {name}",
+      "required": "Add at least one user or group.",
+      "search": "Search",
+      "searchResults": "User and group search results",
+      "selected": "Selected users and groups",
+      "title": "Default shared with",
+      "unavailable": "Unavailable"
+    },
+    "description": "These defaults are copied to new bookable items. Existing bookable items keep their own settings.",
+    "displayDefaults": {
+      "description": "These defaults apply to users who have not saved their own Booking preferences.",
+      "title": "Booking display defaults"
+    },
+    "errors": {
+      "buffer": "Enter a whole number from 0 to 10,080.",
+      "granularity": "Choose 1, 5, 10, or 15 minutes.",
+      "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
+      "openingHours": "Use an opening start before the end, or enter 00:00 as the end to close at midnight.",
+      "save": "RSpace could not save the booking settings. Try again.",
+      "stale": "These settings changed after you opened this page. Reload the page and try again."
+    },
+    "fields": {
+      "allowDoubleBooking": "Allow double booking",
+      "buffer": "Buffer before and after bookings (minutes)",
+      "bufferAfter": "Buffer after booking (minutes)",
+      "bufferBefore": "Buffer before booking (minutes)",
+      "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
+      "granularity": "Time increment",
+      "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
+      "legend": "Scheduling rules",
+      "maximumDuration": "Maximum booking duration (minutes)",
+      "maximumDurationDescription": "Use 0 to allow bookings up to the 366-day system limit.",
+      "openingEnd": "Opening end",
+      "openingEndDescription": "Enter {midnight} to close at midnight (the end of the day).",
+      "openingStart": "Opening start"
+    },
+    "notPermitted": {
+      "action": "Open Booking preferences",
+      "description": "These institution-wide defaults are copied to new bookable items. You can still choose how Booking is displayed for you in Booking preferences.",
+      "title": "Only system administrators can change booking settings"
+    },
+    "openingHours": {
+      "confirmDay": "Confirm {day} hours",
+      "discardDay": "Discard {day} changes",
+      "editDay": "Edit {day} hours",
+      "errors": {
+        "noDays": "Select at least one day.",
+        "pendingDraft": "Confirm or discard the changed hours before saving."
+      },
+      "hoursByDay": "Hours by day",
+      "openOn": "Open on",
+      "setDifferentHours": "Set different hours for some days",
+      "useSameHours": "Use the same hours every day",
+      "useSharedDay": "Use shared hours on {day}"
+    },
+    "saved": "Booking settings saved.",
+    "title": "Booking Settings",
+    "unavailable": {
+      "description": "RSpace could not load the booking settings. Try again.",
+      "title": "Booking settings unavailable"
+    }
+  },
+  "sidebar": {
+    "addBooking": "Add Booking",
+    "administration": "Administration",
+    "allItems": "All items",
+    "bookableItems": "Bookable Items",
+    "calendar": "Calendar",
+    "dashboard": "Dashboard",
+    "label": "Booking",
+    "myBookings": "My Bookings",
+    "preferences": "Preferences",
+    "settings": "Settings"
+  }
+}

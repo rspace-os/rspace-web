@@ -1,0 +1,484 @@
+import { createElement } from "react";
+import { useTranslation } from "react-i18next";
+import * as v from "valibot";
+import {
+  finalizeOpeningExceptions,
+  schedulingSettingsEntries,
+  validMaximumBookingDuration,
+  validOpeningExceptions,
+  validOpeningHours,
+} from "@/modules/booking/configuration/schedulingSettings";
+import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
+import {
+  bookingTimeZoneOptions,
+  isValidTimeZone,
+  useBookingTimeFormat,
+} from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import i18n from "@/modules/common/i18n";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { RoleSourceSchema } from "@/modules/common/resource-access/schemas";
+import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
+import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { UnknownItem } from "@/modules/common/ui/unknown-item";
+
+const NO_BOOKING_CAPABILITIES = {
+  canEditConfiguration: false,
+  canViewAudit: false,
+  canViewAccess: false,
+  canManageAssignments: false,
+  canManageOwners: false,
+  canCreateBooking: false,
+  canManageOwnBookings: false,
+  canManageAllEvents: false,
+  canCreateBlockout: false,
+  canSubscribeCalendar: false,
+  canLeaveConfiguration: false,
+  canManageNotificationSubscription: false,
+};
+
+export const BookingConfigurationSchema = v.pipe(
+  v.object({
+    id: v.number(),
+    configurationVersion: v.number(),
+    target: v.nullable(
+      v.object({
+        relationTo: v.literal("booking-instruments"),
+        value: v.object({
+          id: v.number(),
+          name: v.string(),
+          deleted: v.boolean(),
+          // Supplied by the catalogue adapter; the collection API may omit them.
+          parentContainerName: v.optional(v.nullable(v.string())),
+          parentContainerGlobalId: v.optional(v.nullable(v.string())),
+        }),
+        globalId: v.string(),
+      }),
+    ),
+    enabled: v.boolean(),
+    state: v.picklist(["ACTIVE", "ARCHIVED"]),
+    timezone: v.string(),
+    ...schedulingSettingsEntries,
+    // Fixed-projection consumers, such as Calendar, deliberately omit this field.
+    updatedAt: v.optional(v.nullable(v.pipe(v.string(), v.isoTimestamp()))),
+    createdAt: v.optional(v.nullable(v.pipe(v.string(), v.isoTimestamp()))),
+    createdByName: v.optional(v.nullable(v.string())),
+    createdBy: v.optional(
+      v.object({
+        relationTo: v.literal("users"),
+        value: v.number(),
+      }),
+    ),
+    effectiveRole: v.optional(v.nullable(v.string()), null),
+    roleSources: v.optional(v.array(RoleSourceSchema), []),
+    capabilities: v.optional(
+      v.object({
+        canEditConfiguration: v.boolean(),
+        canViewAudit: v.boolean(),
+        canViewAccess: v.boolean(),
+        canManageAssignments: v.boolean(),
+        canManageOwners: v.boolean(),
+        canCreateBooking: v.boolean(),
+        canManageOwnBookings: v.boolean(),
+        canManageAllEvents: v.boolean(),
+        canCreateBlockout: v.boolean(),
+        canSubscribeCalendar: v.boolean(),
+        canLeaveConfiguration: v.boolean(),
+        canManageNotificationSubscription: v.optional(v.boolean(), false),
+      }),
+      NO_BOOKING_CAPABILITIES,
+    ),
+    ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.optional(v.boolean()) })),
+  }),
+  v.forward(
+    v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
+    ["openingEnd"],
+  ),
+  v.forward(
+    v.check((configuration) => validOpeningExceptions(configuration)),
+    ["openingExceptions"],
+  ),
+  v.forward(
+    v.check((configuration) =>
+      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
+    ),
+    ["maxBookingDurationMinutes"],
+  ),
+);
+
+export type BookingConfiguration = v.InferOutput<typeof BookingConfigurationSchema>;
+
+const InstrumentLocationSchema = v.object({
+  parentContainerName: v.nullable(v.string()),
+  parentContainerGlobalId: v.nullable(v.string()),
+});
+
+export const BookingConfigurationInputSchema = v.pipe(
+  v.object({
+    target: v.object({
+      relationTo: v.literal("booking-instruments"),
+      value: v.number(),
+    }),
+    enabled: v.boolean(),
+    timezone: v.pipe(v.string(), v.check(isValidTimeZone)),
+    ...schedulingSettingsEntries,
+  }),
+  v.forward(
+    v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
+    ["openingEnd"],
+  ),
+  // The form keeps a day's exception while the day is unchecked, so re-checking it restores the exception even
+  // after a failed save; the submitted output drops it.
+  v.transform(finalizeOpeningExceptions),
+  v.forward(
+    v.check((configuration) => validOpeningExceptions(configuration)),
+    ["openingExceptions"],
+  ),
+  v.forward(
+    v.check((configuration) =>
+      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
+    ),
+    ["maxBookingDurationMinutes"],
+  ),
+);
+
+export type BookingConfigurationInput = v.InferOutput<typeof BookingConfigurationInputSchema>;
+
+export const BookingConfigurationUpdateInputSchema = v.pipe(
+  v.object({
+    enabled: v.boolean(),
+    ...schedulingSettingsEntries,
+  }),
+  v.forward(
+    v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
+    ["openingEnd"],
+  ),
+  // The form keeps a day's exception while the day is unchecked, so re-checking it restores the exception even
+  // after a failed save; the submitted output drops it.
+  v.transform(finalizeOpeningExceptions),
+  v.forward(
+    v.check((configuration) => validOpeningExceptions(configuration)),
+    ["openingExceptions"],
+  ),
+  v.forward(
+    v.check((configuration) =>
+      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
+    ),
+    ["maxBookingDurationMinutes"],
+  ),
+);
+
+export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
+
+export const BOOKING_CONFIGURATION_READ_FIELDS =
+  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingStart,openingEnd,openDays,openingExceptions,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+
+const bookingConfigurationReadParameters = {
+  depth: "1",
+  "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
+};
+
+export class BookingConfigurationRequestError extends Error {
+  constructor(readonly status: number) {
+    super(`Booking configuration request failed with status ${status}`);
+  }
+}
+
+/** No readable booking configuration exists for a target: it is unconfigured, missing, or not visible. */
+export class BookingConfigurationNotFoundError extends Error {
+  readonly status = 404;
+}
+
+async function withLocation(
+  configuration: BookingConfiguration,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration> {
+  if (!configuration.target) return configuration;
+  const target = configuration.target.value;
+  if (target.parentContainerName && target.parentContainerGlobalId) return configuration;
+  const parameters = new URLSearchParams({
+    "fields[instruments]": "parentContainerName,parentContainerGlobalId",
+  });
+  let response: Response;
+  try {
+    response = await fetch(`/api/v2/instruments/${target.id}?${parameters}`, {
+      headers: bookingApiV2Headers(token),
+      signal,
+    });
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    return configuration;
+  }
+  if (!response.ok) return configuration;
+  const location = parseOrThrow(InstrumentLocationSchema, (await response.json()) as unknown);
+  return {
+    ...configuration,
+    target: {
+      ...configuration.target,
+      value: { ...target, ...location },
+    },
+  };
+}
+
+export async function fetchBookingConfiguration(
+  id: number,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration> {
+  const parameters = new URLSearchParams({
+    ...bookingConfigurationReadParameters,
+  });
+  const response = await fetch(`/api/v2/booking-configurations/${id}?${parameters}`, {
+    headers: bookingApiV2Headers(token),
+    signal,
+  });
+  if (!response.ok) throw new BookingConfigurationRequestError(response.status);
+  return parseOrThrow(BookingConfigurationSchema, (await response.json()) as unknown);
+}
+
+export async function fetchBookingConfigurationByTarget(
+  globalId: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration> {
+  const where = serializeRsqlExpression<BookingConfiguration>({
+    kind: "comparison",
+    field: "target",
+    operator: "equals",
+    value: globalId,
+  });
+  const parameters = new URLSearchParams({
+    ...bookingConfigurationReadParameters,
+    limit: "2",
+    where,
+  });
+  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+    headers: bookingApiV2Headers(token),
+    signal,
+  });
+  if (!response.ok) throw new BookingConfigurationRequestError(response.status);
+  const configurations = parseOrThrow(
+    v2ListEnvelope(BookingConfigurationSchema),
+    (await response.json()) as unknown,
+  ).docs;
+  if (configurations.length > 1) throw new Error(`Expected exactly one booking configuration for ${globalId}`);
+  if (configurations.length === 0 || configurations[0].target?.globalId !== globalId) {
+    throw new BookingConfigurationNotFoundError(`Expected exactly one booking configuration for ${globalId}`);
+  }
+  return configurations[0];
+}
+
+export async function fetchBookingConfigurationDetailsByTarget(
+  globalId: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration> {
+  return withLocation(await fetchBookingConfigurationByTarget(globalId, token, signal), token, signal);
+}
+
+/** Returns a readable configuration for one Inventory target, or null when none is visible. */
+export async function findBookingConfigurationByTarget(
+  globalId: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration | null> {
+  const where = serializeRsqlExpression<BookingConfiguration>({
+    kind: "comparison",
+    field: "target",
+    operator: "equals",
+    value: globalId,
+  });
+  const parameters = new URLSearchParams({
+    ...bookingConfigurationReadParameters,
+    limit: "2",
+    where,
+  });
+  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+    headers: bookingApiV2Headers(token),
+    signal,
+  });
+  if (!response.ok) throw new BookingConfigurationRequestError(response.status);
+  const configurations = parseOrThrow(
+    v2ListEnvelope(BookingConfigurationSchema),
+    (await response.json()) as unknown,
+  ).docs;
+  if (configurations.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
+  return configurations[0] ?? null;
+}
+
+/** Returns the readable Booking configurations for a bounded set of Instrument global IDs. */
+export async function fetchBookingOwnershipCandidates(
+  globalIds: readonly string[],
+  token: string,
+  signal?: AbortSignal,
+): Promise<readonly BookingConfiguration[]> {
+  if (globalIds.length === 0) return [];
+  const where = serializeRsqlExpression<BookingConfiguration>({
+    kind: "comparison",
+    field: "target",
+    operator: "in",
+    value: globalIds,
+  });
+  const parameters = new URLSearchParams({
+    ...bookingConfigurationReadParameters,
+    limit: String(Math.min(globalIds.length, 100)),
+    where,
+  });
+  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+    headers: bookingApiV2Headers(token),
+    signal,
+  });
+  if (!response.ok) throw new BookingConfigurationRequestError(response.status);
+  return parseOrThrow(v2ListEnvelope(BookingConfigurationSchema), (await response.json()) as unknown).docs;
+}
+
+export const bookingConfigurationConfig = {
+  slug: "bookable-items",
+  relationshipSources: bookingRelationshipSources,
+  idField: "id",
+  labels: {
+    singularKey: "booking:bookableItems.singular",
+    pluralKey: "booking:bookableItems.plural",
+  },
+  useAsTitle: "target",
+  defaultColumns: ["target", "state", "updatedAt"],
+  listSearchableFields: ["target.name", "target.globalId"],
+  fields: [
+    { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
+    {
+      name: "target",
+      type: "relationship",
+      relationTo: "booking-instruments",
+      hasMany: false,
+      labelKey: "booking:bookableItems.fields.target",
+      list: {
+        renderCell: ({ row }) => {
+          if (row.target === null) return createElement(UnknownItem, { size: "xs" });
+          return createElement(
+            "div",
+            { className: "grid gap-1" },
+            createElement(InventoryItem, {
+              name: row.target.value.name,
+              globalId: row.target.globalId,
+              compact: true,
+              size: "xs",
+            }),
+          );
+        },
+      },
+    },
+    {
+      name: "enabled",
+      type: "boolean",
+      labelKey: "booking:bookableItems.fields.enabled",
+      // Shown through the combined Status column; still filterable on its own.
+      list: false,
+    },
+    {
+      name: "state",
+      type: "select",
+      options: ["ACTIVE", "ARCHIVED"],
+      // The column header and the columns panel both read this label.
+      labelKey: "booking:bookableItems.fields.status",
+      form: false,
+      list: {
+        dependencies: ["enabled"],
+        // One status column: an archived item is Archived; an active one is Enabled or Disabled.
+        renderCell: ({ row }) =>
+          row.state === "ARCHIVED"
+            ? i18n.t("booking:bookableItemDetails.archived")
+            : i18n.t(row.enabled ? "booking:bookableItemDetails.enabled" : "booking:bookableItemDetails.disabled"),
+      },
+    },
+    {
+      name: "timezone",
+      type: "select",
+      options: bookingTimeZoneOptions(),
+      labelKey: "booking:bookableItems.fields.timezone",
+      required: true,
+      list: false,
+      // Create-only: the API rejects timezone changes, so edit forms filter this field out.
+      form: { descriptionKey: "booking:bookableItems.fields.timezoneDescription" },
+    },
+    {
+      name: "updatedAt",
+      type: "dateTime",
+      labelKey: "booking:bookableItems.fields.updatedAt",
+      form: false,
+      list: {
+        renderCell: ({ row }) => createElement(ConfigurationUpdatedAt, { value: row.updatedAt }),
+      },
+    },
+    {
+      name: "slotGranularityMinutes",
+      type: "number",
+      labelKey: "booking:settings.fields.granularity",
+      list: false,
+      form: false,
+    },
+    {
+      name: "openingStart",
+      type: "text",
+      labelKey: "booking:settings.fields.openingStart",
+      list: false,
+      form: false,
+    },
+    {
+      name: "openingEnd",
+      type: "text",
+      labelKey: "booking:settings.fields.openingEnd",
+      list: false,
+      form: false,
+    },
+    {
+      name: "bufferBeforeMinutes",
+      type: "number",
+      labelKey: "booking:settings.fields.bufferBefore",
+      list: false,
+      form: false,
+    },
+    {
+      name: "bufferAfterMinutes",
+      type: "number",
+      labelKey: "booking:settings.fields.bufferAfter",
+      list: false,
+      form: false,
+    },
+    {
+      name: "allowDoubleBooking",
+      type: "boolean",
+      labelKey: "booking:settings.fields.allowDoubleBooking",
+      list: false,
+      form: false,
+    },
+    {
+      name: "maxBookingDurationMinutes",
+      type: "number",
+      labelKey: "booking:settings.fields.maximumDuration",
+      list: false,
+      form: false,
+    },
+  ],
+} satisfies CollectionConfig<BookingConfiguration>;
+
+/** One row of the bookable-items table. `target` is null when its item cannot be resolved. */
+export type BookingConfigurationRow = CollectionRow<BookingConfiguration, "id" | "target">;
+
+export const bookingConfigurationFields = resolveCollectionConfig(bookingConfigurationConfig).fields;
+
+function ConfigurationUpdatedAt({ value }: { value: string | null | undefined }) {
+  const { i18n, t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
+  return value
+    ? new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        hourCycle: bookingHourCycle(timeFormat),
+      }).format(new Date(value))
+    : t("bookableItemDetails.notAvailable");
+}

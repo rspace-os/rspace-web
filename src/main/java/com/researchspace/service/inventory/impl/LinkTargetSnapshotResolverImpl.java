@@ -88,15 +88,8 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       // hidden behind "No access". The lookup is permission-gated and type-exact, so an
       // unreadable record and a sibling sharing the db id (SA/IT) both fall through to redaction.
       //
-      // Inventory only. The ELN lookup resolves through transactional *Manager proxies
-      // (BaseRecordManager -> FolderManager) whose folderDao.get and read/not-deleted assertions
-      // throw for a missing, unreadable or deleted record. Catching the throw is not enough: it
-      // crosses a transactional proxy and marks the caller's transaction rollback-only, so
-      // getTargetSummary would fail at commit with UnexpectedRollbackException instead of
-      // returning the redacted summary below - the same trap isReadable's javadoc describes, and
-      // reachable here because import can store a link to a notebook that does not exist. The
-      // inventory lookup throws only its own NotFoundException from a non-transactional
-      // component, so it is safe to consult.
+      // Inventory only: viewableInventoryTarget answers for the Inventory's limited view and has
+      // no ELN counterpart, so an ELN target without audit history is redacted below.
       if (isInventoryPrefix(prefix)) {
         Optional<InventoryRecord> liveTarget =
             linkTargetResolver.viewableInventoryTarget(new GlobalIdentifier(prefix, dbId), user);
@@ -131,10 +124,10 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
    *
    * <p>For a non-owner, ELN read permission comes from the live row, loaded straight from the DAO.
    * Not from the snapshot: sharing and publishing a document write no audit revision, so a
-   * snapshot's ACL can still grant what the live row has revoked. Not through BaseRecordManager ->
-   * FolderManager either: those assertions throw inside transactional {@code *Manager} proxies,
-   * which marks the summary's transaction rollback-only even when caught, so getTargetSummary fails
-   * at commit. A DAO lookup returns empty instead of throwing and crosses no proxy.
+   * snapshot's ACL can still grant what the live row has revoked. Not through the FolderManager
+   * getters either: their assertions throw inside transactional {@code *Manager} proxies, which
+   * marks the summary's transaction rollback-only even when caught, so getTargetSummary fails at
+   * commit. A DAO lookup returns empty instead of throwing and crosses no proxy.
    *
    * <p>Inventory targets keep the live check: their lookup throws only its own NotFoundException,
    * from non-transactional components, so it is safe to consult and reflects current sharing. It

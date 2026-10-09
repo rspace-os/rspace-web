@@ -13,8 +13,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
@@ -66,16 +64,6 @@ public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
   protected void postSendMessage(
       ResponseEntity<String> rc, URI uri, MessageDetails message, User subject) {
     analyticsMgr.trackChatApp(subject, "message_post", AnalyticsEvent.TEAMS_USED);
-  }
-
-  /**
-   * Workflows webhooks reject a {@code text/plain} body; the Adaptive Card must be sent as JSON.
-   */
-  @Override
-  protected HttpHeaders createPostHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
   }
 
   private FactSet factsFor(IRSpaceDoc doc) {

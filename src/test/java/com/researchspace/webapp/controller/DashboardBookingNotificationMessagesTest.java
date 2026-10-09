@@ -1,0 +1,285 @@
+package com.researchspace.webapp.controller;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.researchspace.booking.service.BookingDisplayPreferencesManager;
+import com.researchspace.booking.service.BookingNotificationMessageFormatter;
+import com.researchspace.model.User;
+import com.researchspace.model.booking.BookingTimeFormat;
+import com.researchspace.model.booking.BookingTimezoneMode;
+import com.researchspace.model.comms.Notification;
+import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.comms.data.BookingNotificationData;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.UserManager;
+import com.researchspace.session.SessionAttributeUtils;
+import jakarta.servlet.http.HttpSession;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
+
+class DashboardBookingNotificationMessagesTest {
+
+  @AfterEach
+  void resetLocale() {
+    LocaleContextHolder.resetLocaleContext();
+  }
+
+  @Test
+  void rendersForCurrentRecipientAndLeavesStoredMessageUntouched() {
+    LocaleContextHolder.setLocale(Locale.US);
+    DashboardController controller = new DashboardController();
+    UserManager userManager = mock(UserManager.class);
+    User recipient = mock(User.class);
+    BookingDisplayPreferencesManager preferences = mock(BookingDisplayPreferencesManager.class);
+    HttpSession session = mock(HttpSession.class);
+    Notification structured =
+        bookingNotification(
+            1L, "Stored email text", data("2026-01-02T03:04:05Z", "2026-01-02T04:04:05Z"));
+    Notification legacy =
+        bookingNotification(
+            2L,
+            "Booking 42 was created for instrument Scope 2026-01-02T00:00:00Z (IN12) from "
+                + "2026-01-02T03:04:05Z to 2026-01-02T04:04:05Z.",
+            null);
+    Notification other = new Notification();
+    other.setId(3L);
+    other.setNotificationType(NotificationType.PROCESS_COMPLETED);
+
+    controller.setUserManager(userManager);
+    ReflectionTestUtils.setField(controller, "bookingDisplayPreferences", preferences);
+    ReflectionTestUtils.setField(
+        controller,
+        "bookingMessageFormatter",
+        new BookingNotificationMessageFormatter(
+            new JsonMessageSource(), "https://rspace.example.org"));
+    ReflectionTestUtils.setField(
+        controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
+    when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
+    when(preferences.getForNotificationRecipient(recipient))
+        .thenReturn(
+            Optional.of(
+                new BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences(
+                    "08:00",
+                    "18:00",
+                    com.researchspace.model.booking.BookingTimezoneMode.CUSTOM,
+                    "America/Los_Angeles",
+                    BookingTimeFormat.AUTOMATIC,
+                    "Europe/Berlin",
+                    true)));
+    when(session.getAttribute(SessionAttributeUtils.TIMEZONE))
+        .thenReturn(TimeZone.getTimeZone("Asia/Tokyo"));
+
+    Map<Long, String> messages =
+        controller.bookingNotificationMessages(
+            List.of(structured, legacy, other), "recipient", session, null);
+
+    assertEquals("Stored email text", structured.getNotificationMessage());
+    assertTrue(messages.get(1L).contains("Jan 1, 2026, 7:04 PM (America/Los_Angeles, UTC-08:00)"));
+    assertTrue(
+        messages.get(1L).startsWith("Booking <a href=\"/booking/calendar/bookings/42\">42</a>"),
+        messages.get(1L));
+    assertTrue(messages.get(2L).contains("Scope 2026-01-02T00:00:00Z (IN12)"));
+    assertTrue(messages.get(2L).contains("America/Los_Angeles, UTC-08:00"));
+    assertFalse(messages.containsKey(3L));
+    verify(preferences).getForNotificationRecipient(recipient);
+  }
+
+  @Test
+  void malformedStructuredDataFallsBackToTheLegacyInterval() {
+    DashboardController controller = new DashboardController();
+    UserManager userManager = mock(UserManager.class);
+    User recipient = mock(User.class);
+    BookingDisplayPreferencesManager preferences = mock(BookingDisplayPreferencesManager.class);
+    HttpSession session = mock(HttpSession.class);
+    Notification malformed =
+        bookingNotification(
+            4L, "Booking 4 from 2026-01-02T03:04:05Z to 2026-01-02T04:04:05Z.", null);
+    malformed.setNotificationData("{broken-json");
+
+    controller.setUserManager(userManager);
+    ReflectionTestUtils.setField(controller, "bookingDisplayPreferences", preferences);
+    ReflectionTestUtils.setField(
+        controller,
+        "bookingMessageFormatter",
+        new BookingNotificationMessageFormatter(
+            new JsonMessageSource(), "https://rspace.example.org"));
+    ReflectionTestUtils.setField(
+        controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
+    when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+
+    Map<Long, String> messages =
+        controller.bookingNotificationMessages(List.of(malformed), "recipient", session, null);
+
+    assertTrue(messages.get(4L).contains("Europe/Berlin, UTC+01:00"));
+  }
+
+  @Test
+  void rerendersCancellationReasonFromStructuredData() {
+    LocaleContextHolder.setLocale(Locale.US);
+    DashboardController controller = new DashboardController();
+    UserManager userManager = mock(UserManager.class);
+    User recipient = mock(User.class);
+    BookingDisplayPreferencesManager preferences = mock(BookingDisplayPreferencesManager.class);
+    BookingNotificationData data = data("2026-01-02T03:04:05Z", "2026-01-02T04:04:05Z");
+    data.setCancellationReason("Needs <repair>");
+    Notification cancelled = bookingNotification(9L, "Stored message", data);
+    cancelled.setNotificationType(NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+
+    controller.setUserManager(userManager);
+    ReflectionTestUtils.setField(controller, "bookingDisplayPreferences", preferences);
+    ReflectionTestUtils.setField(
+        controller,
+        "bookingMessageFormatter",
+        new BookingNotificationMessageFormatter(
+            new JsonMessageSource(), "https://rspace.example.org"));
+    ReflectionTestUtils.setField(
+        controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
+    when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+
+    Map<Long, String> messages =
+        controller.bookingNotificationMessages(
+            List.of(cancelled), "recipient", mock(HttpSession.class), null);
+
+    assertTrue(messages.get(9L).contains("Reason: Needs &lt;repair&gt;"), messages.get(9L));
+    assertTrue(messages.get(9L).startsWith("Booking <a href=\"/booking/calendar/bookings/42\">"));
+    assertEquals("Stored message", cancelled.getNotificationMessage());
+  }
+
+  @Test
+  void writesTimesWithTheBrowserRegionsClockAndTheAppLanguagesWords() {
+    LocaleContextHolder.setLocale(Locale.US);
+    DashboardController controller = new DashboardController();
+    UserManager userManager = mock(UserManager.class);
+    User recipient = mock(User.class);
+    BookingDisplayPreferencesManager preferences = mock(BookingDisplayPreferencesManager.class);
+    Notification structured =
+        bookingNotification(
+            5L, "Stored email text", data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z"));
+    Notification legacy =
+        bookingNotification(
+            6L, "Booking 6 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.", null);
+
+    controller.setUserManager(userManager);
+    ReflectionTestUtils.setField(controller, "bookingDisplayPreferences", preferences);
+    ReflectionTestUtils.setField(
+        controller,
+        "bookingMessageFormatter",
+        new BookingNotificationMessageFormatter(
+            new JsonMessageSource(), "https://rspace.example.org"));
+    ReflectionTestUtils.setField(
+        controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
+    when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+
+    Map<Long, String> british =
+        controller.bookingNotificationMessages(
+            List.of(structured, legacy),
+            "recipient",
+            mock(HttpSession.class),
+            "en-GB,en-US;q=0.9,en;q=0.8");
+    Map<Long, String> american =
+        controller.bookingNotificationMessages(
+            List.of(structured, legacy), "recipient", mock(HttpSession.class), "en-US,en;q=0.9");
+
+    assertTrue(
+        british.get(5L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), british.get(5L));
+    assertTrue(british.get(5L).startsWith("Booking <a href="), british.get(5L));
+    assertTrue(
+        british.get(6L).contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)."),
+        british.get(6L));
+    // ICU writes a narrow no-break space before the day period, as browsers do.
+    assertTrue(
+        american
+            .get(5L)
+            .replace('\u202f', ' ')
+            .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
+        american.get(5L));
+    assertFalse(american.get(5L).contains("06:00"), american.get(5L));
+  }
+
+  @Test
+  void anExplicitTimeFormatBeatsTheBrowserRegion() {
+    LocaleContextHolder.setLocale(Locale.US);
+    DashboardController controller = new DashboardController();
+    UserManager userManager = mock(UserManager.class);
+    User recipient = mock(User.class);
+    BookingDisplayPreferencesManager preferences = mock(BookingDisplayPreferencesManager.class);
+    Notification structured =
+        bookingNotification(
+            7L, "Stored email text", data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z"));
+    Notification legacy =
+        bookingNotification(
+            8L, "Booking 8 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.", null);
+
+    controller.setUserManager(userManager);
+    ReflectionTestUtils.setField(controller, "bookingDisplayPreferences", preferences);
+    ReflectionTestUtils.setField(
+        controller,
+        "bookingMessageFormatter",
+        new BookingNotificationMessageFormatter(
+            new JsonMessageSource(), "https://rspace.example.org"));
+    ReflectionTestUtils.setField(
+        controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
+    when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
+    when(preferences.getForNotificationRecipient(recipient))
+        .thenReturn(
+            Optional.of(
+                new BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences(
+                    "08:00",
+                    "18:00",
+                    BookingTimezoneMode.INSTITUTION,
+                    null,
+                    BookingTimeFormat.H24,
+                    "Europe/Berlin",
+                    true)));
+
+    Map<Long, String> messages =
+        controller.bookingNotificationMessages(
+            List.of(structured, legacy), "recipient", mock(HttpSession.class), "en-US,en;q=0.9");
+
+    assertTrue(
+        messages.get(7L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"),
+        messages.get(7L));
+    assertTrue(
+        messages.get(8L).contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)."),
+        messages.get(8L));
+    assertFalse(messages.get(7L).contains("AM"), messages.get(7L));
+  }
+
+  private static Notification bookingNotification(
+      long id, String message, BookingNotificationData data) {
+    Notification notification = new Notification();
+    notification.setId(id);
+    notification.setNotificationType(NotificationType.NOTIFICATION_BOOKING_CREATED);
+    notification.setNotificationMessage(message);
+    notification.setNotificationDataObject(data);
+    return notification;
+  }
+
+  private static BookingNotificationData data(String start, String end) {
+    BookingNotificationData data = new BookingNotificationData();
+    data.setBookingId("42");
+    data.setInstrumentName("Microscope");
+    data.setInstrumentGlobalIdentifier("IN12");
+    data.setStartTime(start);
+    data.setEndTime(end);
+    return data;
+  }
+}

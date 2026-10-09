@@ -1,0 +1,59 @@
+{
+  "bookingNotifications": {
+    "created": "Booking <a href=\"{5}\">{0}</a> was created for instrument <a href=\"{6}\">{1} ({2})</a> from {3} to {4}.",
+    "cancelled": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was cancelled. It was scheduled from {3} to {4}.",
+    "cancelledWithReason": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was cancelled. It was scheduled from {3} to {4}. Reason: {7}",
+    "restored": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was restored. It is scheduled from {3} to {4}."
+  },
+  "bookingFixtures": {
+    "description": "Docker development booking fixture",
+    "instruments": {
+      "confocal": "Confocal microscope",
+      "electronMicroscope": "Electron microscope",
+      "massSpectrometer": "Mass spectrometer",
+      "flowCytometer": "Flow cytometer",
+      "noParentCentrifuge": "No-parent centrifuge",
+      "deletedLocationSequencer": "Deleted-location sequencer",
+      "restrictedLocationPlateReader": "Restricted-location plate reader",
+      "bookingCardSetup": "Booking card: Set up booking",
+      "bookingCardBook": "Booking card: Book",
+      "bookingCardDisabled": "Booking card: Open (disabled)",
+      "bookingCardArchived": "Booking card: Open (archived)",
+      "bookingAlerts": "Booking alerts test bench",
+      "busyCalendar": "Busy calendar instrument {0,number,000}",
+      "aucklandPcrCycler": "Auckland PCR cycler",
+      "honoluluDiffractometer": "Honolulu X-ray diffractometer",
+      "kolkataNmrSpectrometer": "Kolkata NMR spectrometer",
+      "closedDayIncubator": "Closed-day incubator"
+    },
+    "containers": {
+      "imagingLab": "Imaging lab",
+      "cryoEmSuite": "Cryo-EM suite",
+      "longCellAnalysisFacility": "Cell analysis facility with a deliberately long location name",
+      "deletedInstrumentRoom": "Deleted instrument room",
+      "restrictedInstrumentRoom": "Restricted instrument room"
+    },
+    "purposes": {
+      "cellImaging": "Cell imaging",
+      "calibrationRun": "Calibration run",
+      "ultrastructureImaging": "Ultrastructure imaging",
+      "proteomicsRun": "Proteomics run",
+      "cellSorting": "Cell sorting",
+      "overnightAnalysis": "Overnight analysis",
+      "busyCalendar": "Busy calendar fixture",
+      "auroraCalibration": "Aurora calibration session",
+      "beaconCellImaging": "Beacon cell imaging study",
+      "cometProteomics": "Comet proteomics analysis",
+      "bookingAlertsPast": "Booking alerts past fixture",
+      "bookingAlertsOverlap": "Booking alerts overlap fixture",
+      "overlappingProteomicsRun": "Overlapping proteomics run",
+      "lateSpin": "Late spin until midnight",
+      "twoDaySequencingRun": "Two-day sequencing run",
+      "pcrAmplification": "PCR amplification",
+      "crystalScreening": "Crystal screening",
+      "quarterHourNmr": "Quarter-hour NMR acquisition",
+      "closedDayBooking": "Booking on a day that is now closed",
+      "closedDayMaintenance": "Maintenance on a closed day"
+    }
+  }
+}

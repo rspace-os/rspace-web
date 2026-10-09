@@ -12,7 +12,13 @@ import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
+import { mkAlert } from "@/stores/contexts/Alert";
 import { PidinstImportDialogStory } from "./PidinstImportDialog.story";
+
+vi.mock("@/stores/contexts/Alert", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/stores/contexts/Alert")>();
+  return { ...actual, mkAlert: vi.fn(actual.mkAlert) };
+});
 
 const mockAxios = new MockAdapter(axios);
 
@@ -35,6 +41,8 @@ const HITS = [
     measuredVariables: ["Fluorescence intensity"],
     commissioned: "2021-03-01",
     landingPage: "https://example.org/lsm980",
+    measurementTechniques: ["https://other.researchspace.com/globalId/IC65536"],
+    calibrations: ["10.1000/calibration-certificate", "10.1000/calibration-report"],
     alternateIdentifier: "INV-0042",
     alreadyLinked: false,
   },
@@ -48,6 +56,8 @@ const HITS = [
     manufacturers: ["Bruker"],
     instrumentTypes: [],
     measuredVariables: [],
+    measurementTechniques: [],
+    calibrations: [],
     alreadyLinked: true,
     linkedInstrumentGlobalId: "IN52",
   },
@@ -61,6 +71,20 @@ const CREATED_INSTRUMENT = {
   name: "Confocal Microscope",
   identifiers: [],
 };
+
+const SKIPPED = [
+  {
+    field: "Measurement technique",
+    reason: "OTHER_SERVER",
+    address: "https://other.researchspace.com/globalId/IC65536",
+    host: "other.researchspace.com",
+  },
+  {
+    field: "Calibration",
+    reason: "NOT_AVAILABLE",
+    address: "https://this.researchspace.com/globalId/SA32768",
+  },
+];
 
 function stubEndpoints({
   searchReply = [200, SEARCH_RESULT] as [number, unknown],
@@ -88,6 +112,14 @@ async function search(user: ReturnType<typeof userEvent.setup>, query: string, h
   await waitFor(() => {
     expect(screen.getByRole("gridcell", { name: HITS[0].name, hidden })).toBeInTheDocument();
   });
+}
+
+/** What the preview shows under a label: the description list pairs each term with the definition after it. */
+function previewValue(preview: HTMLElement, label: string): HTMLElement {
+  const terms = within(preview).getAllByRole("term");
+  const index = terms.findIndex((term) => term.textContent === label);
+  expect(index, `no "${label}" in the preview`).toBeGreaterThanOrEqual(0);
+  return within(preview).getAllByRole("definition")[index];
 }
 
 /** The row's radio, found through the name cell because every radio label is the same i18n key in cimode. */
@@ -211,6 +243,41 @@ describe("PidinstImportDialog", () => {
     expect(within(preview).getByText("A confocal laser scanning microscope.")).toBeVisible();
     expect(within(preview).getByRole("link", { name: "https://example.org/lsm980" })).toBeVisible();
     expect(within(preview).queryByText("inventory:pidinstImport.preview.decommissioned")).not.toBeInTheDocument();
+  });
+
+  test("previews the registry's Measurement technique and Calibration entries under their own labels", async () => {
+    const user = userEvent.setup();
+    await renderOpenDialog();
+    await search(user, "microscope");
+
+    await user.click(radioFor("Confocal Microscope"));
+
+    const preview = screen.getByRole("region", { name: "inventory:pidinstImport.preview.title" });
+    const measurementTechnique = previewValue(preview, "inventory:pidinstImport.preview.measurementTechnique");
+    expect(
+      within(measurementTechnique).getByRole("link", { name: "https://other.researchspace.com/globalId/IC65536" }),
+    ).toBeVisible();
+    const calibration = previewValue(preview, "inventory:pidinstImport.preview.calibration");
+    // each in its own element: adjacent plain text in the column would run together on one line
+    expect(within(calibration).getByText("10.1000/calibration-certificate")).toBeVisible();
+    expect(within(calibration).getByText("10.1000/calibration-report")).toBeVisible();
+    expect(within(calibration).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  test("previews a landing page that is not a web address as text, not as a link", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({
+      searchReply: [200, { ...SEARCH_RESULT, hits: [{ ...HITS[0], landingPage: "www.example.org/lsm980" }, HITS[1]] }],
+    });
+    await renderOpenDialog();
+    await search(user, "microscope");
+
+    await user.click(radioFor("Confocal Microscope"));
+
+    const preview = screen.getByRole("region", { name: "inventory:pidinstImport.preview.title" });
+    const landingPage = previewValue(preview, "inventory:pidinstImport.preview.landingPage");
+    expect(landingPage).toHaveTextContent("www.example.org/lsm980");
+    expect(within(landingPage).queryByRole("link")).not.toBeInTheDocument();
   });
 
   test("refuses to import without a selection", async () => {
@@ -565,5 +632,108 @@ describe("PidinstImportDialog", () => {
       expect(screen.getByRole("status")).toHaveTextContent("");
     });
     finishSearch?.([200, SEARCH_RESULT]);
+  });
+
+  test("lists the registry entries that were not imported in a second warning that stays until dismissed", async () => {
+    const user = userEvent.setup();
+    const onImported = vi.fn();
+    stubEndpoints({ importReply: [201, { ...CREATED_INSTRUMENT, skippedRelatedIdentifiers: SKIPPED }] });
+    await renderOpenDialog(<PidinstImportDialogStory onImported={onImported} />);
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    expect(await screen.findByText("inventory:pidinstImport.importSuccess")).toBeVisible();
+    expect(onImported).toHaveBeenCalledWith({ id: 77, globalId: "IN77" });
+
+    const warning = await screen.findByRole("alert", { name: /pidinstImport\.skipped\.title/ });
+    await user.click(within(warning).getByRole("button", { name: /detailsToggleLabel/ }));
+    expect(within(warning).getByText("Measurement technique")).toBeVisible();
+    expect(within(warning).getByText(/pidinstImport\.skipped\.reasons\.otherServer/)).toBeVisible();
+    expect(within(warning).getByText("Calibration")).toBeVisible();
+    expect(within(warning).getByText(/pidinstImport\.skipped\.reasons\.notAvailable/)).toBeVisible();
+
+    // persistence is a property of the alert, not of the DOM: the store keeps an infinite alert
+    // until it is dismissed, so it is pinned on what the dialog asked for
+    const mkAlertMock = vi.mocked(mkAlert);
+    expect(mkAlertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: "warning", isInfinite: true, title: "inventory:pidinstImport.skipped.title" }),
+    );
+  });
+
+  test("shows no warning when nothing was skipped", async () => {
+    const user = userEvent.setup();
+    await renderOpenDialog();
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    expect(await screen.findByText("inventory:pidinstImport.importSuccess")).toBeVisible();
+    expect(screen.queryByText("inventory:pidinstImport.skipped.title")).toBeNull();
+    const mkAlertMock = vi.mocked(mkAlert);
+    expect(mkAlertMock).not.toHaveBeenCalledWith(expect.objectContaining({ variant: "warning" }));
+  });
+
+  test("puts each entry's address where the reason's sentence places it, as a link only for a web address", async () => {
+    const user = userEvent.setup();
+    const notWebAddresses = [
+      { field: "Calibration", reason: "OTHER_SERVER", address: "10.1000/manual" },
+      { field: "Calibration", reason: "OTHER_SERVER", address: "javascript:alert(1)" },
+    ];
+    stubEndpoints({
+      importReply: [201, { ...CREATED_INSTRUMENT, skippedRelatedIdentifiers: [...SKIPPED, ...notWebAddresses] }],
+    });
+    await renderOpenDialog(
+      await wrapWithRealI18n(<PidinstImportDialogStory />, {
+        resources: { common: commonEn, inventory: inventoryEn },
+        defaultNS: "inventory",
+      }),
+    );
+    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await screen.findByRole("gridcell", { name: HITS[0].name });
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "Import" }));
+
+    const warning = await screen.findByRole("alert", { name: /Some registry entries were not imported/ });
+    await user.click(within(warning).getByRole("button", { name: /sub-message/ }));
+    // real English, because cimode renders neither the placeholders nor the address inside them
+    const [otherServer, notAvailable, doi, script] = within(warning).getAllByRole("alert");
+    expect(otherServer).toHaveTextContent(
+      `It points at another server (other.researchspace.com): ${SKIPPED[0].address}`,
+    );
+    expect(within(otherServer).getByRole("link", { name: SKIPPED[0].address })).toHaveAttribute(
+      "href",
+      SKIPPED[0].address,
+    );
+    expect(notAvailable).toHaveTextContent(`The item it points at is not available to you: ${SKIPPED[1].address}`);
+    expect(within(notAvailable).getByRole("link", { name: SKIPPED[1].address })).toBeVisible();
+    expect(doi).toHaveTextContent("It is not the address of an item in this RSpace: 10.1000/manual");
+    expect(script).toHaveTextContent("It is not the address of an item in this RSpace: javascript:alert(1)");
+    expect(within(doi).queryByRole("link")).toBeNull();
+    expect(within(script).queryByRole("link")).toBeNull();
+  });
+
+  test("names a reason it has no words for by its code rather than by a wrong sentence", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({
+      importReply: [
+        201,
+        {
+          ...CREATED_INSTRUMENT,
+          skippedRelatedIdentifiers: [{ field: "Calibration", reason: "SOMETHING_NEW", address: "10.1000/manual" }],
+        },
+      ],
+    });
+    await renderOpenDialog();
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    const warning = await screen.findByRole("alert", { name: /pidinstImport\.skipped\.title/ });
+    await user.click(within(warning).getByRole("button", { name: /detailsToggleLabel/ }));
+    expect(within(warning).getByText(/SOMETHING_NEW/)).toBeVisible();
+    // the code itself, not a catalogue key built from it
+    expect(within(warning).queryByText(/skipped\.reasons\./)).toBeNull();
   });
 });

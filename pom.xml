@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>researchspace</artifactId>
   <packaging>war</packaging>
-  <version>2.27.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
+  <version>2.27.1-RC-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
   <name>ResearchSpace</name>
   <url>https://www.researchspace.com</url>
 
@@ -397,6 +397,8 @@
             well for deployment-dependent property files. -->
           <include>deployments/${deployment}/**</include>
           <include>deployments/defaultDeployment.properties</include>
+          <include>deployments/feature-flags.properties</include>
+          <include>feature-flags/feature-flags.jsonc</include>
         </includes>
         <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
           placeholders resolve from deployment.properties at runtime. -->
@@ -461,14 +463,15 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.bucket4j</groupId>
+      <artifactId>bucket4j_jdk17-core</artifactId>
+      <version>${bucket4j.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.mnode.ical4j</groupId>
       <artifactId>ical4j</artifactId>
       <version>${ical4j.version}</version>
       <exclusions>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-collections4</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-lang3</artifactId>
@@ -476,13 +479,6 @@
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
-        </exclusion>
-        <!-- ical4j 3.x (javax namespace) drags in com.sun.mail:javax.mail, whose javax-namespace
-             IMAPProvider is picked up by the jakarta.mail ServiceLoader and rejected as "not a
-             subtype of jakarta.mail.Provider". We use jakarta.mail; exclude the javax one. -->
-        <exclusion>
-          <groupId>com.sun.mail</groupId>
-          <artifactId>javax.mail</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -746,6 +742,53 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-core-jakarta</artifactId>
+      <version>2.2.48</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.swagger.parser.v3</groupId>
+      <artifactId>swagger-parser-v3</artifactId>
+      <version>2.1.10</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>io.swagger.core.v3</groupId>
+          <artifactId>swagger-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.swagger.core.v3</groupId>
+          <artifactId>swagger-models</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!--
+      The test OpenAPI parser uses non-Jakarta swagger-core. Keep its duplicate
+      classes API-compatible with the production Jakarta artifact used by OpenAPI generation.
+    -->
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-core</artifactId>
+      <version>2.2.48</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -1287,6 +1330,30 @@
           <artifactId>classmate</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.blazebit</groupId>
+      <artifactId>blaze-persistence-core-api-jakarta</artifactId>
+      <version>${blaze-persistence.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.blazebit</groupId>
+      <artifactId>blaze-persistence-core-impl-jakarta</artifactId>
+      <version>${blaze-persistence.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.blazebit</groupId>
+      <!-- Blaze publishes this module for Hibernate 6.2+; it is the supported integration for
+           the Hibernate ORM 6.4 version used by this application. There is no 6.4 artifact. -->
+      <artifactId>blaze-persistence-integration-hibernate-6.2</artifactId>
+      <version>${blaze-persistence.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.nstdio</groupId>
+      <artifactId>rsql-parser</artifactId>
+      <version>${rsql-parser.version}</version>
     </dependency>
     <dependency>
       <groupId>org.javassist</groupId>
@@ -2412,6 +2479,8 @@
               <!-- see Spring application-resources.xml which uses this variable
                 as well for deployment-dependent property files. -->
               <include>deployments/defaultDeployment.properties</include>
+              <include>deployments/feature-flags.properties</include>
+              <include>feature-flags/feature-flags.jsonc</include>
             </includes>
             <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
               placeholders resolve from deployment.properties at runtime. -->
@@ -2597,6 +2666,8 @@
     <frontend.pnpm.version>11.18.0</frontend.pnpm.version>
     <includedTestGroups></includedTestGroups>
     <excludedTestGroups>chemistry</excludedTestGroups>
+    <blaze-persistence.version>1.6.18</blaze-persistence.version>
+    <ical4j.version>4.3.0</ical4j.version>
     <!-- jetty -->
     <jetty.version>12.1.11</jetty.version>
     <slf4j.version>2.0.2</slf4j.version>
@@ -2614,6 +2685,7 @@
     <hibernate.logLevel>ERROR</hibernate.logLevel>
 
     <javax.cache.version>1.1.1</javax.cache.version>
+    <rsql-parser.version>2.4.0</rsql-parser.version>
 
     <assertj.version>3.27.7</assertj.version>
 
@@ -2672,6 +2744,7 @@
 
     <aspectj.version>1.9.22.1</aspectj.version>
     <apache.batik.version>1.19</apache.batik.version>
+    <bucket4j.version>8.19.0</bucket4j.version>
     <commons.fileupload.version>1.4</commons.fileupload.version>
     <guava.version>23.4-jre</guava.version>
     <icu4j.version>78.3</icu4j.version>

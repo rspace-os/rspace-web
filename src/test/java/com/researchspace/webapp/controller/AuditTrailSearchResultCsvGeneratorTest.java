@@ -23,6 +23,7 @@ import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -122,6 +123,186 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     assertFalse(implicitLocaleUsed[0], "CSV content used the ambient request locale");
   }
 
+  @Test
+  public void bookingCsvUsesReadableTypeAndActionLabels() throws IOException {
+    AuditDomain bookingDomain = AuditDomain.BOOKING;
+    ISearchResults<AuditTrailSearchResult> results =
+        new SearchResultsImpl<>(
+            toList(
+                createAuditSearchResult(
+                    bookingDomain, AuditAction.WRITE, "bookings:11", "CANCELLED", null),
+                createAuditSearchResult(
+                    bookingDomain,
+                    AuditAction.DELETE,
+                    "booking-configurations:12",
+                    "ARCHIVED",
+                    null),
+                createAuditSearchResult(
+                    bookingDomain,
+                    AuditAction.DELETE,
+                    "booking-configurations:13",
+                    "ARCHIVED",
+                    "permanent=true"),
+                createAuditSearchResult(
+                    AuditDomain.UNKNOWN, AuditAction.WRITE, "bookings:14", "CANCELLED", null)),
+            0,
+            4);
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
+
+    assertEquals("Cancelled", getCellByRowColumn(csv, 2, 2));
+    assertEquals("Booking", getCellByRowColumn(csv, 2, 3));
+    assertEquals("Archived", getCellByRowColumn(csv, 3, 2));
+    assertEquals("Booking", getCellByRowColumn(csv, 3, 3));
+    assertEquals("Permanently deleted", getCellByRowColumn(csv, 4, 2));
+    assertEquals("Booking", getCellByRowColumn(csv, 4, 3));
+    assertEquals("Cancelled", getCellByRowColumn(csv, 5, 2));
+    assertEquals("Booking", getCellByRowColumn(csv, 5, 3));
+  }
+
+  @Test
+  public void bookingCsvLabelsCreateChangeAndRestoreAndKeepOtherActionsRaw() throws IOException {
+    ISearchResults<AuditTrailSearchResult> results =
+        new SearchResultsImpl<>(
+            toList(
+                createAuditSearchResult(
+                    AuditDomain.BOOKING, AuditAction.CREATE, "bookings:21", "CONFIRMED", null),
+                createAuditSearchResult(
+                    AuditDomain.BOOKING, AuditAction.WRITE, "bookings:21", "CONFIRMED", null),
+                createAuditSearchResult(
+                    AuditDomain.BOOKING,
+                    AuditAction.RESTORE,
+                    "booking-configurations:22",
+                    "ACTIVE",
+                    null),
+                createAuditSearchResult(
+                    AuditDomain.BOOKING, AuditAction.DELETE, "bookings:21", "CONFIRMED", null),
+                createAuditSearchResult(
+                    AuditDomain.RECORD, AuditAction.RESTORE, "SD23", "ACTIVE", null)),
+            0,
+            5);
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
+
+    assertEquals("Created", getCellByRowColumn(csv, 2, 2));
+    assertEquals("Changed", getCellByRowColumn(csv, 3, 2));
+    assertEquals("Restored", getCellByRowColumn(csv, 4, 2));
+    assertEquals("DELETE", getCellByRowColumn(csv, 5, 2));
+    assertEquals("RESTORE", getCellByRowColumn(csv, 6, 2));
+  }
+
+  @Test
+  public void bookingNameIsTheRecordedNameTargetOrConfiguration() throws IOException {
+    AuditTrailSearchResult deleted =
+        createAuditSearchResult(
+            AuditDomain.BOOKING,
+            AuditAction.DELETE,
+            "booking-configurations:24",
+            "ARCHIVED",
+            "permanent=true");
+    deleted.getEvent().getData().getData().put("targetName", "Confocal microscope");
+    deleted.getEvent().getData().getData().put("deletedAt", "2026-09-28T18:29:48.555718112Z");
+    AuditTrailSearchResult configuration =
+        createAuditSearchResult(
+            AuditDomain.BOOKING, AuditAction.WRITE, "booking-configurations:25", "ACTIVE", null);
+    configuration
+        .getEvent()
+        .getData()
+        .getData()
+        .put("target", java.util.Map.of("type", "INSTRUMENT", "id", 5));
+    AuditTrailSearchResult booking =
+        createAuditSearchResult(
+            AuditDomain.BOOKING, AuditAction.WRITE, "bookings:26", "CONFIRMED", null);
+    booking
+        .getEvent()
+        .getData()
+        .getData()
+        .put("bookingConfigurationId", "booking-configurations:25");
+    AuditTrailSearchResult defaults =
+        createAuditSearchResult(
+            AuditDomain.BOOKING, AuditAction.WRITE, "booking-settings:1", null, null);
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(
+            new SearchResultsImpl<>(toList(deleted, configuration, booking, defaults), 0, 4),
+            defaultSearchConfig());
+
+    assertEquals("Confocal microscope", getCellByRowColumn(csv, 2, 5));
+    assertEquals("IN5", getCellByRowColumn(csv, 3, 5));
+    assertEquals("booking-configurations:25", getCellByRowColumn(csv, 4, 5));
+    assertEquals("n/a", getCellByRowColumn(csv, 5, 5));
+    assertThat(csv.getBody()).contains("Deleted at (UTC): 2026-09-28T18:29:48Z;");
+    assertThat(csv.getBody()).doesNotContain("555718112");
+  }
+
+  @Test
+  public void bookingDescriptionPutsRecordedDetailsBeforeTheLoggedDescription() throws IOException {
+    AuditTrailSearchResult deleted =
+        createAuditSearchResult(
+            AuditDomain.BOOKING,
+            AuditAction.DELETE,
+            "booking-configurations:13",
+            "ARCHIVED",
+            "permanent=true; subject=user2b");
+    deleted.getEvent().getData().getData().put("openDays", List.of(1, 3));
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(
+            singleResult(deleted), defaultSearchConfig());
+
+    assertEquals("Permanently deleted", getCellByRowColumn(csv, 2, 2));
+    assertThat(csv.getBody())
+        .contains(
+            "\"Status: ARCHIVED; Open days: Monday, Wednesday; permanent=true; subject=user2b\"");
+  }
+
+  @Test
+  public void bookingStateDoesNotChangeNonBookingCsvSemantics() throws IOException {
+    ISearchResults<AuditTrailSearchResult> results =
+        singleResult(
+            createAuditSearchResult(
+                AuditDomain.RECORD, AuditAction.WRITE, "record:15", "CANCELLED", null));
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
+
+    assertEquals("WRITE", getCellByRowColumn(csv, 2, 2));
+    assertEquals("RECORD", getCellByRowColumn(csv, 2, 3));
+  }
+
+  @Test
+  public void malformedLegacyBookingIdKeepsUnknownTypeAndRawAction() throws IOException {
+    ISearchResults<AuditTrailSearchResult> results =
+        singleResult(
+            createAuditSearchResult(
+                AuditDomain.UNKNOWN, AuditAction.WRITE, "bookings:evil", "CANCELLED", null));
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
+
+    assertEquals("WRITE", getCellByRowColumn(csv, 2, 2));
+    assertEquals("UNKNOWN", getCellByRowColumn(csv, 2, 3));
+  }
+
+  @Test
+  public void bookingDeleteRequiresExactPermanentMarker() throws IOException {
+    ISearchResults<AuditTrailSearchResult> results =
+        singleResult(
+            createAuditSearchResult(
+                AuditDomain.BOOKING,
+                AuditAction.DELETE,
+                "booking-configurations:15",
+                "ARCHIVED",
+                "note=not-permanent=true"));
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
+
+    assertEquals("Archived", getCellByRowColumn(csv, 2, 2));
+  }
+
   private String getCellByRowColumn(ResponseEntity<String> results, int row, int column) {
     String csvLine = results.getBody().split("\\n")[row];
     String desc = csvLine.split(",")[column];
@@ -205,6 +386,23 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     AuditTrailSearchResult result =
         new AuditTrailSearchResult(historicData, Instant.now().toEpochMilli());
     return result;
+  }
+
+  private AuditTrailSearchResult createAuditSearchResult(
+      AuditDomain domain, AuditAction action, String id, String state, String description) {
+    AuditData data = new AuditData();
+    data.getData().put("id", id);
+    if (state != null) {
+      data.getData().put("state", state);
+    }
+    HistoricData historicData =
+        new HistoricData(domain, action, anyUser.getFullName(), data, anyUser.getUniqueName());
+    historicData.setDescription(description);
+    return new AuditTrailSearchResult(historicData, Instant.now().toEpochMilli());
+  }
+
+  private ISearchResults<AuditTrailSearchResult> singleResult(AuditTrailSearchResult result) {
+    return new SearchResultsImpl<>(toList(result), 0, 1);
   }
 
   private ISearchResults<AuditTrailSearchResult> createValidSearchResultForMoveEvent(

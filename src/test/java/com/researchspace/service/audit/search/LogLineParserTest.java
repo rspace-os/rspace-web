@@ -3,6 +3,7 @@ package com.researchspace.service.audit.search;
 import com.researchspace.core.util.BasicPaginationCriteria;
 import com.researchspace.core.util.IPagination;
 import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditDomain;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -117,6 +118,52 @@ public class LogLineParserTest {
     Assertions.assertEquals(AuditAction.DUPLICATE, log.getAction());
     Assertions.assertEquals(AuditDomain.RECORD, log.getDomain());
     Assertions.assertEquals("userNik", log.getUsername());
+  }
+
+  @Test
+  public void normalizesOnlyExactTopLevelBookingIdsFromUnknownDomain() throws ParseException {
+    for (String identifier :
+        new String[] {"bookings:41", "booking-configurations:42", "booking-settings:1"}) {
+      String line =
+          "01 Jan 2026 12:00:00,000 - domain:UNKNOWN action:WRITE"
+              + " [{\"data\":{\"id\":\""
+              + identifier
+              + "\"}}] alice(Alice Example)";
+
+      LogLine parsed = parser.parseLine(line, dateFormat);
+
+      Assertions.assertEquals(AuditDomain.BOOKING, parsed.getDomain());
+      Assertions.assertEquals(AuditAction.WRITE, parsed.getAction());
+    }
+
+    String nestedIdentifier =
+        "01 Jan 2026 12:00:00,000 - domain:UNKNOWN action:WRITE"
+            + " [{\"data\":{\"target\":{\"id\":\"bookings:41\"}}}]"
+            + " alice(Alice Example)";
+    String malformedIdentifier =
+        "01 Jan 2026 12:00:00,000 - domain:UNKNOWN action:WRITE"
+            + " [{\"data\":{\"id\":\"booking-settings:1v2\"}}] alice(Alice Example)";
+
+    Assertions.assertEquals(
+        AuditDomain.UNKNOWN, parser.parseLine(nestedIdentifier, dateFormat).getDomain());
+    Assertions.assertEquals(
+        AuditDomain.UNKNOWN, parser.parseLine(malformedIdentifier, dateFormat).getDomain());
+  }
+
+  @Test
+  public void preservesMultilineBookingCancellationReasonsInJsonSnapshots() throws ParseException {
+    String line =
+        "01 Jan 2026 12:00:00,000 - domain:BOOKING action:WRITE"
+            + " [{\"data\":{\"id\":\"bookings:41\","
+            + "\"state\":\"CANCELLED\","
+            + "\"cancellationReason\":\"First line\\nSecond line\"}}]"
+            + " alice(Alice Example)";
+
+    LogLine parsed = parser.parseLine(line, dateFormat);
+
+    Assertions.assertEquals(
+        "First line\nSecond line",
+        AuditData.fromJson(parsed.getData()).getData().get("cancellationReason"));
   }
 
   @Test
