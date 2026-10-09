@@ -242,11 +242,21 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   public void passwordResetIsRefusedWhenAConcurrentSubmitClaimedTheTokenFirst() {
     TokenBasedVerification token = resetToken();
     when(userDao.getByToken(token.getToken())).thenReturn(token);
+    when(userDao.getUserByEmail(token.getEmail())).thenReturn(List.of(createAnyUser("any")));
     when(userDao.claimTokenBasedVerification(token.getToken())).thenReturn(0);
 
     assertNull(userManager.applyLoginPasswordChange("newPassword1", token.getToken()));
-    verify(userDao, never()).getUserByEmail(anyString());
     verify(userDao, never()).save(any(User.class));
+  }
+
+  @Test
+  public void resetForAnEmailWithNoUserDoesNotClaimTheToken() {
+    TokenBasedVerification token = resetToken();
+    when(userDao.getByToken(token.getToken())).thenReturn(token);
+    when(userDao.getUserByEmail(token.getEmail())).thenReturn(List.of());
+
+    assertNull(userManager.applyLoginPasswordChange("newPassword1", token.getToken()));
+    verify(userDao, never()).claimTokenBasedVerification(anyString());
   }
 
   @Test
