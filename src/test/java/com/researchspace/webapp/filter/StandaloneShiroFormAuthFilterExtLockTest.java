@@ -12,6 +12,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.LoginVerificationBusyException;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.User;
 import com.researchspace.service.UserManager;
 import java.text.Normalizer;
@@ -36,6 +38,7 @@ class StandaloneShiroFormAuthFilterExtLockTest {
   private final ExecutorService pool = Executors.newCachedThreadPool();
   private final UserManager userMgr = mock(UserManager.class);
   private final IUserAccountLockoutPolicy lockoutPolicy = mock(IUserAccountLockoutPolicy.class);
+  private final SentinelPasswordCheck sentinelCheck = mock(SentinelPasswordCheck.class);
   private final User user = new User("user1a");
   private final CountDownLatch held = new CountDownLatch(1);
   private final CountDownLatch release = new CountDownLatch(1);
@@ -49,6 +52,7 @@ class StandaloneShiroFormAuthFilterExtLockTest {
     filter = new StandaloneShiroFormAuthFilterExt();
     filter.setUserMgr(userMgr);
     filter.setLockoutPolicy(lockoutPolicy);
+    filter.setSentinelCheck(sentinelCheck);
   }
 
   @AfterEach
@@ -65,7 +69,8 @@ class StandaloneShiroFormAuthFilterExtLockTest {
     MockHttpServletRequest request = loginSubmission("USER1A");
     assertTrue(filter.onAccessDenied(request, new MockHttpServletResponse()));
 
-    assertNotNull(request.getAttribute("shiroLoginFailure"));
+    assertEquals(
+        LoginVerificationBusyException.class.getName(), request.getAttribute("shiroLoginFailure"));
     verify(lockoutPolicy, never()).handleLockoutOnFailure(any());
     release.countDown();
     inFlight.get(5, TimeUnit.SECONDS);
@@ -89,7 +94,8 @@ class StandaloneShiroFormAuthFilterExtLockTest {
     MockHttpServletRequest request = loginSubmission(submitted);
     assertTrue(filter.onAccessDenied(request, new MockHttpServletResponse()));
 
-    assertNotNull(request.getAttribute("shiroLoginFailure"));
+    assertEquals(
+        LoginVerificationBusyException.class.getName(), request.getAttribute("shiroLoginFailure"));
     verify(lockoutPolicy, never()).handleLockoutOnFailure(any());
     release.countDown();
     inFlight.get(5, TimeUnit.SECONDS);
@@ -127,6 +133,20 @@ class StandaloneShiroFormAuthFilterExtLockTest {
     verify(lockoutPolicy, never()).handleLockoutOnFailure(any());
     release.countDown();
     inFlight.get(5, TimeUnit.SECONDS);
+  }
+
+  @Test
+  void lockedAccountIsPaddedLikeAnUnknownName() throws Exception {
+    useVerifierWaiting(Duration.ofSeconds(1));
+    lockUser();
+
+    MockHttpServletRequest request = loginSubmission("user1a");
+    assertTrue(filter.onAccessDenied(request, new MockHttpServletResponse()));
+
+    verify(sentinelCheck).pad("user1a", "wrong");
+    assertEquals(
+        AuthenticationException.class.getName(), request.getAttribute("shiroLoginFailure"));
+    verify(lockoutPolicy, never()).handleLockoutOnFailure(any());
   }
 
   @Test
