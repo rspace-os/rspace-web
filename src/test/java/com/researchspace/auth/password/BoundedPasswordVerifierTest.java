@@ -304,6 +304,59 @@ class BoundedPasswordVerifierTest {
     assertTrue(verifier.runExclusive("alice", () -> verifier.verify("alice", "ok", "stored")));
   }
 
+  @Test
+  void sameNameBurstLeavesAdmissionsForOtherAccounts() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, 2, 2, Duration.ofSeconds(5));
+    Future<Boolean> running = pool.submit(() -> verifier.verify("ghost", "ok", "stored"));
+    awaitEntered(1);
+    Future<Boolean> waiting = pool.submit(() -> verifier.verify("ghost", "ok", "stored"));
+    awaitAdmissions(verifier, 2);
+
+    for (int i = 0; i < 2; i++) {
+      long start = System.nanoTime();
+      assertThrows(
+          LoginVerificationBusyException.class, () -> verifier.verify("ghost", "ok", "stored"));
+      assertTrue(
+          TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) < 1000,
+          "a third check for one username must be refused without waiting");
+    }
+    assertEquals(2, verifier.availableAdmissions(), "refused same-name checks take no admission");
+
+    Future<Boolean> other = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
+    awaitEntered(2);
+
+    encoder.release.countDown();
+    assertTrue(running.get(5, TimeUnit.SECONDS));
+    assertTrue(waiting.get(5, TimeUnit.SECONDS));
+    assertTrue(other.get(5, TimeUnit.SECONDS));
+    assertEquals(4, verifier.availableAdmissions());
+    assertEquals(0, verifier.trackedPrincipals());
+  }
+
+  @Test
+  void thirdLoginForOneUsernameIsRefusedWithoutWaiting() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofSeconds(5));
+    CountDownLatch held = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    Future<Object> running =
+        pool.submit(() -> verifier.runExclusive("alice", () -> awaitWhileHeld(held, release)));
+    held.await(5, TimeUnit.SECONDS);
+    Future<Object> waiting = pool.submit(() -> verifier.runExclusive("alice", () -> null));
+    Thread.sleep(100);
+
+    long start = System.nanoTime();
+    assertThrows(
+        LoginVerificationBusyException.class, () -> verifier.runExclusive("alice", () -> null));
+    assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) < 1000);
+
+    release.countDown();
+    running.get(5, TimeUnit.SECONDS);
+    waiting.get(5, TimeUnit.SECONDS);
+    assertEquals(0, verifier.trackedPrincipals());
+  }
+
   private static void awaitAdmissions(BoundedPasswordVerifier verifier, int count)
       throws InterruptedException {
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
