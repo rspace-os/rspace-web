@@ -24,6 +24,11 @@ Current loggers include:
 
 Logs for authentication/authorisation errors are in `SecurityEvents.txt`.
 
+### Booking audit events
+
+Booking audit events unwrap Hibernate proxies before leaving the transaction so
+archive-triggered changes retain the entity's annotated audit fields.
+
 ### Incoming requests
 
 These are logged using the interceptor `LoggingInterceptor.java` and

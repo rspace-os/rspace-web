@@ -58,12 +58,25 @@ public interface SearchManager {
    * @param user authenticated user (whose records will be searched)
    * @return
    */
+  default ApiInventorySearchResult searchInventoryWithSimpleQuery(
+      String searchQuery,
+      InventorySearchType searchType,
+      GlobalIdentifier parentOid,
+      String ownedBy,
+      InventorySearchDeletedOption deletedItemsOption,
+      PaginationCriteria<InventoryRecord> pgCrit,
+      User user) {
+    return searchInventoryWithSimpleQuery(
+        searchQuery, searchType, parentOid, ownedBy, deletedItemsOption, null, pgCrit, user);
+  }
+
   ApiInventorySearchResult searchInventoryWithSimpleQuery(
       String searchQuery,
       InventorySearchType searchType,
       GlobalIdentifier parentOid,
       String ownedBy,
       InventorySearchDeletedOption deletedItemsOption,
+      Boolean bookable,
       PaginationCriteria<InventoryRecord> pgCrit,
       User user);
 }
