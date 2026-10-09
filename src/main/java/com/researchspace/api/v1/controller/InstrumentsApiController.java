@@ -241,10 +241,10 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     instrumentApiMgr.assertUserCanTransferInstrument(id, user);
 
     ApiInstrument updated = instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, user);
-    // A transfer really does change what the provider holds: RspaceToExternalProviderAdapterImpl
-    // maps ownerContact from the record owner's email unconditionally, and ownerName from the same
-    // owner unless the Owner field overrides it. Left unpushed, the registered record keeps the
-    // previous owner's address, which is exactly the drift this ticket exists to stop.
+    // A transfer can change what the provider holds: RspaceToExternalProviderAdapterImpl
+    // maps ownerName from the record owner's full name unless the Owner field overrides it. Left
+    // unpushed, the registered record keeps naming the previous owner, which is exactly the drift
+    // this ticket exists to stop.
     pushExternalMetadataUpdates(updated, user);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
