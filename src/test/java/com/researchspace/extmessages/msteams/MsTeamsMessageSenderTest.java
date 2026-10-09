@@ -9,11 +9,18 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.extmessages.base.MessageDetails;
+import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
+import com.researchspace.model.apps.AppConfigElementSet;
+import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.core.Person;
+import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.UserConnectionManager;
 import java.util.Collections;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,16 +32,38 @@ public class MsTeamsMessageSenderTest {
 
   private final ObjectMapper mapper = new ObjectMapper();
   MsTeamsMessageSender msteamsSender;
+  UserConnectionManager userConnectionManager;
 
   @BeforeEach
   public void setUp() throws Exception {
-    msteamsSender = new MsTeamsMessageSender();
+    userConnectionManager = mock(UserConnectionManager.class);
+    msteamsSender = new MsTeamsMessageSender(userConnectionManager);
   }
 
   @Test
   public void testSupportsApp() {
     assertTrue(msteamsSender.supportsApp(new App(App.APP_MSTEAMS, "any", false)));
     assertFalse(msteamsSender.supportsApp(new App(App.APP_SLACK, "any", false)));
+  }
+
+  @Test
+  public void webhookUrlComesFromEncryptedUserConnection() {
+    String username = "user";
+    String configSetId = "42";
+    User user = mock(User.class);
+    when(user.getUsername()).thenReturn(username);
+    AppConfigElementSet configSet = mock(AppConfigElementSet.class);
+    when(configSet.getId()).thenReturn(42L);
+    UserAppConfig appConfig = mock(UserAppConfig.class);
+    when(configSet.getUserAppConfig()).thenReturn(appConfig);
+    when(appConfig.getUser()).thenReturn(user);
+    UserConnection connection =
+        new UserConnection(new UserConnectionId(username, "MSTEAMS", configSetId), "");
+    connection.setSecret("https://teams.example/webhook");
+    when(userConnectionManager.findByUserNameProviderName(username, "MSTEAMS", configSetId))
+        .thenReturn(Optional.of(connection));
+
+    assertEquals("https://teams.example/webhook", msteamsSender.doGetPostUrl(configSet));
   }
 
   @Test

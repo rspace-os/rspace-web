@@ -106,6 +106,7 @@ import com.researchspace.service.RepositoryFactory;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserFolderCreator;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
 import com.researchspace.service.archive.ArchiveImporterManager;
@@ -951,8 +952,8 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  ExternalMessageSender msteamsExternalMessageSender() {
-    return new MsTeamsMessageSender();
+  ExternalMessageSender msteamsExternalMessageSender(UserConnectionManager userConnectionManager) {
+    return new MsTeamsMessageSender(userConnectionManager);
   }
 
   /**

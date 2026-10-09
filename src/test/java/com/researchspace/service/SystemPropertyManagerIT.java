@@ -1,6 +1,8 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
@@ -11,6 +13,7 @@ import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +34,27 @@ public class SystemPropertyManagerIT extends RealTransactionSpringTestBase {
   @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
+  }
+
+  @Test
+  public void onlySysadminsOrTheSystemChangeGlobalSettings() {
+    User user = createAndSaveUser(getRandomAlphabeticString("user"));
+    String before = sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE).getValue();
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, user));
+    SystemPropertyValue spv = sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE);
+    assertThrows(AuthorizationException.class, () -> sysPropMgr.save(spv, user));
+    assertEquals(before, sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE).getValue());
+
+    try {
+      sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, null);
+      assertEquals("DENIED", sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE).getValue());
+    } finally {
+      sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, before, null);
+    }
   }
 
   @Test

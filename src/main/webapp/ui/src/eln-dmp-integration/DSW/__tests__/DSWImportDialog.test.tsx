@@ -36,7 +36,7 @@ const uiNavigationData = {
 
 const connectionSettings: DswConfig = {
   DSW_ALIAS: "dswAlias",
-  DSW_APIKEY: "XXXXXXXXXXXXXXXXX",
+  DSW_APIKEY: null,
   DSW_URL: "dsw.org",
 };
 

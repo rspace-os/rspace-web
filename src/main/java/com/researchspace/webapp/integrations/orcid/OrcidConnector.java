@@ -35,7 +35,7 @@ public class OrcidConnector {
             + "&grant_type=authorization_code&code="
             + code;
 
-    log.warn("connecting to orcid uri: " + uri + " with data: " + data);
+    log.info("connecting to orcid uri: {}", uri);
 
     RestTemplate template = new RestTemplate();
     HttpHeaders headers = new HttpHeaders();

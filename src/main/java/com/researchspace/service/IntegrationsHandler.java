@@ -35,6 +35,8 @@ public interface IntegrationsHandler {
   String ZENODO_USER_TOKEN = "ZENODO_USER_TOKEN";
   String FIELDMARK_USER_TOKEN = "FIELDMARK_USER_TOKEN";
   String GALAXY_APIKEY = "GALAXY_APIKEY";
+  String DATAVERSE_APIKEY = "DATAVERSE_APIKEY";
+  String MSTEAMS_WEBHOOK_URL = "MSTEAMS_WEBHOOK_URL";
   String DIGITAL_COMMONS_DATA_USER_TOKEN = "DIGITAL_COMMONS_DATA_USER_TOKEN";
   String DMPONLINE_USER_TOKEN = "DMPONLINE_USER_TOKEN";
   String EGNYTE_DOMAIN_SETTING = "EGNYTE_DOMAIN";
@@ -53,7 +55,9 @@ public interface IntegrationsHandler {
   boolean isValidIntegration(String integrationName);
 
   /**
-   * Gets the {@link IntegrationInfo} enablement for the specified property name
+   * Gets the {@link IntegrationInfo} enablement for the specified property name. Stored secrets in
+   * its options are {@code null} (an unset one is {@code ""}), so server-side code that needs the
+   * real value must read it from the database, not from this object.
    *
    * @param subject
    * @param integrationName
@@ -78,11 +82,12 @@ public interface IntegrationsHandler {
    *
    * @param optionsId if provided, updates existing AppConfigElementSet
    * @param options options to save
-   * @param appName used to update integration info cache
+   * @param appName case-insensitive integration name; must match the options' app
    * @param trustedOrigin some App options should be only updated from trusted sources, not by data
    *     provided by user
    * @param user
    */
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
   void saveAppOptions(
       Long optionsId,
       Map<String, String> options,
@@ -94,7 +99,7 @@ public interface IntegrationsHandler {
    * Deletes AppConfigElementSet
    *
    * @param optionsId id of AppConfigElementSet to delete
-   * @param appName used to update integration info cache
+   * @param appName case-insensitive integration name; must match the set's app
    * @param subject
    */
   void deleteAppOptions(Long optionsId, String appName, User subject);

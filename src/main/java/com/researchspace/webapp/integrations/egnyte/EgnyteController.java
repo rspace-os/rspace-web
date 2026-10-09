@@ -6,6 +6,7 @@ import static com.researchspace.session.SessionAttributeUtils.SESSION_EGNYTE_TOK
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
@@ -39,6 +40,7 @@ public class EgnyteController {
    * =================================================
    */
 
+  @ClientReadableSecret("the Egnyte TinyMCE plugin calls Egnyte from the browser")
   @GetMapping("/egnyteSessionToken")
   @ResponseBody
   public String getEgnyteTokenFromSession(HttpSession session) {

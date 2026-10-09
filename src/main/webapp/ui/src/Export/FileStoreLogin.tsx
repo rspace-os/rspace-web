@@ -4,12 +4,15 @@ import FormHelperText from "@mui/material/FormHelperText";
 import Grid from "@mui/material/Grid";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
+import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import SecretField from "../components/Inputs/SecretField";
 import LoadingFade from "../components/LoadingFade";
+import { getErrorMessage } from "../util/error";
 import type { FileSystemId } from "./common";
 
 type FileStoreLoginArgs = {
@@ -67,7 +70,8 @@ export default function FileStoreLogin({
       })
       .catch((error) => {
         setLoading(false);
-        console.log(error);
+        // not the error itself: its request config holds the password
+        console.error("Filestore login failed", getErrorMessage(error, ""));
       });
   };
 
@@ -75,42 +79,38 @@ export default function FileStoreLogin({
     <div>
       <Grid container>
         <Grid size={12}>
-          <FormControl error aria-describedby="name-error-text">
-            <TextField
-              variant="standard"
-              label={t("export.fileStore.login.username")}
-              value={userName}
-              onChange={({ target: { value } }) => setUserName(value)}
-              autoComplete="nfsUsername"
-              data-test-id="username"
-            />
-            {userNameError && (
-              <FormHelperText id="name-error-text">{t("export.fileStore.login.usernameBlank")}</FormHelperText>
-            )}
-          </FormControl>
-        </Grid>
-        <Grid size={12}>
-          <FormControl error aria-describedby="password-error-text">
-            <TextField
-              variant="standard"
-              label={t("export.fileStore.login.password")}
-              type="password"
-              value={password}
-              onChange={({ target: { value } }) => setPassword(value)}
-              autoComplete="nfsPassword"
-              data-test-id="password"
-            />
-            {passwordError && <FormHelperText>{t("export.fileStore.login.passwordBlank")}</FormHelperText>}
-            {loginError && <FormHelperText>{t("export.fileStore.login.authProblem")}</FormHelperText>}
-            <br />
-          </FormControl>
+          <Stack sx={{ display: "inline-flex" }}>
+            <FormControl error aria-describedby="name-error-text">
+              <TextField
+                variant="standard"
+                label={t("export.fileStore.login.username")}
+                value={userName}
+                onChange={({ target: { value } }) => setUserName(value)}
+                autoComplete="username"
+              />
+              {userNameError && (
+                <FormHelperText id="name-error-text">{t("export.fileStore.login.usernameBlank")}</FormHelperText>
+              )}
+            </FormControl>
+            <FormControl error aria-describedby="password-error-text">
+              <SecretField
+                variant="standard"
+                label={t("export.fileStore.login.password")}
+                value={password}
+                onChange={setPassword}
+                autoComplete="current-password"
+              />
+              {passwordError && <FormHelperText>{t("export.fileStore.login.passwordBlank")}</FormHelperText>}
+              {loginError && <FormHelperText>{t("export.fileStore.login.authProblem")}</FormHelperText>}
+            </FormControl>
+          </Stack>
         </Grid>
         {!hideCancelButton && (
-          <Button variant="contained" color="primary" disabled={loading} data-test-id="cancel-button">
+          <Button variant="contained" color="primary" disabled={loading}>
             {t("common:actions.cancel")}
           </Button>
         )}
-        <Button variant="contained" color="primary" disabled={loading} onClick={login} data-test-id="login-button">
+        <Button variant="contained" color="primary" disabled={loading} onClick={login}>
           {t("common:actions.login")}
         </Button>
         <Snackbar

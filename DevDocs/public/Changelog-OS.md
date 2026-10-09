@@ -4,6 +4,12 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# Unreleased
+
+### Server
+
+- RSDEV-1525 moves integration credentials into encrypted storage using a Java/Hibernate database migration. When upgrading an existing installation, install and start this release before upgrading to a later release; do not skip it. Later Hibernate mappings may reference schema changes that are not yet present when this migration runs.
+
 # 2.27.0 2026-10-02
 
 ### ELN Features

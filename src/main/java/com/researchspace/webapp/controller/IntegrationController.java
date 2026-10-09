@@ -25,6 +25,7 @@ import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.upperCase;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
@@ -39,6 +40,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -157,6 +159,8 @@ public class IntegrationController extends BaseController {
   public AjaxReturnObject<IntegrationInfo> updateIntegration(
       @RequestBody IntegrationInfo newInfo, // need name/enabled state in this object
       HttpSession session) {
+    // the Egnyte and ownCloud/Nextcloud checks below match on the canonical name
+    newInfo.setName(upperCase(newInfo.getName(), Locale.ROOT));
 
     /* for Egnyte integration we verify that passed URL is valid */
     String error = null;

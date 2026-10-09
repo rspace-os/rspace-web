@@ -28,6 +28,7 @@ import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.ShareRecordMessageOrRequestCreationConfiguration;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -261,7 +262,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     channelOptions.put("SLACK_CHANNEL_ID", "C789");
     channelOptions.put("SLACK_USER_ACCESS_TOKEN", "xoxp-123456789");
 
-    userAppConfigManager.saveAppConfigElementSet(channelOptions, null, false, user);
+    userAppConfigManager.saveAppConfigElementSet(channelOptions, null, false, user, App.APP_SLACK);
   }
 
   private Long getFilePropertyCount(String username) {

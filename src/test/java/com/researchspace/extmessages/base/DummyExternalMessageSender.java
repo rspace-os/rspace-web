@@ -38,7 +38,7 @@ class DummyExternalMessageSender extends AbstractExternalWebhookMessageSender {
     this.template = template;
   }
 
-  String doGetPostUrl(AppConfigElementSet messageConfig) {
+  protected String doGetPostUrl(AppConfigElementSet messageConfig) {
     return url;
   }
 
