@@ -1,5 +1,6 @@
 package com.researchspace.auth;
 
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
@@ -29,6 +30,7 @@ public class LdapRealm extends RSpaceRealm {
   private @Autowired UserManager userManager;
 
   private @Autowired IPropertyHolder properties;
+  private @Autowired SentinelPasswordCheck sentinelCheck;
 
   public LdapRealm() {
     setCredentialsMatcher(new AllowAllCredentialsMatcher());
@@ -56,6 +58,8 @@ public class LdapRealm extends RSpaceRealm {
     if (rspaceUserExists) {
       rspaceUser = userManager.getUserByUsername(username);
       if (!SignupSource.LDAP.equals(rspaceUser.getSignupSource())) {
+        // costs about what an unknown name's directory round trip does
+        sentinelCheck.pad(userManager.loginLockKey(username), new String(password));
         return null; // not LDAP user, don't try LDAP authentication
       }
     }

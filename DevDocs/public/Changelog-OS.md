@@ -4,6 +4,22 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# Unreleased
+
+### Server
+
+- RSDEV-894 login passwords are now hashed with Argon2id
+  - On first startup after the upgrade a Liquibase change wraps every existing password hash in Argon2id, so no fast SHA-256 hash stays in the database. The wrapped hash stays as it is until the user next changes their password; new and changed passwords are stored as plain Argon2id.
+  - **This change is irreversible.** Older RSpace versions cannot read the new hashes, so nobody could log in after a downgrade. Downgrading past this version requires restoring the database backup taken before the upgrade.
+  - Backups and binary logs taken before the upgrade still contain the previous SHA-256 hashes. Rotate or expire them under your normal retention policy.
+  - First startup takes about one minute longer per 1,200 users (roughly 50 to 150 ms per user, depending on CPU); raise startup and health-check timeouts above that before upgrading. Progress is saved every 100 users. If the process is killed during this step, release Liquibase's lock (`UPDATE DATABASECHANGELOGLOCK SET LOCKED=0`) and restart; the migration continues with the users it had not reached. The change logs the row count and the time it took.
+  - Rows whose password is not a SHA-256 hex hash with a Base64 salt are left unchanged and logged at ERROR with the username. Those users cannot log in until an administrator resets their password.
+  - New optional `deployment.properties` keys limit how many login and reauthentication password checks run at once, since each check holds about 19 MiB of heap:
+    - `login.passwordVerification.maxConcurrent`, default `8`
+    - `login.passwordVerification.waitSeconds`, the seconds a check waits for a free slot, default `5`. A check that times out shows the usual wrong-password message but does not count toward account lockout.
+    - `login.passwordVerification.maxQueued`, default `32`, how many checks may wait for a slot; further attempts are refused as busy at once. At most one check per account may wait, so a burst for one username cannot fill the queue.
+  - Sign-up, Google sign-up on Community, LDAP first-login auto-signup, and password-reset replies share a limit of `password.anonymousEncode.maxConcurrent` new-password hashes in flight at once (default `4`), because each one hashes the new password with Argon2id. A submission that finds no free slot is refused at once with a message asking the user to try again, and a reset link stays usable. A password-reset link that has already been used or has expired is now refused when the new password is submitted, not only when the form is opened. If the server is too busy to sign a new user in right after sign-up, the account is still created and the login page says so.
+
 # 2.27.0 2026-10-02
 
 ### ELN Features

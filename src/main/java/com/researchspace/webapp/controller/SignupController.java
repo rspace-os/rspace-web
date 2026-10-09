@@ -4,12 +4,16 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 
 import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
+import com.researchspace.auth.password.LoginVerificationBusyException;
+import com.researchspace.auth.password.NewPasswordEncodeGate;
+import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.Role;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
+import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.RoleManager;
@@ -24,6 +28,8 @@ import java.io.UnsupportedEncodingException;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,6 +53,18 @@ public class SignupController extends BaseController {
   public static final String CLOUD_SIGNUP_ACCOUNT_ACTIVATION_FAIL_URL =
       "cloud/signup/accountActivationFail";
 
+  /**
+   * Query parameter on the login page after a signup whose automatic login was refused by the busy
+   * verifier; the page shows a message saying the account exists and to log in.
+   */
+  public static final String ACCOUNT_CREATED_LOGIN_BUSY_PARAM = "accountCreatedLoginBusy";
+
+  static final String ACCOUNT_CREATED_LOGIN_BUSY_VIEW =
+      "redirect:login?" + ACCOUNT_CREATED_LOGIN_BUSY_PARAM;
+
+  private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
+
+  private @Autowired NewPasswordEncodeGate encodeGate;
   private @Autowired RoleManager roleManager;
 
   @Autowired
@@ -249,6 +267,15 @@ public class SignupController extends BaseController {
     }
     addRole(user);
 
+    if (!encodeGate.tryAcquire()) {
+      SECURITY_LOG.warn(
+          "Signup for [{}] from {} refused: no free new-password hashing slot",
+          user.getUsername(),
+          RequestUtil.remoteAddr(request));
+      errors.reject("errors.signup.rateLimited");
+      return returnToSignupPage(user);
+    }
+
     String originalPwd = user.getPassword();
     User savedUser;
     try {
@@ -271,12 +298,23 @@ public class SignupController extends BaseController {
             null);
       }
       return returnToSignupPage(user);
+    } finally {
+      encodeGate.release();
     }
 
     if (properties.isCloud()) {
       organisationManager.checkAndSaveNonApprovedOrganisation(user);
     }
-    postSignup.postUserCreate(savedUser, request, originalPwd);
+    try {
+      postSignup.postUserCreate(savedUser, request, originalPwd);
+    } catch (LoginVerificationBusyException e) {
+      SECURITY_LOG.warn(
+          "Post-signup login for [{}] from {} refused: {}",
+          savedUser.getUsername(),
+          RequestUtil.remoteAddr(request),
+          e.getMessage());
+      return ACCOUNT_CREATED_LOGIN_BUSY_VIEW;
+    }
 
     return postSignup.getRedirect(savedUser);
   }
@@ -318,8 +356,7 @@ public class SignupController extends BaseController {
   public ModelAndView submitPasswordResetPage(
       @ModelAttribute PasswordResetCommand passwordResetCommand,
       BindingResult errors,
-      HttpServletRequest request)
-      throws Exception {
+      HttpServletRequest request) {
     return passwordResetEmailHandler
         .submitResetPage(passwordResetCommand, errors, request)
         .addObject("passwordType", PasswordType.LOGIN_PASSWORD);

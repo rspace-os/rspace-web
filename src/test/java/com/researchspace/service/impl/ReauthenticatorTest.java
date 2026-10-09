@@ -1,9 +1,15 @@
 package com.researchspace.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.model.Role;
 import com.researchspace.model.SignupSource;
@@ -24,6 +30,7 @@ public class ReauthenticatorTest {
   private @Mock UserManager userMgr;
   private @Mock IVerificationPasswordValidator verificationPasswordValidator;
   private @Mock UserLdapRepo userLdapRepo;
+  private @Mock UsernamePasswordCredentialsMatcher credentialsMatcher;
 
   private ShiroTestUtils shiroUtils;
   private @Mock Subject subject;
@@ -37,6 +44,34 @@ public class ReauthenticatorTest {
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
     sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Role.SYSTEM_ROLE.getName());
+  }
+
+  @Test
+  void busyVerificationIsRefused() {
+    when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
+    when(credentialsMatcher.verify(user, "any"))
+        .thenThrow(new LoginVerificationBusyException("busy"));
+
+    assertFalse(reauthenticator.reauthenticate(user, "any"));
+  }
+
+  @Test
+  void failedPasswordCheckWritesNothing() {
+    when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
+    when(credentialsMatcher.verify(user, "wrong")).thenReturn(false);
+
+    assertFalse(reauthenticator.reauthenticate(user, "wrong"));
+    assertEquals(0, user.getNumConsecutiveLoginFailures());
+    verify(userMgr, never()).save(any(User.class));
+  }
+
+  @Test
+  void operateAsChecksTheSysadminPassword() {
+    when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(sysadmin);
+    when(credentialsMatcher.verify(sysadmin, "wrong")).thenReturn(false);
+
+    assertFalse(reauthenticator.reauthenticate(user, "wrong"));
+    verify(credentialsMatcher, never()).verify(user, "wrong");
   }
 
   @Test

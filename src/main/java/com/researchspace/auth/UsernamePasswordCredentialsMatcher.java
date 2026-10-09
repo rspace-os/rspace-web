@@ -1,33 +1,52 @@
 package com.researchspace.auth;
 
+import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.User;
-import java.util.function.BiPredicate;
-import org.apache.shiro.authc.SimpleAuthenticationInfo;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.authc.AuthenticationInfo;
+import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
-import org.apache.shiro.crypto.hash.Sha256Hash;
-import org.apache.shiro.lang.codec.Base64;
-import org.apache.shiro.lang.util.ByteSource;
+import org.apache.shiro.authc.credential.CredentialsMatcher;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Standard username-password matching procedure that replicate Shro's mechanism for use outside of
- * Shiro login mechanism, e.g. for reauthentication.
+ * Checks a login password against the stored hash for both Shiro login ({@link ShiroRealm}) and
+ * reauthentication, through the shared {@link BoundedPasswordVerifier}. A check never writes: a
+ * hash stored in the legacy encoding stays as it is (ADR 0011).
  */
+@Slf4j
 @Service
-public class UsernamePasswordCredentialsMatcher implements BiPredicate<User, String> {
+public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
+
+  private @Autowired BoundedPasswordVerifier verifier;
+  private @Autowired SentinelPasswordCheck sentinelCheck;
+
+  /** Checks the password for reauthentication. */
+  public boolean verify(User subject, String suppliedPassword) {
+    return verify(subject.getUsername(), suppliedPassword, subject.getPassword());
+  }
 
   @Override
-  public boolean test(User subject, String suppliedPassword) {
-    HashedCredentialsMatcher mt = new HashedCredentialsMatcher(Sha256Hash.ALGORITHM_NAME);
-    UsernamePasswordToken token =
-        new UsernamePasswordToken(subject.getUsername(), suppliedPassword);
-    SimpleAuthenticationInfo sif =
-        new SimpleAuthenticationInfo(
-            subject.getUsername(), subject.getPassword(), ShiroRealm.DEFAULT_USER_PASSWD_REALM);
-    if (subject.getSalt() != null) {
-      sif.setCredentialsSalt(ByteSource.Util.bytes(Base64.decode(subject.getSalt())));
+  public boolean doCredentialsMatch(AuthenticationToken token, AuthenticationInfo info) {
+    char[] supplied = ((UsernamePasswordToken) token).getPassword();
+    if (supplied == null) {
+      return false;
     }
-    return mt.doCredentialsMatch(token, sif);
+    String username = (String) info.getPrincipals().getPrimaryPrincipal();
+    return verify(username, new String(supplied), (String) info.getCredentials());
+  }
+
+  private boolean verify(String username, String suppliedPassword, String storedPassword) {
+    try {
+      return verifier.verify(username, suppliedPassword, storedPassword);
+    } catch (IllegalArgumentException e) {
+      sentinelCheck.pad(username, suppliedPassword);
+      log.warn(
+          "Stored password of [{}] has no recognised encoding; an administrator must reset it",
+          username);
+      return false;
+    }
   }
 }

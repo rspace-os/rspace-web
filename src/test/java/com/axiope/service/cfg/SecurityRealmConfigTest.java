@@ -9,6 +9,7 @@ import com.researchspace.auth.GlobalInitSysadminRealm;
 import com.researchspace.auth.LdapRealm;
 import com.researchspace.auth.ShiroRealm;
 import com.researchspace.auth.SlackRealm;
+import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
 import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.auth.wopi.WopiRealm;
 import com.researchspace.ldap.UserLdapRepo;
@@ -52,6 +53,7 @@ public class SecurityRealmConfigTest {
     @Mock MaintenanceManager maintenanceMgr;
     @Mock GroupManager grpMgr;
     @Mock UserLdapRepo userLdapRepo;
+    @Mock UsernamePasswordCredentialsMatcher credentialsMatcher;
     @Mock WhiteListIPChecker ipWhitelist;
 
     @Mock OAuthAppManager oAuthAppManager;
@@ -106,6 +108,12 @@ public class SecurityRealmConfigTest {
     UserLdapRepo userLdapRepo() {
       initMocks();
       return userLdapRepo;
+    }
+
+    @Bean
+    UsernamePasswordCredentialsMatcher credentialsMatcher() {
+      initMocks();
+      return credentialsMatcher;
     }
   }
 
