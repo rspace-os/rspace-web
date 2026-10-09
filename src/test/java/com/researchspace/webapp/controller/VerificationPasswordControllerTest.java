@@ -109,6 +109,8 @@ public class VerificationPasswordControllerTest {
               releaseHash.await(10, TimeUnit.SECONDS);
               return "hashedPW";
             });
+    when(verificationPasswordValidator.authenticateVerificationPassword(anyUser, OK_PWD))
+        .thenReturn(true);
     ExecutorService pool = Executors.newFixedThreadPool(2);
     try {
       Future<AjaxReturnObject<String>> first = pool.submit(this::setOkPassword);
@@ -145,6 +147,19 @@ public class VerificationPasswordControllerTest {
 
     assertEquals(getText("verificationPassword.set.errors.alreadySet"), setOkPassword().getData());
     verify(verificationPasswordValidator, times(1)).hashVerificationPassword(OK_PWD);
+  }
+
+  @Test
+  public void losingSetWithADifferentPasswordIsToldItIsAlreadySet() {
+    User sessionCopy = TestFactory.createAnyUser("any");
+    stubConcurrentSet(sessionCopy);
+    anyUser.setVerificationPassword("setByAnotherSignIn");
+    when(verificationPasswordValidator.authenticateVerificationPassword(anyUser, OK_PWD))
+        .thenReturn(false);
+
+    assertEquals(getText("verificationPassword.set.errors.alreadySet"), setOkPassword().getData());
+    verify(verificationPasswordValidator, never()).hashVerificationPassword(any());
+    assertUserPasswordNotSaved();
   }
 
   @Test

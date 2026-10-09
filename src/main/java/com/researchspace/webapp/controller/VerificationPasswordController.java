@@ -106,7 +106,7 @@ public class VerificationPasswordController extends BaseController {
     // a duplicate submission does not overwrite the first.
     String username = user.getUsername();
     try {
-      return verifier.runExclusive(username, () -> setIfStillUnset(username, newPass));
+      return verifier.runExclusive(username, () -> setIfStillUnset(username, newPass, request));
     } catch (LoginVerificationBusyException e) {
       SECURITY_LOG.warn(
           "User [{}] could not set verification password, from {}: {}",
@@ -121,13 +121,25 @@ public class VerificationPasswordController extends BaseController {
     }
   }
 
-  private AjaxReturnObject<String> setIfStillUnset(String username, String newPass) {
+  /**
+   * A set that lost the race succeeds only if it submitted the password that won, so a different,
+   * discarded password is never reported as saved.
+   */
+  private AjaxReturnObject<String> setIfStillUnset(
+      String username, String newPass, HttpServletRequest request) {
     User current = userManager.getUserByUsername(username, true);
     if (!verificationPasswordValidator.isVerificationPasswordSet(current)) {
       current.setVerificationPassword(
           verificationPasswordValidator.hashVerificationPassword(newPass));
       userManager.saveUser(current);
       SECURITY_LOG.info("User [{}] successfully set verification password", username);
+    } else if (!verificationPasswordValidator.authenticateVerificationPassword(current, newPass)) {
+      SECURITY_LOG.warn(
+          "User [{}] attempted to set verification password, from {}, but it had just been set"
+              + " with a different value",
+          username,
+          RequestUtil.remoteAddr(request));
+      return new AjaxReturnObject<>(getText("verificationPassword.set.errors.alreadySet"), null);
     }
     return new AjaxReturnObject<>(getText("verificationPassword.set.success"), null);
   }
