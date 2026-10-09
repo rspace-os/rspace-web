@@ -77,7 +77,9 @@ Verification passwords were bcrypt. A second custom change,
 `PrefixBcryptVerificationPasswords_RSDEV894`, runs after the login wrap and prefixes every bare
 bcrypt `verificationPassword` (`$2a`, `$2b`, `$2y`) with `{bcrypt}`, skipping values that already
 carry a registered id. Any other non-blank value could never verify, so it is cleared and logged
-at ERROR by username, and that user sets a new verification password. A `{bcrypt}` value is
+at ERROR by username, and that user sets a new verification password. This differs from the
+login-hash wrap, which leaves unreadable rows unchanged, because a cleared verification password
+can be set again by its owner. A `{bcrypt}` value is
 permanent, like the wrapped login hash: it is read through the shared encoder and never rewritten,
 and only a new verification password is stored as Argon2id. The change logs its row counts at
 INFO.
@@ -240,7 +242,11 @@ That table must change in the same commit as any limit, default, message or rout
   `BoundedPasswordVerifier` and so share the permit pool with login, so a login flood also slows
   document signing. The anonymous OAuth password grant reaches the same pool through
   reauthentication, so a client that knows a handful of usernames can hold the permits and push
-  form logins into the busy refusal.
+  form logins into the busy refusal. Verification-password checks (SSO and Google users) share the
+  same per-username queue and permit pool, so a login flood against a username can make that
+  user's signature confirmation answer busy until it stops. Setting or changing a verification
+  password while signed in takes no anonymous-encode permit, by design: that gate bounds
+  anonymous callers only.
 - Reauthentication, including verification password checks, has no per-account rate limit beyond
   one check in flight at a time. The anonymous OAuth password grant (`/oauth/token`) checks the
   user's password before validating the client, so an unregistered client can try on the order of
