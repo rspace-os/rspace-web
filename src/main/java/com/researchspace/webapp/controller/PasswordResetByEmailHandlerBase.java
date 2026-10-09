@@ -14,11 +14,12 @@ import com.researchspace.service.EmailContent;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
+import com.researchspace.service.impl.PasswordResetApplier;
+import com.researchspace.service.impl.PasswordResetApplier.ResetAttempt;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -30,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.dao.DataAccessException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
@@ -38,9 +38,6 @@ import org.springframework.web.servlet.ModelAndView;
 /** Base class for password/verification-password reset by email */
 public abstract class PasswordResetByEmailHandlerBase {
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
-
-  /** "Record has changed since last read", raised under MariaDB's innodb_snapshot_isolation. */
-  private static final int MARIADB_SNAPSHOT_CONFLICT = 1020;
 
   @Autowired UserManager userManager;
   @Autowired IPropertyHolder properties;
@@ -51,6 +48,7 @@ public abstract class PasswordResetByEmailHandlerBase {
 
   @Autowired UserValidator userValidator;
   @Autowired NewPasswordEncodeGate encodeGate;
+  @Autowired PasswordResetApplier resetApplier;
   @Autowired MessageSourceUtils messages;
   private @Autowired EmailContentGenerator emailContentGenerator;
   Map<String, RateLimiter> resetsPerMinutePerUser = new ConcurrentHashMap<String, RateLimiter>();
@@ -155,52 +153,40 @@ public abstract class PasswordResetByEmailHandlerBase {
       return new ModelAndView("passwordReset/resetPassword");
     }
     // update pwd, set as closed
-    TokenBasedVerification upc;
+    ResetAttempt attempt;
     try {
-      upc = applyPasswordChange(cmd);
-    } catch (DataAccessException e) {
-      if (!isSnapshotConflict(e) && !isResetCompletedNow(cmd.getToken())) {
-        throw e;
-      }
-      SECURITY_LOG.warn(
-          "Reset of {} for [{}] from {} not applied: a concurrent change conflicted (another"
-              + " reset submit or an update to the account)",
-          getPasswordType(),
-          username,
-          RequestUtil.remoteAddr(request));
-      return new ModelAndView("passwordReset/resetPasswordFail");
+      attempt = resetApplier.apply(cmd.getToken(), () -> applyPasswordChange(cmd));
     } finally {
       encodeGate.release();
     }
-    if (upc == null) {
-      SECURITY_LOG.warn(
-          "Reset of {} for [{}] from {} refused at the moment of change: token used, expired or"
-              + " claimed by a concurrent submit",
-          getPasswordType(),
-          username,
-          RequestUtil.remoteAddr(request));
-      return new ModelAndView("passwordReset/resetPasswordFail");
+    switch (attempt.outcome()) {
+      case CONFLICT -> {
+        SECURITY_LOG.warn(
+            "Reset of {} for [{}] from {} not applied: a concurrent change conflicted (another"
+                + " reset submit or an update to the account)",
+            getPasswordType(),
+            username,
+            RequestUtil.remoteAddr(request));
+        return new ModelAndView("passwordReset/resetPasswordFail");
+      }
+      case REFUSED -> {
+        SECURITY_LOG.warn(
+            "Reset of {} for [{}] from {} refused at the moment of change: token used, expired or"
+                + " claimed by a concurrent submit",
+            getPasswordType(),
+            username,
+            RequestUtil.remoteAddr(request));
+        return new ModelAndView("passwordReset/resetPasswordFail");
+      }
+      case APPLIED -> {}
     }
+    TokenBasedVerification upc = attempt.change();
     sendPasswordChangeCompleteEmail(upc);
     SECURITY_LOG.info(
         "Completed password reset for user with email [{}] from IP address [{}]",
         upc.getEmail(),
         upc.getIpAddressOfRequestor());
     return new ModelAndView("passwordReset/resetPasswordComplete");
-  }
-
-  private static boolean isSnapshotConflict(DataAccessException e) {
-    for (Throwable t = e; t != null; t = t.getCause()) {
-      if (t instanceof SQLException sql && sql.getErrorCode() == MARIADB_SNAPSHOT_CONFLICT) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private boolean isResetCompletedNow(String token) {
-    TokenBasedVerification reread = userManager.getUserVerificationToken(token);
-    return reread != null && reread.isResetCompleted();
   }
 
   private boolean isUsableResetToken(TokenBasedVerification change, String token) {
