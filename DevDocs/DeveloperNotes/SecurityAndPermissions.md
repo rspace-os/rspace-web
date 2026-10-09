@@ -193,3 +193,9 @@ Endpoints that serve stored file content should send
 of sniffing without also declaring the type the browser should honour. This
 matters most where bytes are returned inline, without a `Content-Disposition`
 header.
+
+### Integration authorization
+
+OAuth callbacks must reject absent or mismatched state before exchanging codes. `BaseOAuth2Controller` generates a random 32-character state in the login session and consumes it on every validation attempt. Provider metadata such as a RAiD server alias stays in the session, separate from the random state. GitHub repository selection uses a session-bound pending token that expires after 15 minutes and is cleared when the user disables the app or removes the last repository. Per-repository credentials remain encrypted in `UserConnection`.
+
+Slack commands require `slack.signing.secret`. `SlackSignatureFilter` authenticates the exact form body before parameter parsing, accepts timestamps within five minutes, and rejects unsigned query parameters. Authorization codes, state, webhook URLs, and tokens must be excluded from request and exception logs.

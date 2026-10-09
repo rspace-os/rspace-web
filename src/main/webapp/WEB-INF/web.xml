@@ -33,6 +33,11 @@
     </context-param>
 
     <filter>
+        <filter-name>slackSignatureFilter</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter>
         <filter-name>encodingFilter</filter-name>
         <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
         <async-supported>true</async-supported>
@@ -147,6 +152,13 @@
     </filter>
 
     <!--  this has to go first to secure subsequent URLs in filters -->
+    <filter-mapping>
+        <filter-name>slackSignatureFilter</filter-name>
+        <url-pattern>/slack/callbacks/*</url-pattern>
+        <url-pattern>/app/slack/callbacks/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+    </filter-mapping>
     <filter-mapping>
         <filter-name>shiroFilter</filter-name>
         <url-pattern>/*</url-pattern>

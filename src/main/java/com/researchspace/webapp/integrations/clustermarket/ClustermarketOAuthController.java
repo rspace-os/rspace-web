@@ -4,6 +4,7 @@ import static com.researchspace.service.IntegrationsHandler.CLUSTERMARKET_APP_NA
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.User;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -67,6 +68,7 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
   }
 
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String onAuthorization(
       @RequestParam Map<String, String> params, Model model, HttpServletRequest request) {
     User subject = userManager.getAuthenticatedUserInSession();

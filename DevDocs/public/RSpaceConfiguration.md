@@ -342,7 +342,7 @@ The following optional properties allow configuring RSpace integration with Data
 The following optional properties enable RSpace to connect to Slack (if this integration is enabled):
 * **slack.client.id** Client id of Slack App registered for given RSpace instance
 * **slack.secret** Client secret of Slack App registered for given RSpace instance
-* **slack.verification.token** Verification token.
+* **slack.signing.secret** Signing Secret from the Slack app's Basic Information page. Required for slash commands. RSpace verifies the exact request body and rejects signatures older than five minutes. The legacy verification token is no longer accepted.
 
 The following optional property enables RSpace to connect to your PyRAT database instance (if this integration is enabled):
 * **pyrat.server.config** configures the pyrat server alias associated to *server url* and server *access token* (API-Client-Token provided by Scionics - developers of PyRAT).

@@ -680,12 +680,7 @@ $(document).ready(function (){
 
   displayOrcidIdSpan();
   $('#setOrcidIdButton').click(function() {
-    var orcidClientId = $(this).data('orcidclientid');
-    var orcidRedirectUri = $(this).data('orcidredirecturi');
-    var url = "https://orcid.org/oauth/authorize?client_id=" + orcidClientId + "&redirect_uri=" 
-      + orcidRedirectUri + "&response_type=code&scope=/authenticate";
-
-    RS.openOauthAuthorizationWindow(url, '/orcid/redirect_uri', '#orcidAPIconnectionSuccess', function(authWindow) {
+    RS.openOauthAuthorizationWindow('/orcid/authorize', '/orcid/redirect_uri', '#orcidAPIconnectionSuccess', function(authWindow) {
             var orcidId = $(authWindow.document.body).find('#orcidId').text();
             var orcidOptionsId = $(authWindow.document.body).find('#orcidOptionsId').text();
             $('#orcidIdSpan').data('orcidid', orcidId);

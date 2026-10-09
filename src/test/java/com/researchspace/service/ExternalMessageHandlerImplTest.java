@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,6 +60,12 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     StructuredDocument doc2 = createBasicDocumentInRootFolderWithText(testUser, "any2");
     StructuredDocument doc3 = createBasicDocumentInRootFolderWithText(testUser, "any3");
     Long cfgSetId = setUpAppConfigForUser(testUser, App.APP_SLACK, () -> getSlackDevDfg());
+    UserConnection connection =
+        new UserConnection(
+            new UserConnectionId(testUser.getUsername(), SLACK_APP_NAME, cfgSetId.toString()),
+            "xoxp-123456789");
+    connection.setSecret(slackTestWebhookUrl);
+    userConnectionManager.save(connection);
     logoutAndLoginAs(testUser);
 
     ServiceOperationResult<ResponseEntity<String>> response =
@@ -91,9 +98,10 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
 
   private Long setUpAppConfigForUser(
       User user, String appName, Supplier<Map<String, String>> appConfigSupplier) {
+    // trusted, as only Slack's OAuth callback may create a Slack channel
     Map<String, String> options = appConfigSupplier.get();
     String teamsWebhook = options.remove("MSTEAMS_WEBHOOK_URL");
-    UserAppConfig appConfig = mgr.saveAppConfigElementSet(options, null, false, user, appName);
+    UserAppConfig appConfig = mgr.saveAppConfigElementSet(options, null, true, user, appName);
     Long cfgSetId = appConfig.getAppConfigElementSets().iterator().next().getId();
     if (App.APP_MSTEAMS.equals(appName) && teamsWebhook != null) {
       UserConnection connection =
@@ -149,12 +157,10 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     Map<String, String> map = new HashMap<>();
     map.put("SLACK_CHANNEL_NAME", "general");
     map.put("SLACK_TEAM_NAME", "rspacedev");
-    map.put("SLACK_WEBHOOK_URL", slackTestWebhookUrl);
     map.put("SLACK_CHANNEL_LABEL", "general");
     map.put("SLACK_USER_ID", "U123");
     map.put("SLACK_TEAM_ID", "T456");
     map.put("SLACK_CHANNEL_ID", "C789");
-    map.put("SLACK_USER_ACCESS_TOKEN", "xoxp-123456789");
     return map;
   }
 

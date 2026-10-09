@@ -3,6 +3,8 @@ package com.researchspace.webapp.integrations.raid;
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
+import com.researchspace.session.SessionAttributeUtils;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Controller
 @RequestMapping("/apps/raid")
@@ -39,19 +42,31 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
   @PostMapping("/connect/{serverAlias}")
   public RedirectView connect(@PathVariable String serverAlias)
       throws MalformedURLException, URISyntaxException {
-    return new RedirectView(raidServiceClientAdapter.performRedirectConnect(serverAlias));
+    String url = raidServiceClientAdapter.performRedirectConnect(serverAlias);
+    String state = generateState();
+    SessionAttributeUtils.setSessionAttribute("rs.raid.pendingAlias", serverAlias);
+    return new RedirectView(
+        UriComponentsBuilder.fromUriString(url)
+            .replaceQueryParam("state", state)
+            .build(true)
+            .toUriString());
   }
 
   @GetMapping("/callback")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String callback(@RequestParam Map<String, String> params, Model model, Principal principal)
       throws IOException, URISyntaxException, HttpClientErrorException {
     String redirectResult;
     OauthAuthorizationErrorBuilder error = OauthAuthorizationError.builder().appName("RAiD");
-    String serverAlias = params.get("state");
+    String serverAlias =
+        (String) SessionAttributeUtils.removeSessionAttribute("rs.raid.pendingAlias");
     ConnectionResultPage.addConnectionAttributes(
         model, "RAiD", "rspace.apps.raid.connection", "RAID_CONNECTED");
     model.addAttribute("connectionAlias", serverAlias);
     try {
+      verifyStateParameter(params.get("state"));
+      if (serverAlias == null)
+        throw new IllegalStateException(getText("connect.authorizationError.stateMismatch"));
       raidServiceClientAdapter.performCreateAccessToken(
           principal.getName(), serverAlias, params.get("code"));
 

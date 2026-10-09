@@ -11,16 +11,15 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
+import com.researchspace.webapp.integrations.helper.OAuthTokenPost;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -30,8 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Data;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -79,56 +76,36 @@ public class OwnCloudController extends BaseOAuth2Controller {
 
     String doRedirectCall(String ownCloudUrl, String clientId, String clientSecret)
         throws IOException {
-      URL url = new URL(ownCloudUrl);
-      HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-      urlConn.setRequestMethod("POST");
-
-      // ownCloud OAuth token request uses basic auth with
-      // client id as username and client secret as password
-      // per documentation at https://github.com/owncloud/oauth2
-      String userpass = clientId + ":" + clientSecret;
-      String basicAuth =
-          "Basic "
-              + new String(
-                  Base64.encodeBase64(userpass.getBytes(StandardCharsets.UTF_8)),
-                  StandardCharsets.UTF_8);
-      urlConn.setRequestProperty("Authorization", basicAuth);
-      // rspac-2123
-      urlConn.setRequestProperty("Content-Length", "0");
-
-      return IOUtils.toString(
-          new InputStreamReader(urlConn.getInputStream(), StandardCharsets.UTF_8));
+      return OAuthTokenPost.exchange(ownCloudUrl, clientId, clientSecret);
     }
 
     String doRefreshCall(String ownCloudRefreshUrl, String clientId, String clientSecret)
         throws IOException {
-      URL url = new URL(ownCloudRefreshUrl);
-      HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-      urlConn.setRequestMethod("POST");
-      // rspac-2123
-      urlConn.setRequestProperty("Content-Length", "0");
-
-      // ownCloud OAuth token request uses basic auth with
-      // client id as username and client secret as password
-      // per documentation at https://github.com/owncloud/oauth2
-      String userpass = clientId + ":" + clientSecret;
-      String basicAuth =
-          "Basic "
-              + new String(
-                  Base64.encodeBase64(userpass.getBytes(StandardCharsets.UTF_8)),
-                  StandardCharsets.UTF_8);
-      urlConn.setRequestProperty("Authorization", basicAuth);
-
-      return IOUtils.toString(
-          new InputStreamReader(urlConn.getInputStream(), StandardCharsets.UTF_8));
+      return doRedirectCall(ownCloudRefreshUrl, clientId, clientSecret);
     }
   }
 
   OwnCloudControllerConnector connector = new OwnCloudControllerConnector();
 
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String handleOwnCloudRedirect(
       @RequestParam Map<String, String> params, Model model, HttpSession session) {
+    try {
+      verifyStateParameter(params.get("state"));
+    } catch (IllegalStateException invalidState) {
+      log.warn("ownCloud OAuth state mismatch");
+      OauthAuthorizationError error =
+          OauthAuthorizationError.builder()
+              .appName("ownCloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"ownCloud"}))
+              .errorDetails(invalidState.getMessage())
+              .build();
+      ConnectionResultPage.addError(
+          model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
+    }
+
     // param code or error
     if (params.containsKey(ERROR)) {
       OauthAuthorizationError error =
@@ -161,7 +138,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
       String ownCloudUrl =
           ownCloudBaseURL
               + "/index.php/apps/oauth2/api/v1/token?grant_type=authorization_code&code="
-              + authorizationCode
+              + URLEncoder.encode(authorizationCode, StandardCharsets.UTF_8)
               + "&redirect_uri="
               + URLEncoder.encode(ownCloudRedirect, UTF_8);
 
@@ -191,12 +168,9 @@ public class OwnCloudController extends BaseOAuth2Controller {
       log.info("ownCloud response retrieved fine");
 
     } catch (IOException e) {
-      log.warn("io exception on contacting oauth.access url", e);
+      log.warn("OAuth token exchange failed ({})", e.getClass().getSimpleName());
       OauthAuthorizationError error =
-          getAuthErrorBuilder()
-              .errorMsg("exception during token exchange")
-              .errorDetails(e.getMessage())
-              .build();
+          getAuthErrorBuilder().errorMsg(getText("apps.oauth.errors.tokenExchange")).build();
 
       ConnectionResultPage.addError(
           model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED", error);
@@ -244,7 +218,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
       String ownCloudRefreshUrl =
           ownCloudBaseURL
               + "/index.php/apps/oauth2/api/v1/token?grant_type=refresh_token&refresh_token="
-              + refreshToken;
+              + URLEncoder.encode(refreshToken, StandardCharsets.UTF_8);
 
       try {
         String content = connector.doRefreshCall(ownCloudRefreshUrl, clientId, clientSecret);
@@ -274,7 +248,9 @@ public class OwnCloudController extends BaseOAuth2Controller {
 
         return response;
       } catch (IOException e) {
-        log.warn("io exception on contacting ownCloud oauth refresh token url", e);
+        log.warn(
+            "io exception on contacting ownCloud oauth refresh token url" + " ({})",
+            e.getClass().getSimpleName());
         return null;
       }
     } else {
@@ -305,7 +281,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
         String.format(
             "%s/index.php/apps/oauth2/authorize?response_type=code&client_id=%s&redirect_uri=%s",
             ownCloudBaseURL, clientId, redirectUrl);
-    return new RedirectView(authURL);
+    return new RedirectView(authURL + "&state=" + generateState());
   }
 
   @DeleteMapping("/connect")

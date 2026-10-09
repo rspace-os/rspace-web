@@ -139,8 +139,10 @@
     },
     "slack": {
       "errors": {
+        "missingResponseField": "The Slack response is missing required field {0}",
         "noAccessToken": "Please, add this Slack channel again on RSpace (no access token found).",
         "noConnectedUser": "There are no RSpace users associated with this Slack account! Please connect to Slack from the RSpace Apps tab.",
+        "noWebhook": "Please add this Slack channel again on RSpace (no webhook URL found).",
         "tooManyConnectedUsers": "There is more than 1 RSpace user associated with this Slack account! [{0}, {1}...]",
         "verificationCodeMismatch": "Verification token does not match!"
       },

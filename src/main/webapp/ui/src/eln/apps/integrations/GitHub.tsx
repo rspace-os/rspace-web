@@ -32,7 +32,6 @@ type UnwrapArray<T extends Array<unknown>> = {
 
 export interface GitHubConnectedMessage extends Record<string, unknown> {
   type: "GITHUB_CONNECTED";
-  authToken: string;
   error?: string;
 }
 
@@ -52,13 +51,16 @@ const DialogContent = observer(
     const { getAllRepositories, oauthUrl } = useGitHubEndpoint();
     const copyOfRepos = useLocalObservable(() => linkedRepos.map((c) => observable(c)));
     const [allRepositories, setAllRepositories] = useState<Optional<Array<Repository>>>(Optional.empty());
-    const [accessToken, setAccessToken] = useState<string | null>(null);
     const [loadingAllRepositories, setLoadingAllRepositories] = useState(false);
 
     useBroadcastChannel<GitHubConnectedMessage>(
       GITHUB_CONNECTION_CHANNEL,
       (e: MessageEvent<GitHubConnectedMessage>) => {
-        if (e.data?.type === "GITHUB_CONNECTED" && e.data.error) {
+        if (e.data?.type !== "GITHUB_CONNECTED") {
+          console.log("GitHub: Ignoring unknown message", e.data);
+          return;
+        }
+        if (e.data.error) {
           setLoadingAllRepositories(false);
           addAlert(
             mkAlert({
@@ -69,19 +71,9 @@ const DialogContent = observer(
           );
           return;
         }
-        if (
-          e.data?.type !== "GITHUB_CONNECTED" ||
-          typeof e.data.authToken !== "string" ||
-          e.data.authToken.length === 0
-        ) {
-          console.log("GitHub: Ignoring unknown message", e.data);
-          return;
-        }
-
         void (async () => {
           try {
-            setAccessToken(e.data.authToken);
-            const response = await getAllRepositories(e.data.authToken);
+            const response = await getAllRepositories();
             setAllRepositories(Optional.present(response));
           } catch (error) {
             if (error instanceof Error) {
@@ -105,7 +97,7 @@ const DialogContent = observer(
       try {
         const authWindow = window.open(await oauthUrl());
         if (!authWindow) {
-          throw new Error("Failed to open GitHub authentication window");
+          throw new Error(t("integrations.github.errors.authWindowFailed"));
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -142,12 +134,7 @@ const DialogContent = observer(
               {copyOfRepos.map((config, i) => (
                 <TableRow key={i}>
                   <TableCell>
-                    <ListItemText
-                      primary={config.GITHUB_REPOSITORY_FULL_NAME}
-                      secondary={config.GITHUB_ACCESS_TOKEN.map(() => null).orElse(
-                        t("integrations.github.repositories.invalidState"),
-                      )}
-                    />
+                    <ListItemText primary={config.GITHUB_REPOSITORY_FULL_NAME} />
                   </TableCell>
                   <TableCell>
                     <Button
@@ -160,6 +147,8 @@ const DialogContent = observer(
                               copyOfRepos.splice(indexOfDeleted, 1);
                               integrationState.credentials.splice(indexOfDeleted, 1);
                             });
+                            // removing the last repository deletes the GitHub token, so adding another needs OAuth again
+                            if (copyOfRepos.length === 0) setAllRepositories(Optional.empty());
                             addAlert(
                               mkAlert({
                                 variant: "success",
@@ -217,7 +206,6 @@ const DialogContent = observer(
                             void (async () => {
                               try {
                                 const newState = await saveAppOptions("GITHUB", Optional.empty(), {
-                                  GITHUB_ACCESS_TOKEN: accessToken,
                                   GITHUB_REPOSITORY_FULL_NAME: repo.full_name,
                                 });
                                 const optionIdsOfExistingRepos = new Set(copyOfRepos.map(({ optionsId }) => optionsId));
@@ -274,18 +262,20 @@ const DialogContent = observer(
             </Box>
           ))
           .orElse(null)}
-        {allRepositories.isEmpty() && (
-          <Box>
-            <Button
-              disabled={loadingAllRepositories}
-              onClick={() => {
-                void addHandler();
-              }}
-            >
-              {loadingAllRepositories ? t("integrations.github.repositories.loading") : t("common:actions.add")}
-            </Button>
-          </Box>
-        )}
+        <Box>
+          <Button
+            disabled={loadingAllRepositories}
+            onClick={() => {
+              void addHandler();
+            }}
+          >
+            {loadingAllRepositories
+              ? t("integrations.github.repositories.loading")
+              : allRepositories.isEmpty()
+                ? t("common:actions.add")
+                : t("actions.connect")}
+          </Button>
+        </Box>
       </Stack>
     );
   },
@@ -307,11 +297,12 @@ type GitHubArgs = {
 };
 
 /*
- * GitHub uses OAuth authentication, but the credential is stored on a
- * per-repository basis so the user has to reauthenticate whenever they wish
- * to view the listing of all of their repositories to link more. For this
- * reason, the current implementation is a little bit of hack and should be
- * further refined once the old apps page has been deprecated.
+ * GitHub uses OAuth authentication. Clicking Add opens the GitHub OAuth flow in
+ * a new window; on the callback the server stores the user's GitHub token in
+ * their UserConnection and the window broadcasts GITHUB_CONNECTED. This dialog
+ * then fetches the user's repositories through the server, which uses the
+ * stored token, and saves only the names of the repositories the user links.
+ * The token never reaches the browser.
  */
 function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);

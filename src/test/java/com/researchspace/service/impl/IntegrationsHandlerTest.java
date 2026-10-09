@@ -9,6 +9,7 @@ import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAM
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
+import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.MSTEAMS_WEBHOOK_URL;
 import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
@@ -73,6 +74,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.session.GitHubPendingToken;
 import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.ServerConfigurationDTO;
@@ -145,6 +147,15 @@ public class IntegrationsHandlerTest {
   }
 
   @Test
+  public void deletingASlackChannelDeletesItsConnection() {
+    stubSetForApp(7L, App.APP_SLACK);
+    handler.deleteAppOptions(7L, "slack", subject);
+    verify(appCfgMgr).deleteAppConfigSet(7L, subject, App.APP_SLACK);
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), SLACK_APP_NAME, "7");
+  }
+
+  @Test
   public void deletingDataverseConfigDeletesItsCredential() {
     stubSetForApp(7L, App.APP_DATAVERSE);
 
@@ -162,6 +173,33 @@ public class IntegrationsHandlerTest {
 
     verify(userConnectionManager)
         .deleteByUserAndProvider(subject.getUsername(), MSTEAMS_APP_NAME, "7");
+  }
+
+  @Test
+  public void deletingOneOfSeveralGitHubRepositoriesKeepsTheToken() {
+    stubSetForApp(7L, App.APP_GITHUB);
+    when(appCfgMgr.getByAppName(App.APP_GITHUB, subject))
+        .thenReturn(
+            SystemPropertyTestFactory.createAnyAppWithConfigElements(subject, App.APP_GITHUB));
+    handler.deleteAppOptions(7L, GITHUB_APP_NAME, subject);
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), GITHUB_APP_NAME, "7");
+    verify(userConnectionManager, never()).deleteByUserAndProvider(any(), any());
+  }
+
+  @Test
+  public void addingAGitHubRepositoryWithoutOAuthTokenDoesNotSaveTheConfig() {
+    Map<String, String> settings = Map.of("GITHUB_REPOSITORY_FULL_NAME", "owner/repo");
+    try (var pending = Mockito.mockStatic(GitHubPendingToken.class)) {
+      assertThrows(
+          IllegalStateException.class,
+          () -> handler.saveAppOptions(null, settings, GITHUB_APP_NAME, false, subject));
+
+      verify(userConnectionManager, never())
+          .saveWithNewAppConfigElementSet(any(), any(), any(), any(), anyBoolean(), any());
+      verify(appCfgMgr, never())
+          .saveAppConfigElementSet(any(), any(), anyBoolean(), any(), anyString());
+    }
   }
 
   private UserAppConfig stubSetForApp(Long setId, String appName) {

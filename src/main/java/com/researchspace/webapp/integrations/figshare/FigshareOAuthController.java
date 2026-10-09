@@ -9,6 +9,7 @@ import com.researchspace.figshare.impl.FigshareTemplate;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -111,6 +112,7 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
    * @return
    */
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String onAuthorization(
       @RequestParam Map<String, String> params, Model model, HttpServletRequest request) {
     User subject = userManager.getAuthenticatedUserInSession();
