@@ -25,9 +25,10 @@ export class IdentifierCreateDialog {
 export class IdentifierPanel {
   readonly root: Locator;
   private readonly previewButton: Locator;
-  private readonly publishButton: Locator;
-  private readonly retractButton: Locator;
-  private readonly deleteButton: Locator;
+  readonly publish: Locator;
+  readonly retract: Locator;
+  readonly delete: Locator;
+  readonly refresh: Locator;
 
   constructor(
     private readonly page: Page,
@@ -35,9 +36,10 @@ export class IdentifierPanel {
   ) {
     this.root = section;
     this.previewButton = this.root.getByRole("button", { name: "Preview", exact: true });
-    this.publishButton = this.root.getByRole("button", { name: "Publish", exact: true });
-    this.retractButton = this.root.getByRole("button", { name: "Retract", exact: true });
-    this.deleteButton = this.root.getByRole("button", { name: "Delete", exact: true });
+    this.publish = this.root.getByRole("button", { name: "Publish", exact: true });
+    this.retract = this.root.getByRole("button", { name: "Retract", exact: true });
+    this.delete = this.root.getByRole("button", { name: "Delete", exact: true });
+    this.refresh = this.root.getByRole("button", { name: "Refresh", exact: true });
   }
 
   async waitForVisible(): Promise<void> {
@@ -52,6 +54,24 @@ export class IdentifierPanel {
       await this.ensureExpanded();
       await this.root.getByText(state, { exact: true }).waitFor({ state: "visible" });
     }
+  }
+
+  /** The state label, for callers that must see the in-place update rather than waitForState's reload fallback. */
+  stateLabel(state: string): Locator {
+    return this.root.getByText(state, { exact: true });
+  }
+
+  /** Any mention of `text` in the panel, linked or not. */
+  mentionsOf(text: string): Locator {
+    return this.root.getByText(text);
+  }
+
+  async waitForType(type: string): Promise<void> {
+    await this.root.getByText(type, { exact: true }).waitFor({ state: "visible" });
+  }
+
+  identifierLink(url: string): Locator {
+    return this.root.getByRole("link", { name: url, exact: true });
   }
 
   private async ensureExpanded(): Promise<void> {
@@ -108,20 +128,40 @@ export class IdentifierPanel {
 
   async clickPublish(): Promise<void> {
     await this.ensureExpanded();
-    await this.publishButton.click();
+    await this.publish.click();
     await this.confirm("You are about to publish this Identifier");
   }
 
   async clickRetract(): Promise<void> {
     await this.ensureExpanded();
-    await this.retractButton.click();
+    await this.retract.click();
     await this.confirm("You are about to retract this Identifier");
   }
 
   async clickDelete(): Promise<void> {
     await this.ensureExpanded();
-    await this.deleteButton.click();
+    await this.delete.click();
     await this.confirm("You are about to delete this Identifier");
+  }
+
+  // IdentifierModel.refresh only reports a failure as a toast, so check the response to fail at the cause.
+  async clickRefresh(): Promise<void> {
+    await this.ensureExpanded();
+    const response = this.page.waitForResponse((r) => {
+      const path = new URL(r.url()).pathname;
+      return (
+        r.request().method() === "POST" &&
+        path.startsWith("/api/inventory/v1/identifiers/") &&
+        path.endsWith("/refresh")
+      );
+    });
+    await this.refresh.click();
+    const refreshResponse = await response;
+    if (!refreshResponse.ok()) {
+      throw new Error(
+        `Identifier refresh failed: ${refreshResponse.status()} ${refreshResponse.statusText()} — ${await refreshResponse.text()}`,
+      );
+    }
   }
 
   private async confirm(title: string): Promise<void> {
