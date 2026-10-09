@@ -3,6 +3,7 @@ import { AttachmentsSection } from "@/__tests__/e2e/components/document/Attachme
 import { resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
 import { DocumentHeader } from "@/__tests__/e2e/components/document/DocumentHeader";
 import { DocumentViewToolbar } from "@/__tests__/e2e/components/document/DocumentViewToolbar";
+import { FilestoreLinkDetailsDialog } from "@/__tests__/e2e/components/document/FilestoreLinkDetailsDialog";
 import { MaterialsDialogComponent } from "@/__tests__/e2e/components/document/MaterialsDialogComponent";
 import { SignDocumentDialogComponent } from "@/__tests__/e2e/components/document/SignDocumentDialogComponent";
 import { signedStatusLocator } from "@/__tests__/e2e/components/document/SignedStatus";
@@ -10,6 +11,7 @@ import { SigningDialogComponent } from "@/__tests__/e2e/components/document/Sign
 import { StoichiometryTableComponent } from "@/__tests__/e2e/components/document/StoichiometryTableComponent";
 import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { WitnessDocumentDialogComponent } from "@/__tests__/e2e/components/document/WitnessDocumentDialogComponent";
+import { ExportWizardComponent } from "@/__tests__/e2e/components/shared/ExportWizardComponent";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
 import { waitForWorkspaceAnimations } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
@@ -22,6 +24,8 @@ export class DocumentPage extends BasePage {
   readonly toolbar: DocumentViewToolbar;
   readonly attachments: AttachmentsSection;
   readonly signingDialog: SigningDialogComponent;
+  readonly filestoreLinkDetails: FilestoreLinkDetailsDialog;
+  readonly exportWizard: ExportWizardComponent;
   readonly editingStatus: Locator;
   readonly lastModifiedDates: Locator;
   /** Any signed/witnessed banner; count 0 once isLoaded() resolves means the record is unsigned. */
@@ -34,11 +38,25 @@ export class DocumentPage extends BasePage {
     this.toolbar = new DocumentViewToolbar(page);
     this.attachments = new AttachmentsSection(page);
     this.signingDialog = new SigningDialogComponent(page);
+    this.filestoreLinkDetails = new FilestoreLinkDetailsDialog(page);
+    this.exportWizard = new ExportWizardComponent(page);
     // Legacy JSP status banner; the same indicator covers document and entry editing.
     this.editingStatus = page.locator("#editingStatus");
     this.lastModifiedDates = page.getByText("Last modified:", { exact: false });
     this.signedStatus = signedStatusLocator(page);
     this.witnessedStatus = page.locator("#witnessedStatus");
+  }
+
+  async openExport(): Promise<ExportWizardComponent> {
+    await this.toolbar.actions.exportButton.click();
+    await this.exportWizard.waitForOpen();
+    return this.exportWizard;
+  }
+
+  async openFilestoreLink(name: string): Promise<FilestoreLinkDetailsDialog> {
+    await this.page.getByRole("link", { name, exact: true }).click();
+    await this.filestoreLinkDetails.waitForOpen();
+    return this.filestoreLinkDetails;
   }
 
   getId(): number {

@@ -37,7 +37,7 @@ type SysadminSessionFixtures = {
   };
 };
 
-async function withSysadminPage<T>(
+export async function withSysadminPage<T>(
   browser: Browser,
   browserContextOptions: BrowserContextOptions,
   open: (page: Page) => Promise<T>,

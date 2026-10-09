@@ -222,7 +222,9 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     assertEquals("1.0", sent.getSchemaVersion());
     assertEquals("An automatic weather station.", sent.getDescription());
     assertEquals("Arctic Research Institute", sent.getOwner().get(0).getOwnerName());
-    assertEquals(anyUser.getEmail(), sent.getOwner().get(0).getOwnerContact());
+    assertNull(
+        sent.getOwner().get(0).getOwnerContact(),
+        "the registering user's email must not reach B2INST");
     assertEquals("Acme Instruments", sent.getManufacturer().get(0).getManufacturerName());
     assertEquals("AWS-42", sent.getModel().getModelName());
     assertEquals("Weather station", sent.getInstrumentType().get(0).getInstrumentTypeName());

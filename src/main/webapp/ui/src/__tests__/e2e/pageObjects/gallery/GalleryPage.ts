@@ -1,4 +1,5 @@
 import { type Download, expect, type Locator, type Page } from "@playwright/test";
+import { AddFilestoreDialog } from "@/__tests__/e2e/components/gallery/AddFilestoreDialog";
 import { GalleryActionsMenu } from "@/__tests__/e2e/components/gallery/GalleryActionsMenu";
 import { GalleryEditImageDialog } from "@/__tests__/e2e/components/gallery/GalleryEditImageDialog";
 import { galleryEmptyStateLocator } from "@/__tests__/e2e/components/gallery/GalleryEmptyState";
@@ -101,6 +102,15 @@ export class GalleryPage extends BasePage {
     await this.isLoaded();
   }
 
+  async openFilestoresSection(): Promise<void> {
+    await this.open();
+    await this.isLoaded();
+    await this.sidebar.openSection("Filestores");
+    await this.fileGrid
+      .or(this.filesListingRegion.getByRole("status").filter({ hasText: "Add a filestore in the Create menu." }))
+      .waitFor({ state: "visible" });
+  }
+
   async openInSection(section: GallerySection): Promise<void> {
     await this.open();
     await this.isLoaded();
@@ -135,6 +145,14 @@ export class GalleryPage extends BasePage {
   async openFolder(name: string): Promise<void> {
     await this.fileCell(name).dblclick();
     await this.isLoaded();
+  }
+
+  async openFilestore(name: string): Promise<void> {
+    await this.fileCell(name).dblclick();
+    await this.page
+      .getByRole("navigation", { name: "Breadcrumbs" })
+      .getByRole("button", { name, exact: true })
+      .waitFor({ state: "visible" });
   }
 
   async itemsCount(): Promise<number> {
@@ -231,6 +249,10 @@ export class GalleryPage extends BasePage {
       await this.searchToggleButton.click();
     }
     await this.searchInput.fill(name);
+  }
+
+  async openAddFilestoreDialog(): Promise<AddFilestoreDialog> {
+    return this.openCreateMenuImport("Add a Filestore", AddFilestoreDialog);
   }
 
   /** Opens the Create menu, clicks the named import menu item, then waits for its dialog to open. */

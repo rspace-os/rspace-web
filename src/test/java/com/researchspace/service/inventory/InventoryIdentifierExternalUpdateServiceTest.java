@@ -179,7 +179,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    * response. A transfer leaves the departing owner with LIMITED_READ, and {@code
    * clearPropertiesForLimitedView} blanks that response's lists, identifiers included. Taking
    * candidates from the response therefore skipped the push silently, and the registered record
-   * kept the previous owner's contact address - one of the three drifts RSDEV-1251 exists to stop.
+   * kept naming the previous owner - one of the three drifts RSDEV-1251 exists to stop.
    */
   @Test
   void pushesFromTheRecordWhenTheCallersOwnViewCarriesNoIdentifiers() {

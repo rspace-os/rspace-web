@@ -140,6 +140,9 @@ if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
     "-Dslack.verification.token=mock-verification-token"
     "-Dslack.oauth.authorize.url=${E2E_MOCK_URL}/slack/oauth/authorize"
     "-Dslack.api.base.url=${E2E_MOCK_URL}/slack-api"
+    "-Dror.api.url=${E2E_MOCK_URL}/ror"
+    "-Dnetfilestores.s3.global.credentials.accessKey=rspacetest"
+    "-Dnetfilestores.s3.global.credentials.secretKey=rspacetestsecret"
   )
   echo "[entrypoint] E2E integration mocks enabled at ${E2E_MOCK_URL}"
 fi
