@@ -437,6 +437,33 @@ class BoundedPasswordVerifierTest {
     assertEquals(PERMITS, verifier.availablePermits());
   }
 
+  @Test
+  void nestedVerifyUnderTheHeldUsernameTakesNoWaitingSlot() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofSeconds(5));
+    encoder.release.countDown();
+    CountDownLatch holding = new CountDownLatch(1);
+    CountDownLatch otherIsWaiting = new CountDownLatch(1);
+    Future<Boolean> running =
+        pool.submit(
+            () ->
+                verifier.runExclusive(
+                    "alice",
+                    () -> {
+                      holding.countDown();
+                      otherIsWaiting.await(10, TimeUnit.SECONDS);
+                      return verifier.verify("alice", "ok", "stored");
+                    }));
+    assertTrue(holding.await(5, TimeUnit.SECONDS));
+    Future<Object> waiting = pool.submit(() -> verifier.runExclusive("alice", () -> null));
+    Thread.sleep(100);
+    otherIsWaiting.countDown();
+
+    assertTrue(running.get(5, TimeUnit.SECONDS), "the thread holding alice re-enters its own lock");
+    waiting.get(5, TimeUnit.SECONDS);
+    assertEquals(0, verifier.trackedPrincipals());
+  }
+
   private static void awaitAdmissions(BoundedPasswordVerifier verifier, int count)
       throws InterruptedException {
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
