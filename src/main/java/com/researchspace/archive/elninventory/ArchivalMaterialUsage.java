@@ -1,11 +1,13 @@
 package com.researchspace.archive.elninventory;
 
 import com.researchspace.model.elninventory.MaterialUsage;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -34,11 +36,9 @@ public class ArchivalMaterialUsage {
     setInvRecId(mu.getInventoryRecord().getId());
     setInvRecType(mu.getInventoryRecord().getType().name());
     setGlobalId(mu.getInventoryRecord().getGlobalIdentifier());
-    if (mu.getInventoryRecord().getActiveIdentifiers() != null
-        && !mu.getInventoryRecord().getActiveIdentifiers().isEmpty()) {
-      setIgsn(
-          "https://doi.org/"
-              + mu.getInventoryRecord().getActiveIdentifiers().get(0).getIdentifier());
+    List<DigitalObjectIdentifier> identifiers = mu.getInventoryRecord().getActiveIdentifiers();
+    if (identifiers != null && !identifiers.isEmpty()) {
+      setIgsn(identifiers.get(0).getPublicUrl());
     }
     if (mu.getUsedQuantity() != null) {
       setUsageValue(mu.getUsedQuantity().getNumericValue());
