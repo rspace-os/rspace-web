@@ -231,7 +231,8 @@ That table must change in the same commit as any limit, default, message or rout
   page answer an existing username measurably slower than an unknown one, so `ShiroRealm` runs
   an unknown name (and, when LDAP is off, an LDAP-source user) through `SentinelPasswordCheck`, an
   Argon2 check against a random hash made at startup. On LDAP installs `LdapRealm` pads an
-  internal user's early exit the same way; parity with a directory bind is best effort. Each
+  internal user's early exit the same way, and a temporarily locked account is padded the same
+  way before it is refused; parity with a directory bind is best effort. Each
   padded check queues on its own lock and takes one permit, exactly like a real username, so
   admission timing is the same for both; the permit pool, not the lock, bounds a flood of made-up
   names, as it already does for a flood of real ones. The filter's whole-login lock and
@@ -243,7 +244,8 @@ That table must change in the same commit as any limit, default, message or rout
   that still confirm a username are RSDEV-1558.
 - Deferred to follow-on tickets:
   - RSDEV-1558: username existence still leaks from the sign-up form, the reset and reminder
-    timing, the disabled-account redirect and the API token route's account-state messages; this
+    timing, the disabled-account redirect, the API token route's account-state messages and the
+    SSO emergency admin form, whose wrong-signup-source message confirms a regular account exists; this
     change closes only the login page.
   - RSDEV-1559: `User.salt` is write-only after the wrap and is dropped in a later release.
   - RSDEV-1560: `RequestUtil.remoteAddr` trusts `X-Forwarded-For`, so address-based throttling of

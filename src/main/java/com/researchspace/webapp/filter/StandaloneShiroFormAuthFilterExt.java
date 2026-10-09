@@ -4,6 +4,7 @@ import com.researchspace.auth.IncorrectSignupSourceException;
 import com.researchspace.auth.SidVerificationException;
 import com.researchspace.auth.password.BoundedPasswordVerifier;
 import com.researchspace.auth.password.LoginVerificationBusyException;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
@@ -35,6 +36,8 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
   @Autowired private MessageSourceUtils messages;
 
   @Autowired private BoundedPasswordVerifier verifier;
+
+  @Autowired private SentinelPasswordCheck sentinelCheck;
 
   /**
    * Overrides standard method, to return an error response directly, if the request was an Ajax
@@ -97,6 +100,10 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
       if (u.isAccountLocked()
           && u.getLoginFailure() != null
           && !lockoutPolicy.isAfterLockoutTime(u)) {
+        String password = getPassword(request);
+        if (isLoginSubmission(request, response) && password != null) {
+          sentinelCheck.pad(userMgr.loginLockKey(username), password);
+        }
         setFailureAttribute(request, new AuthenticationException());
         SECURITY_LOG.warn(
             "Attempt to log in as [{}], from {}, but the account is temporarily locked",
@@ -226,5 +233,9 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
 
   protected void setVerifier(BoundedPasswordVerifier verifier) {
     this.verifier = verifier;
+  }
+
+  protected void setSentinelCheck(SentinelPasswordCheck sentinelCheck) {
+    this.sentinelCheck = sentinelCheck;
   }
 }
