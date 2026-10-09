@@ -46,12 +46,10 @@ test.describe("My RSpace directory and export", () => {
     await componentNotifications.open();
     const notifications = await componentNotifications.getNotificationTexts();
     expect(notifications.some((text) => text.includes(`Your export [${description}] is completed`))).toBe(true);
-    const downloadHref = await componentNotifications.getExportDownloadHref(description);
+    const archive = await componentNotifications.downloadExportArchive(description);
     await componentNotifications.close();
 
-    const archiveResponse = await page.request.get(downloadHref);
-    expect(archiveResponse.ok()).toBe(true);
-    const entries = listZipEntries(await archiveResponse.body());
+    const entries = listZipEntries(archive);
     expect(entries.some((entry) => entry.endsWith("/manifest.txt"))).toBe(true);
     expect(entries.some((entry) => entry.endsWith("/index.html"))).toBe(true);
     expect(entries.some((entry) => entry.endsWith(".html") && !entry.endsWith("/index.html"))).toBe(true);

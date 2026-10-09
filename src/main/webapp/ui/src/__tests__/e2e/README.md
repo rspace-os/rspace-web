@@ -125,6 +125,65 @@ left behind; only `clientSysadmin.createUser` accounts are disabled at teardown.
 Names are unique, so leftovers don't affect later runs; reset the database to
 clear them.
 
+## Filestore and ROR specs
+
+`specs/system/config/filestores/` follows `E2E_INTEGRATION_MODE`. Mock mode tests RSpace against local
+containers; real mode tests it against the real hosts. A backend that isn't configured for the mode is skipped;
+a configured one that can't be reached fails.
+
+| Backend | Mock mode (containers) | Real mode (real hosts) |
+|---|---|---|
+| S3 | MinIO | Cloudflare R2 test bucket (`E2E_REAL_S3_URL`, `_BUCKET`, `_REGION`) |
+| SFTP | atmoz/sftp | internal test host, **VPN required** (`E2E_REAL_SFTP_URL`, `_HOST_KEY`, `_USERNAME`, `_PASSWORD`); skipped in CI |
+| Samba | dperson/samba | internal test host, **VPN required** (`E2E_REAL_SAMBA_URL`, `_SHARE`, `_USERNAME`, `_PASSWORD`); skipped in CI |
+| iRODS | bihealth/irods-docker + PostgreSQL | shared test host (`E2E_REAL_IRODS_URL`, `_USERNAME`, `_PASSWORD`) |
+
+In CI (`e2e.yml`), mock mode starts the containers. Real mode uses these repository secrets: `R2_ACCESS_KEY`,
+`R2_SECRET_KEY`, `E2E_REAL_S3_URL`, `E2E_REAL_IRODS_USERNAME` and `E2E_REAL_IRODS_PASSWORD`. SFTP and Samba
+stay local because GitHub can't reach their internal hosts. Real-mode CI uploads only `e2e-junit.xml`,
+since the HTML report and traces record filled passwords.
+
+For RSpace running directly on the host, including CI:
+
+```bash
+src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> src/main/webapp/ui/.env
+```
+
+For the per-worktree Docker dev stack, start it first, then attach the filestore containers to its network:
+
+```bash
+./docker/dev/rspace-dev up --e2e
+dev_project=$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' docker/dev/.env)
+FILESTORE_DOCKER_NETWORK="${dev_project}_default" \
+FILESTORE_CONTAINER_PREFIX="${dev_project}-filestore" \
+  src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> src/main/webapp/ui/.env
+```
+
+Both commands seed `playwright-test/` and print the test configuration. Docker-network mode emits
+container names and internal ports reachable by Java; it publishes no host ports. Host Playwright
+passes these addresses to RSpace and does not connect to the filestore servers directly.
+Use the app URL and mock port from `rspace-dev ps` as `RSPACE_BASE_URL` and `E2E_MOCK_PORT` when running tests.
+
+- In host mode, ports 9000, 2222, 445 and 1247 on 127.0.0.1 must be free; RSpace's Samba client requires 445.
+- MinIO uses a digest-pinned [Coollabs community build](https://github.com/coollabsio/minio) on GHCR.
+  When updating it, verify that `mc` and `sh` are available and bucket seeding still works.
+- The iRODS image is about 5 GB; the first start pulls it.
+- Host RSpace must be started with `-Dnetfilestores.s3.global.credentials.accessKey=rspacetest` and
+  `-Dnetfilestores.s3.global.credentials.secretKey=rspacetestsecret`. CI and `rspace-dev up --e2e`
+  supply these throwaway credentials and the ROR mock override automatically.
+- `FILESTORE_CONTAINER_PREFIX` defaults to `rspace-e2e`. Containers are reused only when their recorded
+  networking matches. Use a different prefix when switching modes or migrating containers created by
+  an older script; stop old containers first if their host ports are needed.
+- `>>` appends on every run. Delete the old `E2E_*` filestore lines first: a recreated SFTP container has a
+  new host key.
+
+`specs/system/config/rorRegistry.e2e.ts` runs in both modes. Real mode calls `api.ror.org`; mock mode
+requires `-Dror.api.url=http://localhost:<E2E_MOCK_PORT>/ror`, served by `mocks/ror.ts`.
+The IGSN publication scenario also reads the DOI directly from DataCite with `affiliation=true`.
+In mock mode, the DataCite handler returns the metadata RSpace submitted for that DOI; in real mode,
+the test reads the configured DataCite server. This checks the institution's ROR name and identifier
+at the provider as well as on RSpace's public preview.
+
 ## File naming — wrong suffix = test silently never runs
 
 | Suffix | Project | Description |

@@ -29,6 +29,7 @@ import { CreateFormPage } from "../pageObjects/myrspace/CreateFormPage";
 import { DeletedItemsPage } from "../pageObjects/myrspace/DeletedItemsPage";
 import { DirectoryPage } from "../pageObjects/myrspace/DirectoryPage";
 import { ExportImportPage } from "../pageObjects/myrspace/ExportImportPage";
+import { ExportReportPage } from "../pageObjects/myrspace/ExportReportPage";
 import { ManageFormsPage } from "../pageObjects/myrspace/ManageFormsPage";
 import { MyRSpacePage } from "../pageObjects/myrspace/MyRSpacePage";
 import { UserProfilePage } from "../pageObjects/myrspace/UserProfilePage";
@@ -65,6 +66,7 @@ type UiFixtures = {
   pageManageForms: ManageFormsPage;
   pageDirectory: DirectoryPage;
   pageExportImport: ExportImportPage;
+  pageExportReport: ExportReportPage;
   pageUserProfile: UserProfilePage;
   pageNotebook: NotebookPage;
   pageGitHubAppsCard: GitHubAppsCardComponent;
@@ -132,6 +134,7 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageManageForms: pageFixture(ManageFormsPage),
   pageDirectory: pageFixture(DirectoryPage),
   pageExportImport: pageFixture(ExportImportPage),
+  pageExportReport: pageFixture(ExportReportPage),
   pageUserProfile: pageFixture(UserProfilePage),
   pageNotebook: pageFixture(NotebookPage),
   pageGitHubAppsCard: pageFixture(GitHubAppsCardComponent),

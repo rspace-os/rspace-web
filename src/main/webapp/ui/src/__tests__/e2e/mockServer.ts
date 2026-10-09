@@ -32,6 +32,7 @@ import { snapgeneHandlers } from "../../modules/snapgene/__tests__/mock.ts";
 import { zenodoHandlers } from "../../modules/zenodo/__tests__/mock.ts";
 import { b2instHandlers } from "./mocks/b2inst.ts";
 import { dataciteHandlers } from "./mocks/datacite.ts";
+import { rorHandlers } from "./mocks/ror.ts";
 
 const PORT = Number(process.argv[2] ?? process.env.E2E_MOCK_PORT ?? "9099");
 const HOST = process.env.E2E_MOCK_HOST ?? "127.0.0.1";
@@ -70,6 +71,7 @@ const handlers = [
   ...protocolsioHandlers,
   ...dataciteHandlers,
   ...b2instHandlers,
+  ...rorHandlers,
 ];
 const mswMiddleware = createMiddleware(...handlers);
 

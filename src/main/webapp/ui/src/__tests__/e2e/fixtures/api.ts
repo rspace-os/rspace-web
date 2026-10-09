@@ -1,5 +1,6 @@
 import type { APIRequestContext } from "@playwright/test";
 import { request } from "@playwright/test";
+import { DataCiteClient } from "../api/clients/DataCiteClient";
 import { DocumentsClient } from "../api/clients/DocumentsClient";
 import { FilesClient } from "../api/clients/FilesClient";
 import { FoldersClient } from "../api/clients/FoldersClient";
@@ -16,6 +17,7 @@ import { SYSADMIN } from "../users";
 import { uiTest } from "./ui";
 
 type ApiFixtures = {
+  clientDataCite: DataCiteClient;
   apiContext: APIRequestContext;
   clientDocuments: DocumentsClient;
   clientFiles: FilesClient;
@@ -31,6 +33,22 @@ type ApiFixtures = {
 };
 
 export const apiTest = uiTest.extend<ApiFixtures>({
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
+  clientDataCite: async ({}, use) => {
+    const context = await request.newContext({
+      baseURL: env.integrationMode === "mock" ? env.mockBaseUrl : env.igsnServerUrl,
+      storageState: { cookies: [], origins: [] },
+      httpCredentials:
+        env.integrationMode === "real"
+          ? { username: env.igsnAccountId, password: env.igsnPassword, send: "always" }
+          : undefined,
+    });
+    try {
+      await use(new DataCiteClient(context));
+    } finally {
+      await context.dispose();
+    }
+  },
   // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
   apiContext: async ({}, use) => {
     // Playwright request contexts inherit the project's storageState by default, which would
