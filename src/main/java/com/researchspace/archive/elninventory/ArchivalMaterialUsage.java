@@ -37,7 +37,7 @@ public class ArchivalMaterialUsage {
     setInvRecType(mu.getInventoryRecord().getType().name());
     setGlobalId(mu.getInventoryRecord().getGlobalIdentifier());
     List<DigitalObjectIdentifier> identifiers = mu.getInventoryRecord().getActiveIdentifiers();
-    if (identifiers != null && !identifiers.isEmpty()) {
+    if (!identifiers.isEmpty()) {
       setIgsn(identifiers.get(0).getPublicUrl());
     }
     if (mu.getUsedQuantity() != null) {

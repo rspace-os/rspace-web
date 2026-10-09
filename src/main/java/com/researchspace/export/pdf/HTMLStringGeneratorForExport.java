@@ -240,9 +240,10 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
                 mu.getInventoryRecord().getType().toString(),
                 mu.getInventoryRecord().getName()));
         List<DigitalObjectIdentifier> identifiers = mu.getInventoryRecord().getActiveIdentifiers();
-        String publicUrl = identifiers.isEmpty() ? null : identifiers.get(0).getPublicUrl();
+        DigitalObjectIdentifier identifier = identifiers.isEmpty() ? null : identifiers.get(0);
+        String publicUrl = identifier == null ? null : identifier.getPublicUrl();
         if (publicUrl != null) {
-          IdentifierType type = identifiers.get(0).getType();
+          IdentifierType type = identifier.getType();
           String label =
               type == IdentifierType.PIDINST_DATACITE || type == IdentifierType.PIDINST_B2INST
                   ? "pidinst"
