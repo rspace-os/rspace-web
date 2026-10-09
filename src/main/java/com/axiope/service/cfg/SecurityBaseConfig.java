@@ -43,6 +43,9 @@ public abstract class SecurityBaseConfig {
   @Value("${login.passwordVerification.maxConcurrent:8}")
   private int maxConcurrentPasswordVerifications;
 
+  @Value("${login.passwordVerification.maxQueued:32}")
+  private int maxQueuedPasswordVerifications;
+
   @Value("${login.passwordVerification.waitSeconds:5}")
   private int passwordVerificationWaitSeconds;
 
@@ -59,6 +62,7 @@ public abstract class SecurityBaseConfig {
     return new BoundedPasswordVerifier(
         passwordEncoder(),
         maxConcurrentPasswordVerifications,
+        maxQueuedPasswordVerifications,
         Duration.ofSeconds(passwordVerificationWaitSeconds));
   }
 
