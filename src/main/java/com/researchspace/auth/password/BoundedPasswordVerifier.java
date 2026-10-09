@@ -13,11 +13,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * Runs Argon2 login-password checks (Shiro login and default-realm reauthentication) through one
  * shared pool of permits, so the per-check heap allocation is bounded however many requests arrive
  * (ADR 0011). A username has at most one check in flight, so one account cannot hold more than one
- * permit. At most {@code permits + maxQueued} callers are inside at once; further callers are
- * refused as busy without waiting. New passwords are not encoded here; anonymous encodes are
- * bounded by {@link NewPasswordEncodeGate}.
+ * permit, and at most one more caller may wait for that username, so a burst of requests for one
+ * name cannot hold the admissions other accounts need. At most {@code permits + maxQueued} callers
+ * are inside at once; further callers are refused as busy without waiting. New passwords are not
+ * encoded here; anonymous encodes are bounded by {@link NewPasswordEncodeGate}.
  */
 public class BoundedPasswordVerifier {
+
+  /** One check in flight per username plus this many waiting for it; more are refused at once. */
+  static final int MAX_WAITING_PER_PRINCIPAL = 1;
 
   private final PasswordEncoder encoder;
   private final Semaphore permits;
@@ -54,42 +58,43 @@ public class BoundedPasswordVerifier {
    * @throws LoginVerificationBusyException if the wait elapses first
    */
   public <T> T runExclusive(String username, Callable<T> action) throws Exception {
-    boolean admitted = admitOutermost(username);
-    try {
-      return lockAndRun(username, action);
-    } finally {
-      if (admitted) {
-        admissions.release();
-      }
-    }
-  }
-
-  private <T> T lockAndRun(String username, Callable<T> action) throws Exception {
-    long deadline = System.nanoTime() + waitNanos;
     PrincipalLock principalLock = acquireHolder(username);
     try {
+      boolean admitted = admitOutermost(username);
       try {
-        if (!principalLock.lock.tryLock(remaining(deadline), TimeUnit.NANOSECONDS)) {
-          throw busy(username, "another login for this username is still running");
-        }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw busy(username, "interrupted while waiting");
-      }
-      Long outerDeadline = sharedDeadline.get();
-      sharedDeadline.set(deadline);
-      try {
-        return action.call();
+        return lockAndRun(username, principalLock, action);
       } finally {
-        if (outerDeadline == null) {
-          sharedDeadline.remove();
-        } else {
-          sharedDeadline.set(outerDeadline);
+        if (admitted) {
+          admissions.release();
         }
-        principalLock.lock.unlock();
       }
     } finally {
       releaseHolder(username);
+    }
+  }
+
+  private <T> T lockAndRun(String username, PrincipalLock principalLock, Callable<T> action)
+      throws Exception {
+    long deadline = System.nanoTime() + waitNanos;
+    try {
+      if (!principalLock.lock.tryLock(remaining(deadline), TimeUnit.NANOSECONDS)) {
+        throw busy(username, "another login for this username is still running");
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw busy(username, "interrupted while waiting");
+    }
+    Long outerDeadline = sharedDeadline.get();
+    sharedDeadline.set(deadline);
+    try {
+      return action.call();
+    } finally {
+      if (outerDeadline == null) {
+        sharedDeadline.remove();
+      } else {
+        sharedDeadline.set(outerDeadline);
+      }
+      principalLock.lock.unlock();
     }
   }
 
@@ -103,20 +108,28 @@ public class BoundedPasswordVerifier {
    * @throws IllegalArgumentException if the stored value has no recognised encoding
    */
   public boolean verify(String username, CharSequence rawPassword, String encodedPassword) {
-    boolean admitted = admitOutermost(username);
+    PrincipalLock principalLock = acquireHolder(username);
     try {
-      return lockAndVerify(username, rawPassword, encodedPassword);
-    } finally {
-      if (admitted) {
-        admissions.release();
+      boolean admitted = admitOutermost(username);
+      try {
+        return lockAndVerify(username, principalLock, rawPassword, encodedPassword);
+      } finally {
+        if (admitted) {
+          admissions.release();
+        }
       }
+    } finally {
+      releaseHolder(username);
     }
   }
 
-  private boolean lockAndVerify(String username, CharSequence rawPassword, String encodedPassword) {
+  private boolean lockAndVerify(
+      String username,
+      PrincipalLock principalLock,
+      CharSequence rawPassword,
+      String encodedPassword) {
     Long shared = sharedDeadline.get();
     long deadline = shared != null ? shared : System.nanoTime() + waitNanos;
-    PrincipalLock principalLock = acquireHolder(username);
     try {
       if (!principalLock.lock.tryLock(remaining(deadline), TimeUnit.NANOSECONDS)) {
         throw busy(username, "another check for this username is still running");
@@ -136,8 +149,6 @@ public class BoundedPasswordVerifier {
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw busy(username, "interrupted while waiting");
-    } finally {
-      releaseHolder(username);
     }
   }
 
@@ -152,14 +163,24 @@ public class BoundedPasswordVerifier {
     return true;
   }
 
+  /**
+   * Registers this caller on the username's entry, before any admission or wait, and refuses it at
+   * once if the username already has its one check running and one waiting.
+   */
   private PrincipalLock acquireHolder(String username) {
-    return principalLocks.compute(
-        username,
-        (k, existing) -> {
-          PrincipalLock lock = existing == null ? new PrincipalLock() : existing;
-          lock.holders++;
-          return lock;
-        });
+    PrincipalLock lock =
+        principalLocks.compute(
+            username,
+            (k, existing) -> {
+              PrincipalLock l = existing == null ? new PrincipalLock() : existing;
+              l.holders++;
+              return l;
+            });
+    if (lock.holders > 1 + MAX_WAITING_PER_PRINCIPAL) {
+      releaseHolder(username);
+      throw busy(username, "another check for this username is already waiting");
+    }
+    return lock;
   }
 
   private void releaseHolder(String username) {

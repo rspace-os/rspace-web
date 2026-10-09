@@ -85,7 +85,9 @@ generic failure the user sees for a wrong password, but through a distinct excep
 users out. A check waiting for a permit or an account's lock holds its request thread for up to
 `waitSeconds`, so a global admission cap (`login.passwordVerification.maxQueued`, default 32)
 bounds the threads login can hold to `maxConcurrent + maxQueued`; callers past it are refused as
-busy at once. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
+busy at once. The cap is taken after a per-username check that lets one attempt run and one
+wait, so a burst of requests for a single name, real or made up, is refused at once beyond those
+two and cannot hold the admissions other accounts need. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
 that reach it (sign-up, Google sign-up on Community, LDAP first-login auto-signup, and the login
 and verification password-reset replies) take a permit from one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
 through the hash and the save and refused immediately when none is free, with a reset token left
