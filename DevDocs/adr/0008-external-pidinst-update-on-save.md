@@ -128,7 +128,12 @@ anything that is not accepted, so an identifier really can be sitting in
    again, and whose (a facility mailbox chosen by the sysadmin, or a value typed
    on the instrument), is deferred to a separate decision; an account attribute
    will not be the source. Records accepted before this change keep the address
-   they were accepted with; writable drafts lose it on their next push.
+   they were accepted with; writable drafts lose it on their next push. Nothing
+   makes that push come first, though: a record a curator accepts before its
+   instrument is saved again is accepted with the address. No customer
+   deployment had B2INST enabled when this shipped, so rather than re-push
+   every pending record on startup, the release notes ask for instruments with
+   a B2INST identifier still awaiting review to be saved once after upgrading.
 
    That transfer is also why the push takes its candidates from the **record**
    rather than from the response it decorates. A transfer leaves the departing
