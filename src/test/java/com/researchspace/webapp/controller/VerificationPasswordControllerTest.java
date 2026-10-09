@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.auth.password.BoundedPasswordVerifier;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.service.IVerificationPasswordValidator;
@@ -29,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 public class VerificationPasswordControllerTest {
@@ -44,6 +46,14 @@ public class VerificationPasswordControllerTest {
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
     verificationPasswordController.messages = new MessageSourceUtils(new JsonMessageSource());
+    useVerifierWaiting(Duration.ofSeconds(5));
+  }
+
+  private BoundedPasswordVerifier useVerifierWaiting(Duration wait) {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(NoOpPasswordEncoder.getInstance(), 8, 8, wait);
+    verificationPasswordController.setVerifier(verifier);
+    return verifier;
   }
 
   // this is the only method not very similar t oSignup/Profile tests
@@ -139,32 +149,35 @@ public class VerificationPasswordControllerTest {
 
   @Test
   public void setThatCannotGetTheUsersTurnIsRefusedAsBusyWithoutHashing() throws Exception {
-    verificationPasswordController.setInitialSetWait(Duration.ofMillis(50));
-    User sessionCopy = TestFactory.createAnyUser("any");
-    stubConcurrentSet(sessionCopy);
-    CountDownLatch hashing = new CountDownLatch(1);
-    CountDownLatch releaseHash = new CountDownLatch(1);
-    when(verificationPasswordValidator.hashVerificationPassword(OK_PWD))
-        .thenAnswer(
-            invocation -> {
-              hashing.countDown();
-              releaseHash.await(10, TimeUnit.SECONDS);
-              return "hashedPW";
-            });
+    BoundedPasswordVerifier verifier = useVerifierWaiting(Duration.ofMillis(50));
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(anyUser);
+    when(verificationPasswordValidator.isVerificationPasswordSet(anyUser)).thenReturn(false);
+    when(userValidator.validatePasswords(OK_PWD, OK_PWD, anyUser.getUsername()))
+        .thenReturn(UserValidator.FIELD_OK);
+    CountDownLatch held = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
     ExecutorService pool = Executors.newSingleThreadExecutor();
     try {
-      Future<AjaxReturnObject<String>> first = pool.submit(this::setOkPassword);
-      assertTrue(hashing.await(10, TimeUnit.SECONDS));
+      Future<Object> holder =
+          pool.submit(
+              () ->
+                  verifier.runExclusive(
+                      anyUser.getUsername(),
+                      () -> {
+                        held.countDown();
+                        return release.await(10, TimeUnit.SECONDS);
+                      }));
+      assertTrue(held.await(10, TimeUnit.SECONDS));
 
       assertEquals(getText("verificationPassword.set.errors.busy"), setOkPassword().getData());
 
-      releaseHash.countDown();
-      first.get(10, TimeUnit.SECONDS);
+      release.countDown();
+      holder.get(10, TimeUnit.SECONDS);
     } finally {
-      releaseHash.countDown();
+      release.countDown();
       pool.shutdownNow();
     }
-    verify(verificationPasswordValidator, times(1)).hashVerificationPassword(OK_PWD);
+    verify(verificationPasswordValidator, never()).hashVerificationPassword(any());
   }
 
   /**
