@@ -176,7 +176,7 @@ class StandaloneShiroFormAuthFilterExtLockTest {
   }
 
   private void useVerifierWaiting(Duration wait) {
-    verifier = new BoundedPasswordVerifier(mock(PasswordEncoder.class), 8, wait);
+    verifier = new BoundedPasswordVerifier(mock(PasswordEncoder.class), 8, 100, wait);
     filter.setVerifier(verifier);
   }
 
