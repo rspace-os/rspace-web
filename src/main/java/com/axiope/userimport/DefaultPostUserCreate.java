@@ -44,8 +44,6 @@ public class DefaultPostUserCreate implements IPostUserSignup {
     try {
       loginHelper.login(created, origPwd, req);
     } catch (LoginVerificationBusyException e) {
-      log.warn(
-          "Post-signup login for {} refused, completing signup without it", created.getUsername());
       loginRefused = e;
     }
     // Send user an e-mail
