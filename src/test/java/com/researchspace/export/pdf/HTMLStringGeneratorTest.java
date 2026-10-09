@@ -21,6 +21,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierOtherProperty;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
@@ -40,6 +43,7 @@ import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;
@@ -47,6 +51,8 @@ import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -388,5 +394,83 @@ public class HTMLStringGeneratorTest {
     assertThat(html)
         .as("html incorrectly contains 'fieldChoices=' which should be stripped. html is: " + html)
         .doesNotContain("fieldChoices=");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "IGSN_DATACITE, 10.82316/abc, findable, https://doi.org/10.82316/abc, igsn",
+    "PIDINST_DATACITE, 10.82316/xyz, findable, https://doi.org/10.82316/xyz, pidinst",
+    "PIDINST_B2INST, d4mwx-bfd89, accepted, http://hdl.handle.net/21.T11975/d4mwx-bfd89, pidinst"
+  })
+  void listOfMaterialsLinksToThePublicUrlLabelledByIdentifierType(
+      IdentifierType type, String value, String state, String publicUrl, String label) {
+    stubDefaults();
+    StructuredDocument doc = docListingInstrumentWith(identifier(type, value, state, publicUrl));
+
+    ExportProcessorInput input = htmlGenerator.extractHtmlStr(doc, cfg);
+
+    String html = input.getDocumentAsHtml();
+    assertThat(html).as(html).contains(label + ": <a href=\"" + publicUrl + "\">");
+    assertEquals(Set.of(publicUrl), input.getIgsnInventoryLinkedItems());
+  }
+
+  @Test
+  void pidinstStillUnderReviewIsNotLinked() {
+    stubDefaults();
+    StructuredDocument doc =
+        docListingInstrumentWith(
+            identifier(IdentifierType.PIDINST_B2INST, "d4mwx-bfd89", "submitted", null));
+
+    ExportProcessorInput input = htmlGenerator.extractHtmlStr(doc, cfg);
+
+    String html = input.getDocumentAsHtml();
+    assertThat(html)
+        .as(html)
+        .contains("Confocal Microscope")
+        .doesNotContain("pidinst:")
+        .doesNotContain("igsn:");
+    assertThat(input.getIgsnInventoryLinkedItems()).isEmpty();
+  }
+
+  /* A linked identifier's public URL is built from a third-party registry's record. */
+  @Test
+  void publicUrlIsEscapedInTheExportedLink() {
+    stubDefaults();
+    String hostileUrl = "https://hdl.handle.net/21.T11975/a\"onmouseover=\"alert(1)";
+    StructuredDocument doc =
+        docListingInstrumentWith(
+            identifier(IdentifierType.PIDINST_B2INST, "21.T11975/a", "accepted", hostileUrl));
+
+    ExportProcessorInput input = htmlGenerator.extractHtmlStr(doc, cfg);
+
+    Document parsed = Jsoup.parse(input.getDocumentAsHtml());
+    assertNull(parsed.selectFirst("a[onmouseover]"));
+    assertThat(parsed.select("a").eachAttr("href")).contains(hostileUrl);
+    assertEquals(Set.of(hostileUrl), input.getIgsnInventoryLinkedItems());
+  }
+
+  private StructuredDocument docListingInstrumentWith(DigitalObjectIdentifier identifier) {
+    StructuredDocument anyDoc = createAnySDWithText("any");
+    anyDoc.setId(1L);
+    ListOfMaterials lom = new ListOfMaterials();
+    lom.setName("instrument lom");
+    Instrument instrument = new Instrument();
+    instrument.setId(42L);
+    instrument.setName("Confocal Microscope");
+    instrument.addIdentifier(identifier);
+    lom.addMaterial(instrument, null);
+    anyDoc.getFields().get(0).addListOfMaterials(lom);
+    return anyDoc;
+  }
+
+  private static DigitalObjectIdentifier identifier(
+      IdentifierType type, String value, String state, String publicUrl) {
+    DigitalObjectIdentifier doi = new DigitalObjectIdentifier(value, "a title");
+    doi.setType(type);
+    doi.setState(state);
+    if (publicUrl != null) {
+      doi.addOtherData(IdentifierOtherProperty.PUBLIC_URL, publicUrl);
+    }
+    return doi;
   }
 }

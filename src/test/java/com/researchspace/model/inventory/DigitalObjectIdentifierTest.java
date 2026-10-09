@@ -4,12 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierOtherProperty;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 
 public class DigitalObjectIdentifierTest {
 
@@ -107,5 +112,38 @@ public class DigitalObjectIdentifierTest {
     assertNotNull(twoArg.getPublicLink());
     // 16 random bytes, base64url-encoded without padding: pins the entropy, not the char count
     assertThat(twoArg.getPublicLink()).hasSize(22);
+  }
+
+  @Test
+  public void b2instPublicUrlIsTheStoredHandleAndNeverBuiltFromTheRecordId() {
+    DigitalObjectIdentifier accepted = new DigitalObjectIdentifier("d4mwx-bfd89", "a title");
+    accepted.setType(IdentifierType.PIDINST_B2INST);
+    accepted.setState("accepted");
+    assertNull(accepted.getPublicUrl());
+
+    accepted.addOtherData(
+        IdentifierOtherProperty.PUBLIC_URL, "http://hdl.handle.net/21.T11975/d4mwx-bfd89");
+    assertEquals("http://hdl.handle.net/21.T11975/d4mwx-bfd89", accepted.getPublicUrl());
+  }
+
+  /*
+   * A null type is a row persisted before the type column was populated, which predates PIDINST
+   * and is treated as IGSN everywhere else (InventoryIdentifierApiManagerImpl.settingTypeFor).
+   */
+  @ParameterizedTest
+  @NullSource
+  @EnumSource(
+      value = IdentifierType.class,
+      names = {"IGSN_DATACITE", "PIDINST_DATACITE"})
+  public void dataCitePublicUrlFallsBackToDoiOrgOnlyWhileTheDoiResolves(IdentifierType type) {
+    DigitalObjectIdentifier doi = new DigitalObjectIdentifier("10.82316/abc", "a title");
+    doi.setType(type);
+
+    doi.setState("findable");
+    assertEquals("https://doi.org/10.82316/abc", doi.getPublicUrl());
+    doi.setState("registered");
+    assertEquals("https://doi.org/10.82316/abc", doi.getPublicUrl());
+    doi.setState("draft");
+    assertNull(doi.getPublicUrl());
   }
 }

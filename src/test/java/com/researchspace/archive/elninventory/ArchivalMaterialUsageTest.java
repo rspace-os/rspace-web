@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.elninventory.MaterialUsage;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierOtherProperty;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.SubSample;
 import org.junit.jupiter.api.Test;
@@ -46,5 +49,37 @@ public class ArchivalMaterialUsageTest {
     assertEquals("INSTRUMENT", archivalUsage.getInvRecType());
     assertEquals(42L, archivalUsage.getInvRecId());
     assertNull(archivalUsage.getUsageValue()); // no quantity for instruments
+  }
+
+  @Test
+  public void igsnCarriesThePublicUrlNotTheStoredRecordId() {
+    Instrument instrument = new Instrument();
+    instrument.setId(42L);
+    DigitalObjectIdentifier pid = new DigitalObjectIdentifier("d4mwx-bfd89", "a title");
+    pid.setType(IdentifierType.PIDINST_B2INST);
+    pid.setState("accepted");
+    pid.addOtherData(
+        IdentifierOtherProperty.PUBLIC_URL, "http://hdl.handle.net/21.T11975/d4mwx-bfd89");
+    instrument.addIdentifier(pid);
+
+    ArchivalMaterialUsage archivalUsage =
+        new ArchivalMaterialUsage(new MaterialUsage(null, instrument, null));
+
+    assertEquals("http://hdl.handle.net/21.T11975/d4mwx-bfd89", archivalUsage.getIgsn());
+  }
+
+  @Test
+  public void igsnIsAbsentWhileThePidDoesNotResolve() {
+    Instrument instrument = new Instrument();
+    instrument.setId(42L);
+    DigitalObjectIdentifier underReview = new DigitalObjectIdentifier("d4mwx-bfd89", "a title");
+    underReview.setType(IdentifierType.PIDINST_B2INST);
+    underReview.setState("submitted");
+    instrument.addIdentifier(underReview);
+
+    ArchivalMaterialUsage archivalUsage =
+        new ArchivalMaterialUsage(new MaterialUsage(null, instrument, null));
+
+    assertNull(archivalUsage.getIgsn());
   }
 }
