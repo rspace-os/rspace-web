@@ -224,7 +224,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           }}
           onKeyDown={(e: KeyboardEvent) => {
             if (e.key === " ") {
-              setInKeyboardDragAndDropMode(true);
+              if (!search.uiConfig.dragAndDropDisabled) setInKeyboardDragAndDropMode(true);
               return;
             }
             if (inKeyboardDragAndDropMode && (e.key === "Enter" || e.key === "Return" || e.key === "Escape")) {
@@ -234,9 +234,11 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             if (inKeyboardDragAndDropMode) return;
 
             if (!focusCoord) throw new Error("A cell must have focus for key events to be handled");
+            const { onlyAllowSelectingEmptyLocations: emptyOnly, selectionLimit } = search.uiConfig;
             if (e.key === "Escape") {
               container.toggleAllLocations(false);
-              container.findLocation(focusCoord.x, focusCoord.y)?.toggleSelected(true);
+              const focused = container.findLocation(focusCoord.x, focusCoord.y);
+              if (focused && (!emptyOnly || focused.isSelectable(search))) focused.toggleSelected(true);
               e.preventDefault();
             }
 
@@ -270,8 +272,24 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             const top = Math.min(y, origin.y);
             const bottom = Math.max(y, origin.y);
 
+            const toSelect = new Set(
+              (container.locations ?? [])
+                .filter(
+                  (l) =>
+                    l.coordX >= left &&
+                    l.coordX <= right &&
+                    l.coordY >= top &&
+                    l.coordY <= bottom &&
+                    (!emptyOnly || l.selected || l.isSelectable(search)),
+                )
+                .slice(0, emptyOnly ? selectionLimit : Infinity),
+            );
+            // Cells already in the right state are left alone, so the Move dialog's staged previews survive.
             container.locations?.forEach((l) => {
-              l.toggleSelected(l.coordX >= left && l.coordX <= right && l.coordY >= top && l.coordY <= bottom);
+              if (l.selected && !toSelect.has(l)) l.toggleSelected(false);
+            });
+            container.locations?.forEach((l) => {
+              if (!l.selected && toSelect.has(l)) l.toggleSelected(true);
             });
 
             setShiftOrigin(e.shiftKey ? (shiftOrigin ?? focusCoord) : null);

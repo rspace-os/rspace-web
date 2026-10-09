@@ -19,6 +19,7 @@ import useUiPreference from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { CELSIUS, categoryOfUnit } from "@/stores/definitions/Units";
+import ContainerModel from "@/stores/models/ContainerModel";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
@@ -44,8 +45,11 @@ import {
   usesAmountModes,
 } from "./operations";
 import {
+  fetchContainer,
   type OperationResult,
+  PlacementRefused,
   performOperation,
+  placeSubSamples,
   sampleNameAvailable,
   useDescribeOperationError,
 } from "./operationsApi";
@@ -59,6 +63,17 @@ import {
   quantityExceedsOrigin,
   reconcileRestoredQuantities,
 } from "./operationValidation";
+import PlacementStep from "./PlacementStep";
+import {
+  buildPlacementRecords,
+  originContainerId,
+  type PlacementSelection,
+  placementBlocker,
+  prepareContainer,
+  releaseContainer,
+  usableContainer,
+  WORKBENCH,
+} from "./placement";
 import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
 import {
   fetchLatestOperationPreferences,
@@ -67,6 +82,7 @@ import {
   OPERATION_PREFERENCES,
   type OperationPreferences,
   type ProcessValues,
+  type RememberedPlacement,
 } from "./processValues";
 import { derivedSampleName, firstAvailableName } from "./sampleNaming";
 import TemplateStep, { type TemplateSelection } from "./TemplateStep";
@@ -108,6 +124,7 @@ const stepLabelKeys = {
   template: "operations.wizard.step.template",
   amounts: "operations.wizard.step.amounts",
   documentation: "operations.wizard.step.documentation",
+  placement: "operations.wizard.step.placement",
 } as const;
 
 function freshValues(operation: InventoryOperation, origin: SubSampleModel, current: OperationInputs): OperationInputs {
@@ -185,6 +202,12 @@ function OperationWizard({
   const [operation, setOperation] = React.useState<InventoryOperation | null>(null);
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
+  const [placement, setPlacement] = React.useState<PlacementSelection>(WORKBENCH);
+  const placementContainer = placement.mode === "container" ? placement.container : null;
+  React.useEffect(() => {
+    if (!open || !placementContainer) return;
+    return () => releaseContainer(placementContainer);
+  }, [open, placementContainer]);
   // A remembered document may have been trashed since it was saved. The link is kept (the user
   // decides), but the user is told, on the summary as well because a complete bundle skips the step.
   const documentationTrashed = useLinkTargetSummary(documentation?.globalId ?? "")?.deleted === true;
@@ -212,8 +235,85 @@ function OperationWizard({
     defaults: processNameDefaults,
   } = normalizeOperationPreferences(storedOperationPreferences);
 
+  const createdCount = operation?.effect.countFrom ? Number(values[operation.effect.countFrom] ?? 1) : 0;
+  React.useEffect(() => {
+    if (open && placementContainer) prepareContainer(placementContainer, createdCount);
+  }, [open, placementContainer, createdCount]);
+
+  // A remembered container is stored by id, so it is fetched again: it may since have been trashed,
+  // filled or unshared, in which case it stays unpicked and the user is told. Until the fetch
+  // settles, the placement is an unpicked container, which holds back the fast path. With no
+  // remembered run, the first origin's own container is offered instead when it can take the new
+  // subsamples (D5); the workbench stands in while it loads, and silently if it cannot.
+  const [pendingPlacement, setPendingPlacement] = React.useState<{
+    containerId: number;
+    remembered: RememberedPlacement | null;
+  } | null>(null);
+  const [placementNote, setPlacementNote] = React.useState<string | null>(null);
+  // Set when a remembered run keeps a container: if Location turns out to be the only step left to
+  // complete (a grid's locations are never remembered), the wizard opens there instead of on
+  // Details. One decision per bundle; any navigation or edit before it is taken cancels it.
+  const [landOnPlacement, setLandOnPlacement] = React.useState(false);
+  // While on the step it landed on, the wizard offers "Review / edit" in place of Back, as the
+  // fast path does.
+  const [landed, setLanded] = React.useState(false);
+  const placementCheckId = React.useRef(0);
+  const createdCountRef = React.useRef(createdCount);
+  createdCountRef.current = createdCount;
+
+  /** `undefined` when there is no remembered run, `null` when the run remembered the workbench. */
+  const applyRememberedPlacement = (remembered: RememberedPlacement | null | undefined, mayLand: boolean) => {
+    placementCheckId.current++;
+    setPlacementNote(null);
+    setLandOnPlacement(mayLand && Boolean(remembered));
+    setLanded(false);
+    setPlacement(remembered ? { mode: "container", container: null } : WORKBENCH);
+    const originId = remembered === undefined ? originContainerId(origins) : null;
+    setPendingPlacement(
+      remembered
+        ? { containerId: remembered.containerId, remembered }
+        : originId === null
+          ? null
+          : { containerId: originId, remembered: null },
+    );
+  };
+
+  const onPlacementChange = (next: PlacementSelection) => {
+    placementCheckId.current++;
+    setLandOnPlacement(false);
+    setPlacementNote(null);
+    setPlacement(next);
+  };
+
+  // Not React Query: the result is a MobX model the step mutates in place, which a shared query
+  // cache would hand to the next caller with that state still on it.
+  React.useEffect(() => {
+    if (!pendingPlacement) return;
+    const checkId = ++placementCheckId.current;
+    const { containerId, remembered } = pendingPlacement;
+    void (async () => {
+      let container: Awaited<ReturnType<typeof fetchContainer>> | null = null;
+      try {
+        container = usableContainer(await fetchContainer(containerId), createdCountRef.current);
+      } catch (error) {
+        console.warn("Could not fetch the container to place the new subsamples in", error);
+      }
+      if (checkId !== placementCheckId.current) return;
+      setPendingPlacement(null);
+      if (container) {
+        setPlacement({ mode: "container", container });
+        return;
+      }
+      // A remembered choice that cannot be honoured stays an unpicked container, so the run lands on
+      // the picker with the note; the origin's container (D5) was only a suggestion.
+      if (remembered)
+        setPlacementNote(t("operations.placement.rememberedUnavailable", { container: remembered.containerName }));
+      else setPlacement(WORKBENCH);
+    })();
+  }, [pendingPlacement, t]);
+
   const stepKeys: ReadonlyArray<string> = operation
-    ? (operation.steps ?? ["details", "template", "amounts", "documentation", "confirm"])
+    ? (operation.steps ?? ["details", "template", "amounts", "documentation", "placement", "confirm"])
     : [];
   const isLast = activeStep === stepKeys.length - 1;
 
@@ -403,6 +503,7 @@ function OperationWizard({
         documentation: bundle.documentation,
         amountMode: bundle.amountMode ?? resolveDefaultAmountMode(op),
         perSubsampleAmounts: reconciled.perSubsampleAmounts,
+        placement: bundle.placement ?? null,
         remember: true,
       };
     }
@@ -412,6 +513,7 @@ function OperationWizard({
       documentation: null,
       amountMode: resolveDefaultAmountMode(op),
       perSubsampleAmounts: {},
+      placement: undefined,
       remember: false,
     };
   };
@@ -427,6 +529,7 @@ function OperationWizard({
     setValues(s.values);
     setTemplateSelection(s.templateSelection);
     setDocumentation(s.documentation);
+    applyRememberedPlacement(s.placement, true);
     setRemember(s.remember);
     setAmountMode(s.amountMode);
     setPerSubsampleAmounts(s.perSubsampleAmounts);
@@ -451,6 +554,7 @@ function OperationWizard({
       setValues(v);
       setTemplateSelection(s.templateSelection);
       setDocumentation(s.documentation);
+      applyRememberedPlacement(s.placement, Boolean(source?.picked));
       setRemember(s.remember);
       setAmountMode(s.amountMode);
       setPerSubsampleAmounts(s.perSubsampleAmounts);
@@ -460,6 +564,7 @@ function OperationWizard({
       return;
     }
     if (nameFrom && next[nameFrom] !== values[nameFrom]) setSampleNameEdited(true);
+    setLandOnPlacement(false);
     setValues(next);
   };
 
@@ -560,11 +665,14 @@ function OperationWizard({
 
   const next = () => {
     extendOriginLocks();
+    setLandOnPlacement(false);
+    setLanded(false);
     setActiveStep((s) => s + 1);
   };
 
   const back = () => {
     extendOriginLocks();
+    setLandOnPlacement(false);
     if (activeStep === 0) {
       setOperation(null);
       return;
@@ -606,12 +714,32 @@ function OperationWizard({
       return detailsValid(operation, values, detailKeys) && origins.every((o) => commonQuantity(o).greaterThan(0));
     if (key === "template") return templateStepValid(templateSelection);
     if (key === "amounts") return amountsStepValid();
+    if (key === "placement")
+      return (
+        placement.mode === "workbench" ||
+        (placement.container !== null && placementBlocker(placement.container, createdCount) === null)
+      );
     return true;
   };
 
   const stepValid = (): boolean => stepValidFor(stepKeys[activeStep]);
   const allStepsValid = (): boolean => operation !== null && stepKeys.every(stepValidFor);
   const fastPath = operation !== null && activeStep === 0 && remember && !reviewing && allStepsValid();
+
+  const placementIndex = stepKeys.indexOf("placement");
+  const placementSettled =
+    pendingPlacement === null && templateSelection.pendingCheck !== true && !parentTemplateChecking;
+  const placementValid = stepValidFor("placement");
+  const otherStepsValid = stepKeys.every((k) => k === "placement" || stepValidFor(k));
+  React.useEffect(() => {
+    if (!landOnPlacement || !placementSettled) return;
+    setLandOnPlacement(false);
+    if (placementIndex < 0 || placementValid || !otherStepsValid) return;
+    setActiveStep(placementIndex);
+    setLanded(true);
+    // Reviewing, so returning to Details never flips the view to the one-click summary.
+    setReviewing(true);
+  }, [landOnPlacement, placementSettled, placementValid, otherStepsValid, placementIndex]);
 
   const closeUnlessSubmitting = () => {
     if (!submitting) closeAfterRenewals();
@@ -675,6 +803,26 @@ function OperationWizard({
     // From here the operation has committed (output created, origins decremented), so nothing below
     // may report it as failed or leave the wizard open for a retry that would charge the origins
     // again. Bookkeeping errors are warnings, and the wizard closes.
+    let placedIn: ContainerModel | null = null;
+    if (created && placement.mode === "container" && placement.container) {
+      const { container } = placement;
+      const failed = t("operations.placement.failedAfterCreate", { container: container.name });
+      try {
+        await placeSubSamples(buildPlacementRecords(created.subSamples ?? [], container));
+        placedIn = container;
+      } catch (error) {
+        getRootStore().uiStore.addAlert(
+          mkAlert({
+            title: failed,
+            message:
+              error instanceof PlacementRefused && error.reasons.length > 0
+                ? error.reasons.join("\n")
+                : getErrorMessage(error, failed),
+            variant: "warning",
+          }),
+        );
+      }
+    }
     try {
       onPerformed?.(created);
     } catch (error) {
@@ -690,6 +838,10 @@ function OperationWizard({
           ),
           template: templateSelectionToDefault(templateSelection),
           documentation,
+          placement:
+            placement.mode === "container" && placement.container
+              ? { containerId: Number(placement.container.id), containerName: placement.container.name }
+              : null,
           ...(usesAmountModes(operation)
             ? { amountMode, perSubsampleAmounts: amountMode === "perSubsample" ? perSubsampleAmounts : {} }
             : {}),
@@ -718,6 +870,18 @@ function OperationWizard({
       // /inventory/search and, from a record page, drop the permalink and load the default listing.
       const { fetcher } = getRootStore().searchStore.search;
       if (!fetcher.permalink) void fetcher.performInitialSearch(null);
+      // The placement went through its own model, so the copy on screen still shows the old contents.
+      // Not while it is being edited, so as not to overwrite unsaved changes.
+      const onScreen = getRootStore().searchStore.activeResult;
+      if (
+        placedIn &&
+        onScreen instanceof ContainerModel &&
+        onScreen.id === placedIn.id &&
+        onScreen.state === "preview"
+      ) {
+        await onScreen.fetchAdditionalInfo();
+        onScreen.refreshAssociatedSearch();
+      }
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
@@ -790,6 +954,14 @@ function OperationWizard({
         </>
       );
     }
+    if (key === "placement") {
+      return (
+        <>
+          {placementNoteAlert()}
+          <PlacementStep value={placement} onChange={onPlacementChange} count={createdCount} />
+        </>
+      );
+    }
     return confirmationStep();
   };
 
@@ -797,6 +969,13 @@ function OperationWizard({
     documentationTrashed && documentation ? (
       <Alert severity="warning" sx={{ mb: 1 }}>
         {t("operations.documentation.trashed", { name: documentation.name })}
+      </Alert>
+    ) : null;
+
+  const placementNoteAlert = (): React.ReactNode =>
+    placementNote ? (
+      <Alert severity="info" sx={{ mb: 1 }}>
+        {placementNote}
       </Alert>
     ) : null;
 
@@ -820,6 +999,7 @@ function OperationWizard({
           </Alert>
         ) : null}
         {trashedDocumentationWarning()}
+        {placementNoteAlert()}
         <OperationConfirmation
           operation={operation}
           values={values}
@@ -835,6 +1015,7 @@ function OperationWizard({
           // A terminal operation (Destroy) has nothing to remember (no template/amounts/documentation),
           // so passing no handler hides the checkbox.
           onRememberChange={operation.noOutput ? undefined : onRememberChange}
+          placement={placement}
         />
       </>
     );
@@ -893,7 +1074,13 @@ function OperationWizard({
         {operation ? (
           fastPath ? (
             <>
-              <Button onClick={() => setReviewing(true)} disabled={submitting}>
+              <Button
+                onClick={() => {
+                  setLandOnPlacement(false);
+                  setReviewing(true);
+                }}
+                disabled={submitting}
+              >
                 {t("operations.wizard.reviewEdit")}
               </Button>
               <SubmitSpinnerButton
@@ -905,9 +1092,22 @@ function OperationWizard({
             </>
           ) : (
             <>
-              <Button onClick={back} disabled={submitting}>
-                {t("common:actions.back")}
-              </Button>
+              {landed ? (
+                <Button
+                  onClick={() => {
+                    extendOriginLocks();
+                    setLanded(false);
+                    setActiveStep(0);
+                  }}
+                  disabled={submitting}
+                >
+                  {t("operations.wizard.reviewEdit")}
+                </Button>
+              ) : (
+                <Button onClick={back} disabled={submitting}>
+                  {t("common:actions.back")}
+                </Button>
+              )}
               {isLast ? (
                 <SubmitSpinnerButton
                   onClick={() => void submit()}

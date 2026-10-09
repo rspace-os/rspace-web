@@ -1,11 +1,14 @@
 import { useTranslation } from "react-i18next";
 import ApiService from "@/common/InvApiService";
+import ContainerModel, { type ContainerAttrs } from "@/stores/models/ContainerModel";
+import MemoisedFactory from "@/stores/models/Factory/MemoisedFactory";
 import { getApiErrorDetails } from "@/util/error";
 import type { FacadeRequest } from "./buildOperationRequest";
 import type { InventoryOperation } from "./operations";
+import type { CreatedSubSample, PlacementRecord } from "./placement";
 import { type ResolveLabel, resolveLabelFrom } from "./types";
 
-export type OperationResult = { id: number; globalId: string; name: string };
+export type OperationResult = { id: number; globalId: string; name: string; subSamples: Array<CreatedSubSample> };
 
 /**
  * The /api/inventory/v1/ prefix is already applied by InvApiService, so the resource is just
@@ -82,4 +85,27 @@ export async function sampleNameAvailable(name: string): Promise<boolean> {
   } catch {
     return true;
   }
+}
+
+/** The bulk endpoint refused at least one move; with rollbackOnError nothing was moved. */
+export class PlacementRefused extends Error {
+  constructor(readonly reasons: Array<string>) {
+    super(reasons.join("\n"));
+  }
+}
+
+export async function placeSubSamples(records: ReadonlyArray<PlacementRecord>): Promise<void> {
+  const { data } = await ApiService.bulk<{
+    errorCount: number;
+    results: Array<{ error?: { errors: Array<string> } | null }>;
+  }>(records, "MOVE", true);
+  if (data.errorCount > 0) throw new PlacementRefused(data.results.flatMap((r) => r.error?.errors ?? []));
+}
+
+export async function fetchContainer(id: number): Promise<ContainerModel> {
+  const { data } = await ApiService.query<ContainerAttrs>(
+    `containers/${id}`,
+    new URLSearchParams({ includeContent: "true" }),
+  );
+  return new ContainerModel(new MemoisedFactory(), data);
 }

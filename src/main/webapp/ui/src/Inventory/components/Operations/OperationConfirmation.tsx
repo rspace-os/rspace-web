@@ -13,11 +13,14 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import DescriptionList from "@/components/DescriptionList";
+import { formatList } from "@/modules/common/i18n/listFormat";
+import { gridLocationLabel } from "@/stores/models/HasLocation";
 import useStores from "@/stores/use-stores";
 import { withUniqueFieldNames } from "./buildOperationRequest";
 import type { DocumentationSelection } from "./DocumentationStep";
 import { type ConfirmSummaryField, type InventoryOperation, resolveProcessName, usesAmountModes } from "./operations";
 import type { OriginBlockedReason } from "./operationValidation";
+import { type PlacementSelection, WORKBENCH } from "./placement";
 import type { TemplateSelection } from "./TemplateStep";
 import type { AmountMode, OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
 import { resolveLabelFrom } from "./types";
@@ -35,6 +38,7 @@ function OperationConfirmation({
   origins = [],
   remember = false,
   onRememberChange,
+  placement = WORKBENCH,
 }: {
   operation: InventoryOperation;
   values: OperationInputs;
@@ -48,8 +52,9 @@ function OperationConfirmation({
   origins?: Array<{ globalId: string; name: string }>;
   remember?: boolean;
   onRememberChange?: (remember: boolean) => void;
+  placement?: PlacementSelection;
 }): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t, i18n } = useTranslation("inventory");
   const theme = useTheme();
   const rememberHelpId = React.useId();
   const { unitStore } = useStores();
@@ -163,6 +168,23 @@ function OperationConfirmation({
     },
     documentation: () =>
       documentation ? { label: t("operations.confirm.labels.documentation"), value: documentation.name } : null,
+    location: () => {
+      const container = placement.mode === "container" ? placement.container : null;
+      if (!container)
+        return { label: t("operations.confirm.labels.location"), value: t("operations.confirm.values.workbench") };
+      const { gridLayout } = container;
+      if (container.cType !== "GRID" || !gridLayout)
+        return { label: t("operations.confirm.labels.location"), value: container.name };
+      const slots = formatList(
+        (container.selectedLocations ?? []).map((l) => gridLocationLabel(gridLayout, l)),
+        i18n.resolvedLanguage ?? i18n.language,
+        { type: "unit", style: "short" },
+      );
+      return {
+        label: t("operations.confirm.labels.location"),
+        value: t("operations.confirm.values.placedIn", { container: container.name, slots }),
+      };
+    },
     originEmptied: () =>
       effect.emptiesOrigin
         ? { label: t("operations.confirm.labels.originEmptied"), value: t("operations.confirm.values.emptied") }

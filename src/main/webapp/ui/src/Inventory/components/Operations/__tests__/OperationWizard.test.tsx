@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render as renderWithoutQueryClient, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
-import { HttpResponse, http } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import type React from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
@@ -10,7 +10,12 @@ import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
-import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
+import { containerAttrs, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import {
+  makeMockSubSample,
+  makeMockSubSampleWithParentContainer,
+} from "@/stores/models/__tests__/SubSampleModel/mocking";
+import type ContainerModel from "@/stores/models/ContainerModel";
 import OperationWizard from "../OperationWizard";
 
 let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
@@ -18,9 +23,14 @@ beforeAll(async () => {
   InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
 });
 
+// The provider goes in as a wrapper so that `rerender` keeps the same wizard instance: a provider
+// nested in the rendered element would make a bare rerender swap the root and remount the wizard.
 function render(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  const Providers = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+  return renderWithoutQueryClient(ui, { wrapper: Providers });
 }
 
 const prefs = vi.hoisted(() => ({ store: {} as Record<string, unknown> }));
@@ -71,6 +81,8 @@ const fetcher: { permalink: null | { type: string; id: number }; performInitialS
   permalink: null,
   performInitialSearch,
 };
+/** The record shown in the main page's right-hand panel. */
+const onScreen: { activeResult: unknown } = { activeResult: null };
 const getTemplate = vi.fn();
 const template = (o: Record<string, unknown> = {}) => ({
   id: 9,
@@ -85,7 +97,14 @@ const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
-    searchStore: { search: { performSearch, fetcher }, getTemplate },
+    moveStore: { isMoving: false },
+    searchStore: {
+      search: { performSearch, fetcher },
+      getTemplate,
+      get activeResult() {
+        return onScreen.activeResult;
+      },
+    },
     uiStore: { addAlert },
     unitStore: {
       getUnit: (id: number) => ({
@@ -237,6 +256,22 @@ vi.mock("../DocumentationStep", () => ({
     </div>
   ),
 }));
+/** The container the placement stub picks; a test sets it before clicking "place-container". */
+const placementTarget = vi.hoisted(() => ({ container: null as unknown }));
+vi.mock("../PlacementStep", () => ({
+  default: ({ value, onChange, count }: { value: { mode: string }; onChange: (v: unknown) => void; count: number }) => (
+    <div>
+      <span data-testid="placement-mode">{value.mode}</span>
+      <span data-testid="placement-count">{String(count)}</span>
+      <button type="button" data-testid="place-workbench" onClick={() => onChange({ mode: "workbench" })} />
+      <button
+        type="button"
+        data-testid="place-container"
+        onClick={() => onChange({ mode: "container", container: placementTarget.container })}
+      />
+    </div>
+  ),
+}));
 vi.mock("../OperationConfirmation", () => ({
   default: ({ remember, onRememberChange }: { remember?: boolean; onRememberChange?: (remember: boolean) => void }) => (
     <div data-testid="confirm">
@@ -265,6 +300,7 @@ beforeEach(() => {
   performSearch.mockClear();
   performInitialSearch.mockClear();
   fetcher.permalink = null;
+  onScreen.activeResult = null;
   addAlert.mockClear();
   // Reset, not merely cleared: mockClear leaves a queued mockResolvedValueOnce/mockRejectedValueOnce
   // for the next test, and one test here asserts getTemplate is never called.
@@ -280,13 +316,18 @@ async function fillDerive(user: ReturnType<typeof userEvent.setup>, processName:
   await user.click(screen.getByTestId("fill-taken-1"));
 }
 
-async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processName: string) {
+async function reachPlacement(user: ReturnType<typeof userEvent.setup>, processName: string) {
   await fillDerive(user, processName);
   await user.click(nextButton()); // details -> template
   await user.click(screen.getByTestId("tmpl-pick5"));
   await user.click(nextButton()); // template -> amounts
   await user.click(nextButton()); // amounts -> documentation
-  await user.click(nextButton()); // documentation -> confirm
+  await user.click(nextButton()); // documentation -> placement
+}
+
+async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processName: string) {
+  await reachPlacement(user, processName);
+  await user.click(nextButton()); // placement -> confirm
 }
 
 /** The remembered bundle for "derive dna", the process name every test below types. */
@@ -616,6 +657,7 @@ describe("OperationWizard step flow", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.destroy\.label/i }));
     expect(screen.queryByText(/step\.template/)).not.toBeInTheDocument();
     expect(screen.queryByText(/step\.amounts/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/step\.placement/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeDisabled();
   });
 
@@ -652,6 +694,89 @@ describe("OperationWizard step flow", () => {
     expect(nextButton()).toBeDisabled();
     await user.click(screen.getByTestId("tmpl-pick5"));
     expect(nextButton()).toBeEnabled();
+  });
+
+  it("puts the placement step between documentation and confirm", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.aliquot\.label/i }));
+    const labels = screen.getAllByText(/operations\.wizard\.step\./).map((el) => el.textContent?.split(".").pop());
+    expect(labels).toEqual(["details", "template", "amounts", "documentation", "placement", "confirm"]);
+  });
+
+  it("starts the placement step on the workbench, which lets Next through", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await reachPlacement(user, "dna");
+    expect(screen.getByTestId("placement-mode")).toHaveTextContent("workbench");
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("blocks Next on the placement step while no container has been picked", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await reachPlacement(user, "dna");
+    placementTarget.container = null;
+    await user.click(screen.getByTestId("place-container"));
+    expect(nextButton()).toBeDisabled();
+    await user.click(screen.getByTestId("place-workbench"));
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("blocks Next on the placement step for a container with too few free locations", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await reachPlacement(user, "dna");
+    placementTarget.container = makeMockContainer({
+      cType: "GRID",
+      gridLayout: { columnsNumber: 1, rowsNumber: 1, columnsLabelType: "N123", rowsLabelType: "ABC" },
+      locationsCount: 1,
+      contentSummary: { totalCount: 1, subSampleCount: 1, containerCount: 0, instrumentCount: 0 },
+    });
+    await user.click(screen.getByTestId("place-container"));
+    expect(nextButton()).toBeDisabled();
+    placementTarget.container = makeMockContainer({ cType: "LIST" });
+    await user.click(screen.getByTestId("place-container"));
+    expect(nextButton()).toBeEnabled();
+  });
+
+  describe("releasing a picked grid container", () => {
+    const pickGridBox = async (user: ReturnType<typeof userEvent.setup>) => {
+      const box = makeMockContainer({
+        cType: "GRID",
+        gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+        locationsCount: 4,
+        contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
+      });
+      placementTarget.container = box;
+      await user.click(screen.getByTestId("place-container"));
+      box.locations?.[0].toggleSelected(true);
+      expect(box.contentSearch.uiConfig.onlyAllowSelectingEmptyLocations).toBe(true);
+      return box;
+    };
+    const expectReleased = (box: ContainerModel) => {
+      expect(box.contentSearch.uiConfig.onlyAllowSelectingEmptyLocations).toBe(false);
+      expect(box.selectedLocations).toEqual([]);
+    };
+
+    it("restores the container when the user switches to the workbench", async () => {
+      const user = userEvent.setup();
+      render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+      await reachPlacement(user, "dna");
+      const box = await pickGridBox(user);
+      await user.click(screen.getByTestId("place-workbench"));
+      expectReleased(box);
+    });
+
+    it("restores the container when the wizard closes", async () => {
+      const user = userEvent.setup();
+      const origins = [makeMockSubSample({})];
+      const { rerender } = render(<OperationWizard open onClose={vi.fn()} origins={origins} />);
+      await reachPlacement(user, "dna");
+      const box = await pickGridBox(user);
+      rerender(<OperationWizard open={false} onClose={vi.fn()} origins={origins} />);
+      expectReleased(box);
+    });
   });
 
   it("enables Perform for a terminal operation (Destroy) on a non-empty origin", async () => {
@@ -947,7 +1072,8 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
     await user.click(screen.getByRole("button", { name: "Next" })); // amounts -> documentation
-    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> placement
+    await user.click(screen.getByRole("button", { name: "Next" })); // placement -> confirm
     await user.click(screen.getByRole("button", { name: "Perform" }));
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
@@ -974,7 +1100,8 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
     await user.click(screen.getByRole("button", { name: "Next" })); // amounts -> documentation
-    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> placement
+    await user.click(screen.getByRole("button", { name: "Next" })); // placement -> confirm
     await user.click(screen.getByRole("button", { name: "Perform" }));
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
@@ -1016,7 +1143,8 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
-    await user.click(nextButton()); // -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     expect(screen.getByTestId("toggle-remember")).toBeInTheDocument();
     expect(screen.getByTestId("remember")).toHaveTextContent("false");
   });
@@ -1035,7 +1163,8 @@ describe("OperationWizard remember bundle", () => {
     await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
     await user.click(screen.getByTestId("doc-choose"));
-    await user.click(nextButton()); // -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember"));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
@@ -1055,6 +1184,7 @@ describe("OperationWizard remember bundle", () => {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 5, templateName: "T5" },
         documentation: { globalId: "SD1", name: "D1" },
+        placement: null,
       },
     });
     expect(ops().names).toEqual({ derive: ["dna extraction"] });
@@ -1079,7 +1209,8 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByTestId("fill-per-both"));
     await user.click(nextButton()); // amounts -> documentation
     await user.click(screen.getByTestId("doc-choose"));
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember"));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
@@ -1251,7 +1382,8 @@ describe("OperationWizard remember bundle", () => {
     expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9");
     await user.click(nextButton()); // template -> amounts
     await user.click(nextButton()); // amounts -> documentation
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     expect(screen.getByTestId("remember")).toHaveTextContent("false");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -1281,7 +1413,8 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
-    await user.click(nextButton()); // -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember")); // re-tick: must keep the new data
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
@@ -1292,6 +1425,7 @@ describe("OperationWizard remember bundle", () => {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 5, templateName: "T5" },
         documentation: null,
+        placement: null,
       },
     });
   });
@@ -1347,13 +1481,369 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
-    await user.click(nextButton()); // -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember")); // tick on the confirm step
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const stored = ops().values as Record<string, unknown>;
     expect(Object.keys(stored)).toEqual(["cryopreserve"]);
+  });
+});
+
+const BULK_URL = "/api/inventory/v1/bulk";
+
+/** The operation creates two subsamples, and every bulk request is recorded with `reply` as its answer. */
+function createTwoAndRecordBulk(reply: Record<string, unknown> = { errorCount: 0, successCount: 2, results: [] }) {
+  const bulkBodies: Array<Record<string, unknown>> = [];
+  server.use(
+    http.post(
+      OPERATION_URL,
+      () =>
+        HttpResponse.json(
+          {
+            sample: {
+              ...created.sample,
+              subSamples: [
+                { id: 21, globalId: "SS21" },
+                { id: 22, globalId: "SS22" },
+              ],
+            },
+          },
+          { status: 201 },
+        ),
+      { once: true },
+    ),
+    http.post(BULK_URL, async ({ request }) => {
+      bulkBodies.push((await request.json()) as Record<string, unknown>);
+      return HttpResponse.json(reply);
+    }),
+  );
+  return bulkBodies;
+}
+
+const makeShelf = () => makeMockContainer({ id: 5, globalId: "IC5", name: "Shelf", cType: "LIST" });
+
+async function performIntoShelf(
+  user: ReturnType<typeof userEvent.setup>,
+  onClose: () => void,
+  onPerformed = vi.fn(),
+  shelf = makeShelf(),
+) {
+  placementTarget.container = shelf;
+  render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} onPerformed={onPerformed} />);
+  await reachPlacement(user, "dna");
+  await user.click(screen.getByTestId("place-container"));
+  await user.click(nextButton()); // placement -> confirm
+  await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+  return shelf;
+}
+
+describe("OperationWizard placement after Perform", () => {
+  it("moves the created subsamples into the chosen container after the operation", async () => {
+    const bulkBodies = createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    await performIntoShelf(user, onClose);
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(bulkBodies).toHaveLength(1);
+    expect(bulkBodies[0]).toMatchObject({
+      operationType: "MOVE",
+      rollbackOnError: true,
+      records: [
+        { id: 21, type: "SUBSAMPLE", globalId: "SS21", parentContainers: [expect.objectContaining({ id: 5 })] },
+        { id: 22, type: "SUBSAMPLE", globalId: "SS22", parentContainers: [expect.objectContaining({ id: 5 })] },
+      ],
+    });
+  });
+
+  it("leaves the subsamples on the workbench without a move when no container was chosen", async () => {
+    const bulkBodies = createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
+    await reachConfirm(user, "dna");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(bulkBodies).toHaveLength(0);
+  });
+
+  it("warns, still closes and still reports the operation when the move is refused", async () => {
+    createTwoAndRecordBulk({
+      errorCount: 1,
+      successCount: 0,
+      results: [{ error: { errors: ["Container is full"] } }, { error: { errors: [] } }],
+    });
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onPerformed = vi.fn();
+    await performIntoShelf(user, onClose, onPerformed);
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(onPerformed).toHaveBeenCalledWith(expect.objectContaining({ globalId: "SS9" }));
+    const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
+    expect(alerts).toEqual([expect.objectContaining({ variant: "warning", message: "Container is full" })]);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  describe("reloading the destination when it is the record on screen", () => {
+    const watch = (container: ContainerModel) => ({
+      fetch: vi.spyOn(container, "fetchAdditionalInfo").mockResolvedValue(undefined),
+      refresh: vi.spyOn(container, "refreshAssociatedSearch").mockImplementation(() => {}),
+    });
+
+    it("reloads it and its contents", async () => {
+      createTwoAndRecordBulk();
+      const shelf = makeShelf();
+      const { fetch, refresh } = watch(shelf);
+      onScreen.activeResult = shelf;
+      const onClose = vi.fn();
+      await performIntoShelf(userEvent.setup(), onClose, vi.fn(), shelf);
+      await waitFor(() => expect(refresh).toHaveBeenCalled());
+      expect(fetch).toHaveBeenCalled();
+    });
+
+    it("leaves it alone while it is being edited", async () => {
+      createTwoAndRecordBulk();
+      const shelf = makeShelf();
+      const { fetch, refresh } = watch(shelf);
+      runInAction(() => {
+        shelf.editing = true;
+      });
+      onScreen.activeResult = shelf;
+      const onClose = vi.fn();
+      await performIntoShelf(userEvent.setup(), onClose, vi.fn(), shelf);
+      await waitFor(() => expect(onClose).toHaveBeenCalled());
+      expect(fetch).not.toHaveBeenCalled();
+      expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it("leaves a different container on screen alone", async () => {
+      createTwoAndRecordBulk();
+      const other = makeMockContainer({ id: 6, globalId: "IC6", name: "Other", cType: "LIST" });
+      const { fetch } = watch(other);
+      onScreen.activeResult = other;
+      const onClose = vi.fn();
+      await performIntoShelf(userEvent.setup(), onClose);
+      await waitFor(() => expect(onClose).toHaveBeenCalled());
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("does not reload it when the move was refused", async () => {
+      createTwoAndRecordBulk({ errorCount: 2, successCount: 0, results: [{ error: { errors: ["Full"] } }] });
+      const shelf = makeShelf();
+      const { fetch } = watch(shelf);
+      onScreen.activeResult = shelf;
+      const onClose = vi.fn();
+      await performIntoShelf(userEvent.setup(), onClose, vi.fn(), shelf);
+      await waitFor(() => expect(onClose).toHaveBeenCalled());
+      expect(fetch).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("OperationWizard remembered placement", () => {
+  const CONTAINER_URL = "/api/inventory/v1/containers/:id";
+  const grid = { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" } as const;
+
+  function rememberBoil(
+    placement: unknown,
+    { count = 1, template = { mode: "none", templateId: null } }: { count?: number; template?: unknown } = {},
+  ) {
+    ops().defaults = { derive: "boil" };
+    ops().values = {
+      "derive boil": {
+        values: { count, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template,
+        documentation: null,
+        placement,
+      },
+    };
+  }
+
+  function serveContainer(attrs: Parameters<typeof containerAttrs>[0] | null, delayMs = 0) {
+    server.use(
+      http.get(CONTAINER_URL, async () => {
+        if (delayMs) await delay(delayMs);
+        return attrs
+          ? HttpResponse.json(containerAttrs(attrs))
+          : HttpResponse.json({ message: "Not found" }, { status: 404 });
+      }),
+    );
+  }
+
+  it("saves the chosen container by id and name, never its locations", async () => {
+    createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const box = makeMockContainer({
+      id: 6,
+      globalId: "IC6",
+      name: "Box",
+      cType: "GRID",
+      gridLayout: grid,
+      locationsCount: 4,
+    });
+    box.locations?.[0].toggleSelected(true);
+    placementTarget.container = box;
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
+    await reachPlacement(user, "dna");
+    await user.click(screen.getByTestId("place-container"));
+    await user.click(nextButton()); // placement -> confirm
+    await user.click(screen.getByTestId("toggle-remember"));
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect((ops().values["derive dna"] as { placement: unknown }).placement).toEqual({
+      containerId: 6,
+      containerName: "Box",
+    });
+  });
+
+  it("offers the one-click fast path for a remembered list container and places into it", async () => {
+    rememberBoil({ containerId: 5, containerName: "Shelf" });
+    serveContainer({ id: 5, globalId: "IC5", name: "Shelf", cType: "LIST" });
+    const bulkBodies = createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.click(await screen.findByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(bulkBodies).toHaveLength(1);
+  });
+
+  const currentStep = () => document.querySelector('[aria-current="step"]');
+  const gridBox = { id: 6, globalId: "IC6", name: "Box", cType: "GRID", gridLayout: grid, locationsCount: 4 } as const;
+
+  async function openRememberedDerive(user: ReturnType<typeof userEvent.setup>, onClose = vi.fn()) {
+    render(<OperationWizard open onClose={onClose} origins={[mockOrigin()]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+  }
+
+  it("opens a remembered run with a grid container on the Location step, where only the locations are left", async () => {
+    rememberBoil({ containerId: 6, containerName: "Box" }, { count: 2 });
+    serveContainer(gridBox);
+    const bulkBodies = createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    await openRememberedDerive(user, onClose);
+
+    await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
+    expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
+    expect(nextButton()).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
+
+    const box = makeMockContainer({ ...gridBox });
+    box.locations?.[0].toggleSelected(true);
+    box.locations?.[3].toggleSelected(true);
+    placementTarget.container = box;
+    await user.click(screen.getByTestId("place-container"));
+    await user.click(nextButton()); // placement -> confirm
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const records = (bulkBodies[0] as { records: Array<Record<string, unknown>> }).records;
+    expect(records).toHaveLength(2);
+    for (const record of records) expect(record).toHaveProperty("parentLocation");
+  });
+
+  it("offers Review / edit on the landed Location step, which goes to Details and never to the summary", async () => {
+    rememberBoil({ containerId: 6, containerName: "Box" });
+    serveContainer(gridBox);
+    const user = userEvent.setup();
+    await openRememberedDerive(user);
+    await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
+    expect(screen.queryByRole("button", { name: /actions\.back/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
+    expect(currentStep()).toHaveTextContent(/step\.details/);
+    expect(screen.queryByTestId("confirm")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /wizard\.reviewEdit/i })).not.toBeInTheDocument();
+    expect(backButton()).toBeInTheDocument();
+  });
+
+  it("stays on Details when the remembered template is trashed as well as the grid needing locations", async () => {
+    getTemplate.mockResolvedValue(template({ name: "Cell line", deleted: true }));
+    rememberBoil(
+      { containerId: 6, containerName: "Box" },
+      { template: { mode: "pick", templateId: 9, templateName: "Cell line" } },
+    );
+    serveContainer(gridBox);
+    const user = userEvent.setup();
+    await openRememberedDerive(user);
+
+    await waitFor(() => expect(getTemplate).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(currentStep()).toHaveTextContent(/step\.details/);
+  });
+
+  it("does not jump to Location once the user has moved on before the container arrives", async () => {
+    rememberBoil({ containerId: 6, containerName: "Box" });
+    serveContainer(gridBox, 200);
+    const user = userEvent.setup();
+    await openRememberedDerive(user);
+
+    await user.click(nextButton()); // details -> template, before the container has loaded
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(currentStep()).toHaveTextContent(/step\.template/);
+  });
+
+  it.each([
+    ["is gone", null],
+    ["can no longer hold the new subsamples", { id: 5, globalId: "IC5", name: "Shelf", cType: "LIST", deleted: true }],
+  ] as const)(
+    "opens on Location with a note, no container picked, when the remembered container %s",
+    async (_, attrs) => {
+      rememberBoil({ containerId: 5, containerName: "Shelf" });
+      serveContainer(attrs);
+      const user = userEvent.setup();
+      await openRememberedDerive(user);
+
+      await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
+      expect(screen.getByText(/placement\.rememberedUnavailable/)).toBeInTheDocument();
+      expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
+      expect(nextButton()).toBeDisabled();
+      await user.click(screen.getByTestId("place-workbench"));
+      expect(nextButton()).toBeEnabled();
+    },
+  );
+});
+
+describe("OperationWizard origin container pre-selection", () => {
+  it("pre-selects the origin's own container, leaving the workbench one click away", async () => {
+    server.use(
+      http.get("/api/inventory/v1/containers/:id", () =>
+        HttpResponse.json(containerAttrs({ id: 2, globalId: "IC2", name: "Rack", cType: "LIST" })),
+      ),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSampleWithParentContainer();
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await reachPlacement(user, "dna");
+
+    await waitFor(() => expect(screen.getByTestId("placement-mode")).toHaveTextContent("container"));
+    await user.click(screen.getByTestId("place-workbench"));
+    expect(screen.getByTestId("placement-mode")).toHaveTextContent("workbench");
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("stays on the workbench when the origin's container cannot take the new subsamples", async () => {
+    server.use(
+      http.get("/api/inventory/v1/containers/:id", () =>
+        HttpResponse.json(containerAttrs({ id: 2, globalId: "IC2", canStoreSamples: false })),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSampleWithParentContainer()]} />);
+    await reachPlacement(user, "dna");
+
+    expect(screen.getByTestId("placement-mode")).toHaveTextContent("workbench");
+    expect(screen.queryByText(/placement\.rememberedUnavailable/)).not.toBeInTheDocument();
   });
 });
 
@@ -1372,7 +1862,8 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // template -> amounts
     await user.click(nextButton()); // amounts -> documentation
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
@@ -1440,7 +1931,8 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // template -> amounts (count 1 and each amount 1 ml prefilled)
     await user.click(nextButton()); // amounts -> documentation
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());

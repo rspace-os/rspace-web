@@ -13,7 +13,11 @@ export type ProcessValues = {
   documentation: DocumentationSelection;
   amountMode?: AmountMode;
   perSubsampleAmounts?: PerSubsampleAmounts;
+  /** null remembers the workbench. Grid locations are never remembered. */
+  placement?: RememberedPlacement | null;
 };
+
+export type RememberedPlacement = { containerId: number; containerName: string };
 
 const UNSELECTED_TEMPLATE: TemplateDefault = { mode: "unselected", templateId: null };
 const AMOUNT_MODES: ReadonlyArray<AmountMode> = ["same", "all", "perSubsample"];
@@ -43,6 +47,13 @@ function normalizePerSubsampleAmounts(value: unknown): PerSubsampleAmounts {
   return out;
 }
 
+function normalizePlacement(stored: unknown): RememberedPlacement | null {
+  const s = stored as { containerId?: unknown; containerName?: unknown } | null | undefined;
+  return s && typeof s.containerId === "number" && typeof s.containerName === "string"
+    ? { containerId: s.containerId, containerName: s.containerName }
+    : null;
+}
+
 function normalizeTemplateDefault(stored: unknown): TemplateDefault {
   if (typeof stored !== "object" || stored === null) return UNSELECTED_TEMPLATE;
   const { mode, templateId, templateName, quantityCategory } = stored as {
@@ -68,6 +79,7 @@ export function normalizeProcessValues(stored: unknown): ProcessValues | null {
     documentation?: unknown;
     amountMode?: unknown;
     perSubsampleAmounts?: unknown;
+    placement?: unknown;
   };
   if (typeof s.values !== "object" || s.values === null) return null;
   const template = normalizeTemplateDefault(s.template);
@@ -79,6 +91,7 @@ export function normalizeProcessValues(stored: unknown): ProcessValues | null {
   if (s.amountMode !== undefined) result.amountMode = normalizeAmountMode(s.amountMode);
   if (s.perSubsampleAmounts !== undefined)
     result.perSubsampleAmounts = normalizePerSubsampleAmounts(s.perSubsampleAmounts);
+  if (s.placement !== undefined) result.placement = normalizePlacement(s.placement);
   return result;
 }
 
