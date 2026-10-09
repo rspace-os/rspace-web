@@ -3,6 +3,7 @@ package com.researchspace.model.inventory;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.field.InventoryIdentifierField;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -72,7 +73,8 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
    * <p>The three URL properties are distinct: {@code LOCAL_URL} is this RSpace's public landing
    * page for the identifier, {@code PUBLIC_URL} is the citable publicly resolvable URL that only
    * exists once the identifier is published, and {@code PROVIDER_URL} is the record's page on the
-   * issuing provider, which may require signing in to that provider.
+   * issuing provider, which may require signing in to that provider. Read {@code PUBLIC_URL}
+   * through {@link #getPublicUrl()}, which supplies it for DOIs published before it was stored.
    */
   public enum IdentifierOtherProperty {
     CREATOR_NAME,
@@ -235,6 +237,25 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
   /** Marks a transient identifier as linked. Only the import path, via the DTO, calls this. */
   public void markLinked() {
     addOtherData(IdentifierOtherProperty.ORIGIN, ORIGIN_EXTERNAL);
+  }
+
+  /**
+   * This identifier's public URL (CONTEXT.md): the stored one, or, for a DataCite DOI that resolves
+   * (findable, or registered after a retract) but was stored without one, its doi.org address.
+   * Deliberately not {@link #isPublishedState}: that admits B2INST's {@code accepted}, and a B2INST
+   * PID RSpace registered stores the provider's record id, not the Handle (ADR 0009).
+   *
+   * @return the address, or null while the PID does not resolve
+   */
+  @Transient
+  public String getPublicUrl() {
+    String stored = getOtherData(IdentifierOtherProperty.PUBLIC_URL);
+    if (stored != null) {
+      return stored;
+    }
+    boolean doiResolves =
+        "findable".equalsIgnoreCase(getState()) || "registered".equalsIgnoreCase(getState());
+    return doiResolves ? InventoryIdentifierField.DOI_URL_PREFIX + getIdentifier() : null;
   }
 
   @Transient

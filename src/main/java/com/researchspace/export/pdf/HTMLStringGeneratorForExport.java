@@ -19,6 +19,8 @@ import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalSe
 import com.researchspace.model.field.ChoiceField;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.TextField;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.record.BaseRecord;
@@ -237,12 +239,18 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
                 makeGlobalIdLink(mu.getInventoryRecord().getGlobalIdentifier()),
                 mu.getInventoryRecord().getType().toString(),
                 mu.getInventoryRecord().getName()));
-        if (!mu.getInventoryRecord().getActiveIdentifiers().isEmpty()) {
-          String igsn =
-              "https://doi.org/"
-                  + mu.getInventoryRecord().getActiveIdentifiers().get(0).getIdentifier();
-          sbf.append(String.format(", igsn: <a href=\"%s\">%s</a>", igsn, igsn));
-          igsnInventoryLinkedItems.add(igsn);
+        List<DigitalObjectIdentifier> identifiers = mu.getInventoryRecord().getActiveIdentifiers();
+        DigitalObjectIdentifier identifier = identifiers.isEmpty() ? null : identifiers.get(0);
+        String publicUrl = identifier == null ? null : identifier.getPublicUrl();
+        if (publicUrl != null) {
+          IdentifierType type = identifier.getType();
+          String label =
+              type == IdentifierType.PIDINST_DATACITE || type == IdentifierType.PIDINST_B2INST
+                  ? "pidinst"
+                  : "igsn";
+          String escapedUrl = escapeHtml4(publicUrl);
+          sbf.append(String.format(", %s: <a href=\"%s\">%s</a>", label, escapedUrl, escapedUrl));
+          igsnInventoryLinkedItems.add(publicUrl);
         }
         if (mu.getUsedQuantity() != null) {
           sbf.append(", usage: " + mu.getUsedQuantityPlainString());
