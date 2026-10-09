@@ -49,6 +49,8 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -509,8 +511,9 @@ class InventoryIdentifierApiManagerImplUnitTest {
   }
 
   /** The stored public URL becomes a link in exported documents (RSDEV-1536). */
-  @Test
-  void refreshStoresNoPublicUrlWhenTheEpicPidIsNotAnHttpAddress() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"javascript:alert(1)", "http://"})
+  void refreshStoresNoPublicUrlWhenTheEpicPidIsNotAnHttpAddress(String epicPid) throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
     B2instConnector b2instConnector = mock(B2instConnector.class);
     IPropertyHolder properties = mock(IPropertyHolder.class);
@@ -518,7 +521,7 @@ class InventoryIdentifierApiManagerImplUnitTest {
     ReflectionTestUtils.setField(mgr, "properties", properties);
     when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
     B2instDraftRecord published = new B2instDraftRecord();
-    published.setPids(Map.of("epic", Map.of("identifier", "javascript:alert(1)")));
+    published.setPids(Map.of("epic", Map.of("identifier", epicPid)));
     when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.of(published));
 
     ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, b2instDoi());

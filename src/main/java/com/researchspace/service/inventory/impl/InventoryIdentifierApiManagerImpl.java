@@ -813,17 +813,16 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
 
   /**
    * The record's minted ePIC Handle PID (for example {@code
-   * http://hdl.handle.net/21.T11975/<rid>}), or null when the response carries none or it is not an
-   * http(s) address: exported documents link to it. The {@code pids} block is kept loosely typed on
-   * the model, so it is dug out here.
+   * http://hdl.handle.net/21.T11975/<rid>}), or null when the response carries none or it is not a
+   * well-formed absolute http(s) address: exported documents link to it. The {@code pids} block is
+   * kept loosely typed on the model, so it is dug out here.
    */
   private String epicPidOf(B2instDraftRecord record) {
     if (record.getPids() == null || !(record.getPids().get("epic") instanceof Map<?, ?> epic)) {
       return null;
     }
     return epic.get("identifier") instanceof String identifier
-            && PidinstFields.isResolvableAddress(identifier)
-        ? identifier
+        ? PidinstRecordMapper.resolvableUrl(identifier)
         : null;
   }
 
