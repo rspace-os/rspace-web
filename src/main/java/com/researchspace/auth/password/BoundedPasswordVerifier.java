@@ -13,24 +13,35 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * Runs Argon2 login-password checks (Shiro login and default-realm reauthentication) through one
  * shared pool of permits, so the per-check heap allocation is bounded however many requests arrive
  * (ADR 0011). A username has at most one check in flight, so one account cannot hold more than one
- * permit. Encoding new passwords is not bounded.
+ * permit. At most {@code permits + maxQueued} callers are inside at once; further callers are
+ * refused as busy without waiting. New passwords are not encoded here; anonymous encodes are
+ * bounded by {@link NewPasswordEncodeGate}.
  */
 public class BoundedPasswordVerifier {
 
   private final PasswordEncoder encoder;
   private final Semaphore permits;
+  private final Semaphore admissions;
   private final int maxPermits;
   private final long waitNanos;
   private final ConcurrentHashMap<String, PrincipalLock> principalLocks = new ConcurrentHashMap<>();
   private final ThreadLocal<Long> sharedDeadline = new ThreadLocal<>();
 
-  public BoundedPasswordVerifier(PasswordEncoder encoder, int permits, Duration wait) {
+  /**
+   * @param permits checks that may run at once
+   * @param maxQueued callers that may wait for a permit or an account's lock; more are refused
+   * @param wait how long a caller waits before it is refused as busy
+   */
+  public BoundedPasswordVerifier(
+      PasswordEncoder encoder, int permits, int maxQueued, Duration wait) {
     Validate.notNull(encoder);
     Validate.isTrue(permits >= 1, "Password verification needs at least 1 permit, got %d", permits);
+    Validate.isTrue(maxQueued >= 0, "Password verification queue must not be negative");
     Validate.isTrue(!wait.isNegative(), "Password verification wait must not be negative");
     this.encoder = encoder;
     this.maxPermits = permits;
     this.permits = new Semaphore(permits, true);
+    this.admissions = new Semaphore(permits + maxQueued);
     this.waitNanos = wait.toNanos();
   }
 
@@ -43,6 +54,17 @@ public class BoundedPasswordVerifier {
    * @throws LoginVerificationBusyException if the wait elapses first
    */
   public <T> T runExclusive(String username, Callable<T> action) throws Exception {
+    boolean admitted = admitOutermost(username);
+    try {
+      return lockAndRun(username, action);
+    } finally {
+      if (admitted) {
+        admissions.release();
+      }
+    }
+  }
+
+  private <T> T lockAndRun(String username, Callable<T> action) throws Exception {
     long deadline = System.nanoTime() + waitNanos;
     PrincipalLock principalLock = acquireHolder(username);
     try {
@@ -76,10 +98,22 @@ public class BoundedPasswordVerifier {
    * by the configured wait.
    *
    * @return whether the password matched
-   * @throws LoginVerificationBusyException if the wait elapses first
+   * @throws LoginVerificationBusyException if the wait elapses first, or too many callers are
+   *     already waiting
    * @throws IllegalArgumentException if the stored value has no recognised encoding
    */
   public boolean verify(String username, CharSequence rawPassword, String encodedPassword) {
+    boolean admitted = admitOutermost(username);
+    try {
+      return lockAndVerify(username, rawPassword, encodedPassword);
+    } finally {
+      if (admitted) {
+        admissions.release();
+      }
+    }
+  }
+
+  private boolean lockAndVerify(String username, CharSequence rawPassword, String encodedPassword) {
     Long shared = sharedDeadline.get();
     long deadline = shared != null ? shared : System.nanoTime() + waitNanos;
     PrincipalLock principalLock = acquireHolder(username);
@@ -105,6 +139,17 @@ public class BoundedPasswordVerifier {
     } finally {
       releaseHolder(username);
     }
+  }
+
+  /** A call nested inside {@link #runExclusive} on this thread is already admitted. */
+  private boolean admitOutermost(String username) {
+    if (sharedDeadline.get() != null) {
+      return false;
+    }
+    if (!admissions.tryAcquire()) {
+      throw busy(username, "too many password checks are already waiting");
+    }
+    return true;
   }
 
   private PrincipalLock acquireHolder(String username) {
@@ -134,6 +179,10 @@ public class BoundedPasswordVerifier {
   private static final class PrincipalLock {
     private final ReentrantLock lock = new ReentrantLock();
     private int holders;
+  }
+
+  int availableAdmissions() {
+    return admissions.availablePermits();
   }
 
   int availablePermits() {
