@@ -9,7 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -355,6 +358,83 @@ class BoundedPasswordVerifierTest {
     running.get(5, TimeUnit.SECONDS);
     waiting.get(5, TimeUnit.SECONDS);
     assertEquals(0, verifier.trackedPrincipals());
+  }
+
+  /** Parks the caller tagged with a role right after its registration on the username's entry. */
+  private static class PausingLocks
+      extends ConcurrentHashMap<String, BoundedPasswordVerifier.PrincipalLock> {
+    final ThreadLocal<String> role = new ThreadLocal<>();
+    final CountDownLatch bRegistered = new CountDownLatch(1);
+    final CountDownLatch bResume = new CountDownLatch(1);
+    final CountDownLatch cRegistered = new CountDownLatch(1);
+    final CountDownLatch cResume = new CountDownLatch(1);
+
+    @Override
+    public BoundedPasswordVerifier.PrincipalLock compute(
+        String key,
+        BiFunction<
+                ? super String,
+                ? super BoundedPasswordVerifier.PrincipalLock,
+                ? extends BoundedPasswordVerifier.PrincipalLock>
+            fn) {
+      BoundedPasswordVerifier.PrincipalLock result = super.compute(key, fn);
+      if ("B".equals(role.get())) {
+        pause(bRegistered, bResume);
+      } else if ("C".equals(role.get())) {
+        pause(cRegistered, cResume);
+      }
+      return result;
+    }
+
+    private static void pause(CountDownLatch registered, CountDownLatch resume) {
+      registered.countDown();
+      try {
+        resume.await(5, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+
+  @Test
+  void secondCallerIsAdmittedWhileExcessCallerIsRejected() throws Exception {
+    PausingLocks locks = new PausingLocks();
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofSeconds(5), locks);
+    Future<Boolean> a = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
+    awaitEntered(1);
+    Future<Boolean> b =
+        pool.submit(
+            () -> {
+              locks.role.set("B");
+              return verifier.verify("alice", "ok", "stored");
+            });
+    assertTrue(locks.bRegistered.await(5, TimeUnit.SECONDS));
+    Future<Boolean> c =
+        pool.submit(
+            () -> {
+              locks.role.set("C");
+              return verifier.verify("alice", "ok", "stored");
+            });
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while (!c.isDone() && locks.cRegistered.getCount() > 0 && System.nanoTime() < deadline) {
+      Thread.sleep(5);
+    }
+
+    locks.bResume.countDown();
+    Thread.sleep(100);
+    locks.cResume.countDown();
+
+    encoder.release.countDown();
+    assertTrue(a.get(5, TimeUnit.SECONDS));
+    assertTrue(b.get(5, TimeUnit.SECONDS), "the one caller allowed to wait must not be refused");
+    ExecutionException refused =
+        assertThrows(ExecutionException.class, () -> c.get(5, TimeUnit.SECONDS));
+    assertInstanceOf(LoginVerificationBusyException.class, refused.getCause());
+    assertTrue(refused.getCause().getMessage().contains("already waiting"));
+    assertEquals(0, verifier.trackedPrincipals());
+    assertEquals(PERMITS + NO_QUEUE_CAP, verifier.availableAdmissions());
+    assertEquals(PERMITS, verifier.availablePermits());
   }
 
   private static void awaitAdmissions(BoundedPasswordVerifier verifier, int count)
