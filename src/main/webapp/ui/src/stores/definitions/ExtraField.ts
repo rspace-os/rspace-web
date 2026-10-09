@@ -23,6 +23,8 @@ export type ExtraFieldAttrs = {
   initial?: boolean;
   newFieldRequest?: boolean;
   link?: ExtraInventoryLink | null;
+  /** Read-only: the server sets it, and `paramsForBackend` omits it. */
+  operationFieldKey?: string | null;
 };
 
 /**
@@ -43,6 +45,8 @@ export interface ExtraField {
    * fields (and for a Link field that has not yet been given a target).
    */
   readonly link: ExtraInventoryLink | null;
+
+  readonly operationFieldKey?: string | null;
 
   /*
    * Client-side only. True when this field was copied from a template, false

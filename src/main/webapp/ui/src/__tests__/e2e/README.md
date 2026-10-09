@@ -23,7 +23,8 @@ cp src/main/webapp/ui/.env.example src/main/webapp/ui/.env
 |---|---|---|
 | `RSPACE_BASE_URL` | `http://localhost:8080` | Target instance URL |
 | `HEADLESS` | `true` | Set `false` to watch browsers |
-| `E2E_BROWSER` | _(all)_ | Limit to one project: `chromium`, `firefox`, `webkit`, or `api` |
+| `E2E_BROWSER` | _(all)_ | Select `chromium`, `firefox`, `webkit`, `mobile`, or `api`. Cloud mode defaults to the three desktop browsers. |
+| `E2E_CLOUD` | `false` | Set `true` to select community UI specs against RSpace running with `deployment.cloud=true`. |
 | `RSPACE_SYSADMIN_USERNAME` | `sysadmin1` | Sysadmin username |
 | `RSPACE_SYSADMIN_PASSWORD` | `sysWisc23!` | Sysadmin password |
 | `RSPACE_SYSADMIN_API_KEY` | `abcdefghijklmnop12` | Sysadmin API key |
@@ -41,7 +42,7 @@ Real-mode credentials for the `@apps` specs (`FIELDMARK_API_KEY`,
 # All browsers + API
 pnpm run test-e2e
 
-# Single browser (use E2E_BROWSER — --project flag does not work through pnpm)
+# Single browser
 E2E_BROWSER=chromium pnpm run test-e2e
 
 # API tests only
@@ -73,8 +74,56 @@ Boot the dev stack (see `docker/dev/README.md`):
 ./docker/dev/rspace-dev up
 ```
 
-Then run tests with the default `RSPACE_BASE_URL=http://localhost:8080`. No
-extra config needed — the Docker stack listens on 8080 by default.
+Use the app URL printed by `./docker/dev/rspace-dev ps` as `RSPACE_BASE_URL`.
+The default is `http://localhost:8080`; other worktrees may use another port.
+
+## Running the community (cloud) specs
+
+`specs/cloud/` covers community-only flows (email-verified signup, cloud group
+creation and invitations, directory search, confirmed email change). They need
+a server started with `-Ddeployment.cloud=true`, which is fixed at startup,
+and Mailpit. `E2E_CLOUD=true` selects these specs in the same `chromium`,
+`firefox`, and `webkit` projects used for standard RSpace. Without it, the
+runner excludes community specs. This flag selects tests; it does not change
+the deployment property on an already running server.
+
+On the Docker dev stack, add `deployment.cloud=true` to the worktree's
+gitignored `src/main/resources/deployments/dev/deployment.properties`, then:
+
+```bash
+./docker/dev/rspace-dev up --mailpit
+```
+
+If the app was already running, run `./docker/dev/rspace-dev restart` to apply
+the changed deployment property. Wait for Jetty to finish starting, then use
+the app and Mailpit ports printed by `./docker/dev/rspace-dev ps`:
+
+```bash
+E2E_CLOUD=true RSPACE_BASE_URL=http://localhost:<app port> \
+  MAILPIT_HTTP_URL=http://localhost:<mailpit port> pnpm run test-e2e --reporter=list
+```
+
+`E2E_CLOUD=true` runs all three desktop browsers. Add `E2E_BROWSER=chromium`,
+`firefox`, or `webkit` to select one. `mobile` is rejected in cloud mode because
+no community spec is tagged `@mobile`, and `E2E_CLOUD` accepts only `true` or
+`false`.
+Unknown `E2E_BROWSER` values fail before authentication or test execution.
+Check selection without starting browsers or contacting RSpace with
+`E2E_CLOUD=true pnpm run test-e2e --list --reporter=list`.
+
+`projects.ts` defines browser engines, seed users, and project selection for
+both the Playwright config and authentication setup. Add or change browser
+projects there so their login state stays consistent with the runner.
+
+CI varies the `cloud` deployment property independently of the browser in
+`.github/workflows/e2e.yml`. Community jobs run unsharded in both mock and real
+integration modes, each with its own server. The same `E2E_CLOUD` value sets
+the server property and selects the test suite.
+
+Accounts created through the signup form and groups created through the UI are
+left behind; only `clientSysadmin.createUser` accounts are disabled at teardown.
+Names are unique, so leftovers don't affect later runs; reset the database to
+clear them.
 
 ## Filestore and ROR specs
 
@@ -139,7 +188,8 @@ at the provider as well as on RSpace's public preview.
 
 | Suffix | Project | Description |
 |---|---|---|
-| `*.e2e.ts` | chromium, firefox, webkit | UI browser spec |
+| `*.e2e.ts` | chromium, firefox, webkit (and mobile if tagged `@mobile`) | UI browser spec |
+| `specs/cloud/**/*.e2e.ts` | chromium, firefox, webkit with `E2E_CLOUD=true` | Community UI spec |
 | `*.api.spec.ts` | api | Node HTTP spec (no browser) |
 
 ## Directory layout
@@ -147,9 +197,10 @@ at the provider as well as on RSpace's public preview.
 ```
 src/__tests__/e2e/
   specs/               # Test files (*.e2e.ts, *.api.spec.ts)
+    cloud/             # Community UI specs selected by E2E_CLOUD=true
   pageObjects/         # One class per screen, grouped by feature
     BasePage.ts        # Abstract base — not feature-specific, stays at the root
-    document/ notebook/ workspace/ inventory/ auth/ system/ apps/
+    document/ notebook/ workspace/ inventory/ auth/ system/ apps/ gallery/ myrspace/ groups/
   components/          # Reusable UI fragments composed into page objects, same grouping
     document/ notebook/ workspace/ navigation/ shared/
   api/

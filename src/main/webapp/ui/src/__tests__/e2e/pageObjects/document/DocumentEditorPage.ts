@@ -77,7 +77,7 @@ export class DocumentEditorPage extends DocumentPage {
   async getField(fieldName: string, index = 0): Promise<TinyMceEditor> {
     const fieldId = await resolveFieldId(this.page, fieldName, index, "getField");
     await activateFieldForEditing(this.page, fieldId);
-    return new TinyMceEditor(this.page, `rtf_${fieldId}`).waitForReady();
+    return new TinyMceEditor(this.page, fieldId).waitForReady();
   }
 
   async saveAndView(): Promise<DocumentPage> {
@@ -85,6 +85,22 @@ export class DocumentEditorPage extends DocumentPage {
     const viewPage = new DocumentPage(this.page);
     await viewPage.isLoaded();
     return viewPage;
+  }
+
+  /** Saves the current entry and lands on a fresh entry, still in edit mode. */
+  async saveAndNew(): Promise<DocumentEditorPage> {
+    await this.editToolbar.saveAndNew();
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
+  }
+
+  /** Saves the current entry and lands on a "<name>-copy" duplicate, still in edit mode. */
+  async saveAndClone(): Promise<DocumentEditorPage> {
+    await this.editToolbar.saveAndClone();
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
   }
 
   /** Clicks a toolbar button by its accessible name, then waits for the given dialog to open. */

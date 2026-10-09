@@ -10,15 +10,23 @@ export class PidinstImportDialogPage {
   }
 
   get searchField(): Locator {
-    return page.getByRole("textbox", { name: "Search the registry" });
+    return page.getByRole("textbox", { name: "Search the registries" });
   }
 
   get searchButton(): Locator {
     return page.getByRole("button", { name: "Search", exact: true });
   }
 
+  get nextPageButton(): Locator {
+    return page.getByRole("button", { name: "Go to next page" });
+  }
+
   get importButton(): Locator {
     return page.getByRole("button", { name: "Import", exact: true });
+  }
+
+  registryCheckbox(name: string): Locator {
+    return page.getByRole("checkbox", { name });
   }
 
   recordRadio(name: string): Locator {
@@ -52,5 +60,9 @@ export class PidinstImportDialogPage {
 
   async clickImport(): Promise<void> {
     await this.importButton.click();
+  }
+
+  async goToNextPage(): Promise<void> {
+    await this.nextPageButton.click();
   }
 }
