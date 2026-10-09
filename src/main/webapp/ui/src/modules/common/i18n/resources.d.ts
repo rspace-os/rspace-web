@@ -2,7 +2,11 @@
 export default interface Resources {
   "about": {
     "copyright": "© 2026 ResearchSpace",
-    "license": "RSpace is open-source under AGPL, and powered by open-source libraries.",
+    "description": "RSpace is open-source software for collaborative research data management, built around electronic lab notebooks, inventory, and external integrations.",
+    "license": "RSpace is powered by open-source libraries and distributed under the AGPL.",
+    "licensing": {
+      "heading": "Licensing"
+    },
     "links": {
       "changelog": "Changelog",
       "sourceCode": "Source Code",
@@ -12,11 +16,14 @@ export default interface Resources {
       "alt": "RSpace Logo"
     },
     "support": {
-      "accountLabel": "For account and group queries, email:",
-      "generalLabel": "For general support, email:"
+      "accountsLink": "Accounts and groups",
+      "generalLink": "General support",
+      "heading": "Support"
     },
+    "tagline": "RSpace - Research Data Platform",
     "title": "About RSpace",
     "version": {
+      "label": "Version {version}",
       "loading": "Loading version...",
       "unavailable": "Version unavailable"
     }
@@ -7160,7 +7167,6 @@ export default interface Resources {
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
-          "numberInvalid": "''{0}'' is not a valid number or exceeds the supported precision and range.",
           "validation": "{0}"
         },
         "file": {
