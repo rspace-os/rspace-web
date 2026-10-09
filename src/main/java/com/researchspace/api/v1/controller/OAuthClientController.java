@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
+import com.researchspace.auth.PasswordGrantGuessLimiter;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.OAuthTokenType;
@@ -11,6 +12,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
@@ -41,7 +43,11 @@ public class OAuthClientController {
 
   @Autowired private OAuthTokenManager tokenManager;
 
+  @Autowired private OAuthAppManager appManager;
+
   @Autowired private IReauthenticator reauthenticator;
+
+  @Autowired private PasswordGrantGuessLimiter guessLimiter;
 
   @Autowired private ApiAvailabilityHandler apiHandler;
 
@@ -87,6 +93,14 @@ public class OAuthClientController {
         throw new IllegalArgumentException(
             messages.getMessage("oauth.errors.passwordGrantMissingCredentials"));
       }
+      // Checked before the user lookup so an unregistered client never triggers a password check.
+      if (!appManager.isClientSecretCorrect(clientId, clientSecret)) {
+        SECURITY_LOG.warn(
+            "OAuth password flow request with invalid client [{}], from {}",
+            clientId.replaceAll("[\\r\\n]", " "),
+            RequestUtil.remoteAddr(request));
+        throw new ApiAuthenticationException("oauth.errors.tokenCreationFailed");
+      }
       try {
         User user = userManager.getUserByUsernameOrAlias(username);
         if (!username.equals(user.getUsername())) {
@@ -108,9 +122,10 @@ public class OAuthClientController {
         response = passwordGrant(clientId, clientSecret, user, password, isJwt, request);
 
       } catch (DataAccessException e) {
+        guessLimiter.padWithSentinelCheck(password);
         SECURITY_LOG.warn(
             "OAuth password flow request for unknown username [{}], from {}",
-            username,
+            username.replaceAll("[\\r\\n]", " "),
             RequestUtil.remoteAddr(request));
         throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
       }
@@ -163,6 +178,14 @@ public class OAuthClientController {
       Boolean isJwt,
       HttpServletRequest request) {
 
+    if (!guessLimiter.tryAcquire(subject.getUsername())) {
+      SECURITY_LOG.warn(
+          "OAuth password flow request for [{}] refused: too many failed attempts, from {}",
+          subject.getUsername(),
+          RequestUtil.remoteAddr(request));
+      guessLimiter.padWithSentinelCheck(password);
+      throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
+    }
     boolean credentialsMatch = reauthenticator.reauthenticate(subject, password);
 
     if (!credentialsMatch) {
@@ -172,6 +195,7 @@ public class OAuthClientController {
           RequestUtil.remoteAddr(request));
       throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
     }
+    guessLimiter.recordSuccess(subject.getUsername());
     ServiceOperationResult<NewOAuthTokenResponse> response;
     if (isJwt) {
       response =

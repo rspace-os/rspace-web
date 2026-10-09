@@ -4,30 +4,52 @@ import static com.researchspace.webapp.controller.MvcTestUtils.parseOAuthTokenRe
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
+import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
 import com.researchspace.model.User;
 import com.researchspace.model.frontend.OAuthAppInfo;
+import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.OAuthAppManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.bean.override.BeanOverrideTestExecutionListener;
+import org.springframework.test.context.bean.override.mockito.MockitoResetTestExecutionListener;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
+@TestExecutionListeners(
+    value = {BeanOverrideTestExecutionListener.class, MockitoResetTestExecutionListener.class},
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 public class OAuthClientControllerMVCIT extends MVCTestBase {
+  private static final String CLIENT_ERROR = "OAuth token could not be created.";
+  private static final String INVALID_CREDENTIALS = "Invalid user credentials.";
+
   @Autowired private OAuthAppManager oAuthAppManager;
+  @MockitoSpyBean private IReauthenticator reauthenticator;
+  @MockitoSpyBean private UsernamePasswordCredentialsMatcher credentialsMatcher;
 
   /**
-   * These tests disable API access mid-method, and the system property outlives the test, so a
-   * failure before the re-enabling line left every later API test unauthorised.
+   * OAuth starts disabled on a fresh database, so each test enables it first. Some tests disable it
+   * mid-method and the system property outlives the test, so it is restored afterwards too.
    */
+  @BeforeEach
   @AfterEach
-  public void restoreApiAccess() {
+  public void enableApiAccess() {
     enableGlobalApiAccess();
     enableApiOAuthAuthentication();
   }
@@ -261,5 +283,131 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
         .andExpect(
             jsonPath("$.message")
                 .value("OAuth authentication has been disabled by RSpace administrator."));
+  }
+
+  @Test
+  public void passwordGrantWithUnknownClientIsRefusedBeforeThePasswordIsChecked() throws Exception {
+    String username = RandomStringUtils.randomAlphabetic(10);
+    String password = RandomStringUtils.randomAlphabetic(10);
+    createAndSaveUser(username, Constants.USER_ROLE, password);
+
+    mockMvc
+        .perform(
+            post("/oauth/token")
+                .param("client_id", RandomStringUtils.randomAlphanumeric(16))
+                .param("client_secret", RandomStringUtils.randomAlphanumeric(32))
+                .param("grant_type", "password")
+                .param("username", username)
+                .param("password", password))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value(CLIENT_ERROR));
+
+    verify(reauthenticator, never()).reauthenticate(any(), any());
+  }
+
+  @Test
+  public void passwordGrantWithWrongSecretAndWrongPasswordGivesTheClientError() throws Exception {
+    String username = RandomStringUtils.randomAlphabetic(10);
+    String password = RandomStringUtils.randomAlphabetic(10);
+    User user = createAndSaveUser(username, Constants.USER_ROLE, password);
+    OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
+
+    mockMvc
+        .perform(
+            post("/oauth/token")
+                .param("client_id", app.getClientId())
+                .param("client_secret", "wrong-secret")
+                .param("grant_type", "password")
+                .param("username", username)
+                .param("password", "wrong-password"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value(CLIENT_ERROR));
+
+    verify(reauthenticator, never()).reauthenticate(any(), any());
+  }
+
+  @Test
+  public void passwordGrantRefusesAUsernameAfterFiveWrongPasswords() throws Exception {
+    String username = RandomStringUtils.randomAlphabetic(10);
+    String password = RandomStringUtils.randomAlphabetic(10);
+    User user = createAndSaveUser(username, Constants.USER_ROLE, password);
+    OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
+
+    for (int i = 0; i < 5; i++) {
+      passwordGrant(app, username, "wrong-password")
+          .andExpect(status().isUnauthorized())
+          .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
+    }
+    passwordGrant(app, username, password)
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
+
+    verify(reauthenticator, times(5)).reauthenticate(any(), any());
+    verify(credentialsMatcher, times(1))
+        .test(argThat(u -> "oauth-sentinel".equals(u.getUsername())), any());
+  }
+
+  @Test
+  public void passwordGrantSuccessClearsTheWrongPasswordCount() throws Exception {
+    String username = RandomStringUtils.randomAlphabetic(10);
+    String password = RandomStringUtils.randomAlphabetic(10);
+    User user = createAndSaveUser(username, Constants.USER_ROLE, password);
+    OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
+
+    for (int i = 0; i < 4; i++) {
+      passwordGrant(app, username, "wrong-password").andExpect(status().isUnauthorized());
+    }
+    passwordGrant(app, username, password).andExpect(status().isOk());
+    for (int i = 0; i < 4; i++) {
+      passwordGrant(app, username, "wrong-password")
+          .andExpect(status().isUnauthorized())
+          .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
+    }
+  }
+
+  @Test
+  public void passwordGrantBlockAppliesToTheUsernameAlias() throws Exception {
+    String username = RandomStringUtils.randomAlphabetic(10);
+    String alias = RandomStringUtils.randomAlphabetic(10);
+    String password = RandomStringUtils.randomAlphabetic(10);
+    User user = createAndSaveUser(username, Constants.USER_ROLE, password);
+    userMgr.changeUsernameAlias(user.getId(), alias);
+    OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
+
+    for (int i = 0; i < 5; i++) {
+      passwordGrant(app, username, "wrong-password").andExpect(status().isUnauthorized());
+    }
+    passwordGrant(app, alias, password)
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
+  }
+
+  @Test
+  public void passwordGrantWithPublicClientAndUnknownUsernameCostsOnePasswordCheck()
+      throws Exception {
+    mockMvc
+        .perform(
+            post("/oauth/token")
+                .param("client_id", "rsInventoryWebClient")
+                .param("client_secret", "rsInventoryPublicSecret")
+                .param("grant_type", "password")
+                .param("username", RandomStringUtils.randomAlphabetic(12))
+                .param("password", "any-password"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
+
+    verify(reauthenticator, never()).reauthenticate(any(), any());
+    verify(credentialsMatcher, times(1)).test(any(), any());
+  }
+
+  private ResultActions passwordGrant(OAuthAppInfo app, String username, String password)
+      throws Exception {
+    return mockMvc.perform(
+        post("/oauth/token")
+            .param("client_id", app.getClientId())
+            .param("client_secret", app.getUnhashedClientSecret())
+            .param("grant_type", "password")
+            .param("username", username)
+            .param("password", password));
   }
 }
