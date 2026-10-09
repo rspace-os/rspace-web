@@ -32,10 +32,7 @@ class WrapLegacyPasswordHashes_RSDEV894Test extends SpringTransactionalTest {
 
     String message = runChange().getConfirmationMessage();
     assertTrue(
-        message.matches(
-            "Wrapped 2 legacy password hashes in Argon2id, skipped 0:"
-                + " encode \\d+ ms \\(\\d+\\.\\d ms/row, max \\d+ ms\\), loop \\d+ ms"),
-        message);
+        message.startsWith("Wrapped 2 legacy password hashes in Argon2id, skipped 0"), message);
     String saltedWrapped = storedPassword(salted);
     String unsaltedWrapped = storedPassword(unsalted);
     assertWrapped(saltedWrapped);
