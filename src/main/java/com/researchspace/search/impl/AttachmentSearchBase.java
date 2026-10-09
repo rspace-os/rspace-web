@@ -34,8 +34,9 @@ public abstract class AttachmentSearchBase implements Indexable {
 
     if (!index.exists()) {
       log.info("Creating index folder ...");
+      // Concurrent searches may race to create the folder; losing that race is fine.
       boolean mkdir = index.mkdir();
-      if (!mkdir) {
+      if (!mkdir && !index.isDirectory()) {
         throw new IOException("Lucene index could not be created for path " + getIndexFolderPath());
       }
       if (!index.canWrite() || !index.isDirectory()) {
