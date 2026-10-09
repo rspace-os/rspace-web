@@ -95,6 +95,12 @@ function LocationContent({ location, container, tabIndex, hasFocus }: LocationCo
   const theme = useTheme();
   const { search } = React.useContext(SearchContext);
 
+  const emptyGridLocationRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    if (hasFocus) emptyGridLocationRef.current?.focus();
+    // location.content: deselecting a Move dialog preview swaps the focused item for this empty box.
+  }, [hasFocus, location.content]);
+
   return (
     <Box
       sx={
@@ -157,7 +163,7 @@ function LocationContent({ location, container, tabIndex, hasFocus }: LocationCo
             <ActualLocationContent location={location} content={location.content} />
           </DragAndDrop.Draggable>
         ) : location.parentContainer.cType === "GRID" ? (
-          <Box tabIndex={tabIndex} sx={{ ...numberBoxSx, paddingTop: "calc(50% - 10px)" }}>
+          <Box ref={emptyGridLocationRef} tabIndex={tabIndex} sx={{ ...numberBoxSx, paddingTop: "calc(50% - 10px)" }}>
             {(location.coordY - 1) * (location.parentContainer.gridLayout?.columnsNumber || 0) + location.coordX}
           </Box>
         ) : location.parentContainer.cType === "IMAGE" ? (

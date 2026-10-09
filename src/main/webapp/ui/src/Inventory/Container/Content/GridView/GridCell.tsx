@@ -88,10 +88,7 @@ function GridCell({
         e.preventDefault();
       }}
       onFocus={() => {
-        if (location.selected) return;
-        const { uiConfig } = search;
-        const full = (location.parentContainer.selectedLocations?.length ?? 0) >= uiConfig.selectionLimit;
-        if (uiConfig.onlyAllowSelectingEmptyLocations && (full || !location.isSelectable(search))) return;
+        if (location.selected || search.uiConfig.dragAndDropDisabled) return;
         location.toggleSelected(true);
       }}
       onMouseEnter={() => {
@@ -108,6 +105,7 @@ function GridCell({
         color: "grey",
         borderBottom: "none",
         "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
+        "&:focus-within": { boxShadow: `inset 0 0 0 2px ${theme.palette.primary.main}` },
         padding: "3px !important",
         width,
         background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",

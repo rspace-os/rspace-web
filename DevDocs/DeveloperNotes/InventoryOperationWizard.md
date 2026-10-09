@@ -298,7 +298,15 @@ enforced there too (Perform is blocked with the reason shown).
    destination per run. A grid container also shows its content grid,
    in which the user picks one empty location per new subsample (the selection limit is
    the count; lowering the count on the Amounts step drops surplus locations from the
-   end). The grid is selection-only: drag-and-drop is off while the wizard uses it. A list container needs no locations. `placementBlocker` (`placement.ts`) gates
+   end). The grid is selection-only: drag-and-drop is off while the wizard uses it
+   (`uiConfig.dragAndDropDisabled`, also set by the Move dialog destination panel and the
+   Create dialog location picker). Its keys follow the WAI-ARIA grid multi-select model:
+   arrows move focus only, Space toggles the focused location (empty-only and the selection
+   limit apply, and a polite live region says why when Space selects nothing: the location
+   is occupied or the limit is reached), Shift+Arrow adds the range from the anchor to the
+   locations picked before it (they count towards the limit), and Escape clears the
+   selection without closing the wizard (close it with Cancel, or Escape after tabbing out
+   of the grid). A list container needs no locations. `placementBlocker` (`placement.ts`) gates
    Next and shows why: loading, trashed, no edit permission, an image container (not
    supported yet), the workbench itself, a container that cannot hold subsamples, fewer
    free locations than new subsamples (with the free count), grid locations still to

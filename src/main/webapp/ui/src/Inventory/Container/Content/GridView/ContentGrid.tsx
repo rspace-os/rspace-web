@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
 import Snackbar from "@mui/material/Snackbar";
 import Table from "@mui/material/Table";
@@ -10,6 +11,7 @@ import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { type KeyboardEvent, type MouseEvent, useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { visuallyHidden } from "@/util/visuallyHidden";
 import SearchContext from "../../../../stores/contexts/Search";
 import type { Location } from "../../../../stores/definitions/Container";
 import ContainerModel from "../../../../stores/models/ContainerModel";
@@ -121,6 +123,13 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
   const [shiftOrigin, setShiftOrigin] = useState<Coord | null>(null);
 
   /*
+   * In a selection-only grid, the locations the current Shift+Arrow range
+   * added. Locations picked before the range began are kept as it grows or
+   * shrinks.
+   */
+  const shiftRange = useRef<Set<Location>>(new Set());
+
+  /*
    * When the user taps anywhere inside the table, initially we want to do
    * nothing but record where they tapped. If after 500ms they have neither
    * moved the cursor nor releases the click then drag-and-drop should be
@@ -153,6 +162,15 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
    * and when set all other keys are prevented from doing anything.
    */
   const [inKeyboardDragAndDropMode, setInKeyboardDragAndDropMode] = useState(false);
+
+  /*
+   * Why a key press did not select. Each refusal gets an id from a counter that
+   * never resets, so that a repeated message replaces the live region's content
+   * and is announced again.
+   */
+  const [announcement, setAnnouncement] = useState<{ id: number; text: string } | null>(null);
+  const announcementId = useRef(0);
+  const announce = (text: string) => setAnnouncement({ id: ++announcementId.current, text });
 
   const findLocation = (col: { value: number }, row: { value: number }): Location => {
     const loc = container.findLocation(col.value, row.value);
@@ -223,8 +241,14 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             }
           }}
           onKeyDown={(e: KeyboardEvent) => {
-            if (e.key === " ") {
-              if (!search.uiConfig.dragAndDropDisabled) setInKeyboardDragAndDropMode(true);
+            /*
+             * A grid without drag-and-drop is used only to choose locations, so
+             * it follows the WAI-ARIA grid multi-select model: arrows move focus,
+             * Space toggles the focused location, Escape clears the selection.
+             */
+            const selectionOnly = search.uiConfig.dragAndDropDisabled;
+            if (e.key === " " && !selectionOnly) {
+              setInKeyboardDragAndDropMode(true);
               return;
             }
             if (inKeyboardDragAndDropMode && (e.key === "Enter" || e.key === "Return" || e.key === "Escape")) {
@@ -235,11 +259,32 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
 
             if (!focusCoord) throw new Error("A cell must have focus for key events to be handled");
             const { onlyAllowSelectingEmptyLocations: emptyOnly, selectionLimit } = search.uiConfig;
+            if (e.key === " ") {
+              e.preventDefault();
+              const focused = container.findLocation(focusCoord.x, focusCoord.y);
+              if (!focused) return;
+              const wasSelected = focused.selected;
+              container.onSelect(focused, search);
+              setShiftOrigin(null);
+              if (wasSelected || focused.selected) setAnnouncement(null);
+              else if (!focused.isSelectable(search)) announce(t("container.content.keyboard.occupied"));
+              else
+                announce(
+                  t("container.content.keyboard.limitReached", { count: container.selectedLocations?.length ?? 0 }),
+                );
+              return;
+            }
+            setAnnouncement(null);
             if (e.key === "Escape") {
               container.toggleAllLocations(false);
-              const focused = container.findLocation(focusCoord.x, focusCoord.y);
-              if (focused && (!emptyOnly || focused.isSelectable(search))) focused.toggleSelected(true);
               e.preventDefault();
+              if (selectionOnly) {
+                // Grids used only to choose locations sit in dialogs, which would otherwise close on Escape.
+                e.stopPropagation();
+                return;
+              }
+              const focused = container.findLocation(focusCoord.x, focusCoord.y);
+              if (focused) focused.toggleSelected(true);
             }
 
             const newCoord: {
@@ -272,25 +317,35 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             const top = Math.min(y, origin.y);
             const bottom = Math.max(y, origin.y);
 
-            const toSelect = new Set(
-              (container.locations ?? [])
-                .filter(
-                  (l) =>
-                    l.coordX >= left &&
-                    l.coordX <= right &&
-                    l.coordY >= top &&
-                    l.coordY <= bottom &&
-                    (!emptyOnly || l.selected || l.isSelectable(search)),
-                )
-                .slice(0, emptyOnly ? selectionLimit : Infinity),
+            const inRectangle = (container.locations ?? []).filter(
+              (l) =>
+                l.coordX >= left &&
+                l.coordX <= right &&
+                l.coordY >= top &&
+                l.coordY <= bottom &&
+                (!emptyOnly || l.selected || l.isSelectable(search)),
             );
-            // Cells already in the right state are left alone, so the Move dialog's staged previews survive.
-            container.locations?.forEach((l) => {
-              if (l.selected && !toSelect.has(l)) l.toggleSelected(false);
-            });
-            container.locations?.forEach((l) => {
-              if (!l.selected && toSelect.has(l)) l.toggleSelected(true);
-            });
+            let toSelect = new Set(inRectangle.slice(0, emptyOnly ? selectionLimit : Infinity));
+            if (selectionOnly && e.shiftKey) {
+              const previousRange = shiftOrigin ? shiftRange.current : new Set<Location>();
+              const earlierPicks = new Set((container.selectedLocations ?? []).filter((l) => !previousRange.has(l)));
+              const room = Math.max(selectionLimit - earlierPicks.size, 0);
+              const candidates = inRectangle.filter((l) => !earlierPicks.has(l));
+              const range = candidates.slice(0, room);
+              if (candidates.length > room)
+                announce(t("container.content.keyboard.limitReached", { count: earlierPicks.size + range.length }));
+              shiftRange.current = new Set(range);
+              toSelect = new Set([...earlierPicks, ...range]);
+            }
+            if (!selectionOnly || e.shiftKey) {
+              // Cells already in the right state are left alone, so the Move dialog's staged previews survive.
+              container.locations?.forEach((l) => {
+                if (l.selected && !toSelect.has(l)) l.toggleSelected(false);
+              });
+              container.locations?.forEach((l) => {
+                if (!l.selected && toSelect.has(l)) l.toggleSelected(true);
+              });
+            }
 
             setShiftOrigin(e.shiftKey ? (shiftOrigin ?? focusCoord) : null);
             setFocusCoord({ x, y });
@@ -299,7 +354,12 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
         >
           <TableHead>
             <TableRow>
-              <TableCell align="center" ref={topLeftCellRef} onMouseDown={preventEventBubbling()}></TableCell>
+              <TableCell
+                component="td"
+                align="center"
+                ref={topLeftCellRef}
+                onMouseDown={preventEventBubbling()}
+              ></TableCell>
               {container.columns.map((column, columnIndex) => (
                 <TableCell
                   key={column.label}
@@ -351,12 +411,17 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
         </Table>
         <Dragger container={container} parentRef={tableRef} />
       </TableContainer>
+      <Box role="status" sx={visuallyHidden}>
+        {announcement && <span key={announcement.id}>{announcement.text}</span>}
+      </Box>
       <Snackbar
         open={keyboardTips}
         message={
           inKeyboardDragAndDropMode
-            ? "Press Enter to drop items. Press Escape to cancel."
-            : "Expand selection by holding Shift. Press Space to enter drag-and-drop mode. Press Escape to clear selection."
+            ? t("container.content.keyboard.dragTips")
+            : search.uiConfig.dragAndDropDisabled
+              ? t("container.content.keyboard.selectionTips")
+              : t("container.content.keyboard.tips")
         }
       />
     </>
