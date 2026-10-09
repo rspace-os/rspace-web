@@ -5,6 +5,7 @@ import { tags } from "@/__tests__/e2e/tags";
 import { BoxPickerFlow } from "./pageObjects/BoxPickerFlow";
 
 test.describe("Box integration [real]", { tag: tags.APPS }, () => {
+  test.skip(true, "Box emails a verification code on every sign-in from a new device; needs a TOTP secret");
   test.skip(
     !(env.boxUsername && env.boxPassword),
     "real mode needs BOX_USERNAME/BOX_PASSWD (a real Box account) in .env / CI secrets",
