@@ -33,7 +33,7 @@ class UsernamePasswordCredentialsMatcherTest {
           "caa6eec0faa20efba3b7af44af7107b05334759954ef3581030cc8e6199a33bf", null);
 
   private @Spy BoundedPasswordVerifier verifier =
-      new BoundedPasswordVerifier(ENCODER, 8, Duration.ofSeconds(5));
+      new BoundedPasswordVerifier(ENCODER, 8, 100, Duration.ofSeconds(5));
 
   private @InjectMocks UsernamePasswordCredentialsMatcher matcher;
 

@@ -1,6 +1,7 @@
 package com.researchspace.auth.password;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 class BoundedPasswordVerifierTest {
 
   private static final int PERMITS = 8;
+  private static final int NO_QUEUE_CAP = 100;
 
   /** Matches "ok", and blocks inside matches until released. */
   private static class BlockingEncoder implements PasswordEncoder {
@@ -58,7 +60,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void ninthConcurrentVerificationTimesOutAsBusy() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200));
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofMillis(200));
     List<Future<Boolean>> running = new ArrayList<>();
     for (int i = 0; i < PERMITS; i++) {
       String user = "user" + i;
@@ -80,7 +82,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void sameUsernameVerifiesOneAtATime() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(5));
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofSeconds(5));
     Future<Boolean> first = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
     awaitEntered(1);
     Future<Boolean> second = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
@@ -99,7 +101,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void sameUsernameBusyWhenFirstCheckOutlastsTheWait() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200));
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofMillis(200));
     Future<Boolean> first = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
     awaitEntered(1);
     assertThrows(
@@ -114,7 +116,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void interruptedWaitIsBusyAndKeepsTheInterruptFlag() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(5));
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofSeconds(5));
     Future<Boolean> first = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
     awaitEntered(1);
     AtomicReference<Throwable> thrown = new AtomicReference<>();
@@ -145,10 +147,13 @@ class BoundedPasswordVerifierTest {
   void rejectsConfigurationThatWouldRefuseEveryCheck() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new BoundedPasswordVerifier(encoder, 0, Duration.ofSeconds(5)));
+        () -> new BoundedPasswordVerifier(encoder, 0, NO_QUEUE_CAP, Duration.ofSeconds(5)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(-1)));
+        () -> new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofSeconds(-1)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new BoundedPasswordVerifier(encoder, PERMITS, -1, Duration.ofSeconds(5)));
   }
 
   @Test
@@ -161,7 +166,7 @@ class BoundedPasswordVerifierTest {
           }
         };
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(failing, PERMITS, Duration.ofSeconds(1));
+        new BoundedPasswordVerifier(failing, PERMITS, NO_QUEUE_CAP, Duration.ofSeconds(1));
     assertThrows(IllegalArgumentException.class, () -> verifier.verify("alice", "x", "stored"));
     assertEquals(PERMITS, verifier.availablePermits());
     assertEquals(0, verifier.trackedPrincipals());
@@ -170,7 +175,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void runExclusiveReturnsTheActionsValue() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofSeconds(1));
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofSeconds(1));
     assertEquals("done", verifier.runExclusive("alice", () -> "done"));
     assertEquals(0, verifier.trackedPrincipals());
   }
@@ -178,7 +183,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void runExclusiveBusyWhileAnotherThreadHoldsTheUsername() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200));
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofMillis(200));
     CountDownLatch held = new CountDownLatch(1);
     CountDownLatch release = new CountDownLatch(1);
     Future<Object> holder =
@@ -196,7 +201,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void verifyInsideRunExclusiveReentersTheUsernameLock() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, PERMITS, Duration.ofMillis(200));
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofMillis(200));
     encoder.release.countDown();
     assertTrue(verifier.runExclusive("alice", () -> verifier.verify("alice", "ok", "stored")));
     assertEquals(0, verifier.trackedPrincipals());
@@ -205,7 +210,7 @@ class BoundedPasswordVerifierTest {
   @Test
   void verifyInsideRunExclusiveSharesItsWait() throws Exception {
     BoundedPasswordVerifier verifier =
-        new BoundedPasswordVerifier(encoder, 1, Duration.ofSeconds(1));
+        new BoundedPasswordVerifier(encoder, 1, NO_QUEUE_CAP, Duration.ofSeconds(1));
     Future<Boolean> permitHolder = pool.submit(() -> verifier.verify("bob", "ok", "stored"));
     awaitEntered(1);
     CountDownLatch held = new CountDownLatch(1);
@@ -231,6 +236,81 @@ class BoundedPasswordVerifierTest {
     aliceHolder.get(5, TimeUnit.SECONDS);
     encoder.release.countDown();
     permitHolder.get(5, TimeUnit.SECONDS);
+  }
+
+  @Test
+  void callerBeyondTheQueueCapIsRefusedWithoutWaiting() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, 1, 1, Duration.ofSeconds(5));
+    Future<Boolean> running = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
+    awaitEntered(1);
+    Future<Boolean> waiting = pool.submit(() -> verifier.verify("bob", "ok", "stored"));
+    awaitAdmissions(verifier, 0);
+
+    long start = System.nanoTime();
+    assertThrows(
+        LoginVerificationBusyException.class, () -> verifier.verify("carol", "ok", "stored"));
+    assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) < 1000);
+
+    encoder.release.countDown();
+    assertTrue(running.get(5, TimeUnit.SECONDS));
+    assertTrue(waiting.get(5, TimeUnit.SECONDS));
+    assertEquals(2, verifier.availableAdmissions());
+  }
+
+  @Test
+  void admissionIsReturnedOnEveryExit() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, 1, 0, Duration.ofMillis(100));
+    encoder.release.countDown();
+    assertTrue(verifier.verify("alice", "ok", "stored"));
+    assertFalse(verifier.verify("alice", "wrong", "stored"));
+    assertEquals("x", verifier.runExclusive("alice", () -> "x"));
+    assertEquals(1, verifier.availableAdmissions());
+
+    BoundedPasswordVerifier failing =
+        new BoundedPasswordVerifier(
+            new BlockingEncoder() {
+              @Override
+              public boolean matches(CharSequence rawPassword, String encodedPassword) {
+                throw new IllegalArgumentException("unknown id");
+              }
+            },
+            1,
+            0,
+            Duration.ofMillis(100));
+    assertThrows(IllegalArgumentException.class, () -> failing.verify("alice", "x", "stored"));
+    assertEquals(1, failing.availableAdmissions());
+  }
+
+  @Test
+  void busyTimeoutReturnsItsAdmission() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, 1, 1, Duration.ofMillis(100));
+    Future<Boolean> running = pool.submit(() -> verifier.verify("alice", "ok", "stored"));
+    awaitEntered(1);
+    assertThrows(
+        LoginVerificationBusyException.class, () -> verifier.verify("bob", "ok", "stored"));
+    assertEquals(1, verifier.availableAdmissions());
+    encoder.release.countDown();
+    running.get(5, TimeUnit.SECONDS);
+  }
+
+  @Test
+  void verifyInsideRunExclusiveTakesNoSecondAdmission() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, 1, 0, Duration.ofSeconds(1));
+    encoder.release.countDown();
+    assertTrue(verifier.runExclusive("alice", () -> verifier.verify("alice", "ok", "stored")));
+  }
+
+  private static void awaitAdmissions(BoundedPasswordVerifier verifier, int count)
+      throws InterruptedException {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while (verifier.availableAdmissions() > count && System.nanoTime() < deadline) {
+      Thread.sleep(5);
+    }
+    assertEquals(count, verifier.availableAdmissions());
   }
 
   private static void awaitState(Thread thread, Thread.State state) throws InterruptedException {

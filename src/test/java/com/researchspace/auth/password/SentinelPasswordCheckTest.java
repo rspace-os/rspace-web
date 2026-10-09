@@ -60,7 +60,7 @@ class SentinelPasswordCheckTest {
               return false;
             });
     BoundedPasswordVerifier realVerifier =
-        new BoundedPasswordVerifier(encoder, 2, Duration.ofSeconds(5));
+        new BoundedPasswordVerifier(encoder, 2, 100, Duration.ofSeconds(5));
     SentinelPasswordCheck check =
         new SentinelPasswordCheck(new RSpacePasswordEncoder(), realVerifier);
     Thread blocker = new Thread(() -> check.pad("ghost1", "block"));
