@@ -37,6 +37,11 @@ class RSpacePasswordEncoderTest {
   }
 
   @Test
+  void emptySaltIsTreatedAsUnsalted() {
+    assertTrue(encoder.matches("sysWisc23!", encoder.wrapLegacySha256(UNSALTED_HEX, "")));
+  }
+
+  @Test
   void legacyUnsaltedHashMatchesInEitherHexCase() {
     String lower = encoder.wrapLegacySha256(UNSALTED_HEX, null);
     String upper = encoder.wrapLegacySha256(UNSALTED_HEX.toUpperCase(), null);
