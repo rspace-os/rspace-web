@@ -89,7 +89,7 @@ public class TestFactory {
   }
 
   private static final String OLD_NAME = "oldName";
-  public static final String TESTPASS = "testpass";
+  private static final String TESTPASS = "testpass";
   private static final String TESTPASS_ENCODED = new RSpacePasswordEncoder().encode(TESTPASS);
 
   /**
