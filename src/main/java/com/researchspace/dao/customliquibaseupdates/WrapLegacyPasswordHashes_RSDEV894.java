@@ -18,6 +18,9 @@ import org.hibernate.Session;
 public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUpdater {
 
   private static final Pattern SHA256_HEX = Pattern.compile("[0-9a-fA-F]{64}");
+  static final int BATCH_SIZE = 100;
+
+  int batchSize = BATCH_SIZE;
 
   private RSpacePasswordEncoder passwordEncoder;
   private int wrapped;
@@ -46,6 +49,10 @@ public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUp
         millis(loopNanos));
   }
 
+  /**
+   * Commits every {@link #BATCH_SIZE} rows so a killed run resumes: the next run skips rows already
+   * wrapped.
+   */
   @Override
   protected void doExecute(Database database) {
     Session session = sessionFactory.getCurrentSession();
@@ -83,9 +90,18 @@ public class WrapLegacyPasswordHashes_RSDEV894 extends AbstractCustomLiquibaseUp
           .setParameter("id", id)
           .executeUpdate();
       wrapped++;
+      if (wrapped % batchSize == 0) {
+        endBatch();
+        session = sessionFactory.getCurrentSession();
+      }
     }
     loopNanos = System.nanoTime() - loopStart;
     logger.info(getConfirmationMessage());
+  }
+
+  void endBatch() {
+    commitTransaction();
+    openTransaction(getTxMger());
   }
 
   private static long millis(long nanos) {
