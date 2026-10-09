@@ -408,6 +408,6 @@ jobs:
         if: always() && inputs.mode == 'real'
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: e2e-report-${{ inputs.mode }}-${{ matrix.project }}-${{ matrix.shard }}
+          name: e2e-report-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
           path: src/main/webapp/ui/e2e-junit.xml
           retention-days: 14
