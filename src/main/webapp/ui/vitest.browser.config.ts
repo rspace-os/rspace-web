@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import type { Alias, Plugin } from "vite";
@@ -84,7 +85,7 @@ const browsers = (process.env.VITEST_BROWSERS ?? "chromium,firefox,webkit")
   .filter(Boolean) as PlaywrightBrowser[];
 
 export default defineConfig({
-  plugins: [react(), tinymceAssetsPlugin()],
+  plugins: [react(), tailwindcss(), tinymceAssetsPlugin()],
   define: {
     global: "globalThis",
     // Real TinyMCE version for cache-busting; assets are served by the

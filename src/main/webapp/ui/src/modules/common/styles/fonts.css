@@ -1,0 +1,77 @@
+/*
+ * Generated @font-face declarations for the bundled WOFF2 assets served from
+ * /fonts/ (src/main/webapp/fonts/). Keep this file in sync with the actual
+ * font files present there.
+ */
+
+@font-face {
+  font-family: "Noto Sans";
+  src:
+    url("/fonts/NotoSans-VariableFont.woff2") format("woff2-variations"),
+    url("/fonts/NotoSans-VariableFont.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62.5% 100%;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans";
+  src:
+    url("/fonts/NotoSans-Italic-VariableFont.woff2") format("woff2-variations"),
+    url("/fonts/NotoSans-Italic-VariableFont.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 100 900;
+  font-stretch: 62.5% 100%;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans CJK SC";
+  src:
+    url("/fonts/NotoSansCJKsc-VF.woff2") format("woff2-variations"),
+    url("/fonts/NotoSansCJKsc-VF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans CJK TC";
+  src:
+    url("/fonts/NotoSansCJKtc-VF.woff2") format("woff2-variations"),
+    url("/fonts/NotoSansCJKtc-VF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans CJK HK";
+  src:
+    url("/fonts/NotoSansCJKhk-VF.woff2") format("woff2-variations"),
+    url("/fonts/NotoSansCJKhk-VF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans CJK JP";
+  src:
+    url("/fonts/NotoSansCJKjp-VF.woff2") format("woff2-variations"),
+    url("/fonts/NotoSansCJKjp-VF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans CJK KR";
+  src:
+    url("/fonts/NotoSansCJKkr-VF.woff2") format("woff2-variations"),
+    url("/fonts/NotoSansCJKkr-VF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
