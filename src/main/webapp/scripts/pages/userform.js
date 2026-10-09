@@ -350,16 +350,14 @@ function initSetVerificationPasswordDialog(){
 	        RS.blockPage(RS.msg("legacyjs.userForm.settingVerificationPasswordEllipsis"));
 	        var jqxhr= $.post(createURL("/vfpwd/ajax/setVerificationPassword"), data, function (result) { 
 	          RS.unblockPage();
-	          var msgx = new String(result.data);
-	          
-	          if (msgx.indexOf("successfully") != -1) {
-	            RS.confirm(msgx, "success", 3000);
+	          if (result.errorMsg) {
+	            $('#msgAreaSetVerificationPassword').text(getValidationErrorString(result.errorMsg));
+	            $('#msgAreaSetVerificationPassword').slideDown('slow');
+	          } else {
+	            RS.confirm(result.data, "success", 3000);
 	            $("#userVerificationPasswordHint").text(hintVerificationPassword);
 	            $("#setVerificationPasswordDialog").dialog('close');
 	            $("#userSetVerificationPasswordButton").hide();
-	          } else {
-	            $('#msgAreaSetVerificationPassword').text(msgx);
-	            $('#msgAreaSetVerificationPassword').slideDown('slow');
 	          }
 	        });
 	        jqxhr.fail(function(){

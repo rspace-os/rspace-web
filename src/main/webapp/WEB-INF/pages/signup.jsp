@@ -113,7 +113,7 @@
                         path="password"
                         placeholder="${signupPasswordPlaceholder}"
                         required="required"
-                        pattern="[ -~]{8,50}"
+                        pattern="[ -~]{8,128}"
                         title="${signupPasswordCharsTitle}"
                         class="form-control rs-field__input"/>
             <p class="form-text"><spring:message code="signup.form.passwordCharsHint"/></p>
@@ -129,7 +129,7 @@
                         path="confirmPassword"
                         placeholder="${signupConfirmPasswordPlaceholder}"
                         required="required"
-                        pattern="[ -~]{8,50}"
+                        pattern="[ -~]{8,128}"
                         title="${signupConfirmPasswordTitle}"
                         class="form-control rs-field__input"/>
             <div class="rs-field__icon glyphicon fa-key"></div>

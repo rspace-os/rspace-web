@@ -1,11 +1,16 @@
 package com.researchspace.webapp.controller;
 
+import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.ProductType;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
+import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.IVerificationPasswordValidator;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,6 +35,9 @@ public class VerificationPasswordController extends BaseController {
 
   private @Autowired UserValidator userValidator;
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
+
+  @Setter(AccessLevel.PACKAGE) // for testing
+  private @Autowired BoundedPasswordVerifier verifier;
 
   @Autowired
   @Qualifier("verificationPasswordResetHandler")
@@ -74,14 +82,14 @@ public class VerificationPasswordController extends BaseController {
           "User [{}] attempted to set verification password, from {}, but it has already been set",
           user.getUsername(),
           RequestUtil.remoteAddr(request));
-      return new AjaxReturnObject<>(getText("verificationPassword.set.errors.alreadySet"), null);
+      return failure(getText("verificationPassword.set.errors.alreadySet"));
     }
 
     String newPass = StringUtils.trim(newVerificationPassword);
     String confirmPass = StringUtils.trim(confirmVerificationPassword);
 
     if (isInputStringBlank(newPass) || isInputStringBlank(confirmPass)) {
-      return new AjaxReturnObject<>(getText("errors.allFields.required"), null);
+      return failure(getText("errors.allFields.required"));
     }
 
     String checkPasswordResult =
@@ -92,16 +100,57 @@ public class VerificationPasswordController extends BaseController {
           "User [{}] unsuccessfully attempted to set verification password, from {}",
           user.getUsername(),
           RequestUtil.remoteAddr(request));
-      return new AjaxReturnObject<>(checkPasswordResult, null);
+      return failure(checkPasswordResult);
     }
 
-    String encryptedPass = verificationPasswordValidator.hashVerificationPassword(newPass);
+    // One initial set per user at a time, so one account cannot hold several Argon2 encodes and
+    // a duplicate submission does not overwrite the first.
+    String username = user.getUsername();
+    try {
+      return verifier.runExclusive(username, () -> setIfStillUnset(username, newPass, request));
+    } catch (LoginVerificationBusyException e) {
+      SECURITY_LOG.warn(
+          "User [{}] could not set verification password, from {}: {}",
+          username,
+          RequestUtil.remoteAddr(request),
+          e.getMessage());
+      return failure(getText("verificationPassword.set.errors.busy"));
+    } catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    }
+  }
 
-    user.setVerificationPassword(encryptedPass);
-    userManager.saveUser(user);
-
-    SECURITY_LOG.info("User [{}] successfully set verification password", user.getUsername());
+  /**
+   * A set that lost the race succeeds only if it submitted the password that won, so a different,
+   * discarded password is never reported as saved.
+   */
+  private AjaxReturnObject<String> setIfStillUnset(
+      String username, String newPass, HttpServletRequest request) {
+    User current = userManager.getUserByUsername(username, true);
+    if (!verificationPasswordValidator.isVerificationPasswordSet(current)) {
+      current.setVerificationPassword(
+          verificationPasswordValidator.hashVerificationPassword(newPass));
+      userManager.saveUser(current);
+      SECURITY_LOG.info("User [{}] successfully set verification password", username);
+    } else if (!verificationPasswordValidator.authenticateVerificationPassword(current, newPass)) {
+      SECURITY_LOG.warn(
+          "User [{}] attempted to set verification password, from {}, but it had just been set"
+              + " with a different value",
+          username,
+          RequestUtil.remoteAddr(request));
+      return failure(getText("verificationPassword.set.errors.alreadySet"));
+    }
     return new AjaxReturnObject<>(getText("verificationPassword.set.success"), null);
+  }
+
+  /**
+   * Failures are reported in errorMsg. For one release the message is also kept in data, where
+   * pages loaded before the upgrade still look for it.
+   */
+  private static AjaxReturnObject<String> failure(String message) {
+    return new AjaxReturnObject<>(message, ErrorList.of(message));
   }
 
   /**

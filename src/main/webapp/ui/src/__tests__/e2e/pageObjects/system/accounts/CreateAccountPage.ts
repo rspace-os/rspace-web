@@ -34,7 +34,7 @@ export class CreateAccountPage extends BasePage {
   }
 
   get passwordField(): Locator {
-    return this.page.getByRole("textbox", { name: "8 - 50 characters", exact: false });
+    return this.page.getByRole("textbox", { name: "8 - 128 characters", exact: false });
   }
 
   get confirmPasswordField(): Locator {

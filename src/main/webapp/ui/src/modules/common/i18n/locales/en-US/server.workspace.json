@@ -869,8 +869,8 @@
     "usernameWithAlias": "{0}, login alias: {1}",
     "otherProfileHeading": "User Profile",
     "ownProfileHeading": "My Profile",
-    "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-    "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+    "passwordCharsHint": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+    "passwordCharsTitle": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
     "pictureLabel": "Picture:",
     "profileHeading": "Profile",
     "signupSource": {

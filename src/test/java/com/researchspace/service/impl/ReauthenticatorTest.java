@@ -66,6 +66,22 @@ public class ReauthenticatorTest {
   }
 
   @Test
+  void ownVerificationPasswordCheckSkipsOperateAsSubstitution() {
+    when(verificationPasswordValidator.authenticateVerificationPassword(user, "wrong"))
+        .thenReturn(false);
+    when(verificationPasswordValidator.authenticateVerificationPassword(user, "right"))
+        .thenReturn(true);
+    when(verificationPasswordValidator.authenticateVerificationPassword(user, "busy"))
+        .thenThrow(new LoginVerificationBusyException("busy"));
+
+    assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "busy"));
+    assertFalse(reauthenticator.reauthenticateWithVerificationPassword(user, "wrong"));
+    assertTrue(reauthenticator.reauthenticateWithVerificationPassword(user, "right"));
+    verify(userMgr, never()).getOriginalUserForOperateAs(user);
+    verify(userMgr, never()).save(any(User.class));
+  }
+
+  @Test
   void operateAsChecksTheSysadminPassword() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(sysadmin);
     when(credentialsMatcher.verify(sysadmin, "wrong")).thenReturn(false);

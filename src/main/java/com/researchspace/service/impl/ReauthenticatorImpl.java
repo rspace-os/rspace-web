@@ -9,6 +9,7 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.UserManager;
+import java.util.function.BooleanSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,11 +35,21 @@ public class ReauthenticatorImpl implements IReauthenticator {
   public boolean reauthenticate(User subject, String pwd) {
 
     // check this first, before doing any password validation:  rspac-2223
-    subject = userMgr.getOriginalUserForOperateAs(subject);
+    User account = userMgr.getOriginalUserForOperateAs(subject);
+    return logged(account, () -> checkPassword(account, pwd));
+  }
 
+  @Override
+  public boolean reauthenticateWithVerificationPassword(User passwordOwner, String pwd) {
+    return logged(
+        passwordOwner,
+        () -> verificationPasswordValidator.authenticateVerificationPassword(passwordOwner, pwd));
+  }
+
+  private boolean logged(User subject, BooleanSupplier passwordCheck) {
     boolean authenticated;
     try {
-      authenticated = checkPassword(subject, pwd);
+      authenticated = passwordCheck.getAsBoolean();
     } catch (LoginVerificationBusyException e) {
       SECURITY_LOG.warn("Reauthentication refused: {}", e.getMessage());
       return false;

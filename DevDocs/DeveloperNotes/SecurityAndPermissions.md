@@ -38,8 +38,9 @@ The design and its trade-offs are in
 [ADR 0011](../adr/0011-argon2id-password-hashing-and-login-concurrency-limit.md).
 
 - **Encoder.** `RSpacePasswordEncoder` (bean in `SecurityBaseConfig`) wraps
-  Spring Security's `DelegatingPasswordEncoder`. Every stored login
-  password carries an `{id}` prefix. Only two ids are registered:
+  Spring Security's `DelegatingPasswordEncoder`. Every stored login and
+  SSO/Community verification password carries an `{id}` prefix. Only
+  three ids are registered:
   - `argon2@rspace_v1`, the default for new passwords: Argon2id,
     m=19456 KiB, t=2, p=1, 16-byte salt, 32-byte hash. The salt is
     inside the encoded value and the `salt` column is null.
@@ -50,15 +51,29 @@ The design and its trade-offs are in
     the Base64 of its decoded bytes, so the case of the old hex never
     matters. These values are permanent: a check never rewrites them,
     and they change only when the user sets a new password.
+  - `bcrypt`, verification passwords set before RSDEV-894, prefixed at
+    rest by the Liquibase change
+    `PrefixBcryptVerificationPasswords_RSDEV894`. It runs after the
+    login wrap, skips values already carrying a registered id, and
+    clears (sets to null) and logs at ERROR by username any other
+    non-blank value, since that could never verify. This id only
+    reads: it never encodes, and `UsernamePasswordCredentialsMatcher`
+    refuses it for login passwords. Prefixed values are permanent too;
+    new verification passwords are Argon2id.
 
   An unknown or missing prefix throws `IllegalArgumentException` and the
   check fails closed.
 - **Verification.** Shiro login (`ShiroRealm`) and default-realm
   reauthentication (`ReauthenticatorImpl`) both go through
   `UsernamePasswordCredentialsMatcher`, which calls
-  `BoundedPasswordVerifier`. That verifier holds a fair semaphore
+  `BoundedPasswordVerifier`. Verification password checks
+  (`VerificationPasswordValidatorImpl#authenticateVerificationPassword`)
+  call the same verifier and share its permits. Only LDAP
+  reauthentication, which checks against the directory, skips it. That verifier holds a fair semaphore
   (`login.passwordVerification.maxConcurrent`, default 8) and a
-  per-username lock, so one account holds at most one permit. A single
+  per-username lock, so one account holds at most one permit. An input
+  longer than `User.MAX_PWD_LENGTH` is refused as a wrong password before
+  the lock or a permit is taken. A single
   deadline (`login.passwordVerification.waitSeconds`, default 5) covers
   both waits. On timeout it throws `LoginVerificationBusyException`,
   which the login filter and `ReauthenticatorImpl` deliberately do not
@@ -73,8 +88,11 @@ The design and its trade-offs are in
   free, leaving a reset token usable. The reset reply also accepts only a
   token that is unused and unexpired, and `UserManagerImpl` marks it used
   with a conditional update in the same transaction as the password
-  change, so two simultaneous submits give one change. Authenticated encodes (password change,
-  user creation, imports) are unbounded by choice (ADR 0011).
+  change, so two simultaneous submits give one change. Authenticated
+  encodes (password change, user creation, imports) are unbounded by
+  choice (ADR 0011). The initial verification-password set is serialised
+  per user in memory, and a duplicate submission returns success without
+  hashing.
 - **Busy post-signup login.** Standalone signup logs the new user in
   through the same verifier. A `LoginVerificationBusyException` there does
   not abort signup: `DefaultPostUserCreate` finishes the PI promotion and
@@ -86,8 +104,14 @@ The design and its trade-offs are in
   callers that held the same row in their own transaction (ADR 0011,
   considered options). Failed reauthentication is not counted toward the
   login-form lockout and has no other per-account rate limit; the
-  per-username lock is the only bound. The anonymous OAuth password grant
-  is the exposed case and is tracked as a separate ticket.
+  per-username lock is the only bound, for verification password checks
+  too. The anonymous OAuth password grant is the exposed case and is
+  tracked as a separate ticket. Signing and witnessing go through
+  `IReauthenticator#reauthenticate`. Changing a verification password
+  checks the current one through
+  `IReauthenticator#reauthenticateWithVerificationPassword`, which applies
+  the same busy handling and security logging but never substitutes an
+  operating-as sysadmin.
 
 ## Authorization
 

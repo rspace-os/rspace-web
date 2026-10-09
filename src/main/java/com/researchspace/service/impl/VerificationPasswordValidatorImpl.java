@@ -2,18 +2,23 @@ package com.researchspace.service.impl;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IVerificationPasswordValidator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class VerificationPasswordValidatorImpl implements IVerificationPasswordValidator {
 
   protected @Autowired IPropertyHolder properties;
+  private @Autowired RSpacePasswordEncoder passwordEncoder;
+  private @Autowired BoundedPasswordVerifier verifier;
 
   @Override
   public boolean isVerificationPasswordSet(User user) {
@@ -36,16 +41,15 @@ public class VerificationPasswordValidatorImpl implements IVerificationPasswordV
     return SignupSource.GOOGLE.equals(user.getSignupSource());
   }
 
-  /**
-   * Checks if user's verification password has been set to a valid value.
-   *
-   * @param The principal user or sysadmin operating-as
-   * @return true if current verification password is valid, false otherwise
-   */
   @Override
   public boolean authenticateVerificationPassword(User passwordOwner, String password) {
-    String hashedPassword = passwordOwner.getVerificationPassword();
-    return BCrypt.checkpw(password, hashedPassword);
+    String username = passwordOwner.getUsername();
+    try {
+      return verifier.verify(username, password, passwordOwner.getVerificationPassword());
+    } catch (IllegalArgumentException e) {
+      log.error("Stored verification password of [{}] cannot be verified", username, e);
+      return false;
+    }
   }
 
   /**
@@ -56,6 +60,6 @@ public class VerificationPasswordValidatorImpl implements IVerificationPasswordV
    */
   @Override
   public String hashVerificationPassword(String password) {
-    return BCrypt.hashpw(password, BCrypt.gensalt());
+    return passwordEncoder.encode(password);
   }
 }
