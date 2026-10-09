@@ -1,6 +1,8 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -17,6 +19,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,12 +65,8 @@ public class VerificationPasswordControllerTest {
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(anyUser);
     when(verificationPasswordValidator.isVerificationPasswordSet(anyUser)).thenReturn(true);
 
-    verificationPasswordController.setVerificationPassword(
-        OK_PWD, OK_PWD, new MockHttpServletRequest());
+    assertFailure(getText("verificationPassword.set.errors.alreadySet"), setOkPassword());
     assertUserPasswordNotSaved();
-
-    // only saved if validator is OK
-
   }
 
   @Test
@@ -77,8 +76,10 @@ public class VerificationPasswordControllerTest {
     when(userValidator.validatePasswords(
             OK_PWD, "not matching confirm password", anyUser.getUsername()))
         .thenReturn("some error");
-    verificationPasswordController.setVerificationPassword(
-        OK_PWD, "not matching confirm password", new MockHttpServletRequest());
+    assertFailure(
+        "some error",
+        verificationPasswordController.setVerificationPassword(
+            OK_PWD, "not matching confirm password", new MockHttpServletRequest()));
     assertUserPasswordNotSaved();
   }
 
@@ -90,8 +91,9 @@ public class VerificationPasswordControllerTest {
         .thenReturn(UserValidator.FIELD_OK);
     when(verificationPasswordValidator.hashVerificationPassword(OK_PWD)).thenReturn("hashedPW");
     when(userMgr.getUserByUsername(anyUser.getUsername(), true)).thenReturn(anyUser);
-    verificationPasswordController.setVerificationPassword(
-        OK_PWD, OK_PWD, new MockHttpServletRequest());
+    AjaxReturnObject<String> result = setOkPassword();
+    assertEquals(getText("verificationPassword.set.success"), result.getData());
+    assertNull(result.getErrorMsg());
     assertUserPwdSaved();
     assertEquals("hashedPW", anyUser.getVerificationPassword());
   }
@@ -145,7 +147,7 @@ public class VerificationPasswordControllerTest {
     setOkPassword();
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(anyUser);
 
-    assertEquals(getText("verificationPassword.set.errors.alreadySet"), setOkPassword().getData());
+    assertFailure(getText("verificationPassword.set.errors.alreadySet"), setOkPassword());
     verify(verificationPasswordValidator, times(1)).hashVerificationPassword(OK_PWD);
   }
 
@@ -157,7 +159,7 @@ public class VerificationPasswordControllerTest {
     when(verificationPasswordValidator.authenticateVerificationPassword(anyUser, OK_PWD))
         .thenReturn(false);
 
-    assertEquals(getText("verificationPassword.set.errors.alreadySet"), setOkPassword().getData());
+    assertFailure(getText("verificationPassword.set.errors.alreadySet"), setOkPassword());
     verify(verificationPasswordValidator, never()).hashVerificationPassword(any());
     assertUserPasswordNotSaved();
   }
@@ -184,7 +186,7 @@ public class VerificationPasswordControllerTest {
                       }));
       assertTrue(held.await(10, TimeUnit.SECONDS));
 
-      assertEquals(getText("verificationPassword.set.errors.busy"), setOkPassword().getData());
+      assertFailure(getText("verificationPassword.set.errors.busy"), setOkPassword());
 
       release.countDown();
       holder.get(10, TimeUnit.SECONDS);
@@ -212,6 +214,13 @@ public class VerificationPasswordControllerTest {
   private AjaxReturnObject<String> setOkPassword() {
     return verificationPasswordController.setVerificationPassword(
         OK_PWD, OK_PWD, new MockHttpServletRequest());
+  }
+
+  /** Old pages read the message from data, so failures carry it in both fields for one release. */
+  private static void assertFailure(String message, AjaxReturnObject<String> result) {
+    assertNotNull(result.getErrorMsg());
+    assertEquals(List.of(message), result.getErrorMsg().getErrorMessages());
+    assertEquals(message, result.getData());
   }
 
   private String getText(String key) {
