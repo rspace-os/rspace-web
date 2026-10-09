@@ -5293,7 +5293,7 @@ export default interface Resources {
       "set": {
         "errors": {
           "alreadySet": "Verification password has already been set.",
-          "busy": "The server is busy, please try again."
+          "busy": "The server is busy and could not set your verification password. Please try again in a moment."
         },
         "success": "Verification password set successfully"
       }
