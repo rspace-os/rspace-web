@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.BCRYPT_HASH;
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.PLAIN;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -24,10 +26,6 @@ import org.springframework.test.util.ReflectionTestUtils;
  */
 class VerificationPasswordLegacyBcryptIT extends RealTransactionSpringTestBase {
 
-  // BCrypt.hashpw("verify1234", BCrypt.gensalt()), as stored before RSDEV-894
-  private static final String BARE_BCRYPT =
-      "$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6";
-
   private @Autowired IVerificationPasswordValidator validator;
   private JdbcTemplate jdbc;
 
@@ -39,14 +37,14 @@ class VerificationPasswordLegacyBcryptIT extends RealTransactionSpringTestBase {
   @Test
   void bareBcryptRowsVerifyAfterThePrefixMigrationAndStayBcrypt() throws Exception {
     User u = createAndSaveUser(randomAlphabetic(10));
-    store(u, BARE_BCRYPT);
+    store(u, BCRYPT_HASH);
 
     runPrefixMigration();
-    assertEquals("{bcrypt}" + BARE_BCRYPT, stored(u));
+    assertEquals("{bcrypt}" + BCRYPT_HASH, stored(u));
 
     assertFalse(validator.authenticateVerificationPassword(reload(u), "verify1234x"));
-    assertTrue(validator.authenticateVerificationPassword(reload(u), "verify1234"));
-    assertEquals("{bcrypt}" + BARE_BCRYPT, stored(u));
+    assertTrue(validator.authenticateVerificationPassword(reload(u), PLAIN));
+    assertEquals("{bcrypt}" + BCRYPT_HASH, stored(u));
 
     assertTrue(runPrefixMigration().getConfirmationMessage().startsWith("Prefixed 0 "));
   }

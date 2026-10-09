@@ -1,5 +1,7 @@
 package com.researchspace.auth.password;
 
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.BCRYPT_HASH;
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.PLAIN;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,10 +19,6 @@ class RSpacePasswordEncoderTest {
   // Unsalted, as in initial-seed-run.sql: sysWisc23!
   private static final String UNSALTED_HEX =
       "caa6eec0faa20efba3b7af44af7107b05334759954ef3581030cc8e6199a33bf";
-
-  // BCrypt.hashpw("verify1234", BCrypt.gensalt()), as stored before RSDEV-894
-  private static final String LEGACY_BCRYPT =
-      "$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6";
 
   private final RSpacePasswordEncoder encoder = new RSpacePasswordEncoder();
 
@@ -68,16 +66,15 @@ class RSpacePasswordEncoderTest {
     assertThrows(IllegalArgumentException.class, () -> encoder.matches("x", "{noop}x"));
     assertThrows(IllegalArgumentException.class, () -> encoder.matches("x", "{sha256}x"));
     // a bare BCrypt value, as stored before the prefix migration
-    assertThrows(
-        IllegalArgumentException.class, () -> encoder.matches("verify1234", LEGACY_BCRYPT));
+    assertThrows(IllegalArgumentException.class, () -> encoder.matches(PLAIN, BCRYPT_HASH));
   }
 
   @Test
   void prefixedLegacyBcryptVerificationPasswordMatchesButIsNotUsedForNewHashes() {
-    String prefixed = "{bcrypt}" + LEGACY_BCRYPT;
-    assertTrue(encoder.matches("verify1234", prefixed));
+    String prefixed = "{bcrypt}" + BCRYPT_HASH;
+    assertTrue(encoder.matches(PLAIN, prefixed));
     assertFalse(encoder.matches("verify12345", prefixed));
-    assertFalse(encoder.encode("verify1234").startsWith("{bcrypt}"));
+    assertFalse(encoder.encode(PLAIN).startsWith("{bcrypt}"));
   }
 
   @Test

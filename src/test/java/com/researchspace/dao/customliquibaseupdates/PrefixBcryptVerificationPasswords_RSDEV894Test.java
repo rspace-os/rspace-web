@@ -1,5 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates;
 
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.BCRYPT_HASH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,19 +11,15 @@ import org.junit.jupiter.api.Test;
 
 class PrefixBcryptVerificationPasswords_RSDEV894Test extends SpringTransactionalTest {
 
-  // BCrypt.hashpw("verify1234", BCrypt.gensalt()), as stored before RSDEV-894
-  private static final String LEGACY_BCRYPT =
-      "$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6";
-
   @Test
   void prefixesBareBcryptOnce() throws Exception {
     User u = createAndSaveRandomUser();
-    storeVerificationPassword(u, LEGACY_BCRYPT);
+    storeVerificationPassword(u, BCRYPT_HASH);
 
     runChange();
-    assertEquals("{bcrypt}" + LEGACY_BCRYPT, storedVerificationPassword(u));
+    assertEquals("{bcrypt}" + BCRYPT_HASH, storedVerificationPassword(u));
     assertTrue(runChange().getConfirmationMessage().startsWith("Prefixed 0 "));
-    assertEquals("{bcrypt}" + LEGACY_BCRYPT, storedVerificationPassword(u));
+    assertEquals("{bcrypt}" + BCRYPT_HASH, storedVerificationPassword(u));
   }
 
   @Test

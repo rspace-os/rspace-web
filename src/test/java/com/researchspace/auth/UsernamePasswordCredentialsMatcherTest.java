@@ -1,5 +1,7 @@
 package com.researchspace.auth;
 
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.BCRYPT_HASH;
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.PLAIN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -118,8 +120,8 @@ class UsernamePasswordCredentialsMatcherTest {
   @Test
   void bcryptIsRefusedForLoginPasswords() {
     User user = TestFactory.createAnyUser("bcrypt");
-    user.setPassword("{bcrypt}$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6");
-    assertFalse(matcher.verify(user, "verify1234"));
+    user.setPassword("{bcrypt}" + BCRYPT_HASH);
+    assertFalse(matcher.verify(user, PLAIN));
     verify(verifier, never()).verify(anyString(), any(), anyString());
   }
 }

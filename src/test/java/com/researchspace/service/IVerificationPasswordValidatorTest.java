@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.BCRYPT_HASH;
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.PLAIN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -80,10 +82,6 @@ public class IVerificationPasswordValidatorTest {
     assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, plaintextPw));
   }
 
-  // BCrypt.hashpw("verify1234", BCrypt.gensalt()), as stored before RSDEV-894
-  private static final String LEGACY_BCRYPT =
-      "$2a$10$fqWevKAPMKNsortKy6gS9eZbYfMnuItTnN4KUf2cy0w0dMTcIjzA6";
-
   @Test
   public void newVerificationPasswordIsArgon2() {
     assertTrue(
@@ -92,31 +90,31 @@ public class IVerificationPasswordValidatorTest {
 
   @Test
   public void prefixedBcryptVerificationPasswordMatchesAndIsNotRewritten() {
-    String legacy = "{bcrypt}" + LEGACY_BCRYPT;
+    String legacy = "{bcrypt}" + BCRYPT_HASH;
     anyUser.setVerificationPassword(legacy);
 
     assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify12345"));
-    assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
+    assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
     assertEquals(legacy, anyUser.getVerificationPassword());
   }
 
   @Test
   public void bareBcryptOrMissingVerificationPasswordDoesNotMatch() {
-    anyUser.setVerificationPassword(LEGACY_BCRYPT);
-    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
+    anyUser.setVerificationPassword(BCRYPT_HASH);
+    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
     anyUser.setVerificationPassword(null);
-    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
+    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
   }
 
   @Test
   public void busyVerificationPropagates() {
-    anyUser.setVerificationPassword("{bcrypt}" + LEGACY_BCRYPT);
+    anyUser.setVerificationPassword("{bcrypt}" + BCRYPT_HASH);
     doThrow(new LoginVerificationBusyException("busy"))
         .when(verifier)
         .verify(anyString(), any(), anyString());
 
     assertThrows(
         LoginVerificationBusyException.class,
-        () -> verificationValidator.authenticateVerificationPassword(anyUser, "verify1234"));
+        () -> verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
   }
 }
