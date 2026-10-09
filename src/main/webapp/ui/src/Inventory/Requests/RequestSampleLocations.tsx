@@ -12,23 +12,13 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import NoValue from "@/components/NoValue";
 import RecordTypeIcon from "@/components/RecordTypeIcon";
 import NavigateContext from "@/stores/contexts/Navigate";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
-import ApiService from "../../common/InvApiService";
-
-type ApiContainerInfo = { id: number; globalId: string; name: string };
-type ApiSubSampleInfo = { id: number; globalId: string; name: string; parentContainers: Array<ApiContainerInfo> };
-// The backend nulls `subSamples` (rather than omitting/emptying it) when the viewer only has
-// limited/public read access to the sample, so a null here specifically means "restricted",
-// not "no subsamples".
-type ApiSampleWithSubSamples = {
-  subSamples: Array<ApiSubSampleInfo> | null;
-  owner: { firstName: string; lastName: string };
-};
+import { type ApiSubSampleInfo, useSampleWithSubSamplesQuery } from "./queries";
 
 type LoadState =
   | { status: "loading" }
@@ -88,29 +78,18 @@ export default function RequestSampleLocations({
   onSelectSubsample?: (subSample: { id: number; name: string }) => void;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const [state, setState] = useState<LoadState>({ status: "loading" });
-
-  useEffect(() => {
-    let cancelled = false;
-    setState({ status: "loading" });
-    ApiService.get<ApiSampleWithSubSamples>("samples", sampleId)
-      .then(({ data }) => {
-        if (cancelled) return;
-        if (data.subSamples === null) {
-          setState({ status: "restricted", ownerName: `${data.owner.firstName} ${data.owner.lastName}` });
-        } else {
-          setState({ status: "loaded", subSamples: data.subSamples });
-        }
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        console.error("Failed to fetch subsample locations", error);
-        setState({ status: "loaded", subSamples: [] });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [sampleId]);
+  // Shared with RequestDetailPanel's own call to the same hook (one cached fetch of GET
+  // /samples/{id}, not two) - this reads the rest of the response that one only needs a count
+  // from.
+  const query = useSampleWithSubSamplesQuery(sampleId);
+  const state: LoadState = query.isLoading
+    ? { status: "loading" }
+    : query.data?.subSamples === null
+      ? { status: "restricted", ownerName: `${query.data.owner.firstName} ${query.data.owner.lastName}` }
+      : // A fetch error degrades to "no subsamples" rather than surfacing an error state of its
+        // own - there's nothing actionable for the user to do about it here, matching the previous
+        // behaviour.
+        { status: "loaded", subSamples: query.data?.subSamples ?? [] };
 
   if (state.status === "loading") {
     return (
@@ -154,6 +133,13 @@ export default function RequestSampleLocations({
                     checked={selectedSubsampleId === subSample.id}
                     onChange={() => onSelectSubsample?.({ id: subSample.id, name: subSample.name })}
                     size="small"
+                    slotProps={{
+                      input: {
+                        "aria-label": t("requestsManagement.detail.fields.selectSubsampleLabel", {
+                          subsample: subSample.name,
+                        }),
+                      },
+                    }}
                   />
                 </TableCell>
               )}

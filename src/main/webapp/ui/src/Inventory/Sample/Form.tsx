@@ -15,8 +15,10 @@ import { useContext, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PadlockIcon from "../../assets/graphics/PadlockIcon";
 import { Heading } from "../../components/DynamicHeadingLevel";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
 import FieldLabel from "../../components/Inputs/FieldLabel";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
+import { helpDocsArticleUrl } from "../../modules/common/i18n/TransRichText";
 import { mkAlert } from "../../stores/contexts/Alert";
 import NavigateContext from "../../stores/contexts/Navigate";
 import type { Person } from "../../stores/definitions/Person";
@@ -53,19 +55,64 @@ import StorageTemperature from "./Fields/StorageTemperature";
 import TemplateField from "./Fields/Template/Template";
 import Fields from "./Fields/TemplateFields/Fields";
 
-const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
+export const RequestableSwitch = observer(({ activeResult }: { activeResult: SampleModel }) => {
   const { t } = useTranslation("inventory");
   const theme = useTheme();
-  const formSectionError = useFormSectionError({
-    editing: activeResult.editing,
-    globalId: activeResult.globalId,
-  });
   const sampleRequestsAvailable = FetchingData.getSuccessValue(
     useDeploymentProperty("inventory.sampleRequests.available"),
   )
     .flatMap(Parser.isString)
     .map((value) => value === "ALLOWED")
     .orElse(false);
+
+  if (!sampleRequestsAvailable || !activeResult.currentUserIsOwner) return null;
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 2,
+        p: 1.5,
+        borderRadius: 1,
+        border: `1px solid ${theme.palette.divider}`,
+        backgroundColor: theme.palette.record.sample.lighter,
+      }}
+    >
+      <Box>
+        <Heading sx={{ mt: 0, display: "flex", alignItems: "center", gap: 0.5 }}>
+          {t("sample.requestsSection.title")}
+          <HelpLinkIcon
+            link={helpDocsArticleUrl("sampleRequests")}
+            title={t("requestsManagement.helpTitle")}
+            fontSize="inherit"
+          />
+        </Heading>
+        <Typography variant="body2">{t("sample.requestsSection.description")}</Typography>
+      </Box>
+      <FormControlLabel
+        sx={{ m: 0 }}
+        control={
+          <Switch
+            checked={activeResult.requestable}
+            onChange={({ target: { checked } }) => activeResult.setAttributesDirty({ requestable: checked })}
+            color="primary"
+            disabled={!activeResult.isFieldEditable("requestable")}
+          />
+        }
+        label={t("sample.requestsSection.switchLabel")}
+      />
+    </Box>
+  );
+});
+
+const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
+  const { t } = useTranslation("inventory");
+  const formSectionError = useFormSectionError({
+    editing: activeResult.editing,
+    globalId: activeResult.globalId,
+  });
 
   return (
     <StepperPanel
@@ -75,37 +122,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel 
       formSectionError={formSectionError}
       recordType="sample"
     >
-      {sampleRequestsAvailable && activeResult.currentUserIsOwner && (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-            p: 1.5,
-            borderRadius: 1,
-            border: `1px solid ${theme.palette.divider}`,
-            backgroundColor: theme.palette.record.sample.lighter,
-          }}
-        >
-          <Box>
-            <Heading sx={{ mt: 0 }}>{t("sample.requestsSection.title")}</Heading>
-            <Typography variant="body2">{t("sample.requestsSection.description")}</Typography>
-          </Box>
-          <FormControlLabel
-            sx={{ m: 0 }}
-            control={
-              <Switch
-                checked={activeResult.requestable}
-                onChange={({ target: { checked } }) => activeResult.setAttributesDirty({ requestable: checked })}
-                color="primary"
-                disabled={!activeResult.isFieldEditable("requestable")}
-              />
-            }
-            label={t("sample.requestsSection.switchLabel")}
-          />
-        </Box>
-      )}
+      <RequestableSwitch activeResult={activeResult} />
       <RequestMaterialSection key={activeResult.globalId} activeResult={activeResult} />
       <NameField
         fieldOwner={activeResult}
@@ -182,7 +199,7 @@ function RequestSampleButton({ onClick }: { onClick: () => void }): React.ReactN
   );
 }
 
-const RequestMaterialSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
+export const RequestMaterialSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
   const { t } = useTranslation(["inventory", "common"]);
   const theme = useTheme();
   const requestTextFieldId = useId();
@@ -274,7 +291,14 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
       {activeResult.requestable ? (
         <>
           <Box>
-            <Heading sx={{ mt: 0 }}>{t("sample.requestMaterialSection.compactTitle")}</Heading>
+            <Heading sx={{ mt: 0, display: "flex", alignItems: "center", gap: 0.5 }}>
+              {t("sample.requestMaterialSection.compactTitle")}
+              <HelpLinkIcon
+                link={helpDocsArticleUrl("sampleRequests")}
+                title={t("requestsManagement.helpTitle")}
+                fontSize="inherit"
+              />
+            </Heading>
             <Typography variant="body2">
               {existingRequest?.status === "PENDING"
                 ? t("sample.requestMaterialSection.pendingDescription", {
@@ -332,8 +356,13 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <PadlockIcon color={theme.palette.action.disabled} />
           <Box>
-            <Typography variant="subtitle2" sx={{ fontSize: "1rem" }}>
+            <Typography variant="subtitle2" sx={{ fontSize: "1rem", display: "flex", alignItems: "center", gap: 0.5 }}>
               {t("sample.requestMaterialSection.notAvailableHeader")}
+              <HelpLinkIcon
+                link={helpDocsArticleUrl("sampleRequests")}
+                title={t("requestsManagement.helpTitle")}
+                fontSize="inherit"
+              />
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {t("sample.requestMaterialSection.notAvailableBody")}

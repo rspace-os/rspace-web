@@ -2,9 +2,12 @@ import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { server } from "@/__tests__/mswServer";
 import materialTheme from "@/theme";
 import RequestDetailPanel from "../RequestDetailPanel";
 import type { ApiSampleRequestListItem } from "../RequestsList";
@@ -58,16 +61,12 @@ vi.mock("@/stores/use-stores", () => ({
   }),
 }));
 
-const apiGet = vi.fn();
-const apiQuery = vi.fn();
-const apiUpdate = vi.fn();
-vi.mock("@/common/InvApiService", () => ({
+// ApiServiceBase gates every call behind `when(() => !getRootStore().authStore.isSynchronizing)`
+// (see ApiServiceBase.ts) - without this, the real ApiService code backing MSW's handlers below
+// would never even issue its requests.
+vi.mock("@/stores/stores/getRootStore", () => ({
   __esModule: true,
-  default: {
-    get: (...args: Array<unknown>) => apiGet(...args),
-    query: (...args: Array<unknown>) => apiQuery(...args),
-    update: (...args: Array<unknown>) => apiUpdate(...args),
-  },
+  default: () => ({ authStore: { isSynchronizing: false } }),
 }));
 
 // RequestSampleLocations does its own fetching and rendering of the location table; all this
@@ -125,6 +124,74 @@ function renderPanel(request: ApiSampleRequestListItem | null) {
   );
 }
 
+const apiGet = vi.fn();
+const apiQuery = vi.fn();
+const apiUpdate = vi.fn();
+
+const SAMPLE_REQUEST_DETAIL_URL = "/api/inventory/v1/sampleRequests/:id";
+const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";
+const SAMPLE_REQUEST_STATUS_URL = "/api/inventory/v1/sampleRequests/:id/status";
+const SAMPLE_URL = "/api/inventory/v1/samples/:id";
+const SAMPLE_CHANGE_OWNER_URL = "/api/inventory/v1/samples/:id/actions/changeOwner";
+
+/**
+ * The happy-path handler set re-registered before every test, matching what apiGet/apiQuery/
+ * apiUpdate used to default to back when they were the mocked module itself. They're now pure
+ * call recorders - asserted on exactly as before - while the response comes from whichever
+ * handler (this default set, or a test's own server.use override below) MSW actually matches.
+ */
+function defaultHandlers() {
+  return [
+    http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+      apiGet("sampleRequests", Number(params.id));
+      return HttpResponse.json({
+        statusChanges: [],
+        sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
+      });
+    }),
+    http.get(SAMPLE_URL, ({ params }) => {
+      apiGet("samples", Number(params.id));
+      return HttpResponse.json({ subSamples: [{ id: 1 }] });
+    }),
+    http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+      apiQuery("sampleRequests", new URL(request.url).searchParams);
+      return HttpResponse.json({ requests: [] });
+    }),
+    http.put(SAMPLE_REQUEST_STATUS_URL, async ({ params, request }) => {
+      const body = (await request.json()) as { status: string; reason?: string };
+      apiUpdate("sampleRequests", `${params.id}/status`, body);
+      return HttpResponse.json({ status: body.status });
+    }),
+    http.put(SAMPLE_CHANGE_OWNER_URL, async ({ params, request }) => {
+      const body = await request.json();
+      apiUpdate("samples", `${params.id}/actions/changeOwner`, body);
+      return HttpResponse.json({ id: 999 });
+    }),
+  ];
+}
+
+/** Makes every sampleRequests status PUT for the rest of this test fail with the given status. */
+function failSampleRequestStatusUpdate(status = 500) {
+  server.use(
+    http.put(SAMPLE_REQUEST_STATUS_URL, async ({ params, request }) => {
+      const body = await request.json();
+      apiUpdate("sampleRequests", `${params.id}/status`, body);
+      return HttpResponse.json({ message: "Backend unavailable" }, { status });
+    }),
+  );
+}
+
+/** Makes every samples/:id/actions/changeOwner PUT for the rest of this test fail. */
+function failChangeOwner() {
+  server.use(
+    http.put(SAMPLE_CHANGE_OWNER_URL, async ({ params, request }) => {
+      const body = await request.json();
+      apiUpdate("samples", `${params.id}/actions/changeOwner`, body);
+      return HttpResponse.json({ message: "Edit lock held" }, { status: 500 });
+    }),
+  );
+}
+
 /** Waits for the initial mount fetches (status changes, subsample count, other requests) to settle. */
 async function waitForInitialFetches() {
   await waitFor(() => expect(apiGet).toHaveBeenCalledWith("sampleRequests", expect.any(Number)));
@@ -138,33 +205,7 @@ beforeEach(() => {
   deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
   deploymentProperties["inventory.operations.available"] = "ALLOWED";
   getUser.mockResolvedValue({ username: REQUESTER.username });
-
-  apiGet.mockImplementation((resource: string) => {
-    if (resource === "sampleRequests") {
-      return Promise.resolve({
-        data: { statusChanges: [], sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } } },
-      });
-    }
-    if (resource === "samples") {
-      return Promise.resolve({ data: { subSamples: [{ id: 1 }] } });
-    }
-    return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
-  });
-  apiQuery.mockImplementation((resource: string) => {
-    if (resource === "sampleRequests") {
-      return Promise.resolve({ data: { requests: [] } });
-    }
-    return Promise.reject(new Error(`unexpected ApiService.query(${resource})`));
-  });
-  apiUpdate.mockImplementation((resource: string, _path: string, body: { status?: string }) => {
-    if (resource === "sampleRequests") {
-      return Promise.resolve({ data: { status: body.status } });
-    }
-    if (resource === "samples") {
-      return Promise.resolve({ data: { id: 999 } });
-    }
-    return Promise.reject(new Error(`unexpected ApiService.update(${resource})`));
-  });
+  server.use(...defaultHandlers());
 });
 
 describe("RequestDetailPanel", () => {
@@ -174,7 +215,7 @@ describe("RequestDetailPanel", () => {
   });
 
   it("renders the request header, requester, and requested sample for the sample owner", async () => {
-    renderPanel(baseRequest());
+    const { container } = renderPanel(baseRequest());
     await waitForInitialFetches();
 
     expect(screen.getByText("inventory:requestsManagement.detail.title")).toBeInTheDocument();
@@ -183,6 +224,7 @@ describe("RequestDetailPanel", () => {
     // The owner-only Actions and Sample Locations sections should both be present.
     expect(screen.getByRole("button", { name: "inventory:requestsManagement.detail.approveButton" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "inventory:requestsManagement.detail.rejectButton" })).toBeEnabled();
+    await expectAccessible(container);
   });
 
   it("marks a collapsible section header's toggle button with aria-expanded, reflecting its live state", async () => {
@@ -202,6 +244,25 @@ describe("RequestDetailPanel", () => {
     expect(toggleButton).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("gives each collapsible section's toggle button its own aria-controls, each pointing to a real element", async () => {
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    const toggleButtons = screen.getAllByRole("button").filter((button) => button.hasAttribute("aria-controls"));
+    // Details, Approval Result, Sample Locations (owner-only - the default signed-in user here is
+    // the owner), and Request History.
+    expect(toggleButtons).toHaveLength(4);
+
+    const controlsIds = toggleButtons.map((button) => button.getAttribute("aria-controls"));
+    // The bug this guards against: aria-controls being entirely absent, or every button pointing
+    // at the same id - either way leaving a screen reader user with no way to tell which content
+    // region a given "Collapse section"/"Expand section" button actually affects.
+    expect(new Set(controlsIds).size).toBe(4);
+    for (const id of controlsIds) {
+      expect(document.getElementById(id as string)).not.toBeNull();
+    }
+  });
+
   it("hides owner-only actions and shows a Cancel option for a non-owner viewing a pending request", async () => {
     currentUser.value = REQUESTER;
     renderPanel(baseRequest());
@@ -216,10 +277,6 @@ describe("RequestDetailPanel", () => {
   it("cancels the request as a non-owner and notifies listeners", async () => {
     const user = userEvent.setup();
     currentUser.value = REQUESTER;
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") return Promise.resolve({ data: { status: "CANCELLED" } });
-      return Promise.reject(new Error("unexpected"));
-    });
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
@@ -242,10 +299,7 @@ describe("RequestDetailPanel", () => {
     const restoreConsole = silenceConsole(["error"], ["Failed to cancel sample request"]);
     const user = userEvent.setup();
     currentUser.value = REQUESTER;
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") return Promise.reject(new Error("Backend unavailable"));
-      return Promise.reject(new Error("unexpected"));
-    });
+    failSampleRequestStatusUpdate();
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
@@ -264,10 +318,6 @@ describe("RequestDetailPanel", () => {
 
   it("approves a pending request and notifies listeners", async () => {
     const user = userEvent.setup();
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") return Promise.resolve({ data: { status: "APPROVED" } });
-      return Promise.reject(new Error("unexpected"));
-    });
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
@@ -284,10 +334,7 @@ describe("RequestDetailPanel", () => {
   it("shows an error alert, leaves the status unchanged, and re-enables the button when approving fails", async () => {
     const restoreConsole = silenceConsole(["error"], ["Failed to approve sample request"]);
     const user = userEvent.setup();
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") return Promise.reject(new Error("Backend unavailable"));
-      return Promise.reject(new Error("unexpected"));
-    });
+    failSampleRequestStatusUpdate();
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
@@ -306,15 +353,17 @@ describe("RequestDetailPanel", () => {
 
   it("disables the Approve button while a request is in flight, preventing a duplicate call", async () => {
     const user = userEvent.setup();
-    let resolveUpdate: ((value: { data: { status: string } }) => void) | undefined;
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") {
-        return new Promise((resolve) => {
+    let resolveUpdate: (() => void) | undefined;
+    server.use(
+      http.put(SAMPLE_REQUEST_STATUS_URL, async ({ params, request }) => {
+        const body = (await request.json()) as { status: string };
+        apiUpdate("sampleRequests", `${params.id}/status`, body);
+        await new Promise<void>((resolve) => {
           resolveUpdate = resolve;
         });
-      }
-      return Promise.reject(new Error("unexpected"));
-    });
+        return HttpResponse.json({ status: body.status });
+      }),
+    );
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
@@ -327,7 +376,7 @@ describe("RequestDetailPanel", () => {
     fireEvent.click(approveButton);
 
     expect(apiUpdate).toHaveBeenCalledTimes(1);
-    resolveUpdate?.({ data: { status: "APPROVED" } });
+    resolveUpdate?.();
     await waitFor(() =>
       expect(screen.getAllByText("inventory:requestsManagement.status.approved").length).toBeGreaterThan(0),
     );
@@ -335,10 +384,6 @@ describe("RequestDetailPanel", () => {
 
   it("requires a reason before rejecting, then rejects and notifies listeners", async () => {
     const user = userEvent.setup();
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") return Promise.resolve({ data: { status: "REJECTED" } });
-      return Promise.reject(new Error("unexpected"));
-    });
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
@@ -384,10 +429,7 @@ describe("RequestDetailPanel", () => {
   it("shows an error alert and keeps the dialog open with the typed reason when rejecting fails", async () => {
     const restoreConsole = silenceConsole(["error"], ["Failed to reject sample request"]);
     const user = userEvent.setup();
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") return Promise.reject(new Error("Backend unavailable"));
-      return Promise.reject(new Error("unexpected"));
-    });
+    failSampleRequestStatusUpdate();
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
@@ -415,10 +457,6 @@ describe("RequestDetailPanel", () => {
 
   it("marks an approved request as fulfilled without transferring anything, and notifies listeners", async () => {
     const user = userEvent.setup();
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") return Promise.resolve({ data: { status: "FULFILLED" } });
-      return Promise.reject(new Error("unexpected"));
-    });
     renderPanel(baseRequest({ status: "APPROVED" }));
     await waitForInitialFetches();
 
@@ -440,10 +478,7 @@ describe("RequestDetailPanel", () => {
     const user = userEvent.setup();
     // A 409 here is exactly the scenario the fix guards against: someone else already rejected
     // or cancelled the request before this fulfil call reached the backend.
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") return Promise.reject(new Error("409 Conflict"));
-      return Promise.reject(new Error("unexpected"));
-    });
+    failSampleRequestStatusUpdate(409);
     renderPanel(baseRequest({ status: "APPROVED" }));
     await waitForInitialFetches();
 
@@ -473,11 +508,6 @@ describe("RequestDetailPanel", () => {
     // Neither property gates this route toward skipping the dialog.
     deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
     deploymentProperties["inventory.operations.available"] = "ALLOWED";
-    apiUpdate.mockImplementation((resource: string, path: string) => {
-      if (resource === "sampleRequests") return Promise.resolve({ data: { status: "FULFILLED" } });
-      if (resource === "samples" && path === "55/actions/changeOwner") return Promise.resolve({ data: { id: 55 } });
-      return Promise.reject(new Error("unexpected"));
-    });
     renderPanel(baseRequest({ status: "APPROVED" }));
     await waitForInitialFetches();
 
@@ -540,30 +570,24 @@ describe("RequestDetailPanel", () => {
     // A 409 here is exactly the scenario the fix guards against: someone else already rejected
     // or cancelled the request before this fulfil call reached the backend. changeOwner must
     // never run off the back of it.
-    apiUpdate.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") return Promise.reject(new Error("409 Conflict"));
-      return Promise.reject(new Error("unexpected"));
-    });
+    failSampleRequestStatusUpdate(409);
     // The request is still APPROVED when the panel mounts (matching the prop below) - that's what
     // makes the Prepare Sample button clickable in the first place - but has been CANCELLED by the
     // time the failed transfer's invalidation triggers this query's refetch, simulating someone
     // else closing it in between. The panel should pick that up rather than carry on showing the
     // stale APPROVED status this attempt started from.
     let sampleRequestsGetCalls = 0;
-    apiGet.mockImplementation((resource: string) => {
-      if (resource === "sampleRequests") {
+    server.use(
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+        apiGet("sampleRequests", Number(params.id));
         sampleRequestsGetCalls += 1;
-        return Promise.resolve({
-          data: {
-            status: sampleRequestsGetCalls === 1 ? "APPROVED" : "CANCELLED",
-            statusChanges: [],
-            sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
-          },
+        return HttpResponse.json({
+          status: sampleRequestsGetCalls === 1 ? "APPROVED" : "CANCELLED",
+          statusChanges: [],
+          sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
         });
-      }
-      if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }] } });
-      return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
-    });
+      }),
+    );
     renderPanel(baseRequest({ status: "APPROVED" }));
     await waitForInitialFetches();
 
@@ -612,6 +636,72 @@ describe("RequestDetailPanel", () => {
     // up too without needing a test of their own to prove it here.
     await waitFor(() =>
       expect(screen.getAllByText("inventory:requestsManagement.status.cancelled").length).toBeGreaterThan(0),
+    );
+    restoreConsole();
+  });
+
+  it("marks the request fulfilled but shows an accurate error when the sample transfer itself fails", async () => {
+    const restoreConsole = silenceConsole(["error"], ["Failed to transfer sample ownership"]);
+    const user = userEvent.setup();
+    // Neither property gates this route toward skipping the dialog.
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
+    deploymentProperties["inventory.operations.available"] = "ALLOWED";
+    // The fulfil half succeeds; only the changeOwner half fails (e.g. an edit lock, a permissions
+    // error, a network blip) - distinct from the fulfil-itself-failed scenario covered by the test
+    // above, and the reason SampleOwnershipTransferError tags which step actually failed.
+    failChangeOwner();
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.transferOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+
+    const transferDialog = await screen.findByRole("dialog", {
+      name: "inventory:requestsManagement.detail.transferDialog.heading",
+    });
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
+    await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
+
+    await waitFor(() =>
+      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "FULFILLED" }),
+    );
+    await waitFor(() =>
+      expect(apiUpdate).toHaveBeenCalledWith("samples", "55/actions/changeOwner", {
+        owner: { username: REQUESTER.username },
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "inventory:requestsManagement.detail.transferDialog.heading" }),
+      ).toBeNull(),
+    );
+    expect(addAlert).not.toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
+    // Not the same "already cancelled" message the fulfil-fails test above gets - that would be
+    // false here, since the request genuinely was fulfilled.
+    expect(addAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variant: "error",
+        message: "inventory:requestsManagement.detail.transferFailedAfterFulfilMessage",
+      }),
+    );
+    // The fulfil half DID succeed and can't be rolled back (FULFILLED is terminal server-side) -
+    // the status chip must reflect that truth, not the stale pre-attempt APPROVED status.
+    await waitFor(() =>
+      expect(screen.getAllByText("inventory:requestsManagement.status.fulfilled").length).toBeGreaterThan(0),
     );
     restoreConsole();
   });
@@ -699,15 +789,6 @@ describe("RequestDetailPanel", () => {
 
     it("shows the heading, ownership warning, and only the always-present bullets for a single subsample with no other requests", async () => {
       const user = userEvent.setup();
-      apiGet.mockImplementation((resource: string) => {
-        if (resource === "sampleRequests") {
-          return Promise.resolve({
-            data: { statusChanges: [], sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } } },
-          });
-        }
-        if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }] } });
-        return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
-      });
       const dialog = await openTransferDialog(user);
 
       // Confirmed by openTransferDialog's findByRole itself: the dialog's title IS the heading.
@@ -733,15 +814,6 @@ describe("RequestDetailPanel", () => {
 
     it("keeps the Recipient field restricted to the requester even after it is cleared", async () => {
       const user = userEvent.setup();
-      apiGet.mockImplementation((resource: string) => {
-        if (resource === "sampleRequests") {
-          return Promise.resolve({
-            data: { statusChanges: [], sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } } },
-          });
-        }
-        if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }] } });
-        return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
-      });
       const dialog = await openTransferDialog(user);
 
       await waitFor(() =>
@@ -756,17 +828,38 @@ describe("RequestDetailPanel", () => {
       expect(within(dialog).getByTestId("restrict-to-user-value")).toHaveTextContent(REQUESTER.username);
     });
 
+    it("keeps Transfer disabled until the async requester lookup resolves, even if a recipient is picked manually", async () => {
+      const user = userEvent.setup();
+      let resolveGetUser: ((person: { username: string } | null) => void) | undefined;
+      // Overrides the file-level default (which resolves immediately) so this test controls
+      // exactly when the lookup settles - simulating the window the review comment flagged,
+      // where PeopleField's restrictToUser is still unset and so searches every user.
+      getUser.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveGetUser = resolve;
+          }),
+      );
+      const dialog = await openTransferDialog(user);
+
+      await user.click(within(dialog).getByRole("button", { name: "mock-pick-recipient" }));
+      const transferButton = within(dialog).getByRole("button", { name: "common:actions.transfer" });
+      // The bug this guards against: a recipient being chosen was the only thing gating this
+      // button, so it was clickable here even though the field had no restriction applied yet.
+      expect(transferButton).toBeDisabled();
+
+      resolveGetUser?.({ username: REQUESTER.username });
+      await waitFor(() => expect(transferButton).toBeEnabled());
+    });
+
     it("adds the multiple-subsamples bullet when the sample has more than one subsample", async () => {
       const user = userEvent.setup();
-      apiGet.mockImplementation((resource: string) => {
-        if (resource === "sampleRequests") {
-          return Promise.resolve({
-            data: { statusChanges: [], sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } } },
-          });
-        }
-        if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }, { id: 2 }, { id: 3 }] } });
-        return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
-      });
+      server.use(
+        http.get(SAMPLE_URL, ({ params }) => {
+          apiGet("samples", Number(params.id));
+          return HttpResponse.json({ subSamples: [{ id: 1 }, { id: 2 }, { id: 3 }] });
+        }),
+      );
       const dialog = await openTransferDialog(user);
 
       expect(
@@ -778,15 +871,12 @@ describe("RequestDetailPanel", () => {
 
     it("uses the 'Both subsamples' wording specifically when the sample has exactly two subsamples", async () => {
       const user = userEvent.setup();
-      apiGet.mockImplementation((resource: string) => {
-        if (resource === "sampleRequests") {
-          return Promise.resolve({
-            data: { statusChanges: [], sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } } },
-          });
-        }
-        if (resource === "samples") return Promise.resolve({ data: { subSamples: [{ id: 1 }, { id: 2 }] } });
-        return Promise.reject(new Error(`unexpected ApiService.get(${resource})`));
-      });
+      server.use(
+        http.get(SAMPLE_URL, ({ params }) => {
+          apiGet("samples", Number(params.id));
+          return HttpResponse.json({ subSamples: [{ id: 1 }, { id: 2 }] });
+        }),
+      );
       const dialog = await openTransferDialog(user);
 
       expect(
@@ -801,19 +891,17 @@ describe("RequestDetailPanel", () => {
 
     it("adds the other-requests-rejected bullet when other active requests exist on the same sample", async () => {
       const user = userEvent.setup();
-      apiQuery.mockImplementation((resource: string) => {
-        if (resource === "sampleRequests") {
-          return Promise.resolve({
-            data: {
-              requests: [
-                { id: 202, requester: { firstName: "Sam", lastName: "Second" } },
-                { id: 203, requester: { firstName: "Tara", lastName: "Third" } },
-              ],
-            },
+      server.use(
+        http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+          apiQuery("sampleRequests", new URL(request.url).searchParams);
+          return HttpResponse.json({
+            requests: [
+              { id: 202, requester: { firstName: "Sam", lastName: "Second" } },
+              { id: 203, requester: { firstName: "Tara", lastName: "Third" } },
+            ],
           });
-        }
-        return Promise.reject(new Error(`unexpected ApiService.query(${resource})`));
-      });
+        }),
+      );
       const dialog = await openTransferDialog(user);
 
       expect(

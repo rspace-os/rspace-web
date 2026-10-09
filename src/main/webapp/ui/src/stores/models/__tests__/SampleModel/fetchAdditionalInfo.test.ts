@@ -62,6 +62,35 @@ describe("fetchAdditionalInfo", () => {
      */
     expect(sample.template).toEqual(template);
   });
+  test("A solitary call fully awaits the template fetch before resolving (RSDEV-1309 regression).", async () => {
+    const template = makeMockTemplate();
+    mockRootStore.searchStore.getTemplate.mockImplementation(() => Promise.resolve(template));
+    const sample = makeMockSample({
+      templateId: 1,
+    });
+    vi.spyOn(InvApiService, "query").mockImplementation(() =>
+      Promise.resolve({
+        data: {
+          ...sampleAttrs(),
+          templateId: 1,
+        },
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        config: {} as any,
+      }),
+    );
+
+    await sample.fetchAdditionalInfo();
+
+    // The bug this guards against (see fetchAdditionalInfo's own doc comment): awaiting a
+    // *solitary* call used to resolve before the template fetch - and even the base class's own
+    // fetchAdditionalInfo - had actually finished, so `sample.template` would still be null here.
+    // The "Subsequent invocations" test above only exercises the concurrent-second-call path,
+    // which was already correct before the fix; this is the path that was actually broken.
+    expect(sample.template).toEqual(template);
+  });
   test("Calls made on a sample without a template should resolve.", async () => {
     const sample = makeMockSample();
     vi.spyOn(InvApiService, "query").mockImplementation(() =>

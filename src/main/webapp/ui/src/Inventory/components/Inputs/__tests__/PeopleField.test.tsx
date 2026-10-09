@@ -1,10 +1,12 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
 import { describe, expect, test, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import * as PersonMocking from "../../../../stores/models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../../stores/models/PersonModel";
 import getRootStore from "../../../../stores/stores/getRootStore";
+import RsSet from "../../../../util/set";
 import Alerts from "../../Alerts";
 import PeopleField from "../PeopleField";
 
@@ -46,5 +48,67 @@ describe("PeopleField", () => {
     } finally {
       restoreConsole();
     }
+  });
+
+  test("When restrictToUser is set, that person is the only selectable option, even when other people are known.", async () => {
+    const user = userEvent.setup();
+    const { peopleStore } = getRootStore();
+    const currentUser = new PersonModel(
+      PersonMocking.personAttrs({ id: 1, username: "owner", firstName: "Olive", lastName: "Owner" }),
+    );
+    const otherGroupMember = new PersonModel(
+      PersonMocking.personAttrs({ id: 2, username: "other", firstName: "Oscar", lastName: "Other" }),
+    );
+    const requester = new PersonModel(
+      PersonMocking.personAttrs({ id: 3, username: "requester", firstName: "Rae", lastName: "Requester" }),
+    );
+    runInAction(() => {
+      peopleStore.currentUser = currentUser;
+      // Already populated, so the component's own fetchMembersOfSameGroup effect short-circuits
+      // without making a network call - restrictToUser bypasses this list entirely anyway.
+      peopleStore.groupMembers = new RsSet([currentUser, otherGroupMember]);
+    });
+
+    render(
+      <Alerts>
+        <PeopleField onSelection={() => {}} recipient={null} restrictToUser={requester} />
+      </Alerts>,
+    );
+    await user.click(screen.getByRole("button", { name: "Open" }));
+
+    const options = screen.getAllByRole("option");
+    expect(options).toHaveLength(1);
+    expect(options[0]).toHaveTextContent(requester.label);
+    expect(screen.queryByText(currentUser.label, { exact: false })).not.toBeInTheDocument();
+    expect(screen.queryByText(otherGroupMember.label, { exact: false })).not.toBeInTheDocument();
+  });
+
+  test("Without restrictToUser, every known person (group members and current user) is selectable.", async () => {
+    const { peopleStore } = getRootStore();
+    const currentUser = new PersonModel(
+      PersonMocking.personAttrs({ id: 1, username: "owner", firstName: "Olive", lastName: "Owner" }),
+    );
+    const otherGroupMember = new PersonModel(
+      PersonMocking.personAttrs({ id: 2, username: "other", firstName: "Oscar", lastName: "Other" }),
+    );
+    runInAction(() => {
+      peopleStore.currentUser = currentUser;
+      peopleStore.groupMembers = new RsSet([currentUser, otherGroupMember]);
+    });
+
+    render(
+      <Alerts>
+        <PeopleField onSelection={() => {}} recipient={null} />
+      </Alerts>,
+    );
+    // No explicit opening needed: the field autofocuses on mount and, unlike the restrictToUser
+    // case, openOnFocus is true here, so the listbox is already open.
+    const options = await screen.findAllByRole("option");
+    expect(options.map((o) => o.textContent)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(currentUser.label),
+        expect.stringContaining(otherGroupMember.label),
+      ]),
+    );
   });
 });

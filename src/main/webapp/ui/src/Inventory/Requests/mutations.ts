@@ -16,6 +16,22 @@ function markSampleRequestFulfilled(requestId: number): Promise<{ status: string
 }
 
 /**
+ * Says which half of useTransferSampleOwnershipMutation's two-step call actually failed, so the
+ * caller can show an accurate message - "fulfil" means nothing happened (safe to treat like any
+ * other rejected status change); "changeOwner" means the request is now irreversibly FULFILLED
+ * (see the mutation's own doc comment) even though the sample was never actually transferred.
+ */
+export class SampleOwnershipTransferError extends Error {
+  constructor(
+    readonly step: "fulfil" | "changeOwner",
+    cause: unknown,
+  ) {
+    super("Sample ownership transfer failed", { cause });
+    this.name = "SampleOwnershipTransferError";
+  }
+}
+
+/**
  * Invalidates every query under `sampleRequestsQueryKeys.all` (so the Requests list, the sidebar's
  * pending-count badge, and this same detail query all refetch), then overwrites the detail query's
  * `status` with the value this mutation's own response just returned - authoritative, and not
@@ -88,11 +104,23 @@ export function useSendSampleRequestMutation() {
  * A SubSample has no owner of its own (it always derives from its parent Sample), so "preparing" a
  * subsample for transfer means transferring ownership of the whole Sample.
  *
- * The request is marked fulfilled BEFORE the transfer, not after: the backend authorises the
- * fulfil transition against the sample's current owner, and that's still the caller here. Doing
- * the transfer first would change the sample's owner away from the caller, so the follow-up
- * fulfil call would then fail as the caller no longer being party to the request (reported back as
- * 404, to avoid disclosing the request's existence).
+ * The request is marked fulfilled BEFORE the transfer, not after - and this order is required, not
+ * just a preference:
+ * - The fulfil transition is authorised against the sample's CURRENT owner (a live lookup), so
+ *   transferring first would mean the follow-up fulfil call gets rejected as the caller no longer
+ *   being that owner.
+ *   Worse: SampleApiManagerImpl's changeOwner action auto-rejects every other PENDING/APPROVED
+ *   request against the same sample as a side effect - which, before this request has itself been
+ *   fulfilled, includes THIS request. Transferring first would have that side effect auto-reject
+ *   the very request this flow is trying to fulfil, before the fulfil call ever got a chance to
+ *   run.
+ * - FULFILLED is a terminal status server-side: there is no transition back to APPROVED or
+ *   anything else. So if the fulfil call above succeeds but this changeOwner call then fails (edit
+ *   lock held, permissions, network), the request is left genuinely, irreversibly FULFILLED with
+ *   the sample never having actually moved - the backend gives no way to undo that half once it's
+ *   committed. What IS fixable (see SampleOwnershipTransferError and the two onError branches
+ *   below) is telling the user the truth about which of those two situations they're in, instead
+ *   of showing the same "the request was already cancelled" message for both.
  */
 export function useTransferSampleOwnershipMutation() {
   const queryClient = useQueryClient();
@@ -106,20 +134,36 @@ export function useTransferSampleOwnershipMutation() {
       sampleId: number;
       newOwnerUsername: string;
     }) => {
-      const fulfilled = await markSampleRequestFulfilled(requestId);
-      await ApiService.update<{ id: number }>("samples", `${sampleId}/actions/changeOwner`, {
-        owner: { username: newOwnerUsername },
-      });
+      let fulfilled: { status: string };
+      try {
+        fulfilled = await markSampleRequestFulfilled(requestId);
+      } catch (error) {
+        throw new SampleOwnershipTransferError("fulfil", error);
+      }
+      try {
+        await ApiService.update<{ id: number }>("samples", `${sampleId}/actions/changeOwner`, {
+          owner: { username: newOwnerUsername },
+        });
+      } catch (error) {
+        throw new SampleOwnershipTransferError("changeOwner", error);
+      }
       return fulfilled;
     },
     onSuccess: (data, { requestId }) => invalidateAndSeedDetailStatus(queryClient, requestId, data.status),
-    // No trustworthy "new status" to seed on failure - it almost always means the fulfil step's
-    // own request was rejected (e.g. a 409, because the requester cancelled or the request was
-    // otherwise closed between this dialog opening and Transfer being pressed), i.e. the status
-    // moved on server-side without this attempt succeeding. Invalidating (without seeding) lets
-    // every query under `sampleRequestsQueryKeys.all` - including this same detail query - refetch
-    // and pick up whatever that real current state now is on its own.
-    onError: () => {
+    onError: (error, { requestId }) => {
+      if (error instanceof SampleOwnershipTransferError && error.step === "changeOwner") {
+        // The fulfil half of this call DID succeed, and (see the doc comment above) can't be
+        // rolled back - reflect that irreversible fact rather than leaving the UI showing the
+        // stale pre-fulfil status.
+        void invalidateAndSeedDetailStatus(queryClient, requestId, "FULFILLED");
+        return;
+      }
+      // The fulfil step itself failed - nothing happened. Most likely cause: a 409, because the
+      // requester cancelled or the request was otherwise closed between this dialog opening and
+      // Transfer being pressed, i.e. the status moved on server-side without this attempt
+      // succeeding. Invalidating (without seeding) lets every query under
+      // `sampleRequestsQueryKeys.all` - including this same detail query - refetch and pick up
+      // whatever that real current state now is on its own.
       void queryClient.invalidateQueries({ queryKey: sampleRequestsQueryKeys.all });
     },
   });

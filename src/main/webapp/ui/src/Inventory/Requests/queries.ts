@@ -25,10 +25,12 @@ export const sampleRequestsQueryKeys = {
   list: (requestsFilter: RequestsFilter, statusFilter: StatusFilter) =>
     [...sampleRequestsQueryKeys.all, "list", requestsFilter, statusFilter] as const,
   detail: (requestId: number) => [...sampleRequestsQueryKeys.all, "detail", requestId] as const,
-  otherActiveForSample: (sampleId: number) =>
-    [...sampleRequestsQueryKeys.all, "otherActiveForSample", sampleId] as const,
+  otherActiveForSample: (sampleId: number, excludeRequestId: number) =>
+    [...sampleRequestsQueryKeys.all, "otherActiveForSample", sampleId, excludeRequestId] as const,
   forSample: (sampleId: number) => [...sampleRequestsQueryKeys.all, "forSample", sampleId] as const,
   pendingCount: () => [...sampleRequestsQueryKeys.all, "pendingCount"] as const,
+  sampleWithSubSamples: (sampleId: number) =>
+    [...sampleRequestsQueryKeys.all, "sampleWithSubSamples", sampleId] as const,
 };
 
 async function fetchAllSampleRequests(filterParams: Record<string, string>): Promise<Array<ApiSampleRequestListItem>> {
@@ -88,10 +90,15 @@ export type OtherActiveSampleRequest = { id: number; requesterName: string };
  * Other PENDING/APPROVED requests against the same sample, excluding `excludeRequestId` - backs
  * the Choose Sample to Prepare dialog's "other requests will be closed automatically" warning and
  * the Transfer Ownership dialog's "will be automatically rejected" bullet.
+ *
+ * excludeRequestId is part of the query key, not just the queryFn's filtering logic: two different
+ * requests against the same sample would otherwise share one cache entry keyed on sampleId alone,
+ * so opening one just after another could briefly show the previous request's own result,
+ * including that request incorrectly appearing in its own "will be rejected" list.
  */
 export function useOtherActiveSampleRequestsQuery(sampleId: number | null, excludeRequestId: number) {
   return useQuery({
-    queryKey: sampleRequestsQueryKeys.otherActiveForSample(sampleId ?? -1),
+    queryKey: sampleRequestsQueryKeys.otherActiveForSample(sampleId ?? -1, excludeRequestId),
     queryFn: () => {
       const params = new URLSearchParams({
         sampleId: String(sampleId),
@@ -145,20 +152,36 @@ export function usePendingSampleRequestCountQuery() {
   });
 }
 
+export type ApiContainerInfo = { id: number; globalId: string; name: string };
+export type ApiSubSampleInfo = {
+  id: number;
+  globalId: string;
+  name: string;
+  parentContainers: Array<ApiContainerInfo>;
+};
+// The backend nulls `subSamples` (rather than omitting/emptying it) when the viewer only has
+// limited/public read access to the sample, so a null here specifically means "restricted", not
+// "no subsamples".
+export type ApiSampleWithSubSamples = {
+  subSamples: Array<ApiSubSampleInfo> | null;
+  owner: { firstName: string; lastName: string };
+};
+
 /**
- * Only needed to size the "transferring will move all subsamples too" warning in the Choose
- * Sample to Prepare dialog, so a plain count suffices; `subSamples` comes back null for a
- * restricted (non-owner) viewer, same as in RequestSampleLocations. This is a Sample query, not a
- * SampleRequest one - no mutation here ever changes it, so it's kept out of
- * `sampleRequestsQueryKeys` rather than being invalidated for no reason alongside them.
+ * The sample's subsamples (with their current locations) and owner - shared by the "transferring
+ * will move all subsamples too" warning in the Choose Sample to Prepare dialog (which only needs
+ * `subSamples.length`) and RequestSampleLocations' full locations table (which needs the rest),
+ * rather than each independently fetching the same GET /samples/{id} endpoint.
+ *
+ * Although this is Sample data, not SampleRequest data, the key lives under
+ * `sampleRequestsQueryKeys` specifically so a transfer's broad invalidation (see
+ * invalidateAndSeedDetailStatus in ./mutations.ts) covers it too - a transfer changes the sample's
+ * owner, which can flip this between "loaded" and "restricted" for whoever's now viewing it.
  */
-export function useSampleSubSampleCountQuery(sampleId: number | null) {
+export function useSampleWithSubSamplesQuery(sampleId: number | null) {
   return useQuery({
-    queryKey: ["samples", "subSampleCount", sampleId ?? -1] as const,
-    queryFn: () =>
-      ApiService.get<{ subSamples: Array<{ id: number }> | null }>("samples", sampleId as number).then(
-        (r) => r.data.subSamples?.length ?? null,
-      ),
+    queryKey: sampleRequestsQueryKeys.sampleWithSubSamples(sampleId ?? -1),
+    queryFn: () => ApiService.get<ApiSampleWithSubSamples>("samples", sampleId as number).then((r) => r.data),
     enabled: sampleId !== null,
   });
 }

@@ -1029,6 +1029,7 @@ export default interface Resources {
       "pyrat": "9kkeooveia-pyrat-integration",
       "pyratCors": "9kkeooveia-pyrat-integration#cors",
       "raid": "zb4c2c8a4b-raid-integration",
+      "sampleRequests": "ewk2epc69e-sample-requests",
       "search": "e0fngo8a5s-search-inventory",
       "slack": "74r6scvv8g-slack-integration",
       "taggingUsers": "zw6o5uh4qv-tagging-users",
@@ -3429,11 +3430,13 @@ export default interface Resources {
       "batchEditingItemsTitle": "{label} (Click to {open, select, true {close} other {expand}} list)",
       "collapseAll": "Collapse All",
       "collapseSection": "Collapse section",
+      "collapseSectionNamed": "Collapse {section} section",
       "containersBeingEdited": "Containers being edited",
       "customFields": "Custom Fields",
       "details": "Details",
       "expandAll": "Expand All",
       "expandSection": "Expand section",
+      "expandSectionNamed": "Expand {section} section",
       "identifiers": "Identifiers",
       "information": "Information",
       "itemsBeingEdited": "Items being edited",
@@ -4379,6 +4382,7 @@ export default interface Resources {
           "sampleLocationRestricted": "You do not have permission to view locations for subsamples of this sample. To gain full access, please contact the owner, {owner}.",
           "sampleLocationTooltip": "Samples are located via their subsamples",
           "sampleRequested": "Requested Sample",
+          "selectSubsampleLabel": "Select {subsample}",
           "status": "Status",
           "submitted": "Submitted",
           "subsampleColumn": "Subsample",
@@ -4440,6 +4444,7 @@ export default interface Resources {
           "warning": "<strong>You will no longer own this sample.</strong> Only {requester} or their PI can transfer it back.",
           "whatWillHappen": "What will happen:"
         },
+        "transferFailedAfterFulfilMessage": "Request {id} was marked as fulfilled, but transferring sample {sampleName} to {requester} failed. Please transfer ownership of the sample manually.",
         "transferSampleButton": "Transfer Sample",
         "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
       },
@@ -4458,6 +4463,7 @@ export default interface Resources {
           "past": "Closed"
         }
       },
+      "helpTitle": "Info on sample requests.",
       "landmark": "Requests",
       "noResults": "No requests found.",
       "noSelection": "Select a request to see its details.",

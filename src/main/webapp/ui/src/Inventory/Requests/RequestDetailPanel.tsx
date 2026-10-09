@@ -38,6 +38,7 @@ import * as Parsers from "@/util/parsers";
 import { isoToLocale } from "@/util/Util";
 import PeopleField from "../components/Inputs/PeopleField";
 import {
+  SampleOwnershipTransferError,
   useApproveSampleRequestMutation,
   useCancelSampleRequestMutation,
   useFulfilSampleRequestMutation,
@@ -47,7 +48,7 @@ import {
 import {
   useOtherActiveSampleRequestsQuery,
   useSampleRequestDetailQuery,
-  useSampleSubSampleCountQuery,
+  useSampleWithSubSamplesQuery,
 } from "./queries";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
@@ -99,6 +100,13 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const { t, i18n } = useTranslation(["inventory", "common"]);
   const theme = useTheme();
   const reasonFieldId = useId();
+  // Content region ids for the collapsible sections' aria-controls below - each toggle button's
+  // aria-label also names its own section (rather than the four sharing one generic "Collapse
+  // section"/"Expand section" name, indistinguishable from each other to a screen reader user).
+  const detailsSectionId = useId();
+  const approvalResultSectionId = useId();
+  const sampleLocationsSectionId = useId();
+  const requestHistorySectionId = useId();
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [approvalResultExpanded, setApprovalResultExpanded] = useState(true);
   const [requestHistoryExpanded, setRequestHistoryExpanded] = useState(true);
@@ -152,11 +160,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     ? `${detailQuery.data.sample.owner.firstName} ${detailQuery.data.sample.owner.lastName}`
     : null;
 
-  // Only needed to size the "transferring will move all subsamples too" warning in the Choose
-  // Sample to Prepare dialog, so a plain count suffices; `subSamples` comes back null for a
-  // restricted (non-owner) viewer, same as in RequestSampleLocations.
-  const subSampleCountQuery = useSampleSubSampleCountQuery(sampleId);
-  const subSampleCount = subSampleCountQuery.data ?? null;
+  // Shared with RequestSampleLocations' own call to the same hook below (one cached fetch, not
+  // two) - this only needs the count, to size the "transferring will move all subsamples too"
+  // warning in the Choose Sample to Prepare dialog; `subSamples` comes back null for a restricted
+  // (non-owner) viewer, in which case there's no count to show.
+  const sampleWithSubSamplesQuery = useSampleWithSubSamplesQuery(sampleId);
+  const subSampleCount = sampleWithSubSamplesQuery.data?.subSamples?.length ?? null;
 
   // Backs both the "other requests will be closed automatically" warning in the Choose Sample to
   // Prepare dialog and the Transfer Ownership dialog's "will be automatically rejected" bullet,
@@ -293,7 +302,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // so the follow-up fulfil call would then fail as the caller no longer being party to
   // the request (reported back as 404, to avoid disclosing the request's existence).
   const submitTransfer = () => {
-    if (!transferRecipient) return;
+    // transferRequesterPerson also gates the button below, but is re-checked here too: until it
+    // has loaded, PeopleField's restrictToUser is unset and so searches everyone (see
+    // openTransferDialog's comment), meaning transferRecipient could be any user, not just the
+    // requester this dialog exists to hand the sample to.
+    if (!transferRecipient || !transferRequesterPerson) return;
     transferMutation.mutate(
       { requestId: request.id, sampleId: request.sample.id, newOwnerUsername: transferRecipient.username },
       {
@@ -312,20 +325,28 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         },
         onError: (error) => {
           console.error("Failed to transfer sample ownership", error);
-          // The most likely cause reaching here: the fulfil step rejected with a 409 because the
-          // requester cancelled (or the request was otherwise closed) between this dialog opening
-          // and Transfer being pressed. Closing the dialog rather than leaving it open avoids a
-          // retry that can only fail the same way again; the mutation's own onSettled (see
-          // ./mutations.ts) has already invalidated every query above, so the status chip,
-          // history, and action buttons pick up whatever the request's real state now is on
+          // Closing the dialog rather than leaving it open avoids a retry that, in either case
+          // below, can only fail (or succeed-but-mislead) the same way again; the mutation's own
+          // onError (see ./mutations.ts) has already invalidated every query above, so the status
+          // chip, history, and action buttons pick up whatever the request's real state now is on
           // their own, without a bespoke refetch-and-resync here.
           setTransferDialogOpen(false);
+          // Which half of the mutation failed changes what actually happened, and so what's true
+          // to tell the user - see SampleOwnershipTransferError's definition in ./mutations.ts.
+          const sampleTransferItselfFailed =
+            error instanceof SampleOwnershipTransferError && error.step === "changeOwner";
           uiStore.addAlert(
             mkAlert({
               variant: "error",
-              message: t("requestsManagement.detail.transferCancelledErrorMessage", {
-                sampleName: request.sample.name,
-              }),
+              message: sampleTransferItselfFailed
+                ? t("requestsManagement.detail.transferFailedAfterFulfilMessage", {
+                    id: request.id,
+                    sampleName: request.sample.name,
+                    requester: requesterFullName,
+                  })
+                : t("requestsManagement.detail.transferCancelledErrorMessage", {
+                    sampleName: request.sample.name,
+                  }),
             }),
           );
         },
@@ -394,8 +415,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Typography variant="subtitle1">{t("requestsManagement.detail.sections.details")}</Typography>
           <IconButton
             size="small"
-            aria-label={detailsExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")}
+            aria-label={t(detailsExpanded ? "formSections.collapseSectionNamed" : "formSections.expandSectionNamed", {
+              section: t("requestsManagement.detail.sections.details"),
+            })}
             aria-expanded={detailsExpanded}
+            aria-controls={detailsSectionId}
             sx={{
               transform: detailsExpanded ? "rotate(180deg)" : "rotate(0deg)",
               transition: theme.transitions.create("transform"),
@@ -405,7 +429,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           </IconButton>
         </Box>
         <Divider />
-        <Collapse in={detailsExpanded}>
+        <Collapse in={detailsExpanded} id={detailsSectionId}>
           <HeadingContext level={4}>
             <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               <DetailField label={t("requestsManagement.detail.fields.requester")}>
@@ -441,8 +465,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approvalResult")}</Typography>
           <IconButton
             size="small"
-            aria-label={approvalResultExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")}
+            aria-label={t(
+              approvalResultExpanded ? "formSections.collapseSectionNamed" : "formSections.expandSectionNamed",
+              { section: t("requestsManagement.detail.sections.approvalResult") },
+            )}
             aria-expanded={approvalResultExpanded}
+            aria-controls={approvalResultSectionId}
             sx={{
               transform: approvalResultExpanded ? "rotate(180deg)" : "rotate(0deg)",
               transition: theme.transitions.create("transform"),
@@ -452,7 +480,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           </IconButton>
         </Box>
         <Divider />
-        <Collapse in={approvalResultExpanded}>
+        <Collapse in={approvalResultExpanded} id={approvalResultSectionId}>
           <HeadingContext level={4}>
             <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               <DetailField label={t("requestsManagement.detail.fields.status")}>
@@ -625,10 +653,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               </CustomTooltip>
               <IconButton
                 size="small"
-                aria-label={
-                  sampleLocationsExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")
-                }
+                aria-label={t(
+                  sampleLocationsExpanded ? "formSections.collapseSectionNamed" : "formSections.expandSectionNamed",
+                  { section: t("requestsManagement.detail.fields.sampleLocation") },
+                )}
                 aria-expanded={sampleLocationsExpanded}
+                aria-controls={sampleLocationsSectionId}
                 sx={{
                   transform: sampleLocationsExpanded ? "rotate(180deg)" : "rotate(0deg)",
                   transition: theme.transitions.create("transform"),
@@ -638,7 +668,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               </IconButton>
             </Box>
             <Divider />
-            <Collapse in={sampleLocationsExpanded}>
+            <Collapse in={sampleLocationsExpanded} id={sampleLocationsSectionId}>
               <Box sx={{ p: 2 }}>
                 <RequestSampleLocations
                   sampleId={request.sample.id}
@@ -667,8 +697,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Typography variant="subtitle1">{t("requestsManagement.detail.history.sectionTitle")}</Typography>
           <IconButton
             size="small"
-            aria-label={requestHistoryExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")}
+            aria-label={t(
+              requestHistoryExpanded ? "formSections.collapseSectionNamed" : "formSections.expandSectionNamed",
+              { section: t("requestsManagement.detail.history.sectionTitle") },
+            )}
             aria-expanded={requestHistoryExpanded}
+            aria-controls={requestHistorySectionId}
             sx={{
               transform: requestHistoryExpanded ? "rotate(180deg)" : "rotate(0deg)",
               transition: theme.transitions.create("transform"),
@@ -678,7 +712,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           </IconButton>
         </Box>
         <Divider />
-        <Collapse in={requestHistoryExpanded}>
+        <Collapse in={requestHistoryExpanded} id={requestHistorySectionId}>
           <RequestHistoryTable statusChanges={statusChanges} />
         </Collapse>
       </Box>
@@ -892,7 +926,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Button onClick={() => setTransferDialogOpen(false)}>{t("common:actions.cancel")}</Button>
           <Button
             variant="contained"
-            disabled={transferRecipient === null}
+            // transferRequesterPerson === null also disables this: until the requester lookup
+            // in openTransferDialog resolves, PeopleField's restrictToUser is unset and the field
+            // searches every user, not just the requester - submitting before then could hand
+            // the sample to whoever was picked during that window instead.
+            disabled={transferRecipient === null || transferRequesterPerson === null}
             onClick={submitTransfer}
             sx={{
               backgroundColor: darken(theme.palette.primary.main, 0.5),

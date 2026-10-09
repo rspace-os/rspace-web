@@ -47,6 +47,11 @@ const STATUS_DOT_COLOR: Record<string, string> = {
   APPROVED: "#3E5866",
 };
 
+// Darkened from rgb(183, 121, 31): that text on STATUS_BACKGROUND.PENDING was 3.24:1, below WCAG
+// AA's 4.5:1 minimum for small text. This is ~4.57:1 against that same background, same hue, just
+// a bit darker - see RequestsStatusChip.test.tsx for the contrast-ratio check itself.
+export const PENDING_TEXT_COLOR = "rgb(150, 99, 25)";
+
 function ChipLabel({ status }: { status: string }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const dotColor = STATUS_DOT_COLOR[status];
@@ -100,7 +105,7 @@ export default function RequestsStatusChip({
           // (and beat) that specificity regardless of whether this chip is clickable.
           "&&&": {
             backgroundColor: STATUS_BACKGROUND.PENDING,
-            color: "rgb(183, 121, 31)",
+            color: PENDING_TEXT_COLOR,
             border,
           },
         }}

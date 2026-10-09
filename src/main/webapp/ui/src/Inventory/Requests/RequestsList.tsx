@@ -190,7 +190,7 @@ export default function RequestsList({
     >
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", width: "100%" }}>
         <RequestsSearchbar value={searchQuery} onChange={setSearchQuery} />
-        <HelpLinkIcon link={helpDocsArticleUrl("search")} title={t("search.helpTitle")} />
+        <HelpLinkIcon link={helpDocsArticleUrl("sampleRequests")} title={t("requestsManagement.helpTitle")} />
       </Stack>
       <Grid container direction="row" spacing={1} sx={{ pt: 1 }}>
         <DropdownButton

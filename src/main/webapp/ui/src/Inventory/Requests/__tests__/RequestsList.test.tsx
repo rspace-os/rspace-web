@@ -2,8 +2,10 @@ import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import type React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import materialTheme from "@/theme";
 import RequestsList, { type ApiSampleRequestListItem } from "../RequestsList";
 
@@ -12,13 +14,17 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
-const apiQuery = vi.fn();
-vi.mock("@/common/InvApiService", () => ({
+// ApiServiceBase gates every call behind `when(() => !getRootStore().authStore.isSynchronizing)`
+// (see ApiServiceBase.ts) - without this, the real ApiService code backing MSW's handler below
+// would never even issue its requests.
+vi.mock("@/stores/stores/getRootStore", () => ({
   __esModule: true,
-  default: {
-    query: (...args: Array<unknown>) => apiQuery(...args),
-  },
+  default: () => ({ authStore: { isSynchronizing: false } }),
 }));
+
+const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";
+
+const apiQuery = vi.fn();
 
 /**
  * 30 requests, one per id, with later ids created later. The default sort
@@ -43,7 +49,12 @@ function renderList(
   requests: Array<ApiSampleRequestListItem>,
   onSelect: (request: ApiSampleRequestListItem) => void = () => {},
 ) {
-  apiQuery.mockImplementation(() => Promise.resolve({ data: { requests, totalHits: requests.length } }));
+  server.use(
+    http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+      apiQuery("sampleRequests", new URL(request.url).searchParams);
+      return HttpResponse.json({ requests, totalHits: requests.length });
+    }),
+  );
   return renderWithProviders(
     <ThemeProvider theme={materialTheme}>
       <RequestsList selectedRequestId={null} onSelect={onSelect} />
@@ -58,14 +69,19 @@ function renderList(
  * after the first (capped at 100 per call, regardless of what's asked for).
  */
 function renderPagedList(allRequests: Array<ApiSampleRequestListItem>) {
-  apiQuery.mockImplementation((_resource: string, params: URLSearchParams) => {
-    const pageNumber = Number(params.get("pageNumber") ?? "0");
-    const pageSize = Number(params.get("pageSize") ?? "100");
-    const start = pageNumber * pageSize;
-    return Promise.resolve({
-      data: { requests: allRequests.slice(start, start + pageSize), totalHits: allRequests.length },
-    });
-  });
+  server.use(
+    http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+      const params = new URL(request.url).searchParams;
+      apiQuery("sampleRequests", params);
+      const pageNumber = Number(params.get("pageNumber") ?? "0");
+      const pageSize = Number(params.get("pageSize") ?? "100");
+      const start = pageNumber * pageSize;
+      return HttpResponse.json({
+        requests: allRequests.slice(start, start + pageSize),
+        totalHits: allRequests.length,
+      });
+    }),
+  );
   return renderWithProviders(
     <ThemeProvider theme={materialTheme}>
       <RequestsList selectedRequestId={null} onSelect={() => {}} />
