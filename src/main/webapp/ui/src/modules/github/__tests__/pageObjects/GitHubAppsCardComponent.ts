@@ -31,6 +31,7 @@ export class GitHubAppsCardComponent {
     await this.toasts.byVariant("success", "Update successful.").first().waitFor({ state: "visible" });
     await this.toasts.dismissAll();
 
+    await dialog.getByRole("button", { name: "Close" }).click();
     await dialog.waitFor({ state: "detached" });
   }
 }
