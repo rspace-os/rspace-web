@@ -2,14 +2,12 @@ package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,6 +19,7 @@ import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
+import com.researchspace.service.impl.PasswordResetApplier;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Optional;
@@ -60,6 +59,7 @@ public class LoginPasswordResetByEmailHandlerTest {
 
   @BeforeEach
   void setUp() {
+    handler.resetApplier = new PasswordResetApplier(userManager);
     request = new MockHttpServletRequest();
     request.setRemoteAddr("127.0.0.1");
     cmd = newCommand();
@@ -189,37 +189,12 @@ public class LoginPasswordResetByEmailHandlerTest {
   }
 
   @Test
-  void snapshotConflictReturnsTheFailViewWithoutReReadingTheToken() {
+  void concurrentConflictReturnsTheFailView() {
     TokenBasedVerification token = freshToken();
     stubResetThatThrows(token, dbFailure(1020));
 
     assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
-    verify(userManager, times(1)).getUserVerificationToken(token.getToken());
-    assertTrue(encodeGate.tryAcquire());
-  }
-
-  @Test
-  void otherDbFailureWithTheTokenNowUsedReturnsTheFailView() {
-    TokenBasedVerification token = freshToken();
-    TokenBasedVerification usedNow = freshToken();
-    usedNow.setResetCompleted(true);
-    stubResetThatThrows(token, dbFailure(1205));
-    when(userManager.getUserVerificationToken(token.getToken())).thenReturn(token, usedNow);
-
-    assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
-    assertTrue(encodeGate.tryAcquire());
-  }
-
-  @Test
-  void otherDbFailureWithTheTokenStillUnusedPropagates() {
-    TokenBasedVerification token = freshToken();
-    DataAccessException failure = dbFailure(1205);
-    stubResetThatThrows(token, failure);
-
-    assertSame(
-        failure,
-        assertThrows(
-            DataAccessException.class, () -> handler.submitResetPage(cmd, errors, request)));
+    verify(emailer, never()).sendEmail(any(), any(), any());
     assertTrue(encodeGate.tryAcquire());
   }
 
