@@ -1,6 +1,7 @@
 package com.researchspace.auth;
 
 import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authc.AuthenticationInfo;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
 
   private @Autowired BoundedPasswordVerifier verifier;
+  private @Autowired SentinelPasswordCheck sentinelCheck;
 
   /** Checks the password for reauthentication. */
   public boolean verify(User subject, String suppliedPassword) {
@@ -40,7 +42,10 @@ public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
     try {
       return verifier.verify(username, suppliedPassword, storedPassword);
     } catch (IllegalArgumentException e) {
-      log.error("Stored password of [{}] cannot be verified", username, e);
+      sentinelCheck.pad(username, suppliedPassword);
+      log.warn(
+          "Stored password of [{}] has no recognised encoding; an administrator must reset it",
+          username);
       return false;
     }
   }
