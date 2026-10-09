@@ -256,6 +256,13 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     return null;
   }
 
+  @Override
+  public String loginLockKey(String submittedUsername) {
+    String trimmed = StringUtils.trimToEmpty(submittedUsername);
+    String found = findUsernameByUsernameOrAlias(trimmed);
+    return userDao.usernameLockKey(found != null ? found : trimmed);
+  }
+
   public List<User> getUserByEmail(String userEmail) {
     return userDao.getUserByEmail(userEmail);
   }
@@ -406,15 +413,14 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       String newPassword, String token, boolean isVerificationPassword) {
     TokenBasedVerification upwChange = userDao.getByToken(token);
     if (upwChange == null
-        || !upwChange.isValidLink(token, TokenBasedVerificationType.PASSWORD_CHANGE)
-        || userDao.claimTokenBasedVerification(token) == 0) {
+        || !upwChange.isValidLink(token, TokenBasedVerificationType.PASSWORD_CHANGE)) {
+      return null;
+    }
+    List<User> users = userDao.getUserByEmail(upwChange.getEmail());
+    if (users == null || users.isEmpty() || userDao.claimTokenBasedVerification(token) == 0) {
       return null;
     }
     upwChange.setResetCompleted(true);
-    List<User> users = userDao.getUserByEmail(upwChange.getEmail());
-    if (users == null || users.isEmpty()) {
-      return null;
-    }
     User toChange = users.get(0);
 
     if (isVerificationPassword) {

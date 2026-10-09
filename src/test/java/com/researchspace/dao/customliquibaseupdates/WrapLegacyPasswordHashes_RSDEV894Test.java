@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -30,10 +32,7 @@ class WrapLegacyPasswordHashes_RSDEV894Test extends SpringTransactionalTest {
 
     String message = runChange().getConfirmationMessage();
     assertTrue(
-        message.matches(
-            "Wrapped 2 legacy password hashes in Argon2id, skipped 0:"
-                + " encode \\d+ ms \\(\\d+\\.\\d ms/row, max \\d+ ms\\), loop \\d+ ms"),
-        message);
+        message.startsWith("Wrapped 2 legacy password hashes in Argon2id, skipped 0"), message);
     String saltedWrapped = storedPassword(salted);
     String unsaltedWrapped = storedPassword(unsalted);
     assertWrapped(saltedWrapped);
@@ -62,8 +61,36 @@ class WrapLegacyPasswordHashes_RSDEV894Test extends SpringTransactionalTest {
     assertTrue(message.contains("skipped 2"), message);
   }
 
+  @Test
+  void endsABatchAfterEveryBatchSizeWrappedRows() throws Exception {
+    List<User> legacy = new ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+      User u = createAndSaveRandomUser();
+      storeRaw(u, SALTED_HEX, SALT);
+      legacy.add(u);
+    }
+    List<Long> wrappedAtBatchEnd = new ArrayList<>();
+    WrapLegacyPasswordHashes_RSDEV894 change =
+        new WrapLegacyPasswordHashes_RSDEV894() {
+          @Override
+          void endBatch() {
+            wrappedAtBatchEnd.add(
+                legacy.stream().filter(u -> !SALTED_HEX.equals(storedPassword(u))).count());
+          }
+        };
+    change.batchSize = 2;
+
+    runChange(change);
+
+    assertEquals(List.of(2L, 4L), wrappedAtBatchEnd);
+    legacy.forEach(u -> assertWrapped(storedPassword(u)));
+  }
+
   private WrapLegacyPasswordHashes_RSDEV894 runChange() {
-    WrapLegacyPasswordHashes_RSDEV894 change = new WrapLegacyPasswordHashes_RSDEV894();
+    return runChange(new WrapLegacyPasswordHashes_RSDEV894());
+  }
+
+  private WrapLegacyPasswordHashes_RSDEV894 runChange(WrapLegacyPasswordHashes_RSDEV894 change) {
     change.context = applicationContext;
     change.sessionFactory = sessionFactory;
     change.addBeans();

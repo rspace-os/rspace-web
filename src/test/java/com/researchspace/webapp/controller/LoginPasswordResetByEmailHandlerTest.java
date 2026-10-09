@@ -19,6 +19,8 @@ import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
+import com.researchspace.service.impl.PasswordResetApplier;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -55,6 +59,7 @@ public class LoginPasswordResetByEmailHandlerTest {
 
   @BeforeEach
   void setUp() {
+    handler.resetApplier = new PasswordResetApplier(userManager);
     request = new MockHttpServletRequest();
     request.setRemoteAddr("127.0.0.1");
     cmd = newCommand();
@@ -181,6 +186,30 @@ public class LoginPasswordResetByEmailHandlerTest {
     assertEquals(RESET_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
 
     assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
+  void concurrentConflictReturnsTheFailView() {
+    TokenBasedVerification token = freshToken();
+    stubResetThatThrows(token, dbFailure(1020));
+
+    assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
+    verify(emailer, never()).sendEmail(any(), any(), any());
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  private void stubResetThatThrows(TokenBasedVerification token, DataAccessException failure) {
+    cmd.setToken(token.getToken());
+    when(userManager.getUserVerificationToken(token.getToken())).thenReturn(token);
+    when(userManager.getUsernameByToken(token.getToken())).thenReturn(Optional.of("someone"));
+    when(userManager.applyLoginPasswordChange(cmd.getPassword(), token.getToken()))
+        .thenThrow(failure);
+  }
+
+  private static DataAccessException dbFailure(int errorCode) {
+    return new DataIntegrityViolationException(
+        "could not execute statement",
+        new SQLException("Record has changed since last read", "HY000", errorCode));
   }
 
   private void stubCompletableReset(PasswordResetCommand command, TokenBasedVerification token) {

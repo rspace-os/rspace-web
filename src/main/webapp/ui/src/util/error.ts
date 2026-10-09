@@ -68,3 +68,64 @@ export function getErrorMessage(error: unknown, fallback: string): string {
     )
     .orElse(fallback);
 }
+
+/**
+ * A leading request path, as the Inventory API prefixes each of its field-scoped errors with:
+ * "origins[0].amountTaken: ". Deliberately narrow - it requires a dotted or indexed path, so a
+ * message that merely opens with a word and a colon ("Warning: stock is low") keeps its lead-in.
+ */
+const FIELD_PATH_PREFIX = /^[A-Za-z_]\w*(?:\[\d+\]|\.\w+)+:\s*/;
+
+/**
+ * The reasons an API call was rejected, for showing to the user.
+ *
+ * A field-scoped 400 from the Inventory API carries "Errors detected: N" in `message` and the
+ * actual reasons in `errors`, each prefixed by the request path it applies to
+ * ("origins[0].amountTaken: Cannot take more..."). `getErrorMessage` shows only `message`, which
+ * tells the user nothing they can act on. Every reason is returned, in the API's order.
+ *
+ * Every other API response also carries an `errors` array, holding a single empty string, because
+ * `ApiError` wraps its fourth constructor argument in a singleton list. Blank entries (or ones that
+ * are nothing but a path) are skipped, and when none is left the result is `message`, or a 409, 404
+ * or 403 would show a titled alert with no message in it.
+ *
+ * @arg error     Anything; the details are extracted if it is an Axios error carrying them.
+ * @arg fallback  Passed through to {@link getErrorMessage} when there are no details.
+ * @arg formatOriginIndex  Renders "which origin", given the reason and a 1-based index.
+ *   See {@link ORIGIN_INDEX}.
+ */
+export function getApiErrorDetails(
+  error: unknown,
+  fallback: string,
+  formatOriginIndex: (reason: string, index: number) => string,
+): Array<string> {
+  const details = Parsers.objectPath(["response", "data", "errors"], error)
+    .flatMap(Parsers.isArray)
+    .map((errors) =>
+      errors
+        .filter((e): e is string => typeof e === "string")
+        .map((detail) => formatDetail(detail, formatOriginIndex))
+        .filter((detail) => detail.length > 0),
+    )
+    .orElse([]);
+  return details.length > 0 ? details : [getErrorMessage(error, fallback)];
+}
+
+/** An `origins[N]` path, whose index is the one part of the path the user needs. */
+const ORIGIN_INDEX = /^origins\[(\d+)\]/;
+
+/**
+ * The reason, with the request path stripped - except that an origin's index is kept, so that a
+ * rejection of one of several origins says which one. A detail without an `origins[N]` path gets
+ * no index, and one without any path is returned unchanged. The index is 1-based here because it is read
+ * by a person, not sent back.
+ *
+ * The WORDING is the caller's, because this module has no `t` and the reason it is being appended to
+ * was already localized by the server.
+ */
+function formatDetail(detail: string, format: (reason: string, index: number) => string): string {
+  const origin = ORIGIN_INDEX.exec(detail);
+  const reason = detail.replace(FIELD_PATH_PREFIX, "").trim();
+  if (!origin || reason.length === 0) return reason;
+  return format(reason, Number(origin[1]) + 1);
+}

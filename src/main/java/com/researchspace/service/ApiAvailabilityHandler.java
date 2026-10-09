@@ -52,5 +52,11 @@ public interface ApiAvailabilityHandler {
 
   boolean isInventoryAvailable(User user);
 
+  /**
+   * Throws {@link UnsupportedOperationException} (answered as 404) when Inventory is off for the
+   * user.
+   */
+  void assertInventoryAvailable(User user);
+
   void setDataCiteConnector(DataCiteConnector dataCiteConnector); // testing purposes
 }

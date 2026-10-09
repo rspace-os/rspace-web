@@ -39,6 +39,7 @@ import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -241,11 +242,21 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   public void passwordResetIsRefusedWhenAConcurrentSubmitClaimedTheTokenFirst() {
     TokenBasedVerification token = resetToken();
     when(userDao.getByToken(token.getToken())).thenReturn(token);
+    when(userDao.getUserByEmail(token.getEmail())).thenReturn(List.of(createAnyUser("any")));
     when(userDao.claimTokenBasedVerification(token.getToken())).thenReturn(0);
 
     assertNull(userManager.applyLoginPasswordChange("newPassword1", token.getToken()));
-    verify(userDao, never()).getUserByEmail(anyString());
     verify(userDao, never()).save(any(User.class));
+  }
+
+  @Test
+  public void resetForAnEmailWithNoUserDoesNotClaimTheToken() {
+    TokenBasedVerification token = resetToken();
+    when(userDao.getByToken(token.getToken())).thenReturn(token);
+    when(userDao.getUserByEmail(token.getEmail())).thenReturn(List.of());
+
+    assertNull(userManager.applyLoginPasswordChange("newPassword1", token.getToken()));
+    verify(userDao, never()).claimTokenBasedVerification(anyString());
   }
 
   @Test
@@ -296,5 +307,22 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     List<Community> comms = toList(createACommunity());
     comms.get(0).setId(1L);
     return comms;
+  }
+
+  @Test
+  void loginLockKeyOfAnAliasIsTheKeyOfItsAccount() {
+    User alice = TestFactory.createAnyUser("alice");
+    when(userDao.getUserByUsernameAlias("al")).thenReturn(Optional.of(alice));
+    when(userDao.usernameLockKey("alice")).thenReturn("K");
+
+    assertEquals("K", userManager.loginLockKey(" al "));
+  }
+
+  @Test
+  void loginLockKeyOfAnAbsentNameIsTheKeyOfTheTrimmedSubmission() {
+    when(userDao.getUserByUsernameAlias("ghost")).thenReturn(Optional.empty());
+    when(userDao.usernameLockKey("ghost")).thenReturn("G");
+
+    assertEquals("G", userManager.loginLockKey("ghost "));
   }
 }

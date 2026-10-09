@@ -7,8 +7,8 @@ echo 'Building rspace-web'
 /*
  This is the main build script for Jenkins to run tests.
  In Jenkins, it is called from 'rspace-web' project as a multi branch build
- For feature branches, it runs 'quick' JUnit tests
- For master/dev branches, it runs full Java tests (i.e. with IT tests).
+ For the main branch, it runs 'quick' JUnit tests
+ When FULL_JAVA_TESTS is set, it runs full Java tests (i.e. with IT tests) instead.
  The script takes several parameters; there are other Jenkins jobs to run nightly test-suites using JDK 11 and also
  with 'nightly' tests which are more long running tests.
 */
@@ -26,6 +26,7 @@ pipeline {
         booleanParam(name: 'STORYBOOK', defaultValue: false, description: 'Build and bundle Storybook in the WAR; serving requires dev.storybook.preview.enabled=true')
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
+        booleanParam(name: 'ACCESS_OUTSIDE_VPN', defaultValue: false, description: 'Only used with AWS deploy. Tick if the deployed instance should be accessible outside of VPN (HTTPS access from 0.0.0.0), e.g. to test on a mobile device or share the instance with external users')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
@@ -68,7 +69,7 @@ pipeline {
             }
         }
 
-        stage('Fast JUnit tests') {
+        stage("Fast JUnit tests ('main' only)") {
             when {
                 not {
                     anyOf {
@@ -77,10 +78,11 @@ pipeline {
                     }
                 }
                 changeset '**/*.java'
+                branch 'main'
             }
 
             steps {
-                echo 'This is a feature branch, running fast, non Spring tests only'
+                echo 'This is the main branch, running fast, non Spring tests only'
                 sh "./mvnw clean  test -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
                    -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                    -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR}"
@@ -200,6 +202,11 @@ pipeline {
                                         $class: 'StringParameterValue',
                                         name: 'DEPLOYMENT_PROPERTY_OVERRIDE',
                                         value: "$WORKSPACE/${SAFE_BRANCH_NAME}.properties"
+                                ],
+                                [
+                                        $class: 'BooleanParameterValue',
+                                        name: 'ACCESS_OUTSIDE_VPN',
+                                        value: params.ACCESS_OUTSIDE_VPN
                                 ]
                         ],
                         wait: false

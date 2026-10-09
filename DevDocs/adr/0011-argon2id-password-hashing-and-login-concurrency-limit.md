@@ -94,9 +94,12 @@ request volume. A request that cannot get its turn before the wait elapses fails
 generic failure the user sees for a wrong password, but through a distinct exception type,
 `LoginVerificationBusyException`. The login filter (`StandaloneShiroFormAuthFilterExt`) and
 `ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
-users out. A check waiting for a permit holds its request thread for up to `waitSeconds`, so under
-a flood the thread pool, not the heap, is the next limit, and a refused check costs the attacker
-nothing; lowering `waitSeconds` trades honest users' waits for thread capacity. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
+users out. A check waiting for a permit or an account's lock holds its request thread for up to
+`waitSeconds`, so a global admission cap (`login.passwordVerification.maxQueued`, default 32)
+bounds the threads login can hold to `maxConcurrent + maxQueued`; callers past it are refused as
+busy at once. The cap is taken after a per-username check that lets one attempt run and one
+wait, so a burst of requests for a single name, real or made up, is refused at once beyond those
+two and cannot hold the admissions other accounts need. Encoding new passwords is not bounded at the encoder; instead the anonymous routes
 that reach it (sign-up, Google sign-up on Community, LDAP first-login auto-signup, and the login
 and verification password-reset replies) take a permit from one shared pool in front of it (`password.anonymousEncode.maxConcurrent`, default 4), held
 through the hash and the save and refused immediately when none is free, with a reset token left
@@ -229,26 +232,41 @@ That table must change in the same commit as any limit, default, message or rout
   as SSO customers unable to sign or witness documents.
 - Under a login flood, legitimate users see slow or failed logins for the duration. That is the
   intended failure mode, replacing an out-of-memory JVM.
+- Login holds the account's lock for the whole attempt, including the directory check for LDAP
+  users, so a burst of attempts against one LDAP user with a slow directory makes that user's own
+  login wait up to `waitSeconds` and then see the busy refusal. The effect stays on the targeted
+  account, which four wrong passwords can already lock.
 - The reauthentication path, verification passwords and sysadmin operate-as share the
   `BoundedPasswordVerifier` and so share the permit pool with login, so a login flood also slows
-  document signing. Both are authenticated and low volume.
+  document signing. The anonymous OAuth password grant reaches the same pool through
+  reauthentication, so a client that knows a handful of usernames can hold the permits and push
+  form logins into the busy refusal.
 - Reauthentication, including verification password checks, has no per-account rate limit beyond
   one check in flight at a time. The anonymous OAuth password grant (`/oauth/token`) checks the
   user's password before validating the client, so an unregistered client can try on the order of
   10 to 40 passwords per second against one account, bounded only by Argon2 cost and the
   per-username lock, and can tell a right password from a wrong one by the error it gets. On
   `main` the same route hashed every guess with no limit. Validating the client before the
-  password closes it and is a separate ticket against `main`.
+  password closes it and is RSDEV-1557, against `main`.
 - Usernames must not leak from unauthenticated endpoints. Argon2's cost would make the login
   page answer an existing username measurably slower than an unknown one, so `ShiroRealm` runs
   an unknown name (and, when LDAP is off, an LDAP-source user) through `SentinelPasswordCheck`, an
   Argon2 check against a random hash made at startup. On LDAP installs `LdapRealm` pads an
-  internal user's early exit the same way; parity with a directory bind is best effort. All
-  padded checks share one per-username lock, so they hold at most one permit. Other public routes
+  internal user's early exit the same way, and a temporarily locked account is padded the same
+  way before it is refused; parity with a directory bind is best effort. Each
+  padded check queues on its own lock and takes one permit, exactly like a real username, so
+  admission timing is the same for both; the permit pool, not the lock, bounds a flood of made-up
+  names, as it already does for a flood of real ones. The filter's whole-login lock and
+  the sentinel lock are keyed on the username's collation weight from the database, so every
+  spelling the lookup treats as the same account queues on one key whether or not the account
+  exists; the inner check locks on the stored username. The whole-login and sentinel keys
+  carry a NUL prefix so neither can share an entry with a stored username. A per-address cap on checks in flight needs
+  the trusted client address from RSDEV-1560 first and follows it. Other public routes
   that still confirm a username are RSDEV-1558.
 - Deferred to follow-on tickets:
   - RSDEV-1558: username existence still leaks from the sign-up form, the reset and reminder
-    timing, the disabled-account redirect and the API token route's account-state messages; this
+    timing, the disabled-account redirect, the API token route's account-state messages and the
+    SSO emergency admin form, whose wrong-signup-source message confirms a regular account exists; this
     change closes only the login page.
   - RSDEV-1559: `User.salt` is write-only after the wrap and is dropped in a later release.
   - RSDEV-1560: `RequestUtil.remoteAddr` trusts `X-Forwarded-For`, so address-based throttling of

@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.headerDoesNotExist;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -1040,97 +1041,118 @@ class B2instConnectorImplTest {
     server.verify();
   }
 
-  @Test
-  void searchRecordsQueriesPublishedRecordsWithTheTokenAndParsesTheHits() {
-    connector.reloadClient();
-    MockRestServiceServer server =
-        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
-    server
-        .expect(requestTo("https://b2inst-test.gwdg.de/api/records?q=microscope&size=50"))
-        .andExpect(method(HttpMethod.GET))
-        .andExpect(header("Authorization", "Bearer TOK123"))
-        .andRespond(
-            withSuccess(
-                "{\"hits\":{\"hits\":[{\"id\":\"tpqdy-6zd98\",\"is_published\":true,\"metadata\":{\"Name\":\"Olympus"
-                    + " IX71 TIRF\",\"Identifier\":{\"identifierType\":\"Handle\","
-                    + "\"identifierValue\":\"21.11157/44b18238-bba1-4b42-abcc-975017181420\"}},"
-                    + "\"links\":{\"self_html\":\"https://b2inst-test.gwdg.de/records/tpqdy-6zd98\"}}],"
-                    + "\"total\":3}}",
-                MediaType.APPLICATION_JSON));
+  private static final String PUBLIC_HIT =
+      "{\"hits\":{\"hits\":[{\"id\":\"tpqdy-6zd98\",\"is_published\":true,\"metadata\":{\"Name\":\"Olympus"
+          + " IX71 TIRF\",\"Identifier\":{\"identifierType\":\"Handle\","
+          + "\"identifierValue\":\"21.11157/44b18238-bba1-4b42-abcc-975017181420\"}},"
+          + "\"links\":{\"self_html\":\"https://b2inst.gwdg.de/records/tpqdy-6zd98\"}}],"
+          + "\"total\":3}}";
 
-    B2instSearchResult result = connector.searchRecords("microscope", 50);
+  /**
+   * The public registry comes from the deployment property, not from the pidinst.b2inst.* settings.
+   */
+  private MockRestServiceServer lookupServer() {
+    ReflectionTestUtils.setField(connector, "lookupServerUrl", "https://b2inst.gwdg.de/");
+    connector.reloadClient();
+    return MockRestServiceServer.bindTo(connector.getLookupRestTemplate()).build();
+  }
+
+  @Test
+  void searchPublicRecordsAsksThePublicRegistryAnonymouslyNewestUpdateFirst() {
+    MockRestServiceServer server = lookupServer();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst.gwdg.de/api/records?q=microscope&size=50&page=3&sort=updated-desc"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(headerDoesNotExist("Authorization"))
+        .andRespond(withSuccess(PUBLIC_HIT, MediaType.APPLICATION_JSON));
+
+    B2instSearchResult result = connector.searchPublicRecords("microscope", 2, 50);
 
     assertEquals(3, result.getHits().getTotal());
     assertEquals("tpqdy-6zd98", result.getHits().getHits().get(0).getId());
-    assertEquals(
-        "21.11157/44b18238-bba1-4b42-abcc-975017181420",
-        result.getHits().getHits().get(0).getMetadata().getIdentifier().getIdentifierValue());
     server.verify();
   }
 
-  /**
-   * The whole query must reach B2INST exactly as the user typed it, and must not be able to add a
-   * parameter of its own. Only the alphanumeric case was covered, which is the one case that cannot
-   * show a double-encoding bug: handing RestTemplate a pre-encoded String makes it treat that
-   * String as a URI template and encode it a second time, so a space would arrive as %2520.
-   */
   @Test
-  void searchRecordsSendsAQueryWithDelimitersExactlyOnceEncoded() {
-    connector.reloadClient();
-    MockRestServiceServer server =
-        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+  void searchPublicRecordsSendsAQueryWithDelimitersExactlyOnceEncoded() {
+    MockRestServiceServer server = lookupServer();
     server
         .expect(
             requestTo(
-                "https://b2inst-test.gwdg.de/api/records"
-                    + "?q=Zeiss%20microscope%20%26size%3D999%20100%25%20%23top&size=50"))
-        .andExpect(method(HttpMethod.GET))
+                "https://b2inst.gwdg.de/api/records"
+                    + "?q=Zeiss%20microscope%20%26size%3D999%20100%25%20%23top&size=50&page=1&sort=updated-desc"))
         .andRespond(
             withSuccess("{\"hits\":{\"hits\":[],\"total\":0}}", MediaType.APPLICATION_JSON));
 
-    connector.searchRecords("Zeiss microscope &size=999 100% #top", 50);
+    connector.searchPublicRecords("Zeiss microscope &size=999 100% #top", 0, 50);
 
     server.verify();
   }
 
   @Test
-  void getRecordByHandleReadsThePublishedRecordUnderTheHandleSuffix() {
-    connector.reloadClient();
-    MockRestServiceServer server =
-        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+  void getPublicRecordByHandleReadsThePublishedRecordUnderTheHandleSuffixAnonymously() {
+    MockRestServiceServer server = lookupServer();
     server
         .expect(
-            requestTo(
-                "https://b2inst-test.gwdg.de/api/records/44b18238-bba1-4b42-abcc-975017181420"))
+            requestTo("https://b2inst.gwdg.de/api/records/44b18238-bba1-4b42-abcc-975017181420"))
         .andExpect(method(HttpMethod.GET))
+        .andExpect(headerDoesNotExist("Authorization"))
         .andRespond(
             withSuccess(
                 "{\"id\":\"tpqdy-6zd98\",\"is_published\":true}", MediaType.APPLICATION_JSON));
 
     Optional<B2instDraftRecord> record =
-        connector.getRecordByHandle(
+        connector.getPublicRecordByHandle(
             "https://hdl.handle.net/21.11157/44b18238-bba1-4b42-abcc-975017181420");
 
-    assertTrue(record.isPresent());
-    assertEquals("tpqdy-6zd98", record.get().getId());
-    // a suffix that is not a record id shape is answered locally, never sent to the provider
-    assertTrue(connector.getRecordByHandle("21.11157/not a record id!").isEmpty());
+    assertEquals("tpqdy-6zd98", record.orElseThrow().getId());
     server.verify();
   }
 
   @Test
-  void getRecordByHandleFindsOnlyAPublishedRecord() {
-    connector.reloadClient();
-    MockRestServiceServer server =
-        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+  void getPublicRecordByHandleIsEmptyFor404AndForAValueThatIsNotAHandle() {
+    MockRestServiceServer server = lookupServer();
     // /api/records/{rid} serves published records only, and only those may be imported
-    // (RSDEV-1326): a draft, submitted or declined record answers 404 there and is not looked
-    // for anywhere else
+    // (RSDEV-1326): a draft, submitted or declined record answers 404 there
     server
-        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/anaf6-fk223"))
+        .expect(requestTo("https://b2inst.gwdg.de/api/records/nope-00000"))
         .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-    assertTrue(connector.getRecordByHandle("21.T11975/anaf6-fk223").isEmpty());
+    assertTrue(connector.getPublicRecordByHandle("21.11157/nope-00000").isEmpty());
+    assertTrue(connector.getPublicRecordByHandle("no slash here").isEmpty());
+    // a suffix that is not a record id shape is answered locally, never sent to the provider
+    assertTrue(connector.getPublicRecordByHandle("21.11157/not a record id!").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void aBlankLookupUrlFailsTheSearchWithoutARequest() {
+    ReflectionTestUtils.setField(connector, "lookupServerUrl", " ");
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getLookupRestTemplate()).build();
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.searchPublicRecords("microscope", 0, 50));
+
+    assertTrue(thrown.getMessage().contains("pidinst.lookup.b2inst.url"), thrown.getMessage());
+    server.verify();
+  }
+
+  @Test
+  void getPublicRecordByHandleRaisesARegistryFailureOtherThan404() {
+    MockRestServiceServer server = lookupServer();
+    server
+        .expect(requestTo("https://b2inst.gwdg.de/api/records/abc-123"))
+        .andRespond(withServerError());
+
+    assertThrows(
+        B2instConnectionException.class,
+        () -> connector.getPublicRecordByHandle("21.11157/abc-123"));
     server.verify();
   }
 }

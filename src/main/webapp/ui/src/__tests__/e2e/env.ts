@@ -11,6 +11,14 @@ function optional(name: string, fallback: string): string {
   return value === undefined || value === "" ? fallback : value;
 }
 
+function booleanFlag(name: string, fallback: boolean): boolean {
+  const value = optional(name, String(fallback));
+  if (value !== "true" && value !== "false") {
+    throw new Error(`${name} must be "true" or "false", got "${value}".`);
+  }
+  return value === "true";
+}
+
 function isLocalTarget(url: string): boolean {
   try {
     return ["localhost", "127.0.0.1", "::1"].includes(new URL(url).hostname);
@@ -25,6 +33,7 @@ export const env = {
   ci: process.env.CI === "true",
   integrationMode: optional("E2E_INTEGRATION_MODE", "mock") === "real" ? ("real" as const) : ("mock" as const),
   browser: optional("E2E_BROWSER", ""),
+  cloud: booleanFlag("E2E_CLOUD", false),
   mockPort: optional("E2E_MOCK_PORT", "9099"),
   playwrightLog: optional("PW_LOG", "off") as "trace" | "info" | "off",
 
@@ -44,8 +53,32 @@ export const env = {
   sysadminUsername: optional("RSPACE_SYSADMIN_USERNAME", "sysadmin1"),
   sysadminPassword: optional("RSPACE_SYSADMIN_PASSWORD", "sysWisc23!"),
   sysadminApiKey: optional("RSPACE_SYSADMIN_API_KEY", "abcdefghijklmnop12"),
+  s3FilestoreUrl: optional("E2E_S3_FILESTORE_URL", ""),
+  s3FilestoreBucket: optional("E2E_S3_FILESTORE_BUCKET", "rspace-test"),
+  realS3FilestoreUrl: optional("E2E_REAL_S3_URL", ""),
+  realS3FilestoreBucket: optional("E2E_REAL_S3_BUCKET", ""),
+  realS3FilestoreRegion: optional("E2E_REAL_S3_REGION", "auto"),
+  sftpFilestoreUrl: optional("E2E_SFTP_FILESTORE_URL", ""),
+  sftpFilestoreHostKey: optional("E2E_SFTP_FILESTORE_HOST_KEY", ""),
+  sambaFilestoreUrl: optional("E2E_SAMBA_FILESTORE_URL", ""),
+  irodsFilestoreUrl: optional("E2E_IRODS_FILESTORE_URL", ""),
+  realIrodsUrl: optional("E2E_REAL_IRODS_URL", ""),
+  realIrodsUsername: optional("E2E_REAL_IRODS_USERNAME", ""),
+  realIrodsPassword: optional("E2E_REAL_IRODS_PASSWORD", ""),
+  // Real SFTP and Samba host; reachable only on a VPN.
+  realSftpUrl: optional("E2E_REAL_SFTP_URL", ""),
+  realSftpHostKey: optional("E2E_REAL_SFTP_HOST_KEY", ""),
+  realSftpUsername: optional("E2E_REAL_SFTP_USERNAME", ""),
+  realSftpPassword: optional("E2E_REAL_SFTP_PASSWORD", ""),
+  realSambaUrl: optional("E2E_REAL_SAMBA_URL", ""),
+  realSambaShare: optional("E2E_REAL_SAMBA_SHARE", ""),
+  realSambaUsername: optional("E2E_REAL_SAMBA_USERNAME", ""),
+  realSambaPassword: optional("E2E_REAL_SAMBA_PASSWORD", ""),
+  filestoreUsername: optional("E2E_FILESTORE_USERNAME", "rspacetest"),
+  filestorePassword: optional("E2E_FILESTORE_PASSWORD", "rspacetestpass"),
   fieldmarkApiKey: optional("FIELDMARK_API_KEY", ""),
   zenodoApiKey: optional("ZENODO_API_KEY", ""),
+  bioportalApiKey: optional("BIOPORTAL_API_KEY", ""),
   galaxyEuApiKey: optional("GALAXY_EU_APIKEY", ""),
   dataverseApiToken: optional("DATAVERSE_API_TOKEN", ""),
   dataverseServerUrl: optional("DATAVERSE_SERVER_URL", ""),

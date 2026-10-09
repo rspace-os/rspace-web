@@ -54,14 +54,12 @@ const IdentifierWrapper = observer(
     const { t } = useTranslation(["inventory", "common"]);
     const isRadio = (field: IdentifierField): boolean => Boolean(field.radioOptions);
 
-    /* different name to avoid confusion with 'editable' (parent) */
     const fixedValue = (field: IdentifierField) => Boolean(!field.handler);
 
     const [openRecommendedSection, setOpenRecommendedSection] = useState(true);
 
     const handleUpdate = (f: IdentifierField, value: string | number) => {
       if (f.handler) f.handler(value);
-      /* setAttributesDirty on item */
       activeResult.updateIdentifiers();
     };
 
@@ -273,25 +271,14 @@ const IdentifierWrapper = observer(
 );
 
 /*
- * B2INST has no retract operation at all (B2instConnectorImpl.retractDoi refuses outright), and
- * Delete is only offered for "draft". Until this component tolerated the review states it threw
- * during render, so the Delete/Retract button was never reachable for them; now that it renders, it
- * has to be disabled rather than offer an action guaranteed to fail.
- *
- * Keyed on the provider and "not a draft", NOT on a list of known states. The server stores whatever
- * status the provider reported, and only sets it when the response carries one
- * (InventoryIdentifierApiManagerImpl), so a state this frontend has never heard of is expected here —
- * the catch-alls in stateLabel and StateInfo exist for exactly that. A state-keyed gate
- * would leave every such value on the old path with an enabled "Retract" that always errors.
- * Closed reviews are carved back out by isDeletableClosedReview, an explicit allowlist.
+ * B2INST has no retract operation at all, and Delete is only offered for "draft", so any non-draft
+ * review state has to disable both.
  */
 const isB2instBeyondDraft = (id: Identifier): boolean => id.doiType === "PIDINST_B2INST" && id.state !== "draft";
 
 /*
- * A closed, unpublished B2INST review (declined, cancelled, expired): the record is still only a
- * draft on the provider side, so the identifier can be deleted, which is how the user clears a
- * failed submission to register a new one (RSDEV-1260). Deliberately a known-state allowlist, the
- * inverse of isB2instBeyondDraft's catch-all: an unknown state must stay disabled, not deletable.
+ * A closed, unpublished B2INST review: the record is still only a draft on the provider side, so
+ * the identifier can be deleted to register a new one.
  */
 const isDeletableClosedReview = (id: Identifier): boolean =>
   id.doiType === "PIDINST_B2INST" && B2INST_CLOSED_REVIEW_STATES.includes(id.state);
@@ -465,14 +452,6 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
               </Grid>
               <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px" }}>
                 <Grid sx={{ padding: "6px" }} size={6}>
-                  {/*
-                   * Keyed on the URLs available rather than on the state, since the two providers
-                   * reach a linkable URL at different points. A citable public URL wins when present
-                   * (DataCite, once findable). Otherwise the provider's own record page is used, which
-                   * a PIDINST identifier has from registration onwards; the identifier value is the
-                   * link text there, since the provider URL itself is noise to the reader. With
-                   * neither, the identifier is shown as plain text.
-                   */}
                   {id.publicUrl ? (
                     <a href={id.publicUrl} target="_blank" rel="noreferrer">
                       {id.publicUrl}
@@ -589,7 +568,6 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                     </Button>
                   </CustomTooltip>
                 </Grid>
-                {/* last in the row, after Delete/Retract, per the RSDEV-1260 mockup */}
                 <Grid>
                   <RefreshButton
                     identifier={id}

@@ -30,19 +30,21 @@ class ShiroRealmTest {
 
   @Test
   void unknownUsernameIsPaddedThroughTheVerifier() {
-    when(userMgr.findUsernameByUsernameOrAlias("nobody")).thenReturn(null);
+    when(userMgr.findUsernameByUsernameOrAlias("Nobody")).thenReturn(null);
+    when(userMgr.loginLockKey("Nobody")).thenReturn("nobody-key");
 
-    assertNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("nobody", "guess")));
-    verify(sentinelCheck).pad("guess");
+    assertNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("Nobody", "guess")));
+    verify(sentinelCheck).pad("nobody-key", "guess");
   }
 
   @Test
   void ldapSourceUserIsPaddedWhenLdapAuthenticationIsOff() {
     User ldapUser = knownUser("ldapuser");
     ldapUser.setSignupSource(SignupSource.LDAP);
+    when(userMgr.loginLockKey("ldapuser")).thenReturn("ldapuser-key");
 
     assertNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("ldapuser", "guess")));
-    verify(sentinelCheck).pad("guess");
+    verify(sentinelCheck).pad("ldapuser-key", "guess");
   }
 
   @Test
@@ -52,7 +54,7 @@ class ShiroRealmTest {
     when(properties.isLdapAuthenticationEnabled()).thenReturn(true);
 
     assertNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("ldapuser", "guess")));
-    verify(sentinelCheck, never()).pad(any());
+    verify(sentinelCheck, never()).pad(any(), any());
   }
 
   @Test
@@ -60,7 +62,7 @@ class ShiroRealmTest {
     knownUser("internal");
 
     assertNotNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("internal", "guess")));
-    verify(sentinelCheck, never()).pad(any());
+    verify(sentinelCheck, never()).pad(any(), any());
   }
 
   private User knownUser(String username) {

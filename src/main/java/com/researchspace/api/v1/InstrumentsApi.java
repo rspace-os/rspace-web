@@ -75,10 +75,11 @@ public interface InstrumentsApi {
   ApiInstrument duplicate(Long id, User user);
 
   /**
-   * Instrument import (RSDEV-1326): fetch the PID's record from the enabled PIDINST provider,
-   * create an Instrument from the default PIDINST template filled from it, and attach a linked
-   * identifier. 404 when the provider has no published instrument record for the PID, 409 when an
-   * instrument in this deployment already links it, 422 when the record lacks a mandatory value.
+   * Instrument import (RSDEV-1326, RSDEV-1518): fetch the PID's record from the public registry
+   * named by {@code provider}, create an Instrument from the default PIDINST template filled from
+   * it, and attach a linked identifier. 404 when the registry has no published instrument record
+   * for the PID, 409 when an instrument in this deployment already links it, 422 when the record
+   * lacks a mandatory value or {@code provider} names no PIDINST registry.
    */
   @PostMapping("/importPidinst")
   @ResponseStatus(HttpStatus.CREATED)

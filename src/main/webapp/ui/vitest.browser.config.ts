@@ -6,6 +6,7 @@ import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import type { Alias, Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
+import { BrowserTestSequencer } from "./src/__tests__/browserLifecycle/sequencer.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,42 +83,6 @@ const browsers = (process.env.VITEST_BROWSERS ?? "chromium,firefox,webkit")
   .map((name) => name.trim())
   .filter(Boolean) as PlaywrightBrowser[];
 
-// A handful of heavy suites (TinyMCE/DataGrid/gallery) reliably time out
-// wholesale on CI's slow Firefox runner — raising the timeout/retries only
-// turned the job into a multi-hour run without making it pass. They pass on
-// Chromium/WebKit and on a local Firefox, so we skip just these files on
-// Firefox AND only in CI; every other Firefox file still runs. CI runs one
-// browser per job, so `VITEST_BROWSERS=firefox` identifies the Firefox leg.
-//
-// The three import/identifier dialogs are here for a second, distinct reason:
-// on Firefox a spec that mounts TinyMCE (e.g. NewNote.spec.tsx) leaves the
-// next file's requests unintercepted, so MSW passes them through to the dev
-// server and the component sees a 404 instead of its mock. Reproduced locally
-// by running NewNote.spec.tsx immediately before FieldmarkImportDialog.spec.tsx
-// and before PidinstImportDialog.spec.tsx; each passes alone and fails in that
-// pair. The service worker is still active and controlling when it happens, and
-// the poisoning spec leaves nothing in the DOM, so this is inside MSW's
-// per-client request resolution across Vitest's per-file iframes, not something
-// the specs themselves can clean up. Fix that and these three can come back.
-const isCI = Boolean(process.env.CI);
-const isFirefoxOnlyRun = browsers.length === 1 && browsers[0] === "firefox";
-const firefoxCiSkippedFiles =
-  isCI && isFirefoxOnlyRun
-    ? [
-        "**/tinyMCE/stoichiometry/__tests__/StoichiometryTable.spec.tsx",
-        "**/tinyMCE/stoichiometry/__tests__/StoichiometryDialog.spec.tsx",
-        "**/eln/gallery/components/CallableImagePreview.spec.tsx",
-        "**/eln/gallery/components/MainPanel.spec.tsx",
-        "**/tinyMCE/pubchem/ImportDialog.spec.tsx",
-        "**/tinyMCE/pyrat/PyratDialog.spec.tsx",
-        "**/Inventory/components/FieldmarkImportDialog.spec.tsx",
-        "**/Inventory/components/PidinstImportDialog.spec.tsx",
-        "**/Inventory/Identifiers/IGSN/IgsnTable.spec.tsx",
-        "**/components/Tags/__tests__/TagsCombobox.spec.tsx",
-        "**/eln/sysadmin/users/__tests__/TagsCombobox.spec.tsx",
-      ]
-    : [];
-
 export default defineConfig({
   plugins: [react(), tinymceAssetsPlugin()],
   define: {
@@ -145,12 +110,17 @@ export default defineConfig({
   // Pre-bundle deps that are otherwise discovered lazily mid-run, which makes
   // Vite re-optimize and reload — Vitest warns this can make browser tests flaky.
   optimizeDeps: {
+    // Scan the whole component suite even for a focused run. Otherwise its
+    // partial dependency cache can reload later files in a full run.
+    entries: ["src/**/*.spec.{ts,tsx}", "!src/__tests__/e2e/**"],
     include: [
       // Pulled in by Inventory/Identifiers/IGSN/IgsnTable at runtime; pre-bundling
       // prevents a mid-run optimizer reload that causes duplicate React/emotion instances.
       "@mui/material/utils",
       // Imported by SidebarPage to inspect the MUI modal stacking root.
       "@mui/material/Modal",
+      // SidebarToggle is loaded by the gallery picker during stoichiometry tests.
+      "@mui/icons-material/Menu",
       // TinyMCE React wrapper: discovered lazily the first time a component
       // mounts a TinyMCE editor, causing a mid-run optimizer reload that
       // makes the Vitest runner warn and can cause flakiness.
@@ -159,24 +129,17 @@ export default defineConfig({
   },
   test: {
     include: ["**/?*.spec.{ts,tsx}"],
-    // Exclude the heavy suites that time out on CI Firefox (see above); empty on
-    // every other run so they execute normally. `configDefaults.exclude` keeps
-    // node_modules/dist/etc. excluded since setting `exclude` overrides it.
-    exclude: [...configDefaults.exclude, ...firefoxCiSkippedFiles, "src/__tests__/e2e/**"],
-    setupFiles: ["./src/__tests__/browserSetup.ts"],
+    exclude: [...configDefaults.exclude, "src/__tests__/e2e/**"],
+    setupFiles: ["./src/__tests__/browserWorkerRegistration.ts", "./src/__tests__/browserSetup.ts"],
+    sequence: { setupFiles: "list", sequencer: BrowserTestSequencer },
     testTimeout: 20000,
     // Real-browser component tests carry inherent timing flakiness, especially
     // on Firefox/WebKit under full-suite load. Retries mean an occasional
     // first-attempt timing miss does not fail the run; a test that fails every
     // attempt is a real failure.
     retry: 2,
-    // Run spec files SERIALLY within a browser instance. All files share one
-    // origin-level MSW service worker (browserSetup starts it once and never
-    // stops it); if two files ran concurrently their `worker.use()` /
-    // `resetHandlers()` calls would race on that shared worker, intermittently
-    // dropping each other's request handlers. Serial files keep the worker
-    // owned by exactly one file at a time. (The per-browser CI matrix already
-    // gives cross-engine parallelism at the job level.)
+    // Registration renewal must finish before the next file starts. Keep files
+    // serial within each browser; the CI matrix provides engine parallelism.
     fileParallelism: false,
     // In CI, additionally emit a JUnit report so the per-browser matrix job can
     // publish results (mirrors the jsdom `vitest-tests` job). Each CI job sets

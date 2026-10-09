@@ -84,6 +84,15 @@ public interface UserManager extends GenericManager<User, Long> {
   String findUsernameByUsernameOrAlias(String usernameOrAlias);
 
   /**
+   * Key for in-memory login locks: every spelling and alias the lookup treats as one account gives
+   * the same key, whether or not the account exists.
+   *
+   * @param submittedUsername the username or alias as submitted
+   * @return the lock key
+   */
+  String loginLockKey(String submittedUsername);
+
+  /**
    * Variant method to retrieve user based on username, with option to force a fresh reload from the
    * database.
    *

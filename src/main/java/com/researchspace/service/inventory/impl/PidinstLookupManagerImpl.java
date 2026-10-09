@@ -5,12 +5,12 @@ import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryLink;
-import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.api.v1.model.ApiPidinstRecord;
 import com.researchspace.api.v1.model.ApiPidinstSearchResult;
 import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier;
 import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier.Reason;
 import com.researchspace.api.v1.model.ApiTargetLocation;
+import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.dao.InstrumentTemplateDao;
@@ -36,6 +36,9 @@ import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
 import java.net.URI;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -142,6 +145,41 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
       Pattern.compile(
           "^(?:https?://hdl\\.handle\\.net/)?(21\\.[A-Za-z0-9.]+/\\S+)$", Pattern.CASE_INSENSITIVE);
 
+  /**
+   * Newest update first, the merged order of ADR 0011. Nothing else may break a tie: the registries
+   * sort by update time alone, so a tie-breaker of RSpace's own would reorder a tie that spans two
+   * registry pages, and merged page k+1 would repeat a hit of page k and drop another. The sort is
+   * stable, so a tie keeps each registry's order, the registries in the order they were asked.
+   */
+  private static final Comparator<ApiPidinstRecord> NEWEST_FIRST =
+      Comparator.comparing(
+          (ApiPidinstRecord record) -> instantOf(record.getUpdated()),
+          Comparator.nullsLast(Comparator.reverseOrder()));
+
+  /**
+   * B2INST writes "+00:00" offsets, the DataCite mapper writes Instant.toString(): both parse here.
+   */
+  private static Instant instantOf(String iso) {
+    if (StringUtils.isBlank(iso)) {
+      return null;
+    }
+    try {
+      return OffsetDateTime.parse(iso).toInstant();
+    } catch (DateTimeParseException notIso) {
+      return null;
+    }
+  }
+
+  /**
+   * One registry page after RSpace's own filters, with the registry's total and the raw page size.
+   */
+  private record RegistryPage(List<ApiPidinstRecord> records, int total, int rawCount) {
+    static final RegistryPage EMPTY = new RegistryPage(List.of(), 0, 0);
+  }
+
+  /** The first pages of one registry, concatenated, with its total. */
+  private record RegistryHits(List<ApiPidinstRecord> records, int total) {}
+
   @Autowired private B2instConnector b2instConnector;
   @Autowired private DataCiteConnector dataCiteConnector;
   @Autowired private DigitalObjectIdentifierDao doiDao;
@@ -154,60 +192,66 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   @Autowired private IPropertyHolder properties;
 
   @Override
-  public ApiPidinstSearchResult search(String query, User user) {
+  public ApiPidinstSearchResult search(
+      String query, List<String> providers, int pageNumber, User user) {
     // strip, not trim: trim leaves U+3000 and other Unicode spaces, so padding passed the minimum
     String q = StringUtils.stripToEmpty(query);
     if (q.length() < MIN_QUERY_LENGTH) {
       throw new ApiRuntimeException(
           "errors.inventory.identifier.pidinstQueryTooShort", MIN_QUERY_LENGTH);
     }
-    IdentifierType provider = enabledProvider();
+    List<IdentifierType> registries = registriesOf(providers);
+    if (pageNumber < 0 || pageNumber > MAX_PAGE_NUMBER) {
+      throw new ApiRuntimeException(
+          "errors.inventory.identifier.pidinstPageOutOfRange", MAX_PAGE_NUMBER + 1);
+    }
     ApiPidinstSearchResult result = new ApiPidinstSearchResult();
-    result.setProvider(provider.name());
-    if (isPidOfTheOtherRegistry(q, provider)) {
-      // decision 5: a DOI on a B2INST deployment (or a Handle on DataCite) cannot be resolved here
-      return result;
+    result.setProviders(registries.stream().map(Enum::name).toList());
+    result.setPageNumber(pageNumber);
+    // merged page k can only hold items from each registry's first (k+1) pages, so those are
+    // all that is fetched (each page is cached by the connectors), merged, and sliced
+    List<ApiPidinstRecord> candidates = new ArrayList<>();
+    int totalHits = 0;
+    for (IdentifierType registry : registries) {
+      RegistryHits hits = hitsUpTo(q, registry, pageNumber);
+      result.getTotalsByProvider().put(registry.name(), hits.total());
+      totalHits += hits.total();
+      candidates.addAll(hits.records());
     }
-    Optional<String> pid = pidOf(q, provider);
-    if (pid.isPresent()) {
-      fetchByPid(pid.get(), provider).ifPresent(result.getHits()::add);
-      result.setTotal(result.getHits().size());
-    } else if (provider == IdentifierType.PIDINST_B2INST) {
-      searchB2inst(q, result);
-    } else {
-      DataCiteDoiSearchResult hits = searchDataCite(q);
-      // re-checked here as well as asked for in the request, so the rule holds whatever the index
-      // returns (ADR 0009), and so this path cannot offer what fetchByPid would refuse
-      hits.getData().stream()
-          .filter(PidinstLookupManagerImpl::isInstrumentDoi)
-          .filter(PidinstLookupManagerImpl::isFindable)
-          .map(PidinstRecordMapper::fromDataCite)
-          .filter(record -> record.getPid() != null)
-          .forEach(result.getHits()::add);
-      result.setTotal(hits.getMeta().getTotal());
+    result.setTotalHits(totalHits);
+    candidates.sort(NEWEST_FIRST);
+    int from = Math.min(pageNumber * PAGE_SIZE, candidates.size());
+    int to = Math.min(from + PAGE_SIZE, candidates.size());
+    result.getHits().addAll(candidates.subList(from, to));
+    for (IdentifierType registry : registries) {
+      annotateLinkedInstruments(
+          result.getHits().stream()
+              .filter(hit -> registry.name().equals(hit.getProvider()))
+              .toList(),
+          registry,
+          user);
     }
-    result
-        .getHits()
-        .sort(
-            Comparator.comparing(
-                hit -> StringUtils.defaultString(hit.getName()).toLowerCase(Locale.ROOT)));
-    annotateLinkedInstruments(result.getHits(), provider, user);
     return result;
   }
 
   @Override
   public ApiInstrument importInstrument(
-      String pid, ApiTargetLocation newTargetLocation, User user) {
-    IdentifierType provider = enabledProvider();
+      String pid, String provider, ApiTargetLocation newTargetLocation, User user) {
+    IdentifierType registry =
+        registryOf(provider)
+            .orElseThrow(
+                () ->
+                    new ApiRuntimeException(
+                        "errors.inventory.identifier.pidinstImportProviderRequired"));
     ApiPidinstRecord record =
-        pidOf(pid.trim(), provider)
-            .flatMap(bare -> fetchByPid(bare, provider))
+        pidOf(pid.trim(), registry)
+            .flatMap(bare -> fetchByPid(bare, registry))
             .orElseThrow(
                 () ->
                     new NotFoundException(
                         messages.getMessage(
                             "errors.inventory.identifier.pidinstNotFound", new Object[] {pid})));
-    linkedInstrumentOf(record, provider)
+    linkedInstrumentOf(record, registry)
         .ifPresent(
             identifier -> {
               throw alreadyLinked(identifier, user);
@@ -227,7 +271,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
             identifierMgr.linkExternalIdentifier(
                 new GlobalIdentifier(created.getGlobalId()), link, user);
     linked.setSkippedRelatedIdentifiers(skipped);
-    log.info("Imported {} from {} as {}", record.getPid(), provider, created.getGlobalId());
+    log.info("Imported {} from {} as {}", record.getPid(), registry, created.getGlobalId());
     for (ApiPidinstSkippedRelatedIdentifier entry : skipped) {
       log.info(
           "Import of {}: the {} entry {} was not linked ({})",
@@ -241,56 +285,100 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * The B2INST half of a free-text search: one query against the PUBLISHED index.
+   * One registry's share of merged page {@code pageNumber}: its pages 0..pageNumber, stopping at a
+   * short one, or the single hit of a direct PID lookup. Its total is the registry's own.
+   */
+  private RegistryHits hitsUpTo(String query, IdentifierType registry, int pageNumber) {
+    if (isPidOfTheOtherRegistry(query, registry)) {
+      return new RegistryHits(List.of(), 0);
+    }
+    Optional<String> pid = pidOf(query, registry);
+    if (pid.isPresent()) {
+      List<ApiPidinstRecord> hit = fetchByPid(pid.get(), registry).map(List::of).orElse(List.of());
+      return new RegistryHits(hit, hit.size());
+    }
+    List<ApiPidinstRecord> records = new ArrayList<>();
+    int total = 0;
+    for (int page = 0; page <= pageNumber; page++) {
+      RegistryPage fetched =
+          registry == IdentifierType.PIDINST_B2INST
+              ? b2instPage(query, page)
+              : dataCitePage(query, page);
+      if (page == 0) {
+        total = fetched.total();
+      }
+      records.addAll(fetched.records());
+      // judged on what the registry sent, not on what survived RSpace's filters: a page RSpace
+      // thinned is not an exhausted registry
+      if (fetched.rawCount() < PAGE_SIZE) {
+        break;
+      }
+    }
+    return new RegistryHits(records, total);
+  }
+
+  /**
+   * One page of a B2INST free-text search, against the PUBLISHED index.
    *
    * <p>The account's own records under {@code /api/user/records} are deliberately not searched.
    * Only a public PID may be linked (RSDEV-1326), so a record still in draft, submitted or declined
    * is not a candidate, and the published index is exactly the set that is. Hits are filtered on
    * {@code is_published} as well, so the rule holds in RSpace whatever the index returns, and
-   * {@code total} stays the provider's own.
+   * {@code total} stays the registry's own.
    */
-  private void searchB2inst(String query, ApiPidinstSearchResult result) {
+  private RegistryPage b2instPage(String query, int page) {
     // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
     String searchable = B2INST_REMOVED.matcher(query).replaceAll("").strip();
     // the minimum again, on what is left to match: <<<a would otherwise go out as *a*, which
     // matched all 810 records on b2inst-test.gwdg.de, and typed wildcards match nothing specific
     if (searchable.replaceAll("[*?]", "").length() < MIN_QUERY_LENGTH) {
-      result.setTotal(0);
-      return;
+      return RegistryPage.EMPTY;
     }
-    B2instSearchResult page =
-        b2instConnector.searchRecords(containsForB2inst(searchable), MAX_HITS);
-    page.getHits().getHits().stream()
-        .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
-        .map(PidinstRecordMapper::fromB2inst)
-        .filter(record -> record.getPid() != null)
-        .forEach(result.getHits()::add);
-    Integer total = page.getHits().getTotal();
-    result.setTotal(total == null ? result.getHits().size() : total);
+    B2instSearchResult result =
+        b2instConnector.searchPublicRecords(containsForB2inst(searchable), page, PAGE_SIZE);
+    List<B2instDraftRecord> raw = result.getHits().getHits();
+    List<ApiPidinstRecord> records =
+        raw.stream()
+            .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
+            .map(PidinstRecordMapper::fromB2inst)
+            .filter(record -> record.getPid() != null)
+            .toList();
+    Integer total = result.getHits().getTotal();
+    return new RegistryPage(records, total == null ? records.size() : total, raw.size());
   }
 
   /**
-   * The query reaches DataCite as the user typed it, escaped but not wildcarded, so a search here
-   * returns what the same words return in DataCite's own portal (RSDEV-1522, ADR 0009 decision 8).
-   * The escape only keeps query-string syntax from reaching the parser, which would answer 400
-   * rather than an empty page; it does not change which records match.
+   * One page of a DataCite free-text search. The query reaches DataCite as the user typed it,
+   * escaped but not wildcarded, so a search here returns what the same words return in DataCite's
+   * own portal (RSDEV-1522, ADR 0009 decision 8). The escape only keeps query-string syntax from
+   * reaching the parser, which would answer 400 rather than an empty page; it does not change which
+   * records match.
    *
    * <p>DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one
-   * and a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an
-   * empty first page is retried that way (ADR 0009 decision 7). The retry carries the raw query
-   * rather than the escaped one, because it composes its own clause and {@link #DOI_FRAGMENT}
-   * already limits what may go in it; its gate reads the raw query too, so escaping cannot change
-   * which searches retry.
+   * and a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so a
+   * query that matched nothing at all is retried that way, page by page (ADR 0009 decision 7, ADR
+   * 0011). An exhausted later page of a query that did match is not retried, which would fill it
+   * from another query. The retry carries the raw query rather than the escaped one, because it
+   * composes its own clause and {@link #DOI_FRAGMENT} already limits what may go in it; its gate
+   * reads the raw query too, so escaping cannot change which searches retry. Hits are re-checked
+   * for a findable instrument, so the rule holds whatever the index returns (ADR 0009).
    */
-  private DataCiteDoiSearchResult searchDataCite(String query) {
+  private RegistryPage dataCitePage(String query, int page) {
     DataCiteDoiSearchResult hits =
-        dataCiteConnector.searchInstrumentDois(
-            escapeForDataCite(query), MAX_HITS, InventorySettingType.PIDINST);
-    if (!hits.getData().isEmpty() || !DOI_FRAGMENT.matcher(query).matches()) {
-      return hits;
+        dataCiteConnector.searchPublicInstrumentDois(escapeForDataCite(query), page, PAGE_SIZE);
+    if (hits.getData().isEmpty()
+        && hits.getMeta().getTotal() == 0
+        && DOI_FRAGMENT.matcher(query).matches()) {
+      hits = dataCiteConnector.searchPublicInstrumentDois("doi:*" + query + "*", page, PAGE_SIZE);
     }
-    return dataCiteConnector.searchInstrumentDois(
-        "doi:*" + query + "*", MAX_HITS, InventorySettingType.PIDINST);
+    List<ApiPidinstRecord> records =
+        hits.getData().stream()
+            .filter(PidinstLookupManagerImpl::isInstrumentDoi)
+            .filter(PidinstLookupManagerImpl::isFindable)
+            .map(PidinstRecordMapper::fromDataCite)
+            .filter(record -> record.getPid() != null)
+            .toList();
+    return new RegistryPage(records, hits.getMeta().getTotal(), hits.getData().size());
   }
 
   /**
@@ -332,21 +420,38 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     return DATACITE_OPERATOR.matcher(escaped).replaceAll("\\\\$1");
   }
 
-  private IdentifierType enabledProvider() {
-    if (b2instConnector.isConfiguredAndEnabled()) {
-      return IdentifierType.PIDINST_B2INST;
+  /** The two PIDINST registries by name; anything else, including IGSN_DATACITE, is refused. */
+  static Optional<IdentifierType> registryOf(String name) {
+    String upper = StringUtils.trimToEmpty(name).toUpperCase(Locale.ROOT);
+    if (IdentifierType.PIDINST_B2INST.name().equals(upper)) {
+      return Optional.of(IdentifierType.PIDINST_B2INST);
     }
-    if (dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST)) {
-      return IdentifierType.PIDINST_DATACITE;
+    if (IdentifierType.PIDINST_DATACITE.name().equals(upper)) {
+      return Optional.of(IdentifierType.PIDINST_DATACITE);
     }
-    // the controllers' availability gate answers this first; kept so the manager is safe to call
-    // directly, and phrased with the same key the gate uses
-    throw new UnsupportedOperationException(
-        messages.getMessage(
-            "errors.inventory.identifier.integrationNotEnabled", new Object[] {"PIDINST"}));
+    return Optional.empty();
   }
 
-  /** The bare PID when the query has the enabled provider's PID shape; empty means free text. */
+  private static List<IdentifierType> registriesOf(List<String> providers) {
+    if (providers == null || providers.isEmpty()) {
+      throw new ApiRuntimeException("errors.inventory.identifier.pidinstRegistryRequired");
+    }
+    List<IdentifierType> registries = new ArrayList<>();
+    for (String name : providers) {
+      IdentifierType registry =
+          registryOf(name)
+              .orElseThrow(
+                  () ->
+                      new ApiRuntimeException(
+                          "errors.inventory.identifier.pidinstRegistryRequired"));
+      if (!registries.contains(registry)) {
+        registries.add(registry);
+      }
+    }
+    return registries;
+  }
+
+  /** The bare PID when the query has the registry's PID shape; empty means free text. */
   private static Optional<String> pidOf(String query, IdentifierType provider) {
     Matcher matcher = pidPattern(provider).matcher(query);
     return matcher.matches() ? Optional.of(matcher.group(1)) : Optional.empty();
@@ -367,17 +472,17 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   private Optional<ApiPidinstRecord> fetchByPid(String pid, IdentifierType provider) {
     if (provider == IdentifierType.PIDINST_B2INST) {
       return b2instConnector
-          .getRecordByHandle(pid)
+          .getPublicRecordByHandle(pid)
           .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
           .map(PidinstRecordMapper::fromB2inst)
           .filter(record -> record.getPid() != null)
-          // getRecordByHandle resolves the suffix alone, so any well-formed prefix reaches the same
+          // the suffix alone is resolved, so any well-formed prefix reaches the same
           // record: 21.FAKE/abc would otherwise answer with the real 21.T11998/abc. Handles are
           // case-insensitive by spec, so the comparison is too.
           .filter(record -> pid.equalsIgnoreCase(record.getPid()));
     }
     return dataCiteConnector
-        .findDoi(pid, InventorySettingType.PIDINST)
+        .findPublicDoi(pid)
         .filter(PidinstLookupManagerImpl::isInstrumentDoi)
         .filter(PidinstLookupManagerImpl::isFindable)
         .map(PidinstRecordMapper::fromDataCite)
@@ -404,11 +509,11 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
 
   /**
    * Stamps every hit whose PID an instrument in this deployment already links. The link rows are
-   * one query for the whole page rather than one per hit, and none of them is cached with the
-   * provider page because link status is local and changes independently of it. Visibility is then
-   * one permission check per <em>linked</em> hit, bounded by {@link PidinstLookupManager#MAX_HITS},
-   * which for a caller who cannot plainly read the holder reaches the list-of-materials query
-   * inside limited read.
+   * one query per registry for the whole page rather than one per hit, and none of them is cached
+   * with the registry page because link status is local and changes independently of it. Visibility
+   * is then one permission check per <em>linked</em> hit, bounded by {@link
+   * PidinstLookupManager#PAGE_SIZE}, which for a caller who cannot plainly read the holder reaches
+   * the list-of-materials query inside limited read.
    *
    * <p>Every such hit is marked {@code alreadyLinked}, so Import can be refused with a reason, but
    * names the instrument only when {@code user} may read it: the registry record is public, an

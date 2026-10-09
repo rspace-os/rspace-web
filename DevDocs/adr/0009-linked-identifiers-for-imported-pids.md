@@ -47,6 +47,10 @@ and API field names were ported instead.
    settings, with its configured server URL and credentials, through the existing
    connectors. No cross-registry search, no separate lookup hosts, no provider filter
    in the UI. A PID of the other registry yields no hit.
+   *Superseded 2026-10-05 by ADR 0011 (RSDEV-1518):* lookup and import now go to the public
+   registries named in the deployment properties, anonymously and whether or not a provider is
+   enabled, the user may search both registries at once, and the import names its registry. A
+   PID still yields no hit at the registry it does not belong to.
 4. Import is one shot: `POST /api/inventory/v1/instruments/importPidinst {pid}`
    re-fetches the record server-side, fills the locked default template "Instrument
    (PIDINST 1.0)" by the inverse of the PIDINST mapping (multi-valued properties joined
@@ -72,6 +76,8 @@ and API field names were ported instead.
    read: a viewer with only limited read, through a container they can read or a document whose
    List of Materials lists the Instrument, is named it here because both of those contexts
    already show its Global ID.
+   *Amended 2026-10-05 (ADR 0011):* the body is `{pid, provider}`, and the record is fetched from
+   the public registry `provider` names.
 5. **Only public records may be looked up or imported**: B2INST `accepted` (a published
    record) and DataCite `findable`. A PID that exists at the provider but is not public -
    a B2INST draft, a record submitted for community review or declined, a DataCite `draft`
@@ -130,6 +136,9 @@ and API field names were ported instead.
    retry: InvenioRDM tokenises its Handle field, so a bare suffix fragment already matches
    (verified 2026-09-22, `twwkx` finds `21.T11975/twwkx-1zd85`). Its *escaping* was a separate
    gap, filed as RSDEV-1524 and closed by decision 8 on 2026-09-25.
+   *Amended 2026-10-05 (ADR 0011):* with paged results the retry runs page by page, and only while
+   the free text matched nothing at all, so an exhausted later page of a query that did match is
+   never filled from the `doi:` clause.
 
 8. **B2INST gets a substring search; DataCite gets the query as typed** (RSDEV-1522).
 
@@ -289,6 +298,8 @@ and API field names were ported instead.
   the cross-registry search first asked for on RSDEV-1325, but ignores the configured
   provider and the linked identifier's type would not match the deployment's own
   provider. Nico and Tilo agreed on single-provider routing on 2026-09-07.
+  *Adopted on 2026-10-05 by ADR 0011 (RSDEV-1518), reversing this:* the linked identifier's
+  type is the registry's, and no longer has to match a configured provider.
 - **Two-step import** (the server returns a prefilled instrument the client posts
   back): the create endpoint would have to re-fetch the PID to verify client-sent
   metadata, and `identifiers` are ignored on create today.
@@ -333,7 +344,9 @@ and API field names were ported instead.
   /identifiers/{id}`, which the server allows in every state). RSDEV-1325 shipped the import UI
   without an unlink action, so this stands; revisit if users ask to unlink from the page.
   Half-superseded by ADR 0010: there is still no unlink action on the page, but trashing the
-  Instrument now unlinks whatever it carried (RSDEV-1504).
+  Instrument now unlinks whatever it carried (RSDEV-1504). Since ADR 0011 a linked identifier can
+  also exist where no PIDINST provider is enabled, and there that DELETE is refused, so trashing
+  the Instrument is the only way to release it.
   - The disabling is now explicit rather than incidental. It used to hold only for B2INST, where
     the review-state rule happened to disable the button; a linked DataCite PID is `findable`, so
     nothing caught it and the row offered an enabled Retract that the server answers with 422.
@@ -345,13 +358,16 @@ and API field names were ported instead.
 - Registration credentials are used for read-only searches; verified on
   b2inst-test.gwdg.de and api.test.datacite.org (September 2026) that an authenticated
   search still returns the global published registry, not the account's own drafts.
+  *No longer since ADR 0011:* the lookup reads the public registries anonymously, and the
+  credentials serve registration only.
 - `identifier` has no unique key (soft-deleted rows keep their value and MariaDB has no
   partial indexes), so two concurrent imports of one PID can both succeed; accepted. There is a
   non-unique index on `(type, identifier(190))` for the lookup itself, which is about speed, not
   uniqueness: without it every hit on a page of search results scanned the whole table.
 - The lookup shares the provider's availability: a provider outage disables lookup as
   well as registration, and the 10-minute result cache is evicted whenever the
-  provider settings are reloaded.
+  provider settings are reloaded. *No longer since ADR 0011:* the lookup goes to the public
+  registries and depends on no provider setting; the eviction on reload is harmless and stays.
 - A registry failure during a lookup stays an error (decided 2026-09-25, closing RSDEV-1524,
   which had asked whether a 400 should read as "no results"). Since decision 8 nothing the user
   types can make B2INST answer 400, so a 400 there can only be a request RSpace built wrongly or

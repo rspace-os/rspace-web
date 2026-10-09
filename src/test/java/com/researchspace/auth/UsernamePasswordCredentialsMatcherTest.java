@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import com.researchspace.auth.password.BoundedPasswordVerifier;
 import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
 import java.time.Duration;
@@ -22,6 +23,7 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -35,7 +37,9 @@ class UsernamePasswordCredentialsMatcherTest {
           "caa6eec0faa20efba3b7af44af7107b05334759954ef3581030cc8e6199a33bf", null);
 
   private @Spy BoundedPasswordVerifier verifier =
-      new BoundedPasswordVerifier(ENCODER, 8, Duration.ofSeconds(5));
+      new BoundedPasswordVerifier(ENCODER, 8, 100, Duration.ofSeconds(5));
+
+  private @Mock SentinelPasswordCheck sentinelCheck;
 
   private @InjectMocks UsernamePasswordCredentialsMatcher matcher;
 
@@ -75,6 +79,16 @@ class UsernamePasswordCredentialsMatcherTest {
     User user = TestFactory.createAnyUser("raw");
     user.setPassword("caa6eec0faa20efba3b7af44af7107b05334759954ef3581030cc8e6199a33bf");
     assertFalse(matcher.verify(user, "sysWisc23!"));
+  }
+
+  @Test
+  void unrecognisedStoredHashIsPaddedAndRefused() {
+    doThrow(new IllegalArgumentException("no encoder id"))
+        .when(verifier)
+        .verify(anyString(), any(), anyString());
+
+    assertFalse(matcher.verify(legacyUser(), "pw"));
+    verify(sentinelCheck).pad("legacy", "pw");
   }
 
   @Test

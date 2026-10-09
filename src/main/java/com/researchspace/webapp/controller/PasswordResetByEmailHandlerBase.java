@@ -14,6 +14,8 @@ import com.researchspace.service.EmailContent;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
+import com.researchspace.service.impl.PasswordResetApplier;
+import com.researchspace.service.impl.PasswordResetApplier.ResetAttempt;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
@@ -36,6 +38,7 @@ import org.springframework.web.servlet.ModelAndView;
 /** Base class for password/verification-password reset by email */
 public abstract class PasswordResetByEmailHandlerBase {
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
+
   @Autowired UserManager userManager;
   @Autowired IPropertyHolder properties;
 
@@ -45,6 +48,7 @@ public abstract class PasswordResetByEmailHandlerBase {
 
   @Autowired UserValidator userValidator;
   @Autowired NewPasswordEncodeGate encodeGate;
+  @Autowired PasswordResetApplier resetApplier;
   @Autowired MessageSourceUtils messages;
   private @Autowired EmailContentGenerator emailContentGenerator;
   Map<String, RateLimiter> resetsPerMinutePerUser = new ConcurrentHashMap<String, RateLimiter>();
@@ -149,21 +153,34 @@ public abstract class PasswordResetByEmailHandlerBase {
       return new ModelAndView("passwordReset/resetPassword");
     }
     // update pwd, set as closed
-    TokenBasedVerification upc;
+    ResetAttempt attempt;
     try {
-      upc = applyPasswordChange(cmd);
+      attempt = resetApplier.apply(cmd.getToken(), () -> applyPasswordChange(cmd));
     } finally {
       encodeGate.release();
     }
-    if (upc == null) {
-      SECURITY_LOG.warn(
-          "Reset of {} for [{}] from {} refused at the moment of change: token used, expired or"
-              + " claimed by a concurrent submit",
-          getPasswordType(),
-          username,
-          RequestUtil.remoteAddr(request));
-      return new ModelAndView("passwordReset/resetPasswordFail");
+    switch (attempt.outcome()) {
+      case CONFLICT -> {
+        SECURITY_LOG.warn(
+            "Reset of {} for [{}] from {} not applied: a concurrent change conflicted (another"
+                + " reset submit or an update to the account)",
+            getPasswordType(),
+            username,
+            RequestUtil.remoteAddr(request));
+        return new ModelAndView("passwordReset/resetPasswordFail");
+      }
+      case REFUSED -> {
+        SECURITY_LOG.warn(
+            "Reset of {} for [{}] from {} refused at the moment of change: token used, expired or"
+                + " claimed by a concurrent submit",
+            getPasswordType(),
+            username,
+            RequestUtil.remoteAddr(request));
+        return new ModelAndView("passwordReset/resetPasswordFail");
+      }
+      case APPLIED -> {}
     }
+    TokenBasedVerification upc = attempt.change();
     sendPasswordChangeCompleteEmail(upc);
     SECURITY_LOG.info(
         "Completed password reset for user with email [{}] from IP address [{}]",

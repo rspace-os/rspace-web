@@ -78,9 +78,9 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
 
       await identifiers.waitForState("Draft");
 
-      await identifiers.clickPreview();
+      const preview = await identifiers.clickPreview();
       await expect(page.getByRole("heading", { name: instrumentName })).toBeVisible();
-      await page.getByRole("button", { name: "Close", exact: true }).click();
+      await preview.close();
     });
 
     test(`As a user, I do not see Required/Recommended Identifier Properties for a B2INST PIDINST identifier`, async ({
@@ -139,7 +139,6 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       pageInventory,
       componentToasts,
       flowPidinstDataciteConfig,
-      page,
     }) => {
       void flowPidinstDataciteConfig;
       const instrumentName = uniqueName("e2e-pidinst-datacite-instrument");
@@ -173,9 +172,9 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
 
       await identifiers.waitForState("Draft");
 
-      await identifiers.clickPreview();
+      const preview = await identifiers.clickPreview();
       await expect(identifiers.subjects).toBeVisible();
-      await page.getByRole("button", { name: "Close", exact: true }).click();
+      await preview.close();
 
       await identifiers.clickPublish();
       await expect(componentToasts.byText("published")).toBeVisible();

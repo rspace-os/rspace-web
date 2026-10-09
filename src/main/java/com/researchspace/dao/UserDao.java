@@ -64,6 +64,15 @@ public interface UserDao extends GenericDao<User, Long> {
   Optional<User> getUserByUsernameAlias(String usernameAlias);
 
   /**
+   * Spellings the {@code User.username} collation treats as equal give the same key. The key is for
+   * in-memory locks only and is never stored.
+   *
+   * @param name a username or alias; trimmed first
+   * @return the collation weight of the name, or {@code ""} for a null or blank name
+   */
+  String usernameLockKey(String name);
+
+  /**
    * Gets a paginated list of users and returns an {@link ISearchResults}
    *
    * @param pgCrit
