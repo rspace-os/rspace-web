@@ -19,6 +19,7 @@ public class RSpacePasswordEncoder implements PasswordEncoder {
   public static final String ARGON2_ID = "argon2@rspace_v1";
   public static final String LEGACY_SHA256_ID = "argon2-legacy-sha256@rspace_v1";
   public static final String BCRYPT_ID = "bcrypt";
+  public static final String BCRYPT_PREFIX = "{" + BCRYPT_ID + "}";
 
   private static final int SALT_LENGTH = 16;
   private static final int HASH_LENGTH = 32;

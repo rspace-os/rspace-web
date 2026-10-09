@@ -17,9 +17,9 @@ public class PrefixBcryptVerificationPasswords_RSDEV894 extends AbstractCustomLi
 
   // the forms Spring's BCryptPasswordEncoder accepts
   private static final Pattern BCRYPT = Pattern.compile("\\$2[aby]?\\$\\d{2}\\$[./A-Za-z0-9]{53}");
+  // The legacy SHA-256 id is left out on purpose: it only ever labels login passwords.
   private static final List<String> REGISTERED_PREFIXES =
-      List.of(
-          "{" + RSpacePasswordEncoder.BCRYPT_ID + "}", "{" + RSpacePasswordEncoder.ARGON2_ID + "}");
+      List.of(RSpacePasswordEncoder.BCRYPT_PREFIX, "{" + RSpacePasswordEncoder.ARGON2_ID + "}");
 
   private int prefixed;
   private int cleared;
@@ -47,7 +47,6 @@ public class PrefixBcryptVerificationPasswords_RSDEV894 extends AbstractCustomLi
                     + " where verificationPassword is not null and verificationPassword <> ''",
                 Object[].class)
             .list();
-    String prefix = "{" + RSpacePasswordEncoder.BCRYPT_ID + "}";
     long loopStart = System.nanoTime();
     for (Object[] row : rows) {
       Long id = ((Number) row[0]).longValue();
@@ -57,7 +56,7 @@ public class PrefixBcryptVerificationPasswords_RSDEV894 extends AbstractCustomLi
         continue;
       }
       if (BCRYPT.matcher(hash).matches()) {
-        update(session, id, prefix + hash);
+        update(session, id, RSpacePasswordEncoder.BCRYPT_PREFIX + hash);
         prefixed++;
       } else {
         logger.error(

@@ -23,8 +23,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
 
-  private static final String BCRYPT_PREFIX = "{" + RSpacePasswordEncoder.BCRYPT_ID + "}";
-
   private @Autowired BoundedPasswordVerifier verifier;
   private @Autowired SentinelPasswordCheck sentinelCheck;
 
@@ -44,7 +42,7 @@ public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
   }
 
   private boolean verify(String username, String suppliedPassword, String storedPassword) {
-    if (storedPassword != null && storedPassword.startsWith(BCRYPT_PREFIX)) {
+    if (storedPassword != null && storedPassword.startsWith(RSpacePasswordEncoder.BCRYPT_PREFIX)) {
       log.error("Login password of [{}] has the verification-password-only bcrypt id", username);
       return false;
     }
