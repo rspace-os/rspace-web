@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,6 +111,9 @@ public abstract class PasswordResetByEmailHandlerBase {
 
   /** Given a reset token, returns the correct view to set the password */
   protected ModelAndView getResetPage(@RequestParam("token") String token) {
+    if (StringUtils.isBlank(token)) {
+      return new ModelAndView("passwordReset/resetPasswordFail");
+    }
     TokenBasedVerification change = userManager.getUserVerificationToken(token);
     if (isUsableResetToken(change, token)) {
       ModelAndView mav = new ModelAndView("passwordReset/resetPassword");
@@ -125,7 +129,10 @@ public abstract class PasswordResetByEmailHandlerBase {
   protected ModelAndView submitResetPage(
       PasswordResetCommand cmd, BindingResult errors, HttpServletRequest request) {
 
-    TokenBasedVerification change = userManager.getUserVerificationToken(cmd.getToken());
+    TokenBasedVerification change =
+        StringUtils.isBlank(cmd.getToken())
+            ? null
+            : userManager.getUserVerificationToken(cmd.getToken());
     if (!isUsableResetToken(change, cmd.getToken())) {
       SECURITY_LOG.warn(
           "Reset password attempt with a used, expired or unknown token, from {}",
