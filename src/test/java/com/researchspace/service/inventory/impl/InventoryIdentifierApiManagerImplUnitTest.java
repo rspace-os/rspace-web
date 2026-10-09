@@ -508,6 +508,25 @@ class InventoryIdentifierApiManagerImplUnitTest {
         "https://rspace.example.com/public/inventory/" + doi.getPublicLink(), result.getUrl());
   }
 
+  /** The stored public URL becomes a link in exported documents (RSDEV-1536). */
+  @Test
+  void refreshStoresNoPublicUrlWhenTheEpicPidIsNotAnHttpAddress() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
+    when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
+    B2instDraftRecord published = new B2instDraftRecord();
+    published.setPids(Map.of("epic", Map.of("identifier", "javascript:alert(1)")));
+    when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.of(published));
+
+    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, b2instDoi());
+
+    assertEquals("accepted", result.getState());
+    assertNull(result.getPublicUrl());
+  }
+
   /**
    * This is what a CANCELLED review looks like, and the reason cancel and decline are not
    * symmetric: cancelling removes the review from the draft, so the review URL answers 404 while

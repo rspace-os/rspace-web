@@ -73,7 +73,8 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
    * <p>The three URL properties are distinct: {@code LOCAL_URL} is this RSpace's public landing
    * page for the identifier, {@code PUBLIC_URL} is the citable publicly resolvable URL that only
    * exists once the identifier is published, and {@code PROVIDER_URL} is the record's page on the
-   * issuing provider, which may require signing in to that provider.
+   * issuing provider, which may require signing in to that provider. Read {@code PUBLIC_URL}
+   * through {@link #getPublicUrl()}, which supplies it for DOIs published before it was stored.
    */
   public enum IdentifierOtherProperty {
     CREATOR_NAME,
