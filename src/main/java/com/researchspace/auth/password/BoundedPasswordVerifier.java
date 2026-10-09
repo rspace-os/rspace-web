@@ -29,8 +29,10 @@ public class BoundedPasswordVerifier {
   private final Semaphore admissions;
   private final int maxPermits;
   private final long waitNanos;
-  private final ConcurrentHashMap<String, PrincipalLock> principalLocks = new ConcurrentHashMap<>();
-  private final ThreadLocal<Long> sharedDeadline = new ThreadLocal<>();
+  private final ConcurrentHashMap<String, PrincipalLock> principalLocks;
+
+  /** The username lock this thread holds through {@link #runExclusive}, if any. */
+  private final ThreadLocal<Held> held = new ThreadLocal<>();
 
   /**
    * @param permits checks that may run at once
@@ -39,6 +41,15 @@ public class BoundedPasswordVerifier {
    */
   public BoundedPasswordVerifier(
       PasswordEncoder encoder, int permits, int maxQueued, Duration wait) {
+    this(encoder, permits, maxQueued, wait, new ConcurrentHashMap<>());
+  }
+
+  BoundedPasswordVerifier(
+      PasswordEncoder encoder,
+      int permits,
+      int maxQueued,
+      Duration wait,
+      ConcurrentHashMap<String, PrincipalLock> principalLocks) {
     Validate.notNull(encoder);
     Validate.isTrue(permits >= 1, "Password verification needs at least 1 permit, got %d", permits);
     Validate.isTrue(maxQueued >= 0, "Password verification queue must not be negative");
@@ -48,12 +59,15 @@ public class BoundedPasswordVerifier {
     this.permits = new Semaphore(permits, true);
     this.admissions = new Semaphore(permits + maxQueued);
     this.waitNanos = wait.toNanos();
+    this.principalLocks = principalLocks;
   }
 
   /**
    * Runs an action while holding the username's lock, the same lock {@link #verify} takes, so a
    * whole login attempt for one account runs one at a time. Waits up to the configured wait for the
-   * lock, and a {@link #verify} on this thread inside the action shares that one wait.
+   * lock, and a {@link #verify} on this thread inside the action shares that one wait. A nested
+   * {@link #verify} for the same username re-enters the held lock and counts as neither a waiter
+   * nor a new admission.
    *
    * @return the action's result
    * @throws LoginVerificationBusyException if the wait elapses first
@@ -85,15 +99,15 @@ public class BoundedPasswordVerifier {
       Thread.currentThread().interrupt();
       throw busy(username, "interrupted while waiting");
     }
-    Long outerDeadline = sharedDeadline.get();
-    sharedDeadline.set(deadline);
+    Held outer = held.get();
+    held.set(new Held(username, principalLock, deadline));
     try {
       return action.call();
     } finally {
-      if (outerDeadline == null) {
-        sharedDeadline.remove();
+      if (outer == null) {
+        held.remove();
       } else {
-        sharedDeadline.set(outerDeadline);
+        held.set(outer);
       }
       principalLock.lock.unlock();
     }
@@ -113,11 +127,16 @@ public class BoundedPasswordVerifier {
     if (rawPassword == null || rawPassword.length() > User.MAX_PWD_LENGTH) {
       return false;
     }
+    Held outer = held.get();
+    if (outer != null && outer.username.equals(username)) {
+      return lockAndVerify(username, outer.lock, outer.deadline, rawPassword, encodedPassword);
+    }
+    long deadline = outer != null ? outer.deadline : System.nanoTime() + waitNanos;
     PrincipalLock principalLock = acquireHolder(username);
     try {
       boolean admitted = admitOutermost(username);
       try {
-        return lockAndVerify(username, principalLock, rawPassword, encodedPassword);
+        return lockAndVerify(username, principalLock, deadline, rawPassword, encodedPassword);
       } finally {
         if (admitted) {
           admissions.release();
@@ -131,10 +150,9 @@ public class BoundedPasswordVerifier {
   private boolean lockAndVerify(
       String username,
       PrincipalLock principalLock,
+      long deadline,
       CharSequence rawPassword,
       String encodedPassword) {
-    Long shared = sharedDeadline.get();
-    long deadline = shared != null ? shared : System.nanoTime() + waitNanos;
     try {
       if (!principalLock.lock.tryLock(remaining(deadline), TimeUnit.NANOSECONDS)) {
         throw busy(username, "another check for this username is still running");
@@ -159,7 +177,7 @@ public class BoundedPasswordVerifier {
 
   /** A call nested inside {@link #runExclusive} on this thread is already admitted. */
   private boolean admitOutermost(String username) {
-    if (sharedDeadline.get() != null) {
+    if (held.get() != null) {
       return false;
     }
     if (!admissions.tryAcquire()) {
@@ -169,23 +187,21 @@ public class BoundedPasswordVerifier {
   }
 
   /**
-   * Registers this caller on the username's entry, before any admission or wait, and refuses it at
-   * once if the username already has its one check running and one waiting.
+   * Registers this caller on the username's entry, before any admission or wait. A caller beyond
+   * the username's one running and one waiting check is refused in the same per-key step, so it
+   * never enters the count.
    */
   private PrincipalLock acquireHolder(String username) {
-    PrincipalLock lock =
-        principalLocks.compute(
-            username,
-            (k, existing) -> {
-              PrincipalLock l = existing == null ? new PrincipalLock() : existing;
-              l.holders++;
-              return l;
-            });
-    if (lock.holders > 1 + MAX_WAITING_PER_PRINCIPAL) {
-      releaseHolder(username);
-      throw busy(username, "another check for this username is already waiting");
-    }
-    return lock;
+    return principalLocks.compute(
+        username,
+        (k, existing) -> {
+          if (existing != null && existing.holders > MAX_WAITING_PER_PRINCIPAL) {
+            throw busy(username, "another check for this username is already waiting");
+          }
+          PrincipalLock l = existing == null ? new PrincipalLock() : existing;
+          l.holders++;
+          return l;
+        });
   }
 
   private void releaseHolder(String username) {
@@ -201,8 +217,20 @@ public class BoundedPasswordVerifier {
         "Password verification for [" + username + "] refused: " + reason);
   }
 
+  private static final class Held {
+    private final String username;
+    private final PrincipalLock lock;
+    private final long deadline;
+
+    private Held(String username, PrincipalLock lock, long deadline) {
+      this.username = username;
+      this.lock = lock;
+      this.deadline = deadline;
+    }
+  }
+
   /** Mutated only inside {@link ConcurrentHashMap#compute}, which serialises per key. */
-  private static final class PrincipalLock {
+  static final class PrincipalLock {
     private final ReentrantLock lock = new ReentrantLock();
     private int holders;
   }

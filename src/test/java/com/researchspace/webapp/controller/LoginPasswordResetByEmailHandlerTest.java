@@ -102,6 +102,28 @@ public class LoginPasswordResetByEmailHandlerTest {
   }
 
   @Test
+  void submitWithMissingTokenShowsFailPage() {
+    cmd.setToken(null);
+
+    assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
+    verify(userManager, never()).getUserVerificationToken(any());
+  }
+
+  @Test
+  void submitWithEmptyTokenShowsFailPage() {
+    cmd.setToken("");
+
+    assertEquals(FAIL_VIEW, handler.submitResetPage(cmd, errors, request).getViewName());
+    verify(userManager, never()).getUserVerificationToken(any());
+  }
+
+  @Test
+  void resetPageWithBlankTokenShowsFailPage() {
+    assertEquals(FAIL_VIEW, handler.getResetPage(" ").getViewName());
+    verify(userManager, never()).getUserVerificationToken(any());
+  }
+
+  @Test
   void validTokenWithNoMatchingUsernameReturnsTheFailView() throws Exception {
     TokenBasedVerification token = freshToken();
     cmd.setToken(token.getToken());
