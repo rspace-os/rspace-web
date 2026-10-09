@@ -29,7 +29,9 @@ public class BoundedPasswordVerifier {
   private final int maxPermits;
   private final long waitNanos;
   private final ConcurrentHashMap<String, PrincipalLock> principalLocks;
-  private final ThreadLocal<Long> sharedDeadline = new ThreadLocal<>();
+
+  /** The username lock this thread holds through {@link #runExclusive}, if any. */
+  private final ThreadLocal<Held> held = new ThreadLocal<>();
 
   /**
    * @param permits checks that may run at once
@@ -62,7 +64,9 @@ public class BoundedPasswordVerifier {
   /**
    * Runs an action while holding the username's lock, the same lock {@link #verify} takes, so a
    * whole login attempt for one account runs one at a time. Waits up to the configured wait for the
-   * lock, and a {@link #verify} on this thread inside the action shares that one wait.
+   * lock, and a {@link #verify} on this thread inside the action shares that one wait. A nested
+   * {@link #verify} for the same username re-enters the held lock and counts as neither a waiter
+   * nor a new admission.
    *
    * @return the action's result
    * @throws LoginVerificationBusyException if the wait elapses first
@@ -94,15 +98,15 @@ public class BoundedPasswordVerifier {
       Thread.currentThread().interrupt();
       throw busy(username, "interrupted while waiting");
     }
-    Long outerDeadline = sharedDeadline.get();
-    sharedDeadline.set(deadline);
+    Held outer = held.get();
+    held.set(new Held(username, principalLock, deadline));
     try {
       return action.call();
     } finally {
-      if (outerDeadline == null) {
-        sharedDeadline.remove();
+      if (outer == null) {
+        held.remove();
       } else {
-        sharedDeadline.set(outerDeadline);
+        held.set(outer);
       }
       principalLock.lock.unlock();
     }
@@ -118,11 +122,16 @@ public class BoundedPasswordVerifier {
    * @throws IllegalArgumentException if the stored value has no recognised encoding
    */
   public boolean verify(String username, CharSequence rawPassword, String encodedPassword) {
+    Held outer = held.get();
+    if (outer != null && outer.username.equals(username)) {
+      return lockAndVerify(username, outer.lock, outer.deadline, rawPassword, encodedPassword);
+    }
+    long deadline = outer != null ? outer.deadline : System.nanoTime() + waitNanos;
     PrincipalLock principalLock = acquireHolder(username);
     try {
       boolean admitted = admitOutermost(username);
       try {
-        return lockAndVerify(username, principalLock, rawPassword, encodedPassword);
+        return lockAndVerify(username, principalLock, deadline, rawPassword, encodedPassword);
       } finally {
         if (admitted) {
           admissions.release();
@@ -136,10 +145,9 @@ public class BoundedPasswordVerifier {
   private boolean lockAndVerify(
       String username,
       PrincipalLock principalLock,
+      long deadline,
       CharSequence rawPassword,
       String encodedPassword) {
-    Long shared = sharedDeadline.get();
-    long deadline = shared != null ? shared : System.nanoTime() + waitNanos;
     try {
       if (!principalLock.lock.tryLock(remaining(deadline), TimeUnit.NANOSECONDS)) {
         throw busy(username, "another check for this username is still running");
@@ -164,7 +172,7 @@ public class BoundedPasswordVerifier {
 
   /** A call nested inside {@link #runExclusive} on this thread is already admitted. */
   private boolean admitOutermost(String username) {
-    if (sharedDeadline.get() != null) {
+    if (held.get() != null) {
       return false;
     }
     if (!admissions.tryAcquire()) {
@@ -202,6 +210,18 @@ public class BoundedPasswordVerifier {
   private static LoginVerificationBusyException busy(String username, String reason) {
     return new LoginVerificationBusyException(
         "Password verification for [" + username + "] refused: " + reason);
+  }
+
+  private static final class Held {
+    private final String username;
+    private final PrincipalLock lock;
+    private final long deadline;
+
+    private Held(String username, PrincipalLock lock, long deadline) {
+      this.username = username;
+      this.lock = lock;
+      this.deadline = deadline;
+    }
   }
 
   /** Mutated only inside {@link ConcurrentHashMap#compute}, which serialises per key. */
