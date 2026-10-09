@@ -11,12 +11,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.impl.VerificationPasswordValidatorImpl;
 import com.researchspace.testutils.TestFactory;
 import java.time.Duration;
 import java.util.List;
@@ -34,12 +37,14 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class VerificationPasswordControllerTest {
   private @Mock UserManager userMgr;
   private @Mock UserValidator userValidator;
   private @Mock IVerificationPasswordValidator verificationPasswordValidator;
+  private @Mock IPropertyHolder properties;
 
   @InjectMocks private VerificationPasswordController verificationPasswordController;
   User anyUser;
@@ -137,6 +142,68 @@ public class VerificationPasswordControllerTest {
     verify(verificationPasswordValidator, times(1)).hashVerificationPassword(OK_PWD);
     verify(userMgr, times(1)).saveUser(anyUser);
     assertEquals("hashedPW", anyUser.getVerificationPassword());
+  }
+
+  /**
+   * Two retries whose sessions still think the password is unset, while the row already holds it.
+   * The running retry pauses in its reload until the other retry is queued behind it, then checks
+   * the submitted password through the real validator and the shared verifier under the username it
+   * already holds; that nested check must not count as a further waiter.
+   */
+  @Test
+  public void retryCheckingThePasswordWhileAnotherRetryWaitsIsNotRefusedAsBusy() throws Exception {
+    RSpacePasswordEncoder encoder = new RSpacePasswordEncoder();
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, 8, 8, Duration.ofSeconds(5));
+    verificationPasswordController.setVerifier(verifier);
+    VerificationPasswordValidatorImpl realValidator = new VerificationPasswordValidatorImpl();
+    ReflectionTestUtils.setField(realValidator, "properties", properties);
+    ReflectionTestUtils.setField(realValidator, "passwordEncoder", encoder);
+    ReflectionTestUtils.setField(realValidator, "verifier", verifier);
+    ReflectionTestUtils.setField(
+        verificationPasswordController, "verificationPasswordValidator", realValidator);
+    when(properties.isSSO()).thenReturn(true);
+    anyUser.setVerificationPassword(encoder.encode(OK_PWD));
+    User sessionCopy = TestFactory.createAnyUser("any");
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(sessionCopy);
+    when(userValidator.validatePasswords(OK_PWD, OK_PWD, anyUser.getUsername()))
+        .thenReturn(UserValidator.FIELD_OK);
+    CountDownLatch reloading = new CountDownLatch(1);
+    CountDownLatch otherIsWaiting = new CountDownLatch(1);
+    when(userMgr.getUserByUsername(anyUser.getUsername(), true))
+        .thenAnswer(
+            invocation -> {
+              if (reloading.getCount() > 0) {
+                reloading.countDown();
+                otherIsWaiting.await(10, TimeUnit.SECONDS);
+              }
+              return anyUser;
+            });
+
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    try {
+      Future<AjaxReturnObject<String>> first = pool.submit(this::setOkPassword);
+      assertTrue(reloading.await(10, TimeUnit.SECONDS));
+      Thread[] second = new Thread[1];
+      Future<AjaxReturnObject<String>> secondResult =
+          pool.submit(
+              () -> {
+                second[0] = Thread.currentThread();
+                return setOkPassword();
+              });
+      awaitTimedWaiting(second);
+      otherIsWaiting.countDown();
+
+      String success = getText("verificationPassword.set.success");
+      AjaxReturnObject<String> firstResult = first.get(10, TimeUnit.SECONDS);
+      assertNull(firstResult.getErrorMsg(), "first retry: " + firstResult.getData());
+      assertEquals(success, firstResult.getData());
+      assertEquals(success, secondResult.get(10, TimeUnit.SECONDS).getData());
+    } finally {
+      otherIsWaiting.countDown();
+      pool.shutdownNow();
+    }
+    assertUserPasswordNotSaved();
   }
 
   @Test
