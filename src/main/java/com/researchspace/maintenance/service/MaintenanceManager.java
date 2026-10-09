@@ -2,63 +2,61 @@ package com.researchspace.maintenance.service;
 
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.User;
-import java.util.Collections;
+import com.researchspace.service.CollectionManager;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
-/** For managing scheduled maintenance periods. */
-public interface MaintenanceManager {
+/** Manages scheduled maintenance and its REST API v2 collection operations. */
+public interface MaintenanceManager extends CollectionManager<ScheduledMaintenance, Long> {
 
   /**
-   * Retrieves maintenance object by id.
+   * Retrieves a scheduled maintenance entry by ID.
    *
-   * @param id
-   * @return {@link ScheduledMaintenance} with given id
-   * @throws ObjectRetrievalFailureException if no object with given id
+   * @param id maintenance ID
+   * @return maintenance with the specified ID
+   * @throws ObjectRetrievalFailureException if no object has the specified ID
    */
   ScheduledMaintenance getScheduledMaintenance(Long id);
 
   /**
-   * Get all active or future scheduled maintenances, ordered by startDate.
+   * Gets all active or future scheduled maintenance entries, ordered by start date.
    *
-   * @return List of {@link ScheduledMaintenance} or empty list
+   * @return matching maintenance, or an empty list
    */
   List<ScheduledMaintenance> getAllFutureMaintenances();
 
   /**
-   * Get old or expired maintenances, ordered by startDate.
+   * Gets all expired scheduled maintenance entries, ordered by start date.
    *
-   * @return List of {@link ScheduledMaintenance} or empty list
+   * @return matching maintenance, or an empty list
    */
-  default List<ScheduledMaintenance> getOldMaintenances() {
-    return Collections.emptyList();
-  }
+  List<ScheduledMaintenance> getOldMaintenances();
 
   /**
-   * Retrieves nearest scheduled maintenance (may be already active), if there is any.
+   * Retrieves the nearest scheduled maintenance entry. The entry can already be active.
    *
-   * @param maintenance
-   * @return {@link ScheduledMaintenance} or ScheduledMaintenance.NULL if none found
+   * @return the nearest maintenance, or {@link ScheduledMaintenance#NULL} if none exists
    */
   ScheduledMaintenance getNextScheduledMaintenance();
 
   /**
-   * Inserts or updates maintenance object. Can be only called by user with sysadmin role.
+   * Inserts or updates a scheduled maintenance entry. Only a system administrator can call this
+   * method.
    *
-   * @param maintenance
-   * @param user
-   * @return saved {@link ScheduledMaintenance} object
-   * @throws AuthorizationException if user doesn't have sysadmin role
+   * @param maintenance maintenance to save
+   * @param user authenticated user
+   * @return saved maintenance
+   * @throws AuthorizationException if the user is not a system administrator
    */
   ScheduledMaintenance saveScheduledMaintenance(ScheduledMaintenance maintenance, User user);
 
   /**
-   * Removes maintenance objecdt by id. Can be only called by user with sysadmin role.
+   * Removes a scheduled maintenance entry by ID. Only a system administrator can call this method.
    *
-   * @param id
-   * @param sysUser
-   * @throws AuthorizationException if user doesn't have sysadmin role
+   * @param id maintenance ID
+   * @param user authenticated user
+   * @throws AuthorizationException if the user is not a system administrator
    */
   void removeScheduledMaintenance(Long id, User user);
 }

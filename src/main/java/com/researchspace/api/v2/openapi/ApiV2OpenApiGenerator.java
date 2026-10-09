@@ -192,6 +192,7 @@ public final class ApiV2OpenApiGenerator {
       }
       pathItem.put(method, operation(resource, operation, component, resourceSchemas));
     }
+    addResourceAccessPaths(paths, resource, component);
   }
 
   private static void addResourceAccessSchemas(Map<String, Object> schemas) {
