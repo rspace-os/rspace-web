@@ -73,11 +73,7 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
           wholeLoginKey(userMgr.loginLockKey(getUsername(request))),
           () -> checkLockoutThenContinue(request, response));
     } catch (LoginVerificationBusyException e) {
-      SECURITY_LOG.warn(
-          "Login by [{}] from {} refused: {}",
-          getUsername(request),
-          RequestUtil.remoteAddr(WebUtils.toHttp(request)),
-          e.getMessage());
+      logBusyRefusal(request, getUsername(request), e);
       if (isAdminLogin(request)) {
         return redirectAdminLogin(request, response, e.getClass().getSimpleName());
       }
@@ -172,13 +168,9 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
           (e != null) && (e.getCause() instanceof SidVerificationException);
       if (autoSignupProblem || sidVerificationProblem) {
         WebUtils.toHttp(request).setAttribute("checkedExceptionMessage", e.getCause().getMessage());
-      } else if (e instanceof LoginVerificationBusyException) {
+      } else if (e instanceof LoginVerificationBusyException busy) {
         // a flood, not a wrong password: counting it would let a flood lock users out
-        SECURITY_LOG.warn(
-            "Login by [{}] from {} refused: {}",
-            username,
-            RequestUtil.remoteAddr(WebUtils.toHttp(request)),
-            e.getMessage());
+        logBusyRefusal(request, username, busy);
       } else {
         try {
           User u = userMgr.getUserByUsernameOrAlias(username);
@@ -202,6 +194,15 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
     }
 
     return super.onLoginFailure(token, e, request, response);
+  }
+
+  private void logBusyRefusal(
+      ServletRequest request, String username, LoginVerificationBusyException e) {
+    SECURITY_LOG.warn(
+        "Login by [{}] from {} refused: {}",
+        username,
+        RequestUtil.remoteAddr(WebUtils.toHttp(request)),
+        e.getMessage());
   }
 
   private boolean redirectAdminLogin(
