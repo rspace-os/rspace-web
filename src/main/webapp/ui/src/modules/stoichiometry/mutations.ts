@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { resolveToken, type TokenParams } from "@/modules/common/utils/auth";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
 import {
   DeleteStoichiometryResponseSchema,
@@ -59,7 +60,7 @@ export async function calculateStoichiometry(
     searchParams.set("revision", String(revision));
   }
 
-  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
+  const response = await fetchWithUiToken(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
     method: "POST",
     headers: {
       "X-Requested-With": "XMLHttpRequest",
@@ -84,7 +85,7 @@ export async function updateStoichiometry(
 
   const requestBody = parseOrThrow(StoichiometryRequestSchema, stoichiometryData);
 
-  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
+  const response = await fetchWithUiToken(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -109,7 +110,7 @@ export async function deleteStoichiometry(
   const searchParams = new URLSearchParams();
   searchParams.set("stoichiometryId", String(stoichiometryId));
 
-  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
+  const response = await fetchWithUiToken(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
     method: "DELETE",
     headers: {
       "X-Requested-With": "XMLHttpRequest",
@@ -145,7 +146,7 @@ export async function deductStock(
     linkIds,
   });
 
-  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry/link/deductStock`, {
+  const response = await fetchWithUiToken(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry/link/deductStock`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -165,7 +166,7 @@ export async function deductStock(
 }
 
 export async function getMoleculeInfo({ smiles }: GetMoleculeInfoParams, token: string): Promise<MoleculeInfo> {
-  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry/molecule/info`, {
+  const response = await fetchWithUiToken(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry/molecule/info`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

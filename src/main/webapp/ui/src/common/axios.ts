@@ -10,7 +10,8 @@
  * ```
  */
 
-import axios from "axios";
+import axios, { type AxiosInstance } from "axios";
+import { recoverUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 /*
  * The server remembers the last the page the user attempted to load when
@@ -30,6 +31,31 @@ import axios from "axios";
  *
  */
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
+
+function installUiTokenRecovery(client: AxiosInstance): AxiosInstance {
+  client.interceptors.response.use(undefined, async (error: unknown) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401 && error.config) {
+      const authorization = error.config.headers.get("Authorization");
+      const url = new URL(client.getUri(error.config), globalThis.location.href);
+      if (
+        url.origin === globalThis.location.origin &&
+        url.pathname.startsWith("/api/") &&
+        typeof authorization === "string" &&
+        authorization.startsWith("Bearer ")
+      ) {
+        await recoverUiToken(authorization);
+      }
+    }
+    // Never replay a request under a potentially different session identity.
+    throw error;
+  });
+  return client;
+}
+
+installUiTokenRecovery(axios);
+// Axios instances do not inherit the default instance's interceptors.
+const create = axios.create.bind(axios);
+axios.create = (config) => installUiTokenRecovery(create(config));
 
 /**
  * We re-export the axios instance so that it can be used by the modules that

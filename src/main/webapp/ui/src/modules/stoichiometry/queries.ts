@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { resolveToken, type TokenParams } from "@/modules/common/utils/auth";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { type StoichiometryResponse, StoichiometryResponseSchema } from "@/modules/stoichiometry/schema";
 import { STOICHIOMETRY_API_BASE_URL, toStoichiometryError } from "@/modules/stoichiometry/utils";
 
@@ -34,7 +35,7 @@ export async function getStoichiometry({
     searchParams.set("revision", String(revision));
   }
 
-  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
+  const response = await fetchWithUiToken(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
     method: "GET",
     headers: {
       "X-Requested-With": "XMLHttpRequest",
