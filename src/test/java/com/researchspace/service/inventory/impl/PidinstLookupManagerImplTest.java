@@ -979,7 +979,8 @@ class PidinstLookupManagerImplTest {
   }
 
   static Stream<String> queriesBelowTheB2instMinimum() {
-    return Stream.of("<<<a", "\"\"\"\"", "a\"<>", "***a", "?a?b", "*".repeat(240) + "abcd");
+    return Stream.of(
+        "<<<a", "\"\"\"\"", "a\"<>", "***a", "?a?b", "a   *", "*".repeat(240) + "abcd");
   }
 
   /**

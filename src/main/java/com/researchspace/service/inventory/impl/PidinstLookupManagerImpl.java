@@ -345,8 +345,10 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private RegistryPage b2instPage(String query, int page) {
     // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
-    String stripped = B2INST_REMOVED.matcher(query).replaceAll("").strip();
-    // capped before the minimum, so the minimum judges exactly what the term is built from
+    String removed = B2INST_REMOVED.matcher(query).replaceAll("");
+    String stripped = LUCENE_WHITESPACE.matcher(removed).replaceAll(" ").strip();
+    // whitespace collapsed and capped before the minimum, so the minimum judges exactly the text
+    // the term is built from
     String searchable =
         stripped.substring(
             0,
@@ -417,7 +419,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   private static String containsForB2inst(String searchable) {
     String end = ".*/";
     StringBuilder regex = new StringBuilder("/.*");
-    for (int cp : LUCENE_WHITESPACE.matcher(searchable).replaceAll(" ").codePoints().toArray()) {
+    for (int cp : searchable.codePoints().toArray()) {
       String piece;
       if (cp == '*') {
         piece = ".*";

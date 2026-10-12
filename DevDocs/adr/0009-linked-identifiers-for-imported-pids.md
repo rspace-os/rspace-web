@@ -257,8 +257,9 @@ and API field names were ported instead.
    is four characters per letter, so the term is built from the first 240 code points of the
    query only. A longer paste is searched by its first 240 characters: still a substring match
    that finds the record, answering at most a superset; nothing errors and nothing is refused.
-   The 4-character minimum is checked on those 240 code points, since `*` x 240 followed by
-   `abcd` would otherwise pass it and go out as a term matching every record. A cased letter
+   The 4-character minimum is checked on those 240 code points, after whitespace runs are
+   collapsed, since `*` x 240 followed by `abcd` would otherwise pass it and go out as a term
+   matching every record, and `a   *` would count its spaces. A cased letter
    outside the Basic Multilingual Plane is six characters in the term (a surrogate pair per
    case), so 240 of them would reach 1446 characters: 240 Adlam letters answered 400 on
    b2inst-test.gwdg.de, and the term therefore also ends at the last whole piece that fits in
