@@ -134,7 +134,40 @@ describe("ContentGrid", () => {
         await user.tab();
         await user.keyboard("{ArrowRight}{Escape}");
         expect(parentKeys).not.toHaveBeenCalledWith("Escape");
-        expect(selectedCount()).toBe(1);
+        expect(selectedCount()).toBe(0);
+      });
+
+      describe("after a mouse click on a location", () => {
+        const emptyBox = () =>
+          makeMockContainer({
+            cType: "GRID",
+            gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+            locationsCount: 4,
+            contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
+          });
+
+        it("moves the selection with the arrow keys from the clicked location", async () => {
+          const user = userEvent.setup();
+          const box = emptyBox();
+          prepareContainer(box, 1);
+          renderGrid(box);
+          await user.click(cells()[0]);
+          await user.keyboard("{ArrowRight}");
+          expect(cells()[1]).toHaveAttribute("aria-selected", "true");
+          expect(selectedCount()).toBe(1);
+        });
+
+        it("keeps Escape inside the grid", async () => {
+          const user = userEvent.setup();
+          const box = emptyBox();
+          prepareContainer(box, 1);
+          const parentKeys = vi.fn();
+          renderGrid(box, (e) => parentKeys(e.key));
+          await user.click(cells()[2]);
+          expect(screen.getByRole("grid")).toContainElement(document.activeElement as HTMLElement);
+          await user.keyboard("{Escape}");
+          expect(parentKeys).not.toHaveBeenCalledWith("Escape");
+        });
       });
 
       it("selects no more locations than the selection limit", async () => {

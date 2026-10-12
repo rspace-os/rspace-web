@@ -184,7 +184,10 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           sx={tableSx}
           padding="normal"
           size="small"
-          onFocus={() => setKeyboardTips(true)}
+          onFocus={() => {
+            setKeyboardTips(!search.uiConfig.dragAndDropDisabled);
+            setFocusCoord((current) => current ?? tabIndexCoord);
+          }}
           onBlur={() => setKeyboardTips(false)}
           onMouseDown={(e) => {
             if (e.currentTarget === tableRef.current) return; // ignore taps to scrollbar
@@ -238,7 +241,8 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             if (e.key === "Escape") {
               container.toggleAllLocations(false);
               const focused = container.findLocation(focusCoord.x, focusCoord.y);
-              if (focused && (!emptyOnly || focused.isSelectable(search))) focused.toggleSelected(true);
+              const clearOnly = search.uiConfig.dragAndDropDisabled;
+              if (!clearOnly && focused && (!emptyOnly || focused.isSelectable(search))) focused.toggleSelected(true);
               e.preventDefault();
               // Grids used only to choose locations sit in dialogs, which would otherwise close on Escape.
               if (emptyOnly) e.stopPropagation();
@@ -338,6 +342,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                       parentRef={tableRef}
                       columnsUnderHover={columnsUnderHover}
                       columnIndex={index}
+                      onPointerFocus={setTabIndexCoord}
                     >
                       <LocationContent
                         location={findLocation(col, row)}
