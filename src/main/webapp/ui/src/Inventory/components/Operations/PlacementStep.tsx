@@ -72,7 +72,7 @@ function PlacementStep({
   const container = value.mode === "container" ? value.container : null;
   const blocker = container ? placementBlocker(container, count) : null;
 
-  const blockerMessage = (b: PlacementBlocker): string => {
+  const blockerMessage = (b: PlacementBlocker, containerName: string): string => {
     switch (b.reason) {
       case "loading":
         return t("operations.placement.status.loading");
@@ -89,7 +89,7 @@ function PlacementStep({
       case "notEnoughSpace":
         return t("operations.placement.status.notEnoughSpace", { free: b.free, count });
       case "selectSlots":
-        return t("operations.placement.status.selectSlots", { count: b.remaining, container: container?.name ?? "" });
+        return t("operations.placement.status.selectSlots", { count: b.remaining, container: containerName });
       case "occupiedSlot":
         return t("operations.placement.status.occupiedSlot");
       case "tooManySlots":
@@ -112,7 +112,7 @@ function PlacementStep({
     const severity = inProgress ? "info" : fixInGrid ? "warning" : "error";
     return (
       <Alert severity={severity} role={inProgress || fixInGrid ? "status" : "alert"}>
-        {blockerMessage(blocker)}
+        {blockerMessage(blocker, container.name)}
       </Alert>
     );
   };
