@@ -301,9 +301,9 @@ describe("PlacementStep", () => {
       return { user, onChange };
     }
 
-    it("replaces the search with the container's name and a way to change it, so the grid follows directly", async () => {
-      await pick(gridBox());
-      expect(await screen.findByText("Placing in Box")).toBeInTheDocument();
+    it("replaces the search with the container's name, global ID and a way to change it, so the grid follows directly", async () => {
+      await pick(gridBox(0, { globalId: "IC7" }));
+      expect(await screen.findByText("Placing in Box (IC7)")).toBeInTheDocument();
       expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Change container" })).toBeInTheDocument();
       expect(screen.getByTestId("container-content")).toBeInTheDocument();
