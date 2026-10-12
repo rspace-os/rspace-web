@@ -4,7 +4,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
-import { afterEach, describe, expect, it } from "vitest";
+import type React from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import SearchContext from "@/stores/contexts/Search";
@@ -36,7 +37,7 @@ const boxWithA1Taken = () =>
     ],
   });
 
-function renderGrid(box: ContainerModel) {
+function renderGrid(box: ContainerModel, onParentKeyDown?: (e: React.KeyboardEvent) => void) {
   render(
     <ThemeProvider theme={materialTheme}>
       <SearchContext.Provider
@@ -46,7 +47,10 @@ function renderGrid(box: ContainerModel) {
           differentSearchForSettingActiveResult: box.contentSearch,
         }}
       >
-        <ContentGrid />
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: stands in for the dialog that listens for Escape */}
+        <div onKeyDown={onParentKeyDown}>
+          <ContentGrid />
+        </div>
       </SearchContext.Provider>
     </ThemeProvider>,
   );
@@ -93,6 +97,15 @@ describe("ContentGrid", () => {
       expect(selectedCount()).toBe(2);
     });
 
+    it("lets Escape reach the page around a container's own grid", async () => {
+      const user = userEvent.setup();
+      const parentKeys = vi.fn();
+      renderGrid(boxWithA1Taken(), (e) => parentKeys(e.key));
+      await user.tab();
+      await user.keyboard("{Escape}");
+      expect(parentKeys).toHaveBeenCalledWith("Escape");
+    });
+
     describe("when choosing empty locations for new records", () => {
       it("is accessible", async () => {
         const box = boxWithA1Taken();
@@ -110,6 +123,18 @@ describe("ContentGrid", () => {
         expect(cells()[0]).toHaveAttribute("aria-selected", "false");
         await user.keyboard("{Escape}");
         expect(cells()[0]).toHaveAttribute("aria-selected", "false");
+      });
+
+      it("keeps Escape from reaching the dialog around the grid, so it clears the selection without closing it", async () => {
+        const user = userEvent.setup();
+        const box = boxWithA1Taken();
+        prepareContainer(box, 1);
+        const parentKeys = vi.fn();
+        renderGrid(box, (e) => parentKeys(e.key));
+        await user.tab();
+        await user.keyboard("{ArrowRight}{Escape}");
+        expect(parentKeys).not.toHaveBeenCalledWith("Escape");
+        expect(selectedCount()).toBe(1);
       });
 
       it("selects no more locations than the selection limit", async () => {
