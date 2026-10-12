@@ -298,7 +298,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                 y,
               }),
               ArrowLeft: ({ x, y }) => ({
-                x: Math.max(x - 1, 0),
+                x: Math.max(x - 1, 1),
                 y,
               }),
               ArrowDown: ({ x, y }) => ({
@@ -307,7 +307,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
               }),
               ArrowUp: ({ x, y }) => ({
                 x,
-                y: Math.max(y - 1, 0),
+                y: Math.max(y - 1, 1),
               }),
             };
             if (!(e.key in newCoord)) return;

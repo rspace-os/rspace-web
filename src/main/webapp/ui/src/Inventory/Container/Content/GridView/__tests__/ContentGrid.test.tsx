@@ -216,6 +216,16 @@ describe("ContentGrid", () => {
         expect(screen.getByText("inventory:container.content.keyboard.selectionTips")).toBeVisible();
       });
 
+      it("keeps focus on the first location when the arrows push past the grid's top-left edge", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 2);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard("{ArrowLeft}{ArrowUp} ");
+        expect(cells()[0]).toHaveAttribute("aria-selected", "true");
+      });
+
       it("lets Space deselect a location", async () => {
         const user = userEvent.setup();
         const box = emptyBox();
