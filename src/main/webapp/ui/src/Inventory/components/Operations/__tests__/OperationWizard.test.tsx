@@ -1664,15 +1664,25 @@ describe("OperationWizard remembered placement", () => {
     };
   }
 
+  /** Returns a mock that is called once the container has been sent. */
   function serveContainer(attrs: Parameters<typeof containerAttrs>[0] | null, delayMs = 0) {
+    const served = vi.fn();
     server.use(
       http.get(CONTAINER_URL, async () => {
         if (delayMs) await delay(delayMs);
+        served();
         return attrs
           ? HttpResponse.json(containerAttrs(attrs))
           : HttpResponse.json({ message: "Not found" }, { status: 404 });
       }),
     );
+    return served;
+  }
+
+  /** Waits until the container has been sent and the wizard has acted on it. */
+  async function containerArrived(served: ReturnType<typeof serveContainer>) {
+    await waitFor(() => expect(served).toHaveBeenCalled());
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
   }
 
   it("saves the chosen container by id and name, never its locations", async () => {
@@ -1773,23 +1783,23 @@ describe("OperationWizard remembered placement", () => {
       { containerId: 6, containerName: "Box" },
       { template: { mode: "pick", templateId: 9, templateName: "Cell line" } },
     );
-    serveContainer(gridBox);
+    const served = serveContainer(gridBox);
     const user = userEvent.setup();
     await openRememberedDerive(user);
 
     await waitFor(() => expect(getTemplate).toHaveBeenCalled());
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await containerArrived(served);
     expect(currentStep()).toHaveTextContent(/step\.details/);
   });
 
   it("does not jump to Location once the user has moved on before the container arrives", async () => {
     rememberBoil({ containerId: 6, containerName: "Box" });
-    serveContainer(gridBox, 200);
+    const served = serveContainer(gridBox, 200);
     const user = userEvent.setup();
     await openRememberedDerive(user);
 
     await user.click(nextButton()); // details -> template, before the container has loaded
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await containerArrived(served);
     expect(currentStep()).toHaveTextContent(/step\.template/);
   });
 
