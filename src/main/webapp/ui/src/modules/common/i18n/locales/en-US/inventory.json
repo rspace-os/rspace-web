@@ -1806,7 +1806,7 @@
         "notEnoughSpace": "{count, plural, one {This container has no free location.} other {Only {free} of the # locations needed are free.}} Choose another container.",
         "occupiedSlot": "A selected location is already occupied. Deselect it.",
         "ready": "The new subsamples will be placed in {container}.",
-        "selectSlots": "{count, plural, one {Select # more location.} other {Select # more locations.}}",
+        "selectSlots": "{count, plural, one {Select # more location in {container}.} other {Select # more locations in {container}.}}",
         "tooManySlots": "{count, plural, one {Deselect # location.} other {Deselect # locations.}}",
         "workbench": "To keep the new subsamples on your workbench, choose \"Leave on my workbench\"."
       },
