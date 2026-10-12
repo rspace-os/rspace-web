@@ -4074,7 +4074,7 @@ export default interface Resources {
       },
       "placement": {
         "changeContainer": "Change container",
-        "chosen": "Placing in {container}",
+        "chosen": "Placing in {container} ({globalId})",
         "container": "Choose a location",
         "description": "Choose where the new subsamples go once they are created.",
         "failedAfterCreate": "The new subsamples were created on your workbench, but could not be placed in {container}.",
