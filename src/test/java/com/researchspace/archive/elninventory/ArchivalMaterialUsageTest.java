@@ -69,6 +69,20 @@ public class ArchivalMaterialUsageTest {
   }
 
   @Test
+  public void igsnFallsBackToDoiOrgForADataCiteDoiPublishedBeforeItsUrlWasStored() {
+    Instrument instrument = new Instrument();
+    instrument.setId(42L);
+    DigitalObjectIdentifier doi = new DigitalObjectIdentifier("10.82316/old", "a title");
+    doi.setState("findable");
+    instrument.addIdentifier(doi);
+
+    ArchivalMaterialUsage archivalUsage =
+        new ArchivalMaterialUsage(new MaterialUsage(null, instrument, null));
+
+    assertEquals("https://doi.org/10.82316/old", archivalUsage.getIgsn());
+  }
+
+  @Test
   public void igsnIsAbsentWhileThePidDoesNotResolve() {
     Instrument instrument = new Instrument();
     instrument.setId(42L);

@@ -396,16 +396,27 @@ public class HTMLStringGeneratorTest {
         .doesNotContain("fieldChoices=");
   }
 
+  /* an empty stored URL is a DOI published before it was stored; an empty type is a legacy row */
   @ParameterizedTest
   @CsvSource({
-    "IGSN_DATACITE, 10.82316/abc, findable, https://doi.org/10.82316/abc, igsn",
-    "PIDINST_DATACITE, 10.82316/xyz, findable, https://doi.org/10.82316/xyz, pidinst",
-    "PIDINST_B2INST, d4mwx-bfd89, accepted, http://hdl.handle.net/21.T11975/d4mwx-bfd89, pidinst"
+    "IGSN_DATACITE, 10.82316/abc, findable, https://doi.org/10.82316/abc,"
+        + " https://doi.org/10.82316/abc, igsn",
+    "PIDINST_DATACITE, 10.82316/xyz, findable, https://doi.org/10.82316/xyz,"
+        + " https://doi.org/10.82316/xyz, pidinst",
+    "PIDINST_B2INST, d4mwx-bfd89, accepted, http://hdl.handle.net/21.T11975/d4mwx-bfd89,"
+        + " http://hdl.handle.net/21.T11975/d4mwx-bfd89, pidinst",
+    "IGSN_DATACITE, 10.82316/old, findable, , https://doi.org/10.82316/old, igsn",
+    ", 10.82316/legacy, findable, , https://doi.org/10.82316/legacy, igsn"
   })
   void listOfMaterialsLinksToThePublicUrlLabelledByIdentifierType(
-      IdentifierType type, String value, String state, String publicUrl, String label) {
+      IdentifierType type,
+      String value,
+      String state,
+      String storedUrl,
+      String publicUrl,
+      String label) {
     stubDefaults();
-    StructuredDocument doc = docListingInstrumentWith(identifier(type, value, state, publicUrl));
+    StructuredDocument doc = docListingInstrumentWith(identifier(type, value, state, storedUrl));
 
     ExportProcessorInput input = htmlGenerator.extractHtmlStr(doc, cfg);
 
