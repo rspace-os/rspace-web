@@ -26,8 +26,17 @@ public class MoveDataverseTeamsAndGalaxySecretsToUserConnection_RSDEV1525
     extends AbstractCustomLiquibaseUpdater {
 
   private static final String APP_GALAXY = "app.galaxy";
+
+  /**
+   * The placeholder the Apps page showed for a stored key before RSDEV-1525. Saving a Galaxy server
+   * again posted it back, overwriting the plaintext setting while the real key stayed in
+   * UserConnection, so it is never a credential to copy.
+   */
+  private static final String LEGACY_MASKED_TOKEN = "XXXXXXXXXXXXXXXXX";
+
   private UserConnectionDao userConnectionDao;
   private int moved;
+  private int skippedMasked;
 
   @Override
   protected void addBeans() {
@@ -36,7 +45,11 @@ public class MoveDataverseTeamsAndGalaxySecretsToUserConnection_RSDEV1525
 
   @Override
   public String getConfirmationMessage() {
-    return "Moved " + moved + " Dataverse, Teams, and Galaxy credentials to UserConnection";
+    return "Moved "
+        + moved
+        + " Dataverse, Teams, and Galaxy credentials to UserConnection; removed "
+        + skippedMasked
+        + " masked placeholders";
   }
 
   /** Rolls back copied credentials if verification or cleanup fails. */
@@ -75,7 +88,9 @@ public class MoveDataverseTeamsAndGalaxySecretsToUserConnection_RSDEV1525
       String providerName = set.getApp().toIntegrationInfoName();
       String settingName = settingFor(appName);
       String credential = value(set, settingName);
-      if (!StringUtils.isEmpty(credential)) {
+      if (LEGACY_MASKED_TOKEN.equals(credential)) {
+        skippedMasked++;
+      } else if (!StringUtils.isEmpty(credential)) {
         String discriminant = discriminantFor(set, appName);
         boolean secretField = APP_MSTEAMS.equals(appName);
         copyAndVerify(

@@ -5,6 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -33,6 +34,7 @@ class MoveDataverseTeamsAndGalaxySecretsToUserConnection_RSDEV1525Test
     extends SpringTransactionalTest {
 
   private static final String GALAXY_APP_NAME = "GALAXY";
+  private static final String MASKED_TOKEN = "XXXXXXXXXXXXXXXXX";
   private @Autowired UserAppConfigManager appConfigManager;
   private @Autowired UserConnectionManager userConnectionManager;
 
@@ -134,6 +136,64 @@ class MoveDataverseTeamsAndGalaxySecretsToUserConnection_RSDEV1525Test
                 user.getUsername(), DATAVERSE_APP_NAME, dataverseSet.toString())
             .orElseThrow()
             .getAccessToken());
+  }
+
+  @Test
+  void maskedGalaxyPlaintextKeepsTheStoredKeyAndIsRemoved() {
+    User user = createAndSaveRandomUser();
+    logoutAndLoginAs(user);
+    Long galaxySet =
+        newSet(
+            user,
+            "app.galaxy",
+            Map.of("GALAXY_ALIAS", "galaxy", "GALAXY_URL", "https://galaxy.example"));
+    userConnectionManager.save(
+        new UserConnection(
+            new UserConnectionId(user.getUsername(), GALAXY_APP_NAME, "galaxy"), "real-key"));
+    Session session = sessionFactory.getCurrentSession();
+    addLegacyDescriptor(session, -1532, "app.galaxy", "GALAXY_APIKEY");
+    addLegacyValue(session, -1532, galaxySet, MASKED_TOKEN);
+    session.flush();
+    session.clear();
+
+    newMigration().doExecute(null);
+    session.flush();
+    session.clear();
+
+    assertEquals(
+        "real-key",
+        userConnectionManager
+            .findByUserNameProviderName(user.getUsername(), GALAXY_APP_NAME, "galaxy")
+            .orElseThrow()
+            .getAccessToken());
+    assertEquals(0L, plaintextSettingCount(session, "app.galaxy", "GALAXY_APIKEY"));
+  }
+
+  @Test
+  void maskedPlaintextWithoutAConnectionIsNotCopied() {
+    User user = createAndSaveRandomUser();
+    logoutAndLoginAs(user);
+    Long dataverseSet =
+        newSet(
+            user,
+            App.APP_DATAVERSE,
+            Map.of("DATAVERSE_ALIAS", "tenant", "DATAVERSE_URL", "https://dataverse.example"));
+    Session session = sessionFactory.getCurrentSession();
+    addLegacyDescriptor(session, -1530, App.APP_DATAVERSE, "DATAVERSE_APIKEY");
+    addLegacyValue(session, -1530, dataverseSet, MASKED_TOKEN);
+    session.flush();
+    session.clear();
+
+    newMigration().doExecute(null);
+    session.flush();
+    session.clear();
+
+    assertTrue(
+        userConnectionManager
+            .findByUserNameProviderName(
+                user.getUsername(), DATAVERSE_APP_NAME, dataverseSet.toString())
+            .isEmpty());
+    assertEquals(0L, plaintextSettingCount(session, App.APP_DATAVERSE, "DATAVERSE_APIKEY"));
   }
 
   @Test

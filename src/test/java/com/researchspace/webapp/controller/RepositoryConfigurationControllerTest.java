@@ -34,6 +34,7 @@ import com.researchspace.repository.spi.properties.RepoProperty;
 import com.researchspace.repository.spi.properties.StringRepoProperty;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
@@ -63,7 +64,6 @@ class RepositoryConfigurationControllerTest {
   @Mock private UserManager userManager;
   @Mock private DMPManager dmpManager;
   @Mock private IPermissionUtils permissionUtils;
-  @Mock private MessageSourceUtils messages;
 
   @InjectMocks private RepositoryConfigurationController repositoryConfigurationController;
 
@@ -73,6 +73,8 @@ class RepositoryConfigurationControllerTest {
   public void setUp() throws Exception {
     exporter = TestFactory.createAnyUser("anyUser");
     when(userManager.getAuthenticatedUserInSession()).thenReturn(exporter);
+    repositoryConfigurationController.setMessageSource(
+        new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @Test
@@ -102,10 +104,8 @@ class RepositoryConfigurationControllerTest {
     when(appCfgMgr.findByAppConfigElementSetId(1L)).thenReturn(Optional.of(configSet));
     when(repositoryDepositHandler.testDataverseConnection(configSet))
         .thenReturn(new RepositoryOperationResult(true, "connected", null, null));
-    when(messages.getMessage(eq("repository.connection.success"), any(Object[].class)))
-        .thenReturn("Connection succeeded");
 
-    assertEquals("Connection succeeded", repositoryConfigurationController.testRepository(1L));
+    assertEquals("Success! connected", repositoryConfigurationController.testRepository(1L));
 
     InOrder authorizationFirst = inOrder(permissionUtils, repositoryDepositHandler);
     authorizationFirst
