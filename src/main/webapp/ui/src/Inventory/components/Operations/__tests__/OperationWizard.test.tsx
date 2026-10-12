@@ -1800,6 +1800,7 @@ describe("OperationWizard remembered placement", () => {
   ] as const)(
     "opens on Location with a note, no container picked, when the remembered container %s",
     async (_, attrs) => {
+      const restoreConsole = silenceConsole(["warn"], ["Could not fetch the container"]);
       rememberBoil({ containerId: 5, containerName: "Shelf" });
       serveContainer(attrs);
       const user = userEvent.setup();
@@ -1811,8 +1812,21 @@ describe("OperationWizard remembered placement", () => {
       expect(nextButton()).toBeDisabled();
       await user.click(screen.getByTestId("place-workbench"));
       expect(nextButton()).toBeEnabled();
+      restoreConsole();
     },
   );
+
+  it("logs only the reason when the remembered container cannot be fetched, not the request with its credentials", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    rememberBoil({ containerId: 5, containerName: "Shelf" });
+    serveContainer(null);
+    const user = userEvent.setup();
+    await openRememberedDerive(user);
+
+    await waitFor(() => expect(warn).toHaveBeenCalled());
+    for (const arg of warn.mock.calls.flat()) expect(typeof arg).toBe("string");
+    warn.mockRestore();
+  });
 });
 
 describe("OperationWizard origin container pre-selection", () => {
