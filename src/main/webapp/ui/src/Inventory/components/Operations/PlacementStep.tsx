@@ -89,7 +89,7 @@ function PlacementStep({
       case "notEnoughSpace":
         return t("operations.placement.status.notEnoughSpace", { free: b.free, count });
       case "selectSlots":
-        return t("operations.placement.status.selectSlots", { count: b.remaining });
+        return t("operations.placement.status.selectSlots", { count: b.remaining, container: container?.name ?? "" });
       case "occupiedSlot":
         return t("operations.placement.status.occupiedSlot");
       case "tooManySlots":
