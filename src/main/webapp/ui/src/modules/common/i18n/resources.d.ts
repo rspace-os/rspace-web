@@ -4073,6 +4073,8 @@ export default interface Resources {
         "tooManySelected": "Select at most 100 subsamples for this operation."
       },
       "placement": {
+        "changeContainer": "Change container",
+        "chosen": "Placing in {container}",
         "container": "Choose a location",
         "description": "Choose where the new subsamples go once they are created.",
         "failedAfterCreate": "The new subsamples were created on your workbench, but could not be placed in {container}.",
